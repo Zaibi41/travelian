@@ -17,7 +17,7 @@ export default function VisaPackagesPage() {
   const [packages, setPackages] = useState(mockVisaPackages);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<UmrahPackage | null>(null);
-  const [form, setForm] = useState({ name: '', description: '', basePrice: 0, duration: '', city: '', status: 'active' as const, includes: [] as string[] });
+  const [form, setForm] = useState<{ name: string; description: string; basePrice: number; duration: string; city: string; status: 'active' | 'inactive'; includes: string[] }>({ name: '', description: '', basePrice: 0, duration: '', city: '', status: 'active', includes: [] });
   const [incInput, setIncInput] = useState('');
   const isAgency = currentRole === 'agency_owner' || currentRole === 'agency_staff';
   const canEdit = currentRole === 'super_admin' || currentRole === 'admin';
