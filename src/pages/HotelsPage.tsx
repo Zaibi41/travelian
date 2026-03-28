@@ -18,7 +18,7 @@ export default function HotelsPage() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Hotel | null>(null);
-  const [form, setForm] = useState({ name: '', city: '', country: '', starRating: 4, pricePerNight: 0, rooms: 0, amenities: [] as string[], status: 'active' as const });
+  const [form, setForm] = useState<{ name: string; city: string; country: string; starRating: number; pricePerNight: number; rooms: number; amenities: string[]; status: 'active' | 'inactive' }>({ name: '', city: '', country: '', starRating: 4, pricePerNight: 0, rooms: 0, amenities: [], status: 'active' });
   const [amenityInput, setAmenityInput] = useState('');
 
   const canEdit = currentRole === 'super_admin' || currentRole === 'admin';
