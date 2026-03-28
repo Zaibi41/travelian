@@ -4,6 +4,7 @@ import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { mockNotifications } from "@/data/mock";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const unreadCount = mockNotifications.filter(n => !n.read).length;
@@ -18,7 +19,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <SidebarTrigger />
               <span className="text-sm text-muted-foreground hidden sm:block">Travel Management System</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <RoleSwitcher />
               <Link to="/notifications">
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-4 w-4" />
