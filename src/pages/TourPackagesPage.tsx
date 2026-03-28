@@ -23,7 +23,7 @@ export default function TourPackagesPage() {
   const isAgency = currentRole === 'agency_owner' || currentRole === 'agency_staff';
   const canEdit = currentRole === 'super_admin' || currentRole === 'admin';
 
-  const openAdd = () => { setEditing(null); setForm({ name: '', description: '', basePrice: 0, duration: '', hotel: '', city: '', status: 'active', includes: [] }); setDialogOpen(true); };
+  const openAdd = () => { setEditing(null); setForm({ name: '', description: '', basePrice: 0, duration: '', hotel: '', city: '', status: 'active' as 'active' | 'inactive', includes: [] }); setDialogOpen(true); };
   const openEdit = (pkg: UmrahPackage) => { setEditing(pkg); setForm(pkg); setDialogOpen(true); };
 
   const handleSave = () => {

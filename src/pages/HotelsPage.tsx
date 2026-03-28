@@ -24,7 +24,7 @@ export default function HotelsPage() {
   const canEdit = currentRole === 'super_admin' || currentRole === 'admin';
   const filtered = hotels.filter(h => h.name.toLowerCase().includes(search.toLowerCase()) || h.city.toLowerCase().includes(search.toLowerCase()));
 
-  const openAdd = () => { setEditing(null); setForm({ name: '', city: '', country: '', starRating: 4, pricePerNight: 0, rooms: 0, amenities: [], status: 'active' }); setDialogOpen(true); };
+  const openAdd = () => { setEditing(null); setForm({ name: '', city: '', country: '', starRating: 4, pricePerNight: 0, rooms: 0, amenities: [], status: 'active' as const }); setDialogOpen(true); };
   const openEdit = (h: Hotel) => { setEditing(h); setForm(h); setDialogOpen(true); };
 
   const handleSave = () => {
