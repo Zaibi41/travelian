@@ -18,7 +18,7 @@ export default function TourPackagesPage() {
   const [packages, setPackages] = useState(mockTourPackages);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<UmrahPackage | null>(null);
-  const [form, setForm] = useState({ name: '', description: '', basePrice: 0, duration: '', hotel: '', city: '', status: 'active' as const, includes: [] as string[] });
+  const [form, setForm] = useState<{ name: string; description: string; basePrice: number; duration: string; hotel: string; city: string; status: 'active' | 'inactive'; includes: string[] }>({ name: '', description: '', basePrice: 0, duration: '', hotel: '', city: '', status: 'active', includes: [] });
   const [incInput, setIncInput] = useState('');
   const isAgency = currentRole === 'agency_owner' || currentRole === 'agency_staff';
   const canEdit = currentRole === 'super_admin' || currentRole === 'admin';
