@@ -1,11 +1,12 @@
 import {
   LayoutDashboard, Building2, Package, CalendarCheck, Wallet,
   Users, FileText, Bell, Settings, Plane, Hotel, Map, FileCheck,
-  Tag, PenTool, Shield, Ticket,
+  Tag, PenTool, Shield, Ticket, Globe,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -19,84 +20,84 @@ interface NavItem {
 }
 
 const superAdminNav: NavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Agencies", url: "/agencies", icon: Building2 },
-  { title: "Umrah Packages", url: "/packages", icon: Package },
-  { title: "Tour Packages", url: "/tours", icon: Map },
-  { title: "Visa Packages", url: "/visa", icon: FileCheck },
-  { title: "Bookings", url: "/bookings", icon: CalendarCheck },
-  { title: "Travel Tickets", url: "/tickets", icon: Ticket },
-  { title: "Hotels", url: "/hotels", icon: Hotel },
-  { title: "Flights", url: "/flights", icon: Plane },
-  { title: "Wallet", url: "/wallet", icon: Wallet },
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Agencies", url: "/admin/agencies", icon: Building2 },
+  { title: "Umrah Packages", url: "/admin/packages", icon: Package },
+  { title: "Tour Packages", url: "/admin/tours", icon: Map },
+  { title: "Visa Packages", url: "/admin/visa", icon: FileCheck },
+  { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
+  { title: "Travel Tickets", url: "/admin/tickets", icon: Ticket },
+  { title: "Hotels", url: "/admin/hotels", icon: Hotel },
+  { title: "Flights", url: "/admin/flights", icon: Plane },
+  { title: "Wallet", url: "/admin/wallet", icon: Wallet },
 ];
 
 const superAdminSystemNav: NavItem[] = [
-  { title: "Users", url: "/users", icon: Users },
-  { title: "Access Control", url: "/rbac", icon: Shield },
-  { title: "Coupons & Deals", url: "/coupons", icon: Tag },
-  { title: "Blog", url: "/blog", icon: PenTool },
-  { title: "Documents", url: "/documents", icon: FileText },
-  { title: "Notifications", url: "/notifications", icon: Bell },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Users", url: "/admin/users", icon: Users },
+  { title: "Access Control", url: "/admin/rbac", icon: Shield },
+  { title: "Coupons & Deals", url: "/admin/coupons", icon: Tag },
+  { title: "Blog", url: "/admin/blog", icon: PenTool },
+  { title: "Documents", url: "/admin/documents", icon: FileText },
+  { title: "Notifications", url: "/admin/notifications", icon: Bell },
+  { title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 
 const adminNav: NavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Agencies", url: "/agencies", icon: Building2 },
-  { title: "Umrah Packages", url: "/packages", icon: Package },
-  { title: "Tour Packages", url: "/tours", icon: Map },
-  { title: "Visa Packages", url: "/visa", icon: FileCheck },
-  { title: "Bookings", url: "/bookings", icon: CalendarCheck },
-  { title: "Travel Tickets", url: "/tickets", icon: Ticket },
-  { title: "Hotels", url: "/hotels", icon: Hotel },
-  { title: "Flights", url: "/flights", icon: Plane },
-  { title: "Wallet", url: "/wallet", icon: Wallet },
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Agencies", url: "/admin/agencies", icon: Building2 },
+  { title: "Umrah Packages", url: "/admin/packages", icon: Package },
+  { title: "Tour Packages", url: "/admin/tours", icon: Map },
+  { title: "Visa Packages", url: "/admin/visa", icon: FileCheck },
+  { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
+  { title: "Travel Tickets", url: "/admin/tickets", icon: Ticket },
+  { title: "Hotels", url: "/admin/hotels", icon: Hotel },
+  { title: "Flights", url: "/admin/flights", icon: Plane },
+  { title: "Wallet", url: "/admin/wallet", icon: Wallet },
 ];
 
 const adminSystemNav: NavItem[] = [
-  { title: "Users", url: "/users", icon: Users },
-  { title: "Coupons & Deals", url: "/coupons", icon: Tag },
-  { title: "Blog", url: "/blog", icon: PenTool },
-  { title: "Documents", url: "/documents", icon: FileText },
-  { title: "Notifications", url: "/notifications", icon: Bell },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Users", url: "/admin/users", icon: Users },
+  { title: "Coupons & Deals", url: "/admin/coupons", icon: Tag },
+  { title: "Blog", url: "/admin/blog", icon: PenTool },
+  { title: "Documents", url: "/admin/documents", icon: FileText },
+  { title: "Notifications", url: "/admin/notifications", icon: Bell },
+  { title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 
 const staffNav: NavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Bookings", url: "/bookings", icon: CalendarCheck },
-  { title: "Travel Tickets", url: "/tickets", icon: Ticket },
-  { title: "Documents", url: "/documents", icon: FileText },
-  { title: "Notifications", url: "/notifications", icon: Bell },
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
+  { title: "Travel Tickets", url: "/admin/tickets", icon: Ticket },
+  { title: "Documents", url: "/admin/documents", icon: FileText },
+  { title: "Notifications", url: "/admin/notifications", icon: Bell },
 ];
 
 const agencyOwnerNav: NavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Umrah Packages", url: "/packages", icon: Package },
-  { title: "Tour Packages", url: "/tours", icon: Map },
-  { title: "Visa Packages", url: "/visa", icon: FileCheck },
-  { title: "Bookings", url: "/bookings", icon: CalendarCheck },
-  { title: "Travel Tickets", url: "/tickets", icon: Ticket },
-  { title: "My Wallet", url: "/wallet", icon: Wallet },
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Umrah Packages", url: "/admin/packages", icon: Package },
+  { title: "Tour Packages", url: "/admin/tours", icon: Map },
+  { title: "Visa Packages", url: "/admin/visa", icon: FileCheck },
+  { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
+  { title: "Travel Tickets", url: "/admin/tickets", icon: Ticket },
+  { title: "My Wallet", url: "/admin/wallet", icon: Wallet },
 ];
 
 const agencyOwnerSystemNav: NavItem[] = [
-  { title: "My Staff", url: "/users", icon: Users },
-  { title: "Documents", url: "/documents", icon: FileText },
-  { title: "Notifications", url: "/notifications", icon: Bell },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "My Staff", url: "/admin/users", icon: Users },
+  { title: "Documents", url: "/admin/documents", icon: FileText },
+  { title: "Notifications", url: "/admin/notifications", icon: Bell },
+  { title: "Settings", url: "/admin/settings", icon: Settings },
 ];
 
 const agencyStaffNav: NavItem[] = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Umrah Packages", url: "/packages", icon: Package },
-  { title: "Tour Packages", url: "/tours", icon: Map },
-  { title: "Visa Packages", url: "/visa", icon: FileCheck },
-  { title: "Bookings", url: "/bookings", icon: CalendarCheck },
-  { title: "Travel Tickets", url: "/tickets", icon: Ticket },
-  { title: "Documents", url: "/documents", icon: FileText },
-  { title: "Notifications", url: "/notifications", icon: Bell },
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Umrah Packages", url: "/admin/packages", icon: Package },
+  { title: "Tour Packages", url: "/admin/tours", icon: Map },
+  { title: "Visa Packages", url: "/admin/visa", icon: FileCheck },
+  { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
+  { title: "Travel Tickets", url: "/admin/tickets", icon: Ticket },
+  { title: "Documents", url: "/admin/documents", icon: FileText },
+  { title: "Notifications", url: "/admin/notifications", icon: Bell },
 ];
 
 function getNavForRole(role: string): { main: NavItem[]; system: NavItem[] } {
@@ -116,7 +117,7 @@ export function AdminSidebar() {
   const location = useLocation();
   const { currentRole, currentUser } = useRole();
   const isActive = (path: string) =>
-    path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+    path === "/admin" ? location.pathname === "/admin" : location.pathname.startsWith(path);
 
   const { main, system } = getNavForRole(currentRole);
 
@@ -125,7 +126,7 @@ export function AdminSidebar() {
       {items.map((item) => (
         <SidebarMenuItem key={item.title}>
           <SidebarMenuButton asChild isActive={isActive(item.url)}>
-            <NavLink to={item.url} end={item.url === "/"} activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold">
+            <NavLink to={item.url} end={item.url === "/admin"} activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold">
               <item.icon className="h-4 w-4 shrink-0" />
               {!collapsed && <span>{item.title}</span>}
             </NavLink>
@@ -166,6 +167,22 @@ export function AdminSidebar() {
             <SidebarGroupContent>{renderItems(system)}</SidebarGroupContent>
           </SidebarGroup>
         )}
+
+        {/* Link to public site */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/" className="flex items-center gap-2 text-sidebar-muted hover:text-sidebar-accent-foreground">
+                    <Globe className="h-4 w-4 shrink-0" />
+                    {!collapsed && <span>View Public Site</span>}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="p-4">
