@@ -2,7 +2,7 @@ import { SearchTabs } from "@/components/public/SearchTabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, MapPin, ArrowRight, Shield, Clock, Headphones, CreditCard, Plane, Hotel, FileCheck, Users } from "lucide-react";
+import { Star, MapPin, ArrowRight, Shield, Clock, Headphones, CreditCard, Plane, Hotel, FileCheck, Users, Package, Map } from "lucide-react";
 import { Link } from "react-router-dom";
 import { mockPackages, mockTourPackages, mockHotels, mockBlogPosts } from "@/data/mock";
 
