@@ -10,6 +10,7 @@ import { RoleProvider } from "@/contexts/RoleContext";
 // Public pages
 import HomePage from "./pages/public/HomePage";
 import PublicHotelsPage from "./pages/public/PublicHotelsPage";
+import HotelDetailPage from "./pages/public/HotelDetailPage";
 import PublicFlightsPage from "./pages/public/PublicFlightsPage";
 import PublicPackagesPage from "./pages/public/PublicPackagesPage";
 import PublicToursPage from "./pages/public/PublicToursPage";
@@ -17,6 +18,9 @@ import PublicVisaPage from "./pages/public/PublicVisaPage";
 import PublicBlogPage from "./pages/public/PublicBlogPage";
 import ContactPage from "./pages/public/ContactPage";
 import AboutPage from "./pages/public/AboutPage";
+import DealsPage from "./pages/public/DealsPage";
+import BookingPage from "./pages/public/BookingPage";
+import AccountPage from "./pages/public/AccountPage";
 
 // Admin pages
 import DashboardPage from "./pages/DashboardPage";
@@ -51,6 +55,7 @@ const App = () => (
             {/* Public routes */}
             <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
             <Route path="/hotels-search" element={<PublicLayout><PublicHotelsPage /></PublicLayout>} />
+            <Route path="/hotel/:id" element={<PublicLayout><HotelDetailPage /></PublicLayout>} />
             <Route path="/flights-search" element={<PublicLayout><PublicFlightsPage /></PublicLayout>} />
             <Route path="/umrah-packages" element={<PublicLayout><PublicPackagesPage /></PublicLayout>} />
             <Route path="/tour-packages" element={<PublicLayout><PublicToursPage /></PublicLayout>} />
@@ -58,6 +63,9 @@ const App = () => (
             <Route path="/blog-public" element={<PublicLayout><PublicBlogPage /></PublicLayout>} />
             <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
             <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
+            <Route path="/deals" element={<PublicLayout><DealsPage /></PublicLayout>} />
+            <Route path="/booking" element={<PublicLayout><BookingPage /></PublicLayout>} />
+            <Route path="/account" element={<PublicLayout><AccountPage /></PublicLayout>} />
 
             {/* Admin routes */}
             <Route path="/admin" element={<AdminLayout><DashboardPage /></AdminLayout>} />

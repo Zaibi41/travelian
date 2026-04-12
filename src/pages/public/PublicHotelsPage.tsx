@@ -3,138 +3,363 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Star, MapPin, Wifi, UtensilsCrossed, Dumbbell, Search, SlidersHorizontal, Grid3X3, List } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Star, MapPin, Wifi, UtensilsCrossed, Dumbbell, Search, SlidersHorizontal, Grid3X3, List, Heart, X, ChevronDown, Map as MapIcon, ArrowUpDown, Users, Waves, Coffee } from "lucide-react";
 import { mockHotels } from "@/data/mock";
+import { Link } from "react-router-dom";
+
+const amenityFilters = [
+  { id: "wifi", label: "Free WiFi", icon: Wifi },
+  { id: "pool", label: "Swimming Pool", icon: Waves },
+  { id: "breakfast", label: "Breakfast", icon: Coffee },
+  { id: "gym", label: "Fitness Center", icon: Dumbbell },
+  { id: "restaurant", label: "Restaurant", icon: UtensilsCrossed },
+];
+
+const sortOptions = [
+  { label: "Popular", value: "popular" },
+  { label: "Price: Low to High", value: "price-asc" },
+  { label: "Price: High to Low", value: "price-desc" },
+  { label: "Rating", value: "rating" },
+  { label: "Star Rating", value: "stars" },
+];
 
 export default function PublicHotelsPage() {
   const [search, setSearch] = useState("");
-  const [starFilter, setStarFilter] = useState<number | null>(null);
+  const [starFilter, setStarFilter] = useState<number[]>([]);
+  const [priceRange, setPriceRange] = useState([0, 500]);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [sort, setSort] = useState("popular");
+  const [showFilters, setShowFilters] = useState(true);
 
-  const filtered = mockHotels.filter(h => {
+  const toggleStar = (s: number) => {
+    setStarFilter(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  };
+
+  const toggleAmenity = (a: string) => {
+    setSelectedAmenities(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
+  };
+
+  let filtered = mockHotels.filter(h => {
     if (h.status !== 'active') return false;
     if (search && !h.name.toLowerCase().includes(search.toLowerCase()) && !h.city.toLowerCase().includes(search.toLowerCase())) return false;
-    if (starFilter && h.starRating !== starFilter) return false;
+    if (starFilter.length > 0 && !starFilter.includes(h.starRating)) return false;
+    if (h.pricePerNight < priceRange[0] || h.pricePerNight > priceRange[1]) return false;
+    if (selectedAmenities.length > 0) {
+      const hotelAmenities = h.amenities.map(a => a.toLowerCase());
+      if (!selectedAmenities.every(sa => hotelAmenities.some(ha => ha.includes(sa)))) return false;
+    }
     return true;
   });
 
-  const amenityIcon = (a: string) => {
-    if (a.toLowerCase().includes('wifi')) return <Wifi className="h-3 w-3" />;
-    if (a.toLowerCase().includes('restaurant') || a.toLowerCase().includes('meal')) return <UtensilsCrossed className="h-3 w-3" />;
-    if (a.toLowerCase().includes('gym')) return <Dumbbell className="h-3 w-3" />;
-    return null;
-  };
+  if (sort === "price-asc") filtered.sort((a, b) => a.pricePerNight - b.pricePerNight);
+  else if (sort === "price-desc") filtered.sort((a, b) => b.pricePerNight - a.pricePerNight);
+  else if (sort === "stars") filtered.sort((a, b) => b.starRating - a.starRating);
+
+  const activeFilterCount = starFilter.length + selectedAmenities.length + (priceRange[0] > 0 || priceRange[1] < 500 ? 1 : 0);
 
   return (
     <div>
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-sidebar to-sidebar-accent py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold font-display text-sidebar-accent-foreground mb-2">Find Your Perfect Stay</h1>
-          <p className="text-sidebar-muted mb-6">Search from our curated collection of hotels worldwide</p>
-          <div className="max-w-2xl mx-auto flex gap-2">
+      {/* Search Header */}
+      <section className="gradient-hero py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-2xl md:text-3xl font-bold font-display text-primary-foreground mb-4">Hotels & Accommodation</h1>
+          <div className="flex gap-2 max-w-3xl">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search by hotel name or city..." className="pl-9 bg-card" value={search} onChange={e => setSearch(e.target.value)} />
+              <Input placeholder="Search hotel, city, or destination..." className="pl-9 h-11 bg-card" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
-            <Button className="gradient-primary text-primary-foreground"><Search className="h-4 w-4" /></Button>
+            <Button className="gradient-primary text-primary-foreground h-11"><Search className="h-4 w-4" /></Button>
           </div>
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2 mb-6">
-          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium text-muted-foreground mr-2">Filter:</span>
-          {[3, 4, 5].map(s => (
-            <Button key={s} size="sm" variant={starFilter === s ? "default" : "outline"} onClick={() => setStarFilter(starFilter === s ? null : s)} className="text-xs">
-              {s} <Star className="h-3 w-3 ml-1 fill-current" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Toolbar */}
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className="gap-2"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Filters
+              {activeFilterCount > 0 && (
+                <Badge className="bg-primary text-primary-foreground h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
+                  {activeFilterCount}
+                </Badge>
+              )}
             </Button>
-          ))}
-          <div className="ml-auto flex gap-1">
-            <Button size="icon" variant={view === "grid" ? "default" : "outline"} onClick={() => setView("grid")} className="h-8 w-8">
+            <span className="text-sm text-muted-foreground">{filtered.length} properties found</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 text-sm">
+              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+              <select
+                className="bg-transparent text-sm font-medium text-foreground border-0 focus:outline-none cursor-pointer"
+                value={sort}
+                onChange={e => setSort(e.target.value)}
+              >
+                {sortOptions.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-px h-5 bg-border mx-1" />
+            <Button size="icon" variant={view === "grid" ? "default" : "ghost"} onClick={() => setView("grid")} className="h-8 w-8">
               <Grid3X3 className="h-4 w-4" />
             </Button>
-            <Button size="icon" variant={view === "list" ? "default" : "outline"} onClick={() => setView("list")} className="h-8 w-8">
+            <Button size="icon" variant={view === "list" ? "default" : "ghost"} onClick={() => setView("list")} className="h-8 w-8">
               <List className="h-4 w-4" />
+            </Button>
+            <Button size="sm" variant="outline" className="gap-2 hidden md:flex">
+              <MapIcon className="h-4 w-4" /> Map View
             </Button>
           </div>
         </div>
 
-        <p className="text-sm text-muted-foreground mb-4">{filtered.length} hotels found</p>
-
-        {view === "grid" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map(hotel => (
-              <Card key={hotel.hotelId} className="overflow-hidden group hover:shadow-elevated transition-all">
-                <div className="h-48 bg-gradient-to-br from-warning/10 to-accent relative flex items-center justify-center">
-                  <span className="text-6xl">🏨</span>
-                  <div className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-md flex items-center gap-1">
-                    {hotel.starRating}.0 <Star className="h-3 w-3 fill-current" />
-                  </div>
+        <div className="flex gap-6">
+          {/* Sidebar Filters */}
+          {showFilters && (
+            <aside className="hidden md:block w-64 shrink-0 space-y-6">
+              {/* Price Range */}
+              <div className="bg-card rounded-xl p-5 shadow-card">
+                <h3 className="font-semibold text-foreground text-sm mb-4">Price per night</h3>
+                <Slider
+                  value={priceRange}
+                  onValueChange={setPriceRange}
+                  min={0}
+                  max={500}
+                  step={10}
+                  className="mb-3"
+                />
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>${priceRange[0]}</span>
+                  <span>${priceRange[1]}+</span>
                 </div>
-                <CardContent className="p-5">
-                  <h3 className="font-semibold text-foreground text-lg">{hotel.name}</h3>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                    <MapPin className="h-3.5 w-3.5" /> {hotel.city}, {hotel.country}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {hotel.amenities.slice(0, 4).map(a => (
-                      <Badge key={a} variant="outline" className="text-xs flex items-center gap-1">
-                        {amenityIcon(a)} {a}
-                      </Badge>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t">
-                    <div>
-                      <span className="text-xs text-muted-foreground">Per night from</span>
-                      <p className="text-2xl font-bold text-primary">${hotel.pricePerNight}</p>
-                    </div>
-                    <Button className="gradient-primary text-primary-foreground">Book Now</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {filtered.map(hotel => (
-              <Card key={hotel.hotelId} className="overflow-hidden hover:shadow-elevated transition-all">
-                <div className="flex flex-col md:flex-row">
-                  <div className="w-full md:w-64 h-48 md:h-auto bg-gradient-to-br from-warning/10 to-accent flex items-center justify-center shrink-0">
-                    <span className="text-5xl">🏨</span>
-                  </div>
-                  <CardContent className="p-5 flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-semibold text-foreground text-lg">{hotel.name}</h3>
-                          <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                            <MapPin className="h-3.5 w-3.5" /> {hotel.city}, {hotel.country}
-                          </p>
-                        </div>
-                        <Badge className="bg-primary text-primary-foreground">{hotel.starRating} <Star className="h-3 w-3 ml-1 fill-current" /></Badge>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 mt-3">
-                        {hotel.amenities.map(a => (
-                          <Badge key={a} variant="outline" className="text-xs">{a}</Badge>
+              </div>
+
+              {/* Star Rating */}
+              <div className="bg-card rounded-xl p-5 shadow-card">
+                <h3 className="font-semibold text-foreground text-sm mb-3">Star Rating</h3>
+                <div className="space-y-2">
+                  {[5, 4, 3, 2, 1].map(s => (
+                    <label key={s} className="flex items-center gap-2 cursor-pointer group">
+                      <Checkbox
+                        checked={starFilter.includes(s)}
+                        onCheckedChange={() => toggleStar(s)}
+                      />
+                      <div className="flex items-center gap-0.5">
+                        {Array.from({ length: s }).map((_, i) => (
+                          <Star key={i} className="h-3.5 w-3.5 fill-warning text-warning" />
                         ))}
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-4 pt-3 border-t">
-                      <div>
-                        <span className="text-xs text-muted-foreground">Per night from</span>
-                        <p className="text-2xl font-bold text-primary">${hotel.pricePerNight}</p>
-                      </div>
-                      <Button className="gradient-primary text-primary-foreground">Book Now</Button>
-                    </div>
-                  </CardContent>
+                      <span className="text-xs text-muted-foreground group-hover:text-foreground">{s} Star</span>
+                    </label>
+                  ))}
                 </div>
-              </Card>
-            ))}
+              </div>
+
+              {/* Guest Rating */}
+              <div className="bg-card rounded-xl p-5 shadow-card">
+                <h3 className="font-semibold text-foreground text-sm mb-3">Guest Rating</h3>
+                <div className="space-y-2">
+                  {[
+                    { label: "Exceptional", min: 9 },
+                    { label: "Very Good", min: 8 },
+                    { label: "Good", min: 7 },
+                    { label: "Pleasant", min: 6 },
+                  ].map(r => (
+                    <label key={r.label} className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox />
+                      <span className="text-xs text-muted-foreground">{r.label} ({r.min}+)</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Amenities */}
+              <div className="bg-card rounded-xl p-5 shadow-card">
+                <h3 className="font-semibold text-foreground text-sm mb-3">Amenities</h3>
+                <div className="space-y-2">
+                  {amenityFilters.map(a => (
+                    <label key={a.id} className="flex items-center gap-2 cursor-pointer group">
+                      <Checkbox
+                        checked={selectedAmenities.includes(a.id)}
+                        onCheckedChange={() => toggleAmenity(a.id)}
+                      />
+                      <a.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground group-hover:text-foreground">{a.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Property Type */}
+              <div className="bg-card rounded-xl p-5 shadow-card">
+                <h3 className="font-semibold text-foreground text-sm mb-3">Property Type</h3>
+                <div className="space-y-2">
+                  {["Hotels", "Resorts", "Apartments", "Villas", "Hostels"].map(t => (
+                    <label key={t} className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox />
+                      <span className="text-xs text-muted-foreground">{t}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </aside>
+          )}
+
+          {/* Results */}
+          <div className="flex-1 min-w-0">
+            {/* Active Filters */}
+            {activeFilterCount > 0 && (
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                {starFilter.map(s => (
+                  <Badge key={s} variant="secondary" className="gap-1 text-xs cursor-pointer" onClick={() => toggleStar(s)}>
+                    {s} Star <X className="h-3 w-3" />
+                  </Badge>
+                ))}
+                {selectedAmenities.map(a => (
+                  <Badge key={a} variant="secondary" className="gap-1 text-xs cursor-pointer capitalize" onClick={() => toggleAmenity(a)}>
+                    {a} <X className="h-3 w-3" />
+                  </Badge>
+                ))}
+                <button className="text-xs text-primary hover:underline" onClick={() => { setStarFilter([]); setSelectedAmenities([]); setPriceRange([0, 500]); }}>
+                  Clear all
+                </button>
+              </div>
+            )}
+
+            {view === "grid" ? (
+              <div className={`grid gap-4 ${showFilters ? 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
+                {filtered.map(hotel => (
+                  <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
+                    <Card className="overflow-hidden group hover:shadow-elevated transition-all h-full">
+                      <div className="h-44 bg-gradient-to-br from-warning/10 to-accent relative flex items-center justify-center">
+                        <span className="text-5xl group-hover:scale-110 transition-transform">🏨</span>
+                        <div className="absolute top-3 left-3 flex items-center gap-0.5">
+                          {Array.from({ length: hotel.starRating }).map((_, i) => (
+                            <Star key={i} className="h-3 w-3 fill-warning text-warning" />
+                          ))}
+                        </div>
+                        <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-foreground/40 transition-colors">
+                          <Heart className="h-3.5 w-3.5" />
+                        </button>
+                        <Badge className="absolute bottom-3 left-3 bg-success/90 text-success-foreground border-0 text-[10px]">
+                          Free Cancellation
+                        </Badge>
+                      </div>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h3 className="font-semibold text-foreground text-sm truncate">{hotel.name}</h3>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <MapPin className="h-3 w-3 shrink-0" /> {hotel.city}, {hotel.country}
+                            </p>
+                          </div>
+                          <div className="shrink-0">
+                            <div className="bg-primary text-primary-foreground text-xs font-bold px-1.5 py-0.5 rounded">
+                              9.{hotel.starRating}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {hotel.amenities.slice(0, 3).map(a => (
+                            <span key={a} className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{a}</span>
+                          ))}
+                        </div>
+                        <div className="flex items-end justify-between mt-3 pt-3 border-t">
+                          <div>
+                            <span className="text-xs text-muted-foreground line-through">${Math.round(hotel.pricePerNight * 1.25)}</span>
+                            <p className="text-lg font-bold text-destructive">${hotel.pricePerNight}<span className="text-[10px] font-normal text-muted-foreground">/night</span></p>
+                          </div>
+                          <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px]">20% OFF</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filtered.map(hotel => (
+                  <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
+                    <Card className="overflow-hidden hover:shadow-elevated transition-all">
+                      <div className="flex flex-col md:flex-row">
+                        <div className="w-full md:w-72 h-48 md:h-auto bg-gradient-to-br from-warning/10 to-accent flex items-center justify-center shrink-0 relative">
+                          <span className="text-5xl">🏨</span>
+                          <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground">
+                            <Heart className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                        <CardContent className="p-5 flex-1 flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-start justify-between gap-4">
+                              <div>
+                                <div className="flex items-center gap-1 mb-1">
+                                  {Array.from({ length: hotel.starRating }).map((_, i) => (
+                                    <Star key={i} className="h-3 w-3 fill-warning text-warning" />
+                                  ))}
+                                </div>
+                                <h3 className="font-semibold text-foreground text-lg">{hotel.name}</h3>
+                                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
+                                  <MapPin className="h-3.5 w-3.5" /> {hotel.city}, {hotel.country}
+                                </p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <div className="bg-primary text-primary-foreground text-sm font-bold px-2.5 py-1 rounded-lg">
+                                  9.{hotel.starRating}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1">Excellent</p>
+                                <p className="text-[10px] text-muted-foreground">1,234 reviews</p>
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 mt-3">
+                              {hotel.amenities.map(a => (
+                                <span key={a} className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{a}</span>
+                              ))}
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                              <Badge className="bg-success/10 text-success border-0 text-[10px]">Free Cancellation</Badge>
+                              <Badge className="bg-info/10 text-info border-0 text-[10px]">Breakfast Included</Badge>
+                            </div>
+                          </div>
+                          <div className="flex items-end justify-between mt-4 pt-3 border-t">
+                            <div>
+                              <span className="text-xs text-muted-foreground">1 night, 2 adults</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-muted-foreground line-through">${Math.round(hotel.pricePerNight * 1.3)}</span>
+                                <p className="text-2xl font-bold text-destructive">${hotel.pricePerNight}</p>
+                              </div>
+                              <span className="text-[10px] text-muted-foreground">+$12 taxes & fees</span>
+                            </div>
+                            <Button className="gradient-primary text-primary-foreground">Select Room</Button>
+                          </div>
+                        </CardContent>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {filtered.length === 0 && (
+              <div className="text-center py-16">
+                <span className="text-6xl mb-4 block">🏨</span>
+                <h3 className="text-lg font-semibold text-foreground mb-2">No properties found</h3>
+                <p className="text-sm text-muted-foreground mb-4">Try adjusting your filters or search criteria</p>
+                <Button variant="outline" onClick={() => { setStarFilter([]); setSelectedAmenities([]); setPriceRange([0, 500]); setSearch(""); }}>
+                  Clear All Filters
+                </Button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
