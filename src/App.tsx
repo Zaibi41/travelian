@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AdminLayout } from "@/components/AdminLayout";
 import { PublicLayout } from "@/components/public/PublicLayout";
 import { RoleProvider } from "@/contexts/RoleContext";
+import { AdminProvider } from "@/contexts/AdminStore";
 
 // Public pages
 import HomePage from "./pages/public/HomePage";
