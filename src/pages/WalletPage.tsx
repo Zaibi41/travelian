@@ -1,22 +1,51 @@
 import { useState } from "react";
-import { mockTransactions, mockAgencies } from "@/data/mock";
+import { useAdmin } from "@/contexts/AdminStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatCard } from "@/components/StatCard";
-import { Wallet, ArrowUpRight, ArrowDownRight, Plus, Building2 } from "lucide-react";
+import { Wallet, ArrowUpRight, ArrowDownRight, Plus, Building2, Minus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 export default function WalletPage() {
+  const { agencies, transactions, addWalletFunds, deductWalletFunds } = useAdmin();
   const [agencyFilter, setAgencyFilter] = useState<string>("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<'add' | 'deduct'>('add');
+  const [selectedAgencyId, setSelectedAgencyId] = useState('');
+  const [amount, setAmount] = useState(0);
+  const [description, setDescription] = useState('');
 
-  const filtered = agencyFilter === "all"
-    ? mockTransactions
-    : mockTransactions.filter(t => t.agencyId === agencyFilter);
+  const filtered = agencyFilter === "all" ? transactions : transactions.filter(t => t.agencyId === agencyFilter);
+  const totalBalance = agencies.reduce((sum, a) => sum + a.walletBalance, 0);
+  const totalCredits = transactions.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
+  const totalDebits = transactions.filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0);
 
-  const totalBalance = mockAgencies.reduce((sum, a) => sum + a.walletBalance, 0);
-  const totalCredits = mockTransactions.filter(t => t.type === 'credit').reduce((sum, t) => sum + t.amount, 0);
-  const totalDebits = mockTransactions.filter(t => t.type === 'debit').reduce((sum, t) => sum + t.amount, 0);
+  const openDialog = (mode: 'add' | 'deduct') => {
+    setDialogMode(mode);
+    setSelectedAgencyId(agencies[0]?.agencyId || '');
+    setAmount(0);
+    setDescription('');
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = () => {
+    if (!selectedAgencyId || !amount || amount <= 0) { toast.error("Select agency and enter valid amount"); return; }
+    if (dialogMode === 'add') {
+      addWalletFunds(selectedAgencyId, amount, description || 'Manual top-up');
+      toast.success(`$${amount.toLocaleString()} added successfully`);
+    } else {
+      const agency = agencies.find(a => a.agencyId === selectedAgencyId);
+      if (agency && amount > agency.walletBalance) { toast.error("Insufficient balance"); return; }
+      deductWalletFunds(selectedAgencyId, amount, description || 'Manual deduction');
+      toast.success(`$${amount.toLocaleString()} deducted successfully`);
+    }
+    setDialogOpen(false);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -25,9 +54,14 @@ export default function WalletPage() {
           <h1 className="text-2xl font-bold font-display">Wallet System</h1>
           <p className="text-sm text-muted-foreground">Manage agency wallet balances and transactions</p>
         </div>
-        <Button className="gradient-primary text-primary-foreground gap-2">
-          <Plus className="h-4 w-4" /> Add Balance
-        </Button>
+        <div className="flex gap-2">
+          <Button className="gradient-primary text-primary-foreground gap-2" onClick={() => openDialog('add')}>
+            <Plus className="h-4 w-4" /> Add Balance
+          </Button>
+          <Button variant="outline" className="gap-2" onClick={() => openDialog('deduct')}>
+            <Minus className="h-4 w-4" /> Deduct
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -38,11 +72,9 @@ export default function WalletPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="shadow-card">
-          <CardHeader>
-            <CardTitle className="text-base font-display">Agency Balances</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-base font-display">Agency Balances</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            {mockAgencies.filter(a => a.status === 'active').map(a => (
+            {agencies.filter(a => a.status === 'active').map(a => (
               <div key={a.agencyId} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 rounded bg-accent flex items-center justify-center">
@@ -66,9 +98,7 @@ export default function WalletPage() {
               <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filter agency" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Agencies</SelectItem>
-                {mockAgencies.map(a => (
-                  <SelectItem key={a.agencyId} value={a.agencyId}>{a.agencyName}</SelectItem>
-                ))}
+                {agencies.map(a => (<SelectItem key={a.agencyId} value={a.agencyId}>{a.agencyName}</SelectItem>))}
               </SelectContent>
             </Select>
           </CardHeader>
@@ -97,6 +127,38 @@ export default function WalletPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">{dialogMode === 'add' ? 'Add Wallet Balance' : 'Deduct from Wallet'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Agency</Label>
+              <Select value={selectedAgencyId} onValueChange={setSelectedAgencyId}>
+                <SelectTrigger><SelectValue placeholder="Select agency" /></SelectTrigger>
+                <SelectContent>
+                  {agencies.filter(a => a.status === 'active').map(a => (
+                    <SelectItem key={a.agencyId} value={a.agencyId}>{a.agencyName} (${a.walletBalance.toLocaleString()})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Amount ($)</Label>
+              <Input type="number" value={amount || ''} onChange={e => setAmount(Number(e.target.value))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Input value={description} onChange={e => setDescription(e.target.value)} placeholder={dialogMode === 'add' ? 'e.g. Manual top-up' : 'e.g. Service charge'} />
+            </div>
+            <Button onClick={handleSubmit} className={`w-full ${dialogMode === 'add' ? 'gradient-primary text-primary-foreground' : 'bg-destructive text-destructive-foreground hover:bg-destructive/90'}`}>
+              {dialogMode === 'add' ? 'Add Funds' : 'Deduct Funds'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

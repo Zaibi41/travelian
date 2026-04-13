@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Building2, Package, CalendarCheck, Wallet,
   Users, FileText, Bell, Settings, Plane, Hotel, Map, FileCheck,
-  Tag, PenTool, Shield, Ticket, Globe,
+  Tag, PenTool, Shield, Ticket, Globe, CreditCard, KeyRound,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Link, useLocation } from "react-router-dom";
@@ -30,11 +30,13 @@ const superAdminNav: NavItem[] = [
   { title: "Hotels", url: "/admin/hotels", icon: Hotel },
   { title: "Flights", url: "/admin/flights", icon: Plane },
   { title: "Wallet", url: "/admin/wallet", icon: Wallet },
+  { title: "Payments", url: "/admin/payments", icon: CreditCard },
 ];
 
 const superAdminSystemNav: NavItem[] = [
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Access Control", url: "/admin/rbac", icon: Shield },
+  { title: "Secret Manager", url: "/admin/secrets", icon: KeyRound },
   { title: "Coupons & Deals", url: "/admin/coupons", icon: Tag },
   { title: "Blog", url: "/admin/blog", icon: PenTool },
   { title: "Documents", url: "/admin/documents", icon: FileText },

@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AdminLayout } from "@/components/AdminLayout";
 import { PublicLayout } from "@/components/public/PublicLayout";
 import { RoleProvider } from "@/contexts/RoleContext";
+import { AdminProvider } from "@/contexts/AdminStore";
 
 // Public pages
 import HomePage from "./pages/public/HomePage";
@@ -33,6 +34,8 @@ import TicketsPage from "./pages/TicketsPage";
 import HotelsPage from "./pages/HotelsPage";
 import FlightsPage from "./pages/FlightsPage";
 import WalletPage from "./pages/WalletPage";
+import PaymentsPage from "./pages/PaymentsPage";
+import SecretManagerPage from "./pages/SecretManagerPage";
 import UsersPage from "./pages/UsersPage";
 import RBACPage from "./pages/RBACPage";
 import CouponsPage from "./pages/CouponsPage";
@@ -68,23 +71,25 @@ const App = () => (
             <Route path="/account" element={<PublicLayout><AccountPage /></PublicLayout>} />
 
             {/* Admin routes */}
-            <Route path="/admin" element={<AdminLayout><DashboardPage /></AdminLayout>} />
-            <Route path="/admin/agencies" element={<AdminLayout><AgenciesPage /></AdminLayout>} />
-            <Route path="/admin/packages" element={<AdminLayout><PackagesPage /></AdminLayout>} />
-            <Route path="/admin/tours" element={<AdminLayout><TourPackagesPage /></AdminLayout>} />
-            <Route path="/admin/visa" element={<AdminLayout><VisaPackagesPage /></AdminLayout>} />
-            <Route path="/admin/bookings" element={<AdminLayout><BookingsPage /></AdminLayout>} />
-            <Route path="/admin/tickets" element={<AdminLayout><TicketsPage /></AdminLayout>} />
-            <Route path="/admin/hotels" element={<AdminLayout><HotelsPage /></AdminLayout>} />
-            <Route path="/admin/flights" element={<AdminLayout><FlightsPage /></AdminLayout>} />
-            <Route path="/admin/wallet" element={<AdminLayout><WalletPage /></AdminLayout>} />
-            <Route path="/admin/users" element={<AdminLayout><UsersPage /></AdminLayout>} />
-            <Route path="/admin/rbac" element={<AdminLayout><RBACPage /></AdminLayout>} />
-            <Route path="/admin/coupons" element={<AdminLayout><CouponsPage /></AdminLayout>} />
-            <Route path="/admin/blog" element={<AdminLayout><BlogPage /></AdminLayout>} />
-            <Route path="/admin/documents" element={<AdminLayout><DocumentsPage /></AdminLayout>} />
-            <Route path="/admin/notifications" element={<AdminLayout><NotificationsPage /></AdminLayout>} />
-            <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
+            <Route path="/admin" element={<AdminProvider><AdminLayout><DashboardPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/agencies" element={<AdminProvider><AdminLayout><AgenciesPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/packages" element={<AdminProvider><AdminLayout><PackagesPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/tours" element={<AdminProvider><AdminLayout><TourPackagesPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/visa" element={<AdminProvider><AdminLayout><VisaPackagesPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/bookings" element={<AdminProvider><AdminLayout><BookingsPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/tickets" element={<AdminProvider><AdminLayout><TicketsPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/hotels" element={<AdminProvider><AdminLayout><HotelsPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/flights" element={<AdminProvider><AdminLayout><FlightsPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/wallet" element={<AdminProvider><AdminLayout><WalletPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/payments" element={<AdminProvider><AdminLayout><PaymentsPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/users" element={<AdminProvider><AdminLayout><UsersPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/rbac" element={<AdminProvider><AdminLayout><RBACPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/secrets" element={<AdminProvider><AdminLayout><SecretManagerPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/coupons" element={<AdminProvider><AdminLayout><CouponsPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/blog" element={<AdminProvider><AdminLayout><BlogPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/documents" element={<AdminProvider><AdminLayout><DocumentsPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/notifications" element={<AdminProvider><AdminLayout><NotificationsPage /></AdminLayout></AdminProvider>} />
+            <Route path="/admin/settings" element={<AdminProvider><AdminLayout><SettingsPage /></AdminLayout></AdminProvider>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </RoleProvider>

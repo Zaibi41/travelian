@@ -1,21 +1,19 @@
 import { useState } from "react";
-import { mockNotifications, Notification } from "@/data/mock";
+import { useAdmin } from "@/contexts/AdminStore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bell, Building2, Wallet, CalendarCheck, Settings, CheckCheck } from "lucide-react";
+import { Bell, Building2, Wallet, CalendarCheck, Settings, CheckCheck, Plane, CreditCard, AlertTriangle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string }> = {
   booking: { icon: CalendarCheck, color: "bg-info/10 text-info" },
   wallet: { icon: Wallet, color: "bg-success/10 text-success" },
   agency: { icon: Building2, color: "bg-warning/10 text-warning" },
-  system: { icon: Settings, color: "bg-muted text-muted-foreground" },
+  system: { icon: AlertTriangle, color: "bg-destructive/10 text-destructive" },
 };
 
 export default function NotificationsPage() {
-  const [notifications, setNotifications] = useState(mockNotifications);
-
-  const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-
+  const { notifications, markNotificationRead, markAllRead } = useAdmin();
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
@@ -34,10 +32,14 @@ export default function NotificationsPage() {
 
       <div className="space-y-2">
         {notifications.map(n => {
-          const config = typeConfig[n.type];
+          const config = typeConfig[n.type] || typeConfig.system;
           const Icon = config.icon;
           return (
-            <Card key={n.id} className={`shadow-card transition-all ${!n.read ? 'border-l-2 border-l-primary' : 'opacity-70'}`}>
+            <Card
+              key={n.id}
+              className={`shadow-card transition-all cursor-pointer ${!n.read ? 'border-l-2 border-l-primary' : 'opacity-70'}`}
+              onClick={() => !n.read && markNotificationRead(n.id)}
+            >
               <CardContent className="p-4 flex items-start gap-3">
                 <div className={`h-9 w-9 rounded-lg flex items-center justify-center shrink-0 ${config.color}`}>
                   <Icon className="h-4 w-4" />
@@ -52,6 +54,9 @@ export default function NotificationsPage() {
             </Card>
           );
         })}
+        {notifications.length === 0 && (
+          <p className="text-center text-muted-foreground py-8">No notifications</p>
+        )}
       </div>
     </div>
   );
