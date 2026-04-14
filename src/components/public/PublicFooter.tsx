@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Plane, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from "lucide-react";
+import { Plane, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube, Shield, Award, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -15,8 +15,8 @@ export function PublicFooter() {
               <p className="text-sm text-sidebar-muted mt-1">Subscribe and save up to 50% on your next booking</p>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
-              <Input placeholder="Enter your email" className="bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-muted md:w-72" />
-              <Button className="gradient-primary text-primary-foreground shrink-0">Subscribe</Button>
+              <Input placeholder="Enter your email" className="bg-sidebar-accent border-sidebar-border text-sidebar-foreground placeholder:text-sidebar-muted md:w-72 rounded-xl" />
+              <Button className="gradient-gold text-gold-foreground shrink-0 rounded-xl font-semibold">Subscribe</Button>
             </div>
           </div>
         </div>
@@ -26,13 +26,13 @@ export function PublicFooter() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           <div className="col-span-2 md:col-span-1 lg:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
                 <Plane className="h-4 w-4 text-primary-foreground" />
               </div>
               <span className="text-lg font-bold font-display text-sidebar-accent-foreground">Travelian</span>
             </div>
             <p className="text-sm text-sidebar-muted leading-relaxed mb-4">
-              Your trusted travel partner. Making journeys seamless and memorable since 2020.
+              Your premium travel partner. Making journeys seamless and memorable since 2020.
             </p>
             <div className="flex gap-2">
               {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (
@@ -46,8 +46,8 @@ export function PublicFooter() {
           <div>
             <h4 className="font-semibold text-sidebar-accent-foreground mb-4 text-sm">Products</h4>
             <ul className="space-y-2.5 text-sm text-sidebar-muted">
-              <li><Link to="/hotels-search" className="hover:text-sidebar-primary transition-colors">Hotels</Link></li>
               <li><Link to="/flights-search" className="hover:text-sidebar-primary transition-colors">Flights</Link></li>
+              <li><Link to="/hotels-search" className="hover:text-sidebar-primary transition-colors">Hotels</Link></li>
               <li><Link to="/umrah-packages" className="hover:text-sidebar-primary transition-colors">Umrah Packages</Link></li>
               <li><Link to="/tour-packages" className="hover:text-sidebar-primary transition-colors">Tours</Link></li>
               <li><Link to="/visa-services" className="hover:text-sidebar-primary transition-colors">Visa Services</Link></li>
@@ -87,16 +87,24 @@ export function PublicFooter() {
           </div>
         </div>
 
-        <div className="border-t border-sidebar-border mt-10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-sidebar-muted">
-          <span>© {new Date().getFullYear()} Travelian. All rights reserved.</span>
-          <div className="flex items-center gap-4">
-            <span>We accept:</span>
-            <div className="flex gap-2">
-              {['Visa', 'Mastercard', 'PayPal', 'Stripe'].map(p => (
-                <span key={p} className="px-2 py-1 bg-sidebar-accent rounded text-xs">{p}</span>
-              ))}
+        {/* Trust Badges */}
+        <div className="border-t border-sidebar-border mt-10 pt-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-6 text-xs text-sidebar-muted">
+              <div className="flex items-center gap-1.5"><Shield className="h-4 w-4 text-gold" /> Secure Booking</div>
+              <div className="flex items-center gap-1.5"><Award className="h-4 w-4 text-gold" /> Best Price Guarantee</div>
+              <div className="flex items-center gap-1.5"><Lock className="h-4 w-4 text-gold" /> SSL Encrypted</div>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-sidebar-muted">We accept:</span>
+              <div className="flex gap-2">
+                {['Visa', 'Mastercard', 'PayPal', 'Stripe'].map(p => (
+                  <span key={p} className="px-2.5 py-1 bg-sidebar-accent rounded-md text-xs text-sidebar-muted font-medium">{p}</span>
+                ))}
+              </div>
             </div>
           </div>
+          <p className="text-xs text-sidebar-muted text-center mt-6">© {new Date().getFullYear()} Travelian. All rights reserved.</p>
         </div>
       </div>
     </footer>

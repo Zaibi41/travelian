@@ -2,7 +2,7 @@ import { SearchTabs } from "@/components/public/SearchTabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, MapPin, ArrowRight, Shield, Clock, Headphones, CreditCard, Flame, TrendingUp, Heart, ChevronRight, Percent, Zap, Globe } from "lucide-react";
+import { Star, MapPin, ArrowRight, Shield, Clock, Headphones, CreditCard, Flame, TrendingUp, Heart, ChevronRight, Percent, Zap, Globe, Award, Plane, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { mockPackages, mockTourPackages, mockHotels, mockBlogPosts } from "@/data/mock";
 
@@ -21,17 +21,10 @@ const deals = [
   { title: "Umrah Package Deal", discount: "From $899", desc: "Economy 7-night Umrah with flights included", bg: "gradient-hero", expiry: "Limited seats" },
 ];
 
-const recentlyViewed = [
-  { name: "Swissotel Al Maqam", city: "Makkah", price: 350, rating: 9.2, image: "🏨" },
-  { name: "Grand Hyatt Istanbul", city: "Istanbul", price: 280, rating: 8.8, image: "🏨" },
-  { name: "Atlantis The Palm", city: "Dubai", price: 450, rating: 9.5, image: "🏨" },
-  { name: "Hilton Suites", city: "Makkah", price: 220, rating: 8.5, image: "🏨" },
-];
-
 const features = [
-  { icon: Shield, title: "Best Price Guarantee", desc: "Find it cheaper? We'll refund the difference" },
-  { icon: CreditCard, title: "No Hidden Fees", desc: "Transparent pricing, always" },
-  { icon: Clock, title: "Free Cancellation", desc: "On most properties within 24 hours" },
+  { icon: Shield, title: "Secure Booking", desc: "256-bit SSL encrypted payments" },
+  { icon: Award, title: "Best Price Guarantee", desc: "Find it cheaper? We'll match it" },
+  { icon: Clock, title: "Free Cancellation", desc: "On most properties within 24h" },
   { icon: Headphones, title: "24/7 Support", desc: "Round the clock assistance" },
 ];
 
@@ -47,42 +40,42 @@ const topCountries = [
 export default function HomePage() {
   return (
     <div>
-      {/* Hero Section */}
-      <section className="relative overflow-hidden gradient-hero py-16 md:py-24">
-        <div className="absolute inset-0 opacity-20">
+      {/* Hero */}
+      <section className="relative overflow-hidden gradient-hero py-20 md:py-28">
+        <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-10 w-72 h-72 bg-primary/30 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-20 w-96 h-96 bg-info/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-10 right-20 w-96 h-96 bg-gold/20 rounded-full blur-3xl" />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 bg-primary/20 text-primary-foreground/90 text-sm px-4 py-1.5 rounded-full mb-6 border border-primary/30">
-            <Zap className="h-3.5 w-3.5" /> Over 2 Million Properties Worldwide
+          <div className="inline-flex items-center gap-2 bg-gold/20 text-gold text-sm px-4 py-1.5 rounded-full mb-6 border border-gold/30 animate-fade-in">
+            <Plane className="h-3.5 w-3.5" /> Your Premium Travel Partner
           </div>
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold font-display text-primary-foreground mb-4 leading-tight tracking-tight">
-            Find deals on hotels, homes,
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold font-display text-primary-foreground mb-5 leading-tight tracking-tight animate-fade-in-up">
+            Discover Your Next
             <br className="hidden md:block" />
-            <span className="text-primary">and much more...</span>
+            <span className="text-gold">Extraordinary Journey</span>
           </h1>
-          <p className="text-primary-foreground/60 text-base md:text-lg max-w-2xl mx-auto mb-10">
-            From cozy country homes to funky city apartments, find your perfect stay at the best price.
+          <p className="text-primary-foreground/50 text-base md:text-lg max-w-2xl mx-auto mb-10 animate-fade-in">
+            Search flights, hotels, and packages with the best prices. Trusted by over 2 million travelers worldwide.
           </p>
           <SearchTabs />
-          <div className="flex items-center justify-center gap-4 mt-6 text-xs text-primary-foreground/50">
+          <div className="flex items-center justify-center gap-4 mt-6 text-xs text-primary-foreground/40">
             <span>Popular:</span>
-            {["Makkah Hotels", "Istanbul Flights", "Dubai Tours", "Umrah 2025"].map(t => (
-              <Link key={t} to="/hotels-search" className="hover:text-primary transition-colors underline underline-offset-2">{t}</Link>
+            {["Makkah Flights", "Istanbul Hotels", "Dubai Tours", "Umrah 2025"].map(t => (
+              <Link key={t} to="/flights-search" className="hover:text-gold transition-colors underline underline-offset-2">{t}</Link>
             ))}
           </div>
         </div>
       </section>
 
       {/* Trust Bar */}
-      <section className="py-4 bg-card border-b">
+      <section className="py-5 bg-card border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {features.map((f) => (
-              <div key={f.title} className="flex items-center gap-3 p-3">
-                <div className="h-10 w-10 shrink-0 rounded-xl bg-accent flex items-center justify-center">
-                  <f.icon className="h-5 w-5 text-primary" />
+              <div key={f.title} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/30 transition-colors">
+                <div className="h-10 w-10 shrink-0 rounded-xl bg-gold-light flex items-center justify-center">
+                  <f.icon className="h-5 w-5 text-gold" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">{f.title}</p>
@@ -95,9 +88,9 @@ export default function HomePage() {
       </section>
 
       {/* Flash Deals */}
-      <section className="py-12">
+      <section className="py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2">
               <Flame className="h-5 w-5 text-destructive" />
               <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Today's Deals</h2>
@@ -106,15 +99,15 @@ export default function HomePage() {
               View all deals <ChevronRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {deals.map((deal, i) => (
-              <div key={i} className={`${deal.bg} rounded-2xl p-6 text-primary-foreground relative overflow-hidden group cursor-pointer hover:scale-[1.02] transition-transform`}>
+              <div key={i} className={`${deal.bg} rounded-2xl p-6 text-primary-foreground relative overflow-hidden group cursor-pointer hover:scale-[1.02] transition-transform duration-300`}>
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/5 rounded-full -mr-10 -mt-10" />
                 <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 mb-3">{deal.expiry}</Badge>
                 <h3 className="font-bold text-lg mb-1">{deal.title}</h3>
                 <p className="text-3xl font-extrabold mb-2">{deal.discount}</p>
                 <p className="text-sm text-primary-foreground/70">{deal.desc}</p>
-                <Button size="sm" variant="secondary" className="mt-4">Book Now</Button>
+                <Button size="sm" variant="secondary" className="mt-4 rounded-lg">Book Now</Button>
               </div>
             ))}
           </div>
@@ -122,9 +115,9 @@ export default function HomePage() {
       </section>
 
       {/* Trending Destinations */}
-      <section className="py-12 bg-muted/30">
+      <section className="py-14 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-8">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <TrendingUp className="h-5 w-5 text-primary" />
@@ -132,18 +125,18 @@ export default function HomePage() {
               </div>
               <p className="text-sm text-muted-foreground">Most booked destinations this month</p>
             </div>
-            <Button variant="outline" size="sm" asChild className="hidden md:flex">
+            <Button variant="outline" size="sm" asChild className="hidden md:flex rounded-lg">
               <Link to="/tour-packages">Explore All <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {destinations.map((d) => (
               <Link key={d.name} to="/hotels-search" className="group">
-                <div className="relative rounded-2xl overflow-hidden aspect-[3/4] shadow-card hover:shadow-hover transition-all">
+                <div className="relative rounded-2xl overflow-hidden aspect-[3/4] shadow-card hover:shadow-hover transition-all duration-300">
                   <img src={d.image} alt={d.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
                   <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
                   {d.badge && (
-                    <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground border-0 text-xs">{d.badge}</Badge>
+                    <Badge className="absolute top-3 left-3 bg-gold text-gold-foreground border-0 text-xs">{d.badge}</Badge>
                   )}
                   <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground/80 hover:text-primary-foreground transition-colors">
                     <Heart className="h-3.5 w-3.5" />
@@ -159,124 +152,37 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Recently Viewed */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Recently Viewed</h2>
-              <p className="text-sm text-muted-foreground">Pick up where you left off</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {recentlyViewed.map((item, i) => (
-              <Card key={i} className="overflow-hidden hover:shadow-elevated transition-all cursor-pointer group">
-                <div className="h-36 bg-gradient-to-br from-accent to-muted flex items-center justify-center text-5xl group-hover:scale-105 transition-transform">
-                  {item.image}
-                </div>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h4 className="font-semibold text-foreground text-sm">{item.name}</h4>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                        <MapPin className="h-3 w-3" /> {item.city}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 bg-primary text-primary-foreground text-xs font-bold px-1.5 py-0.5 rounded">
-                      {item.rating}
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-end justify-between">
-                    <div>
-                      <span className="text-xs text-muted-foreground">per night</span>
-                      <p className="text-lg font-bold text-foreground">${item.price}</p>
-                    </div>
-                    <Button size="sm" variant="outline" className="text-xs h-7">View</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Packages */}
-      <section className="py-12 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Umrah Packages</h2>
-              <p className="text-sm text-muted-foreground">Fulfil your spiritual journey</p>
-            </div>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/umrah-packages">View All <ArrowRight className="h-4 w-4 ml-1" /></Link>
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {mockPackages.filter(p => p.status === 'active').slice(0, 4).map((pkg) => (
-              <Card key={pkg.packageId} className="overflow-hidden group hover:shadow-elevated transition-all">
-                <div className="h-40 bg-gradient-to-br from-primary/10 to-accent flex items-center justify-center relative">
-                  <span className="text-5xl">🕋</span>
-                  <Badge className="absolute top-3 left-3 bg-success text-success-foreground border-0 text-xs">
-                    <Percent className="h-3 w-3 mr-1" /> Best Value
-                  </Badge>
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-foreground text-sm">{pkg.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{pkg.description}</p>
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {pkg.includes.slice(0, 3).map((i) => (
-                      <span key={i} className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{i}</span>
-                    ))}
-                    {pkg.includes.length > 3 && (
-                      <span className="text-[10px] text-primary bg-accent px-1.5 py-0.5 rounded">+{pkg.includes.length - 3}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                    <div>
-                      <span className="text-[10px] text-muted-foreground">{pkg.duration}</span>
-                      <p className="text-lg font-bold text-primary">${pkg.basePrice}</p>
-                    </div>
-                    <Button size="sm" className="gradient-primary text-primary-foreground text-xs h-8">Book Now</Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Featured Hotels */}
-      <section className="py-12">
+      <section className="py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Featured Hotels</h2>
               <p className="text-sm text-muted-foreground">Handpicked stays with verified reviews</p>
             </div>
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="rounded-lg">
               <Link to="/hotels-search">View All <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {mockHotels.filter(h => h.status === 'active').slice(0, 3).map((hotel) => (
               <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
-                <Card className="overflow-hidden group hover:shadow-elevated transition-all cursor-pointer">
-                  <div className="h-48 bg-gradient-to-br from-warning/10 to-accent flex items-center justify-center relative">
-                    <span className="text-6xl group-hover:scale-110 transition-transform">🏨</span>
+                <Card className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
+                  <div className="h-48 bg-gradient-to-br from-primary/5 to-accent flex items-center justify-center relative">
+                    <span className="text-6xl group-hover:scale-110 transition-transform duration-500">🏨</span>
                     <div className="absolute top-3 left-3 flex items-center gap-1">
                       {Array.from({ length: hotel.starRating }).map((_, i) => (
-                        <Star key={i} className="h-3.5 w-3.5 fill-warning text-warning" />
+                        <Star key={i} className="h-3.5 w-3.5 fill-gold text-gold" />
                       ))}
                     </div>
                     <button className="absolute top-3 right-3 h-8 w-8 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-foreground/40 transition-colors">
                       <Heart className="h-4 w-4" />
                     </button>
-                    <Badge className="absolute bottom-3 left-3 bg-success text-success-foreground border-0">
+                    <Badge className="absolute bottom-3 left-3 bg-success text-success-foreground border-0 text-xs">
                       Free Cancellation
                     </Badge>
                   </div>
-                  <CardContent className="p-4">
+                  <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <h3 className="font-semibold text-foreground">{hotel.name}</h3>
@@ -299,13 +205,11 @@ export default function HomePage() {
                     <div className="flex items-end justify-between mt-4 pt-3 border-t">
                       <div>
                         <span className="text-xs text-muted-foreground line-through">${Math.round(hotel.pricePerNight * 1.3)}</span>
-                        <p className="text-xl font-bold text-destructive">${hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
+                        <p className="text-xl font-bold text-foreground">${hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
                       </div>
-                      <div className="text-right">
-                        <Badge variant="outline" className="text-destructive border-destructive/30 text-xs">
-                          Save {Math.round(30)}%
-                        </Badge>
-                      </div>
+                      <Badge variant="outline" className="text-gold border-gold/30 text-xs">
+                        Save {Math.round(30)}%
+                      </Badge>
                     </div>
                   </CardContent>
                 </Card>
@@ -315,18 +219,64 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Top Properties by Country */}
-      <section className="py-12 bg-muted/30">
+      {/* Umrah Packages */}
+      <section className="py-14 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Umrah Packages</h2>
+              <p className="text-sm text-muted-foreground">Fulfil your spiritual journey</p>
+            </div>
+            <Button variant="outline" size="sm" asChild className="rounded-lg">
+              <Link to="/umrah-packages">View All <ArrowRight className="h-4 w-4 ml-1" /></Link>
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {mockPackages.filter(p => p.status === 'active').slice(0, 4).map((pkg) => (
+              <Card key={pkg.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 border-0 shadow-card">
+                <div className="h-40 bg-gradient-to-br from-gold/10 to-accent flex items-center justify-center relative">
+                  <span className="text-5xl group-hover:scale-110 transition-transform duration-500">🕋</span>
+                  <Badge className="absolute top-3 left-3 bg-gold text-gold-foreground border-0 text-xs">
+                    <Percent className="h-3 w-3 mr-1" /> Best Value
+                  </Badge>
+                </div>
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-foreground text-sm">{pkg.name}</h3>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{pkg.description}</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {pkg.includes.slice(0, 3).map((i) => (
+                      <span key={i} className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{i}</span>
+                    ))}
+                    {pkg.includes.length > 3 && (
+                      <span className="text-[10px] text-primary bg-accent px-1.5 py-0.5 rounded">+{pkg.includes.length - 3}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                    <div>
+                      <span className="text-[10px] text-muted-foreground">{pkg.duration}</span>
+                      <p className="text-lg font-bold text-primary">${pkg.basePrice}</p>
+                    </div>
+                    <Button size="sm" className="gradient-primary text-primary-foreground text-xs h-8 rounded-lg">Book Now</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Top Properties by Country */}
+      <section className="py-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2">
               <Globe className="h-5 w-5 text-primary" />
               <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Top Properties by Country</h2>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {topCountries.map((c) => (
-              <Card key={c.country} className="p-5 hover:shadow-elevated transition-all cursor-pointer group">
+              <Card key={c.country} className="p-5 hover:shadow-hover transition-all duration-300 cursor-pointer group border-0 shadow-card">
                 <div className="flex items-center gap-3 mb-3">
                   <span className="text-3xl">{c.flag}</span>
                   <div>
@@ -347,31 +297,31 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Tour Packages */}
-      <section className="py-12">
+      {/* Popular Tours */}
+      <section className="py-14 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Popular Tours</h2>
               <p className="text-sm text-muted-foreground">Explore the world with guided tours</p>
             </div>
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="rounded-lg">
               <Link to="/tour-packages">View All <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {mockTourPackages.filter(t => t.status === 'active').map((tour) => (
-              <Card key={tour.packageId} className="overflow-hidden group hover:shadow-elevated transition-all cursor-pointer">
-                <div className="h-44 bg-gradient-to-br from-info/15 to-accent flex items-center justify-center relative">
-                  <span className="text-5xl group-hover:scale-110 transition-transform">
+              <Card key={tour.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
+                <div className="h-44 bg-gradient-to-br from-info/10 to-accent flex items-center justify-center relative">
+                  <span className="text-5xl group-hover:scale-110 transition-transform duration-500">
                     {tour.city.includes('Istanbul') ? '🕌' : tour.city.includes('Dubai') ? '🏙️' : '🌴'}
                   </span>
-                  <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground border-0 text-xs">{tour.duration}</Badge>
+                  <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground border-0 text-xs rounded-lg">{tour.duration}</Badge>
                   <button className="absolute top-3 right-3 h-8 w-8 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-foreground/40 transition-colors">
                     <Heart className="h-4 w-4" />
                   </button>
                 </div>
-                <CardContent className="p-4">
+                <CardContent className="p-5">
                   <h3 className="font-semibold text-foreground">{tour.name}</h3>
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                     <MapPin className="h-3 w-3" /> {tour.city}
@@ -382,7 +332,7 @@ export default function HomePage() {
                       <span className="text-xs text-muted-foreground">From</span>
                       <p className="text-xl font-bold text-foreground">${tour.basePrice}</p>
                     </div>
-                    <Button size="sm" variant="outline" className="text-xs h-8">View Details</Button>
+                    <Button size="sm" variant="outline" className="text-xs h-8 rounded-lg">View Details</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -391,26 +341,26 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Blog */}
-      <section className="py-12 bg-muted/30">
+      {/* Travel Guides */}
+      <section className="py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Travel Guides</h2>
               <p className="text-sm text-muted-foreground">Tips, guides, and inspiration</p>
             </div>
-            <Button variant="outline" size="sm" asChild>
+            <Button variant="outline" size="sm" asChild className="rounded-lg">
               <Link to="/blog-public">Read More <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {mockBlogPosts.filter(b => b.status === 'published').slice(0, 3).map((post) => (
-              <Card key={post.postId} className="overflow-hidden hover:shadow-elevated transition-all cursor-pointer group">
-                <div className="h-44 bg-gradient-to-br from-primary/10 to-info/10 flex items-center justify-center">
-                  <span className="text-5xl group-hover:scale-110 transition-transform">📝</span>
+              <Card key={post.postId} className="overflow-hidden hover:shadow-hover transition-all duration-300 cursor-pointer group border-0 shadow-card">
+                <div className="h-44 bg-gradient-to-br from-primary/5 to-accent flex items-center justify-center">
+                  <span className="text-5xl group-hover:scale-110 transition-transform duration-500">📝</span>
                 </div>
-                <CardContent className="p-4">
-                  <Badge variant="secondary" className="mb-2 text-xs">{post.category}</Badge>
+                <CardContent className="p-5">
+                  <Badge variant="secondary" className="mb-2 text-xs rounded-md">{post.category}</Badge>
                   <h3 className="font-semibold text-foreground line-clamp-2">{post.title}</h3>
                   <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{post.excerpt}</p>
                   <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs text-muted-foreground">
@@ -424,24 +374,27 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* App Promo Banner */}
+      {/* App Promo */}
       <section className="py-16 gradient-primary relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary-foreground/20 rounded-full -mr-48 -mt-48" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary-foreground/10 rounded-full -ml-32 -mb-32" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-gold/20 rounded-full -ml-32 -mb-32" />
         </div>
         <div className="relative max-w-4xl mx-auto px-4 text-center">
+          <div className="inline-flex items-center gap-2 bg-gold/20 text-gold text-sm px-4 py-1.5 rounded-full mb-6 border border-gold/30">
+            <Award className="h-3.5 w-3.5" /> Verified Platform
+          </div>
           <h2 className="text-2xl md:text-4xl font-extrabold font-display text-primary-foreground mb-4">
             Get exclusive app-only deals
           </h2>
-          <p className="text-primary-foreground/70 mb-8 max-w-lg mx-auto">
+          <p className="text-primary-foreground/60 mb-8 max-w-lg mx-auto">
             Download the Travelian app for members-only prices, instant booking confirmation, and 24/7 support.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" variant="secondary" className="font-semibold">
+            <Button size="lg" variant="secondary" className="font-semibold rounded-xl">
               📱 Download App
             </Button>
-            <Button size="lg" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 font-semibold" asChild>
+            <Button size="lg" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 font-semibold rounded-xl" asChild>
               <Link to="/umrah-packages">Browse Packages</Link>
             </Button>
           </div>

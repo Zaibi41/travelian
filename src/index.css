@@ -6,32 +6,32 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 30% 12%;
+    --background: 220 20% 97%;
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 12%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 12%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 210 100% 45%;
+    --primary: 217 91% 30%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 210 100% 38%;
+    --primary-hover: 217 91% 24%;
 
     --secondary: 220 14% 96%;
-    --secondary-foreground: 220 30% 12%;
+    --secondary-foreground: 222 47% 11%;
 
     --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 46%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 210 100% 95%;
-    --accent-foreground: 210 100% 30%;
+    --accent: 217 91% 95%;
+    --accent-foreground: 217 91% 25%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 152 60% 42%;
+    --success: 152 60% 38%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
@@ -40,35 +40,41 @@
     --info: 210 80% 52%;
     --info-foreground: 0 0% 100%;
 
+    --gold: 42 78% 55%;
+    --gold-foreground: 42 78% 15%;
+    --gold-light: 42 60% 92%;
+
     --deal: 0 72% 51%;
     --deal-foreground: 0 0% 100%;
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 210 100% 45%;
+    --ring: 217 91% 30%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
 
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 210 100% 50%;
+    --sidebar-primary: 217 91% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 217 33% 17%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 210 100% 50%;
+    --sidebar-ring: 217 91% 50%;
     --sidebar-muted: 215 20% 65%;
 
     --font-display: 'Plus Jakarta Sans', sans-serif;
     --font-body: 'Inter', sans-serif;
 
-    --gradient-primary: linear-gradient(135deg, hsl(210, 100%, 45%), hsl(230, 80%, 50%));
-    --gradient-hero: linear-gradient(135deg, hsl(220, 60%, 15%), hsl(210, 80%, 20%));
+    --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 30%), hsl(230, 70%, 40%));
+    --gradient-hero: linear-gradient(135deg, hsl(222, 47%, 8%), hsl(217, 60%, 16%));
     --gradient-deal: linear-gradient(135deg, hsl(0, 72%, 51%), hsl(340, 80%, 45%));
+    --gradient-gold: linear-gradient(135deg, hsl(42, 78%, 55%), hsl(38, 92%, 50%));
     --gradient-sidebar: linear-gradient(180deg, hsl(222, 47%, 11%), hsl(222, 47%, 8%));
-    --shadow-card: 0 1px 3px 0 hsl(220 30% 12% / 0.06), 0 1px 2px -1px hsl(220 30% 12% / 0.04);
-    --shadow-elevated: 0 10px 25px -5px hsl(220 30% 12% / 0.1), 0 4px 6px -2px hsl(220 30% 12% / 0.05);
-    --shadow-hover: 0 20px 40px -10px hsl(220 30% 12% / 0.15);
+    --shadow-card: 0 1px 3px 0 hsl(222 47% 11% / 0.04), 0 1px 2px -1px hsl(222 47% 11% / 0.03);
+    --shadow-elevated: 0 10px 30px -8px hsl(222 47% 11% / 0.08), 0 4px 6px -2px hsl(222 47% 11% / 0.04);
+    --shadow-hover: 0 20px 50px -12px hsl(222 47% 11% / 0.12);
+    --shadow-premium: 0 4px 20px -4px hsl(42 78% 55% / 0.15);
   }
 }
 
@@ -77,7 +83,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-family: var(--font-body);
   }
   h1, h2, h3, h4, h5, h6 {
@@ -95,6 +101,9 @@
   .gradient-deal {
     background: var(--gradient-deal);
   }
+  .gradient-gold {
+    background: var(--gradient-gold);
+  }
   .shadow-card {
     box-shadow: var(--shadow-card);
   }
@@ -103,6 +112,18 @@
   }
   .shadow-hover {
     box-shadow: var(--shadow-hover);
+  }
+  .shadow-premium {
+    box-shadow: var(--shadow-premium);
+  }
+  .text-gold {
+    color: hsl(var(--gold));
+  }
+  .bg-gold {
+    background-color: hsl(var(--gold));
+  }
+  .bg-gold-light {
+    background-color: hsl(var(--gold-light));
   }
   .line-clamp-1 {
     display: -webkit-box;
@@ -128,5 +149,17 @@
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Skeleton loader animation */
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .skeleton-loader {
+    background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted-foreground) / 0.08) 50%, hsl(var(--muted)) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--radius);
   }
 }
