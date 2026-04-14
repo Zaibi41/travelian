@@ -13,6 +13,7 @@ import HomePage from "./pages/public/HomePage";
 import PublicHotelsPage from "./pages/public/PublicHotelsPage";
 import HotelDetailPage from "./pages/public/HotelDetailPage";
 import PublicFlightsPage from "./pages/public/PublicFlightsPage";
+import FlightDetailPage from "./pages/public/FlightDetailPage";
 import PublicPackagesPage from "./pages/public/PublicPackagesPage";
 import PublicToursPage from "./pages/public/PublicToursPage";
 import PublicVisaPage from "./pages/public/PublicVisaPage";
@@ -60,6 +61,7 @@ const App = () => (
             <Route path="/hotels-search" element={<PublicLayout><PublicHotelsPage /></PublicLayout>} />
             <Route path="/hotel/:id" element={<PublicLayout><HotelDetailPage /></PublicLayout>} />
             <Route path="/flights-search" element={<PublicLayout><PublicFlightsPage /></PublicLayout>} />
+            <Route path="/flight/:id" element={<PublicLayout><FlightDetailPage /></PublicLayout>} />
             <Route path="/umrah-packages" element={<PublicLayout><PublicPackagesPage /></PublicLayout>} />
             <Route path="/tour-packages" element={<PublicLayout><PublicToursPage /></PublicLayout>} />
             <Route path="/visa-services" element={<PublicLayout><PublicVisaPage /></PublicLayout>} />
