@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, MapPin, Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, Clock, Users, Calendar, ArrowLeft } from "lucide-react";
+import { Star, MapPin, Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, Clock, Users, Calendar, ArrowLeft, Plane, Award, Download } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const steps = [
-  { id: 1, label: "Guest Details" },
+  { id: 1, label: "Traveler Details" },
   { id: 2, label: "Add-ons" },
   { id: 3, label: "Payment" },
   { id: 4, label: "Confirmation" },
@@ -19,8 +19,8 @@ const addons = [
   { id: "insurance", name: "Travel Insurance", desc: "Full coverage for trip cancellation, medical, and baggage", price: 29, popular: true },
   { id: "breakfast", name: "Daily Breakfast", desc: "Buffet breakfast for 2 adults, all 3 nights", price: 45 },
   { id: "transfer", name: "Airport Transfer", desc: "Private car pickup from airport to hotel", price: 35 },
-  { id: "earlyCheckin", name: "Early Check-in", desc: "Check in from 12:00 PM instead of 3:00 PM", price: 20 },
-  { id: "lateCheckout", name: "Late Check-out", desc: "Check out until 3:00 PM instead of 12:00 PM", price: 20 },
+  { id: "seat", name: "Preferred Seat", desc: "Choose your preferred seat on the flight", price: 15 },
+  { id: "lounge", name: "Lounge Access", desc: "Airport lounge access before departure", price: 40 },
 ];
 
 export default function BookingPage() {
@@ -33,35 +33,36 @@ export default function BookingPage() {
   };
 
   const addonsTotal = addons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.price, 0);
-  const roomTotal = 350 * 3;
-  const taxes = 36;
-  const grandTotal = roomTotal + addonsTotal + taxes;
+  const baseTotal = 510;
+  const taxes = 42;
+  const grandTotal = baseTotal + addonsTotal + taxes;
+  const bookingRef = `TRV-${Date.now().toString(36).toUpperCase().slice(-6)}`;
 
   return (
-    <div className="bg-muted/30 min-h-screen">
-      {/* Progress */}
-      <div className="bg-card border-b">
+    <div className="bg-muted/20 min-h-screen">
+      {/* Progress Header */}
+      <div className="bg-card border-b sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <Link to="/hotels-search" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+            <Link to="/flights-search" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-4 w-4" /> Back to results
             </Link>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Lock className="h-3 w-3" /> Secure Checkout
+              <Lock className="h-3 w-3 text-success" /> Secure Checkout
             </div>
           </div>
           <div className="flex items-center gap-2 mt-4">
             {steps.map((s, i) => (
               <div key={s.id} className="flex items-center gap-2 flex-1">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                  step >= s.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all duration-300 ${
+                  step >= s.id ? 'gradient-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground'
                 }`}>
                   {step > s.id ? <Check className="h-4 w-4" /> : s.id}
                 </div>
-                <span className={`text-xs font-medium hidden sm:block ${step >= s.id ? 'text-foreground' : 'text-muted-foreground'}`}>
+                <span className={`text-xs font-medium hidden sm:block transition-colors ${step >= s.id ? 'text-foreground' : 'text-muted-foreground'}`}>
                   {s.label}
                 </span>
-                {i < steps.length - 1 && <div className={`h-0.5 flex-1 rounded ${step > s.id ? 'bg-primary' : 'bg-muted'}`} />}
+                {i < steps.length - 1 && <div className={`h-0.5 flex-1 rounded transition-all ${step > s.id ? 'bg-primary' : 'bg-muted'}`} />}
               </div>
             ))}
           </div>
@@ -72,40 +73,47 @@ export default function BookingPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Step 1: Guest Details */}
             {step === 1 && (
-              <Card>
+              <Card className="shadow-card border-0 animate-fade-in">
                 <CardContent className="p-6">
-                  <h2 className="text-lg font-bold text-foreground mb-1">Guest Details</h2>
-                  <p className="text-sm text-muted-foreground mb-6">Enter the details of the primary guest</p>
+                  <h2 className="text-lg font-bold text-foreground mb-1">Traveler Details</h2>
+                  <p className="text-sm text-muted-foreground mb-6">Enter the details of the primary traveler</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label className="text-sm">First Name *</Label>
-                      <Input placeholder="Enter first name" className="mt-1" />
+                      <Label className="text-sm font-medium">First Name *</Label>
+                      <Input placeholder="Enter first name" className="mt-1.5 h-11 rounded-xl" />
                     </div>
                     <div>
-                      <Label className="text-sm">Last Name *</Label>
-                      <Input placeholder="Enter last name" className="mt-1" />
+                      <Label className="text-sm font-medium">Last Name *</Label>
+                      <Input placeholder="Enter last name" className="mt-1.5 h-11 rounded-xl" />
                     </div>
                     <div>
-                      <Label className="text-sm">Email *</Label>
-                      <Input type="email" placeholder="your@email.com" className="mt-1" />
+                      <Label className="text-sm font-medium">Email *</Label>
+                      <Input type="email" placeholder="your@email.com" className="mt-1.5 h-11 rounded-xl" />
                     </div>
                     <div>
-                      <Label className="text-sm">Phone *</Label>
-                      <Input type="tel" placeholder="+1 234 567 890" className="mt-1" />
+                      <Label className="text-sm font-medium">Phone *</Label>
+                      <Input type="tel" placeholder="+1 234 567 890" className="mt-1.5 h-11 rounded-xl" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Passport Number *</Label>
+                      <Input placeholder="AB1234567" className="mt-1.5 h-11 rounded-xl" />
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Date of Birth *</Label>
+                      <Input type="date" className="mt-1.5 h-11 rounded-xl" />
                     </div>
                     <div className="md:col-span-2">
-                      <Label className="text-sm">Special Requests (optional)</Label>
-                      <Input placeholder="e.g., High floor, extra pillows, quiet room..." className="mt-1" />
+                      <Label className="text-sm font-medium">Special Requests (optional)</Label>
+                      <Input placeholder="e.g., Wheelchair assistance, dietary requirements..." className="mt-1.5 h-11 rounded-xl" />
                     </div>
                   </div>
-                  <div className="flex items-start gap-2 mt-4 p-3 bg-info/5 rounded-lg border border-info/20">
-                    <AlertCircle className="h-4 w-4 text-info shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground">Guest name must match the ID/passport used at check-in.</p>
+                  <div className="flex items-start gap-2 mt-4 p-3 bg-accent/50 rounded-xl border border-primary/10">
+                    <AlertCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground">Name must match exactly as shown on your passport or ID.</p>
                   </div>
                   <div className="flex justify-end mt-6">
-                    <Button onClick={() => setStep(2)} className="gradient-primary text-primary-foreground">
+                    <Button onClick={() => setStep(2)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
                       Continue to Add-ons <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
@@ -113,18 +121,17 @@ export default function BookingPage() {
               </Card>
             )}
 
-            {/* Step 2: Add-ons */}
             {step === 2 && (
-              <Card>
+              <Card className="shadow-card border-0 animate-fade-in">
                 <CardContent className="p-6">
-                  <h2 className="text-lg font-bold text-foreground mb-1">Enhance Your Stay</h2>
-                  <p className="text-sm text-muted-foreground mb-6">Add extras to make your trip even better</p>
+                  <h2 className="text-lg font-bold text-foreground mb-1">Enhance Your Trip</h2>
+                  <p className="text-sm text-muted-foreground mb-6">Add extras to make your journey even better</p>
                   <div className="space-y-3">
                     {addons.map(addon => (
                       <div
                         key={addon.id}
-                        className={`border rounded-xl p-4 cursor-pointer transition-all ${
-                          selectedAddons.includes(addon.id) ? 'border-primary bg-accent/30' : 'hover:border-primary/50'
+                        className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${
+                          selectedAddons.includes(addon.id) ? 'border-primary bg-accent/30 shadow-sm' : 'hover:border-primary/30'
                         }`}
                         onClick={() => toggleAddon(addon.id)}
                       >
@@ -134,7 +141,7 @@ export default function BookingPage() {
                             <div>
                               <div className="flex items-center gap-2">
                                 <h4 className="text-sm font-semibold text-foreground">{addon.name}</h4>
-                                {addon.popular && <Badge className="bg-warning/10 text-warning border-0 text-[10px]">Popular</Badge>}
+                                {addon.popular && <Badge className="bg-gold/10 text-gold border-0 text-[10px] rounded-md">Recommended</Badge>}
                               </div>
                               <p className="text-xs text-muted-foreground mt-0.5">{addon.desc}</p>
                             </div>
@@ -145,8 +152,8 @@ export default function BookingPage() {
                     ))}
                   </div>
                   <div className="flex justify-between mt-6">
-                    <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-                    <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground">
+                    <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl">Back</Button>
+                    <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
                       Continue to Payment <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
@@ -154,71 +161,77 @@ export default function BookingPage() {
               </Card>
             )}
 
-            {/* Step 3: Payment */}
             {step === 3 && (
-              <Card>
+              <Card className="shadow-card border-0 animate-fade-in">
                 <CardContent className="p-6">
                   <h2 className="text-lg font-bold text-foreground mb-1">Payment Method</h2>
                   <p className="text-sm text-muted-foreground mb-6">Choose how you'd like to pay</p>
                   <div className="space-y-3 mb-6">
                     {[
-                      { id: "card", label: "Credit/Debit Card", icon: CreditCard, desc: "Visa, Mastercard, AMEX" },
+                      { id: "card", label: "Credit/Debit Card", icon: CreditCard, desc: "Visa, Mastercard, AMEX", badges: ["💳 Visa", "💳 MC"] },
                       { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "PayPal, Apple Pay, Google Pay" },
                       { id: "bank", label: "Bank Transfer", icon: Building2, desc: "Direct bank transfer" },
                     ].map(method => (
                       <div
                         key={method.id}
-                        className={`border rounded-xl p-4 cursor-pointer transition-all ${
-                          paymentMethod === method.id ? 'border-primary bg-accent/30' : 'hover:border-primary/50'
+                        className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${
+                          paymentMethod === method.id ? 'border-primary bg-accent/30 shadow-sm' : 'hover:border-primary/30'
                         }`}
                         onClick={() => setPaymentMethod(method.id)}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                            paymentMethod === method.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                          <div className={`h-11 w-11 rounded-xl flex items-center justify-center transition-all ${
+                            paymentMethod === method.id ? 'gradient-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
                           }`}>
                             <method.icon className="h-5 w-5" />
                           </div>
-                          <div>
+                          <div className="flex-1">
                             <h4 className="text-sm font-semibold text-foreground">{method.label}</h4>
                             <p className="text-xs text-muted-foreground">{method.desc}</p>
                           </div>
+                          {method.badges && (
+                            <div className="flex gap-1">
+                              {method.badges.map(b => (
+                                <span key={b} className="text-xs bg-muted px-2 py-0.5 rounded-md">{b}</span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
 
                   {paymentMethod === "card" && (
-                    <div className="space-y-4 border-t pt-4">
+                    <div className="space-y-4 border-t pt-5">
                       <div>
-                        <Label className="text-sm">Card Number</Label>
-                        <Input placeholder="1234 5678 9012 3456" className="mt-1" />
+                        <Label className="text-sm font-medium">Card Number</Label>
+                        <Input placeholder="1234 5678 9012 3456" className="mt-1.5 h-11 rounded-xl" />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label className="text-sm">Expiry Date</Label>
-                          <Input placeholder="MM/YY" className="mt-1" />
+                          <Label className="text-sm font-medium">Expiry Date</Label>
+                          <Input placeholder="MM/YY" className="mt-1.5 h-11 rounded-xl" />
                         </div>
                         <div>
-                          <Label className="text-sm">CVV</Label>
-                          <Input placeholder="123" className="mt-1" />
+                          <Label className="text-sm font-medium">CVV</Label>
+                          <Input placeholder="123" className="mt-1.5 h-11 rounded-xl" />
                         </div>
                       </div>
                       <div>
-                        <Label className="text-sm">Cardholder Name</Label>
-                        <Input placeholder="Name on card" className="mt-1" />
+                        <Label className="text-sm font-medium">Cardholder Name</Label>
+                        <Input placeholder="Name on card" className="mt-1.5 h-11 rounded-xl" />
                       </div>
                     </div>
                   )}
 
-                  <div className="flex items-start gap-2 mt-4 p-3 bg-success/5 rounded-lg border border-success/20">
+                  <div className="flex items-start gap-2 mt-5 p-3 bg-success/5 rounded-xl border border-success/20">
                     <Lock className="h-4 w-4 text-success shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground">Your payment is secured with 256-bit SSL encryption.</p>
+                    <p className="text-xs text-muted-foreground">Your payment is secured with 256-bit SSL encryption. We never store your card details.</p>
                   </div>
 
                   <div className="flex justify-between mt-6">
-                    <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
-                    <Button onClick={() => setStep(4)} className="gradient-primary text-primary-foreground">
+                    <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl">Back</Button>
+                    <Button onClick={() => setStep(4)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
                       Pay ${grandTotal} <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
@@ -226,42 +239,65 @@ export default function BookingPage() {
               </Card>
             )}
 
-            {/* Step 4: Confirmation */}
             {step === 4 && (
-              <Card>
+              <Card className="shadow-card border-0 animate-fade-in-up">
                 <CardContent className="p-8 text-center">
-                  <div className="h-16 w-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
-                    <Check className="h-8 w-8 text-success" />
+                  <div className="h-20 w-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-5 animate-scale-in">
+                    <Check className="h-10 w-10 text-success" />
                   </div>
                   <h2 className="text-2xl font-bold text-foreground mb-2">Booking Confirmed!</h2>
-                  <p className="text-muted-foreground mb-6">Your reservation has been successfully processed.</p>
-                  <div className="bg-muted/50 rounded-xl p-5 text-left max-w-md mx-auto space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Booking ID</span>
-                      <span className="text-sm font-bold text-foreground">TRV-2025-7842</span>
+                  <p className="text-muted-foreground mb-6">Your reservation has been successfully processed and your E-ticket has been issued.</p>
+
+                  {/* E-Ticket Card */}
+                  <div className="bg-gradient-to-br from-primary/5 to-accent border rounded-2xl p-6 text-left max-w-lg mx-auto">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
+                          <Plane className="h-4 w-4 text-primary-foreground" />
+                        </div>
+                        <span className="font-bold text-sm">Travelian E-Ticket</span>
+                      </div>
+                      <Badge className="bg-success/10 text-success border-0 text-xs rounded-md">Confirmed</Badge>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Hotel</span>
-                      <span className="text-sm font-medium text-foreground">Swissotel Al Maqam</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Dates</span>
-                      <span className="text-sm font-medium text-foreground">Apr 15 – Apr 18, 2025</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Room</span>
-                      <span className="text-sm font-medium text-foreground">Deluxe Room</span>
-                    </div>
-                    <div className="flex justify-between border-t pt-2">
-                      <span className="text-sm font-bold text-foreground">Total Paid</span>
-                      <span className="text-sm font-bold text-primary">${grandTotal}</span>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Booking ID</span>
+                        <span className="font-bold font-mono text-foreground">{bookingRef}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Flight</span>
+                        <span className="font-medium text-foreground">Saudi Airlines · SV-702</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Route</span>
+                        <span className="font-medium text-foreground">Lahore → Jeddah</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Date</span>
+                        <span className="font-medium text-foreground">Apr 15, 2025</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Passenger</span>
+                        <span className="font-medium text-foreground">1 Adult</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Seat</span>
+                        <span className="font-medium text-foreground">24A (Window)</span>
+                      </div>
+                      <div className="flex justify-between font-bold border-t pt-3 text-base">
+                        <span>Total Paid</span>
+                        <span className="text-primary">${grandTotal}</span>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-4">Confirmation email sent to your registered email address.</p>
+
+                  <p className="text-xs text-muted-foreground mt-4">Confirmation email and E-ticket sent to your registered email address.</p>
                   <div className="flex gap-3 justify-center mt-6">
-                    <Button variant="outline">Download Invoice</Button>
+                    <Button variant="outline" className="rounded-xl gap-2">
+                      <Download className="h-4 w-4" /> Download E-Ticket
+                    </Button>
                     <Link to="/account">
-                      <Button className="gradient-primary text-primary-foreground">View My Bookings</Button>
+                      <Button className="gradient-primary text-primary-foreground rounded-xl">View My Bookings</Button>
                     </Link>
                   </div>
                 </CardContent>
@@ -271,41 +307,36 @@ export default function BookingPage() {
 
           {/* Sidebar */}
           <div>
-            <Card className="sticky top-28">
+            <Card className="sticky top-32 shadow-card border-0">
               <CardContent className="p-5">
                 <div className="flex gap-3 mb-4 pb-4 border-b">
-                  <div className="h-16 w-16 rounded-lg bg-gradient-to-br from-warning/15 to-accent flex items-center justify-center text-2xl shrink-0">🏨</div>
+                  <div className="h-14 w-14 rounded-xl bg-accent flex items-center justify-center text-2xl shrink-0">✈️</div>
                   <div>
-                    <h3 className="font-semibold text-foreground text-sm">Swissotel Al Maqam</h3>
-                    <div className="flex items-center gap-0.5 mt-0.5">
-                      {[1, 2, 3, 4, 5].map(i => <Star key={i} className="h-3 w-3 fill-warning text-warning" />)}
-                    </div>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <MapPin className="h-3 w-3" /> Makkah, Saudi Arabia
-                    </p>
+                    <h3 className="font-semibold text-foreground text-sm">Saudi Airlines · SV-702</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Lahore → Jeddah</p>
+                    <p className="text-xs text-muted-foreground">Apr 15, 2025 · 4h 30m</p>
                   </div>
                 </div>
 
                 <div className="space-y-2 mb-4 pb-4 border-b">
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-primary" />
-                    <span className="text-muted-foreground">Apr 15 – Apr 18 (3 nights)</span>
+                    <span className="text-muted-foreground">Apr 15, 2025</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Users className="h-4 w-4 text-primary" />
-                    <span className="text-muted-foreground">2 Adults, 1 Room</span>
+                    <span className="text-muted-foreground">1 Adult, Economy</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Clock className="h-4 w-4 text-primary" />
-                    <span className="text-muted-foreground">Deluxe Room</span>
+                    <span className="text-muted-foreground">Standard Fare</span>
                   </div>
                 </div>
 
-                {/* Price Breakdown */}
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Room ($350 × 3 nights)</span>
-                    <span className="font-medium">${roomTotal}</span>
+                    <span className="text-muted-foreground">Base fare</span>
+                    <span className="font-medium">${baseTotal}</span>
                   </div>
                   {selectedAddons.length > 0 && addons.filter(a => selectedAddons.includes(a.id)).map(a => (
                     <div key={a.id} className="flex justify-between">
@@ -320,6 +351,15 @@ export default function BookingPage() {
                   <div className="flex justify-between font-bold border-t pt-2 text-base">
                     <span>Total</span>
                     <span className="text-primary">${grandTotal}</span>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-4 border-t space-y-2">
+                  <div className="flex items-center gap-2 text-xs text-success">
+                    <Shield className="h-3.5 w-3.5" /> Secure booking
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gold">
+                    <Award className="h-3.5 w-3.5" /> Best price guarantee
                   </div>
                 </div>
               </CardContent>
