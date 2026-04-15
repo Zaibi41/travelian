@@ -47,16 +47,11 @@ export default function HomePage() {
           <div className="absolute bottom-10 right-20 w-96 h-96 bg-gold/20 rounded-full blur-3xl" />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 bg-gold/20 text-gold text-sm px-4 py-1.5 rounded-full mb-6 border border-gold/30 animate-fade-in">
-            <Plane className="h-3.5 w-3.5" /> Your Premium Travel Partner
-          </div>
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold font-display text-primary-foreground mb-5 leading-tight tracking-tight animate-fade-in-up">
-            Discover Your Next
-            <br className="hidden md:block" />
-            <span className="text-gold">Extraordinary Journey</span>
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold font-display text-primary-foreground mb-1 tracking-tight animate-fade-in-up">
+            Travelian
           </h1>
-          <p className="text-primary-foreground/50 text-base md:text-lg max-w-2xl mx-auto mb-10 animate-fade-in">
-            Search flights, hotels, and packages with the best prices. Trusted by over 2 million travelers worldwide.
+          <p className="text-primary-foreground/70 text-base md:text-lg font-medium mb-8 animate-fade-in">
+            Your Trusted Travel Partner
           </p>
           <SearchTabs />
           <div className="flex items-center justify-center gap-4 mt-6 text-xs text-primary-foreground/40">

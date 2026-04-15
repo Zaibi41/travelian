@@ -5,7 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, MapPin, Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, Clock, Users, Calendar, ArrowLeft, Plane, Award, Download } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, CalendarIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const steps = [
@@ -23,10 +28,58 @@ const addons = [
   { id: "lounge", name: "Lounge Access", desc: "Airport lounge access before departure", price: 40 },
 ];
 
+const countries = [
+  "Afghanistan", "Albania", "Algeria", "Argentina", "Australia", "Austria", "Bahrain", "Bangladesh",
+  "Belgium", "Brazil", "Canada", "China", "Colombia", "Denmark", "Egypt", "Ethiopia", "Finland",
+  "France", "Germany", "Ghana", "Greece", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Italy",
+  "Japan", "Jordan", "Kenya", "Kuwait", "Lebanon", "Libya", "Malaysia", "Mexico", "Morocco",
+  "Netherlands", "New Zealand", "Nigeria", "Norway", "Oman", "Pakistan", "Palestine", "Philippines",
+  "Poland", "Portugal", "Qatar", "Russia", "Saudi Arabia", "Singapore", "Somalia", "South Africa",
+  "South Korea", "Spain", "Sri Lanka", "Sudan", "Sweden", "Switzerland", "Syria", "Thailand",
+  "Tunisia", "Turkey", "UAE", "Uganda", "Ukraine", "United Kingdom", "United States", "Vietnam", "Yemen"
+];
+
+const phoneCodes = [
+  { code: "+1", country: "US" }, { code: "+44", country: "UK" }, { code: "+91", country: "IN" },
+  { code: "+92", country: "PK" }, { code: "+966", country: "SA" }, { code: "+971", country: "AE" },
+  { code: "+90", country: "TR" }, { code: "+20", country: "EG" }, { code: "+60", country: "MY" },
+  { code: "+61", country: "AU" }, { code: "+33", country: "FR" }, { code: "+49", country: "DE" },
+  { code: "+86", country: "CN" }, { code: "+81", country: "JP" }, { code: "+82", country: "KR" },
+  { code: "+234", country: "NG" }, { code: "+254", country: "KE" }, { code: "+880", country: "BD" },
+];
+
+function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className={cn(
+          "flex items-center gap-2 w-full h-11 bg-background border border-input rounded-xl px-3 text-sm text-left transition-colors hover:border-primary/30",
+          !date && "text-muted-foreground"
+        )}>
+          <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+          {date ? format(date, "MMM dd, yyyy") : placeholder}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar mode="single" selected={date} onSelect={onSelect} initialFocus className="p-3 pointer-events-auto" />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function BookingPage() {
   const [step, setStep] = useState(1);
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const [paymentMethod, setPaymentMethod] = useState("card");
+  const [title, setTitle] = useState("");
+  const [gender, setGender] = useState("");
+  const [dob, setDob] = useState<Date>();
+  const [nationality, setNationality] = useState("");
+  const [issuanceCountry, setIssuanceCountry] = useState("");
+  const [issueDate, setIssueDate] = useState<Date>();
+  const [expiryDate, setExpiryDate] = useState<Date>();
+  const [phoneCode, setPhoneCode] = useState("+966");
+  const [altPhoneCode, setAltPhoneCode] = useState("+966");
 
   const toggleAddon = (id: string) => {
     setSelectedAddons(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -74,51 +127,164 @@ export default function BookingPage() {
           {/* Main */}
           <div className="lg:col-span-2 space-y-6">
             {step === 1 && (
-              <Card className="shadow-card border-0 animate-fade-in">
-                <CardContent className="p-6">
-                  <h2 className="text-lg font-bold text-foreground mb-1">Traveler Details</h2>
-                  <p className="text-sm text-muted-foreground mb-6">Enter the details of the primary traveler</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium">First Name *</Label>
-                      <Input placeholder="Enter first name" className="mt-1.5 h-11 rounded-xl" />
+              <div className="space-y-6 animate-fade-in">
+                {/* Traveler Information */}
+                <Card className="shadow-card border-0">
+                  <CardContent className="p-6">
+                    <h2 className="text-lg font-bold text-foreground mb-1">Traveler Information</h2>
+                    <p className="text-sm text-muted-foreground mb-6">Enter details exactly as shown on your passport</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Title *</Label>
+                        <Select value={title} onValueChange={setTitle}>
+                          <SelectTrigger className="mt-1.5 h-11 rounded-xl">
+                            <SelectValue placeholder="Select title" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="mr">Mr</SelectItem>
+                            <SelectItem value="ms">Ms</SelectItem>
+                            <SelectItem value="mrs">Mrs</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Gender (Optional)</Label>
+                        <Select value={gender} onValueChange={setGender}>
+                          <SelectTrigger className="mt-1.5 h-11 rounded-xl">
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="male">Male</SelectItem>
+                            <SelectItem value="female">Female</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">First Name *</Label>
+                        <Input placeholder="Given Name" className="mt-1.5 h-11 rounded-xl" />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Last Name *</Label>
+                        <Input placeholder="Surnames" className="mt-1.5 h-11 rounded-xl" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label className="text-sm font-medium">Date of Birth *</Label>
+                        <div className="mt-1.5">
+                          <DatePickerField date={dob} onSelect={setDob} placeholder="Select date of birth" />
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-sm font-medium">Last Name *</Label>
-                      <Input placeholder="Enter last name" className="mt-1.5 h-11 rounded-xl" />
+                  </CardContent>
+                </Card>
+
+                {/* Passport Information */}
+                <Card className="shadow-card border-0">
+                  <CardContent className="p-6">
+                    <h2 className="text-lg font-bold text-foreground mb-1">Passport Information</h2>
+                    <p className="text-sm text-muted-foreground mb-6">Identity document details required for international travel</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <Label className="text-sm font-medium">Passport Number *</Label>
+                        <Input placeholder="e.g. AB1234567" className="mt-1.5 h-11 rounded-xl" />
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Nationality *</Label>
+                        <Select value={nationality} onValueChange={setNationality}>
+                          <SelectTrigger className="mt-1.5 h-11 rounded-xl">
+                            <SelectValue placeholder="Select country" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                            {countries.map(c => (
+                              <SelectItem key={c} value={c.toLowerCase()}>{c}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Country of Issuance *</Label>
+                        <Select value={issuanceCountry} onValueChange={setIssuanceCountry}>
+                          <SelectTrigger className="mt-1.5 h-11 rounded-xl">
+                            <SelectValue placeholder="Select country" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                            {countries.map(c => (
+                              <SelectItem key={c} value={c.toLowerCase()}>{c}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Issue Date *</Label>
+                        <div className="mt-1.5">
+                          <DatePickerField date={issueDate} onSelect={setIssueDate} placeholder="Select issue date" />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Date of Expiry *</Label>
+                        <div className="mt-1.5">
+                          <DatePickerField date={expiryDate} onSelect={setExpiryDate} placeholder="Select expiry date" />
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-sm font-medium">Email *</Label>
-                      <Input type="email" placeholder="your@email.com" className="mt-1.5 h-11 rounded-xl" />
+                  </CardContent>
+                </Card>
+
+                {/* Contact Information */}
+                <Card className="shadow-card border-0">
+                  <CardContent className="p-6">
+                    <h2 className="text-lg font-bold text-foreground mb-1">Contact Information</h2>
+                    <p className="text-sm text-muted-foreground mb-6">We'll send your booking confirmation here</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="md:col-span-2">
+                        <Label className="text-sm font-medium">Email *</Label>
+                        <Input type="email" placeholder="your@email.com" className="mt-1.5 h-11 rounded-xl" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label className="text-sm font-medium">Mobile Number *</Label>
+                        <div className="flex gap-2 mt-1.5">
+                          <Select value={phoneCode} onValueChange={setPhoneCode}>
+                            <SelectTrigger className="h-11 rounded-xl w-[120px] shrink-0">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {phoneCodes.map(p => (
+                                <SelectItem key={p.code} value={p.code}>{p.code} {p.country}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input placeholder="Phone number" className="h-11 rounded-xl flex-1" />
+                        </div>
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label className="text-sm font-medium">Alternate Mobile Number</Label>
+                        <div className="flex gap-2 mt-1.5">
+                          <Select value={altPhoneCode} onValueChange={setAltPhoneCode}>
+                            <SelectTrigger className="h-11 rounded-xl w-[120px] shrink-0">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {phoneCodes.map(p => (
+                                <SelectItem key={p.code} value={p.code}>{p.code} {p.country}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input placeholder="Phone number" className="h-11 rounded-xl flex-1" />
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <Label className="text-sm font-medium">Phone *</Label>
-                      <Input type="tel" placeholder="+1 234 567 890" className="mt-1.5 h-11 rounded-xl" />
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Passport Number *</Label>
-                      <Input placeholder="AB1234567" className="mt-1.5 h-11 rounded-xl" />
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Date of Birth *</Label>
-                      <Input type="date" className="mt-1.5 h-11 rounded-xl" />
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label className="text-sm font-medium">Special Requests (optional)</Label>
-                      <Input placeholder="e.g., Wheelchair assistance, dietary requirements..." className="mt-1.5 h-11 rounded-xl" />
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2 mt-4 p-3 bg-accent/50 rounded-xl border border-primary/10">
-                    <AlertCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground">Name must match exactly as shown on your passport or ID.</p>
-                  </div>
-                  <div className="flex justify-end mt-6">
-                    <Button onClick={() => setStep(2)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
-                      Continue to Add-ons <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+
+                <div className="flex items-start gap-2 p-3 bg-accent/50 rounded-xl border border-primary/10">
+                  <AlertCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                  <p className="text-xs text-muted-foreground">Name must match exactly as shown on your passport or ID.</p>
+                </div>
+                <div className="flex justify-end">
+                  <Button onClick={() => setStep(2)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
+                    Continue to Add-ons <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
             )}
 
             {step === 2 && (
@@ -248,7 +414,6 @@ export default function BookingPage() {
                   <h2 className="text-2xl font-bold text-foreground mb-2">Booking Confirmed!</h2>
                   <p className="text-muted-foreground mb-6">Your reservation has been successfully processed and your E-ticket has been issued.</p>
 
-                  {/* E-Ticket Card */}
                   <div className="bg-gradient-to-br from-primary/5 to-accent border rounded-2xl p-6 text-left max-w-lg mx-auto">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
@@ -317,49 +482,32 @@ export default function BookingPage() {
                     <p className="text-xs text-muted-foreground">Apr 15, 2025 · 4h 30m</p>
                   </div>
                 </div>
-
-                <div className="space-y-2 mb-4 pb-4 border-b">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="h-4 w-4 text-primary" />
-                    <span className="text-muted-foreground">Apr 15, 2025</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="h-4 w-4 text-primary" />
-                    <span className="text-muted-foreground">1 Adult, Economy</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="h-4 w-4 text-primary" />
-                    <span className="text-muted-foreground">Standard Fare</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-sm">
+                <div className="space-y-2.5 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Base fare</span>
-                    <span className="font-medium">${baseTotal}</span>
+                    <span className="text-foreground font-medium">${baseTotal}</span>
                   </div>
-                  {selectedAddons.length > 0 && addons.filter(a => selectedAddons.includes(a.id)).map(a => (
-                    <div key={a.id} className="flex justify-between">
-                      <span className="text-muted-foreground">{a.name}</span>
-                      <span className="font-medium">${a.price}</span>
+                  {selectedAddons.length > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Add-ons ({selectedAddons.length})</span>
+                      <span className="text-foreground font-medium">${addonsTotal}</span>
                     </div>
-                  ))}
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Taxes & fees</span>
-                    <span className="font-medium">${taxes}</span>
+                    <span className="text-foreground font-medium">${taxes}</span>
                   </div>
-                  <div className="flex justify-between font-bold border-t pt-2 text-base">
+                  <div className="flex justify-between font-bold text-base pt-2 border-t">
                     <span>Total</span>
                     <span className="text-primary">${grandTotal}</span>
                   </div>
                 </div>
-
                 <div className="mt-4 pt-4 border-t space-y-2">
-                  <div className="flex items-center gap-2 text-xs text-success">
-                    <Shield className="h-3.5 w-3.5" /> Secure booking
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Shield className="h-3.5 w-3.5 text-success" /> Best Price Guarantee
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gold">
-                    <Award className="h-3.5 w-3.5" /> Best price guarantee
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Lock className="h-3.5 w-3.5 text-success" /> Secure Payment
                   </div>
                 </div>
               </CardContent>

@@ -1,13 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { Plane, Search, ArrowUpDown, Wifi, Briefcase, Coffee, ArrowLeftRight, Calendar, Users, MapPin, Clock, Shield, Award, ChevronDown, Luggage } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Plane, Search, Wifi, Briefcase, Coffee, ArrowLeftRight, Users, Clock, Shield, ChevronDown, Luggage, CalendarIcon } from "lucide-react";
 import { mockFlights } from "@/data/mock";
 import { Link } from "react-router-dom";
+import { format, addDays } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function PublicFlightsPage() {
   const [search, setSearch] = useState("");
@@ -15,6 +19,8 @@ export default function PublicFlightsPage() {
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [sort, setSort] = useState("best");
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
+  const [departDate, setDepartDate] = useState<Date>(new Date());
+  const [selectedDayIndex, setSelectedDayIndex] = useState(3); // middle of week
 
   const toggleAirline = (a: string) => setSelectedAirlines(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
 
@@ -40,42 +46,92 @@ export default function PublicFlightsPage() {
     return fDur < fastDur ? f : fast;
   }, filtered[0]) : null;
 
+  // Date flexibility row - 7 days around selected date
+  const dateFlexDays = useMemo(() => {
+    const base = addDays(departDate, -3 + selectedDayIndex === 3 ? -3 : -3);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = addDays(departDate, i - 3);
+      const price = Math.round(180 + Math.random() * 300);
+      return { date: d, price, isCheapest: false };
+    });
+  }, [departDate]);
+
+  // Mark cheapest
+  const cheapestDayPrice = Math.min(...dateFlexDays.map(d => d.price));
+  dateFlexDays.forEach(d => { d.isCheapest = d.price === cheapestDayPrice; });
+
   return (
     <div>
-      {/* Editable Search Hero */}
-      <section className="gradient-hero py-8">
+      {/* Sticky Search Hero */}
+      <section className="gradient-hero py-6 sticky top-0 z-40 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-2xl md:text-3xl font-bold font-display text-primary-foreground mb-4">Search Flights</h1>
           <div className="bg-card/10 backdrop-blur-sm rounded-2xl p-4 border border-primary-foreground/10">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-              <div className="relative md:col-span-3">
-                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="From where?" className="pl-9 h-12 bg-card rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-center">
+              <div className="relative">
+                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-primary-foreground/60" />
+                <Input placeholder="From where?" className="pl-9 h-12 bg-card rounded-xl border-0" value={search} onChange={e => setSearch(e.target.value)} />
               </div>
-              <div className="hidden md:flex items-center justify-center md:col-span-1">
+              <div className="hidden md:flex items-center justify-center">
                 <button className="h-9 w-9 rounded-full border-2 border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/10 transition-colors">
                   <ArrowLeftRight className="h-4 w-4" />
                 </button>
               </div>
-              <div className="relative md:col-span-3">
-                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
-                <Input placeholder="To where?" className="pl-9 h-12 bg-card rounded-xl" />
+              <div className="relative">
+                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-primary-foreground/60 rotate-90" />
+                <Input placeholder="To where?" className="pl-9 h-12 bg-card rounded-xl border-0" />
               </div>
-              <div className="relative md:col-span-2">
-                <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input type="date" className="pl-9 h-12 bg-card rounded-xl" />
-              </div>
-              <div className="relative md:col-span-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="flex items-center gap-2 h-12 bg-card rounded-xl px-3 text-sm text-muted-foreground w-full text-left">
+                    <CalendarIcon className="h-4 w-4 shrink-0" />
+                    {departDate ? format(departDate, "MMM dd, yyyy") : "Select date"}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={departDate} onSelect={(d) => d && setDepartDate(d)} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+              <div className="relative">
                 <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="1 Adult, Economy" className="pl-9 h-12 bg-card rounded-xl" />
+                <Input placeholder="1 Adult, Economy" className="pl-9 h-12 bg-card rounded-xl border-0" />
               </div>
-              <Button className="md:col-span-1 h-12 gradient-primary text-primary-foreground rounded-xl">
-                <Search className="h-4 w-4" />
+              <Button className="h-12 px-6 gradient-primary text-primary-foreground rounded-xl font-semibold">
+                <Search className="h-4 w-4 mr-2" /> Modify Search
               </Button>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Date Flexibility Row */}
+      <div className="bg-card border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-1 py-3 overflow-x-auto scrollbar-hide">
+            {dateFlexDays.map((day, i) => (
+              <button
+                key={i}
+                onClick={() => setSelectedDayIndex(i)}
+                className={cn(
+                  "flex flex-col items-center px-4 py-2 rounded-xl text-xs font-medium transition-all min-w-[80px] shrink-0",
+                  selectedDayIndex === i
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : day.isCheapest
+                    ? "bg-success/10 text-success hover:bg-success/20"
+                    : "text-muted-foreground hover:bg-muted/50"
+                )}
+              >
+                <span>{format(day.date, "EEE, MMM d")}</span>
+                <span className={cn("font-bold mt-0.5", selectedDayIndex === i ? "text-primary-foreground" : day.isCheapest ? "text-success" : "text-foreground")}>
+                  ${day.price}
+                </span>
+                {day.isCheapest && selectedDayIndex !== i && (
+                  <span className="text-[9px] text-success font-semibold">Cheapest</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Sort Tags */}
