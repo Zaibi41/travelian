@@ -1,8 +1,12 @@
 import { useState } from "react";
-import { Hotel, Plane, Compass, Car, Package, Search, Calendar, MapPin, Users, ChevronDown, ArrowLeftRight } from "lucide-react";
+import { Hotel, Plane, Compass, Car, Package, Search, MapPin, Users, ChevronDown, ArrowLeftRight, Plus, CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
@@ -20,6 +24,31 @@ const tripTypes = [
 
 const cabinClasses = ["Economy", "Premium Economy", "Business", "First"];
 
+interface MultiCitySegment {
+  from: string;
+  to: string;
+  date: Date | undefined;
+}
+
+function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className={cn(
+          "flex items-center gap-2 w-full h-12 bg-muted/30 border border-muted rounded-xl px-3 text-sm text-left transition-colors hover:border-primary/30",
+          !date && "text-muted-foreground"
+        )}>
+          <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+          {date ? format(date, "MMM dd, yyyy") : placeholder}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar mode="single" selected={date} onSelect={onSelect} initialFocus className="p-3 pointer-events-auto" />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function SearchTabs() {
   const [activeTab, setActiveTab] = useState("flights");
   const [tripType, setTripType] = useState("roundtrip");
@@ -28,6 +57,17 @@ export function SearchTabs() {
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
   const [cabin, setCabin] = useState("Economy");
+  const [departDate, setDepartDate] = useState<Date>();
+  const [returnDate, setReturnDate] = useState<Date>();
+  const [hotelCheckIn, setHotelCheckIn] = useState<Date>();
+  const [hotelCheckOut, setHotelCheckOut] = useState<Date>();
+  const [pkgDate, setPkgDate] = useState<Date>();
+  const [actDate, setActDate] = useState<Date>();
+  const [transDate, setTransDate] = useState<Date>();
+  const [multiCitySegments, setMultiCitySegments] = useState<MultiCitySegment[]>([
+    { from: "", to: "", date: undefined },
+    { from: "", to: "", date: undefined },
+  ]);
   const navigate = useNavigate();
 
   const handleSearch = () => {
@@ -40,8 +80,26 @@ export function SearchTabs() {
 
   const totalPassengers = adults + children + infants;
 
+  const addMultiCitySegment = () => {
+    if (multiCitySegments.length < 6) {
+      setMultiCitySegments([...multiCitySegments, { from: "", to: "", date: undefined }]);
+    }
+  };
+
+  const updateSegment = (index: number, field: keyof MultiCitySegment, value: string | Date | undefined) => {
+    const updated = [...multiCitySegments];
+    (updated[index] as any)[field] = value;
+    setMultiCitySegments(updated);
+  };
+
+  const removeSegment = (index: number) => {
+    if (multiCitySegments.length > 2) {
+      setMultiCitySegments(multiCitySegments.filter((_, i) => i !== index));
+    }
+  };
+
   return (
-    <div className="bg-card rounded-2xl shadow-elevated p-0 max-w-5xl mx-auto overflow-hidden animate-scale-in">
+    <div className="bg-card rounded-2xl shadow-elevated p-0 max-w-6xl mx-auto overflow-visible animate-scale-in">
       {/* Tabs */}
       <div className="flex bg-muted/60">
         {tabs.map((tab) => (
@@ -86,11 +144,11 @@ export function SearchTabs() {
                   className="flex items-center gap-2 text-xs font-medium text-foreground bg-muted/40 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
                 >
                   <Users className="h-3.5 w-3.5" />
-                  {totalPassengers} Traveler{totalPassengers > 1 ? 's' : ''}, {cabin}
+                  <span className="whitespace-nowrap">{totalPassengers} Traveler{totalPassengers > 1 ? 's' : ''}, {cabin}</span>
                   <ChevronDown className="h-3 w-3" />
                 </button>
                 {showPassengers && (
-                  <div className="absolute top-full left-0 mt-2 bg-card border rounded-xl shadow-elevated p-4 z-50 w-72 animate-scale-in">
+                  <div className="absolute top-full left-0 mt-2 bg-card border rounded-xl shadow-elevated p-4 z-[100] w-72 animate-scale-in">
                     <div className="space-y-3">
                       {[
                         { label: "Adults", sub: "12+ years", value: adults, set: setAdults, min: 1 },
@@ -139,115 +197,152 @@ export function SearchTabs() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-              <div className="relative md:col-span-3">
-                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="From where?" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-              </div>
-              <div className="hidden md:flex items-center justify-center md:col-span-1">
-                <button className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
-                  <ArrowLeftRight className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="relative md:col-span-3">
-                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
-                <Input placeholder="To where?" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-              </div>
-              <div className="relative md:col-span-2">
-                <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input type="date" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-              </div>
-              {tripType === "roundtrip" && (
-                <div className="relative md:col-span-2">
-                  <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                  <Input type="date" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+            {/* Multi-city layout */}
+            {tripType === "multicity" ? (
+              <div className="space-y-3">
+                {multiCitySegments.map((seg, idx) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
+                    <div className="relative">
+                      {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">From</label>}
+                      <div className="relative">
+                        <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="City or airport"
+                          className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm"
+                          value={seg.from}
+                          onChange={e => updateSegment(idx, "from", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="relative">
+                      {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>}
+                      <div className="relative">
+                        <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
+                        <Input
+                          placeholder="City or airport"
+                          className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm"
+                          value={seg.to}
+                          onChange={e => updateSegment(idx, "to", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">Date</label>}
+                      <DatePickerField date={seg.date} onSelect={d => updateSegment(idx, "date", d)} placeholder="Select date" />
+                    </div>
+                    <div className="flex items-center h-12">
+                      {multiCitySegments.length > 2 && (
+                        <button
+                          onClick={() => removeSegment(idx)}
+                          className="text-xs text-destructive hover:text-destructive/80 font-medium px-2"
+                        >✕</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={addMultiCitySegment}
+                    className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Add Flight
+                  </button>
+                  <div className="flex-1" />
+                  <Button onClick={handleSearch} className="h-12 px-8 gradient-primary text-primary-foreground font-semibold rounded-xl">
+                    <Search className="h-4 w-4 mr-2" /> Search
+                  </Button>
                 </div>
-              )}
-              <Button
-                onClick={handleSearch}
-                className={`${tripType === "roundtrip" ? "md:col-span-1" : "md:col-span-3"} h-12 gradient-primary text-primary-foreground font-semibold rounded-xl`}
-              >
-                <Search className="h-4 w-4" />
-              </Button>
-            </div>
+              </div>
+            ) : (
+              /* One-way / Round-trip layout */
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-center">
+                <div className="relative">
+                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="From where?" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+                </div>
+                <div className="hidden md:flex items-center justify-center">
+                  <button className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
+                    <ArrowLeftRight className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="relative">
+                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
+                  <Input placeholder="To where?" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+                </div>
+                <DatePickerField date={departDate} onSelect={setDepartDate} placeholder="Departure date" />
+                {tripType === "roundtrip" ? (
+                  <DatePickerField date={returnDate} onSelect={setReturnDate} placeholder="Return date" />
+                ) : (
+                  <div />
+                )}
+                <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </>
         )}
 
         {activeTab === "hotels" && (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-            <div className="relative md:col-span-4">
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-3 items-center">
+            <div className="relative">
               <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="City, hotel, or destination" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
             </div>
-            <div className="relative md:col-span-3">
-              <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input type="date" placeholder="Check-in" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <div className="relative md:col-span-3">
-              <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input type="date" placeholder="Check-out" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <Button onClick={handleSearch} className="md:col-span-2 h-12 gradient-primary text-primary-foreground font-semibold rounded-xl">
+            <DatePickerField date={hotelCheckIn} onSelect={setHotelCheckIn} placeholder="Check-in" />
+            <DatePickerField date={hotelCheckOut} onSelect={setHotelCheckOut} placeholder="Check-out" />
+            <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
               <Search className="h-4 w-4 mr-2" /> Search
             </Button>
           </div>
         )}
 
         {activeTab === "packages" && (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-            <div className="relative md:col-span-5">
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-3 items-center">
+            <div className="relative">
               <Package className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Umrah, Hajj, or custom package..." className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
             </div>
-            <div className="relative md:col-span-3">
-              <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input type="date" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <div className="relative md:col-span-2">
+            <DatePickerField date={pkgDate} onSelect={setPkgDate} placeholder="Travel date" />
+            <div className="relative">
               <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Travelers" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
             </div>
-            <Button onClick={handleSearch} className="md:col-span-2 h-12 gradient-primary text-primary-foreground font-semibold rounded-xl">
+            <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
               <Search className="h-4 w-4 mr-2" /> Search
             </Button>
           </div>
         )}
 
         {activeTab === "activities" && (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-            <div className="relative md:col-span-5">
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-3 items-center">
+            <div className="relative">
               <Compass className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search activities, tours..." className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
             </div>
-            <div className="relative md:col-span-3">
+            <div className="relative">
               <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Destination" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
             </div>
-            <div className="relative md:col-span-2">
-              <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input type="date" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <Button onClick={handleSearch} className="md:col-span-2 h-12 gradient-primary text-primary-foreground font-semibold rounded-xl">
+            <DatePickerField date={actDate} onSelect={setActDate} placeholder="Select date" />
+            <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
               <Search className="h-4 w-4 mr-2" /> Search
             </Button>
           </div>
         )}
 
         {activeTab === "transfers" && (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-            <div className="relative md:col-span-4">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-center">
+            <div className="relative">
               <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Pick-up location" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
             </div>
-            <div className="relative md:col-span-4">
+            <div className="relative">
               <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Drop-off location" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
             </div>
-            <div className="relative md:col-span-2">
-              <Calendar className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input type="date" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <Button onClick={handleSearch} className="md:col-span-2 h-12 gradient-primary text-primary-foreground font-semibold rounded-xl">
+            <DatePickerField date={transDate} onSelect={setTransDate} placeholder="Select date" />
+            <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
               <Search className="h-4 w-4 mr-2" /> Search
             </Button>
           </div>
