@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,11 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, CalendarIcon } from "lucide-react";
+import { AdvancedDatePicker } from "@/components/ui/advanced-date-picker";
+import { CountryCodePicker } from "@/components/ui/country-code-picker";
+import { CountryPicker } from "@/components/ui/country-picker";
+import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Globe, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const steps = [
@@ -28,58 +27,41 @@ const addons = [
   { id: "lounge", name: "Lounge Access", desc: "Airport lounge access before departure", price: 40 },
 ];
 
-const countries = [
-  "Afghanistan", "Albania", "Algeria", "Argentina", "Australia", "Austria", "Bahrain", "Bangladesh",
-  "Belgium", "Brazil", "Canada", "China", "Colombia", "Denmark", "Egypt", "Ethiopia", "Finland",
-  "France", "Germany", "Ghana", "Greece", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Italy",
-  "Japan", "Jordan", "Kenya", "Kuwait", "Lebanon", "Libya", "Malaysia", "Mexico", "Morocco",
-  "Netherlands", "New Zealand", "Nigeria", "Norway", "Oman", "Pakistan", "Palestine", "Philippines",
-  "Poland", "Portugal", "Qatar", "Russia", "Saudi Arabia", "Singapore", "Somalia", "South Africa",
-  "South Korea", "Spain", "Sri Lanka", "Sudan", "Sweden", "Switzerland", "Syria", "Thailand",
-  "Tunisia", "Turkey", "UAE", "Uganda", "Ukraine", "United Kingdom", "United States", "Vietnam", "Yemen"
-];
-
-const phoneCodes = [
-  { code: "+1", country: "US" }, { code: "+44", country: "UK" }, { code: "+91", country: "IN" },
-  { code: "+92", country: "PK" }, { code: "+966", country: "SA" }, { code: "+971", country: "AE" },
-  { code: "+90", country: "TR" }, { code: "+20", country: "EG" }, { code: "+60", country: "MY" },
-  { code: "+61", country: "AU" }, { code: "+33", country: "FR" }, { code: "+49", country: "DE" },
-  { code: "+86", country: "CN" }, { code: "+81", country: "JP" }, { code: "+82", country: "KR" },
-  { code: "+234", country: "NG" }, { code: "+254", country: "KE" }, { code: "+880", country: "BD" },
-];
-
-function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string }) {
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button className={cn(
-          "flex items-center gap-2 w-full h-11 bg-background border border-input rounded-xl px-3 text-sm text-left transition-colors hover:border-primary/30",
-          !date && "text-muted-foreground"
-        )}>
-          <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-          {date ? format(date, "MMM dd, yyyy") : placeholder}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar mode="single" selected={date} onSelect={onSelect} initialFocus className="p-3 pointer-events-auto" />
-      </PopoverContent>
-    </Popover>
-  );
-}
+const currentYear = new Date().getFullYear();
 
 export default function BookingPage() {
   const [step, setStep] = useState(1);
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const [paymentMethod, setPaymentMethod] = useState("card");
-  const [title, setTitle] = useState("");
+
+  // Flight type — drives whether passport is required (international) or CNIC is allowed (domestic)
+  const [flightType, setFlightType] = useState<"international" | "domestic">("international");
+  const [docType, setDocType] = useState<"passport" | "cnic">("passport");
+
+  // Traveler info — Pakistan-market defaults
+  const [title, setTitle] = useState("mr");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [gender, setGender] = useState("");
+
+  // Identity document
   const [dob, setDob] = useState<Date>();
-  const [nationality, setNationality] = useState("");
-  const [issuanceCountry, setIssuanceCountry] = useState("");
-  const [issueDate, setIssueDate] = useState<Date>();
+  const [docNumber, setDocNumber] = useState("");
+  const [nationality, setNationality] = useState("Pakistan");
+  const [issuanceCountry, setIssuanceCountry] = useState("Pakistan");
   const [expiryDate, setExpiryDate] = useState<Date>();
-  const [phoneCode, setPhoneCode] = useState("+966");
-  const [altPhoneCode, setAltPhoneCode] = useState("+966");
+
+  // Contact
+  const [email, setEmail] = useState("");
+  const [phoneCode, setPhoneCode] = useState("+92");
+  const [phone, setPhone] = useState("");
+  const [altPhoneCode, setAltPhoneCode] = useState("+92");
+  const [altPhone, setAltPhone] = useState("");
+
+  // Validation touch tracking
+  const [touched, setTouched] = useState(false);
+
+  const requiresPassport = flightType === "international" || docType === "passport";
 
   const toggleAddon = (id: string) => {
     setSelectedAddons(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -90,6 +72,44 @@ export default function BookingPage() {
   const taxes = 42;
   const grandTotal = baseTotal + addonsTotal + taxes;
   const bookingRef = `TRV-${Date.now().toString(36).toUpperCase().slice(-6)}`;
+
+  // Validation
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const phoneValid = /^\d{6,15}$/.test(phone);
+  const altPhoneValid = altPhone === "" || /^\d{6,15}$/.test(altPhone);
+  const docValid = requiresPassport
+    ? /^[A-Z0-9]{6,12}$/i.test(docNumber)
+    : /^\d{13}$/.test(docNumber.replace(/-/g, "")); // CNIC: 13 digits
+
+  const errors = useMemo(() => {
+    const e: Record<string, string> = {};
+    if (!firstName.trim()) e.firstName = "First name is required";
+    if (!lastName.trim()) e.lastName = "Last name is required";
+    if (!dob) e.dob = "Date of birth is required";
+    if (!docNumber.trim()) e.docNumber = `${requiresPassport ? "Passport" : "CNIC"} number is required`;
+    else if (!docValid) e.docNumber = requiresPassport
+      ? "Enter a valid passport number (6–12 letters/digits)"
+      : "Enter a valid 13-digit CNIC";
+    if (requiresPassport && !expiryDate) e.expiryDate = "Expiry date is required";
+    if (!email.trim()) e.email = "Email is required";
+    else if (!emailValid) e.email = "Enter a valid email address";
+    if (!phone.trim()) e.phone = "Mobile number is required";
+    else if (!phoneValid) e.phone = "Enter a valid numeric phone (6–15 digits)";
+    if (!altPhoneValid) e.altPhone = "Enter a valid numeric phone (6–15 digits)";
+    return e;
+  }, [firstName, lastName, dob, docNumber, docValid, requiresPassport, expiryDate, email, emailValid, phone, phoneValid, altPhoneValid]);
+
+  const isStep1Valid = Object.keys(errors).length === 0;
+
+  const handleContinue = () => {
+    setTouched(true);
+    if (isStep1Valid) setStep(2);
+  };
+
+  // Numeric-only phone handler
+  const onPhoneChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setter(e.target.value.replace(/[^\d]/g, ""));
+  };
 
   return (
     <div className="bg-muted/20 min-h-screen">
@@ -128,11 +148,44 @@ export default function BookingPage() {
           <div className="lg:col-span-2 space-y-6">
             {step === 1 && (
               <div className="space-y-6 animate-fade-in">
+                {/* Flight type toggle (drives document logic) */}
+                <Card className="shadow-card border-0">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium text-foreground">Flight type</span>
+                      </div>
+                      <div className="flex items-center bg-muted rounded-lg p-0.5">
+                        {[
+                          { id: "international", label: "International", icon: Globe },
+                          { id: "domestic", label: "Domestic", icon: MapPin },
+                        ].map(t => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => {
+                              setFlightType(t.id as any);
+                              if (t.id === "international") setDocType("passport");
+                            }}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                              flightType === t.id ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            <t.icon className="h-3.5 w-3.5" />
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Traveler Information */}
                 <Card className="shadow-card border-0">
                   <CardContent className="p-6">
                     <h2 className="text-lg font-bold text-foreground mb-1">Traveler Information</h2>
-                    <p className="text-sm text-muted-foreground mb-6">Enter details exactly as shown on your passport</p>
+                    <p className="text-sm text-muted-foreground mb-6">Enter details exactly as shown on your identity document</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label className="text-sm font-medium">Title *</Label>
@@ -161,70 +214,120 @@ export default function BookingPage() {
                       </div>
                       <div>
                         <Label className="text-sm font-medium">First Name *</Label>
-                        <Input placeholder="Given Name" className="mt-1.5 h-11 rounded-xl" />
+                        <Input
+                          placeholder="Given Name"
+                          className="mt-1.5 h-11 rounded-xl"
+                          value={firstName}
+                          onChange={e => setFirstName(e.target.value)}
+                        />
+                        {touched && errors.firstName && <p className="text-xs text-destructive mt-1">{errors.firstName}</p>}
                       </div>
                       <div>
                         <Label className="text-sm font-medium">Last Name *</Label>
-                        <Input placeholder="Surnames" className="mt-1.5 h-11 rounded-xl" />
-                      </div>
-                      <div className="md:col-span-2">
-                        <Label className="text-sm font-medium">Date of Birth *</Label>
-                        <div className="mt-1.5">
-                          <DatePickerField date={dob} onSelect={setDob} placeholder="Select date of birth" />
-                        </div>
+                        <Input
+                          placeholder="Surnames"
+                          className="mt-1.5 h-11 rounded-xl"
+                          value={lastName}
+                          onChange={e => setLastName(e.target.value)}
+                        />
+                        {touched && errors.lastName && <p className="text-xs text-destructive mt-1">{errors.lastName}</p>}
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Passport Information */}
+                {/* Identity Document Information */}
                 <Card className="shadow-card border-0">
                   <CardContent className="p-6">
-                    <h2 className="text-lg font-bold text-foreground mb-1">Passport Information</h2>
-                    <p className="text-sm text-muted-foreground mb-6">Identity document details required for international travel</p>
+                    <h2 className="text-lg font-bold text-foreground mb-1">Identity Document Information</h2>
+                    <p className="text-sm text-muted-foreground mb-6">
+                      {flightType === "international"
+                        ? "Passport is required for international travel"
+                        : "Choose the document you'll use to travel domestically"}
+                    </p>
+
+                    {/* Doc type for domestic */}
+                    {flightType === "domestic" && (
+                      <div className="mb-5">
+                        <Label className="text-sm font-medium">Document Type *</Label>
+                        <div className="flex items-center bg-muted rounded-lg p-0.5 mt-1.5 w-fit">
+                          {[
+                            { id: "cnic", label: "CNIC" },
+                            { id: "passport", label: "Passport" },
+                          ].map(t => (
+                            <button
+                              key={t.id}
+                              type="button"
+                              onClick={() => { setDocType(t.id as any); setDocNumber(""); }}
+                              className={`px-4 py-1.5 text-xs font-medium rounded-md transition-all ${
+                                docType === t.id ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
+                              }`}
+                            >
+                              {t.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2">
-                        <Label className="text-sm font-medium">Passport Number *</Label>
-                        <Input placeholder="e.g. AB1234567" className="mt-1.5 h-11 rounded-xl" />
+                      <div>
+                        <Label className="text-sm font-medium">Date of Birth *</Label>
+                        <div className="mt-1.5">
+                          <AdvancedDatePicker
+                            date={dob}
+                            onSelect={setDob}
+                            placeholder="Select date of birth"
+                            fromYear={1925}
+                            toYear={currentYear}
+                            disabled={(d) => d > new Date()}
+                          />
+                        </div>
+                        {touched && errors.dob && <p className="text-xs text-destructive mt-1">{errors.dob}</p>}
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">
+                          {requiresPassport ? "Passport Number *" : "CNIC Number *"}
+                        </Label>
+                        <Input
+                          placeholder={requiresPassport ? "e.g. AB1234567" : "e.g. 3520112345671"}
+                          className="mt-1.5 h-11 rounded-xl"
+                          value={docNumber}
+                          onChange={e => setDocNumber(requiresPassport ? e.target.value.toUpperCase() : e.target.value.replace(/[^\d]/g, ""))}
+                          maxLength={requiresPassport ? 12 : 13}
+                        />
+                        {touched && errors.docNumber && <p className="text-xs text-destructive mt-1">{errors.docNumber}</p>}
                       </div>
                       <div>
                         <Label className="text-sm font-medium">Nationality *</Label>
-                        <Select value={nationality} onValueChange={setNationality}>
-                          <SelectTrigger className="mt-1.5 h-11 rounded-xl">
-                            <SelectValue placeholder="Select country" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-60">
-                            {countries.map(c => (
-                              <SelectItem key={c} value={c.toLowerCase()}>{c}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Country of Issuance *</Label>
-                        <Select value={issuanceCountry} onValueChange={setIssuanceCountry}>
-                          <SelectTrigger className="mt-1.5 h-11 rounded-xl">
-                            <SelectValue placeholder="Select country" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-60">
-                            {countries.map(c => (
-                              <SelectItem key={c} value={c.toLowerCase()}>{c}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Issue Date *</Label>
                         <div className="mt-1.5">
-                          <DatePickerField date={issueDate} onSelect={setIssueDate} placeholder="Select issue date" />
+                          <CountryPicker value={nationality} onChange={setNationality} />
                         </div>
                       </div>
-                      <div>
-                        <Label className="text-sm font-medium">Date of Expiry *</Label>
-                        <div className="mt-1.5">
-                          <DatePickerField date={expiryDate} onSelect={setExpiryDate} placeholder="Select expiry date" />
-                        </div>
-                      </div>
+                      {requiresPassport && (
+                        <>
+                          <div>
+                            <Label className="text-sm font-medium">Country of Issuance *</Label>
+                            <div className="mt-1.5">
+                              <CountryPicker value={issuanceCountry} onChange={setIssuanceCountry} />
+                            </div>
+                          </div>
+                          <div className="md:col-span-2">
+                            <Label className="text-sm font-medium">Date of Expiry *</Label>
+                            <div className="mt-1.5">
+                              <AdvancedDatePicker
+                                date={expiryDate}
+                                onSelect={setExpiryDate}
+                                placeholder="Select expiry date"
+                                fromYear={currentYear}
+                                toYear={currentYear + 25}
+                                disabled={(d) => d < new Date()}
+                              />
+                            </div>
+                            {touched && errors.expiryDate && <p className="text-xs text-destructive mt-1">{errors.expiryDate}</p>}
+                          </div>
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -237,39 +340,42 @@ export default function BookingPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="md:col-span-2">
                         <Label className="text-sm font-medium">Email *</Label>
-                        <Input type="email" placeholder="your@email.com" className="mt-1.5 h-11 rounded-xl" />
+                        <Input
+                          type="email"
+                          placeholder="your@email.com"
+                          className="mt-1.5 h-11 rounded-xl"
+                          value={email}
+                          onChange={e => setEmail(e.target.value)}
+                        />
+                        {touched && errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
                       </div>
                       <div className="md:col-span-2">
                         <Label className="text-sm font-medium">Mobile Number *</Label>
                         <div className="flex gap-2 mt-1.5">
-                          <Select value={phoneCode} onValueChange={setPhoneCode}>
-                            <SelectTrigger className="h-11 rounded-xl w-[120px] shrink-0">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-60">
-                              {phoneCodes.map(p => (
-                                <SelectItem key={p.code} value={p.code}>{p.code} {p.country}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Input placeholder="Phone number" className="h-11 rounded-xl flex-1" />
+                          <CountryCodePicker value={phoneCode} onChange={setPhoneCode} />
+                          <Input
+                            inputMode="numeric"
+                            placeholder="3001234567"
+                            className="h-11 rounded-xl flex-1"
+                            value={phone}
+                            onChange={onPhoneChange(setPhone)}
+                          />
                         </div>
+                        {touched && errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
                       </div>
                       <div className="md:col-span-2">
                         <Label className="text-sm font-medium">Alternate Mobile Number</Label>
                         <div className="flex gap-2 mt-1.5">
-                          <Select value={altPhoneCode} onValueChange={setAltPhoneCode}>
-                            <SelectTrigger className="h-11 rounded-xl w-[120px] shrink-0">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-60">
-                              {phoneCodes.map(p => (
-                                <SelectItem key={p.code} value={p.code}>{p.code} {p.country}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Input placeholder="Phone number" className="h-11 rounded-xl flex-1" />
+                          <CountryCodePicker value={altPhoneCode} onChange={setAltPhoneCode} />
+                          <Input
+                            inputMode="numeric"
+                            placeholder="3001234567"
+                            className="h-11 rounded-xl flex-1"
+                            value={altPhone}
+                            onChange={onPhoneChange(setAltPhone)}
+                          />
                         </div>
+                        {touched && errors.altPhone && <p className="text-xs text-destructive mt-1">{errors.altPhone}</p>}
                       </div>
                     </div>
                   </CardContent>
@@ -277,10 +383,10 @@ export default function BookingPage() {
 
                 <div className="flex items-start gap-2 p-3 bg-accent/50 rounded-xl border border-primary/10">
                   <AlertCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <p className="text-xs text-muted-foreground">Name must match exactly as shown on your passport or ID.</p>
+                  <p className="text-xs text-muted-foreground">Name must match exactly as shown on your {requiresPassport ? "passport" : "CNIC"}.</p>
                 </div>
                 <div className="flex justify-end">
-                  <Button onClick={() => setStep(2)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
+                  <Button onClick={handleContinue} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
                     Continue to Add-ons <ChevronRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
@@ -443,7 +549,7 @@ export default function BookingPage() {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Passenger</span>
-                        <span className="font-medium text-foreground">1 Adult</span>
+                        <span className="font-medium text-foreground">{firstName || "1"} {lastName}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Seat</span>
