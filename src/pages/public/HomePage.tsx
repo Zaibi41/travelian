@@ -40,21 +40,21 @@ const topCountries = [
 export default function HomePage() {
   return (
     <div>
-      {/* Hero */}
-      <section className="relative overflow-hidden gradient-hero py-20 md:py-28">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-primary/30 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-20 w-96 h-96 bg-gold/20 rounded-full blur-3xl" />
+      {/* Hero — compact */}
+      <section className="relative overflow-hidden gradient-hero pt-10 pb-8 md:pt-12 md:pb-10">
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
+          <div className="absolute top-10 left-10 w-72 h-72 bg-primary/30 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-20 w-96 h-96 bg-gold/20 rounded-full blur-3xl" />
         </div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold font-display text-primary-foreground mb-1 tracking-tight animate-fade-in-up">
+          <h1 className="text-xl md:text-2xl font-bold font-display text-primary-foreground mb-0.5 tracking-tight animate-fade-in-up">
             Travelian
           </h1>
-          <p className="text-primary-foreground/70 text-base md:text-lg font-medium mb-8 animate-fade-in">
+          <p className="text-primary-foreground/70 text-sm md:text-base font-medium mb-5 animate-fade-in">
             Your Trusted Travel Partner
           </p>
           <SearchTabs />
-          <div className="flex items-center justify-center gap-4 mt-6 text-xs text-primary-foreground/40">
+          <div className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 mt-4 text-xs text-primary-foreground/50">
             <span>Popular:</span>
             {["Makkah Flights", "Istanbul Hotels", "Dubai Tours", "Umrah 2025"].map(t => (
               <Link key={t} to="/flights-search" className="hover:text-gold transition-colors underline underline-offset-2">{t}</Link>

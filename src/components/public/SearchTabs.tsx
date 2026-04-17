@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Hotel, Plane, Compass, Car, Package, Search, MapPin, Users, ChevronDown, ArrowLeftRight, Plus, CalendarIcon } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Hotel, Plane, Compass, Car, Package, Search, MapPin, Users, ChevronDown, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +22,7 @@ const tripTypes = [
   { id: "multicity", label: "Multi-city" },
 ];
 
-const cabinClasses = ["Economy", "Premium Economy", "Business", "First"];
+const cabinClasses = ["Economy", "Premium Economy", "Business Class", "First Class"];
 
 interface MultiCitySegment {
   from: string;
@@ -34,7 +34,7 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className={cn(
+        <button type="button" className={cn(
           "flex items-center gap-2 w-full h-12 bg-muted/30 border border-muted rounded-xl px-3 text-sm text-left transition-colors hover:border-primary/30",
           !date && "text-muted-foreground"
         )}>
@@ -42,7 +42,7 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
           {date ? format(date, "MMM dd, yyyy") : placeholder}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0 z-[200]" align="start">
         <Calendar mode="single" selected={date} onSelect={onSelect} initialFocus className="p-3 pointer-events-auto" />
       </PopoverContent>
     </Popover>
@@ -51,7 +51,7 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
 
 export function SearchTabs() {
   const [activeTab, setActiveTab] = useState("flights");
-  const [tripType, setTripType] = useState("roundtrip");
+  const [tripType, setTripType] = useState("oneway"); // default One-way
   const [showPassengers, setShowPassengers] = useState(false);
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
@@ -69,6 +69,19 @@ export function SearchTabs() {
     { from: "", to: "", date: undefined },
   ]);
   const navigate = useNavigate();
+  const passengerRef = useRef<HTMLDivElement>(null);
+
+  // Close passenger dropdown on outside click
+  useEffect(() => {
+    if (!showPassengers) return;
+    const handler = (e: MouseEvent) => {
+      if (passengerRef.current && !passengerRef.current.contains(e.target as Node)) {
+        setShowPassengers(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showPassengers]);
 
   const handleSearch = () => {
     if (activeTab === "flights") navigate("/flights-search");
@@ -99,9 +112,9 @@ export function SearchTabs() {
   };
 
   return (
-    <div className="bg-card rounded-2xl shadow-elevated p-0 max-w-6xl mx-auto overflow-visible animate-scale-in">
+    <div className="bg-card rounded-2xl shadow-elevated max-w-6xl mx-auto overflow-hidden animate-scale-in">
       {/* Tabs */}
-      <div className="flex bg-muted/60">
+      <div className="flex bg-muted/60 rounded-t-2xl overflow-hidden">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -122,7 +135,7 @@ export function SearchTabs() {
         {/* Flight-specific controls */}
         {activeTab === "flights" && (
           <>
-            <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center bg-muted/40 rounded-lg p-0.5">
                 {tripTypes.map(t => (
                   <button
@@ -138,8 +151,9 @@ export function SearchTabs() {
                   </button>
                 ))}
               </div>
-              <div className="relative">
+              <div className="relative" ref={passengerRef}>
                 <button
+                  type="button"
                   onClick={() => setShowPassengers(!showPassengers)}
                   className="flex items-center gap-2 text-xs font-medium text-foreground bg-muted/40 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
                 >
@@ -148,7 +162,7 @@ export function SearchTabs() {
                   <ChevronDown className="h-3 w-3" />
                 </button>
                 {showPassengers && (
-                  <div className="absolute top-full left-0 mt-2 bg-card border rounded-xl shadow-elevated p-4 z-[100] w-72 animate-scale-in">
+                  <div className="absolute top-full left-0 mt-2 bg-card border rounded-xl shadow-elevated p-4 z-[100] w-80 animate-scale-in">
                     <div className="space-y-3">
                       {[
                         { label: "Adults", sub: "12+ years", value: adults, set: setAdults, min: 1 },
@@ -162,12 +176,14 @@ export function SearchTabs() {
                           </div>
                           <div className="flex items-center gap-2">
                             <button
+                              type="button"
                               onClick={() => p.set(Math.max(p.min, p.value - 1))}
                               className="h-7 w-7 rounded-full border flex items-center justify-center text-sm hover:bg-muted disabled:opacity-40"
                               disabled={p.value <= p.min}
                             >−</button>
                             <span className="text-sm font-semibold w-5 text-center">{p.value}</span>
                             <button
+                              type="button"
                               onClick={() => p.set(p.value + 1)}
                               className="h-7 w-7 rounded-full border flex items-center justify-center text-sm hover:bg-muted"
                             >+</button>
@@ -177,12 +193,13 @@ export function SearchTabs() {
                     </div>
                     <div className="mt-3 pt-3 border-t">
                       <p className="text-xs font-medium text-muted-foreground mb-2">Cabin Class</p>
-                      <div className="grid grid-cols-2 gap-1">
+                      <div className="grid grid-cols-2 gap-1.5">
                         {cabinClasses.map(c => (
                           <button
                             key={c}
+                            type="button"
                             onClick={() => setCabin(c)}
-                            className={`text-xs px-2 py-1.5 rounded-md transition-all ${
+                            className={`text-xs px-2 py-2 rounded-md transition-all text-center ${
                               cabin === c ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground hover:bg-muted"
                             }`}
                           >{c}</button>
@@ -233,35 +250,37 @@ export function SearchTabs() {
                     <div className="flex items-center h-12">
                       {multiCitySegments.length > 2 && (
                         <button
+                          type="button"
                           onClick={() => removeSegment(idx)}
-                          className="text-xs text-destructive hover:text-destructive/80 font-medium px-2"
-                        >✕</button>
+                          className="h-9 w-9 rounded-full border border-destructive/30 text-destructive hover:bg-destructive/10 flex items-center justify-center transition-colors"
+                          aria-label="Remove segment"
+                        ><X className="h-4 w-4" /></button>
                       )}
                     </div>
                   </div>
                 ))}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between gap-3 pt-1">
                   <button
+                    type="button"
                     onClick={addMultiCitySegment}
-                    className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                    className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
                   >
-                    <Plus className="h-3.5 w-3.5" /> Add Flight
+                    <Plus className="h-4 w-4" /> Add Flight
                   </button>
-                  <div className="flex-1" />
                   <Button onClick={handleSearch} className="h-12 px-8 gradient-primary text-primary-foreground font-semibold rounded-xl">
-                    <Search className="h-4 w-4 mr-2" /> Search
+                    <Search className="h-4 w-4 mr-2" /> Search Flights
                   </Button>
                 </div>
               </div>
-            ) : (
-              /* One-way / Round-trip layout */
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-center">
+            ) : tripType === "oneway" ? (
+              /* One-way: From | swap | To | Date | Search (compact, balanced) */
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-center">
                 <div className="relative">
                   <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
                   <Input placeholder="From where?" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
                 </div>
                 <div className="hidden md:flex items-center justify-center">
-                  <button className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
+                  <button type="button" className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
                     <ArrowLeftRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -270,12 +289,29 @@ export function SearchTabs() {
                   <Input placeholder="To where?" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
                 </div>
                 <DatePickerField date={departDate} onSelect={setDepartDate} placeholder="Departure date" />
-                {tripType === "roundtrip" ? (
-                  <DatePickerField date={returnDate} onSelect={setReturnDate} placeholder="Return date" />
-                ) : (
-                  <div />
-                )}
-                <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
+                <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl whitespace-nowrap">
+                  <Search className="h-4 w-4 mr-2" /> Search
+                </Button>
+              </div>
+            ) : (
+              /* Round-trip: adds return date */
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-center">
+                <div className="relative">
+                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="From where?" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+                </div>
+                <div className="hidden md:flex items-center justify-center">
+                  <button type="button" className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
+                    <ArrowLeftRight className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="relative">
+                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
+                  <Input placeholder="To where?" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+                </div>
+                <DatePickerField date={departDate} onSelect={setDepartDate} placeholder="Departure date" />
+                <DatePickerField date={returnDate} onSelect={setReturnDate} placeholder="Return date" />
+                <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl whitespace-nowrap">
                   <Search className="h-4 w-4" />
                 </Button>
               </div>
