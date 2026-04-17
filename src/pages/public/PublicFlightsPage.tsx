@@ -7,7 +7,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plane, Search, Wifi, Briefcase, Coffee, ArrowLeftRight, Users, Clock, Shield, ChevronDown, Luggage, CalendarIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Users, Shield, Luggage, CalendarIcon, Pencil } from "lucide-react";
 import { mockFlights } from "@/data/mock";
 import { Link } from "react-router-dom";
 import { format, addDays } from "date-fns";
@@ -15,12 +16,43 @@ import { cn } from "@/lib/utils";
 
 export default function PublicFlightsPage() {
   const [search, setSearch] = useState("");
+  const [from, setFrom] = useState("Lahore (LHE)");
+  const [to, setTo] = useState("Jeddah (JED)");
+  const [travelers, setTravelers] = useState("1 Adult, Economy");
   const [priceRange, setPriceRange] = useState([0, 700]);
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [sort, setSort] = useState("best");
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
   const [departDate, setDepartDate] = useState<Date>(new Date());
-  const [selectedDayIndex, setSelectedDayIndex] = useState(3); // middle of week
+  const [selectedDayIndex, setSelectedDayIndex] = useState(3); // center
+  const [modifyOpen, setModifyOpen] = useState(false);
+
+  // Modal-local edit state
+  const [editFrom, setEditFrom] = useState(from);
+  const [editTo, setEditTo] = useState(to);
+  const [editDate, setEditDate] = useState<Date | undefined>(departDate);
+  const [editTravelers, setEditTravelers] = useState(travelers);
+
+  const openModify = () => {
+    setEditFrom(from);
+    setEditTo(to);
+    setEditDate(departDate);
+    setEditTravelers(travelers);
+    setModifyOpen(true);
+  };
+
+  const applyModify = () => {
+    setFrom(editFrom);
+    setTo(editTo);
+    if (editDate) setDepartDate(editDate);
+    setTravelers(editTravelers);
+    setModifyOpen(false);
+  };
+
+  const swap = () => {
+    setFrom(to);
+    setTo(from);
+  };
 
   const toggleAirline = (a: string) => setSelectedAirlines(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
 
@@ -46,56 +78,72 @@ export default function PublicFlightsPage() {
     return fDur < fastDur ? f : fast;
   }, filtered[0]) : null;
 
-  // Date flexibility row - 7 days around selected date
+  // 7 days centered around selected date (index 3 = center)
   const dateFlexDays = useMemo(() => {
-    const base = addDays(departDate, -3 + selectedDayIndex === 3 ? -3 : -3);
     return Array.from({ length: 7 }, (_, i) => {
       const d = addDays(departDate, i - 3);
-      const price = Math.round(180 + Math.random() * 300);
-      return { date: d, price, isCheapest: false };
+      return { date: d };
     });
   }, [departDate]);
-
-  // Mark cheapest
-  const cheapestDayPrice = Math.min(...dateFlexDays.map(d => d.price));
-  dateFlexDays.forEach(d => { d.isCheapest = d.price === cheapestDayPrice; });
 
   return (
     <div>
       {/* Sticky Search Hero */}
-      <section className="gradient-hero py-6 sticky top-0 z-40 shadow-md">
+      <section className="gradient-hero py-5 sticky top-0 z-40 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-card/10 backdrop-blur-sm rounded-2xl p-4 border border-primary-foreground/10">
+          <div className="bg-card/10 backdrop-blur-sm rounded-2xl p-3.5 border border-primary-foreground/10">
+            {/* Internal route summary */}
+            <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+              <div className="flex items-center gap-2 text-primary-foreground text-sm">
+                <Plane className="h-4 w-4" />
+                <span className="font-semibold">{from}</span>
+                <ArrowLeftRight className="h-3.5 w-3.5 opacity-60" />
+                <span className="font-semibold">{to}</span>
+                <span className="text-primary-foreground/60 text-xs">·</span>
+                <span className="text-primary-foreground/80 text-xs">{format(departDate, "EEE, MMM d")}</span>
+                <span className="text-primary-foreground/60 text-xs">·</span>
+                <span className="text-primary-foreground/80 text-xs">{travelers}</span>
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={openModify}
+                className="rounded-lg gap-2"
+              >
+                <Pencil className="h-3.5 w-3.5" /> Modify Search
+              </Button>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-center">
               <div className="relative">
-                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-primary-foreground/60" />
-                <Input placeholder="From where?" className="pl-9 h-12 bg-card rounded-xl border-0" value={search} onChange={e => setSearch(e.target.value)} />
+                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                <Input value={from} onChange={e => setFrom(e.target.value)} placeholder="From where?" className="pl-9 h-12 bg-card rounded-xl border-0" />
               </div>
               <div className="hidden md:flex items-center justify-center">
-                <button className="h-9 w-9 rounded-full border-2 border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/10 transition-colors">
+                <button type="button" onClick={swap} className="h-9 w-9 rounded-full border-2 border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/10 transition-colors">
                   <ArrowLeftRight className="h-4 w-4" />
                 </button>
               </div>
               <div className="relative">
-                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-primary-foreground/60 rotate-90" />
-                <Input placeholder="To where?" className="pl-9 h-12 bg-card rounded-xl border-0" />
+                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
+                <Input value={to} onChange={e => setTo(e.target.value)} placeholder="To where?" className="pl-9 h-12 bg-card rounded-xl border-0" />
               </div>
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="flex items-center gap-2 h-12 bg-card rounded-xl px-3 text-sm text-muted-foreground w-full text-left">
-                    <CalendarIcon className="h-4 w-4 shrink-0" />
-                    {departDate ? format(departDate, "MMM dd, yyyy") : "Select date"}
+                  <button type="button" className="flex items-center gap-2 h-12 bg-card rounded-xl px-3 text-sm text-foreground w-full text-left">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    {format(departDate, "MMM dd, yyyy")}
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 z-[200]" align="start">
                   <Calendar mode="single" selected={departDate} onSelect={(d) => d && setDepartDate(d)} initialFocus className="p-3 pointer-events-auto" />
                 </PopoverContent>
               </Popover>
               <div className="relative">
                 <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="1 Adult, Economy" className="pl-9 h-12 bg-card rounded-xl border-0" />
+                <Input value={travelers} onChange={e => setTravelers(e.target.value)} className="pl-9 h-12 bg-card rounded-xl border-0" />
               </div>
-              <Button className="h-12 px-6 gradient-primary text-primary-foreground rounded-xl font-semibold">
+              <Button onClick={openModify} className="h-12 px-6 gradient-primary text-primary-foreground rounded-xl font-semibold whitespace-nowrap">
                 <Search className="h-4 w-4 mr-2" /> Modify Search
               </Button>
             </div>
@@ -103,30 +151,29 @@ export default function PublicFlightsPage() {
         </div>
       </section>
 
-      {/* Date Flexibility Row */}
+      {/* Date Flexibility Row — centered, "See Price" subtitle */}
       <div className="bg-card border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-1 py-3 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center justify-center gap-1.5 py-3 overflow-x-auto scrollbar-hide">
             {dateFlexDays.map((day, i) => (
               <button
                 key={i}
-                onClick={() => setSelectedDayIndex(i)}
+                onClick={() => {
+                  setSelectedDayIndex(i);
+                  setDepartDate(day.date);
+                  setSelectedDayIndex(3);
+                }}
                 className={cn(
-                  "flex flex-col items-center px-4 py-2 rounded-xl text-xs font-medium transition-all min-w-[80px] shrink-0",
+                  "flex flex-col items-center px-4 py-2 rounded-xl text-xs font-medium transition-all min-w-[100px] shrink-0",
                   selectedDayIndex === i
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : day.isCheapest
-                    ? "bg-success/10 text-success hover:bg-success/20"
-                    : "text-muted-foreground hover:bg-muted/50"
+                    : "text-muted-foreground hover:bg-muted/50",
                 )}
               >
                 <span>{format(day.date, "EEE, MMM d")}</span>
-                <span className={cn("font-bold mt-0.5", selectedDayIndex === i ? "text-primary-foreground" : day.isCheapest ? "text-success" : "text-foreground")}>
-                  ${day.price}
+                <span className={cn("text-[10px] mt-0.5", selectedDayIndex === i ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                  See Price
                 </span>
-                {day.isCheapest && selectedDayIndex !== i && (
-                  <span className="text-[9px] text-success font-semibold">Cheapest</span>
-                )}
               </button>
             ))}
           </div>
@@ -330,6 +377,58 @@ export default function PublicFlightsPage() {
           </div>
         </div>
       </div>
+
+      {/* Modify Search Dialog */}
+      <Dialog open={modifyOpen} onOpenChange={setModifyOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Modify Search</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">From</label>
+              <div className="relative">
+                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                <Input value={editFrom} onChange={e => setEditFrom(e.target.value)} className="pl-9 h-11 rounded-xl" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">To</label>
+              <div className="relative">
+                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
+                <Input value={editTo} onChange={e => setEditTo(e.target.value)} className="pl-9 h-11 rounded-xl" />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Departure Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button type="button" className="flex items-center gap-2 h-11 w-full bg-background border border-input rounded-xl px-3 text-sm text-left">
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    {editDate ? format(editDate, "MMM dd, yyyy") : "Select date"}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-[300]" align="start">
+                  <Calendar mode="single" selected={editDate} onSelect={setEditDate} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Travelers & Class</label>
+              <div className="relative">
+                <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                <Input value={editTravelers} onChange={e => setEditTravelers(e.target.value)} className="pl-9 h-11 rounded-xl" />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModifyOpen(false)} className="rounded-xl">Cancel</Button>
+            <Button onClick={applyModify} className="gradient-primary text-primary-foreground rounded-xl">
+              <Search className="h-4 w-4 mr-2" /> Search Flights
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
