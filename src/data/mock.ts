@@ -44,6 +44,7 @@ export interface UmrahPackage {
   status: 'active' | 'inactive';
   includes: string[];
   category: 'umrah' | 'tour' | 'visa';
+  image?: string;
 }
 
 export interface Booking {
@@ -191,10 +192,10 @@ export const mockPackages: UmrahPackage[] = [
 ];
 
 export const mockTourPackages: UmrahPackage[] = [
-  { packageId: 't1', name: 'Turkey Explorer', description: '8-day guided tour of Istanbul, Cappadocia, and Pamukkale', basePrice: 1500, duration: '8 days', hotel: 'Grand Hyatt Istanbul', city: 'Istanbul & Cappadocia', status: 'active', includes: ['Flights', 'Hotel', 'Guided Tours', 'Breakfast', 'Transport'], category: 'tour' },
-  { packageId: 't2', name: 'Dubai Luxury', description: '5-day luxury Dubai experience with desert safari', basePrice: 2800, duration: '5 days', hotel: 'Atlantis The Palm', city: 'Dubai', status: 'active', includes: ['Flights', 'Hotel', 'Desert Safari', 'City Tour', 'Meals'], category: 'tour' },
-  { packageId: 't3', name: 'Malaysia Adventure', description: '7-day Malaysia tour covering KL, Langkawi, and Penang', basePrice: 1100, duration: '7 days', hotel: 'Shangri-La KL', city: 'Kuala Lumpur & Langkawi', status: 'active', includes: ['Flights', 'Hotel', 'Tours', 'Transport'], category: 'tour' },
-  { packageId: 't4', name: 'Egypt Heritage', description: '10-day historical tour of Cairo, Luxor, and Aswan', basePrice: 1900, duration: '10 days', hotel: 'Marriott Mena House', city: 'Cairo & Luxor', status: 'inactive', includes: ['Flights', 'Hotel', 'Guide', 'Nile Cruise', 'Meals'], category: 'tour' },
+  { packageId: 't1', name: 'Turkey Explorer', description: '8-day guided tour of Istanbul, Cappadocia, and Pamukkale', basePrice: 1500, duration: '8 days', hotel: 'Grand Hyatt Istanbul', city: 'Istanbul & Cappadocia', status: 'active', includes: ['Flights', 'Hotel', 'Guided Tours', 'Breakfast', 'Transport'], category: 'tour', image: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=900&h=580&fit=crop&q=80' },
+  { packageId: 't2', name: 'Dubai Luxury', description: '5-day luxury Dubai experience with desert safari', basePrice: 2800, duration: '5 days', hotel: 'Atlantis The Palm', city: 'Dubai', status: 'active', includes: ['Flights', 'Hotel', 'Desert Safari', 'City Tour', 'Meals'], category: 'tour', image: 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=900&h=580&fit=crop&q=80' },
+  { packageId: 't3', name: 'Malaysia Adventure', description: '7-day Malaysia tour covering KL, Langkawi, and Penang', basePrice: 1100, duration: '7 days', hotel: 'Shangri-La KL', city: 'Kuala Lumpur & Langkawi', status: 'active', includes: ['Flights', 'Hotel', 'Tours', 'Transport'], category: 'tour', image: 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=900&h=580&fit=crop&q=80' },
+  { packageId: 't4', name: 'Egypt Heritage', description: '10-day historical tour of Cairo, Luxor, and Aswan', basePrice: 1900, duration: '10 days', hotel: 'Marriott Mena House', city: 'Cairo & Luxor', status: 'inactive', includes: ['Flights', 'Hotel', 'Guide', 'Nile Cruise', 'Meals'], category: 'tour', image: 'https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=900&h=580&fit=crop&q=80' },
 ];
 
 export const mockVisaPackages: UmrahPackage[] = [
@@ -237,12 +238,12 @@ export const mockNotifications: Notification[] = [
 
 // ─── Hotels ───
 export const mockHotels: Hotel[] = [
-  { hotelId: 'h1', name: 'Swissotel Al Maqam', city: 'Makkah', country: 'Saudi Arabia', starRating: 5, pricePerNight: 350, rooms: 1500, amenities: ['WiFi', 'Pool', 'Gym', 'Spa', 'Restaurant', 'Room Service'], status: 'active' },
-  { hotelId: 'h2', name: 'Hilton Suites Makkah', city: 'Makkah', country: 'Saudi Arabia', starRating: 4, pricePerNight: 220, rooms: 800, amenities: ['WiFi', 'Restaurant', 'Room Service', 'Laundry'], status: 'active' },
-  { hotelId: 'h3', name: 'Al Madinah Hotel', city: 'Madinah', country: 'Saudi Arabia', starRating: 3, pricePerNight: 120, rooms: 400, amenities: ['WiFi', 'Restaurant', 'Parking'], status: 'active' },
-  { hotelId: 'h4', name: 'Pullman Zamzam', city: 'Makkah', country: 'Saudi Arabia', starRating: 5, pricePerNight: 400, rooms: 1200, amenities: ['WiFi', 'Pool', 'Gym', 'Spa', 'Multiple Restaurants', 'Concierge'], status: 'active' },
-  { hotelId: 'h5', name: 'Movenpick Hotel', city: 'Madinah', country: 'Saudi Arabia', starRating: 4, pricePerNight: 180, rooms: 600, amenities: ['WiFi', 'Restaurant', 'Pool', 'Gym'], status: 'inactive' },
-  { hotelId: 'h6', name: 'Grand Hyatt Istanbul', city: 'Istanbul', country: 'Turkey', starRating: 5, pricePerNight: 280, rooms: 950, amenities: ['WiFi', 'Pool', 'Spa', 'Restaurant', 'Bar', 'Gym'], status: 'active' },
+  { hotelId: 'h1', name: 'Swissotel Al Maqam', city: 'Makkah', country: 'Saudi Arabia', starRating: 5, pricePerNight: 350, rooms: 1500, amenities: ['WiFi', 'Pool', 'Gym', 'Spa', 'Restaurant', 'Room Service'], status: 'active', image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800&h=600&fit=crop&q=80' },
+  { hotelId: 'h2', name: 'Hilton Suites Makkah', city: 'Makkah', country: 'Saudi Arabia', starRating: 4, pricePerNight: 220, rooms: 800, amenities: ['WiFi', 'Restaurant', 'Room Service', 'Laundry'], status: 'active', image: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&h=600&fit=crop&q=80' },
+  { hotelId: 'h3', name: 'Al Madinah Hotel', city: 'Madinah', country: 'Saudi Arabia', starRating: 3, pricePerNight: 120, rooms: 400, amenities: ['WiFi', 'Restaurant', 'Parking'], status: 'active', image: 'https://images.unsplash.com/photo-1590076215667-875d4ef2d7de?w=800&h=600&fit=crop&q=80' },
+  { hotelId: 'h4', name: 'Pullman Zamzam', city: 'Makkah', country: 'Saudi Arabia', starRating: 5, pricePerNight: 400, rooms: 1200, amenities: ['WiFi', 'Pool', 'Gym', 'Spa', 'Multiple Restaurants', 'Concierge'], status: 'active', image: 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop&q=80' },
+  { hotelId: 'h5', name: 'Movenpick Hotel', city: 'Madinah', country: 'Saudi Arabia', starRating: 4, pricePerNight: 180, rooms: 600, amenities: ['WiFi', 'Restaurant', 'Pool', 'Gym'], status: 'inactive', image: 'https://images.unsplash.com/photo-1445019980599-0354988e8f8a?w=800&h=600&fit=crop&q=80' },
+  { hotelId: 'h6', name: 'Grand Hyatt Istanbul', city: 'Istanbul', country: 'Turkey', starRating: 5, pricePerNight: 280, rooms: 950, amenities: ['WiFi', 'Pool', 'Spa', 'Restaurant', 'Bar', 'Gym'], status: 'active', image: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=800&h=600&fit=crop&q=80' },
 ];
 
 // ─── Flights ───

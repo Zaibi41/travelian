@@ -2,12 +2,12 @@ import { SearchTabs } from "@/components/public/SearchTabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, MapPin, ArrowRight, Shield, Clock, Headphones, CreditCard, Flame, TrendingUp, Heart, ChevronRight, Percent, Zap, Globe, Award, Plane, Check } from "lucide-react";
+import { Star, MapPin, ArrowRight, Shield, Headphones, CreditCard, Flame, TrendingUp, Heart, ChevronRight, Percent, Zap, Globe, Award, Plane, Check, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { mockPackages, mockTourPackages, mockHotels, mockBlogPosts } from "@/data/mock";
 
 const destinations = [
-  { name: "Makkah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d99f7e?w=400&h=500&fit=crop", properties: 234, badge: "Popular" },
+  { name: "Makkah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=400&h=500&fit=crop&q=80", properties: 234, badge: "Popular" },
   { name: "Istanbul", country: "Turkey", image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=400&h=500&fit=crop", properties: 1850 },
   { name: "Dubai", country: "UAE", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&h=500&fit=crop", properties: 3200, badge: "Trending" },
   { name: "Kuala Lumpur", country: "Malaysia", image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&h=500&fit=crop", properties: 2100 },
@@ -24,17 +24,17 @@ const deals = [
 const features = [
   { icon: Shield, title: "Secure Booking", desc: "256-bit SSL encrypted payments" },
   { icon: Award, title: "Best Price Guarantee", desc: "Find it cheaper? We'll match it" },
-  { icon: Clock, title: "Free Cancellation", desc: "On most properties within 24h" },
+  { icon: Percent, title: "No Hidden Charges", desc: "Transparent pricing, no surprises" },
   { icon: Headphones, title: "24/7 Support", desc: "Round the clock assistance" },
 ];
 
 const topCountries = [
-  { country: "Saudi Arabia", flag: "🇸🇦", properties: 2340, popular: ["Makkah", "Madinah", "Riyadh", "Jeddah"] },
-  { country: "Turkey", flag: "🇹🇷", properties: 5670, popular: ["Istanbul", "Antalya", "Cappadocia", "Bodrum"] },
-  { country: "UAE", flag: "🇦🇪", properties: 4120, popular: ["Dubai", "Abu Dhabi", "Sharjah", "Ras Al Khaimah"] },
-  { country: "Malaysia", flag: "🇲🇾", properties: 3890, popular: ["KL", "Langkawi", "Penang", "Johor Bahru"] },
-  { country: "Egypt", flag: "🇪🇬", properties: 1890, popular: ["Cairo", "Luxor", "Sharm El Sheikh", "Hurghada"] },
-  { country: "Indonesia", flag: "🇮🇩", properties: 8920, popular: ["Bali", "Jakarta", "Yogyakarta", "Lombok"] },
+  { country: "Saudi Arabia", flag: "🇸🇦", properties: 2340, popular: ["Makkah", "Madinah", "Riyadh", "Jeddah"], image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=900&h=620&fit=crop&q=80" },
+  { country: "Turkey", flag: "🇹🇷", properties: 5670, popular: ["Istanbul", "Antalya", "Cappadocia", "Bodrum"], image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=900&h=620&fit=crop&q=80" },
+  { country: "UAE", flag: "🇦🇪", properties: 4120, popular: ["Dubai", "Abu Dhabi", "Sharjah", "Ras Al Khaimah"], image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=900&h=620&fit=crop&q=80" },
+  { country: "Malaysia", flag: "🇲🇾", properties: 3890, popular: ["KL", "Langkawi", "Penang", "Johor Bahru"], image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=900&h=620&fit=crop&q=80" },
+  { country: "Egypt", flag: "🇪🇬", properties: 1890, popular: ["Cairo", "Luxor", "Sharm El Sheikh", "Hurghada"], image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=900&h=620&fit=crop&q=80" },
+  { country: "Indonesia", flag: "🇮🇩", properties: 8920, popular: ["Bali", "Jakarta", "Yogyakarta", "Lombok"], image: "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=900&h=620&fit=crop&q=80" },
 ];
 
 export default function HomePage() {
@@ -163,8 +163,20 @@ export default function HomePage() {
             {mockHotels.filter(h => h.status === 'active').slice(0, 3).map((hotel) => (
               <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
                 <Card className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
-                  <div className="h-48 bg-gradient-to-br from-primary/5 to-accent flex items-center justify-center relative">
-                    <span className="text-6xl group-hover:scale-110 transition-transform duration-500">🏨</span>
+                  <div className="h-48 relative overflow-hidden bg-muted">
+                    {hotel.image ? (
+                      <img
+                        src={hotel.image}
+                        alt={hotel.name}
+                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent text-6xl transition-transform duration-500 group-hover:scale-110">
+                        🏨
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/25 to-transparent pointer-events-none" />
                     <div className="absolute top-3 left-3 flex items-center gap-1">
                       {Array.from({ length: hotel.starRating }).map((_, i) => (
                         <Star key={i} className="h-3.5 w-3.5 fill-gold text-gold" />
@@ -260,31 +272,43 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Top Properties by Country */}
+      {/* Top Destinations by Country */}
       <section className="py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2">
               <Globe className="h-5 w-5 text-primary" />
-              <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Top Properties by Country</h2>
+              <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Top Destinations by Country</h2>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {topCountries.map((c) => (
-              <Card key={c.country} className="p-5 hover:shadow-hover transition-all duration-300 cursor-pointer group border-0 shadow-card">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-3xl">{c.flag}</span>
-                  <div>
-                    <h3 className="font-semibold text-foreground">{c.country}</h3>
-                    <p className="text-xs text-muted-foreground">{c.properties.toLocaleString()} properties</p>
+              <Card key={c.country} className="relative overflow-hidden hover:shadow-hover transition-all duration-300 cursor-pointer group border-0 shadow-card min-h-[220px] md:min-h-[260px] lg:min-h-[280px]">
+                <img
+                  src={c.image}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25" aria-hidden="true" />
+                <div className="relative z-10 flex h-full min-h-[220px] md:min-h-[260px] lg:min-h-[280px] flex-col justify-end p-5 md:p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-3xl drop-shadow-md">{c.flag}</span>
+                    <div>
+                      <h3 className="font-semibold text-white drop-shadow-sm">{c.country}</h3>
+                      <p className="text-xs text-white/80">{c.properties.toLocaleString()} properties</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {c.popular.map(city => (
-                    <Link key={city} to="/hotels-search" className="text-xs text-primary bg-accent px-2.5 py-1 rounded-full hover:bg-primary hover:text-primary-foreground transition-colors">
-                      {city}
-                    </Link>
-                  ))}
+                  <div className="flex flex-wrap gap-2">
+                    {c.popular.map(city => (
+                      <Link
+                        key={city}
+                        to="/hotels-search"
+                        className="text-xs font-medium text-foreground bg-white/90 px-2.5 py-1 rounded-full hover:bg-white transition-colors shadow-sm"
+                      >
+                        {city}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </Card>
             ))}
@@ -307,12 +331,23 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {mockTourPackages.filter(t => t.status === 'active').map((tour) => (
               <Card key={tour.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
-                <div className="h-44 bg-gradient-to-br from-info/10 to-accent flex items-center justify-center relative">
-                  <span className="text-5xl group-hover:scale-110 transition-transform duration-500">
-                    {tour.city.includes('Istanbul') ? '🕌' : tour.city.includes('Dubai') ? '🏙️' : '🌴'}
-                  </span>
-                  <Badge className="absolute top-3 left-3 bg-primary text-primary-foreground border-0 text-xs rounded-lg">{tour.duration}</Badge>
-                  <button className="absolute top-3 right-3 h-8 w-8 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-foreground/40 transition-colors">
+                <div className="relative h-44 overflow-hidden bg-muted">
+                  {tour.image ? (
+                    <img
+                      src={tour.image}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-info/10 to-accent">
+                      <span className="text-5xl">
+                        {tour.city.includes('Istanbul') ? '🕌' : tour.city.includes('Dubai') ? '🏙️' : '🌴'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" aria-hidden="true" />
+                  <Badge className="absolute top-3 left-3 z-10 bg-primary text-primary-foreground border-0 text-xs rounded-lg shadow-sm">{tour.duration}</Badge>
+                  <button type="button" className="absolute top-3 right-3 z-10 h-8 w-8 rounded-full bg-black/35 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors">
                     <Heart className="h-4 w-4" />
                   </button>
                 </div>
@@ -369,27 +404,34 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* App Promo */}
+      {/* WhatsApp CTA */}
       <section className="py-16 gradient-primary relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary-foreground/20 rounded-full -mr-48 -mt-48" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-gold/20 rounded-full -ml-32 -mb-32" />
         </div>
         <div className="relative max-w-4xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 bg-gold/20 text-gold text-sm px-4 py-1.5 rounded-full mb-6 border border-gold/30">
-            <Award className="h-3.5 w-3.5" /> Verified Platform
+          <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-100 text-sm px-4 py-1.5 rounded-full mb-6 border border-emerald-400/35">
+            <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
           </div>
           <h2 className="text-2xl md:text-4xl font-extrabold font-display text-primary-foreground mb-4">
-            Get exclusive app-only deals
+            Plan Your Journey with Confidence
           </h2>
-          <p className="text-primary-foreground/60 mb-8 max-w-lg mx-auto">
-            Download the Travelian app for members-only prices, instant booking confirmation, and 24/7 support.
+          <p className="text-primary-foreground/85 mb-8 max-w-lg mx-auto text-base md:text-lg">
+            Book Umrah, flights, and visas with trusted experts. Fast processing, best prices, and full support.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" variant="secondary" className="font-semibold rounded-xl">
-              📱 Download App
+            <Button size="lg" className="font-semibold rounded-xl bg-[#25D366] text-white hover:bg-[#20BD5A] border-0 shadow-lg shadow-emerald-900/20" asChild>
+              <a href="https://wa.me/923001234567?text=Hi%2C%20I%27d%20like%20a%20free%20quote%20for%20my%20travel%20plans." target="_blank" rel="noopener noreferrer">
+                Get a Free Quote
+              </a>
             </Button>
-            <Button size="lg" variant="outline" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 font-semibold rounded-xl" asChild>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-2 border-primary-foreground/80 bg-primary-foreground text-primary hover:bg-primary-foreground/90 hover:text-primary font-semibold rounded-xl shadow-sm"
+              asChild
+            >
               <Link to="/umrah-packages">Browse Packages</Link>
             </Button>
           </div>

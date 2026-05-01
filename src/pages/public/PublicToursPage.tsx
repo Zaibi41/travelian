@@ -20,8 +20,18 @@ export default function PublicToursPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tours.map(tour => (
             <Card key={tour.packageId} className="overflow-hidden hover:shadow-elevated transition-all group">
-              <div className="h-52 bg-gradient-to-br from-info/20 to-accent flex items-center justify-center">
-                <Map className="h-16 w-16 text-info/30 group-hover:scale-110 transition-transform" />
+              <div className="relative h-52 overflow-hidden bg-muted">
+                {tour.image ? (
+                  <img
+                    src={tour.image}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-info/20 to-accent">
+                    <Map className="h-16 w-16 text-info/30 group-hover:scale-110 transition-transform" />
+                  </div>
+                )}
               </div>
               <CardContent className="p-5">
                 <h3 className="text-lg font-semibold text-foreground">{tour.name}</h3>
