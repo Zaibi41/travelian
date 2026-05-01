@@ -42,7 +42,7 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
           {date ? format(date, "MMM dd, yyyy") : placeholder}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 z-[200]" align="start">
+      <PopoverContent className="w-auto p-0" align="start">
         <Calendar mode="single" selected={date} onSelect={onSelect} initialFocus className="p-3 pointer-events-auto" />
       </PopoverContent>
     </Popover>
@@ -112,7 +112,7 @@ export function SearchTabs() {
   };
 
   return (
-    <div className="bg-card rounded-2xl shadow-elevated max-w-6xl mx-auto overflow-hidden animate-scale-in">
+    <div className="relative z-10 bg-card rounded-2xl shadow-elevated max-w-6xl mx-auto animate-scale-in">
       {/* Tabs */}
       <div className="flex bg-muted/60 rounded-t-2xl overflow-hidden">
         {tabs.map((tab) => (
@@ -162,7 +162,7 @@ export function SearchTabs() {
                   <ChevronDown className="h-3 w-3" />
                 </button>
                 {showPassengers && (
-                  <div className="absolute top-full left-0 mt-2 bg-card border rounded-xl shadow-elevated p-4 z-[100] w-80 animate-scale-in">
+                  <div className="absolute top-full left-0 mt-2 bg-card border rounded-xl shadow-elevated p-4 z-20 w-80">
                     <div className="space-y-3">
                       {[
                         { label: "Adults", sub: "12+ years", value: adults, set: setAdults, min: 1 },

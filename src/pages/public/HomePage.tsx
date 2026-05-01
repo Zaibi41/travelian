@@ -41,8 +41,8 @@ export default function HomePage() {
   return (
     <div>
       {/* Hero — compact */}
-      <section className="relative overflow-hidden gradient-hero pt-10 pb-8 md:pt-12 md:pb-10">
-        <div className="absolute inset-0 opacity-10 pointer-events-none">
+      <section className="relative z-10 gradient-hero pt-10 pb-8 md:pt-12 md:pb-10">
+        <div className="absolute inset-0 overflow-hidden opacity-10 pointer-events-none" aria-hidden="true">
           <div className="absolute top-10 left-10 w-72 h-72 bg-primary/30 rounded-full blur-3xl" />
           <div className="absolute bottom-0 right-20 w-96 h-96 bg-gold/20 rounded-full blur-3xl" />
         </div>
