@@ -84,7 +84,7 @@ export default function CouponsPage() {
                 <Progress value={(coupon.usedCount / coupon.maxUses) * 100} className="h-1.5" />
               </div>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{coupon.validFrom} – {coupon.validUntil}</span>
+                <span>{coupon.validFrom} - {coupon.validUntil}</span>
                 <Badge variant="secondary" className="text-[10px] capitalize">{coupon.applicableTo}</Badge>
               </div>
               <p className="text-xs text-muted-foreground">Min order: ${coupon.minOrder}</p>

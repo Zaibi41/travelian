@@ -9,13 +9,13 @@ import { Calendar, MapPin, Star, Heart, User, Settings, CreditCard, Gift, Clock,
 import { Link } from "react-router-dom";
 
 const upcomingTrips = [
-  { id: "b1", hotel: "Swissotel Al Maqam", city: "Makkah, SA", dates: "Apr 15 – Apr 18", room: "Deluxe Room", status: "confirmed", total: 1086, image: "🕋" },
-  { id: "b2", hotel: "Grand Hyatt Istanbul", city: "Istanbul, TR", dates: "May 10 – May 15", room: "Premium Suite", status: "confirmed", total: 2100, image: "🕌" },
+  { id: "b1", hotel: "Swissotel Al Maqam", city: "Makkah, SA", dates: "Apr 15 - Apr 18", room: "Deluxe Room", status: "confirmed", total: 1086, image: "🕋" },
+  { id: "b2", hotel: "Grand Hyatt Istanbul", city: "Istanbul, TR", dates: "May 10 - May 15", room: "Premium Suite", status: "confirmed", total: 2100, image: "🕌" },
 ];
 
 const pastBookings = [
-  { id: "b3", hotel: "Pullman Zamzam", city: "Makkah, SA", dates: "Jan 5 – Jan 12", room: "Standard Room", status: "completed", total: 2800, image: "🏨", reviewed: true },
-  { id: "b4", hotel: "Atlantis The Palm", city: "Dubai, UAE", dates: "Dec 20 – Dec 25", room: "Ocean View", status: "completed", total: 3500, image: "🏖️", reviewed: false },
+  { id: "b3", hotel: "Pullman Zamzam", city: "Makkah, SA", dates: "Jan 5 - Jan 12", room: "Standard Room", status: "completed", total: 2800, image: "🏨", reviewed: true },
+  { id: "b4", hotel: "Atlantis The Palm", city: "Dubai, UAE", dates: "Dec 20 - Dec 25", room: "Ocean View", status: "completed", total: 3500, image: "🏖️", reviewed: false },
 ];
 
 const wishlist = [

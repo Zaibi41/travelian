@@ -12,8 +12,11 @@ const navLinks = [
   { label: "Deals", href: "/deals" },
 ];
 
+type PublicCurrency = "PKR" | "USD";
+
 export function PublicNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [currency, setCurrency] = useState<PublicCurrency>("PKR");
   const location = useLocation();
 
   return (
@@ -26,7 +29,24 @@ export function PublicNavbar() {
               <Globe className="h-3 w-3" /> English
             </button>
             <span className="text-border">|</span>
-            <button className="hover:text-foreground transition-colors">USD $</button>
+            <span className="flex items-center gap-1.5">
+              {(["PKR", "USD"] as const).map((code, i) => (
+                <span key={code} className="flex items-center gap-1.5">
+                  {i > 0 ? <span className="text-border">|</span> : null}
+                  <button
+                    type="button"
+                    onClick={() => setCurrency(code)}
+                    className={`transition-colors ${
+                      currency === code
+                        ? "text-foreground font-medium"
+                        : "hover:text-foreground text-muted-foreground"
+                    }`}
+                  >
+                    {code === "PKR" ? "PKR Rs" : "USD $"}
+                  </button>
+                </span>
+              ))}
+            </span>
           </div>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <Link to="/about" className="hover:text-foreground transition-colors">About</Link>

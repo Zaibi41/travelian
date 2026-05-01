@@ -88,14 +88,14 @@ export default function BookingPage() {
     if (!dob) e.dob = "Date of birth is required";
     if (!docNumber.trim()) e.docNumber = `${requiresPassport ? "Passport" : "CNIC"} number is required`;
     else if (!docValid) e.docNumber = requiresPassport
-      ? "Enter a valid passport number (6–12 letters/digits)"
+      ? "Enter a valid passport number (6-12 letters/digits)"
       : "Enter a valid 13-digit CNIC";
     if (requiresPassport && !expiryDate) e.expiryDate = "Expiry date is required";
     if (!email.trim()) e.email = "Email is required";
     else if (!emailValid) e.email = "Enter a valid email address";
     if (!phone.trim()) e.phone = "Mobile number is required";
-    else if (!phoneValid) e.phone = "Enter a valid numeric phone (6–15 digits)";
-    if (!altPhoneValid) e.altPhone = "Enter a valid numeric phone (6–15 digits)";
+    else if (!phoneValid) e.phone = "Enter a valid numeric phone (6-15 digits)";
+    if (!altPhoneValid) e.altPhone = "Enter a valid numeric phone (6-15 digits)";
     return e;
   }, [firstName, lastName, dob, docNumber, docValid, requiresPassport, expiryDate, email, emailValid, phone, phoneValid, altPhoneValid]);
 
