@@ -8,6 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Star, MapPin, Wifi, UtensilsCrossed, Dumbbell, Search, SlidersHorizontal, Grid3X3, List, Heart, X, ChevronDown, Map as MapIcon, ArrowUpDown, Users, Waves, Coffee } from "lucide-react";
 import { mockHotels } from "@/data/mock";
 import { Link } from "react-router-dom";
+import { PageHeader } from "@/components/public/PageHeader";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const amenityFilters = [
   { id: "wifi", label: "Free WiFi", icon: Wifi },
