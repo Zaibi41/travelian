@@ -54,12 +54,6 @@ export default function HomePage() {
             Your Trusted Travel Partner
           </p>
           <SearchTabs />
-          <div className="flex items-center justify-center flex-wrap gap-x-4 gap-y-1 mt-4 text-xs text-primary-foreground/50">
-            <span>Popular:</span>
-            {["Makkah Flights", "Istanbul Hotels", "Dubai Tours", "Umrah 2025"].map(t => (
-              <Link key={t} to="/flights-search" className="hover:text-gold transition-colors underline underline-offset-2">{t}</Link>
-            ))}
-          </div>
         </div>
       </section>
 

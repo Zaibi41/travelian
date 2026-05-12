@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Hotel, Plane, Compass, Car, Package, Search, MapPin, Users, ChevronDown, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
+import { Hotel, Plane, UsersRound, Car, Package, Search, MapPin, Users, ChevronDown, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +12,7 @@ const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
   { id: "hotels", label: "Hotels", icon: Hotel },
   { id: "packages", label: "Packages", icon: Package },
-  { id: "activities", label: "Activities", icon: Compass },
+  { id: "groupbooking", label: "Group Booking", icon: UsersRound },
   { id: "transfers", label: "Transfers", icon: Car },
 ];
 
@@ -87,7 +87,7 @@ export function SearchTabs() {
     if (activeTab === "flights") navigate("/flights-search");
     else if (activeTab === "hotels") navigate("/hotels-search");
     else if (activeTab === "packages") navigate("/umrah-packages");
-    else if (activeTab === "activities") navigate("/tour-packages");
+    else if (activeTab === "groupbooking") navigate("/contact?type=group");
     else navigate("/tour-packages");
   };
 
