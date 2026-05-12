@@ -355,7 +355,7 @@ export default function HotelDetailPage() {
                   </div>
                 )}
 
-                <Link to="/booking">
+                <Link to={`/booking?type=hotel&id=${hotel.hotelId}${selectedRoom ? `&room=${selectedRoom}` : ''}`}>
                   <Button className="w-full gradient-primary text-primary-foreground h-11 font-semibold" disabled={!selectedRoom}>
                     {selectedRoom ? "Reserve Now" : "Select a Room"}
                   </Button>
