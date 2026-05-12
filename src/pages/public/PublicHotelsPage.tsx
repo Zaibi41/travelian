@@ -8,6 +8,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Star, MapPin, Wifi, UtensilsCrossed, Dumbbell, Search, SlidersHorizontal, Grid3X3, List, Heart, X, ChevronDown, Map as MapIcon, ArrowUpDown, Users, Waves, Coffee } from "lucide-react";
 import { mockHotels } from "@/data/mock";
 import { Link } from "react-router-dom";
+import { PageHeader } from "@/components/public/PageHeader";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const amenityFilters = [
   { id: "wifi", label: "Free WiFi", icon: Wifi },
@@ -360,6 +362,23 @@ export default function PublicHotelsPage() {
             )}
           </div>
         </div>
+
+        {/* FAQ */}
+        <section className="max-w-3xl mx-auto mt-14">
+          <h2 className="text-lg font-bold text-foreground mb-4 text-center">Hotel Booking FAQs</h2>
+          <Accordion type="single" collapsible>
+            {[
+              { q: "Can I cancel my hotel booking?", a: "Most hotels offer free cancellation. Specific terms are shown on each property." },
+              { q: "When am I charged?", a: "Either at booking or at the property — depends on the rate selected." },
+              { q: "Are taxes included?", a: "Prices shown include applicable taxes unless noted otherwise." },
+            ].map((f, i) => (
+              <AccordionItem key={i} value={`f-${i}`}>
+                <AccordionTrigger className="text-left">{f.q}</AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">{f.a}</AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </section>
       </div>
     </div>
   );

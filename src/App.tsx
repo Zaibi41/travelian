@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +24,13 @@ import AboutPage from "./pages/public/AboutPage";
 import DealsPage from "./pages/public/DealsPage";
 import BookingPage from "./pages/public/BookingPage";
 import AccountPage from "./pages/public/AccountPage";
+import SignInPage from "./pages/public/SignInPage";
+import RegisterPage from "./pages/public/RegisterPage";
+import FaqPage from "./pages/public/FaqPage";
+import PrivacyPage from "./pages/public/PrivacyPage";
+import TermsPage from "./pages/public/TermsPage";
+import CareersPage from "./pages/public/CareersPage";
+import UmrahDetailPage from "./pages/public/UmrahDetailPage";
 
 // Admin pages
 import DashboardPage from "./pages/DashboardPage";
@@ -55,6 +63,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <RoleProvider>
+          <ScrollToTop />
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
@@ -63,6 +72,7 @@ const App = () => (
             <Route path="/flights-search" element={<PublicLayout><PublicFlightsPage /></PublicLayout>} />
             <Route path="/flight/:id" element={<PublicLayout><FlightDetailPage /></PublicLayout>} />
             <Route path="/umrah-packages" element={<PublicLayout><PublicPackagesPage /></PublicLayout>} />
+            <Route path="/umrah/:id" element={<PublicLayout><UmrahDetailPage /></PublicLayout>} />
             <Route path="/tour-packages" element={<PublicLayout><PublicToursPage /></PublicLayout>} />
             <Route path="/visa-services" element={<PublicLayout><PublicVisaPage /></PublicLayout>} />
             <Route path="/blog-public" element={<PublicLayout><PublicBlogPage /></PublicLayout>} />
@@ -71,6 +81,12 @@ const App = () => (
             <Route path="/deals" element={<PublicLayout><DealsPage /></PublicLayout>} />
             <Route path="/booking" element={<PublicLayout><BookingPage /></PublicLayout>} />
             <Route path="/account" element={<PublicLayout><AccountPage /></PublicLayout>} />
+            <Route path="/signin" element={<PublicLayout><SignInPage /></PublicLayout>} />
+            <Route path="/register" element={<PublicLayout><RegisterPage /></PublicLayout>} />
+            <Route path="/faq" element={<PublicLayout><FaqPage /></PublicLayout>} />
+            <Route path="/privacy" element={<PublicLayout><PrivacyPage /></PublicLayout>} />
+            <Route path="/terms" element={<PublicLayout><TermsPage /></PublicLayout>} />
+            <Route path="/careers" element={<PublicLayout><CareersPage /></PublicLayout>} />
 
             {/* Admin routes */}
             <Route path="/admin" element={<AdminProvider><AdminLayout><DashboardPage /></AdminLayout></AdminProvider>} />
