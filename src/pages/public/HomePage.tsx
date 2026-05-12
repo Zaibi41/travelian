@@ -257,7 +257,9 @@ export default function HomePage() {
                       <span className="text-[10px] text-muted-foreground">{pkg.duration}</span>
                       <p className="text-lg font-bold text-primary">${pkg.basePrice}</p>
                     </div>
-                    <Button size="sm" className="gradient-primary text-primary-foreground text-xs h-8 rounded-lg">Book Now</Button>
+                    <Link to={`/umrah/${pkg.packageId}`}>
+                      <Button size="sm" className="gradient-primary text-primary-foreground text-xs h-8 rounded-lg">Book Now</Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
