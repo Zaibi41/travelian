@@ -64,6 +64,7 @@ const App = () => (
       <BrowserRouter>
         <RoleProvider>
           <ScrollToTop />
+          <Routes>
             {/* Public routes */}
             <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
             <Route path="/hotels-search" element={<PublicLayout><PublicHotelsPage /></PublicLayout>} />
@@ -71,6 +72,7 @@ const App = () => (
             <Route path="/flights-search" element={<PublicLayout><PublicFlightsPage /></PublicLayout>} />
             <Route path="/flight/:id" element={<PublicLayout><FlightDetailPage /></PublicLayout>} />
             <Route path="/umrah-packages" element={<PublicLayout><PublicPackagesPage /></PublicLayout>} />
+            <Route path="/umrah/:id" element={<PublicLayout><UmrahDetailPage /></PublicLayout>} />
             <Route path="/tour-packages" element={<PublicLayout><PublicToursPage /></PublicLayout>} />
             <Route path="/visa-services" element={<PublicLayout><PublicVisaPage /></PublicLayout>} />
             <Route path="/blog-public" element={<PublicLayout><PublicBlogPage /></PublicLayout>} />
@@ -79,6 +81,12 @@ const App = () => (
             <Route path="/deals" element={<PublicLayout><DealsPage /></PublicLayout>} />
             <Route path="/booking" element={<PublicLayout><BookingPage /></PublicLayout>} />
             <Route path="/account" element={<PublicLayout><AccountPage /></PublicLayout>} />
+            <Route path="/signin" element={<PublicLayout><SignInPage /></PublicLayout>} />
+            <Route path="/register" element={<PublicLayout><RegisterPage /></PublicLayout>} />
+            <Route path="/faq" element={<PublicLayout><FaqPage /></PublicLayout>} />
+            <Route path="/privacy" element={<PublicLayout><PrivacyPage /></PublicLayout>} />
+            <Route path="/terms" element={<PublicLayout><TermsPage /></PublicLayout>} />
+            <Route path="/careers" element={<PublicLayout><CareersPage /></PublicLayout>} />
 
             {/* Admin routes */}
             <Route path="/admin" element={<AdminProvider><AdminLayout><DashboardPage /></AdminLayout></AdminProvider>} />
