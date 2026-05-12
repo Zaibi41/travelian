@@ -350,19 +350,23 @@ export function SearchTabs() {
           </div>
         )}
 
-        {activeTab === "activities" && (
-          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-3 items-center">
+        {activeTab === "groupbooking" && (
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-3 items-center">
             <div className="relative">
-              <Compass className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search activities, tours..." className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+              <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="From" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
             </div>
             <div className="relative">
-              <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Destination" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+              <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
+              <Input placeholder="To" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
             </div>
-            <DatePickerField date={actDate} onSelect={setActDate} placeholder="Select date" />
+            <DatePickerField date={actDate} onSelect={setActDate} placeholder="Travel date" />
+            <div className="relative">
+              <UsersRound className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+              <Input type="number" min={10} placeholder="Group size (10+)" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+            </div>
             <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
-              <Search className="h-4 w-4 mr-2" /> Search
+              <Search className="h-4 w-4 mr-2" /> Inquire
             </Button>
           </div>
         )}
