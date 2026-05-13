@@ -1,4 +1,5 @@
 import { SearchTabs } from "@/components/public/SearchTabs";
+import { SEO } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,42 @@ const topCountries = [
 export default function HomePage() {
   return (
     <div>
+      <SEO
+        title="Travelian — Cheap Flights, Hotels, Umrah & Visa Booking"
+        description="Book flights, hotels, Umrah packages, tours and visas at the best prices. 24/7 support, secure payments, and instant e-tickets. Your trusted Pakistan travel partner."
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "Travelian",
+            url: "https://fly-vibe-buddy.lovable.app",
+            logo: "https://fly-vibe-buddy.lovable.app/placeholder.svg",
+            sameAs: [
+              "https://facebook.com",
+              "https://twitter.com",
+              "https://instagram.com",
+            ],
+            contactPoint: {
+              "@type": "ContactPoint",
+              telephone: "+92-300-1234567",
+              contactType: "customer support",
+              areaServed: "PK",
+              availableLanguage: ["English", "Urdu", "Arabic"],
+            },
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "Travelian",
+            url: "https://fly-vibe-buddy.lovable.app",
+            potentialAction: {
+              "@type": "SearchAction",
+              target: "https://fly-vibe-buddy.lovable.app/flights-search?from={search_term_string}",
+              "query-input": "required name=search_term_string",
+            },
+          },
+        ]}
+      />
       {/* Hero — compact */}
       <section className="relative z-10 gradient-hero pt-10 pb-8 md:pt-12 md:pb-10">
         <div className="absolute inset-0 overflow-hidden opacity-10 pointer-events-none" aria-hidden="true">
@@ -90,14 +127,21 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {deals.map((deal, i) => (
-              <div key={i} className={`${deal.bg} rounded-2xl p-6 text-primary-foreground relative overflow-hidden group cursor-pointer hover:scale-[1.02] transition-transform duration-300`}>
+              <Link
+                key={i}
+                to="/deals"
+                aria-label={`${deal.title} — ${deal.discount}`}
+                className={`${deal.bg} rounded-2xl p-6 text-primary-foreground relative overflow-hidden group block hover:scale-[1.02] transition-transform duration-300 focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:outline-none`}
+              >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/5 rounded-full -mr-10 -mt-10" />
                 <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 mb-3">{deal.expiry}</Badge>
                 <h3 className="font-bold text-lg mb-1">{deal.title}</h3>
                 <p className="text-3xl font-extrabold mb-2">{deal.discount}</p>
                 <p className="text-sm text-primary-foreground/70">{deal.desc}</p>
-                <Button size="sm" variant="secondary" className="mt-4 rounded-lg">Book Now</Button>
-              </div>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold underline-offset-4 group-hover:underline">
+                  Book Now <ArrowRight className="h-4 w-4" />
+                </span>
+              </Link>
             ))}
           </div>
         </div>
@@ -358,7 +402,9 @@ export default function HomePage() {
                       <span className="text-xs text-muted-foreground">From</span>
                       <p className="text-xl font-bold text-foreground">${tour.basePrice}</p>
                     </div>
-                    <Button size="sm" variant="outline" className="text-xs h-8 rounded-lg">View Details</Button>
+                    <Button asChild size="sm" variant="outline" className="text-xs h-8 rounded-lg">
+                      <Link to="/tour-packages" aria-label={`View details for ${tour.name}`}>View Details</Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

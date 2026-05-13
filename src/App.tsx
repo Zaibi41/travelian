@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -8,6 +9,7 @@ import { AdminLayout } from "@/components/AdminLayout";
 import { PublicLayout } from "@/components/public/PublicLayout";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AdminProvider } from "@/contexts/AdminStore";
+import { LocaleProvider } from "@/contexts/LocaleContext";
 
 // Public pages
 import HomePage from "./pages/public/HomePage";
@@ -57,13 +59,15 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <RoleProvider>
-          <ScrollToTop />
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <RoleProvider>
+            <LocaleProvider>
+              <ScrollToTop />
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
@@ -108,12 +112,14 @@ const App = () => (
             <Route path="/admin/documents" element={<AdminProvider><AdminLayout><DocumentsPage /></AdminLayout></AdminProvider>} />
             <Route path="/admin/notifications" element={<AdminProvider><AdminLayout><NotificationsPage /></AdminLayout></AdminProvider>} />
             <Route path="/admin/settings" element={<AdminProvider><AdminLayout><SettingsPage /></AdminLayout></AdminProvider>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </RoleProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            </LocaleProvider>
+          </RoleProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;
