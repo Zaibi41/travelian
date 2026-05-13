@@ -314,46 +314,103 @@ export function SearchTabs() {
               </div>
             ) : tripType === "oneway" ? (
               /* One-way: From | swap | To | Date | Search (compact, balanced) */
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-center">
-                <div className="relative">
-                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="From where?" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-center">
+                  <div className="relative">
+                    <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={fromValue}
+                      onChange={e => { setFromValue(e.target.value); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }}
+                      placeholder="From where?"
+                      aria-invalid={!!errors.from}
+                      className={cn("pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm", errors.from && "border-destructive")}
+                    />
+                  </div>
+                  <div className="hidden md:flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => { const a = fromValue; setFromValue(toValue); setToValue(a); }}
+                      aria-label="Swap origin and destination"
+                      className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                    >
+                      <ArrowLeftRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
+                    <Input
+                      value={toValue}
+                      onChange={e => { setToValue(e.target.value); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }}
+                      placeholder="To where?"
+                      aria-invalid={!!errors.to}
+                      className={cn("pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm", errors.to && "border-destructive")}
+                    />
+                  </div>
+                  <DatePickerField date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
+                  <Button
+                    onClick={handleSearch}
+                    disabled={!flightsValid}
+                    className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl whitespace-nowrap disabled:opacity-50"
+                  >
+                    <Search className="h-4 w-4 mr-2" /> Search
+                  </Button>
                 </div>
-                <div className="hidden md:flex items-center justify-center">
-                  <button type="button" className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
-                    <ArrowLeftRight className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="relative">
-                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
-                  <Input placeholder="To where?" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-                </div>
-                <DatePickerField date={departDate} onSelect={setDepartDate} placeholder="Departure date" />
-                <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl whitespace-nowrap">
-                  <Search className="h-4 w-4 mr-2" /> Search
-                </Button>
+                {(errors.from || errors.to || errors.depart) && (
+                  <div className="mt-2 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 text-xs text-destructive">
+                    <p>{errors.from || ""}</p><span className="hidden md:block" /><p>{errors.to || ""}</p><p>{errors.depart || ""}</p><span className="hidden md:block" />
+                  </div>
+                )}
               </div>
             ) : (
               /* Round-trip: adds return date */
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-center">
-                <div className="relative">
-                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="From where?" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-center">
+                  <div className="relative">
+                    <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={fromValue}
+                      onChange={e => { setFromValue(e.target.value); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }}
+                      placeholder="From where?"
+                      aria-invalid={!!errors.from}
+                      className={cn("pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm", errors.from && "border-destructive")}
+                    />
+                  </div>
+                  <div className="hidden md:flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => { const a = fromValue; setFromValue(toValue); setToValue(a); }}
+                      aria-label="Swap origin and destination"
+                      className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                    >
+                      <ArrowLeftRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="relative">
+                    <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
+                    <Input
+                      value={toValue}
+                      onChange={e => { setToValue(e.target.value); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }}
+                      placeholder="To where?"
+                      aria-invalid={!!errors.to}
+                      className={cn("pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm", errors.to && "border-destructive")}
+                    />
+                  </div>
+                  <DatePickerField date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
+                  <DatePickerField date={returnDate} onSelect={(d) => { setReturnDate(d); if (errors.return) setErrors(p => ({ ...p, return: undefined })); }} placeholder="Return date" />
+                  <Button
+                    onClick={handleSearch}
+                    disabled={!flightsValid}
+                    aria-label="Search flights"
+                    className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl whitespace-nowrap disabled:opacity-50"
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="hidden md:flex items-center justify-center">
-                  <button type="button" className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
-                    <ArrowLeftRight className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="relative">
-                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
-                  <Input placeholder="To where?" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-                </div>
-                <DatePickerField date={departDate} onSelect={setDepartDate} placeholder="Departure date" />
-                <DatePickerField date={returnDate} onSelect={setReturnDate} placeholder="Return date" />
-                <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl whitespace-nowrap">
-                  <Search className="h-4 w-4" />
-                </Button>
+                {(errors.from || errors.to || errors.depart || errors.return) && (
+                  <p className="mt-2 text-xs text-destructive">
+                    {[errors.from, errors.to, errors.depart, errors.return].filter(Boolean).join(" • ")}
+                  </p>
+                )}
               </div>
             )}
           </>
