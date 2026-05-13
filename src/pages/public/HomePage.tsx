@@ -127,14 +127,21 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {deals.map((deal, i) => (
-              <div key={i} className={`${deal.bg} rounded-2xl p-6 text-primary-foreground relative overflow-hidden group cursor-pointer hover:scale-[1.02] transition-transform duration-300`}>
+              <Link
+                key={i}
+                to="/deals"
+                aria-label={`${deal.title} — ${deal.discount}`}
+                className={`${deal.bg} rounded-2xl p-6 text-primary-foreground relative overflow-hidden group block hover:scale-[1.02] transition-transform duration-300 focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:outline-none`}
+              >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/5 rounded-full -mr-10 -mt-10" />
                 <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 mb-3">{deal.expiry}</Badge>
                 <h3 className="font-bold text-lg mb-1">{deal.title}</h3>
                 <p className="text-3xl font-extrabold mb-2">{deal.discount}</p>
                 <p className="text-sm text-primary-foreground/70">{deal.desc}</p>
-                <Button size="sm" variant="secondary" className="mt-4 rounded-lg">Book Now</Button>
-              </div>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold underline-offset-4 group-hover:underline">
+                  Book Now <ArrowRight className="h-4 w-4" />
+                </span>
+              </Link>
             ))}
           </div>
         </div>
