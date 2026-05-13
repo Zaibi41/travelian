@@ -89,7 +89,7 @@ export default function PublicFlightsPage() {
   return (
     <div>
       {/* Sticky Search Hero */}
-      <section className="gradient-hero py-5 sticky top-16 z-30 shadow-md">
+      <section className="gradient-hero py-5 sticky top-16 md:top-[100px] z-30 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-card/10 backdrop-blur-sm rounded-2xl p-3.5 border border-primary-foreground/10">
             {/* Internal route summary */}
