@@ -64,6 +64,9 @@ export function SearchTabs() {
   const [pkgDate, setPkgDate] = useState<Date>();
   const [actDate, setActDate] = useState<Date>();
   const [transDate, setTransDate] = useState<Date>();
+  const [fromValue, setFromValue] = useState("");
+  const [toValue, setToValue] = useState("");
+  const [errors, setErrors] = useState<{ from?: string; to?: string; depart?: string; return?: string }>({});
   const [multiCitySegments, setMultiCitySegments] = useState<MultiCitySegment[]>([
     { from: "", to: "", date: undefined },
     { from: "", to: "", date: undefined },
@@ -83,9 +86,46 @@ export function SearchTabs() {
     return () => document.removeEventListener("mousedown", handler);
   }, [showPassengers]);
 
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+
+  const validateFlights = (): boolean => {
+    const next: typeof errors = {};
+    if (!fromValue.trim()) next.from = "Origin is required";
+    if (!toValue.trim()) next.to = "Destination is required";
+    if (fromValue.trim() && toValue.trim() && fromValue.trim().toLowerCase() === toValue.trim().toLowerCase()) {
+      next.to = "Destination must differ from origin";
+    }
+    if (!departDate) next.depart = "Departure date is required";
+    else if (departDate < today) next.depart = "Departure cannot be in the past";
+    if (tripType === "roundtrip") {
+      if (!returnDate) next.return = "Return date is required";
+      else if (departDate && returnDate < departDate) next.return = "Return must be after departure";
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const flightsValid =
+    fromValue.trim().length > 0 &&
+    toValue.trim().length > 0 &&
+    fromValue.trim().toLowerCase() !== toValue.trim().toLowerCase() &&
+    !!departDate && departDate >= today &&
+    (tripType !== "roundtrip" || (!!returnDate && !!departDate && returnDate >= departDate));
+
   const handleSearch = () => {
-    if (activeTab === "flights") navigate("/flights-search");
-    else if (activeTab === "hotels") navigate("/hotels-search");
+    if (activeTab === "flights") {
+      if (!validateFlights()) return;
+      const params = new URLSearchParams({
+        from: fromValue, to: toValue,
+        depart: departDate ? departDate.toISOString().slice(0, 10) : "",
+        ...(tripType === "roundtrip" && returnDate ? { return: returnDate.toISOString().slice(0, 10) } : {}),
+        adults: String(adults), children: String(children), infants: String(infants),
+        cabin, trip: tripType,
+      });
+      navigate(`/flights-search?${params.toString()}`);
+      return;
+    }
+    if (activeTab === "hotels") navigate("/hotels-search");
     else if (activeTab === "packages") navigate("/umrah-packages");
     else if (activeTab === "groupbooking") navigate("/contact?type=group");
     else navigate("/tour-packages");
