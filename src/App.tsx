@@ -112,12 +112,14 @@ const App = () => (
             <Route path="/admin/documents" element={<AdminProvider><AdminLayout><DocumentsPage /></AdminLayout></AdminProvider>} />
             <Route path="/admin/notifications" element={<AdminProvider><AdminLayout><NotificationsPage /></AdminLayout></AdminProvider>} />
             <Route path="/admin/settings" element={<AdminProvider><AdminLayout><SettingsPage /></AdminLayout></AdminProvider>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </RoleProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            </LocaleProvider>
+          </RoleProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;
