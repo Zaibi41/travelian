@@ -402,7 +402,9 @@ export default function HomePage() {
                       <span className="text-xs text-muted-foreground">From</span>
                       <p className="text-xl font-bold text-foreground">${tour.basePrice}</p>
                     </div>
-                    <Button size="sm" variant="outline" className="text-xs h-8 rounded-lg">View Details</Button>
+                    <Button asChild size="sm" variant="outline" className="text-xs h-8 rounded-lg">
+                      <Link to="/tour-packages" aria-label={`View details for ${tour.name}`}>View Details</Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
