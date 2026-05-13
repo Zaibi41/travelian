@@ -41,6 +41,42 @@ const topCountries = [
 export default function HomePage() {
   return (
     <div>
+      <SEO
+        title="Travelian — Cheap Flights, Hotels, Umrah & Visa Booking"
+        description="Book flights, hotels, Umrah packages, tours and visas at the best prices. 24/7 support, secure payments, and instant e-tickets. Your trusted Pakistan travel partner."
+        jsonLd={[
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "Travelian",
+            url: "https://fly-vibe-buddy.lovable.app",
+            logo: "https://fly-vibe-buddy.lovable.app/placeholder.svg",
+            sameAs: [
+              "https://facebook.com",
+              "https://twitter.com",
+              "https://instagram.com",
+            ],
+            contactPoint: {
+              "@type": "ContactPoint",
+              telephone: "+92-300-1234567",
+              contactType: "customer support",
+              areaServed: "PK",
+              availableLanguage: ["English", "Urdu", "Arabic"],
+            },
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "Travelian",
+            url: "https://fly-vibe-buddy.lovable.app",
+            potentialAction: {
+              "@type": "SearchAction",
+              target: "https://fly-vibe-buddy.lovable.app/flights-search?from={search_term_string}",
+              "query-input": "required name=search_term_string",
+            },
+          },
+        ]}
+      />
       {/* Hero — compact */}
       <section className="relative z-10 gradient-hero pt-10 pb-8 md:pt-12 md:pb-10">
         <div className="absolute inset-0 overflow-hidden opacity-10 pointer-events-none" aria-hidden="true">
