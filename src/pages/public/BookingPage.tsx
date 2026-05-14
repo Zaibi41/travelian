@@ -9,12 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AdvancedDatePicker } from "@/components/ui/advanced-date-picker";
 import { CountryCodePicker } from "@/components/ui/country-code-picker";
 import { CountryPicker } from "@/components/ui/country-picker";
-import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Globe, MapPin } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Globe, MapPin, Armchair } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { SeatMap } from "@/components/booking/SeatMap";
+import { saveBooking, type BookingRecord } from "@/lib/booking-store";
+import { downloadETicket } from "@/lib/eticket-pdf";
+import { toast } from "@/hooks/use-toast";
 
 const steps = [
   { id: 1, label: "Traveler Details" },
-  { id: 2, label: "Add-ons" },
+  { id: 2, label: "Seats & Add-ons" },
   { id: 3, label: "Payment" },
   { id: 4, label: "Confirmation" },
 ];
@@ -30,9 +34,27 @@ const addons = [
 const currentYear = new Date().getFullYear();
 
 export default function BookingPage() {
+  const [params] = useSearchParams();
+  const ctxFrom = params.get("from") || "Lahore";
+  const ctxTo = params.get("to") || "Jeddah";
+  const ctxFromCode = params.get("fromCode") || "LHE";
+  const ctxToCode = params.get("toCode") || "JED";
+  const ctxDate = params.get("date") || "Apr 15, 2025";
+  const ctxAirline = params.get("airline") || "Saudi Airlines";
+  const ctxFlightNo = params.get("flightNo") || "SV-702";
+  const ctxCabin = params.get("cabin") || "Economy";
+
   const [step, setStep] = useState(1);
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+  const [selectedSeat, setSelectedSeat] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState("card");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [paymentTouched, setPaymentTouched] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [savedBooking, setSavedBooking] = useState<BookingRecord | null>(null);
 
   // Flight type — drives whether passport is required (international) or CNIC is allowed (domestic)
   const [flightType, setFlightType] = useState<"international" | "domestic">("international");
@@ -67,11 +89,11 @@ export default function BookingPage() {
     setSelectedAddons(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const addonsTotal = addons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.price, 0);
+  const seatFee = selectedSeat && parseInt(selectedSeat) <= 3 ? 15 : 0;
+  const addonsTotal = addons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.price, 0) + seatFee;
   const baseTotal = 510;
   const taxes = 42;
   const grandTotal = baseTotal + addonsTotal + taxes;
-  const bookingRef = `TRV-${Date.now().toString(36).toUpperCase().slice(-6)}`;
 
   // Validation
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -109,6 +131,60 @@ export default function BookingPage() {
   // Numeric-only phone handler
   const onPhoneChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setter(e.target.value.replace(/[^\d]/g, ""));
+  };
+
+  // Payment validation (card only)
+  const cardNumberValid = cardNumber.replace(/\s/g, "").length >= 13 && /^\d+$/.test(cardNumber.replace(/\s/g, ""));
+  const cardExpiryValid = /^(0[1-9]|1[0-2])\/\d{2}$/.test(cardExpiry);
+  const cardCvvValid = /^\d{3,4}$/.test(cardCvv);
+  const cardNameValid = cardName.trim().length >= 3;
+  const paymentValid = paymentMethod !== "card" || (cardNumberValid && cardExpiryValid && cardCvvValid && cardNameValid);
+
+  const handlePay = async () => {
+    setPaymentTouched(true);
+    if (!paymentValid) return;
+    setProcessing(true);
+    await new Promise(r => setTimeout(r, 1200)); // mock processing
+    const addonsList = addons.filter(a => selectedAddons.includes(a.id)).map(a => ({ id: a.id, name: a.name, price: a.price }));
+    if (seatFee) addonsList.push({ id: "seat-premium", name: `Premium seat ${selectedSeat}`, price: seatFee });
+    const record = saveBooking({
+      type: "flight",
+      flight: {
+        airline: ctxAirline,
+        flightNumber: ctxFlightNo,
+        from: ctxFrom,
+        fromCode: ctxFromCode,
+        to: ctxTo,
+        toCode: ctxToCode,
+        date: ctxDate,
+        departTime: "08:30",
+        arriveTime: "13:00",
+        duration: "4h 30m",
+        cabin: ctxCabin,
+      },
+      travelers: [{
+        title, firstName, lastName, gender,
+        dob: dob?.toISOString(),
+        docType: requiresPassport ? "passport" : "cnic",
+        docNumber, nationality, issuanceCountry,
+        expiryDate: expiryDate?.toISOString(),
+      }],
+      contact: { email, phone: `${phoneCode} ${phone}`, altPhone: altPhone ? `${altPhoneCode} ${altPhone}` : undefined },
+      seat: selectedSeat || undefined,
+      addons: addonsList,
+      paymentMethod,
+      pricing: { base: baseTotal, addons: addonsTotal, taxes, total: grandTotal, currency: "USD" },
+    });
+    setSavedBooking(record);
+    setProcessing(false);
+    setStep(4);
+    toast({ title: "Payment successful", description: `Booking ${record.pnr} confirmed.` });
+  };
+
+  const formatCardNumber = (v: string) => v.replace(/\D/g, "").slice(0, 19).replace(/(.{4})/g, "$1 ").trim();
+  const formatExpiry = (v: string) => {
+    const d = v.replace(/\D/g, "").slice(0, 4);
+    return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
   };
 
   return (
@@ -394,43 +470,63 @@ export default function BookingPage() {
             )}
 
             {step === 2 && (
-              <Card className="shadow-card border-0 animate-fade-in">
-                <CardContent className="p-6">
-                  <h2 className="text-lg font-bold text-foreground mb-1">Enhance Your Trip</h2>
-                  <p className="text-sm text-muted-foreground mb-6">Add extras to make your journey even better</p>
-                  <div className="space-y-3">
-                    {addons.map(addon => (
-                      <div
-                        key={addon.id}
-                        className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${
-                          selectedAddons.includes(addon.id) ? 'border-primary bg-accent/30 shadow-sm' : 'hover:border-primary/30'
-                        }`}
-                        onClick={() => toggleAddon(addon.id)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Checkbox checked={selectedAddons.includes(addon.id)} />
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="text-sm font-semibold text-foreground">{addon.name}</h4>
-                                {addon.popular && <Badge className="bg-gold/10 text-gold border-0 text-[10px] rounded-md">Recommended</Badge>}
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">{addon.desc}</p>
-                            </div>
-                          </div>
-                          <p className="text-sm font-bold text-foreground shrink-0">+${addon.price}</p>
-                        </div>
+              <div className="space-y-6 animate-fade-in">
+                <Card className="shadow-card border-0">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Armchair className="h-5 w-5 text-primary" />
+                      <h2 className="text-lg font-bold text-foreground">Choose Your Seat</h2>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-5">
+                      Pick your preferred seat. {selectedSeat ? `Selected: ${selectedSeat}${seatFee ? ` (+$${seatFee})` : ""}` : "Optional — we'll auto-assign at check-in."}
+                    </p>
+                    <SeatMap selected={selectedSeat} onSelect={setSelectedSeat} />
+                    {selectedSeat && (
+                      <div className="flex justify-end mt-3">
+                        <Button size="sm" variant="ghost" onClick={() => setSelectedSeat("")} className="text-xs">Clear selection</Button>
                       </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between mt-6">
-                    <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl">Back</Button>
-                    <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
-                      Continue to Payment <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-card border-0">
+                  <CardContent className="p-6">
+                    <h2 className="text-lg font-bold text-foreground mb-1">Enhance Your Trip</h2>
+                    <p className="text-sm text-muted-foreground mb-6">Add extras to make your journey even better</p>
+                    <div className="space-y-3">
+                      {addons.map(addon => (
+                        <div
+                          key={addon.id}
+                          className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${
+                            selectedAddons.includes(addon.id) ? 'border-primary bg-accent/30 shadow-sm' : 'hover:border-primary/30'
+                          }`}
+                          onClick={() => toggleAddon(addon.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Checkbox checked={selectedAddons.includes(addon.id)} />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-sm font-semibold text-foreground">{addon.name}</h4>
+                                  {addon.popular && <Badge className="bg-gold/10 text-gold border-0 text-[10px] rounded-md">Recommended</Badge>}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5">{addon.desc}</p>
+                              </div>
+                            </div>
+                            <p className="text-sm font-bold text-foreground shrink-0">+${addon.price}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between mt-6">
+                      <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl">Back</Button>
+                      <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
+                        Continue to Payment <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             {step === 3 && (
@@ -476,23 +572,51 @@ export default function BookingPage() {
                   {paymentMethod === "card" && (
                     <div className="space-y-4 border-t pt-5">
                       <div>
-                        <Label className="text-sm font-medium">Card Number</Label>
-                        <Input placeholder="1234 5678 9012 3456" className="mt-1.5 h-11 rounded-xl" />
+                        <Label className="text-sm font-medium">Card Number *</Label>
+                        <Input
+                          inputMode="numeric"
+                          placeholder="1234 5678 9012 3456"
+                          className="mt-1.5 h-11 rounded-xl"
+                          value={cardNumber}
+                          onChange={e => setCardNumber(formatCardNumber(e.target.value))}
+                        />
+                        {paymentTouched && !cardNumberValid && <p className="text-xs text-destructive mt-1">Enter a valid card number</p>}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label className="text-sm font-medium">Expiry Date</Label>
-                          <Input placeholder="MM/YY" className="mt-1.5 h-11 rounded-xl" />
+                          <Label className="text-sm font-medium">Expiry *</Label>
+                          <Input
+                            placeholder="MM/YY"
+                            className="mt-1.5 h-11 rounded-xl"
+                            value={cardExpiry}
+                            onChange={e => setCardExpiry(formatExpiry(e.target.value))}
+                          />
+                          {paymentTouched && !cardExpiryValid && <p className="text-xs text-destructive mt-1">MM/YY required</p>}
                         </div>
                         <div>
-                          <Label className="text-sm font-medium">CVV</Label>
-                          <Input placeholder="123" className="mt-1.5 h-11 rounded-xl" />
+                          <Label className="text-sm font-medium">CVV *</Label>
+                          <Input
+                            inputMode="numeric"
+                            placeholder="123"
+                            maxLength={4}
+                            className="mt-1.5 h-11 rounded-xl"
+                            value={cardCvv}
+                            onChange={e => setCardCvv(e.target.value.replace(/\D/g, ""))}
+                          />
+                          {paymentTouched && !cardCvvValid && <p className="text-xs text-destructive mt-1">3–4 digits</p>}
                         </div>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium">Cardholder Name</Label>
-                        <Input placeholder="Name on card" className="mt-1.5 h-11 rounded-xl" />
+                        <Label className="text-sm font-medium">Cardholder Name *</Label>
+                        <Input
+                          placeholder="Name on card"
+                          className="mt-1.5 h-11 rounded-xl"
+                          value={cardName}
+                          onChange={e => setCardName(e.target.value)}
+                        />
+                        {paymentTouched && !cardNameValid && <p className="text-xs text-destructive mt-1">Cardholder name required</p>}
                       </div>
+                      <p className="text-xs text-muted-foreground">Demo mode: no real charge will be made.</p>
                     </div>
                   )}
 
@@ -502,16 +626,16 @@ export default function BookingPage() {
                   </div>
 
                   <div className="flex justify-between mt-6">
-                    <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl">Back</Button>
-                    <Button onClick={() => setStep(4)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
-                      Pay ${grandTotal} <ChevronRight className="h-4 w-4 ml-1" />
+                    <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl" disabled={processing}>Back</Button>
+                    <Button onClick={handlePay} disabled={processing} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
+                      {processing ? "Processing..." : `Pay $${grandTotal}`} <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {step === 4 && (
+            {step === 4 && savedBooking && (
               <Card className="shadow-card border-0 animate-fade-in-up">
                 <CardContent className="p-8 text-center">
                   <div className="h-20 w-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-5 animate-scale-in">
@@ -532,28 +656,32 @@ export default function BookingPage() {
                     </div>
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">PNR</span>
+                        <span className="font-bold font-mono text-foreground">{savedBooking.pnr}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Booking ID</span>
-                        <span className="font-bold font-mono text-foreground">{bookingRef}</span>
+                        <span className="font-mono text-foreground">{savedBooking.id}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Flight</span>
-                        <span className="font-medium text-foreground">Saudi Airlines · SV-702</span>
+                        <span className="font-medium text-foreground">{ctxAirline} · {ctxFlightNo}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Route</span>
-                        <span className="font-medium text-foreground">Lahore → Jeddah</span>
+                        <span className="font-medium text-foreground">{ctxFrom} → {ctxTo}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Date</span>
-                        <span className="font-medium text-foreground">Apr 15, 2025</span>
+                        <span className="font-medium text-foreground">{ctxDate}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Passenger</span>
-                        <span className="font-medium text-foreground">{firstName || "1"} {lastName}</span>
+                        <span className="font-medium text-foreground">{firstName} {lastName}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Seat</span>
-                        <span className="font-medium text-foreground">24A (Window)</span>
+                        <span className="font-medium text-foreground">{selectedSeat || "Auto-assign at check-in"}</span>
                       </div>
                       <div className="flex justify-between font-bold border-t pt-3 text-base">
                         <span>Total Paid</span>
@@ -562,13 +690,16 @@ export default function BookingPage() {
                     </div>
                   </div>
 
-                  <p className="text-xs text-muted-foreground mt-4">Confirmation email and E-ticket sent to your registered email address.</p>
-                  <div className="flex gap-3 justify-center mt-6">
-                    <Button variant="outline" className="rounded-xl gap-2">
+                  <p className="text-xs text-muted-foreground mt-4">Confirmation email and E-ticket sent to {email}.</p>
+                  <div className="flex flex-wrap gap-3 justify-center mt-6">
+                    <Button variant="outline" className="rounded-xl gap-2" onClick={() => downloadETicket(savedBooking)}>
                       <Download className="h-4 w-4" /> Download E-Ticket
                     </Button>
-                    <Link to="/account">
+                    <Link to="/my-bookings">
                       <Button className="gradient-primary text-primary-foreground rounded-xl">View My Bookings</Button>
+                    </Link>
+                    <Link to="/">
+                      <Button variant="ghost" className="rounded-xl">Back to Home</Button>
                     </Link>
                   </div>
                 </CardContent>
@@ -583,9 +714,9 @@ export default function BookingPage() {
                 <div className="flex gap-3 mb-4 pb-4 border-b">
                   <div className="h-14 w-14 rounded-xl bg-accent flex items-center justify-center text-2xl shrink-0">✈️</div>
                   <div>
-                    <h3 className="font-semibold text-foreground text-sm">Saudi Airlines · SV-702</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Lahore → Jeddah</p>
-                    <p className="text-xs text-muted-foreground">Apr 15, 2025 · 4h 30m</p>
+                    <h3 className="font-semibold text-foreground text-sm">{ctxAirline} · {ctxFlightNo}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{ctxFrom} → {ctxTo}</p>
+                    <p className="text-xs text-muted-foreground">{ctxDate} · {ctxCabin}</p>
                   </div>
                 </div>
                 <div className="space-y-2.5 text-sm">
