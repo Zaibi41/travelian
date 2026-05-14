@@ -714,9 +714,9 @@ export default function BookingPage() {
                 <div className="flex gap-3 mb-4 pb-4 border-b">
                   <div className="h-14 w-14 rounded-xl bg-accent flex items-center justify-center text-2xl shrink-0">✈️</div>
                   <div>
-                    <h3 className="font-semibold text-foreground text-sm">Saudi Airlines · SV-702</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">Lahore → Jeddah</p>
-                    <p className="text-xs text-muted-foreground">Apr 15, 2025 · 4h 30m</p>
+                    <h3 className="font-semibold text-foreground text-sm">{ctxAirline} · {ctxFlightNo}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{ctxFrom} → {ctxTo}</p>
+                    <p className="text-xs text-muted-foreground">{ctxDate} · {ctxCabin}</p>
                   </div>
                 </div>
                 <div className="space-y-2.5 text-sm">
