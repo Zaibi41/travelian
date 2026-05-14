@@ -133,6 +133,60 @@ export default function BookingPage() {
     setter(e.target.value.replace(/[^\d]/g, ""));
   };
 
+  // Payment validation (card only)
+  const cardNumberValid = cardNumber.replace(/\s/g, "").length >= 13 && /^\d+$/.test(cardNumber.replace(/\s/g, ""));
+  const cardExpiryValid = /^(0[1-9]|1[0-2])\/\d{2}$/.test(cardExpiry);
+  const cardCvvValid = /^\d{3,4}$/.test(cardCvv);
+  const cardNameValid = cardName.trim().length >= 3;
+  const paymentValid = paymentMethod !== "card" || (cardNumberValid && cardExpiryValid && cardCvvValid && cardNameValid);
+
+  const handlePay = async () => {
+    setPaymentTouched(true);
+    if (!paymentValid) return;
+    setProcessing(true);
+    await new Promise(r => setTimeout(r, 1200)); // mock processing
+    const addonsList = addons.filter(a => selectedAddons.includes(a.id)).map(a => ({ id: a.id, name: a.name, price: a.price }));
+    if (seatFee) addonsList.push({ id: "seat-premium", name: `Premium seat ${selectedSeat}`, price: seatFee });
+    const record = saveBooking({
+      type: "flight",
+      flight: {
+        airline: ctxAirline,
+        flightNumber: ctxFlightNo,
+        from: ctxFrom,
+        fromCode: ctxFromCode,
+        to: ctxTo,
+        toCode: ctxToCode,
+        date: ctxDate,
+        departTime: "08:30",
+        arriveTime: "13:00",
+        duration: "4h 30m",
+        cabin: ctxCabin,
+      },
+      travelers: [{
+        title, firstName, lastName, gender,
+        dob: dob?.toISOString(),
+        docType: requiresPassport ? "passport" : "cnic",
+        docNumber, nationality, issuanceCountry,
+        expiryDate: expiryDate?.toISOString(),
+      }],
+      contact: { email, phone: `${phoneCode} ${phone}`, altPhone: altPhone ? `${altPhoneCode} ${altPhone}` : undefined },
+      seat: selectedSeat || undefined,
+      addons: addonsList,
+      paymentMethod,
+      pricing: { base: baseTotal, addons: addonsTotal, taxes, total: grandTotal, currency: "USD" },
+    });
+    setSavedBooking(record);
+    setProcessing(false);
+    setStep(4);
+    toast({ title: "Payment successful", description: `Booking ${record.pnr} confirmed.` });
+  };
+
+  const formatCardNumber = (v: string) => v.replace(/\D/g, "").slice(0, 19).replace(/(.{4})/g, "$1 ").trim();
+  const formatExpiry = (v: string) => {
+    const d = v.replace(/\D/g, "").slice(0, 4);
+    return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
+  };
+
   return (
     <div className="bg-muted/20 min-h-screen">
       {/* Progress Header */}
