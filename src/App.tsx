@@ -33,6 +33,7 @@ import PrivacyPage from "./pages/public/PrivacyPage";
 import TermsPage from "./pages/public/TermsPage";
 import CareersPage from "./pages/public/CareersPage";
 import UmrahDetailPage from "./pages/public/UmrahDetailPage";
+import MyBookingsPage from "./pages/public/MyBookingsPage";
 
 // Admin pages
 import DashboardPage from "./pages/DashboardPage";
@@ -85,6 +86,7 @@ const App = () => (
             <Route path="/deals" element={<PublicLayout><DealsPage /></PublicLayout>} />
             <Route path="/booking" element={<PublicLayout><BookingPage /></PublicLayout>} />
             <Route path="/account" element={<PublicLayout><AccountPage /></PublicLayout>} />
+            <Route path="/my-bookings" element={<PublicLayout><MyBookingsPage /></PublicLayout>} />
             <Route path="/signin" element={<PublicLayout><SignInPage /></PublicLayout>} />
             <Route path="/register" element={<PublicLayout><RegisterPage /></PublicLayout>} />
             <Route path="/faq" element={<PublicLayout><FaqPage /></PublicLayout>} />
