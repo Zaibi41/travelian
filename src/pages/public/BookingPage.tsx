@@ -416,43 +416,63 @@ export default function BookingPage() {
             )}
 
             {step === 2 && (
-              <Card className="shadow-card border-0 animate-fade-in">
-                <CardContent className="p-6">
-                  <h2 className="text-lg font-bold text-foreground mb-1">Enhance Your Trip</h2>
-                  <p className="text-sm text-muted-foreground mb-6">Add extras to make your journey even better</p>
-                  <div className="space-y-3">
-                    {addons.map(addon => (
-                      <div
-                        key={addon.id}
-                        className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${
-                          selectedAddons.includes(addon.id) ? 'border-primary bg-accent/30 shadow-sm' : 'hover:border-primary/30'
-                        }`}
-                        onClick={() => toggleAddon(addon.id)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <Checkbox checked={selectedAddons.includes(addon.id)} />
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="text-sm font-semibold text-foreground">{addon.name}</h4>
-                                {addon.popular && <Badge className="bg-gold/10 text-gold border-0 text-[10px] rounded-md">Recommended</Badge>}
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">{addon.desc}</p>
-                            </div>
-                          </div>
-                          <p className="text-sm font-bold text-foreground shrink-0">+${addon.price}</p>
-                        </div>
+              <div className="space-y-6 animate-fade-in">
+                <Card className="shadow-card border-0">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Armchair className="h-5 w-5 text-primary" />
+                      <h2 className="text-lg font-bold text-foreground">Choose Your Seat</h2>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-5">
+                      Pick your preferred seat. {selectedSeat ? `Selected: ${selectedSeat}${seatFee ? ` (+$${seatFee})` : ""}` : "Optional — we'll auto-assign at check-in."}
+                    </p>
+                    <SeatMap selected={selectedSeat} onSelect={setSelectedSeat} />
+                    {selectedSeat && (
+                      <div className="flex justify-end mt-3">
+                        <Button size="sm" variant="ghost" onClick={() => setSelectedSeat("")} className="text-xs">Clear selection</Button>
                       </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between mt-6">
-                    <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl">Back</Button>
-                    <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
-                      Continue to Payment <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="shadow-card border-0">
+                  <CardContent className="p-6">
+                    <h2 className="text-lg font-bold text-foreground mb-1">Enhance Your Trip</h2>
+                    <p className="text-sm text-muted-foreground mb-6">Add extras to make your journey even better</p>
+                    <div className="space-y-3">
+                      {addons.map(addon => (
+                        <div
+                          key={addon.id}
+                          className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${
+                            selectedAddons.includes(addon.id) ? 'border-primary bg-accent/30 shadow-sm' : 'hover:border-primary/30'
+                          }`}
+                          onClick={() => toggleAddon(addon.id)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Checkbox checked={selectedAddons.includes(addon.id)} />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-sm font-semibold text-foreground">{addon.name}</h4>
+                                  {addon.popular && <Badge className="bg-gold/10 text-gold border-0 text-[10px] rounded-md">Recommended</Badge>}
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5">{addon.desc}</p>
+                              </div>
+                            </div>
+                            <p className="text-sm font-bold text-foreground shrink-0">+${addon.price}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between mt-6">
+                      <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl">Back</Button>
+                      <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
+                        Continue to Payment <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
 
             {step === 3 && (
