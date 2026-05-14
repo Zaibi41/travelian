@@ -118,6 +118,9 @@ export function PublicNavbar() {
           </div>
 
           <div className="hidden lg:flex items-center gap-2">
+            <Link to="/my-bookings">
+              <Button variant="ghost" size="sm" className="rounded-lg text-sm">My Bookings</Button>
+            </Link>
             <Link to="/signin">
               <Button variant="outline" size="sm" className="gap-2 rounded-lg">
                 <User className="h-4 w-4" /> Sign In
