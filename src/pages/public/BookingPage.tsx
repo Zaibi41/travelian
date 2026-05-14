@@ -89,11 +89,11 @@ export default function BookingPage() {
     setSelectedAddons(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const addonsTotal = addons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.price, 0);
+  const seatFee = selectedSeat && parseInt(selectedSeat) <= 3 ? 15 : 0;
+  const addonsTotal = addons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.price, 0) + seatFee;
   const baseTotal = 510;
   const taxes = 42;
   const grandTotal = baseTotal + addonsTotal + taxes;
-  const bookingRef = `TRV-${Date.now().toString(36).toUpperCase().slice(-6)}`;
 
   // Validation
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
