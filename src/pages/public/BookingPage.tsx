@@ -9,12 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AdvancedDatePicker } from "@/components/ui/advanced-date-picker";
 import { CountryCodePicker } from "@/components/ui/country-code-picker";
 import { CountryPicker } from "@/components/ui/country-picker";
-import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Globe, MapPin } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Globe, MapPin, Armchair } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { SeatMap } from "@/components/booking/SeatMap";
+import { saveBooking, type BookingRecord } from "@/lib/booking-store";
+import { downloadETicket } from "@/lib/eticket-pdf";
+import { toast } from "@/hooks/use-toast";
 
 const steps = [
   { id: 1, label: "Traveler Details" },
-  { id: 2, label: "Add-ons" },
+  { id: 2, label: "Seats & Add-ons" },
   { id: 3, label: "Payment" },
   { id: 4, label: "Confirmation" },
 ];
@@ -30,9 +34,27 @@ const addons = [
 const currentYear = new Date().getFullYear();
 
 export default function BookingPage() {
+  const [params] = useSearchParams();
+  const ctxFrom = params.get("from") || "Lahore";
+  const ctxTo = params.get("to") || "Jeddah";
+  const ctxFromCode = params.get("fromCode") || "LHE";
+  const ctxToCode = params.get("toCode") || "JED";
+  const ctxDate = params.get("date") || "Apr 15, 2025";
+  const ctxAirline = params.get("airline") || "Saudi Airlines";
+  const ctxFlightNo = params.get("flightNo") || "SV-702";
+  const ctxCabin = params.get("cabin") || "Economy";
+
   const [step, setStep] = useState(1);
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
+  const [selectedSeat, setSelectedSeat] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState("card");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [paymentTouched, setPaymentTouched] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [savedBooking, setSavedBooking] = useState<BookingRecord | null>(null);
 
   // Flight type — drives whether passport is required (international) or CNIC is allowed (domestic)
   const [flightType, setFlightType] = useState<"international" | "domestic">("international");
