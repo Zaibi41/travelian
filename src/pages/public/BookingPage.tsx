@@ -572,23 +572,51 @@ export default function BookingPage() {
                   {paymentMethod === "card" && (
                     <div className="space-y-4 border-t pt-5">
                       <div>
-                        <Label className="text-sm font-medium">Card Number</Label>
-                        <Input placeholder="1234 5678 9012 3456" className="mt-1.5 h-11 rounded-xl" />
+                        <Label className="text-sm font-medium">Card Number *</Label>
+                        <Input
+                          inputMode="numeric"
+                          placeholder="1234 5678 9012 3456"
+                          className="mt-1.5 h-11 rounded-xl"
+                          value={cardNumber}
+                          onChange={e => setCardNumber(formatCardNumber(e.target.value))}
+                        />
+                        {paymentTouched && !cardNumberValid && <p className="text-xs text-destructive mt-1">Enter a valid card number</p>}
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label className="text-sm font-medium">Expiry Date</Label>
-                          <Input placeholder="MM/YY" className="mt-1.5 h-11 rounded-xl" />
+                          <Label className="text-sm font-medium">Expiry *</Label>
+                          <Input
+                            placeholder="MM/YY"
+                            className="mt-1.5 h-11 rounded-xl"
+                            value={cardExpiry}
+                            onChange={e => setCardExpiry(formatExpiry(e.target.value))}
+                          />
+                          {paymentTouched && !cardExpiryValid && <p className="text-xs text-destructive mt-1">MM/YY required</p>}
                         </div>
                         <div>
-                          <Label className="text-sm font-medium">CVV</Label>
-                          <Input placeholder="123" className="mt-1.5 h-11 rounded-xl" />
+                          <Label className="text-sm font-medium">CVV *</Label>
+                          <Input
+                            inputMode="numeric"
+                            placeholder="123"
+                            maxLength={4}
+                            className="mt-1.5 h-11 rounded-xl"
+                            value={cardCvv}
+                            onChange={e => setCardCvv(e.target.value.replace(/\D/g, ""))}
+                          />
+                          {paymentTouched && !cardCvvValid && <p className="text-xs text-destructive mt-1">3–4 digits</p>}
                         </div>
                       </div>
                       <div>
-                        <Label className="text-sm font-medium">Cardholder Name</Label>
-                        <Input placeholder="Name on card" className="mt-1.5 h-11 rounded-xl" />
+                        <Label className="text-sm font-medium">Cardholder Name *</Label>
+                        <Input
+                          placeholder="Name on card"
+                          className="mt-1.5 h-11 rounded-xl"
+                          value={cardName}
+                          onChange={e => setCardName(e.target.value)}
+                        />
+                        {paymentTouched && !cardNameValid && <p className="text-xs text-destructive mt-1">Cardholder name required</p>}
                       </div>
+                      <p className="text-xs text-muted-foreground">Demo mode: no real charge will be made.</p>
                     </div>
                   )}
 
@@ -598,16 +626,16 @@ export default function BookingPage() {
                   </div>
 
                   <div className="flex justify-between mt-6">
-                    <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl">Back</Button>
-                    <Button onClick={() => setStep(4)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
-                      Pay ${grandTotal} <ChevronRight className="h-4 w-4 ml-1" />
+                    <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl" disabled={processing}>Back</Button>
+                    <Button onClick={handlePay} disabled={processing} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
+                      {processing ? "Processing..." : `Pay $${grandTotal}`} <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {step === 4 && (
+            {step === 4 && savedBooking && (
               <Card className="shadow-card border-0 animate-fade-in-up">
                 <CardContent className="p-8 text-center">
                   <div className="h-20 w-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-5 animate-scale-in">
@@ -628,28 +656,32 @@ export default function BookingPage() {
                     </div>
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">PNR</span>
+                        <span className="font-bold font-mono text-foreground">{savedBooking.pnr}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Booking ID</span>
-                        <span className="font-bold font-mono text-foreground">{bookingRef}</span>
+                        <span className="font-mono text-foreground">{savedBooking.id}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Flight</span>
-                        <span className="font-medium text-foreground">Saudi Airlines · SV-702</span>
+                        <span className="font-medium text-foreground">{ctxAirline} · {ctxFlightNo}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Route</span>
-                        <span className="font-medium text-foreground">Lahore → Jeddah</span>
+                        <span className="font-medium text-foreground">{ctxFrom} → {ctxTo}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Date</span>
-                        <span className="font-medium text-foreground">Apr 15, 2025</span>
+                        <span className="font-medium text-foreground">{ctxDate}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Passenger</span>
-                        <span className="font-medium text-foreground">{firstName || "1"} {lastName}</span>
+                        <span className="font-medium text-foreground">{firstName} {lastName}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Seat</span>
-                        <span className="font-medium text-foreground">24A (Window)</span>
+                        <span className="font-medium text-foreground">{selectedSeat || "Auto-assign at check-in"}</span>
                       </div>
                       <div className="flex justify-between font-bold border-t pt-3 text-base">
                         <span>Total Paid</span>
@@ -658,13 +690,16 @@ export default function BookingPage() {
                     </div>
                   </div>
 
-                  <p className="text-xs text-muted-foreground mt-4">Confirmation email and E-ticket sent to your registered email address.</p>
-                  <div className="flex gap-3 justify-center mt-6">
-                    <Button variant="outline" className="rounded-xl gap-2">
+                  <p className="text-xs text-muted-foreground mt-4">Confirmation email and E-ticket sent to {email}.</p>
+                  <div className="flex flex-wrap gap-3 justify-center mt-6">
+                    <Button variant="outline" className="rounded-xl gap-2" onClick={() => downloadETicket(savedBooking)}>
                       <Download className="h-4 w-4" /> Download E-Ticket
                     </Button>
-                    <Link to="/account">
+                    <Link to="/my-bookings">
                       <Button className="gradient-primary text-primary-foreground rounded-xl">View My Bookings</Button>
+                    </Link>
+                    <Link to="/">
+                      <Button variant="ghost" className="rounded-xl">Back to Home</Button>
                     </Link>
                   </div>
                 </CardContent>
