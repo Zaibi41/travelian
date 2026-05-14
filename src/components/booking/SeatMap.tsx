@@ -50,10 +50,9 @@ export function SeatMap({ selected, onSelect, rows = 12 }: SeatMapProps) {
                 const isSelected = selected === seat;
                 const premium = isPremium(r);
                 return (
-                  <>
+                  <span key={seat} className="contents">
                     {idx === 3 && <span className="w-3" />}
                     <button
-                      key={seat}
                       type="button"
                       disabled={isTaken}
                       onClick={() => onSelect(seat)}
@@ -68,7 +67,7 @@ export function SeatMap({ selected, onSelect, rows = 12 }: SeatMapProps) {
                     >
                       {c}
                     </button>
-                  </>
+                  </span>
                 );
               })}
             </div>
