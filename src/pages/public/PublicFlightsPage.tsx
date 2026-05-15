@@ -97,6 +97,13 @@ export default function PublicFlightsPage() {
 
   return (
     <div>
+      <SEO
+        title={`Flights ${from} to ${to} — Travelian`}
+        description={`Compare and book ${from} to ${to} flights on ${format(departDate, "PPP")}. Best fares, instant e-ticket, secure checkout.`}
+      />
+      {/* Visually-hidden H1 for SEO/a11y, keeps premium look intact */}
+      <h1 className="sr-only">Flight search results: {from} to {to}</h1>
+
       {/* Sticky Search Hero */}
       <section className="gradient-hero py-5 sticky top-16 md:top-[100px] z-30 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -123,13 +130,13 @@ export default function PublicFlightsPage() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr] gap-3 items-center">
               <div className="relative">
                 <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
                 <Input value={from} onChange={e => setFrom(e.target.value)} placeholder="From where?" className="pl-9 h-12 bg-card rounded-xl border-0" />
               </div>
               <div className="hidden md:flex items-center justify-center">
-                <button type="button" onClick={swap} className="h-9 w-9 rounded-full border-2 border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/10 transition-colors">
+                <button type="button" onClick={swap} aria-label="Swap origin and destination" className="h-9 w-9 rounded-full border-2 border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/10 transition-colors">
                   <ArrowLeftRight className="h-4 w-4" />
                 </button>
               </div>
@@ -152,9 +159,6 @@ export default function PublicFlightsPage() {
                 <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
                 <Input value={travelers} onChange={e => setTravelers(e.target.value)} className="pl-9 h-12 bg-card rounded-xl border-0" />
               </div>
-              <Button onClick={openModify} className="h-12 px-6 gradient-primary text-primary-foreground rounded-xl font-semibold whitespace-nowrap">
-                <Search className="h-4 w-4 mr-2" /> Modify Search
-              </Button>
             </div>
           </div>
         </div>
