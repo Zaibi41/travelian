@@ -44,6 +44,7 @@ export default function RegisterPage() {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
+      setSession({ email: String(parsed.data.email), name: String(parsed.data.fullName), createdAt: new Date().toISOString() });
       toast.success("Account created! Welcome to Travelian.");
       navigate("/account");
     }, 600);
