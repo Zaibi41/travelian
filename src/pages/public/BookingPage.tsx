@@ -310,13 +310,17 @@ export default function BookingPage() {
     return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
   };
 
+  const backLink = isFlight ? "/flights-search" : productCtx.type === "hotel" ? "/hotels-search" : productCtx.type === "umrah" ? "/umrah-packages" : productCtx.type === "tour" ? "/tour-packages" : "/visa-services";
+
   return (
     <div className="bg-muted/20 min-h-screen">
+      <SEO title="Secure Checkout — Travelian" description={`Complete your ${productCtx.type} booking securely with Travelian.`} />
+      <h1 className="sr-only">Secure Checkout</h1>
       {/* Progress Header */}
       <div className="bg-card border-b sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <Link to="/flights-search" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link to={backLink} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="h-4 w-4" /> Back to results
             </Link>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
