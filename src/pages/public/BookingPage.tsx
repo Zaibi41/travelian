@@ -791,25 +791,27 @@ export default function BookingPage() {
                         <span className="font-mono text-foreground">{savedBooking.id}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Flight</span>
-                        <span className="font-medium text-foreground">{ctxAirline} · {ctxFlightNo}</span>
+                        <span className="text-muted-foreground capitalize">{productCtx.type}</span>
+                        <span className="font-medium text-foreground">{productCtx.title}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Route</span>
-                        <span className="font-medium text-foreground">{ctxFrom} → {ctxTo}</span>
+                        <span className="text-muted-foreground">Details</span>
+                        <span className="font-medium text-foreground">{productCtx.subtitle}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Date</span>
-                        <span className="font-medium text-foreground">{ctxDate}</span>
+                        <span className="text-muted-foreground">When</span>
+                        <span className="font-medium text-foreground">{productCtx.meta}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Passenger</span>
                         <span className="font-medium text-foreground">{firstName} {lastName}</span>
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Seat</span>
-                        <span className="font-medium text-foreground">{selectedSeat || "Auto-assign at check-in"}</span>
-                      </div>
+                      {isFlight && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Seat</span>
+                          <span className="font-medium text-foreground">{selectedSeat || "Auto-assign at check-in"}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between font-bold border-t pt-3 text-base">
                         <span>Total Paid</span>
                         <span className="text-primary">${grandTotal}</span>
