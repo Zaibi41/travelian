@@ -48,6 +48,8 @@ export default function SignInPage() {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
+      const email = String(parsed.data.email);
+      setSession({ email, name: email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase()), createdAt: new Date().toISOString() });
       toast.success("Welcome back!");
       navigate("/account");
     }, 600);
