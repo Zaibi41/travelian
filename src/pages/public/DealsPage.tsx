@@ -52,7 +52,7 @@ export default function DealsPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {flashDeals.map((deal, i) => (
-              <div key={i} className={`${deal.bg} rounded-2xl p-5 text-primary-foreground relative overflow-hidden hover:scale-[1.02] transition-transform cursor-pointer`}>
+              <Link to={deal.to} key={i} className={`${deal.bg} rounded-2xl p-5 text-primary-foreground relative overflow-hidden hover:scale-[1.02] transition-transform block`}>
                 <div className="absolute top-0 right-0 w-24 h-24 bg-primary-foreground/5 rounded-full -mr-8 -mt-8" />
                 <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 text-[10px] mb-2">{deal.category}</Badge>
                 <h3 className="font-bold text-sm mb-1">{deal.title}</h3>
@@ -60,9 +60,9 @@ export default function DealsPage() {
                 <p className="text-xs text-primary-foreground/70 mb-3">{deal.desc}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs flex items-center gap-1"><Clock className="h-3 w-3" /> {deal.expiry}</span>
-                  <Button size="sm" variant="secondary" className="text-xs h-7">Grab Deal</Button>
+                  <Button size="sm" variant="secondary" className="text-xs h-7" tabIndex={-1}>Grab Deal</Button>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
