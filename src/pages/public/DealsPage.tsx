@@ -1,19 +1,33 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Flame, Clock, Percent, Zap, Tag, Star, MapPin, Heart, ArrowRight } from "lucide-react";
+import { Flame, Clock, Percent, Zap, Tag, Star, MapPin, Heart, ArrowRight, Check, Copy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { mockCoupons, mockHotels, mockPackages } from "@/data/mock";
+import { useState } from "react";
+import { toast } from "sonner";
+import { SEO } from "@/components/SEO";
 
 const flashDeals = [
-  { title: "Makkah Hotels Flash Sale", discount: "40% OFF", desc: "5-star hotels near Haram at unbeatable prices", bg: "gradient-deal", expiry: "2 days", category: "Hotels" },
-  { title: "Summer Tour Early Bird", discount: "Save $300", desc: "Book Turkey & Egypt tours before May", bg: "gradient-primary", expiry: "15 days", category: "Tours" },
-  { title: "Umrah Economy Special", discount: "From $799", desc: "7-night economy package with flights", bg: "gradient-hero", expiry: "Limited", category: "Umrah" },
-  { title: "First Booking Bonus", discount: "$50 OFF", desc: "Use code WELCOME50 on your first booking", bg: "gradient-deal", expiry: "Ongoing", category: "All" },
+  { title: "Makkah Hotels Flash Sale", discount: "40% OFF", desc: "5-star hotels near Haram at unbeatable prices", bg: "gradient-deal", expiry: "2 days", category: "Hotels", to: "/hotels-search" },
+  { title: "Summer Tour Early Bird", discount: "Save $300", desc: "Book Turkey & Egypt tours before May", bg: "gradient-primary", expiry: "15 days", category: "Tours", to: "/tour-packages" },
+  { title: "Umrah Economy Special", discount: "From $799", desc: "7-night economy package with flights", bg: "gradient-hero", expiry: "Limited", category: "Umrah", to: "/umrah-packages" },
+  { title: "First Booking Bonus", discount: "$50 OFF", desc: "Use code WELCOME50 on your first booking", bg: "gradient-deal", expiry: "Ongoing", category: "All", to: "/hotels-search" },
 ];
 
 export default function DealsPage() {
-  const activeCoupons = mockCoupons.filter(c => c.status === 'active');
+  const today = new Date().toISOString().slice(0, 10);
+  const activeCoupons = mockCoupons.filter(c => c.status === 'active' && c.validUntil >= today);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const onCopy = (code: string) => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(code);
+      toast.success(`Copied promo code ${code}`);
+      setTimeout(() => setCopied(null), 2000);
+    }).catch(() => toast.error("Could not copy code"));
+  };
+
 
   return (
     <div>
@@ -38,7 +52,7 @@ export default function DealsPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {flashDeals.map((deal, i) => (
-              <div key={i} className={`${deal.bg} rounded-2xl p-5 text-primary-foreground relative overflow-hidden hover:scale-[1.02] transition-transform cursor-pointer`}>
+              <Link to={deal.to} key={i} className={`${deal.bg} rounded-2xl p-5 text-primary-foreground relative overflow-hidden hover:scale-[1.02] transition-transform block`}>
                 <div className="absolute top-0 right-0 w-24 h-24 bg-primary-foreground/5 rounded-full -mr-8 -mt-8" />
                 <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 text-[10px] mb-2">{deal.category}</Badge>
                 <h3 className="font-bold text-sm mb-1">{deal.title}</h3>
@@ -46,9 +60,9 @@ export default function DealsPage() {
                 <p className="text-xs text-primary-foreground/70 mb-3">{deal.desc}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs flex items-center gap-1"><Clock className="h-3 w-3" /> {deal.expiry}</span>
-                  <Button size="sm" variant="secondary" className="text-xs h-7">Grab Deal</Button>
+                  <Button size="sm" variant="secondary" className="text-xs h-7" tabIndex={-1}>Grab Deal</Button>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -75,7 +89,9 @@ export default function DealsPage() {
                   <h3 className="font-semibold text-foreground text-sm">{coupon.description}</h3>
                   <div className="mt-3 p-2.5 bg-muted rounded-lg flex items-center justify-between">
                     <code className="text-sm font-bold text-primary tracking-wider">{coupon.code}</code>
-                    <Button size="sm" variant="ghost" className="text-xs h-7 text-primary">Copy</Button>
+                    <Button size="sm" variant="ghost" onClick={() => onCopy(coupon.code)} className="text-xs h-7 text-primary gap-1" aria-label={`Copy promo code ${coupon.code}`}>
+                      {copied === coupon.code ? (<><Check className="h-3 w-3" /> Copied</>) : (<><Copy className="h-3 w-3" /> Copy</>)}
+                    </Button>
                   </div>
                   <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
                     <span>Min. order: ${coupon.minOrder}</span>

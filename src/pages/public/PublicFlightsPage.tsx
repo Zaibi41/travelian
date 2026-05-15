@@ -10,21 +10,30 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Users, Shield, Luggage, CalendarIcon, Pencil } from "lucide-react";
 import { mockFlights } from "@/data/mock";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
+import { SEO } from "@/components/SEO";
 
 export default function PublicFlightsPage() {
+  const [params] = useSearchParams();
+  const initFrom = params.get("from") || "Lahore (LHE)";
+  const initTo = params.get("to") || "Jeddah (JED)";
+  const initDateStr = params.get("depart");
+  const initCabin = params.get("cabin") || "Economy";
+  const initAdults = params.get("adults") || "1";
+  const initDate = initDateStr ? new Date(initDateStr) : new Date();
+
   const [search, setSearch] = useState("");
-  const [from, setFrom] = useState("Lahore (LHE)");
-  const [to, setTo] = useState("Jeddah (JED)");
-  const [travelers, setTravelers] = useState("1 Adult, Economy");
+  const [from, setFrom] = useState(initFrom);
+  const [to, setTo] = useState(initTo);
+  const [travelers, setTravelers] = useState(`${initAdults} Adult, ${initCabin}`);
   const [priceRange, setPriceRange] = useState([0, 700]);
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [sort, setSort] = useState("best");
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
-  const [departDate, setDepartDate] = useState<Date>(new Date());
-  const [selectedDayIndex, setSelectedDayIndex] = useState(3); // center
+  const [departDate, setDepartDate] = useState<Date>(initDate);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(3);
   const [modifyOpen, setModifyOpen] = useState(false);
 
   // Modal-local edit state
@@ -88,6 +97,13 @@ export default function PublicFlightsPage() {
 
   return (
     <div>
+      <SEO
+        title={`Flights ${from} to ${to} — Travelian`}
+        description={`Compare and book ${from} to ${to} flights on ${format(departDate, "PPP")}. Best fares, instant e-ticket, secure checkout.`}
+      />
+      {/* Visually-hidden H1 for SEO/a11y, keeps premium look intact */}
+      <h1 className="sr-only">Flight search results: {from} to {to}</h1>
+
       {/* Sticky Search Hero */}
       <section className="gradient-hero py-5 sticky top-16 md:top-[100px] z-30 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -114,13 +130,13 @@ export default function PublicFlightsPage() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr] gap-3 items-center">
               <div className="relative">
                 <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
                 <Input value={from} onChange={e => setFrom(e.target.value)} placeholder="From where?" className="pl-9 h-12 bg-card rounded-xl border-0" />
               </div>
               <div className="hidden md:flex items-center justify-center">
-                <button type="button" onClick={swap} className="h-9 w-9 rounded-full border-2 border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/10 transition-colors">
+                <button type="button" onClick={swap} aria-label="Swap origin and destination" className="h-9 w-9 rounded-full border-2 border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/10 transition-colors">
                   <ArrowLeftRight className="h-4 w-4" />
                 </button>
               </div>
@@ -143,9 +159,6 @@ export default function PublicFlightsPage() {
                 <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
                 <Input value={travelers} onChange={e => setTravelers(e.target.value)} className="pl-9 h-12 bg-card rounded-xl border-0" />
               </div>
-              <Button onClick={openModify} className="h-12 px-6 gradient-primary text-primary-foreground rounded-xl font-semibold whitespace-nowrap">
-                <Search className="h-4 w-4 mr-2" /> Modify Search
-              </Button>
             </div>
           </div>
         </div>
@@ -314,7 +327,7 @@ export default function PublicFlightsPage() {
                             <Coffee className="h-3 w-3 text-muted-foreground" />
                           </div>
                         </div>
-                        <Link to="/booking">
+                        <Link to={`/booking?type=flight&flightId=${flight.flightId}&airline=${encodeURIComponent(flight.airline)}&flightNo=${encodeURIComponent(flight.flightNumber)}&from=${encodeURIComponent(flight.origin)}&to=${encodeURIComponent(flight.destination)}&date=${encodeURIComponent(format(departDate, "MMM dd, yyyy"))}&cabin=${encodeURIComponent(flight.class)}&price=${flight.price}`}>
                           <Button className="gradient-primary text-primary-foreground rounded-xl h-11 px-5">Select</Button>
                         </Link>
                       </div>
@@ -346,7 +359,7 @@ export default function PublicFlightsPage() {
                               <p className="flex items-center gap-1.5"><ArrowLeftRight className="h-3 w-3" /> {fare.change}</p>
                               <p className="flex items-center gap-1.5"><Shield className="h-3 w-3" /> {fare.refund}</p>
                             </div>
-                            <Link to="/booking">
+                            <Link to={`/booking?type=flight&flightId=${flight.flightId}&airline=${encodeURIComponent(flight.airline)}&flightNo=${encodeURIComponent(flight.flightNumber)}&from=${encodeURIComponent(flight.origin)}&to=${encodeURIComponent(flight.destination)}&date=${encodeURIComponent(format(departDate, "MMM dd, yyyy"))}&cabin=${encodeURIComponent(flight.class)}&fare=${fare.tier}&price=${fare.price}`}>
                               <Button
                                 size="sm"
                                 className={`w-full mt-3 rounded-lg ${fare.popular ? "gradient-primary text-primary-foreground" : ""}`}

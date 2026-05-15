@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plane, Mail, Lock, User } from "lucide-react";
 import { toast } from "sonner";
+import { setSession } from "@/lib/auth-session";
 
 const schema = z.object({
   fullName: z.string().trim().min(2, "Name is required").max(100),
@@ -43,6 +44,7 @@ export default function RegisterPage() {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
+      setSession({ email: String(parsed.data.email), name: String(parsed.data.fullName), createdAt: new Date().toISOString() });
       toast.success("Account created! Welcome to Travelian.");
       navigate("/account");
     }, 600);
