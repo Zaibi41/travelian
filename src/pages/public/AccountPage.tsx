@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, MapPin, Star, Heart, User, Settings, CreditCard, Gift, Clock, ChevronRight, Plane, Hotel, Download, Eye } from "lucide-react";
+import { Calendar, MapPin, Star, Heart, User, Settings, CreditCard, Gift, Clock, ChevronRight, Plane, Hotel, Download, Eye, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
+import { getSession } from "@/lib/auth-session";
+import { SEO } from "@/components/SEO";
 
 const upcomingTrips = [
   { id: "b1", hotel: "Swissotel Al Maqam", city: "Makkah, SA", dates: "Apr 15 - Apr 18", room: "Deluxe Room", status: "confirmed", total: 1086, image: "🕋" },
