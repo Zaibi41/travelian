@@ -841,11 +841,11 @@ export default function BookingPage() {
             <Card className="sticky top-32 shadow-card border-0">
               <CardContent className="p-5">
                 <div className="flex gap-3 mb-4 pb-4 border-b">
-                  <div className="h-14 w-14 rounded-xl bg-accent flex items-center justify-center text-2xl shrink-0">✈️</div>
+                  <div className="h-14 w-14 rounded-xl bg-accent flex items-center justify-center text-2xl shrink-0">{productCtx.emoji}</div>
                   <div>
-                    <h3 className="font-semibold text-foreground text-sm">{ctxAirline} · {ctxFlightNo}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{ctxFrom} → {ctxTo}</p>
-                    <p className="text-xs text-muted-foreground">{ctxDate} · {ctxCabin}</p>
+                    <h3 className="font-semibold text-foreground text-sm">{productCtx.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{productCtx.subtitle}</p>
+                    <p className="text-xs text-muted-foreground">{productCtx.meta}</p>
                   </div>
                 </div>
                 <div className="space-y-2.5 text-sm">
