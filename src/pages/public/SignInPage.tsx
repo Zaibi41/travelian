@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plane, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { setSession } from "@/lib/auth-session";
 
 const schema = z.object({
   email: z.string().trim().email("Enter a valid email").max(255),
