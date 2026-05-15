@@ -32,8 +32,8 @@ export default function PublicFlightsPage() {
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [sort, setSort] = useState("best");
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
-  const [departDate, setDepartDate] = useState<Date>(new Date());
-  const [selectedDayIndex, setSelectedDayIndex] = useState(3); // center
+  const [departDate, setDepartDate] = useState<Date>(initDate);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(3);
   const [modifyOpen, setModifyOpen] = useState(false);
 
   // Modal-local edit state
