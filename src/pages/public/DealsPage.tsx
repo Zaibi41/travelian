@@ -1,19 +1,33 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Flame, Clock, Percent, Zap, Tag, Star, MapPin, Heart, ArrowRight } from "lucide-react";
+import { Flame, Clock, Percent, Zap, Tag, Star, MapPin, Heart, ArrowRight, Check, Copy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { mockCoupons, mockHotels, mockPackages } from "@/data/mock";
+import { useState } from "react";
+import { toast } from "sonner";
+import { SEO } from "@/components/SEO";
 
 const flashDeals = [
-  { title: "Makkah Hotels Flash Sale", discount: "40% OFF", desc: "5-star hotels near Haram at unbeatable prices", bg: "gradient-deal", expiry: "2 days", category: "Hotels" },
-  { title: "Summer Tour Early Bird", discount: "Save $300", desc: "Book Turkey & Egypt tours before May", bg: "gradient-primary", expiry: "15 days", category: "Tours" },
-  { title: "Umrah Economy Special", discount: "From $799", desc: "7-night economy package with flights", bg: "gradient-hero", expiry: "Limited", category: "Umrah" },
-  { title: "First Booking Bonus", discount: "$50 OFF", desc: "Use code WELCOME50 on your first booking", bg: "gradient-deal", expiry: "Ongoing", category: "All" },
+  { title: "Makkah Hotels Flash Sale", discount: "40% OFF", desc: "5-star hotels near Haram at unbeatable prices", bg: "gradient-deal", expiry: "2 days", category: "Hotels", to: "/hotels-search" },
+  { title: "Summer Tour Early Bird", discount: "Save $300", desc: "Book Turkey & Egypt tours before May", bg: "gradient-primary", expiry: "15 days", category: "Tours", to: "/tour-packages" },
+  { title: "Umrah Economy Special", discount: "From $799", desc: "7-night economy package with flights", bg: "gradient-hero", expiry: "Limited", category: "Umrah", to: "/umrah-packages" },
+  { title: "First Booking Bonus", discount: "$50 OFF", desc: "Use code WELCOME50 on your first booking", bg: "gradient-deal", expiry: "Ongoing", category: "All", to: "/hotels-search" },
 ];
 
 export default function DealsPage() {
-  const activeCoupons = mockCoupons.filter(c => c.status === 'active');
+  const today = new Date().toISOString().slice(0, 10);
+  const activeCoupons = mockCoupons.filter(c => c.status === 'active' && c.validUntil >= today);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const onCopy = (code: string) => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(code);
+      toast.success(`Copied promo code ${code}`);
+      setTimeout(() => setCopied(null), 2000);
+    }).catch(() => toast.error("Could not copy code"));
+  };
+
 
   return (
     <div>
