@@ -64,14 +64,14 @@ export default function AccountPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
             <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center text-2xl font-bold text-primary-foreground">
-              AK
+              {session.name.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase()}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-primary-foreground">Ahmed Khan</h1>
-              <p className="text-sm text-primary-foreground/60">Member since 2024 · Gold Member</p>
+              <h1 className="text-xl font-bold text-primary-foreground">{session.name}</h1>
+              <p className="text-sm text-primary-foreground/60">{session.email}</p>
             </div>
             <div className="ml-auto hidden md:flex items-center gap-2">
-              <Badge className="bg-warning/20 text-warning border-warning/30"><Gift className="h-3 w-3 mr-1" /> 2,450 Points</Badge>
+              <Badge className="bg-warning/20 text-warning border-warning/30"><Gift className="h-3 w-3 mr-1" /> Member</Badge>
             </div>
           </div>
         </div>
