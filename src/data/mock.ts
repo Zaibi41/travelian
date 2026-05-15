@@ -257,18 +257,18 @@ export const mockFlights: Flight[] = [
 
 // ─── Coupons ───
 export const mockCoupons: Coupon[] = [
-  { couponId: 'c1', code: 'UMRAH10', description: '10% off on all Umrah packages', discountType: 'percentage', discountValue: 10, minOrder: 1000, maxUses: 100, usedCount: 34, validFrom: '2025-03-01', validUntil: '2025-06-30', status: 'active', applicableTo: 'umrah' },
-  { couponId: 'c2', code: 'WELCOME50', description: '$50 off on first booking', discountType: 'fixed', discountValue: 50, minOrder: 500, maxUses: 200, usedCount: 89, validFrom: '2025-01-01', validUntil: '2025-12-31', status: 'active', applicableTo: 'all' },
+  { couponId: 'c1', code: 'UMRAH10', description: '10% off on all Umrah packages', discountType: 'percentage', discountValue: 10, minOrder: 1000, maxUses: 100, usedCount: 34, validFrom: '2026-01-01', validUntil: '2026-12-31', status: 'active', applicableTo: 'umrah' },
+  { couponId: 'c2', code: 'WELCOME50', description: '$50 off on first booking', discountType: 'fixed', discountValue: 50, minOrder: 500, maxUses: 200, usedCount: 89, validFrom: '2026-01-01', validUntil: '2026-12-31', status: 'active', applicableTo: 'all' },
   { couponId: 'c3', code: 'RAMADAN15', description: '15% off on Ramadan packages', discountType: 'percentage', discountValue: 15, minOrder: 2000, maxUses: 50, usedCount: 50, validFrom: '2025-02-01', validUntil: '2025-03-31', status: 'expired', applicableTo: 'umrah' },
-  { couponId: 'c4', code: 'TOUR20', description: '20% off on all tour packages', discountType: 'percentage', discountValue: 20, minOrder: 800, maxUses: 75, usedCount: 12, validFrom: '2025-04-01', validUntil: '2025-09-30', status: 'active', applicableTo: 'tour' },
-  { couponId: 'c5', code: 'VISA25', description: '$25 off on visa processing', discountType: 'fixed', discountValue: 25, minOrder: 100, maxUses: 500, usedCount: 145, validFrom: '2025-01-01', validUntil: '2025-12-31', status: 'active', applicableTo: 'visa' },
+  { couponId: 'c4', code: 'TOUR20', description: '20% off on all tour packages', discountType: 'percentage', discountValue: 20, minOrder: 800, maxUses: 75, usedCount: 12, validFrom: '2026-01-01', validUntil: '2026-09-30', status: 'active', applicableTo: 'tour' },
+  { couponId: 'c5', code: 'VISA25', description: '$25 off on visa processing', discountType: 'fixed', discountValue: 25, minOrder: 100, maxUses: 500, usedCount: 145, validFrom: '2026-01-01', validUntil: '2026-12-31', status: 'active', applicableTo: 'visa' },
 ];
 
 // ─── Blog Posts ───
 export const mockBlogPosts: BlogPost[] = [
-  { postId: 'bp1', title: 'Complete Umrah Guide 2025', slug: 'complete-umrah-guide-2025', excerpt: 'Everything you need to know about performing Umrah in 2025', content: 'Full article content here...', author: 'Ahmed Khan', category: 'Umrah', status: 'published', publishedAt: '2025-03-15', tags: ['umrah', 'guide', 'saudi'] },
-  { postId: 'bp2', title: 'Top 10 Hotels Near Haram', slug: 'top-10-hotels-near-haram', excerpt: 'Our curated list of the best hotels within walking distance of Masjid al-Haram', content: 'Full article content here...', author: 'Sara Ali', category: 'Hotels', status: 'published', publishedAt: '2025-03-10', tags: ['hotels', 'makkah', 'haram'] },
-  { postId: 'bp3', title: 'Visa Requirements for Saudi Arabia', slug: 'visa-requirements-saudi', excerpt: 'Updated visa requirements and process for Pakistani travelers', content: 'Full article content here...', author: 'Ahmed Khan', category: 'Visa', status: 'published', publishedAt: '2025-02-28', tags: ['visa', 'saudi', 'requirements'] },
+  { postId: 'bp1', title: 'Complete Umrah Guide 2026', slug: 'complete-umrah-guide-2026', excerpt: 'Everything you need to know about performing Umrah in 2026', content: 'Full article content here...', author: 'Ahmed Khan', category: 'Umrah', status: 'published', publishedAt: '2026-04-12', tags: ['umrah', 'guide', 'saudi'] },
+  { postId: 'bp2', title: 'Top 10 Hotels Near Haram', slug: 'top-10-hotels-near-haram', excerpt: 'Our curated list of the best hotels within walking distance of Masjid al-Haram', content: 'Full article content here...', author: 'Sara Ali', category: 'Hotels', status: 'published', publishedAt: '2026-03-22', tags: ['hotels', 'makkah', 'haram'] },
+  { postId: 'bp3', title: 'Visa Requirements for Saudi Arabia', slug: 'visa-requirements-saudi', excerpt: 'Updated visa requirements and process for Pakistani travelers', content: 'Full article content here...', author: 'Ahmed Khan', category: 'Visa', status: 'published', publishedAt: '2026-02-18', tags: ['visa', 'saudi', 'requirements'] },
   { postId: 'bp4', title: 'Best Time to Visit Turkey', slug: 'best-time-visit-turkey', excerpt: 'Planning a trip to Turkey? Here is the ideal timing for different activities', content: 'Full article content here...', author: 'Sara Ali', category: 'Tours', status: 'draft', publishedAt: '', tags: ['turkey', 'tours', 'travel-tips'] },
 ];
 
