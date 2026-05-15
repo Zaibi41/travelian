@@ -89,7 +89,9 @@ export default function DealsPage() {
                   <h3 className="font-semibold text-foreground text-sm">{coupon.description}</h3>
                   <div className="mt-3 p-2.5 bg-muted rounded-lg flex items-center justify-between">
                     <code className="text-sm font-bold text-primary tracking-wider">{coupon.code}</code>
-                    <Button size="sm" variant="ghost" className="text-xs h-7 text-primary">Copy</Button>
+                    <Button size="sm" variant="ghost" onClick={() => onCopy(coupon.code)} className="text-xs h-7 text-primary gap-1" aria-label={`Copy promo code ${coupon.code}`}>
+                      {copied === coupon.code ? (<><Check className="h-3 w-3" /> Copied</>) : (<><Copy className="h-3 w-3" /> Copy</>)}
+                    </Button>
                   </div>
                   <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
                     <span>Min. order: ${coupon.minOrder}</span>
