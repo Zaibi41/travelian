@@ -327,7 +327,7 @@ export default function PublicFlightsPage() {
                             <Coffee className="h-3 w-3 text-muted-foreground" />
                           </div>
                         </div>
-                        <Link to="/booking">
+                        <Link to={`/booking?type=flight&flightId=${flight.flightId}&airline=${encodeURIComponent(flight.airline)}&flightNo=${encodeURIComponent(flight.flightNumber)}&from=${encodeURIComponent(flight.origin)}&to=${encodeURIComponent(flight.destination)}&date=${encodeURIComponent(format(departDate, "MMM dd, yyyy"))}&cabin=${encodeURIComponent(flight.class)}&price=${flight.price}`}>
                           <Button className="gradient-primary text-primary-foreground rounded-xl h-11 px-5">Select</Button>
                         </Link>
                       </div>
