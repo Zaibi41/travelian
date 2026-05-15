@@ -359,7 +359,7 @@ export default function PublicFlightsPage() {
                               <p className="flex items-center gap-1.5"><ArrowLeftRight className="h-3 w-3" /> {fare.change}</p>
                               <p className="flex items-center gap-1.5"><Shield className="h-3 w-3" /> {fare.refund}</p>
                             </div>
-                            <Link to="/booking">
+                            <Link to={`/booking?type=flight&flightId=${flight.flightId}&airline=${encodeURIComponent(flight.airline)}&flightNo=${encodeURIComponent(flight.flightNumber)}&from=${encodeURIComponent(flight.origin)}&to=${encodeURIComponent(flight.destination)}&date=${encodeURIComponent(format(departDate, "MMM dd, yyyy"))}&cabin=${encodeURIComponent(flight.class)}&fare=${fare.tier}&price=${fare.price}`}>
                               <Button
                                 size="sm"
                                 className={`w-full mt-3 rounded-lg ${fare.popular ? "gradient-primary text-primary-foreground" : ""}`}
