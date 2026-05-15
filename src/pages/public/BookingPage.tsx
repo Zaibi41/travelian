@@ -9,12 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AdvancedDatePicker } from "@/components/ui/advanced-date-picker";
 import { CountryCodePicker } from "@/components/ui/country-code-picker";
 import { CountryPicker } from "@/components/ui/country-picker";
-import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Globe, MapPin, Armchair } from "lucide-react";
+import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Globe, MapPin, Armchair, Search, Hotel, FileCheck, Map } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { SeatMap } from "@/components/booking/SeatMap";
 import { saveBooking, type BookingRecord } from "@/lib/booking-store";
 import { downloadETicket } from "@/lib/eticket-pdf";
 import { toast } from "@/hooks/use-toast";
+import { SEO } from "@/components/SEO";
+import { mockHotels, mockPackages, mockTourPackages, mockVisaPackages, mockFlights } from "@/data/mock";
+import { format, addDays } from "date-fns";
 
 const steps = [
   { id: 1, label: "Traveler Details" },
@@ -25,24 +28,144 @@ const steps = [
 
 const addons = [
   { id: "insurance", name: "Travel Insurance", desc: "Full coverage for trip cancellation, medical, and baggage", price: 29, popular: true },
-  { id: "breakfast", name: "Daily Breakfast", desc: "Buffet breakfast for 2 adults, all 3 nights", price: 45 },
-  { id: "transfer", name: "Airport Transfer", desc: "Private car pickup from airport to hotel", price: 35 },
+  { id: "breakfast", name: "Daily Breakfast", desc: "Buffet breakfast for 2 adults", price: 45 },
+  { id: "transfer", name: "Airport Transfer", desc: "Private car pickup", price: 35 },
   { id: "seat", name: "Preferred Seat", desc: "Choose your preferred seat on the flight", price: 15 },
   { id: "lounge", name: "Lounge Access", desc: "Airport lounge access before departure", price: 40 },
 ];
 
 const currentYear = new Date().getFullYear();
 
+type BookingType = "flight" | "hotel" | "umrah" | "tour" | "visa";
+
+interface ProductCtx {
+  type: BookingType;
+  title: string;
+  subtitle: string;
+  meta: string;
+  emoji: string;
+  base: number;
+  extra?: { airline?: string; flightNumber?: string; from?: string; to?: string; fromCode?: string; toCode?: string; date?: string; cabin?: string };
+}
+
+function buildCtx(params: URLSearchParams): ProductCtx | null {
+  const type = (params.get("type") as BookingType) || (params.get("airline") ? "flight" : null);
+  if (!type) return null;
+  const id = params.get("id") || params.get("flightId") || "";
+
+  if (type === "flight") {
+    const f = mockFlights.find(x => x.flightId === id);
+    const airline = params.get("airline") || f?.airline || "";
+    const flightNumber = params.get("flightNo") || f?.flightNumber || "";
+    const from = params.get("from") || f?.origin || "";
+    const to = params.get("to") || f?.destination || "";
+    const date = params.get("date") || (f ? format(addDays(new Date(), 14), "MMM dd, yyyy") : "");
+    const cabin = params.get("cabin") || f?.class || "Economy";
+    const price = Number(params.get("price")) || f?.price || 510;
+    if (!airline) return null;
+    return {
+      type: "flight",
+      title: `${airline} · ${flightNumber}`,
+      subtitle: `${from} → ${to}`,
+      meta: `${date} · ${cabin}`,
+      emoji: "✈️",
+      base: price,
+      extra: { airline, flightNumber, from, to, date, cabin },
+    };
+  }
+  if (type === "hotel") {
+    const h = mockHotels.find(x => x.hotelId === id);
+    if (!h) return null;
+    const checkIn = params.get("checkIn") || format(addDays(new Date(), 7), "MMM dd, yyyy");
+    const checkOut = params.get("checkOut") || format(addDays(new Date(), 10), "MMM dd, yyyy");
+    const nights = Number(params.get("nights")) || 3;
+    return {
+      type: "hotel",
+      title: h.name,
+      subtitle: `${h.city}, ${h.country} · ${h.starRating}★`,
+      meta: `${checkIn} → ${checkOut} · ${nights} night${nights > 1 ? "s" : ""}`,
+      emoji: "🏨",
+      base: h.pricePerNight * nights,
+    };
+  }
+  if (type === "umrah") {
+    const p = mockPackages.find(x => x.packageId === id);
+    if (!p) return null;
+    return {
+      type: "umrah",
+      title: p.name,
+      subtitle: p.city,
+      meta: `${p.duration} · ${p.hotel}`,
+      emoji: "🕋",
+      base: p.basePrice,
+    };
+  }
+  if (type === "tour") {
+    const t = mockTourPackages.find(x => x.packageId === id);
+    if (!t) return null;
+    return {
+      type: "tour",
+      title: t.name,
+      subtitle: t.city,
+      meta: `${t.duration}`,
+      emoji: "🗺️",
+      base: t.basePrice,
+    };
+  }
+  if (type === "visa") {
+    const v = mockVisaPackages.find(x => x.packageId === id);
+    if (!v) return null;
+    return {
+      type: "visa",
+      title: v.name,
+      subtitle: v.city,
+      meta: `${v.duration} processing`,
+      emoji: "📄",
+      base: v.basePrice,
+    };
+  }
+  return null;
+}
+
 export default function BookingPage() {
   const [params] = useSearchParams();
-  const ctxFrom = params.get("from") || "Lahore";
-  const ctxTo = params.get("to") || "Jeddah";
-  const ctxFromCode = params.get("fromCode") || "LHE";
-  const ctxToCode = params.get("toCode") || "JED";
-  const ctxDate = params.get("date") || "Apr 15, 2025";
-  const ctxAirline = params.get("airline") || "Saudi Airlines";
-  const ctxFlightNo = params.get("flightNo") || "SV-702";
-  const ctxCabin = params.get("cabin") || "Economy";
+  const productCtx = useMemo(() => buildCtx(params), [params]);
+
+  // Empty state if no booking context provided
+  if (!productCtx) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-muted/30 flex items-center justify-center px-4 py-16">
+        <SEO title="Secure Checkout — Travelian" description="Complete your booking securely with Travelian." />
+        <Card className="max-w-lg w-full shadow-elevated border-0">
+          <CardContent className="p-10 text-center">
+            <div className="h-16 w-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-5">
+              <Search className="h-7 w-7 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">No booking selected</h1>
+            <p className="text-sm text-muted-foreground mb-6">
+              You haven't chosen a flight, hotel or package yet. Start a search and select a product to proceed to checkout.
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              <Link to="/"><Button className="gradient-primary text-primary-foreground rounded-xl">Search Flights</Button></Link>
+              <Link to="/hotels-search"><Button variant="outline" className="rounded-xl">Find Hotels</Button></Link>
+              <Link to="/umrah-packages"><Button variant="outline" className="rounded-xl">Umrah Packages</Button></Link>
+              <Link to="/tour-packages"><Button variant="outline" className="rounded-xl">Tours</Button></Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const isFlight = productCtx.type === "flight";
+  const ctxAirline = productCtx.extra?.airline || "";
+  const ctxFlightNo = productCtx.extra?.flightNumber || "";
+  const ctxFrom = productCtx.extra?.from || "";
+  const ctxTo = productCtx.extra?.to || "";
+  const ctxFromCode = productCtx.extra?.fromCode || "";
+  const ctxToCode = productCtx.extra?.toCode || "";
+  const ctxDate = productCtx.extra?.date || format(addDays(new Date(), 14), "MMM dd, yyyy");
+  const ctxCabin = productCtx.extra?.cabin || "Economy";
 
   const [step, setStep] = useState(1);
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
