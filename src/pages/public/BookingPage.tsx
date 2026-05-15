@@ -271,8 +271,8 @@ export default function BookingPage() {
     const addonsList = addons.filter(a => selectedAddons.includes(a.id)).map(a => ({ id: a.id, name: a.name, price: a.price }));
     if (seatFee) addonsList.push({ id: "seat-premium", name: `Premium seat ${selectedSeat}`, price: seatFee });
     const record = saveBooking({
-      type: "flight",
-      flight: {
+      type: productCtx.type,
+      flight: isFlight ? {
         airline: ctxAirline,
         flightNumber: ctxFlightNo,
         from: ctxFrom,
@@ -284,7 +284,7 @@ export default function BookingPage() {
         arriveTime: "13:00",
         duration: "4h 30m",
         cabin: ctxCabin,
-      },
+      } : undefined,
       travelers: [{
         title, firstName, lastName, gender,
         dob: dob?.toISOString(),
@@ -293,7 +293,7 @@ export default function BookingPage() {
         expiryDate: expiryDate?.toISOString(),
       }],
       contact: { email, phone: `${phoneCode} ${phone}`, altPhone: altPhone ? `${altPhoneCode} ${altPhone}` : undefined },
-      seat: selectedSeat || undefined,
+      seat: isFlight ? (selectedSeat || undefined) : undefined,
       addons: addonsList,
       paymentMethod,
       pricing: { base: baseTotal, addons: addonsTotal, taxes, total: grandTotal, currency: "USD" },
