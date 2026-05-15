@@ -27,8 +27,38 @@ const wishlist = [
 ];
 
 export default function AccountPage() {
+  const [session, setSessionState] = useState(() => getSession());
+  useEffect(() => {
+    const h = () => setSessionState(getSession());
+    window.addEventListener("travelian:session", h);
+    window.addEventListener("storage", h);
+    return () => { window.removeEventListener("travelian:session", h); window.removeEventListener("storage", h); };
+  }, []);
+
+  if (!session) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-muted/30 flex items-center justify-center px-4 py-16">
+        <SEO title="Sign in required — Travelian" description="Sign in to access your Travelian account, trips, and rewards." />
+        <Card className="max-w-md w-full shadow-elevated border-0">
+          <CardContent className="p-10 text-center">
+            <div className="h-16 w-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-5">
+              <Lock className="h-7 w-7 text-primary" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Sign in required</h1>
+            <p className="text-sm text-muted-foreground mb-6">You need to be signed in to view your account, trips and rewards.</p>
+            <div className="flex gap-2 justify-center">
+              <Link to="/signin"><Button className="gradient-primary text-primary-foreground rounded-xl">Sign In</Button></Link>
+              <Link to="/register"><Button variant="outline" className="rounded-xl">Create Account</Button></Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-muted/30 min-h-screen">
+      <SEO title="My Account — Travelian" description="Manage your trips, wishlist, rewards and profile on Travelian." />
       {/* Header */}
       <div className="gradient-hero py-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
