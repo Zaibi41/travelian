@@ -10,15 +10,24 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Users, Shield, Luggage, CalendarIcon, Pencil } from "lucide-react";
 import { mockFlights } from "@/data/mock";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
+import { SEO } from "@/components/SEO";
 
 export default function PublicFlightsPage() {
+  const [params] = useSearchParams();
+  const initFrom = params.get("from") || "Lahore (LHE)";
+  const initTo = params.get("to") || "Jeddah (JED)";
+  const initDateStr = params.get("depart");
+  const initCabin = params.get("cabin") || "Economy";
+  const initAdults = params.get("adults") || "1";
+  const initDate = initDateStr ? new Date(initDateStr) : new Date();
+
   const [search, setSearch] = useState("");
-  const [from, setFrom] = useState("Lahore (LHE)");
-  const [to, setTo] = useState("Jeddah (JED)");
-  const [travelers, setTravelers] = useState("1 Adult, Economy");
+  const [from, setFrom] = useState(initFrom);
+  const [to, setTo] = useState(initTo);
+  const [travelers, setTravelers] = useState(`${initAdults} Adult, ${initCabin}`);
   const [priceRange, setPriceRange] = useState([0, 700]);
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [sort, setSort] = useState("best");
