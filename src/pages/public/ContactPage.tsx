@@ -1,11 +1,50 @@
+import { useState } from "react";
+import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
+
+const schema = z.object({
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
+  email: z.string().trim().email("Enter a valid email").max(255),
+  subject: z.string().trim().min(3, "Subject is too short").max(150),
+  message: z.string().trim().min(10, "Message must be at least 10 characters").max(1000),
+});
 
 export default function ContactPage() {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const fd = new FormData(e.currentTarget);
+    const parsed = schema.safeParse({
+      name: fd.get("name"),
+      email: fd.get("email"),
+      subject: fd.get("subject"),
+      message: fd.get("message"),
+    });
+    if (!parsed.success) {
+      const errs: Record<string, string> = {};
+      parsed.error.issues.forEach(i => { errs[String(i.path[0])] = i.message; });
+      setErrors(errs);
+      return;
+    }
+    setErrors({});
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      setSuccess(true);
+      toast.success("Message sent! We'll reply within 24 hours.");
+      (e.target as HTMLFormElement).reset();
+    }, 600);
+  };
+
   return (
     <div>
       <section className="bg-gradient-to-br from-sidebar to-sidebar-accent py-12">
@@ -19,29 +58,44 @@ export default function ContactPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <Card>
-              <CardHeader>
-                <CardTitle>Send us a Message</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Full Name</Label>
-                    <Input placeholder="Your name" />
+              <CardHeader><CardTitle>Send us a Message</CardTitle></CardHeader>
+              <CardContent>
+                {success ? (
+                  <div className="text-center py-10">
+                    <CheckCircle2 className="h-12 w-12 text-success mx-auto mb-3" />
+                    <h2 className="text-lg font-semibold">Thanks — we've got your message</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Our team will respond within 24 hours.</p>
+                    <Button variant="outline" className="mt-5" onClick={() => setSuccess(false)}>Send another message</Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input type="email" placeholder="your@email.com" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Subject</Label>
-                  <Input placeholder="How can we help?" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Message</Label>
-                  <Textarea placeholder="Tell us more..." rows={5} />
-                </div>
-                <Button className="gradient-primary text-primary-foreground">Send Message</Button>
+                ) : (
+                  <form onSubmit={onSubmit} className="space-y-4" noValidate>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Full Name *</Label>
+                        <Input id="name" name="name" placeholder="Your name" maxLength={100} />
+                        {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email *</Label>
+                        <Input id="email" name="email" type="email" placeholder="your@email.com" maxLength={255} />
+                        {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="subject">Subject *</Label>
+                      <Input id="subject" name="subject" placeholder="How can we help?" maxLength={150} />
+                      {errors.subject && <p className="text-xs text-destructive">{errors.subject}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="message">Message *</Label>
+                      <Textarea id="message" name="message" placeholder="Tell us more..." rows={5} maxLength={1000} />
+                      {errors.message && <p className="text-xs text-destructive">{errors.message}</p>}
+                    </div>
+                    <Button type="submit" disabled={loading} className="gradient-primary text-primary-foreground">
+                      {loading ? "Sending..." : "Send Message"}
+                    </Button>
+                  </form>
+                )}
               </CardContent>
             </Card>
           </div>

@@ -34,6 +34,9 @@ import TermsPage from "./pages/public/TermsPage";
 import CareersPage from "./pages/public/CareersPage";
 import UmrahDetailPage from "./pages/public/UmrahDetailPage";
 import MyBookingsPage from "./pages/public/MyBookingsPage";
+import TourDetailPage from "./pages/public/TourDetailPage";
+import VisaDetailPage from "./pages/public/VisaDetailPage";
+import BlogDetailPage from "./pages/public/BlogDetailPage";
 
 // Admin pages
 import DashboardPage from "./pages/DashboardPage";
@@ -81,6 +84,9 @@ const App = () => (
             <Route path="/tour-packages" element={<PublicLayout><PublicToursPage /></PublicLayout>} />
             <Route path="/visa-services" element={<PublicLayout><PublicVisaPage /></PublicLayout>} />
             <Route path="/blog-public" element={<PublicLayout><PublicBlogPage /></PublicLayout>} />
+            <Route path="/blog/:slug" element={<PublicLayout><BlogDetailPage /></PublicLayout>} />
+            <Route path="/tour/:id" element={<PublicLayout><TourDetailPage /></PublicLayout>} />
+            <Route path="/visa/:id" element={<PublicLayout><VisaDetailPage /></PublicLayout>} />
             <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
             <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
             <Route path="/deals" element={<PublicLayout><DealsPage /></PublicLayout>} />

@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
 import { mockBlogPosts } from "@/data/mock";
 
 export default function PublicBlogPage() {
@@ -17,7 +18,8 @@ export default function PublicBlogPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {posts.map(post => (
-            <Card key={post.postId} className="overflow-hidden hover:shadow-elevated transition-all group cursor-pointer">
+            <Link key={post.postId} to={`/blog/${post.slug}`}>
+            <Card className="overflow-hidden hover:shadow-elevated transition-all group cursor-pointer h-full">
               <div className="h-48 bg-gradient-to-br from-primary/10 to-info/10 flex items-center justify-center">
                 <span className="text-5xl group-hover:scale-110 transition-transform">📝</span>
               </div>
@@ -34,6 +36,7 @@ export default function PublicBlogPage() {
                 <p className="text-xs text-muted-foreground mt-4">By {post.author}</p>
               </CardContent>
             </Card>
+            </Link>
           ))}
         </div>
       </div>

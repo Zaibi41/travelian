@@ -100,8 +100,8 @@ export default function PublicVisaPage() {
                     <h3 className="font-semibold text-foreground text-sm">{visa.name}</h3>
                     <p className="text-xs text-muted-foreground mt-1">{visa.duration}</p>
                     <p className="text-xl font-bold text-primary mt-2">${visa.basePrice}</p>
-                    <Link to={`/contact?type=visa&id=${visa.packageId}`}>
-                      <Button size="sm" className="w-full mt-3 gradient-primary text-primary-foreground">Apply Now</Button>
+                    <Link to={`/visa/${visa.packageId}`}>
+                      <Button size="sm" className="w-full mt-3 gradient-primary text-primary-foreground">View details</Button>
                     </Link>
                   </CardContent>
                 </Card>

@@ -1,7 +1,9 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plane, Menu, X, User, Phone, MessageCircle, Globe, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { Plane, Menu, X, User, Phone, MessageCircle, Globe, ChevronDown, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { clearSession, getSession, useSessionEvent, type AuthSession } from "@/lib/auth-session";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +31,17 @@ const WHATSAPP_URL = `https://wa.me/${SUPPORT_PHONE_TEL.replace("+", "")}`;
 export function PublicNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { currency, setCurrency, language, setLanguage } = useLocale();
+  const [session, setSessionState] = useState<AuthSession | null>(() => getSession());
+
+  useEffect(() => useSessionEvent(() => setSessionState(getSession())), []);
+
+  const handleLogout = () => {
+    clearSession();
+    toast.success("Signed out");
+    navigate("/");
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/50">
@@ -121,14 +133,36 @@ export function PublicNavbar() {
             <Link to="/my-bookings">
               <Button variant="ghost" size="sm" className="rounded-lg text-sm">My Bookings</Button>
             </Link>
-            <Link to="/signin">
-              <Button variant="outline" size="sm" className="gap-2 rounded-lg">
-                <User className="h-4 w-4" /> Sign In
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button size="sm" className="gradient-primary text-primary-foreground rounded-lg font-semibold">Register</Button>
-            </Link>
+            {session ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2 rounded-lg">
+                    <User className="h-4 w-4" /> {session.name.split(" ")[0]} <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="z-[60] bg-popover">
+                  <DropdownMenuLabel className="text-xs truncate max-w-[200px]">{session.email}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/account")}>My Account</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/my-bookings")}>My Bookings</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                    <LogOut className="h-4 w-4 mr-2" /> Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <>
+                <Link to="/signin">
+                  <Button variant="outline" size="sm" className="gap-2 rounded-lg">
+                    <User className="h-4 w-4" /> Sign In
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm" className="gradient-primary text-primary-foreground rounded-lg font-semibold">Register</Button>
+                </Link>
+              </>
+            )}
           </div>
 
           <button className="lg:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
@@ -170,12 +204,25 @@ export function PublicNavbar() {
               </div>
             </div>
             <div className="flex gap-2 pt-3 px-3 border-t mt-2">
-              <Link to="/signin" className="flex-1" onClick={() => setMobileOpen(false)}>
-                <Button variant="outline" size="sm" className="w-full rounded-lg">Sign In</Button>
-              </Link>
-              <Link to="/register" className="flex-1" onClick={() => setMobileOpen(false)}>
-                <Button size="sm" className="w-full gradient-primary text-primary-foreground rounded-lg">Register</Button>
-              </Link>
+              {session ? (
+                <>
+                  <Link to="/account" className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Button variant="outline" size="sm" className="w-full rounded-lg gap-2"><User className="h-4 w-4" /> Account</Button>
+                  </Link>
+                  <Button size="sm" className="flex-1 rounded-lg gap-2" variant="destructive" onClick={() => { setMobileOpen(false); handleLogout(); }}>
+                    <LogOut className="h-4 w-4" /> Sign out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/signin" className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Button variant="outline" size="sm" className="w-full rounded-lg">Sign In</Button>
+                  </Link>
+                  <Link to="/register" className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Button size="sm" className="w-full gradient-primary text-primary-foreground rounded-lg">Register</Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         )}
