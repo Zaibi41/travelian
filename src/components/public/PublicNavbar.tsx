@@ -1,7 +1,9 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plane, Menu, X, User, Phone, MessageCircle, Globe, ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { Plane, Menu, X, User, Phone, MessageCircle, Globe, ChevronDown, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { clearSession, getSession, useSessionEvent, type AuthSession } from "@/lib/auth-session";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +31,17 @@ const WHATSAPP_URL = `https://wa.me/${SUPPORT_PHONE_TEL.replace("+", "")}`;
 export function PublicNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { currency, setCurrency, language, setLanguage } = useLocale();
+  const [session, setSessionState] = useState<AuthSession | null>(() => getSession());
+
+  useEffect(() => useSessionEvent(() => setSessionState(getSession())), []);
+
+  const handleLogout = () => {
+    clearSession();
+    toast.success("Signed out");
+    navigate("/");
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/50">
