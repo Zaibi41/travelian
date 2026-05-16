@@ -92,8 +92,8 @@ export default function PublicToursPage() {
                       <span className="text-xs text-muted-foreground">From</span>
                       <p className="text-2xl font-bold text-primary">${tour.basePrice}</p>
                     </div>
-                    <Link to={`/contact?type=tour&id=${tour.packageId}`}>
-                      <Button className="gradient-primary text-primary-foreground">Book Now</Button>
+                    <Link to={`/tour/${tour.packageId}`}>
+                      <Button className="gradient-primary text-primary-foreground">View details</Button>
                     </Link>
                   </div>
                 </CardContent>
