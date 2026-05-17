@@ -53,11 +53,7 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
 export function SearchTabs() {
   const [activeTab, setActiveTab] = useState("flights");
   const [tripType, setTripType] = useState("oneway"); // default One-way
-  const [showPassengers, setShowPassengers] = useState(false);
-  const [adults, setAdults] = useState(1);
-  const [children, setChildren] = useState(0);
-  const [infants, setInfants] = useState(0);
-  const [cabin, setCabin] = useState("Economy");
+  const [travelers, setTravelers] = useState<TravelersValue>({ adults: 1, children: 0, infants: 0, cabin: "Economy" });
   const [departDate, setDepartDate] = useState<Date>();
   const [returnDate, setReturnDate] = useState<Date>();
   const [hotelCheckIn, setHotelCheckIn] = useState<Date>();
@@ -73,19 +69,6 @@ export function SearchTabs() {
     { from: "", to: "", date: undefined },
   ]);
   const navigate = useNavigate();
-  const passengerRef = useRef<HTMLDivElement>(null);
-
-  // Close passenger dropdown on outside click
-  useEffect(() => {
-    if (!showPassengers) return;
-    const handler = (e: MouseEvent) => {
-      if (passengerRef.current && !passengerRef.current.contains(e.target as Node)) {
-        setShowPassengers(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [showPassengers]);
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
 
