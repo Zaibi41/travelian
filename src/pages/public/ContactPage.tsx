@@ -102,9 +102,9 @@ export default function ContactPage() {
 
           <div className="space-y-4">
             {[
-              { icon: MapPin, title: "Address", detail: "123 Mall Road, Lahore, Pakistan" },
-              { icon: Phone, title: "Phone", detail: "+92-300-1234567" },
-              { icon: Mail, title: "Email", detail: "info@travelian.com" },
+              { icon: MapPin, title: "Address", detail: "Johar Town, Lahore" },
+              { icon: Phone, title: "Phone", detail: "+92 324 4440014" },
+              { icon: Mail, title: "Email", detail: "travelian.pk@gmail.com" },
               { icon: Clock, title: "Working Hours", detail: "Mon-Sat: 9AM - 6PM" },
             ].map(item => (
               <Card key={item.title}>
