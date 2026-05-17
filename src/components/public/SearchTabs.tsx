@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Hotel, Plane, UsersRound, Car, Package, Search, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
+import { Hotel, Plane, UsersRound, Car, Package, Search, MapPin, Users, ChevronDown, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
