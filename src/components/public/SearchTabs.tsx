@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Hotel, Plane, UsersRound, Car, Package, Search, MapPin, Users, ChevronDown, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
+import { useState } from "react";
+import { Hotel, Plane, UsersRound, Car, Package, Search, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { TravelersClassPicker, type TravelersValue } from "@/components/public/TravelersClassPicker";
 
 const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
