@@ -77,7 +77,7 @@ export function PublicFooter() {
           <div>
             <h4 className="font-semibold text-sidebar-accent-foreground mb-4 text-sm">Company</h4>
             <ul className="space-y-2.5 text-sm text-sidebar-muted">
-              <li><Link to="/about" className="hover:text-sidebar-primary transition-colors">About Travelian</Link></li>
+              <li><Link to="/about" className="hover:text-sidebar-primary transition-colors">About Us</Link></li>
               <li><Link to="/blog-public" className="hover:text-sidebar-primary transition-colors">Travel Guide Blog</Link></li>
               <li><Link to="/contact" className="hover:text-sidebar-primary transition-colors">Contact Us</Link></li>
               <li><Link to="/careers" className="hover:text-sidebar-primary transition-colors">Careers</Link></li>
