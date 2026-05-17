@@ -58,7 +58,7 @@ export default function HomePage() {
             ],
             contactPoint: {
               "@type": "ContactPoint",
-              telephone: "+92-300-1234567",
+              telephone: "+92-324-4440014",
               contactType: "customer support",
               areaServed: "PK",
               availableLanguage: ["English", "Urdu", "Arabic"],
