@@ -102,7 +102,7 @@ export default function UmrahDetailPage() {
               <Link to="/contact?type=umrah" className="block">
                 <Button variant="outline" className="w-full mt-2 gap-2"><MessageCircle className="h-4 w-4" /> Send Inquiry</Button>
               </Link>
-              <a href="https://wa.me/923001234567" target="_blank" rel="noreferrer" className="block">
+              <a href="https://wa.me/923244440014" target="_blank" rel="noreferrer" className="block">
                 <Button variant="outline" className="w-full mt-2 gap-2"><MessageCircle className="h-4 w-4" /> WhatsApp Us</Button>
               </a>
             </CardContent>

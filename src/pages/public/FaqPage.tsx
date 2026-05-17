@@ -7,7 +7,7 @@ const faqs = [
   { q: "Do you offer Umrah packages with visa?", a: "Yes. Our Umrah packages include flight, hotel, transport and Umrah visa processing." },
   { q: "What payment methods do you accept?", a: "Visa, Mastercard, Amex, PayPal, bank transfer, and Travelian Wallet." },
   { q: "Is Travelian safe to use?", a: "All transactions are 256-bit SSL encrypted. We are a verified travel platform with 24/7 customer support." },
-  { q: "How do I contact support?", a: "Email info@travelian.com, call +92-300-1234567 or message us on WhatsApp." },
+  { q: "How do I contact support?", a: "Email travelian.pk@gmail.com, call +92 324 4440014 or message us on WhatsApp." },
 ];
 
 export default function FaqPage() {

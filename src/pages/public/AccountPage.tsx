@@ -261,7 +261,7 @@ export default function AccountPage() {
                   </div>
                   <div>
                     <Label className="text-sm">Phone</Label>
-                    <Input defaultValue="+92-300-1234567" className="mt-1" />
+                    <Input defaultValue="+92 324 4440014" className="mt-1" />
                   </div>
                   <div>
                     <Label className="text-sm">Date of Birth</Label>

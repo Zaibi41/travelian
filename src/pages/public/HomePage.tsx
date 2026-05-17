@@ -481,7 +481,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" className="font-semibold rounded-xl bg-[#25D366] text-white hover:bg-[#20BD5A] border-0 shadow-lg shadow-emerald-900/20" asChild>
-              <a href="https://wa.me/923001234567?text=Hi%2C%20I%27d%20like%20a%20free%20quote%20for%20my%20travel%20plans." target="_blank" rel="noopener noreferrer">
+              <a href="https://wa.me/923244440014?text=Hi%2C%20I%27d%20like%20a%20free%20quote%20for%20my%20travel%20plans." target="_blank" rel="noopener noreferrer">
                 Get a Free Quote
               </a>
             </Button>
