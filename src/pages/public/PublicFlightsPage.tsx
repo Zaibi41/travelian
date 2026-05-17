@@ -22,13 +22,17 @@ export default function PublicFlightsPage() {
   const initTo = params.get("to") || "Jeddah (JED)";
   const initDateStr = params.get("depart");
   const initCabin = params.get("cabin") || "Economy";
-  const initAdults = params.get("adults") || "1";
+  const initAdults = parseInt(params.get("adults") || "1") || 1;
+  const initChildren = parseInt(params.get("children") || "0") || 0;
+  const initInfants = parseInt(params.get("infants") || "0") || 0;
   const initDate = initDateStr ? new Date(initDateStr) : new Date();
 
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState(initFrom);
   const [to, setTo] = useState(initTo);
-  const [travelers, setTravelers] = useState(`${initAdults} Adult, ${initCabin}`);
+  const [travelers, setTravelers] = useState<TravelersValue>({
+    adults: initAdults, children: initChildren, infants: initInfants, cabin: initCabin,
+  });
   const [priceRange, setPriceRange] = useState([0, 700]);
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [sort, setSort] = useState("best");
@@ -41,7 +45,7 @@ export default function PublicFlightsPage() {
   const [editFrom, setEditFrom] = useState(from);
   const [editTo, setEditTo] = useState(to);
   const [editDate, setEditDate] = useState<Date | undefined>(departDate);
-  const [editTravelers, setEditTravelers] = useState(travelers);
+  const [editTravelers, setEditTravelers] = useState<TravelersValue>(travelers);
 
   const openModify = () => {
     setEditFrom(from);
@@ -59,9 +63,9 @@ export default function PublicFlightsPage() {
     setModifyOpen(false);
   };
 
-  const swap = () => {
-    setFrom(to);
-    setTo(from);
+  const swapEdit = () => {
+    setEditFrom(editTo);
+    setEditTo(editFrom);
   };
 
   const toggleAirline = (a: string) => setSelectedAirlines(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
