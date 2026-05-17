@@ -371,18 +371,25 @@ export default function PublicFlightsPage() {
             <DialogTitle>Modify Search</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">From</label>
-              <div className="relative">
-                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input value={editFrom} onChange={e => setEditFrom(e.target.value)} className="pl-9 h-11 rounded-xl" />
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-end">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">From</label>
+                <div className="relative">
+                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                  <Input value={editFrom} onChange={e => setEditFrom(e.target.value)} className="pl-9 h-11 rounded-xl" />
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">To</label>
-              <div className="relative">
-                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
-                <Input value={editTo} onChange={e => setEditTo(e.target.value)} className="pl-9 h-11 rounded-xl" />
+              <div className="hidden sm:flex items-center justify-center pb-1">
+                <button type="button" onClick={swapEdit} aria-label="Swap origin and destination" className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
+                  <ArrowLeftRight className="h-4 w-4" />
+                </button>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">To</label>
+                <div className="relative">
+                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
+                  <Input value={editTo} onChange={e => setEditTo(e.target.value)} className="pl-9 h-11 rounded-xl" />
+                </div>
               </div>
             </div>
             <div>
@@ -401,10 +408,7 @@ export default function PublicFlightsPage() {
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Travelers & Class</label>
-              <div className="relative">
-                <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input value={editTravelers} onChange={e => setEditTravelers(e.target.value)} className="pl-9 h-11 rounded-xl" />
-              </div>
+              <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} />
             </div>
           </div>
           <DialogFooter>
