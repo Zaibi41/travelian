@@ -103,8 +103,8 @@ export function SearchTabs() {
         from: fromValue, to: toValue,
         depart: departDate ? departDate.toISOString().slice(0, 10) : "",
         ...(tripType === "roundtrip" && returnDate ? { return: returnDate.toISOString().slice(0, 10) } : {}),
-        adults: String(adults), children: String(children), infants: String(infants),
-        cabin, trip: tripType,
+        adults: String(travelers.adults), children: String(travelers.children), infants: String(travelers.infants),
+        cabin: travelers.cabin, trip: tripType,
       });
       navigate(`/flights-search?${params.toString()}`);
       return;
@@ -114,8 +114,6 @@ export function SearchTabs() {
     else if (activeTab === "groupbooking") navigate("/contact?type=group");
     else navigate("/tour-packages");
   };
-
-  const totalPassengers = adults + children + infants;
 
   const addMultiCitySegment = () => {
     if (multiCitySegments.length < 6) {
