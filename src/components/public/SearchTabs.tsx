@@ -23,7 +23,7 @@ const tripTypes = [
   { id: "multicity", label: "Multi-city" },
 ];
 
-const cabinClasses = ["Economy", "Premium Economy", "Business Class", "First Class"];
+
 
 interface MultiCitySegment {
   from: string;
