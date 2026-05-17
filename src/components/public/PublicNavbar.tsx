@@ -21,11 +21,11 @@ const navLinks = [
   { label: "Tours", href: "/tour-packages" },
   { label: "Visa", href: "/visa-services" },
   { label: "Deals", href: "/deals" },
-  { label: "About Travelian", href: "/about" },
+  { label: "About", href: "/about" },
 ];
 
-const SUPPORT_PHONE = "+92-300-1234567";
-const SUPPORT_PHONE_TEL = "+923001234567";
+const SUPPORT_PHONE = "+92 324 4440014";
+const SUPPORT_PHONE_TEL = "+923244440014";
 const WHATSAPP_URL = `https://wa.me/${SUPPORT_PHONE_TEL.replace("+", "")}`;
 
 export function PublicNavbar() {
