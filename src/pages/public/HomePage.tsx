@@ -442,20 +442,22 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {mockBlogPosts.filter(b => b.status === 'published').slice(0, 3).map((post) => (
-              <Card key={post.postId} className="overflow-hidden hover:shadow-hover transition-all duration-300 cursor-pointer group border-0 shadow-card">
-                <div className="h-44 bg-gradient-to-br from-primary/5 to-accent flex items-center justify-center">
-                  <span className="text-5xl group-hover:scale-110 transition-transform duration-500">📝</span>
-                </div>
-                <CardContent className="p-5">
-                  <Badge variant="secondary" className="mb-2 text-xs rounded-md">{post.category}</Badge>
-                  <h3 className="font-semibold text-foreground line-clamp-2">{post.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{post.excerpt}</p>
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs text-muted-foreground">
-                    <span>By {post.author}</span>
-                    <span>{post.publishedAt}</span>
+              <Link key={post.postId} to={`/blog/${post.slug}`} aria-label={post.title} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl">
+                <Card className="overflow-hidden hover:shadow-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group border-0 shadow-card h-full">
+                  <div className="h-44 bg-gradient-to-br from-primary/5 to-accent flex items-center justify-center">
+                    <span className="text-5xl group-hover:scale-110 transition-transform duration-500">📝</span>
                   </div>
-                </CardContent>
-              </Card>
+                  <CardContent className="p-5">
+                    <Badge variant="secondary" className="mb-2 text-xs rounded-md">{post.category}</Badge>
+                    <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">{post.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{post.excerpt}</p>
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs text-muted-foreground">
+                      <span>By {post.author}</span>
+                      <span>{post.publishedAt}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
