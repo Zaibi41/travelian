@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Hotel, Plane, UsersRound, Car, Package, Search, MapPin, Users, ChevronDown, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { TravelersClassPicker, type TravelersValue } from "@/components/public/TravelersClassPicker";
 
 const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
@@ -22,7 +23,7 @@ const tripTypes = [
   { id: "multicity", label: "Multi-city" },
 ];
 
-const cabinClasses = ["Economy", "Premium Economy", "Business Class", "First Class"];
+
 
 interface MultiCitySegment {
   from: string;
@@ -52,11 +53,7 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
 export function SearchTabs() {
   const [activeTab, setActiveTab] = useState("flights");
   const [tripType, setTripType] = useState("oneway"); // default One-way
-  const [showPassengers, setShowPassengers] = useState(false);
-  const [adults, setAdults] = useState(1);
-  const [children, setChildren] = useState(0);
-  const [infants, setInfants] = useState(0);
-  const [cabin, setCabin] = useState("Economy");
+  const [travelers, setTravelers] = useState<TravelersValue>({ adults: 1, children: 0, infants: 0, cabin: "Economy" });
   const [departDate, setDepartDate] = useState<Date>();
   const [returnDate, setReturnDate] = useState<Date>();
   const [hotelCheckIn, setHotelCheckIn] = useState<Date>();
@@ -72,19 +69,6 @@ export function SearchTabs() {
     { from: "", to: "", date: undefined },
   ]);
   const navigate = useNavigate();
-  const passengerRef = useRef<HTMLDivElement>(null);
-
-  // Close passenger dropdown on outside click
-  useEffect(() => {
-    if (!showPassengers) return;
-    const handler = (e: MouseEvent) => {
-      if (passengerRef.current && !passengerRef.current.contains(e.target as Node)) {
-        setShowPassengers(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [showPassengers]);
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
 
@@ -119,8 +103,8 @@ export function SearchTabs() {
         from: fromValue, to: toValue,
         depart: departDate ? departDate.toISOString().slice(0, 10) : "",
         ...(tripType === "roundtrip" && returnDate ? { return: returnDate.toISOString().slice(0, 10) } : {}),
-        adults: String(adults), children: String(children), infants: String(infants),
-        cabin, trip: tripType,
+        adults: String(travelers.adults), children: String(travelers.children), infants: String(travelers.infants),
+        cabin: travelers.cabin, trip: tripType,
       });
       navigate(`/flights-search?${params.toString()}`);
       return;
@@ -130,8 +114,6 @@ export function SearchTabs() {
     else if (activeTab === "groupbooking") navigate("/contact?type=group");
     else navigate("/tour-packages");
   };
-
-  const totalPassengers = adults + children + infants;
 
   const addMultiCitySegment = () => {
     if (multiCitySegments.length < 6) {
@@ -191,67 +173,7 @@ export function SearchTabs() {
                   </button>
                 ))}
               </div>
-              <div className="relative" ref={passengerRef}>
-                <button
-                  type="button"
-                  onClick={() => setShowPassengers(!showPassengers)}
-                  className="flex items-center gap-2 text-xs font-medium text-foreground bg-muted/40 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
-                >
-                  <Users className="h-3.5 w-3.5" />
-                  <span className="whitespace-nowrap">{totalPassengers} Traveler{totalPassengers > 1 ? 's' : ''}, {cabin}</span>
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-                {showPassengers && (
-                  <div className="absolute top-full left-0 mt-2 bg-card border rounded-xl shadow-elevated p-4 z-20 w-80">
-                    <div className="space-y-3">
-                      {[
-                        { label: "Adults", sub: "12+ years", value: adults, set: setAdults, min: 1 },
-                        { label: "Children", sub: "2-11 years", value: children, set: setChildren, min: 0 },
-                        { label: "Infants", sub: "Under 2", value: infants, set: setInfants, min: 0 },
-                      ].map(p => (
-                        <div key={p.label} className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{p.label}</p>
-                            <p className="text-[10px] text-muted-foreground">{p.sub}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => p.set(Math.max(p.min, p.value - 1))}
-                              className="h-7 w-7 rounded-full border flex items-center justify-center text-sm hover:bg-muted disabled:opacity-40"
-                              disabled={p.value <= p.min}
-                            >−</button>
-                            <span className="text-sm font-semibold w-5 text-center">{p.value}</span>
-                            <button
-                              type="button"
-                              onClick={() => p.set(p.value + 1)}
-                              className="h-7 w-7 rounded-full border flex items-center justify-center text-sm hover:bg-muted"
-                            >+</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-3 pt-3 border-t">
-                      <p className="text-xs font-medium text-muted-foreground mb-2">Cabin Class</p>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {cabinClasses.map(c => (
-                          <button
-                            key={c}
-                            type="button"
-                            onClick={() => setCabin(c)}
-                            className={`text-xs px-2 py-2 rounded-md transition-all text-center ${
-                              cabin === c ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground hover:bg-muted"
-                            }`}
-                          >{c}</button>
-                        ))}
-                      </div>
-                    </div>
-                    <Button size="sm" className="w-full mt-3 gradient-primary text-primary-foreground" onClick={() => setShowPassengers(false)}>
-                      Done
-                    </Button>
-                  </div>
-                )}
-              </div>
+              <TravelersClassPicker value={travelers} onChange={setTravelers} variant="compact" />
             </div>
 
             {/* Multi-city layout */}

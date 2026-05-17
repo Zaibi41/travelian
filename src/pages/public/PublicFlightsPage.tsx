@@ -8,12 +8,13 @@ import { Slider } from "@/components/ui/slider";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Users, Shield, Luggage, CalendarIcon, Pencil } from "lucide-react";
+import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil } from "lucide-react";
 import { mockFlights } from "@/data/mock";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { SEO } from "@/components/SEO";
+import { TravelersClassPicker, formatTravelers, type TravelersValue } from "@/components/public/TravelersClassPicker";
 
 export default function PublicFlightsPage() {
   const [params] = useSearchParams();
@@ -21,13 +22,17 @@ export default function PublicFlightsPage() {
   const initTo = params.get("to") || "Jeddah (JED)";
   const initDateStr = params.get("depart");
   const initCabin = params.get("cabin") || "Economy";
-  const initAdults = params.get("adults") || "1";
+  const initAdults = parseInt(params.get("adults") || "1") || 1;
+  const initChildren = parseInt(params.get("children") || "0") || 0;
+  const initInfants = parseInt(params.get("infants") || "0") || 0;
   const initDate = initDateStr ? new Date(initDateStr) : new Date();
 
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState(initFrom);
   const [to, setTo] = useState(initTo);
-  const [travelers, setTravelers] = useState(`${initAdults} Adult, ${initCabin}`);
+  const [travelers, setTravelers] = useState<TravelersValue>({
+    adults: initAdults, children: initChildren, infants: initInfants, cabin: initCabin,
+  });
   const [priceRange, setPriceRange] = useState([0, 700]);
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [sort, setSort] = useState("best");
@@ -40,7 +45,7 @@ export default function PublicFlightsPage() {
   const [editFrom, setEditFrom] = useState(from);
   const [editTo, setEditTo] = useState(to);
   const [editDate, setEditDate] = useState<Date | undefined>(departDate);
-  const [editTravelers, setEditTravelers] = useState(travelers);
+  const [editTravelers, setEditTravelers] = useState<TravelersValue>(travelers);
 
   const openModify = () => {
     setEditFrom(from);
@@ -58,9 +63,9 @@ export default function PublicFlightsPage() {
     setModifyOpen(false);
   };
 
-  const swap = () => {
-    setFrom(to);
-    setTo(from);
+  const swapEdit = () => {
+    setEditFrom(editTo);
+    setEditTo(editFrom);
   };
 
   const toggleAirline = (a: string) => setSelectedAirlines(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
@@ -105,20 +110,19 @@ export default function PublicFlightsPage() {
       <h1 className="sr-only">Flight search results: {from} to {to}</h1>
 
       {/* Sticky Search Hero */}
-      <section className="gradient-hero py-5 sticky top-16 md:top-[100px] z-30 shadow-md">
+      <section className="gradient-hero py-4 sticky top-16 md:top-[100px] z-30 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-card/10 backdrop-blur-sm rounded-2xl p-3.5 border border-primary-foreground/10">
-            {/* Internal route summary */}
-            <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-              <div className="flex items-center gap-2 text-primary-foreground text-sm">
-                <Plane className="h-4 w-4" />
-                <span className="font-semibold">{from}</span>
-                <ArrowLeftRight className="h-3.5 w-3.5 opacity-60" />
-                <span className="font-semibold">{to}</span>
+          <div className="bg-card/10 backdrop-blur-sm rounded-2xl px-4 py-3 border border-primary-foreground/10">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2 text-primary-foreground text-sm flex-wrap min-w-0">
+                <Plane className="h-4 w-4 shrink-0" />
+                <span className="font-semibold truncate">{from}</span>
+                <ArrowLeftRight className="h-3.5 w-3.5 opacity-60 shrink-0" />
+                <span className="font-semibold truncate">{to}</span>
                 <span className="text-primary-foreground/60 text-xs">·</span>
-                <span className="text-primary-foreground/80 text-xs">{format(departDate, "EEE, MMM d")}</span>
+                <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{format(departDate, "EEE, MMM d")}</span>
                 <span className="text-primary-foreground/60 text-xs">·</span>
-                <span className="text-primary-foreground/80 text-xs">{travelers}</span>
+                <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{formatTravelers(travelers)}</span>
               </div>
               <Button
                 size="sm"
@@ -128,37 +132,6 @@ export default function PublicFlightsPage() {
               >
                 <Pencil className="h-3.5 w-3.5" /> Modify Search
               </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr] gap-3 items-center">
-              <div className="relative">
-                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input value={from} onChange={e => setFrom(e.target.value)} placeholder="From where?" className="pl-9 h-12 bg-card rounded-xl border-0" />
-              </div>
-              <div className="hidden md:flex items-center justify-center">
-                <button type="button" onClick={swap} aria-label="Swap origin and destination" className="h-9 w-9 rounded-full border-2 border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/10 transition-colors">
-                  <ArrowLeftRight className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="relative">
-                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
-                <Input value={to} onChange={e => setTo(e.target.value)} placeholder="To where?" className="pl-9 h-12 bg-card rounded-xl border-0" />
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button type="button" className="flex items-center gap-2 h-12 bg-card rounded-xl px-3 text-sm text-foreground w-full text-left">
-                    <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-                    {format(departDate, "MMM dd, yyyy")}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-[200]" align="start">
-                  <Calendar mode="single" selected={departDate} onSelect={(d) => d && setDepartDate(d)} initialFocus className="p-3 pointer-events-auto" />
-                </PopoverContent>
-              </Popover>
-              <div className="relative">
-                <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input value={travelers} onChange={e => setTravelers(e.target.value)} className="pl-9 h-12 bg-card rounded-xl border-0" />
-              </div>
             </div>
           </div>
         </div>
@@ -398,18 +371,25 @@ export default function PublicFlightsPage() {
             <DialogTitle>Modify Search</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">From</label>
-              <div className="relative">
-                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input value={editFrom} onChange={e => setEditFrom(e.target.value)} className="pl-9 h-11 rounded-xl" />
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-end">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">From</label>
+                <div className="relative">
+                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                  <Input value={editFrom} onChange={e => setEditFrom(e.target.value)} className="pl-9 h-11 rounded-xl" />
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">To</label>
-              <div className="relative">
-                <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
-                <Input value={editTo} onChange={e => setEditTo(e.target.value)} className="pl-9 h-11 rounded-xl" />
+              <div className="hidden sm:flex items-center justify-center pb-1">
+                <button type="button" onClick={swapEdit} aria-label="Swap origin and destination" className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
+                  <ArrowLeftRight className="h-4 w-4" />
+                </button>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">To</label>
+                <div className="relative">
+                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
+                  <Input value={editTo} onChange={e => setEditTo(e.target.value)} className="pl-9 h-11 rounded-xl" />
+                </div>
               </div>
             </div>
             <div>
@@ -428,10 +408,7 @@ export default function PublicFlightsPage() {
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Travelers & Class</label>
-              <div className="relative">
-                <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input value={editTravelers} onChange={e => setEditTravelers(e.target.value)} className="pl-9 h-11 rounded-xl" />
-              </div>
+              <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} />
             </div>
           </div>
           <DialogFooter>

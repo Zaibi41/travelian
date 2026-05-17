@@ -77,7 +77,7 @@ export function PublicFooter() {
           <div>
             <h4 className="font-semibold text-sidebar-accent-foreground mb-4 text-sm">Company</h4>
             <ul className="space-y-2.5 text-sm text-sidebar-muted">
-              <li><Link to="/about" className="hover:text-sidebar-primary transition-colors">About Travelian</Link></li>
+              <li><Link to="/about" className="hover:text-sidebar-primary transition-colors">About Us</Link></li>
               <li><Link to="/blog-public" className="hover:text-sidebar-primary transition-colors">Travel Guide Blog</Link></li>
               <li><Link to="/contact" className="hover:text-sidebar-primary transition-colors">Contact Us</Link></li>
               <li><Link to="/careers" className="hover:text-sidebar-primary transition-colors">Careers</Link></li>
@@ -99,9 +99,9 @@ export function PublicFooter() {
           <div>
             <h4 className="font-semibold text-sidebar-accent-foreground mb-4 text-sm">Contact</h4>
             <ul className="space-y-3 text-sm text-sidebar-muted">
-              <li className="flex items-start gap-2"><MapPin className="h-4 w-4 shrink-0 mt-0.5" /> Lahore, Pakistan</li>
-              <li className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" /> <a href="tel:+923001234567" className="hover:text-sidebar-primary">+92-300-1234567</a></li>
-              <li className="flex items-center gap-2"><Mail className="h-4 w-4 shrink-0" /> <a href="mailto:info@travelian.com" className="hover:text-sidebar-primary">info@travelian.com</a></li>
+              <li className="flex items-start gap-2"><MapPin className="h-4 w-4 shrink-0 mt-0.5" /> Johar Town, Lahore</li>
+              <li className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" /> <a href="tel:+923244440014" className="hover:text-sidebar-primary">+92 324 4440014</a></li>
+              <li className="flex items-center gap-2"><Mail className="h-4 w-4 shrink-0" /> <a href="mailto:travelian.pk@gmail.com" className="hover:text-sidebar-primary">travelian.pk@gmail.com</a></li>
             </ul>
           </div>
         </div>

@@ -58,7 +58,7 @@ export default function HomePage() {
             ],
             contactPoint: {
               "@type": "ContactPoint",
-              telephone: "+92-300-1234567",
+              telephone: "+92-324-4440014",
               contactType: "customer support",
               areaServed: "PK",
               availableLanguage: ["English", "Urdu", "Arabic"],
@@ -322,36 +322,51 @@ export default function HomePage() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {topCountries.map((c) => (
-              <Card key={c.country} className="relative overflow-hidden hover:shadow-hover transition-all duration-300 cursor-pointer group border-0 shadow-card min-h-[220px] md:min-h-[260px] lg:min-h-[280px]">
-                <img
-                  src={c.image}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25" aria-hidden="true" />
-                <div className="relative z-10 flex h-full min-h-[220px] md:min-h-[260px] lg:min-h-[280px] flex-col justify-end p-5 md:p-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-3xl drop-shadow-md">{c.flag}</span>
-                    <div>
-                      <h3 className="font-semibold text-white drop-shadow-sm">{c.country}</h3>
-                      <p className="text-xs text-white/80">{c.properties.toLocaleString()} properties</p>
+            {topCountries.map((c) => {
+              const slug = c.country.toLowerCase().replace(/\s+/g, "-");
+              return (
+                <Link
+                  key={c.country}
+                  to={`/hotels-search?country=${slug}`}
+                  aria-label={`Explore hotels in ${c.country}`}
+                  className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl"
+                >
+                  <Card className="relative overflow-hidden hover:shadow-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group border-0 shadow-card min-h-[220px] md:min-h-[260px] lg:min-h-[280px]">
+                    <img
+                      src={c.image}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25" aria-hidden="true" />
+                    <div className="relative z-10 flex h-full min-h-[220px] md:min-h-[260px] lg:min-h-[280px] flex-col justify-end p-5 md:p-6">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-3xl drop-shadow-md" aria-hidden="true">{c.flag}</span>
+                        <div>
+                          <h3 className="font-semibold text-white drop-shadow-sm">{c.country}</h3>
+                          <p className="text-xs text-white/80">{c.properties.toLocaleString()} properties</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {c.popular.map(city => (
+                          <button
+                            key={city}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              window.location.href = `/hotels-search?city=${encodeURIComponent(city.toLowerCase())}`;
+                            }}
+                            className="text-xs font-medium text-foreground bg-white/90 px-2.5 py-1 rounded-full hover:bg-white transition-colors shadow-sm"
+                          >
+                            {city}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {c.popular.map(city => (
-                      <Link
-                        key={city}
-                        to="/hotels-search"
-                        className="text-xs font-medium text-foreground bg-white/90 px-2.5 py-1 rounded-full hover:bg-white transition-colors shadow-sm"
-                      >
-                        {city}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            ))}
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -427,20 +442,22 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {mockBlogPosts.filter(b => b.status === 'published').slice(0, 3).map((post) => (
-              <Card key={post.postId} className="overflow-hidden hover:shadow-hover transition-all duration-300 cursor-pointer group border-0 shadow-card">
-                <div className="h-44 bg-gradient-to-br from-primary/5 to-accent flex items-center justify-center">
-                  <span className="text-5xl group-hover:scale-110 transition-transform duration-500">📝</span>
-                </div>
-                <CardContent className="p-5">
-                  <Badge variant="secondary" className="mb-2 text-xs rounded-md">{post.category}</Badge>
-                  <h3 className="font-semibold text-foreground line-clamp-2">{post.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{post.excerpt}</p>
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs text-muted-foreground">
-                    <span>By {post.author}</span>
-                    <span>{post.publishedAt}</span>
+              <Link key={post.postId} to={`/blog/${post.slug}`} aria-label={post.title} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl">
+                <Card className="overflow-hidden hover:shadow-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group border-0 shadow-card h-full">
+                  <div className="h-44 bg-gradient-to-br from-primary/5 to-accent flex items-center justify-center">
+                    <span className="text-5xl group-hover:scale-110 transition-transform duration-500">📝</span>
                   </div>
-                </CardContent>
-              </Card>
+                  <CardContent className="p-5">
+                    <Badge variant="secondary" className="mb-2 text-xs rounded-md">{post.category}</Badge>
+                    <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">{post.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{post.excerpt}</p>
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs text-muted-foreground">
+                      <span>By {post.author}</span>
+                      <span>{post.publishedAt}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
@@ -464,7 +481,7 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button size="lg" className="font-semibold rounded-xl bg-[#25D366] text-white hover:bg-[#20BD5A] border-0 shadow-lg shadow-emerald-900/20" asChild>
-              <a href="https://wa.me/923001234567?text=Hi%2C%20I%27d%20like%20a%20free%20quote%20for%20my%20travel%20plans." target="_blank" rel="noopener noreferrer">
+              <a href="https://wa.me/923244440014?text=Hi%2C%20I%27d%20like%20a%20free%20quote%20for%20my%20travel%20plans." target="_blank" rel="noopener noreferrer">
                 Get a Free Quote
               </a>
             </Button>
