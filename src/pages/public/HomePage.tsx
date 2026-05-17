@@ -322,36 +322,51 @@ export default function HomePage() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {topCountries.map((c) => (
-              <Card key={c.country} className="relative overflow-hidden hover:shadow-hover transition-all duration-300 cursor-pointer group border-0 shadow-card min-h-[220px] md:min-h-[260px] lg:min-h-[280px]">
-                <img
-                  src={c.image}
-                  alt=""
-                  className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25" aria-hidden="true" />
-                <div className="relative z-10 flex h-full min-h-[220px] md:min-h-[260px] lg:min-h-[280px] flex-col justify-end p-5 md:p-6">
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-3xl drop-shadow-md">{c.flag}</span>
-                    <div>
-                      <h3 className="font-semibold text-white drop-shadow-sm">{c.country}</h3>
-                      <p className="text-xs text-white/80">{c.properties.toLocaleString()} properties</p>
+            {topCountries.map((c) => {
+              const slug = c.country.toLowerCase().replace(/\s+/g, "-");
+              return (
+                <Link
+                  key={c.country}
+                  to={`/hotels-search?country=${slug}`}
+                  aria-label={`Explore hotels in ${c.country}`}
+                  className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl"
+                >
+                  <Card className="relative overflow-hidden hover:shadow-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group border-0 shadow-card min-h-[220px] md:min-h-[260px] lg:min-h-[280px]">
+                    <img
+                      src={c.image}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25" aria-hidden="true" />
+                    <div className="relative z-10 flex h-full min-h-[220px] md:min-h-[260px] lg:min-h-[280px] flex-col justify-end p-5 md:p-6">
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-3xl drop-shadow-md" aria-hidden="true">{c.flag}</span>
+                        <div>
+                          <h3 className="font-semibold text-white drop-shadow-sm">{c.country}</h3>
+                          <p className="text-xs text-white/80">{c.properties.toLocaleString()} properties</p>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {c.popular.map(city => (
+                          <button
+                            key={city}
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              window.location.href = `/hotels-search?city=${encodeURIComponent(city.toLowerCase())}`;
+                            }}
+                            className="text-xs font-medium text-foreground bg-white/90 px-2.5 py-1 rounded-full hover:bg-white transition-colors shadow-sm"
+                          >
+                            {city}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {c.popular.map(city => (
-                      <Link
-                        key={city}
-                        to="/hotels-search"
-                        className="text-xs font-medium text-foreground bg-white/90 px-2.5 py-1 rounded-full hover:bg-white transition-colors shadow-sm"
-                      >
-                        {city}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </Card>
-            ))}
+                  </Card>
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>
