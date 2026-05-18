@@ -31,7 +31,7 @@ export default function ContactPage() {
     });
     if (!parsed.success) {
       const errs: Record<string, string> = {};
-      parsed.error.issues.forEach(i => { errs[String(i.path[0])] = i.message; });
+      parsed.error.issues.forEach((i) => { errs[String(i.path[0])] = i.message; });
       setErrors(errs);
       return;
     }
@@ -63,7 +63,7 @@ export default function ContactPage() {
                 {success ? (
                   <div className="text-center py-10">
                     <CheckCircle2 className="h-12 w-12 text-success mx-auto mb-3" />
-                    <h2 className="text-lg font-semibold">Thanks — we've got your message</h2>
+                    <h2 className="text-lg font-semibold">Thanks, we've got your message</h2>
                     <p className="text-sm text-muted-foreground mt-1">Our team will respond within 24 hours.</p>
                     <Button variant="outline" className="mt-5" onClick={() => setSuccess(false)}>Send another message</Button>
                   </div>
@@ -106,7 +106,7 @@ export default function ContactPage() {
               { icon: Phone, title: "Phone", detail: "+92 324 4440014" },
               { icon: Mail, title: "Email", detail: "travelian.pk@gmail.com" },
               { icon: Clock, title: "Working Hours", detail: "Mon-Sat: 9AM - 6PM" },
-            ].map(item => (
+            ].map((item) => (
               <Card key={item.title}>
                 <CardContent className="p-4 flex items-center gap-3">
                   <div className="h-10 w-10 rounded-lg bg-accent flex items-center justify-center shrink-0">
@@ -114,7 +114,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                    <p className="text-sm text-muted-foreground">{item.detail}</p>
+                    <p className="text-sm text-muted-foreground whitespace-pre-line">{item.detail}</p>
                   </div>
                 </CardContent>
               </Card>

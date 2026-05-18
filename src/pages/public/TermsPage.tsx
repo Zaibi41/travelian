@@ -15,7 +15,7 @@ export default function TermsPage() {
         </section>
         <section>
           <h2 className="text-lg font-bold text-foreground">3. Refund Policy</h2>
-          <p>Refunds are processed to the original payment method within 7–14 business days after approval.</p>
+          <p>Refunds are processed to the original payment method within 7-14 business days after approval.</p>
         </section>
         <section>
           <h2 className="text-lg font-bold text-foreground">4. Liability</h2>

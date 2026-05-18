@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Building2, Package, CalendarCheck, Wallet,
   Users, FileText, Bell, Settings, Plane, Hotel, Map, FileCheck,
-  Tag, PenTool, Shield, Ticket, Globe, CreditCard, KeyRound,
+  Tag, PenTool, Shield, Ticket, Globe, CreditCard, KeyRound, CloudCog,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Link, useLocation } from "react-router-dom";
@@ -36,6 +36,7 @@ const superAdminNav: NavItem[] = [
 const superAdminSystemNav: NavItem[] = [
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Access Control", url: "/admin/rbac", icon: Shield },
+  { title: "Provider Systems", url: "/admin/provider-systems", icon: CloudCog },
   { title: "Secret Manager", url: "/admin/secrets", icon: KeyRound },
   { title: "Coupons & Deals", url: "/admin/coupons", icon: Tag },
   { title: "Blog", url: "/admin/blog", icon: PenTool },
@@ -76,6 +77,7 @@ const staffNav: NavItem[] = [
 
 const agencyOwnerNav: NavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Flight Search", url: "/admin/flight-search", icon: Plane },
   { title: "Umrah Packages", url: "/admin/packages", icon: Package },
   { title: "Tour Packages", url: "/admin/tours", icon: Map },
   { title: "Visa Packages", url: "/admin/visa", icon: FileCheck },
@@ -93,6 +95,7 @@ const agencyOwnerSystemNav: NavItem[] = [
 
 const agencyStaffNav: NavItem[] = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Flight Search", url: "/admin/flight-search", icon: Plane },
   { title: "Umrah Packages", url: "/admin/packages", icon: Package },
   { title: "Tour Packages", url: "/admin/tours", icon: Map },
   { title: "Visa Packages", url: "/admin/visa", icon: FileCheck },

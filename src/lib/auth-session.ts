@@ -1,4 +1,4 @@
-// Frontend-only mock auth session backed by localStorage.
+// Browser session cache for the current Cognito-authenticated user.
 
 const KEY = "travelian.session.v1";
 
@@ -6,12 +6,25 @@ export interface AuthSession {
   email: string;
   name: string;
   createdAt: string;
+  provider?: string;
+  sub?: string;
+  groups?: string[];
+  idToken?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  expiresAt?: number;
 }
 
 export function getSession(): AuthSession | null {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as AuthSession) : null;
+    if (!raw) return null;
+    const session = JSON.parse(raw) as AuthSession;
+    if (session.email?.endsWith("@travelian-sso.local")) {
+      localStorage.removeItem(KEY);
+      return null;
+    }
+    return session;
   } catch {
     return null;
   }

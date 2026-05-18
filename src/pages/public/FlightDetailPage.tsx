@@ -26,7 +26,7 @@ const fareOptions = [
       { label: "1 carry-on bag (7 kg)", included: true },
       { label: "1 checked bag (23 kg)", included: true },
       { label: "Seat selection", included: true },
-      { label: "Flight changes ($50 fee)", included: true },
+      { label: "Flight changes (PKR 14,000 fee)", included: true },
       { label: "Partial refund (50%)", included: true },
     ],
     extra: 60,
@@ -59,6 +59,7 @@ export default function FlightDetailPage() {
 
   const selectedFareData = fareOptions.find(f => f.tier === selectedFare)!;
   const totalPrice = flight.price + selectedFareData.extra;
+  const formatMoney = (amount: number) => `PKR ${Math.round(amount).toLocaleString()}`;
 
   return (
     <div className="bg-muted/20 min-h-screen">
@@ -114,7 +115,7 @@ export default function FlightDetailPage() {
                 </div>
               </div>
               <div className="text-right lg:border-l lg:pl-6">
-                <p className="text-3xl font-bold text-foreground">${totalPrice}</p>
+                <p className="text-3xl font-bold text-foreground">{formatMoney(totalPrice)}</p>
                 <p className="text-xs text-muted-foreground">per person, all inclusive</p>
                 <div className="flex items-center gap-2 mt-2 justify-end text-xs text-muted-foreground">
                   <Wifi className="h-3.5 w-3.5" /> WiFi
@@ -146,7 +147,7 @@ export default function FlightDetailPage() {
                   )}
                   <CardContent className="p-5">
                     <h3 className="font-bold text-foreground">{fare.tier}</h3>
-                    <p className="text-2xl font-bold text-foreground mt-1">${flight.price + fare.extra}</p>
+                    <p className="text-2xl font-bold text-foreground mt-1">{formatMoney(flight.price + fare.extra)}</p>
                     <p className="text-[10px] text-muted-foreground mb-4">per person</p>
                     <div className="space-y-2">
                       {fare.features.map(f => (
@@ -190,7 +191,7 @@ export default function FlightDetailPage() {
                       <h4 className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
                         <ArrowLeftRight className="h-4 w-4 text-primary" /> Changes
                       </h4>
-                      <p className="text-sm text-muted-foreground">Basic: No changes. Standard: $50 fee. Flex: Free unlimited changes.</p>
+                      <p className="text-sm text-muted-foreground">Basic: No changes. Standard: PKR 14,000 fee. Flex: Free unlimited changes.</p>
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -243,15 +244,15 @@ export default function FlightDetailPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Base fare ({selectedFare})</span>
-                    <span className="font-medium">${totalPrice - 42}</span>
+                    <span className="font-medium">{formatMoney(totalPrice - 42)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Taxes & fees</span>
-                    <span className="font-medium">$42</span>
+                    <span className="font-medium">{formatMoney(42)}</span>
                   </div>
                   <div className="flex justify-between font-bold border-t pt-2 text-base">
                     <span>Total</span>
-                    <span className="text-primary">${totalPrice}</span>
+                    <span className="text-primary">{formatMoney(totalPrice)}</span>
                   </div>
                 </div>
 

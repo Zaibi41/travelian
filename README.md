@@ -1,6 +1,6 @@
 # Travelian - Travel Agency
 
-**Travelian** is a travel-agency web app: a public booking experience plus an **admin / agency panel** (`/admin/*`). This repository is also known by the folder name **fly-vibe-buddy**.
+**Travelian** is a travel-agency web app: a public booking experience plus an **admin / agency panel** (`/admin/*`).
 
 The app is a **travel booking and agency admin** front end built with React and Vite. The customer site covers flights, hotels, Umrah/tour packages, visa services, deals, and account flows. The **admin** area includes dashboards for bookings, payments, users, RBAC, coupons, content, and more.
 
@@ -42,7 +42,7 @@ Then open **http://localhost:8080** in your browser (host and port are set in `v
 | Home   | `/` | Search tabs, featured destinations, mock listings |
 | Admin  | `/admin` | Dashboard; use the in-app role switcher where available |
 
-Other public routes include `/flights-search`, `/hotels-search`, `/umrah-packages`, `/tour-packages`, `/visa-services`, `/booking`, `/account`, `/contact`, `/about`, `/deals`, and more—see `src/App.tsx` for the full route table.
+Other public routes include `/flights-search`, `/hotels-search`, `/umrah-packages`, `/tour-packages`, `/visa-services`, `/booking`, `/account`, `/contact`, `/about`, `/deals`, and more. See `src/App.tsx` for the full route table.
 
 ## Other scripts
 
@@ -57,12 +57,12 @@ Other public routes include `/flights-search`, `/hotels-search`, `/umrah-package
 
 ## Project layout (high level)
 
-- `src/App.tsx` — Router: public routes under `PublicLayout`, admin under `AdminLayout` + providers
-- `src/pages/public/` — Marketing and booking flows
-- `src/pages/` — Admin screens (bookings, flights, hotels, users, etc.)
-- `src/components/` — Shared UI, including `components/ui/` (shadcn-style primitives)
-- `src/data/` — Mock data and helpers
-- `src/contexts/` — Role and admin UI state
+- `src/App.tsx` - Router: public routes under `PublicLayout`, admin under `AdminLayout` + providers
+- `src/pages/public/` - Marketing and booking flows
+- `src/pages/` - Admin screens (bookings, flights, hotels, users, etc.)
+- `src/components/` - Shared UI, including `components/ui/` (shadcn-style primitives)
+- `src/data/` - Mock data and helpers
+- `src/contexts/` - Role and admin UI state
 
 ## Environment variables
 

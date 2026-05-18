@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+﻿import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, Package, Check } from "lucide-react";
@@ -10,13 +10,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 const timeline = [
   { step: "Choose Package", desc: "Pick from Economy, Standard or Premium." },
   { step: "Submit Documents", desc: "Passport, photo and CNIC." },
-  { step: "Visa Processing", desc: "7–10 business days." },
+  { step: "Visa Processing", desc: "7-10 business days." },
   { step: "Travel", desc: "Fly with our 24/7 in-trip support." },
 ];
 
 const faqs = [
   { q: "What's included in an Umrah package?", a: "Visa, return flights, accommodation in Makkah and Madinah, ground transport and Ziyarat tours." },
-  { q: "How long does Umrah visa take?", a: "Usually 7–10 business days after document submission." },
+  { q: "How long does Umrah visa take?", a: "Usually 7-10 business days after document submission." },
   { q: "Can I customize my package?", a: "Yes, contact our team to tailor flights, hotels and duration to your needs." },
   { q: "Is travel insurance included?", a: "Insurance is optional and recommended; we can arrange it on request." },
 ];
@@ -48,7 +48,7 @@ export default function PublicPackagesPage() {
                 <div className="flex items-center justify-between mt-4 pt-4 border-t">
                   <div>
                     <span className="text-xs text-muted-foreground">Starting from</span>
-                    <p className="text-2xl font-bold text-primary">${pkg.basePrice}</p>
+                    <p className="text-2xl font-bold text-primary">PKR {pkg.basePrice}</p>
                   </div>
                   <Link to={`/umrah/${pkg.packageId}`}>
                     <Button className="gradient-primary text-primary-foreground">Book Now</Button>
@@ -64,7 +64,7 @@ export default function PublicPackagesPage() {
           <div className="grid md:grid-cols-2 gap-6 items-center">
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-foreground">Umrah Visa Assistance</h2>
-              <p className="text-sm text-muted-foreground mt-2">We handle the full visa process from document collection to issuance — typically in 7–10 business days.</p>
+              <p className="text-sm text-muted-foreground mt-2">We handle the full visa process from document collection to issuance, typically in 7-10 business days.</p>
               <Link to="/visa-services" className="inline-block mt-4"><Button variant="outline">Learn More</Button></Link>
             </div>
             <ul className="space-y-2">
@@ -96,12 +96,12 @@ export default function PublicPackagesPage() {
           <h2 className="text-xl md:text-2xl font-bold text-foreground text-center mb-6">What Pilgrims Say</h2>
           <div className="grid md:grid-cols-3 gap-4">
             {[
-              { n: "Ayesha R.", t: "Family Umrah was perfectly arranged — hotel was steps from Haram." },
+              { n: "Ayesha R.", t: "Family Umrah was perfectly arranged. The hotel was steps from Haram." },
               { n: "Bilal K.", t: "Visa processed in 6 days. Smooth experience overall." },
               { n: "Sana M.", t: "Excellent group leader and support throughout the trip." },
             ].map(t => (
               <Card key={t.n} className="border-0 shadow-card"><CardContent className="p-5">
-                <div className="text-gold mb-2">★★★★★</div>
+                <div className="text-gold mb-2">â˜…â˜…â˜…â˜…â˜…</div>
                 <p className="text-sm text-muted-foreground italic">"{t.t}"</p>
                 <p className="text-sm font-semibold text-foreground mt-3">{t.n}</p>
               </CardContent></Card>
@@ -125,3 +125,5 @@ export default function PublicPackagesPage() {
     </div>
   );
 }
+
+

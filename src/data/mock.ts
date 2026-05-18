@@ -12,6 +12,8 @@ export interface User {
   email: string;
   role: UserRole;
   agencyId?: string;
+  parentAgencyId?: string;
+  designation?: string;
   status: 'active' | 'inactive';
   createdAt: string;
   moduleAccess?: string[];
@@ -31,6 +33,9 @@ export interface Agency {
   totalBookings: number;
   address?: string;
   licenseNo?: string;
+  parentAgencyId?: string;
+  agencyType?: 'main' | 'sub';
+  ownerUserId?: string;
 }
 
 export interface UmrahPackage {
@@ -107,6 +112,7 @@ export interface Flight {
   departureTime: string;
   arrivalTime: string;
   price: number;
+  currency?: string;
   seats: number;
   status: 'scheduled' | 'delayed' | 'cancelled';
   class: 'economy' | 'business' | 'first';
@@ -138,6 +144,7 @@ export interface BlogPost {
   status: 'published' | 'draft';
   publishedAt: string;
   tags: string[];
+  image?: string;
 }
 
 export interface TravelTicket {
@@ -166,20 +173,22 @@ export const mockUsers: User[] = [
   { userId: 'u1', name: 'Ahmed Khan', email: 'ahmed@travelian.com', role: 'super_admin', status: 'active', createdAt: '2024-01-15', moduleAccess: ['all'] },
   { userId: 'u2', name: 'Sara Ali', email: 'sara@travelian.com', role: 'admin', status: 'active', createdAt: '2024-02-10', moduleAccess: ['dashboard', 'bookings', 'packages', 'agencies', 'users'] },
   { userId: 'u3', name: 'Omar Farooq', email: 'omar@travelian.com', role: 'staff', status: 'active', createdAt: '2024-03-05', moduleAccess: ['dashboard', 'bookings'] },
-  { userId: 'u4', name: 'Fatima Zahra', email: 'fatima@alhijaz.com', role: 'agency_owner', agencyId: 'a1', status: 'active', createdAt: '2024-04-01' },
-  { userId: 'u5', name: 'Hassan Raza', email: 'hassan@alhijaz.com', role: 'agency_staff', agencyId: 'a1', status: 'active', createdAt: '2024-04-15' },
-  { userId: 'u6', name: 'Zainab Malik', email: 'zainab@safartours.com', role: 'agency_owner', agencyId: 'a2', status: 'active', createdAt: '2024-05-01' },
-  { userId: 'u7', name: 'Bilal Ahmed', email: 'bilal@noortravel.com', role: 'agency_owner', agencyId: 'a3', status: 'active', createdAt: '2024-06-15' },
+  { userId: 'u4', name: 'Fatima Zahra', email: 'fatima@alhijaz.com', role: 'agency_owner', agencyId: 'a1', status: 'active', createdAt: '2024-04-01', designation: 'Agency Owner' },
+  { userId: 'u5', name: 'Hassan Raza', email: 'hassan@alhijaz.com', role: 'agency_staff', agencyId: 'a1', status: 'active', createdAt: '2024-04-15', designation: 'Ticketing Officer' },
+  { userId: 'u6', name: 'Zainab Malik', email: 'zainab@safartours.com', role: 'agency_owner', agencyId: 'a2', status: 'active', createdAt: '2024-05-01', designation: 'Agency Owner' },
+  { userId: 'u7', name: 'Bilal Ahmed', email: 'bilal@noortravel.com', role: 'agency_owner', agencyId: 'a3', status: 'active', createdAt: '2024-06-15', designation: 'Agency Owner' },
   { userId: 'u8', name: 'Amna Qureshi', email: 'amna@travelian.com', role: 'staff', status: 'inactive', createdAt: '2024-07-01', moduleAccess: ['dashboard'] },
+  { userId: 'u9', name: 'Adeel Raza', email: 'adeel@alhijaz.com', role: 'agency_staff', agencyId: 'a6', parentAgencyId: 'a1', status: 'active', createdAt: '2024-08-12', designation: 'Sub Agency Manager' },
 ];
 
 // ─── Agencies ───
 export const mockAgencies: Agency[] = [
-  { agencyId: 'a1', agencyName: 'Al Hijaz Tours', email: 'info@alhijaz.com', phone: '+92-300-1234567', status: 'active', commissionRate: 12, walletBalance: 45000, contactPerson: 'Fatima Zahra', city: 'Lahore', createdAt: '2024-04-01', totalBookings: 34, address: '123 Mall Road, Lahore', licenseNo: 'TRV-2024-001' },
-  { agencyId: 'a2', agencyName: 'Safar Tours', email: 'info@safartours.com', phone: '+92-321-7654321', status: 'active', commissionRate: 10, walletBalance: 78500, contactPerson: 'Zainab Malik', city: 'Karachi', createdAt: '2024-05-01', totalBookings: 56, address: '45 Clifton Block 5, Karachi', licenseNo: 'TRV-2024-002' },
-  { agencyId: 'a3', agencyName: 'Noor Travel Agency', email: 'noor@noortravel.com', phone: '+92-333-9876543', status: 'pending', commissionRate: 8, walletBalance: 0, contactPerson: 'Bilal Ahmed', city: 'Islamabad', createdAt: '2024-06-15', totalBookings: 0, address: 'F-7 Markaz, Islamabad', licenseNo: 'TRV-2024-003' },
-  { agencyId: 'a4', agencyName: 'Madinah Express', email: 'contact@madinah-express.com', phone: '+92-345-1122334', status: 'suspended', commissionRate: 15, walletBalance: 12000, contactPerson: 'Asad Iqbal', city: 'Faisalabad', createdAt: '2024-03-20', totalBookings: 12, address: 'D Ground, Faisalabad', licenseNo: 'TRV-2024-004' },
-  { agencyId: 'a5', agencyName: 'Barakah Travels', email: 'hello@barakah.pk', phone: '+92-311-5566778', status: 'active', commissionRate: 11, walletBalance: 125000, contactPerson: 'Mariam Siddiqui', city: 'Rawalpindi', createdAt: '2024-02-10', totalBookings: 89, address: 'Saddar Road, Rawalpindi', licenseNo: 'TRV-2024-005' },
+  { agencyId: 'a1', agencyName: 'Al Hijaz Tours', email: 'info@alhijaz.com', phone: '+92 324 4440014', status: 'active', commissionRate: 12, walletBalance: 45000, contactPerson: 'Fatima Zahra', city: 'Lahore', createdAt: '2024-04-01', totalBookings: 34, address: 'Johar Town, Lahore', licenseNo: 'TRV-2024-001', agencyType: 'main', ownerUserId: 'u4' },
+  { agencyId: 'a2', agencyName: 'Safar Tours', email: 'info@safartours.com', phone: '+92-321-7654321', status: 'active', commissionRate: 10, walletBalance: 78500, contactPerson: 'Zainab Malik', city: 'Karachi', createdAt: '2024-05-01', totalBookings: 56, address: '45 Clifton Block 5, Karachi', licenseNo: 'TRV-2024-002', agencyType: 'main', ownerUserId: 'u6' },
+  { agencyId: 'a3', agencyName: 'Noor Travel Agency', email: 'noor@noortravel.com', phone: '+92-333-9876543', status: 'pending', commissionRate: 8, walletBalance: 0, contactPerson: 'Bilal Ahmed', city: 'Islamabad', createdAt: '2024-06-15', totalBookings: 0, address: 'F-7 Markaz, Islamabad', licenseNo: 'TRV-2024-003', agencyType: 'main', ownerUserId: 'u7' },
+  { agencyId: 'a4', agencyName: 'Madinah Express', email: 'contact@madinah-express.com', phone: '+92-345-1122334', status: 'suspended', commissionRate: 15, walletBalance: 12000, contactPerson: 'Asad Iqbal', city: 'Faisalabad', createdAt: '2024-03-20', totalBookings: 12, address: 'D Ground, Faisalabad', licenseNo: 'TRV-2024-004', agencyType: 'main' },
+  { agencyId: 'a5', agencyName: 'Barakah Travels', email: 'hello@barakah.pk', phone: '+92-311-5566778', status: 'active', commissionRate: 11, walletBalance: 125000, contactPerson: 'Mariam Siddiqui', city: 'Rawalpindi', createdAt: '2024-02-10', totalBookings: 89, address: 'Saddar Road, Rawalpindi', licenseNo: 'TRV-2024-005', agencyType: 'main' },
+  { agencyId: 'a6', agencyName: 'Al Hijaz Johar Branch', email: 'johar@alhijaz.com', phone: '+92-300-1100220', status: 'active', commissionRate: 8, walletBalance: 15000, contactPerson: 'Adeel Raza', city: 'Lahore', createdAt: '2024-08-12', totalBookings: 9, address: 'Johar Town, Lahore', licenseNo: 'TRV-2024-001-B1', parentAgencyId: 'a1', agencyType: 'sub', ownerUserId: 'u9' },
 ];
 
 // ─── Packages ───
@@ -266,10 +275,10 @@ export const mockCoupons: Coupon[] = [
 
 // ─── Blog Posts ───
 export const mockBlogPosts: BlogPost[] = [
-  { postId: 'bp1', title: 'Complete Umrah Guide 2026', slug: 'complete-umrah-guide-2026', excerpt: 'Everything you need to know about performing Umrah in 2026', content: 'Full article content here...', author: 'Ahmed Khan', category: 'Umrah', status: 'published', publishedAt: '2026-04-12', tags: ['umrah', 'guide', 'saudi'] },
-  { postId: 'bp2', title: 'Top 10 Hotels Near Haram', slug: 'top-10-hotels-near-haram', excerpt: 'Our curated list of the best hotels within walking distance of Masjid al-Haram', content: 'Full article content here...', author: 'Sara Ali', category: 'Hotels', status: 'published', publishedAt: '2026-03-22', tags: ['hotels', 'makkah', 'haram'] },
-  { postId: 'bp3', title: 'Visa Requirements for Saudi Arabia', slug: 'visa-requirements-saudi', excerpt: 'Updated visa requirements and process for Pakistani travelers', content: 'Full article content here...', author: 'Ahmed Khan', category: 'Visa', status: 'published', publishedAt: '2026-02-18', tags: ['visa', 'saudi', 'requirements'] },
-  { postId: 'bp4', title: 'Best Time to Visit Turkey', slug: 'best-time-visit-turkey', excerpt: 'Planning a trip to Turkey? Here is the ideal timing for different activities', content: 'Full article content here...', author: 'Sara Ali', category: 'Tours', status: 'draft', publishedAt: '', tags: ['turkey', 'tours', 'travel-tips'] },
+  { postId: 'bp1', title: 'Complete Umrah Guide 2026', slug: 'complete-umrah-guide-2026', excerpt: 'Everything you need to know about performing Umrah in 2026', content: 'Full article content here...', author: 'Ahmed Khan', category: 'Umrah', status: 'published', publishedAt: '2026-04-12', tags: ['umrah', 'guide', 'saudi'], image: 'https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=800&h=520&fit=crop&q=80' },
+  { postId: 'bp2', title: 'Top 10 Hotels Near Haram', slug: 'top-10-hotels-near-haram', excerpt: 'Our curated list of the best hotels within walking distance of Masjid al-Haram', content: 'Full article content here...', author: 'Sara Ali', category: 'Hotels', status: 'published', publishedAt: '2026-03-22', tags: ['hotels', 'makkah', 'haram'], image: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=800&h=520&fit=crop&q=80' },
+  { postId: 'bp3', title: 'Visa Requirements for Saudi Arabia', slug: 'visa-requirements-saudi', excerpt: 'Updated visa requirements and process for Pakistani travelers', content: 'Full article content here...', author: 'Ahmed Khan', category: 'Visa', status: 'published', publishedAt: '2026-02-18', tags: ['visa', 'saudi', 'requirements'], image: 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&h=520&fit=crop&q=80' },
+  { postId: 'bp4', title: 'Best Time to Visit Turkey', slug: 'best-time-visit-turkey', excerpt: 'Planning a trip to Turkey? Here is the ideal timing for different activities', content: 'Full article content here...', author: 'Sara Ali', category: 'Tours', status: 'draft', publishedAt: '', tags: ['turkey', 'tours', 'travel-tips'], image: 'https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=800&h=520&fit=crop&q=80' },
 ];
 
 // ─── Travel Tickets ───

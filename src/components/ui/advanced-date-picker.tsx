@@ -55,7 +55,7 @@ export function AdvancedDatePicker({
           {date ? format(date, "MMM dd, yyyy") : placeholder}
         </button>
       </PopoverTrigger>
-      <PopoverContent className={cn("w-auto p-0 z-[200]", className)} align="start">
+      <PopoverContent className={cn("w-auto p-0 z-[200]", className)} align="start" side="bottom" sideOffset={8} avoidCollisions={false}>
         <DayPicker
           mode="single"
           selected={date}
@@ -71,21 +71,21 @@ export function AdvancedDatePicker({
           classNames={{
             months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
             month: "space-y-3",
-            caption: "flex justify-center pt-1 relative items-center",
+            caption: "relative flex min-h-9 items-center justify-between gap-2 px-1 pt-1",
             caption_label: "hidden",
-            caption_dropdowns: "flex gap-1.5 items-center",
+            caption_dropdowns: "mx-auto flex items-center justify-center gap-2",
             dropdown:
-              "h-8 rounded-md border border-input bg-background text-xs px-2 font-medium text-foreground hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-ring",
-            dropdown_month: "min-w-[90px]",
-            dropdown_year: "min-w-[70px]",
-            vhidden: "hidden",
-            nav: "space-x-1 flex items-center",
+              "h-9 rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground outline-none transition-colors hover:border-primary/50 focus:ring-2 focus:ring-ring",
+            dropdown_month: "min-w-[124px]",
+            dropdown_year: "min-w-[88px]",
+            vhidden: "sr-only",
+            nav: "pointer-events-none absolute inset-x-1 top-1 flex items-center justify-between",
             nav_button: cn(
               buttonVariants({ variant: "outline" }),
-              "h-7 w-7 bg-transparent p-0 opacity-60 hover:opacity-100",
+              "pointer-events-auto h-9 w-9 bg-background p-0 opacity-80 hover:opacity-100",
             ),
-            nav_button_previous: "absolute left-1",
-            nav_button_next: "absolute right-1",
+            nav_button_previous: "",
+            nav_button_next: "",
             table: "w-full border-collapse space-y-1",
             head_row: "flex",
             head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.75rem]",

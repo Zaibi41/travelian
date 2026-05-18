@@ -8,6 +8,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { TravelersClassPicker, type TravelersValue } from "@/components/public/TravelersClassPicker";
+import { AirportCombobox } from "@/components/public/AirportCombobox";
+import { useLocale } from "@/contexts/LocaleContext";
 
 const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
@@ -43,24 +45,39 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
           {date ? format(date, "MMM dd, yyyy") : placeholder}
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8} avoidCollisions={false}>
         <Calendar mode="single" selected={date} onSelect={onSelect} initialFocus className="p-3 pointer-events-auto" />
       </PopoverContent>
     </Popover>
   );
 }
 
-export function SearchTabs() {
-  const [activeTab, setActiveTab] = useState("flights");
+type SearchTabsProps = {
+  initialTab?: string;
+  visibleTabIds?: string[];
+  flightResultsPath?: string;
+};
+
+export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResultsPath = "/flights-search" }: SearchTabsProps = {}) {
+  const { currency } = useLocale();
+  const visibleTabs = visibleTabIds?.length ? tabs.filter((tab) => visibleTabIds.includes(tab.id)) : tabs;
+  const [activeTab, setActiveTab] = useState(visibleTabs.some((tab) => tab.id === initialTab) ? initialTab : visibleTabs[0]?.id || "flights");
   const [tripType, setTripType] = useState("oneway"); // default One-way
   const [travelers, setTravelers] = useState<TravelersValue>({ adults: 1, children: 0, infants: 0, cabin: "Economy" });
   const [departDate, setDepartDate] = useState<Date>();
   const [returnDate, setReturnDate] = useState<Date>();
   const [hotelCheckIn, setHotelCheckIn] = useState<Date>();
   const [hotelCheckOut, setHotelCheckOut] = useState<Date>();
+  const [hotelLocation, setHotelLocation] = useState("");
+  const [hotelGuests, setHotelGuests] = useState("2");
   const [pkgDate, setPkgDate] = useState<Date>();
-  const [actDate, setActDate] = useState<Date>();
+  const [groupFrom, setGroupFrom] = useState("");
+  const [groupTo, setGroupTo] = useState("");
+  const [groupDate, setGroupDate] = useState<Date>();
   const [transDate, setTransDate] = useState<Date>();
+  const [transferPickup, setTransferPickup] = useState("");
+  const [transferDropoff, setTransferDropoff] = useState("");
+  const [transferPassengers, setTransferPassengers] = useState("1");
   const [fromValue, setFromValue] = useState("");
   const [toValue, setToValue] = useState("");
   const [errors, setErrors] = useState<{ from?: string; to?: string; depart?: string; return?: string }>({});
@@ -74,9 +91,9 @@ export function SearchTabs() {
 
   const validateFlights = (): boolean => {
     const next: typeof errors = {};
-    if (!fromValue.trim()) next.from = "Origin is required";
-    if (!toValue.trim()) next.to = "Destination is required";
-    if (fromValue.trim() && toValue.trim() && fromValue.trim().toLowerCase() === toValue.trim().toLowerCase()) {
+    if (!/^[A-Z]{3}$/.test(fromValue)) next.from = "Select a valid origin airport";
+    if (!/^[A-Z]{3}$/.test(toValue)) next.to = "Select a valid destination airport";
+    if (fromValue && toValue && fromValue === toValue) {
       next.to = "Destination must differ from origin";
     }
     if (!departDate) next.depart = "Departure date is required";
@@ -90,9 +107,9 @@ export function SearchTabs() {
   };
 
   const flightsValid =
-    fromValue.trim().length > 0 &&
-    toValue.trim().length > 0 &&
-    fromValue.trim().toLowerCase() !== toValue.trim().toLowerCase() &&
+    /^[A-Z]{3}$/.test(fromValue) &&
+    /^[A-Z]{3}$/.test(toValue) &&
+    fromValue !== toValue &&
     !!departDate && departDate >= today &&
     (tripType !== "roundtrip" || (!!returnDate && !!departDate && returnDate >= departDate));
 
@@ -104,14 +121,41 @@ export function SearchTabs() {
         depart: departDate ? departDate.toISOString().slice(0, 10) : "",
         ...(tripType === "roundtrip" && returnDate ? { return: returnDate.toISOString().slice(0, 10) } : {}),
         adults: String(travelers.adults), children: String(travelers.children), infants: String(travelers.infants),
-        cabin: travelers.cabin, trip: tripType,
+        cabin: travelers.cabin, trip: tripType, currency,
       });
-      navigate(`/flights-search?${params.toString()}`);
+      navigate(`${flightResultsPath}?${params.toString()}`);
       return;
     }
-    if (activeTab === "hotels") navigate("/hotels-search");
+    if (activeTab === "hotels") {
+      const params = new URLSearchParams({
+        location: hotelLocation || "Dubai",
+        checkIn: hotelCheckIn ? hotelCheckIn.toISOString().slice(0, 10) : "",
+        checkOut: hotelCheckOut ? hotelCheckOut.toISOString().slice(0, 10) : "",
+        adults: hotelGuests || "2",
+        currency,
+      });
+      navigate(`/hotels-search?${params.toString()}`);
+    }
     else if (activeTab === "packages") navigate("/umrah-packages");
-    else if (activeTab === "groupbooking") navigate("/contact?type=group");
+    else if (activeTab === "groupbooking") {
+      const params = new URLSearchParams({
+        type: "group",
+        from: groupFrom,
+        to: groupTo,
+        date: groupDate ? groupDate.toISOString().slice(0, 10) : "",
+      });
+      navigate(`/contact?${params.toString()}`);
+    }
+    else if (activeTab === "transfers") {
+      const params = new URLSearchParams({
+        pickup: transferPickup || "Dubai International Airport",
+        dropoff: transferDropoff || "Downtown Dubai",
+        pickupDate: transDate ? transDate.toISOString().slice(0, 10) : "",
+        passengers: transferPassengers || "1",
+        currency,
+      });
+      navigate(`/transfers-search?${params.toString()}`);
+    }
     else navigate("/tour-packages");
   };
 
@@ -136,8 +180,9 @@ export function SearchTabs() {
   return (
     <div className="relative z-10 bg-card rounded-2xl shadow-elevated max-w-6xl mx-auto animate-scale-in">
       {/* Tabs */}
+      {visibleTabs.length > 1 && (
       <div className="flex bg-muted/60 rounded-t-2xl overflow-hidden">
-        {tabs.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
@@ -152,6 +197,7 @@ export function SearchTabs() {
           </button>
         ))}
       </div>
+      )}
 
       <div className="p-5 space-y-4">
         {/* Flight-specific controls */}
@@ -184,25 +230,13 @@ export function SearchTabs() {
                     <div className="relative">
                       {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">From</label>}
                       <div className="relative">
-                        <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="City or airport"
-                          className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm"
-                          value={seg.from}
-                          onChange={e => updateSegment(idx, "from", e.target.value)}
-                        />
+                        <AirportCombobox value={String(seg.from || "")} onChange={code => updateSegment(idx, "from", code)} placeholder="From airport" />
                       </div>
                     </div>
                     <div className="relative">
                       {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>}
                       <div className="relative">
-                        <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
-                        <Input
-                          placeholder="City or airport"
-                          className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm"
-                          value={seg.to}
-                          onChange={e => updateSegment(idx, "to", e.target.value)}
-                        />
+                        <AirportCombobox value={String(seg.to || "")} onChange={code => updateSegment(idx, "to", code)} placeholder="To airport" />
                       </div>
                     </div>
                     <div>
@@ -239,14 +273,7 @@ export function SearchTabs() {
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-center">
                   <div className="relative">
-                    <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      value={fromValue}
-                      onChange={e => { setFromValue(e.target.value); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }}
-                      placeholder="From where?"
-                      aria-invalid={!!errors.from}
-                      className={cn("pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm", errors.from && "border-destructive")}
-                    />
+                    <AirportCombobox value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="From where?" invalid={!!errors.from} />
                   </div>
                   <div className="hidden md:flex items-center justify-center">
                     <button
@@ -259,14 +286,7 @@ export function SearchTabs() {
                     </button>
                   </div>
                   <div className="relative">
-                    <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
-                    <Input
-                      value={toValue}
-                      onChange={e => { setToValue(e.target.value); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }}
-                      placeholder="To where?"
-                      aria-invalid={!!errors.to}
-                      className={cn("pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm", errors.to && "border-destructive")}
-                    />
+                    <AirportCombobox value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To where?" invalid={!!errors.to} />
                   </div>
                   <DatePickerField date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
                   <Button
@@ -288,14 +308,7 @@ export function SearchTabs() {
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-center">
                   <div className="relative">
-                    <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      value={fromValue}
-                      onChange={e => { setFromValue(e.target.value); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }}
-                      placeholder="From where?"
-                      aria-invalid={!!errors.from}
-                      className={cn("pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm", errors.from && "border-destructive")}
-                    />
+                    <AirportCombobox value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="From where?" invalid={!!errors.from} />
                   </div>
                   <div className="hidden md:flex items-center justify-center">
                     <button
@@ -308,14 +321,7 @@ export function SearchTabs() {
                     </button>
                   </div>
                   <div className="relative">
-                    <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
-                    <Input
-                      value={toValue}
-                      onChange={e => { setToValue(e.target.value); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }}
-                      placeholder="To where?"
-                      aria-invalid={!!errors.to}
-                      className={cn("pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm", errors.to && "border-destructive")}
-                    />
+                    <AirportCombobox value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To where?" invalid={!!errors.to} />
                   </div>
                   <DatePickerField date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
                   <DatePickerField date={returnDate} onSelect={(d) => { setReturnDate(d); if (errors.return) setErrors(p => ({ ...p, return: undefined })); }} placeholder="Return date" />
@@ -342,10 +348,14 @@ export function SearchTabs() {
           <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-3 items-center">
             <div className="relative">
               <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="City, hotel, or destination" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+              <Input value={hotelLocation} onChange={(event) => setHotelLocation(event.target.value)} placeholder="City, hotel, or destination" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
             </div>
             <DatePickerField date={hotelCheckIn} onSelect={setHotelCheckIn} placeholder="Check-in" />
             <DatePickerField date={hotelCheckOut} onSelect={setHotelCheckOut} placeholder="Check-out" />
+            <div className="relative md:hidden">
+              <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+              <Input value={hotelGuests} onChange={(event) => setHotelGuests(event.target.value)} type="number" min={1} placeholder="Guests" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+            </div>
             <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
               <Search className="h-4 w-4 mr-2" /> Search
             </Button>
@@ -370,20 +380,10 @@ export function SearchTabs() {
         )}
 
         {activeTab === "groupbooking" && (
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-3 items-center">
-            <div className="relative">
-              <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="From" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <div className="relative">
-              <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
-              <Input placeholder="To" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <DatePickerField date={actDate} onSelect={setActDate} placeholder="Travel date" />
-            <div className="relative">
-              <UsersRound className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input type="number" min={10} placeholder="Group size (10+)" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-center">
+            <AirportCombobox value={groupFrom} onChange={setGroupFrom} placeholder="From" />
+            <AirportCombobox value={groupTo} onChange={setGroupTo} placeholder="To" />
+            <DatePickerField date={groupDate} onSelect={setGroupDate} placeholder="Travel date" />
             <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
               <Search className="h-4 w-4 mr-2" /> Inquire
             </Button>
@@ -394,13 +394,17 @@ export function SearchTabs() {
           <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-center">
             <div className="relative">
               <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Pick-up location" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+              <Input value={transferPickup} onChange={(event) => setTransferPickup(event.target.value)} placeholder="Pick-up location" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
             </div>
             <div className="relative">
               <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Drop-off location" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+              <Input value={transferDropoff} onChange={(event) => setTransferDropoff(event.target.value)} placeholder="Drop-off location" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
             </div>
             <DatePickerField date={transDate} onSelect={setTransDate} placeholder="Select date" />
+            <div className="relative md:hidden">
+              <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+              <Input value={transferPassengers} onChange={(event) => setTransferPassengers(event.target.value)} type="number" min={1} placeholder="Passengers" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+            </div>
             <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
               <Search className="h-4 w-4 mr-2" /> Search
             </Button>

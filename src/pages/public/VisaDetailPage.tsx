@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+﻿import { Link, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileCheck, Check, Clock } from "lucide-react";
@@ -63,7 +63,7 @@ export default function VisaDetailPage() {
           <Card className="sticky top-24">
             <CardContent className="p-6">
               <span className="text-xs text-muted-foreground">Service fee from</span>
-              <p className="text-3xl font-bold text-primary">${visa.basePrice}</p>
+              <p className="text-3xl font-bold text-primary">PKR {visa.basePrice}</p>
               <p className="text-xs text-muted-foreground mb-4">Government fees billed separately</p>
               <Link to={`/booking?type=visa&id=${visa.packageId}`}>
                 <Button className="w-full gradient-primary text-primary-foreground">Apply now</Button>
@@ -78,3 +78,5 @@ export default function VisaDetailPage() {
     </div>
   );
 }
+
+

@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/public/PageHeader";
 
 const faqs = [
   { q: "How do I book a flight on Travelian?", a: "Use our flight search on the homepage, pick a fare, fill in traveler details, and pay securely. Your e-ticket is issued instantly." },
-  { q: "Can I cancel or change my booking?", a: "Yes — most fares allow free cancellation within 24 hours. Specific rules depend on the airline or hotel policy shown at checkout." },
+  { q: "Can I cancel or change my booking?", a: "Yes, most fares allow free cancellation within 24 hours. Specific rules depend on the airline or hotel policy shown at checkout." },
   { q: "Do you offer Umrah packages with visa?", a: "Yes. Our Umrah packages include flight, hotel, transport and Umrah visa processing." },
   { q: "What payment methods do you accept?", a: "Visa, Mastercard, Amex, PayPal, bank transfer, and Travelian Wallet." },
   { q: "Is Travelian safe to use?", a: "All transactions are 256-bit SSL encrypted. We are a verified travel platform with 24/7 customer support." },

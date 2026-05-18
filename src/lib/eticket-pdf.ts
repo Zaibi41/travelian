@@ -44,7 +44,7 @@ export function downloadETicket(b: BookingRecord) {
     doc.setFontSize(11);
     doc.text(`${b.flight.from}${b.flight.fromCode ? ` (${b.flight.fromCode})` : ""}  →  ${b.flight.to}${b.flight.toCode ? ` (${b.flight.toCode})` : ""}`, 40, y);
     y += 18;
-    doc.text(`Date: ${b.flight.date}    Depart: ${b.flight.departTime ?? "—"}    Arrive: ${b.flight.arriveTime ?? "—"}    Duration: ${b.flight.duration ?? "—"}`, 40, y);
+    doc.text(`Date: ${b.flight.date}    Depart: ${b.flight.departTime ?? "-"}    Arrive: ${b.flight.arriveTime ?? "-"}    Duration: ${b.flight.duration ?? "-"}`, 40, y);
     y += 16;
     if (b.flight.cabin) {
       doc.text(`Cabin: ${b.flight.cabin}`, 40, y);
@@ -125,7 +125,7 @@ export function downloadETicket(b: BookingRecord) {
   doc.setTextColor(100);
   doc.text("Please carry a valid government ID and arrive at the airport at least 2 hours before departure.", 40, y);
   y += 12;
-  doc.text("This e-ticket is your proof of booking. Travelian — Your Trusted Travel Partner.", 40, y);
+  doc.text("This e-ticket is your proof of booking. Travelian - Your Trusted Travel Partner.", 40, y);
 
   doc.save(`Travelian-${b.pnr}.pdf`);
 }

@@ -7,23 +7,41 @@ import { buttonVariants } from "@/components/ui/button";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
-function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
+function getInitialMonth(props: CalendarProps) {
+  if (props.defaultMonth) return props.defaultMonth;
+  const selected = props.selected;
+  if (selected instanceof Date) return selected;
+  if (Array.isArray(selected) && selected[0] instanceof Date) return selected[0];
+  if (selected && typeof selected === "object" && "from" in selected && selected.from instanceof Date) return selected.from;
+  return undefined;
+}
+
+function Calendar({ className, classNames, showOutsideDays = true, captionLayout = "dropdown-buttons", fromYear = 2024, toYear = 2035, ...props }: CalendarProps) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      captionLayout={captionLayout}
+      fromYear={fromYear}
+      toYear={toYear}
+      defaultMonth={getInitialMonth(props)}
       className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
-        caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
-        nav: "space-x-1 flex items-center",
+        caption: "relative flex min-h-9 items-center justify-between gap-2 px-1 pt-1",
+        caption_label: "hidden",
+        caption_dropdowns: "mx-auto flex items-center justify-center gap-2",
+        dropdown: "h-9 rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground outline-none transition-colors hover:border-primary/50 focus:ring-2 focus:ring-ring",
+        dropdown_month: "min-w-[124px]",
+        dropdown_year: "min-w-[88px]",
+        vhidden: "sr-only",
+        nav: "pointer-events-none absolute inset-x-1 top-1 flex items-center justify-between",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+          "pointer-events-auto h-9 w-9 bg-background p-0 opacity-80 hover:opacity-100",
         ),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
+        nav_button_previous: "",
+        nav_button_next: "",
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
         head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",

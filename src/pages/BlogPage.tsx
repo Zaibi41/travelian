@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { mockBlogPosts, BlogPost } from "@/data/mock";
+import { useEffect, useState } from "react";
+import { BlogPost } from "@/data/mock";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useRole } from "@/contexts/RoleContext";
 import { toast } from "sonner";
+import { deleteBlogPost, listBlogPosts, saveBlogPost } from "@/lib/content-api";
 
 export default function BlogPage() {
   const { currentRole } = useRole();
-  const [posts, setPosts] = useState(mockBlogPosts);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<BlogPost | null>(null);
@@ -25,20 +26,36 @@ export default function BlogPage() {
   const canEdit = currentRole === 'super_admin' || currentRole === 'admin';
   const filtered = posts.filter(p => p.title.toLowerCase().includes(search.toLowerCase()));
 
+  useEffect(() => {
+    listBlogPosts()
+      .then(setPosts)
+      .catch(() => toast.error("Unable to load blog posts from database"));
+  }, []);
+
   const openAdd = () => { setEditing(null); setForm({ title: '', slug: '', excerpt: '', content: '', category: '', status: 'draft', tags: [] }); setDialogOpen(true); };
   const openEdit = (p: BlogPost) => { setEditing(p); setForm(p); setDialogOpen(true); };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.title) { toast.error("Title is required"); return; }
     const slug = form.slug || form.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    if (editing) {
-      setPosts(prev => prev.map(p => p.postId === editing.postId ? { ...p, ...form, slug } : p));
-      toast.success("Post updated");
-    } else {
-      setPosts(prev => [...prev, { ...form, slug, postId: `bp${Date.now()}`, author: 'Admin', publishedAt: form.status === 'published' ? new Date().toISOString().split('T')[0] : '' }]);
-      toast.success("Post created");
+    try {
+      const saved = await saveBlogPost({
+        ...form,
+        slug,
+        postId: editing?.postId,
+        author: editing?.author || "Admin",
+        publishedAt: form.status === 'published' ? (editing?.publishedAt || new Date().toISOString().split('T')[0]) : '',
+      });
+      if (editing) {
+        setPosts(prev => prev.map(p => p.postId === editing.postId ? saved : p));
+      } else {
+        setPosts(prev => [saved, ...prev]);
+      }
+      setDialogOpen(false);
+      toast.success(editing ? "Post updated" : "Post created");
+    } catch {
+      toast.error("Unable to save post");
     }
-    setDialogOpen(false);
   };
 
   return (
@@ -85,7 +102,15 @@ export default function BlogPage() {
                   <div className="flex gap-1">
                     <Button variant="ghost" size="sm"><Eye className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(post)}><Pencil className="h-3 w-3" /></Button>
-                    <Button variant="ghost" size="sm" className="text-destructive" onClick={() => { setPosts(prev => prev.filter(p => p.postId !== post.postId)); toast.success("Post deleted"); }}><Trash2 className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="sm" className="text-destructive" onClick={async () => {
+                      try {
+                        await deleteBlogPost(post.slug);
+                        setPosts(prev => prev.filter(p => p.postId !== post.postId));
+                        toast.success("Post deleted");
+                      } catch {
+                        toast.error("Unable to delete post");
+                      }
+                    }}><Trash2 className="h-3 w-3" /></Button>
                   </div>
                 )}
               </div>

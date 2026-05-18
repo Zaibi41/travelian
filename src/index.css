@@ -156,6 +156,10 @@
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
   }
+  @keyframes premiumProgress {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(320%); }
+  }
   .skeleton-loader {
     background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted-foreground) / 0.08) 50%, hsl(var(--muted)) 75%);
     background-size: 200% 100%;

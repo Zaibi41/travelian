@@ -1,8 +1,15 @@
 import { Link } from "react-router-dom";
-import { Plane, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube, Shield, Award, Lock } from "lucide-react";
+import { Plane, Mail, Phone, MapPin, Facebook, Instagram, Shield, Award, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+
+const SUPPORT_PHONE = "+92 324 4440014";
+const SUPPORT_PHONE_TEL = "+923244440014";
+const SUPPORT_EMAIL = "travelian.pk@gmail.com";
+const SUPPORT_ADDRESS = "Johar Town, Lahore";
+const FACEBOOK_URL = "https://www.facebook.com/Travelian.pk/";
+const INSTAGRAM_URL = "https://www.instagram.com/travelian.pk/";
 
 export function PublicFooter() {
   const handleSubscribe = (e: React.FormEvent<HTMLFormElement>) => {
@@ -17,11 +24,15 @@ export function PublicFooter() {
     e.currentTarget.reset();
   };
 
+  const scrollToTop = () => {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  };
+
   const socials = [
-    { Icon: Facebook, href: "https://facebook.com" },
-    { Icon: Twitter, href: "https://twitter.com" },
-    { Icon: Instagram, href: "https://instagram.com" },
-    { Icon: Youtube, href: "https://youtube.com" },
+    { Icon: Facebook, href: FACEBOOK_URL, label: "Travelian on Facebook" },
+    { Icon: Instagram, href: INSTAGRAM_URL, label: "Travelian on Instagram" },
   ];
 
   return (
@@ -54,8 +65,8 @@ export function PublicFooter() {
               Your premium travel partner. Making journeys seamless and memorable since 2020.
             </p>
             <div className="flex gap-2">
-              {socials.map(({ Icon, href }, i) => (
-                <a key={i} href={href} target="_blank" rel="noreferrer" className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-muted hover:text-sidebar-primary transition-colors">
+              {socials.map(({ Icon, href, label }) => (
+                <a key={href} href={href} target="_blank" rel="noreferrer" aria-label={label} className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-muted hover:text-sidebar-primary transition-colors">
                   <Icon className="h-4 w-4" />
                 </a>
               ))}
@@ -65,7 +76,7 @@ export function PublicFooter() {
           <div>
             <h4 className="font-semibold text-sidebar-accent-foreground mb-4 text-sm">Products</h4>
             <ul className="space-y-2.5 text-sm text-sidebar-muted">
-              <li><Link to="/flights-search" className="hover:text-sidebar-primary transition-colors">Flights</Link></li>
+              <li><Link to="/" onClick={scrollToTop} className="hover:text-sidebar-primary transition-colors">Flights</Link></li>
               <li><Link to="/hotels-search" className="hover:text-sidebar-primary transition-colors">Hotels</Link></li>
               <li><Link to="/umrah-packages" className="hover:text-sidebar-primary transition-colors">Umrah Packages</Link></li>
               <li><Link to="/tour-packages" className="hover:text-sidebar-primary transition-colors">Tours</Link></li>
@@ -77,7 +88,7 @@ export function PublicFooter() {
           <div>
             <h4 className="font-semibold text-sidebar-accent-foreground mb-4 text-sm">Company</h4>
             <ul className="space-y-2.5 text-sm text-sidebar-muted">
-              <li><Link to="/about" className="hover:text-sidebar-primary transition-colors">About Us</Link></li>
+              <li><Link to="/about" className="hover:text-sidebar-primary transition-colors">About</Link></li>
               <li><Link to="/blog-public" className="hover:text-sidebar-primary transition-colors">Travel Guide Blog</Link></li>
               <li><Link to="/contact" className="hover:text-sidebar-primary transition-colors">Contact Us</Link></li>
               <li><Link to="/careers" className="hover:text-sidebar-primary transition-colors">Careers</Link></li>
@@ -99,9 +110,9 @@ export function PublicFooter() {
           <div>
             <h4 className="font-semibold text-sidebar-accent-foreground mb-4 text-sm">Contact</h4>
             <ul className="space-y-3 text-sm text-sidebar-muted">
-              <li className="flex items-start gap-2"><MapPin className="h-4 w-4 shrink-0 mt-0.5" /> Johar Town, Lahore</li>
-              <li className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" /> <a href="tel:+923244440014" className="hover:text-sidebar-primary">+92 324 4440014</a></li>
-              <li className="flex items-center gap-2"><Mail className="h-4 w-4 shrink-0" /> <a href="mailto:travelian.pk@gmail.com" className="hover:text-sidebar-primary">travelian.pk@gmail.com</a></li>
+              <li className="flex items-start gap-2"><MapPin className="h-4 w-4 shrink-0 mt-0.5" /> {SUPPORT_ADDRESS}</li>
+              <li className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" /> <a href={`tel:${SUPPORT_PHONE_TEL}`} className="hover:text-sidebar-primary">{SUPPORT_PHONE}</a></li>
+              <li className="flex items-center gap-2"><Mail className="h-4 w-4 shrink-0" /> <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-sidebar-primary">{SUPPORT_EMAIL}</a></li>
             </ul>
           </div>
         </div>
@@ -109,7 +120,7 @@ export function PublicFooter() {
         <div className="border-t border-sidebar-border mt-10 pt-8 space-y-6">
           <div className="flex flex-wrap items-center justify-center md:justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3 text-[11px] text-sidebar-muted">
-              {['IATA Accredited', 'PATA Member', 'SSL Secure', 'PCI-DSS', 'Verified by Visa'].map(t => (
+              {["IATA Accredited", "PATA Member", "SSL Secure", "PCI-DSS", "Verified by Visa"].map((t) => (
                 <span key={t} className="px-2.5 py-1 rounded-md border border-sidebar-border bg-sidebar-accent/40 font-semibold tracking-wide">
                   {t}
                 </span>
@@ -126,7 +137,7 @@ export function PublicFooter() {
             <div className="flex items-center gap-3">
               <span className="text-xs text-sidebar-muted">We accept:</span>
               <div className="flex gap-2">
-                {['Visa', 'Mastercard', 'Amex', 'PayPal', 'Stripe'].map(p => (
+                {["Visa", "Mastercard", "Amex", "PayPal", "Stripe"].map((p) => (
                   <span key={p} className="px-2.5 py-1 bg-sidebar-accent rounded-md text-xs text-sidebar-muted font-medium">{p}</span>
                 ))}
               </div>

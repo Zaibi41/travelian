@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+﻿import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Flame, Clock, Percent, Zap, Tag, Star, MapPin, Heart, ArrowRight, Check, Copy } from "lucide-react";
@@ -10,9 +10,9 @@ import { SEO } from "@/components/SEO";
 
 const flashDeals = [
   { title: "Makkah Hotels Flash Sale", discount: "40% OFF", desc: "5-star hotels near Haram at unbeatable prices", bg: "gradient-deal", expiry: "2 days", category: "Hotels", to: "/hotels-search" },
-  { title: "Summer Tour Early Bird", discount: "Save $300", desc: "Book Turkey & Egypt tours before May", bg: "gradient-primary", expiry: "15 days", category: "Tours", to: "/tour-packages" },
-  { title: "Umrah Economy Special", discount: "From $799", desc: "7-night economy package with flights", bg: "gradient-hero", expiry: "Limited", category: "Umrah", to: "/umrah-packages" },
-  { title: "First Booking Bonus", discount: "$50 OFF", desc: "Use code WELCOME50 on your first booking", bg: "gradient-deal", expiry: "Ongoing", category: "All", to: "/hotels-search" },
+  { title: "Summer Tour Early Bird", discount: "Save PKR 300", desc: "Book Turkey & Egypt tours before May", bg: "gradient-primary", expiry: "15 days", category: "Tours", to: "/tour-packages" },
+  { title: "Umrah Economy Special", discount: "From PKR 799", desc: "7-night economy package with flights", bg: "gradient-hero", expiry: "Limited", category: "Umrah", to: "/umrah-packages" },
+  { title: "First Booking Bonus", discount: "PKR 50 OFF", desc: "Use code WELCOME50 on your first booking", bg: "gradient-deal", expiry: "Ongoing", category: "All", to: "/hotels-search" },
 ];
 
 export default function DealsPage() {
@@ -81,7 +81,7 @@ export default function DealsPage() {
                     <Badge className="bg-accent text-accent-foreground capitalize">{coupon.applicableTo}</Badge>
                     <div className="text-right">
                       <p className="text-2xl font-extrabold text-primary">
-                        {coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `$${coupon.discountValue}`}
+                        {coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `PKR ${coupon.discountValue}`}
                       </p>
                       <p className="text-[10px] text-muted-foreground">OFF</p>
                     </div>
@@ -94,7 +94,7 @@ export default function DealsPage() {
                     </Button>
                   </div>
                   <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
-                    <span>Min. order: ${coupon.minOrder}</span>
+                    <span>Min. order: PKR {coupon.minOrder}</span>
                     <span>Valid until {coupon.validUntil}</span>
                   </div>
                 </CardContent>
@@ -119,7 +119,7 @@ export default function DealsPage() {
               <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
                 <Card className="overflow-hidden hover:shadow-elevated transition-all group">
                   <div className="h-40 bg-gradient-to-br from-warning/10 to-accent flex items-center justify-center relative">
-                    <span className="text-5xl group-hover:scale-110 transition-transform">🏨</span>
+                    <span className="text-5xl group-hover:scale-110 transition-transform">ðŸ¨</span>
                     <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground border-0 text-xs">30% OFF</Badge>
                     <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground">
                       <Heart className="h-3.5 w-3.5" />
@@ -130,8 +130,8 @@ export default function DealsPage() {
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin className="h-3 w-3" /> {hotel.city}</p>
                     <div className="flex items-end justify-between mt-3">
                       <div>
-                        <span className="text-xs text-muted-foreground line-through">${Math.round(hotel.pricePerNight * 1.3)}</span>
-                        <p className="text-lg font-bold text-destructive">${hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
+                        <span className="text-xs text-muted-foreground line-through">PKR {Math.round(hotel.pricePerNight * 1.3)}</span>
+                        <p className="text-lg font-bold text-destructive">PKR {hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
                       </div>
                       <div className="bg-primary text-primary-foreground text-xs font-bold px-1.5 py-0.5 rounded">9.{hotel.starRating}</div>
                     </div>
@@ -145,3 +145,5 @@ export default function DealsPage() {
     </div>
   );
 }
+
+

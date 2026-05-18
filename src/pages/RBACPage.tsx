@@ -88,7 +88,7 @@ export default function RBACPage() {
             <div>
               <CardTitle className="text-base font-display flex items-center gap-2">
                 <Shield className="h-4 w-4 text-primary" />
-                Module Access — {user?.name}
+                Module Access - {user?.name}
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-1">Select which modules this user can access</p>
             </div>

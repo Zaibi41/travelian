@@ -43,7 +43,7 @@ function AdminDashboard() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold">{failedSearches} No-Result Searches</p>
-                    <p className="text-xs text-muted-foreground">Flights not found — action needed</p>
+                    <p className="text-xs text-muted-foreground">Flights not found, action needed</p>
                   </div>
                 </CardContent>
               </Card>

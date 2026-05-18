@@ -1,27 +1,32 @@
-import { useState, useMemo } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil } from "lucide-react";
-import { mockFlights } from "@/data/mock";
+import type { Flight } from "@/data/mock";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { SEO } from "@/components/SEO";
 import { TravelersClassPicker, formatTravelers, type TravelersValue } from "@/components/public/TravelersClassPicker";
+import { searchFlights, type TravelianFlight } from "@/lib/travelian-api";
+import { AirportCombobox } from "@/components/public/AirportCombobox";
+import { FlightSearchLoader } from "@/components/public/FlightSearchLoader";
+import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
 
-export default function PublicFlightsPage() {
-  const [params] = useSearchParams();
-  const initFrom = params.get("from") || "Lahore (LHE)";
-  const initTo = params.get("to") || "Jeddah (JED)";
+export default function PublicFlightsPage({ bookingPath = "/booking", adminMode = false }: { bookingPath?: string; adminMode?: boolean } = {}) {
+  const { currency: selectedCurrency, setCurrency } = useLocale();
+  const [params, setParams] = useSearchParams();
+  const initFrom = params.get("from") || "LHE";
+  const initTo = params.get("to") || "JED";
   const initDateStr = params.get("depart");
   const initCabin = params.get("cabin") || "Economy";
+  const initCurrency = (params.get("currency") as CurrencyCode) || selectedCurrency || "PKR";
   const initAdults = parseInt(params.get("adults") || "1") || 1;
   const initChildren = parseInt(params.get("children") || "0") || 0;
   const initInfants = parseInt(params.get("infants") || "0") || 0;
@@ -30,6 +35,7 @@ export default function PublicFlightsPage() {
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState(initFrom);
   const [to, setTo] = useState(initTo);
+  const [currency, setSearchCurrency] = useState<CurrencyCode>(initCurrency);
   const [travelers, setTravelers] = useState<TravelersValue>({
     adults: initAdults, children: initChildren, infants: initInfants, cabin: initCabin,
   });
@@ -40,18 +46,23 @@ export default function PublicFlightsPage() {
   const [departDate, setDepartDate] = useState<Date>(initDate);
   const [selectedDayIndex, setSelectedDayIndex] = useState(3);
   const [modifyOpen, setModifyOpen] = useState(false);
+  const [apiFlights, setApiFlights] = useState<TravelianFlight[]>([]);
+  const [apiStatus, setApiStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [apiMessage, setApiMessage] = useState("");
 
   // Modal-local edit state
   const [editFrom, setEditFrom] = useState(from);
   const [editTo, setEditTo] = useState(to);
   const [editDate, setEditDate] = useState<Date | undefined>(departDate);
   const [editTravelers, setEditTravelers] = useState<TravelersValue>(travelers);
+  const [editCurrency, setEditCurrency] = useState<CurrencyCode>(currency);
 
   const openModify = () => {
     setEditFrom(from);
     setEditTo(to);
     setEditDate(departDate);
     setEditTravelers(travelers);
+    setEditCurrency(currency);
     setModifyOpen(true);
   };
 
@@ -60,6 +71,20 @@ export default function PublicFlightsPage() {
     setTo(editTo);
     if (editDate) setDepartDate(editDate);
     setTravelers(editTravelers);
+    setSearchCurrency(editCurrency);
+    setCurrency(editCurrency);
+    setSelectedAirlines([]);
+    setSelectedFlight(null);
+    setParams(new URLSearchParams({
+      from: editFrom,
+      to: editTo,
+      depart: editDate ? format(editDate, "yyyy-MM-dd") : format(departDate, "yyyy-MM-dd"),
+      adults: String(editTravelers.adults),
+      children: String(editTravelers.children),
+      infants: String(editTravelers.infants),
+      cabin: editTravelers.cabin,
+      currency: editCurrency,
+    }), { replace: true });
     setModifyOpen(false);
   };
 
@@ -70,7 +95,44 @@ export default function PublicFlightsPage() {
 
   const toggleAirline = (a: string) => setSelectedAirlines(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
 
-  let filtered = mockFlights.filter(f => {
+  useEffect(() => {
+    const controller = new AbortController();
+    setApiStatus("loading");
+    setApiMessage("Searching live providers...");
+
+    searchFlights({
+      from,
+      to,
+      departureDate: format(departDate, "yyyy-MM-dd"),
+      cabin: travelers.cabin,
+      currency,
+      passengers: {
+        adults: travelers.adults,
+        children: travelers.children,
+        infants: travelers.infants,
+      },
+    }, controller.signal)
+      .then(result => {
+        setApiFlights(result.flights);
+        const liveMaxPrice = Math.max(700, ...result.flights.map(f => f.price));
+        setPriceRange([0, Math.ceil(liveMaxPrice / 1000) * 1000]);
+        setApiStatus("success");
+        setApiMessage(result.flights.length ? "" : "No live fares found for this search.");
+      })
+      .catch(error => {
+        if (controller.signal.aborted) return;
+        setApiFlights([]);
+        setApiStatus("error");
+        setApiMessage(error instanceof Error ? error.message : "Live flight search is unavailable. Please modify your search and try again.");
+      });
+
+    return () => controller.abort();
+  }, [from, to, departDate, travelers, currency]);
+
+  const flights = apiFlights;
+  const maxPrice = Math.max(700, ...flights.map(f => f.price));
+
+  let filtered = flights.filter(f => {
     if (search && !f.origin.toLowerCase().includes(search.toLowerCase()) && !f.destination.toLowerCase().includes(search.toLowerCase()) && !f.airline.toLowerCase().includes(search.toLowerCase())) return false;
     if (f.price < priceRange[0] || f.price > priceRange[1]) return false;
     if (selectedAirlines.length > 0 && !selectedAirlines.includes(f.airline)) return false;
@@ -83,6 +145,10 @@ export default function PublicFlightsPage() {
   const getDuration = (dep: string, arr: string) => {
     const ms = new Date(arr).getTime() - new Date(dep).getTime();
     return `${Math.floor(ms / 3600000)}h ${Math.round((ms % 3600000) / 60000)}m`;
+  };
+
+  const formatFare = (price: number, currency = "PKR") => {
+    return `${currency || "PKR"} ${Math.round(price).toLocaleString()}`;
   };
 
   const bestFlight = filtered.length > 0 ? filtered.reduce((best, f) => f.price < best.price ? f : best, filtered[0]) : null;
@@ -101,17 +167,17 @@ export default function PublicFlightsPage() {
   }, [departDate]);
 
   return (
-    <div>
+    <div className={adminMode ? "-m-4 md:-m-6 bg-muted/30 min-h-[calc(100vh-3.5rem)]" : ""}>
       <SEO
-        title={`Flights ${from} to ${to} — Travelian`}
+        title={`Flights ${from} to ${to} - Travelian`}
         description={`Compare and book ${from} to ${to} flights on ${format(departDate, "PPP")}. Best fares, instant e-ticket, secure checkout.`}
       />
       {/* Visually-hidden H1 for SEO/a11y, keeps premium look intact */}
       <h1 className="sr-only">Flight search results: {from} to {to}</h1>
 
-      {/* Sticky Search Hero */}
-      <section className="gradient-hero py-4 sticky top-16 md:top-[100px] z-30 shadow-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Search summary */}
+      <section className={cn("gradient-hero z-30 shadow-md", adminMode ? "py-2" : "py-4")}>
+        <div className={cn(adminMode ? "px-4 md:px-6" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8")}>
           <div className="bg-card/10 backdrop-blur-sm rounded-2xl px-4 py-3 border border-primary-foreground/10">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-2 text-primary-foreground text-sm flex-wrap min-w-0">
@@ -119,10 +185,12 @@ export default function PublicFlightsPage() {
                 <span className="font-semibold truncate">{from}</span>
                 <ArrowLeftRight className="h-3.5 w-3.5 opacity-60 shrink-0" />
                 <span className="font-semibold truncate">{to}</span>
-                <span className="text-primary-foreground/60 text-xs">·</span>
+                <span className="text-primary-foreground/60 text-xs">-</span>
                 <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{format(departDate, "EEE, MMM d")}</span>
-                <span className="text-primary-foreground/60 text-xs">·</span>
+                <span className="text-primary-foreground/60 text-xs">-</span>
                 <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{formatTravelers(travelers)}</span>
+                <span className="text-primary-foreground/60 text-xs">-</span>
+                <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{currency}</span>
               </div>
               <Button
                 size="sm"
@@ -137,9 +205,9 @@ export default function PublicFlightsPage() {
         </div>
       </section>
 
-      {/* Date Flexibility Row — centered, "See Price" subtitle */}
+      {/* Date flexibility row with centered "See Price" subtitle */}
       <div className="bg-card border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className={cn(adminMode ? "px-4 md:px-6" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8")}>
           <div className="flex items-center justify-center gap-1.5 py-3 overflow-x-auto scrollbar-hide">
             {dateFlexDays.map((day, i) => (
               <button
@@ -166,12 +234,12 @@ export default function PublicFlightsPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className={cn(adminMode ? "px-4 md:px-6 py-5" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6")}>
         {/* Sort Tags */}
         <div className="flex items-center gap-3 mb-6 overflow-x-auto scrollbar-hide">
           {[
-            { id: "best", label: "Best", sub: bestFlight ? `$${bestFlight.price}` : "" },
-            { id: "price-asc", label: "Cheapest", sub: bestFlight ? `$${bestFlight.price}` : "" },
+            { id: "best", label: "Best", sub: bestFlight ? formatFare(bestFlight.price, bestFlight.currency) : "" },
+            { id: "price-asc", label: "Cheapest", sub: bestFlight ? formatFare(bestFlight.price, bestFlight.currency) : "" },
             { id: "fastest", label: "Fastest", sub: fastestFlight ? getDuration(fastestFlight.departureTime, fastestFlight.arrivalTime) : "" },
           ].map(s => (
             <button
@@ -187,24 +255,32 @@ export default function PublicFlightsPage() {
               {s.sub && <span className="text-xs opacity-70">{s.sub}</span>}
             </button>
           ))}
-          <span className="text-sm text-muted-foreground ml-auto shrink-0">{filtered.length} flights found</span>
+          <span className="text-sm text-muted-foreground ml-auto shrink-0">
+            {apiStatus === "loading" ? "Searching live fares" : `${filtered.length} flights found`}
+          </span>
         </div>
+
+        {apiStatus === "error" && (
+          <div className="mb-5 rounded-xl border border-warning/20 bg-warning/5 px-4 py-3 text-sm text-warning">
+            <span>{apiMessage}</span>
+          </div>
+        )}
 
         <div className="flex gap-6">
           {/* Sidebar Filters */}
-          <aside className="hidden md:block w-64 shrink-0 space-y-5">
+          <aside className="hidden md:block w-56 xl:w-64 shrink-0 space-y-5">
             <Card className="shadow-card border-0">
               <CardContent className="p-5">
                 <h3 className="font-semibold text-foreground text-sm mb-4">Price Range</h3>
-                <Slider value={priceRange} onValueChange={setPriceRange} min={0} max={700} step={10} className="mb-3" />
-                <div className="flex justify-between text-xs text-muted-foreground"><span>${priceRange[0]}</span><span>${priceRange[1]}</span></div>
+                <Slider value={priceRange} onValueChange={setPriceRange} min={0} max={Math.max(700, Math.ceil(maxPrice / 1000) * 1000)} step={100} className="mb-3" />
+                <div className="flex justify-between text-xs text-muted-foreground"><span>{formatFare(priceRange[0], currency)}</span><span>{formatFare(priceRange[1], currency)}</span></div>
               </CardContent>
             </Card>
             <Card className="shadow-card border-0">
               <CardContent className="p-5">
                 <h3 className="font-semibold text-foreground text-sm mb-3">Airlines</h3>
                 <div className="space-y-2.5">
-                  {["Saudi Airlines", "PIA", "Emirates", "Turkish Airlines"].map(a => (
+                  {Array.from(new Set(flights.map(f => f.airline))).map(a => (
                     <label key={a} className="flex items-center gap-2 cursor-pointer group">
                       <Checkbox checked={selectedAirlines.includes(a)} onCheckedChange={() => toggleAirline(a)} />
                       <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">{a}</span>
@@ -241,7 +317,9 @@ export default function PublicFlightsPage() {
 
           {/* Results */}
           <div className="flex-1 space-y-4">
-            {filtered.map((flight, idx) => {
+            {apiStatus === "loading" && <FlightSearchLoader from={from} to={to} />}
+
+            {apiStatus !== "loading" && filtered.map((flight, idx) => {
               const isBest = bestFlight?.flightId === flight.flightId;
               const isCheapest = sort === "price-asc" && idx === 0;
               const isFastest = fastestFlight?.flightId === flight.flightId;
@@ -292,7 +370,7 @@ export default function PublicFlightsPage() {
                       </div>
                       <div className="flex items-center gap-4 md:border-l md:pl-5">
                         <div className="text-right">
-                          <p className="text-2xl font-bold text-foreground">${flight.price}</p>
+                          <p className="text-2xl font-bold text-foreground">{formatFare(flight.price, flight.currency)}</p>
                           <p className="text-[10px] text-muted-foreground">per person, incl. tax</p>
                           <div className="flex items-center gap-1.5 mt-1.5 justify-end">
                             <Wifi className="h-3 w-3 text-muted-foreground" />
@@ -300,7 +378,7 @@ export default function PublicFlightsPage() {
                             <Coffee className="h-3 w-3 text-muted-foreground" />
                           </div>
                         </div>
-                        <Link to={`/booking?type=flight&flightId=${flight.flightId}&airline=${encodeURIComponent(flight.airline)}&flightNo=${encodeURIComponent(flight.flightNumber)}&from=${encodeURIComponent(flight.origin)}&to=${encodeURIComponent(flight.destination)}&date=${encodeURIComponent(format(departDate, "MMM dd, yyyy"))}&cabin=${encodeURIComponent(flight.class)}&price=${flight.price}`}>
+                        <Link to={`${bookingPath}?type=flight&flightId=${flight.flightId}&airline=${encodeURIComponent(flight.airline)}&flightNo=${encodeURIComponent(flight.flightNumber)}&from=${encodeURIComponent(flight.origin)}&to=${encodeURIComponent(flight.destination)}&date=${encodeURIComponent(format(departDate, "MMM dd, yyyy"))}&cabin=${encodeURIComponent(flight.class)}&price=${flight.price}&currency=${encodeURIComponent(flight.currency || "PKR")}`}>
                           <Button className="gradient-primary text-primary-foreground rounded-xl h-11 px-5">Select</Button>
                         </Link>
                       </div>
@@ -309,11 +387,12 @@ export default function PublicFlightsPage() {
                     {/* Expanded fare options */}
                     {selectedFlight === flight.flightId && (
                       <div className="mt-5 pt-5 border-t grid grid-cols-1 md:grid-cols-3 gap-3 animate-fade-in">
-                        {[
-                          { tier: "Basic", price: flight.price, bags: "1 carry-on", change: "No changes", refund: "Non-refundable" },
-                          { tier: "Standard", price: flight.price + 60, bags: "1 carry-on + 1 checked", change: "Change for $50", refund: "Partial refund", popular: true },
-                          { tier: "Flex", price: flight.price + 130, bags: "2 checked + 1 carry-on", change: "Free changes", refund: "Full refund" },
-                        ].map(fare => (
+                        {(flight.fareOptions || []).length === 0 && (
+                          <div className="md:col-span-3 rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
+                            Fare options were not returned by the provider for this offer. Select the main fare to continue.
+                          </div>
+                        )}
+                        {(flight.fareOptions || []).map(fare => (
                           <div
                             key={fare.tier}
                             className={`border rounded-xl p-4 relative transition-all hover:border-primary/50 ${
@@ -326,13 +405,13 @@ export default function PublicFlightsPage() {
                               </Badge>
                             )}
                             <h4 className="font-semibold text-foreground text-sm">{fare.tier}</h4>
-                            <p className="text-xl font-bold text-foreground mt-1">${fare.price}</p>
+                            <p className="text-xl font-bold text-foreground mt-1">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</p>
                             <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
                               <p className="flex items-center gap-1.5"><Luggage className="h-3 w-3" /> {fare.bags}</p>
                               <p className="flex items-center gap-1.5"><ArrowLeftRight className="h-3 w-3" /> {fare.change}</p>
                               <p className="flex items-center gap-1.5"><Shield className="h-3 w-3" /> {fare.refund}</p>
                             </div>
-                            <Link to={`/booking?type=flight&flightId=${flight.flightId}&airline=${encodeURIComponent(flight.airline)}&flightNo=${encodeURIComponent(flight.flightNumber)}&from=${encodeURIComponent(flight.origin)}&to=${encodeURIComponent(flight.destination)}&date=${encodeURIComponent(format(departDate, "MMM dd, yyyy"))}&cabin=${encodeURIComponent(flight.class)}&fare=${fare.tier}&price=${fare.price}`}>
+                            <Link to={`${bookingPath}?type=flight&flightId=${flight.flightId}&airline=${encodeURIComponent(flight.airline)}&flightNo=${encodeURIComponent(flight.flightNumber)}&from=${encodeURIComponent(flight.origin)}&to=${encodeURIComponent(flight.destination)}&date=${encodeURIComponent(format(departDate, "MMM dd, yyyy"))}&cabin=${encodeURIComponent(flight.class)}&fare=${fare.tier}&price=${fare.price.total}&currency=${encodeURIComponent(fare.price.currency || flight.currency || "PKR")}`}>
                               <Button
                                 size="sm"
                                 className={`w-full mt-3 rounded-lg ${fare.popular ? "gradient-primary text-primary-foreground" : ""}`}
@@ -350,11 +429,13 @@ export default function PublicFlightsPage() {
               );
             })}
 
-            {filtered.length === 0 && (
+            {apiStatus !== "loading" && filtered.length === 0 && (
               <div className="text-center py-16">
-                <span className="text-6xl mb-4 block">✈️</span>
+                <Plane className="mx-auto mb-4 h-14 w-14 text-muted-foreground" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">No flights found</h3>
-                <p className="text-sm text-muted-foreground mb-4">Try adjusting your search or filters</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  No bookable live fares returned. Modify the search and try again.
+                </p>
                 <Button variant="outline" className="rounded-lg" onClick={() => { setSelectedAirlines([]); setPriceRange([0, 700]); setSearch(""); }}>
                   Clear All Filters
                 </Button>
@@ -374,10 +455,7 @@ export default function PublicFlightsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-end">
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">From</label>
-                <div className="relative">
-                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                  <Input value={editFrom} onChange={e => setEditFrom(e.target.value)} className="pl-9 h-11 rounded-xl" />
-                </div>
+                <AirportCombobox value={editFrom} onChange={setEditFrom} className="h-11" placeholder="From airport" />
               </div>
               <div className="hidden sm:flex items-center justify-center pb-1">
                 <button type="button" onClick={swapEdit} aria-label="Swap origin and destination" className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
@@ -386,10 +464,7 @@ export default function PublicFlightsPage() {
               </div>
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">To</label>
-                <div className="relative">
-                  <Plane className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground rotate-90" />
-                  <Input value={editTo} onChange={e => setEditTo(e.target.value)} className="pl-9 h-11 rounded-xl" />
-                </div>
+                <AirportCombobox value={editTo} onChange={setEditTo} className="h-11" placeholder="To airport" />
               </div>
             </div>
             <div>
@@ -401,7 +476,7 @@ export default function PublicFlightsPage() {
                     {editDate ? format(editDate, "MMM dd, yyyy") : "Select date"}
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-[300]" align="start">
+                <PopoverContent className="w-auto p-0 z-[300]" align="start" side="bottom" sideOffset={8} avoidCollisions={false}>
                   <Calendar mode="single" selected={editDate} onSelect={setEditDate} initialFocus className="p-3 pointer-events-auto" />
                 </PopoverContent>
               </Popover>
@@ -409,6 +484,18 @@ export default function PublicFlightsPage() {
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Travelers & Class</label>
               <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Currency</label>
+              <select
+                value={editCurrency}
+                onChange={(event) => setEditCurrency(event.target.value as CurrencyCode)}
+                className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+              >
+                {CURRENCIES.map(option => (
+                  <option key={option.code} value={option.code}>{option.code} - {option.label}</option>
+                ))}
+              </select>
             </div>
           </div>
           <DialogFooter>

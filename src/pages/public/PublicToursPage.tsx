@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+﻿import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, Map } from "lucide-react";
@@ -25,7 +25,7 @@ const destinations = [
 
 const faqs = [
   { q: "Are flights included in tour packages?", a: "Most tours include flights, hotels, transfers and guided sightseeing. Specifics are listed on each package." },
-  { q: "Can I travel solo?", a: "Yes. Solo travelers are welcome — single supplements may apply." },
+  { q: "Can I travel solo?", a: "Yes. Solo travelers are welcome. Single supplements may apply." },
   { q: "Are tours customizable?", a: "Yes, we can tailor any tour to your dates, hotel preference and activities." },
 ];
 
@@ -90,7 +90,7 @@ export default function PublicToursPage() {
                   <div className="flex items-center justify-between mt-4 pt-4 border-t">
                     <div>
                       <span className="text-xs text-muted-foreground">From</span>
-                      <p className="text-2xl font-bold text-primary">${tour.basePrice}</p>
+                      <p className="text-2xl font-bold text-primary">PKR {tour.basePrice}</p>
                     </div>
                     <Link to={`/tour/${tour.packageId}`}>
                       <Button className="gradient-primary text-primary-foreground">View details</Button>
@@ -108,11 +108,11 @@ export default function PublicToursPage() {
           <div className="grid md:grid-cols-3 gap-4">
             {[
               { n: "Hassan T.", t: "Cappadocia tour was magical. Travelian handled every detail." },
-              { n: "Maria S.", t: "Best family vacation we've ever had — Dubai was amazing." },
+              { n: "Maria S.", t: "Best family vacation we've ever had. Dubai was amazing." },
               { n: "Omar A.", t: "Great value. Hotels and guides were top-class." },
             ].map(t => (
               <Card key={t.n} className="border-0 shadow-card"><CardContent className="p-5">
-                <div className="text-gold mb-2">★★★★★</div>
+                <div className="text-gold mb-2">â˜…â˜…â˜…â˜…â˜…</div>
                 <p className="text-sm text-muted-foreground italic">"{t.t}"</p>
                 <p className="text-sm font-semibold text-foreground mt-3">{t.n}</p>
               </CardContent></Card>
@@ -136,3 +136,5 @@ export default function PublicToursPage() {
     </div>
   );
 }
+
+

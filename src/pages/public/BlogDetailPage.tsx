@@ -1,13 +1,27 @@
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, User } from "lucide-react";
-import { mockBlogPosts } from "@/data/mock";
+import type { BlogPost } from "@/data/mock";
 import { SEO } from "@/components/SEO";
+import { getBlogPost } from "@/lib/content-api";
+import { getBlogImage } from "@/lib/blog-images";
 
 export default function BlogDetailPage() {
   const { slug } = useParams();
-  const post = mockBlogPosts.find(p => p.slug === slug && p.status === "published");
+  const [post, setPost] = useState<BlogPost | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (!slug) return;
+    getBlogPost(slug)
+      .then(item => setPost(item && item.status === "published" ? item : null))
+      .catch(() => setPost(null));
+  }, [slug]);
+
+  if (post === undefined) {
+    return <div className="max-w-3xl mx-auto px-4 py-20 text-center text-muted-foreground">Loading article...</div>;
+  }
 
   if (!post) {
     return (
@@ -31,13 +45,13 @@ export default function BlogDetailPage() {
       </div>
       <h1 className="text-3xl md:text-4xl font-bold font-display mt-3">{post.title}</h1>
       <p className="text-lg text-muted-foreground mt-3">{post.excerpt}</p>
-      <div className="h-64 mt-6 rounded-2xl bg-gradient-to-br from-primary/10 to-info/10 flex items-center justify-center">
-        <span className="text-6xl">📝</span>
+      <div className="h-64 mt-6 overflow-hidden rounded-2xl bg-muted">
+        <img src={getBlogImage(post)} alt={post.title} className="h-full w-full object-cover" />
       </div>
       <div className="prose prose-sm md:prose-base max-w-none mt-8 text-foreground leading-relaxed space-y-4">
         <p>{post.content || post.excerpt}</p>
         <p>
-          At Travelian we curate every detail of your journey — from flights and hotels to visas and ground transport.
+          At Travelian we curate every detail of your journey, from flights and hotels to visas and ground transport.
           This article covers the essentials you need to plan with confidence.
         </p>
         <h2 className="text-xl font-semibold mt-6">Key takeaways</h2>
@@ -53,3 +67,4 @@ export default function BlogDetailPage() {
     </article>
   );
 }
+

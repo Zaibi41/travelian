@@ -29,7 +29,7 @@ export function SeatMap({ selected, onSelect, rows = 12 }: SeatMapProps) {
     <div className="space-y-4">
       <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
         <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-muted border" /> Available</span>
-        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-gold/30 border border-gold/40" /> Premium (+$15)</span>
+        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-gold/30 border border-gold/40" /> Premium (+PKR 15)</span>
         <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-primary" /> Selected</span>
         <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-muted-foreground/30" /> Taken</span>
       </div>

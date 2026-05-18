@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,16 +7,16 @@ import { Star, MapPin, Wifi, UtensilsCrossed, Dumbbell, Heart, Share2, ChevronLe
 import { mockHotels } from "@/data/mock";
 
 const rooms = [
-  { id: "r1", name: "Standard Room", size: "25 m²", beds: "1 King Bed", guests: 2, price: 0, breakfast: false, cancellation: true, left: 5 },
-  { id: "r2", name: "Deluxe Room", size: "35 m²", beds: "1 King Bed or 2 Twin", guests: 2, price: 50, breakfast: true, cancellation: true, left: 3 },
-  { id: "r3", name: "Premium Suite", size: "55 m²", beds: "1 King Bed + Sofa", guests: 3, price: 120, breakfast: true, cancellation: true, left: 2 },
-  { id: "r4", name: "Family Suite", size: "70 m²", beds: "2 King Beds", guests: 4, price: 180, breakfast: true, cancellation: false, left: 1 },
+  { id: "r1", name: "Standard Room", size: "25 mÂ²", beds: "1 King Bed", guests: 2, price: 0, breakfast: false, cancellation: true, left: 5 },
+  { id: "r2", name: "Deluxe Room", size: "35 mÂ²", beds: "1 King Bed or 2 Twin", guests: 2, price: 50, breakfast: true, cancellation: true, left: 3 },
+  { id: "r3", name: "Premium Suite", size: "55 mÂ²", beds: "1 King Bed + Sofa", guests: 3, price: 120, breakfast: true, cancellation: true, left: 2 },
+  { id: "r4", name: "Family Suite", size: "70 mÂ²", beds: "2 King Beds", guests: 4, price: 180, breakfast: true, cancellation: false, left: 1 },
 ];
 
 const reviews = [
-  { name: "Ahmed K.", country: "🇵🇰", rating: 9.4, title: "Amazing stay!", text: "Perfect location, amazing service. Highly recommend!", date: "March 2025", type: "Couple" },
-  { name: "Sarah M.", country: "🇬🇧", rating: 8.8, title: "Very comfortable", text: "Clean rooms, great breakfast. A bit noisy at night.", date: "February 2025", type: "Family" },
-  { name: "Omar F.", country: "🇸🇦", rating: 9.6, title: "Best hotel in Makkah", text: "Walking distance to Haram. Staff is exceptionally friendly.", date: "January 2025", type: "Solo" },
+  { name: "Ahmed K.", country: "ðŸ‡µðŸ‡°", rating: 9.4, title: "Amazing stay!", text: "Perfect location, amazing service. Highly recommend!", date: "March 2025", type: "Couple" },
+  { name: "Sarah M.", country: "ðŸ‡¬ðŸ‡§", rating: 8.8, title: "Very comfortable", text: "Clean rooms, great breakfast. A bit noisy at night.", date: "February 2025", type: "Family" },
+  { name: "Omar F.", country: "ðŸ‡¸ðŸ‡¦", rating: 9.6, title: "Best hotel in Makkah", text: "Walking distance to Haram. Staff is exceptionally friendly.", date: "January 2025", type: "Solo" },
 ];
 
 const ratingBreakdown = [
@@ -34,7 +34,7 @@ export default function HotelDetailPage() {
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [imageIndex, setImageIndex] = useState(0);
 
-  const images = ["🏨", "🛏️", "🏊", "🍽️", "🌃"];
+  const images = ["ðŸ¨", "ðŸ›ï¸", "ðŸŠ", "ðŸ½ï¸", "ðŸŒƒ"];
 
   return (
     <div>
@@ -63,7 +63,7 @@ export default function HotelDetailPage() {
             </div>
             <h1 className="text-2xl md:text-3xl font-bold font-display text-foreground">{hotel.name}</h1>
             <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-              <MapPin className="h-4 w-4" /> {hotel.city}, {hotel.country} · <a href="#map" className="text-primary hover:underline">Show on map</a>
+              <MapPin className="h-4 w-4" /> {hotel.city}, {hotel.country} Â· <a href="#map" className="text-primary hover:underline">Show on map</a>
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -170,9 +170,9 @@ export default function HotelDetailPage() {
                           </div>
                           <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mt-1">
                             <span>{room.size}</span>
-                            <span>·</span>
+                            <span>Â·</span>
                             <span>{room.beds}</span>
-                            <span>·</span>
+                            <span>Â·</span>
                             <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {room.guests} guests</span>
                           </div>
                           <div className="flex gap-2 mt-2">
@@ -204,7 +204,7 @@ export default function HotelDetailPage() {
                             className={`mt-2 w-full ${selectedRoom === room.id ? 'gradient-primary text-primary-foreground' : ''}`}
                             variant={selectedRoom === room.id ? "default" : "outline"}
                           >
-                            {selectedRoom === room.id ? "Selected ✓" : "Select"}
+                            {selectedRoom === room.id ? "Selected âœ“" : "Select"}
                           </Button>
                         </div>
                       </div>
@@ -254,7 +254,7 @@ export default function HotelDetailPage() {
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-foreground">{review.name} {review.country}</p>
-                            <p className="text-xs text-muted-foreground">{review.type} · {review.date}</p>
+                            <p className="text-xs text-muted-foreground">{review.type} Â· {review.date}</p>
                           </div>
                         </div>
                         <Badge className="bg-primary text-primary-foreground text-xs">{review.rating}</Badge>
@@ -286,7 +286,7 @@ export default function HotelDetailPage() {
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-foreground mb-1">Children & Extra Beds</h4>
-                      <p className="text-sm text-muted-foreground">Children of all ages are welcome. Extra beds available on request ($35/night).</p>
+                      <p className="text-sm text-muted-foreground">Children of all ages are welcome. Extra beds available on request (PKR 35/night).</p>
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -314,8 +314,8 @@ export default function HotelDetailPage() {
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <span className="text-xs text-muted-foreground line-through">${Math.round(hotel.pricePerNight * 1.3)}</span>
-                    <p className="text-2xl font-bold text-foreground">${hotel.pricePerNight}</p>
+                    <span className="text-xs text-muted-foreground line-through">PKR {Math.round(hotel.pricePerNight * 1.3)}</span>
+                    <p className="text-2xl font-bold text-foreground">PKR {hotel.pricePerNight}</p>
                     <p className="text-xs text-muted-foreground">per night</p>
                   </div>
                   <Badge className="bg-destructive/10 text-destructive border-0">Save 30%</Badge>
@@ -342,15 +342,15 @@ export default function HotelDetailPage() {
                   <div className="border-t pt-3 mb-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{rooms.find(r => r.id === selectedRoom)?.name}</span>
-                      <span className="font-medium">${hotel.pricePerNight + (rooms.find(r => r.id === selectedRoom)?.price || 0)} × 3</span>
+                      <span className="font-medium">PKR {hotel.pricePerNight + (rooms.find(r => r.id === selectedRoom)?.price || 0)} Ã— 3</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Taxes & fees</span>
-                      <span className="font-medium">$36</span>
+                      <span className="font-medium">PKR 36</span>
                     </div>
                     <div className="flex justify-between text-sm font-bold border-t pt-2">
                       <span>Total</span>
-                      <span className="text-primary">${(hotel.pricePerNight + (rooms.find(r => r.id === selectedRoom)?.price || 0)) * 3 + 36}</span>
+                      <span className="text-primary">PKR {(hotel.pricePerNight + (rooms.find(r => r.id === selectedRoom)?.price || 0)) * 3 + 36}</span>
                     </div>
                   </div>
                 )}
@@ -360,7 +360,7 @@ export default function HotelDetailPage() {
                     {selectedRoom ? "Reserve Now" : "Select a Room"}
                   </Button>
                 </Link>
-                <p className="text-xs text-center text-muted-foreground mt-2">No payment needed today — pay at the property</p>
+                <p className="text-xs text-center text-muted-foreground mt-2">No payment needed today. Pay at the property</p>
 
                 <div className="mt-4 space-y-2">
                   <div className="flex items-center gap-2 text-xs text-success">
@@ -381,3 +381,5 @@ export default function HotelDetailPage() {
     </div>
   );
 }
+
+

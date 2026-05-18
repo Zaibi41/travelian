@@ -1,4 +1,4 @@
-import { SearchTabs } from "@/components/public/SearchTabs";
+﻿import { SearchTabs } from "@/components/public/SearchTabs";
 import { SEO } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Star, MapPin, ArrowRight, Shield, Headphones, CreditCard, Flame, TrendingUp, Heart, ChevronRight, Percent, Zap, Globe, Award, Plane, Check, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { mockPackages, mockTourPackages, mockHotels, mockBlogPosts } from "@/data/mock";
+import { getBlogImage } from "@/lib/blog-images";
 
 const destinations = [
   { name: "Makkah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=400&h=500&fit=crop&q=80", properties: 234, badge: "Popular" },
@@ -18,8 +19,8 @@ const destinations = [
 
 const deals = [
   { title: "Flash Sale: Makkah Hotels", discount: "Up to 40% OFF", desc: "Limited time offer on 5-star hotels near Haram", bg: "gradient-deal", expiry: "Ends in 2 days" },
-  { title: "Early Bird: Summer Tours", discount: "Save $200", desc: "Book Turkey & Dubai tours before April", bg: "gradient-primary", expiry: "Book by Apr 30" },
-  { title: "Umrah Package Deal", discount: "From $899", desc: "Economy 7-night Umrah with flights included", bg: "gradient-hero", expiry: "Limited seats" },
+  { title: "Early Bird: Summer Tours", discount: "Save PKR 200", desc: "Book Turkey & Dubai tours before April", bg: "gradient-primary", expiry: "Book by Apr 30" },
+  { title: "Umrah Package Deal", discount: "From PKR 899", desc: "Economy 7-night Umrah with flights included", bg: "gradient-hero", expiry: "Limited seats" },
 ];
 
 const features = [
@@ -30,31 +31,30 @@ const features = [
 ];
 
 const topCountries = [
-  { country: "Saudi Arabia", flag: "🇸🇦", properties: 2340, popular: ["Makkah", "Madinah", "Riyadh", "Jeddah"], image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=900&h=620&fit=crop&q=80" },
-  { country: "Turkey", flag: "🇹🇷", properties: 5670, popular: ["Istanbul", "Antalya", "Cappadocia", "Bodrum"], image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=900&h=620&fit=crop&q=80" },
-  { country: "UAE", flag: "🇦🇪", properties: 4120, popular: ["Dubai", "Abu Dhabi", "Sharjah", "Ras Al Khaimah"], image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=900&h=620&fit=crop&q=80" },
-  { country: "Malaysia", flag: "🇲🇾", properties: 3890, popular: ["KL", "Langkawi", "Penang", "Johor Bahru"], image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=900&h=620&fit=crop&q=80" },
-  { country: "Egypt", flag: "🇪🇬", properties: 1890, popular: ["Cairo", "Luxor", "Sharm El Sheikh", "Hurghada"], image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=900&h=620&fit=crop&q=80" },
-  { country: "Indonesia", flag: "🇮🇩", properties: 8920, popular: ["Bali", "Jakarta", "Yogyakarta", "Lombok"], image: "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=900&h=620&fit=crop&q=80" },
+  { country: "Saudi Arabia", properties: 2340, popular: ["Makkah", "Madinah", "Riyadh", "Jeddah"], image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=900&h=620&fit=crop&q=80" },
+  { country: "Turkey", properties: 5670, popular: ["Istanbul", "Antalya", "Cappadocia", "Bodrum"], image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=900&h=620&fit=crop&q=80" },
+  { country: "UAE", properties: 4120, popular: ["Dubai", "Abu Dhabi", "Sharjah", "Ras Al Khaimah"], image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=900&h=620&fit=crop&q=80" },
+  { country: "Malaysia", properties: 3890, popular: ["KL", "Langkawi", "Penang", "Johor Bahru"], image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=900&h=620&fit=crop&q=80" },
+  { country: "Egypt", properties: 1890, popular: ["Cairo", "Luxor", "Sharm El Sheikh", "Hurghada"], image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=900&h=620&fit=crop&q=80" },
+  { country: "Indonesia", properties: 8920, popular: ["Bali", "Jakarta", "Yogyakarta", "Lombok"], image: "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=900&h=620&fit=crop&q=80" },
 ];
 
 export default function HomePage() {
   return (
     <div>
       <SEO
-        title="Travelian — Cheap Flights, Hotels, Umrah & Visa Booking"
+        title="Travelian - Cheap Flights, Hotels, Umrah & Visa Booking"
         description="Book flights, hotels, Umrah packages, tours and visas at the best prices. 24/7 support, secure payments, and instant e-tickets. Your trusted Pakistan travel partner."
         jsonLd={[
           {
             "@context": "https://schema.org",
             "@type": "Organization",
             name: "Travelian",
-            url: "https://fly-vibe-buddy.lovable.app",
-            logo: "https://fly-vibe-buddy.lovable.app/placeholder.svg",
+            url: "https://travelian.pk",
+            logo: "https://travelian.pk/travelian-favicon.jpg",
             sameAs: [
-              "https://facebook.com",
-              "https://twitter.com",
-              "https://instagram.com",
+              "https://www.facebook.com/Travelian.pk/",
+              "https://www.instagram.com/travelian.pk/",
             ],
             contactPoint: {
               "@type": "ContactPoint",
@@ -68,16 +68,16 @@ export default function HomePage() {
             "@context": "https://schema.org",
             "@type": "WebSite",
             name: "Travelian",
-            url: "https://fly-vibe-buddy.lovable.app",
+            url: "https://travelian.pk",
             potentialAction: {
               "@type": "SearchAction",
-              target: "https://fly-vibe-buddy.lovable.app/flights-search?from={search_term_string}",
+              target: "https://travelian.pk/flights-search?from={search_term_string}",
               "query-input": "required name=search_term_string",
             },
           },
         ]}
       />
-      {/* Hero — compact */}
+      {/* Compact hero */}
       <section className="relative z-10 gradient-hero pt-10 pb-8 md:pt-12 md:pb-10">
         <div className="absolute inset-0 overflow-hidden opacity-10 pointer-events-none" aria-hidden="true">
           <div className="absolute top-10 left-10 w-72 h-72 bg-primary/30 rounded-full blur-3xl" />
@@ -130,7 +130,7 @@ export default function HomePage() {
               <Link
                 key={i}
                 to="/deals"
-                aria-label={`${deal.title} — ${deal.discount}`}
+                aria-label={`${deal.title} - ${deal.discount}`}
                 className={`${deal.bg} rounded-2xl p-6 text-primary-foreground relative overflow-hidden group block hover:scale-[1.02] transition-transform duration-300 focus-visible:ring-2 focus-visible:ring-primary-foreground focus-visible:outline-none`}
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary-foreground/5 rounded-full -mr-10 -mt-10" />
@@ -176,7 +176,7 @@ export default function HomePage() {
                   </button>
                   <div className="absolute bottom-3 left-3 right-3">
                     <p className="text-primary-foreground font-bold text-sm">{d.name}</p>
-                    <p className="text-primary-foreground/60 text-xs">{d.country} · {d.properties.toLocaleString()} properties</p>
+                    <p className="text-primary-foreground/60 text-xs">{d.country} Â· {d.properties.toLocaleString()} properties</p>
                   </div>
                 </div>
               </Link>
@@ -211,7 +211,7 @@ export default function HomePage() {
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent text-6xl transition-transform duration-500 group-hover:scale-110">
-                        🏨
+                        ðŸ¨
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/25 to-transparent pointer-events-none" />
@@ -249,8 +249,8 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-end justify-between mt-4 pt-3 border-t">
                       <div>
-                        <span className="text-xs text-muted-foreground line-through">${Math.round(hotel.pricePerNight * 1.3)}</span>
-                        <p className="text-xl font-bold text-foreground">${hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
+                        <span className="text-xs text-muted-foreground line-through">PKR {Math.round(hotel.pricePerNight * 1.3)}</span>
+                        <p className="text-xl font-bold text-foreground">PKR {hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
                       </div>
                       <Badge variant="outline" className="text-gold border-gold/30 text-xs">
                         Save {Math.round(30)}%
@@ -280,7 +280,7 @@ export default function HomePage() {
             {mockPackages.filter(p => p.status === 'active').slice(0, 4).map((pkg) => (
               <Card key={pkg.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 border-0 shadow-card">
                 <div className="h-40 bg-gradient-to-br from-gold/10 to-accent flex items-center justify-center relative">
-                  <span className="text-5xl group-hover:scale-110 transition-transform duration-500">🕋</span>
+                  <span className="text-5xl group-hover:scale-110 transition-transform duration-500">ðŸ•‹</span>
                   <Badge className="absolute top-3 left-3 bg-gold text-gold-foreground border-0 text-xs">
                     <Percent className="h-3 w-3 mr-1" /> Best Value
                   </Badge>
@@ -299,7 +299,7 @@ export default function HomePage() {
                   <div className="flex items-center justify-between mt-3 pt-3 border-t">
                     <div>
                       <span className="text-[10px] text-muted-foreground">{pkg.duration}</span>
-                      <p className="text-lg font-bold text-primary">${pkg.basePrice}</p>
+                      <p className="text-lg font-bold text-primary">PKR {pkg.basePrice}</p>
                     </div>
                     <Link to={`/umrah/${pkg.packageId}`}>
                       <Button size="sm" className="gradient-primary text-primary-foreground text-xs h-8 rounded-lg">Book Now</Button>
@@ -340,7 +340,9 @@ export default function HomePage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25" aria-hidden="true" />
                     <div className="relative z-10 flex h-full min-h-[220px] md:min-h-[260px] lg:min-h-[280px] flex-col justify-end p-5 md:p-6">
                       <div className="flex items-center gap-3 mb-3">
-                        <span className="text-3xl drop-shadow-md" aria-hidden="true">{c.flag}</span>
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-primary shadow-sm" aria-hidden="true">
+                          <Globe className="h-5 w-5" />
+                        </span>
                         <div>
                           <h3 className="font-semibold text-white drop-shadow-sm">{c.country}</h3>
                           <p className="text-xs text-white/80">{c.properties.toLocaleString()} properties</p>
@@ -396,7 +398,7 @@ export default function HomePage() {
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-info/10 to-accent">
                       <span className="text-5xl">
-                        {tour.city.includes('Istanbul') ? '🕌' : tour.city.includes('Dubai') ? '🏙️' : '🌴'}
+                        {tour.city.includes('Istanbul') ? 'ðŸ•Œ' : tour.city.includes('Dubai') ? 'ðŸ™ï¸' : 'ðŸŒ´'}
                       </span>
                     </div>
                   )}
@@ -415,7 +417,7 @@ export default function HomePage() {
                   <div className="flex items-end justify-between mt-4 pt-3 border-t">
                     <div>
                       <span className="text-xs text-muted-foreground">From</span>
-                      <p className="text-xl font-bold text-foreground">${tour.basePrice}</p>
+                      <p className="text-xl font-bold text-foreground">PKR {tour.basePrice}</p>
                     </div>
                     <Button asChild size="sm" variant="outline" className="text-xs h-8 rounded-lg">
                       <Link to="/tour-packages" aria-label={`View details for ${tour.name}`}>View Details</Link>
@@ -444,8 +446,13 @@ export default function HomePage() {
             {mockBlogPosts.filter(b => b.status === 'published').slice(0, 3).map((post) => (
               <Link key={post.postId} to={`/blog/${post.slug}`} aria-label={post.title} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl">
                 <Card className="overflow-hidden hover:shadow-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group border-0 shadow-card h-full">
-                  <div className="h-44 bg-gradient-to-br from-primary/5 to-accent flex items-center justify-center">
-                    <span className="text-5xl group-hover:scale-110 transition-transform duration-500">📝</span>
+                  <div className="h-44 overflow-hidden bg-muted">
+                    <img
+                      src={getBlogImage(post)}
+                      alt={post.title}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
                   </div>
                   <CardContent className="p-5">
                     <Badge variant="secondary" className="mb-2 text-xs rounded-md">{post.category}</Badge>
@@ -499,3 +506,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+

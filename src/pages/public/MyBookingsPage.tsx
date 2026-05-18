@@ -23,7 +23,7 @@ export default function MyBookingsPage() {
 
   const handleCancel = (id: string) => {
     cancelBooking(id);
-    toast({ title: "Booking cancelled", description: "Refund (if applicable) will be processed within 5–7 business days." });
+    toast({ title: "Booking cancelled", description: "Refund (if applicable) will be processed within 5-7 business days." });
   };
 
   const handleDelete = (id: string) => {
@@ -33,7 +33,7 @@ export default function MyBookingsPage() {
 
   return (
     <div className="bg-muted/20 min-h-screen">
-      <SEO title="My Bookings — Travelian" description="View, manage and download your Travelian flight, hotel and Umrah bookings." />
+      <SEO title="My Bookings - Travelian" description="View, manage and download your Travelian flight, hotel and Umrah bookings." />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
           <div>

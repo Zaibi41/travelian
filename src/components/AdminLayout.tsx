@@ -1,13 +1,28 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
-import { Bell } from "lucide-react";
+import { Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { mockNotifications } from "@/data/mock";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { clearSession, getSession } from "@/lib/auth-session";
+import { cognitoLogoutUrl } from "@/lib/cognito-auth";
+import { toast } from "sonner";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const unreadCount = mockNotifications.filter(n => !n.read).length;
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    const session = getSession();
+    clearSession();
+    toast.success("Signed out");
+    if (session?.provider === "Cognito") {
+      window.location.assign(cognitoLogoutUrl());
+      return;
+    }
+    navigate("/signin");
+  };
 
   return (
     <SidebarProvider>
@@ -21,7 +36,13 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
             <div className="flex items-center gap-3">
               <RoleSwitcher />
-              <Link to="/notifications">
+              <Button variant="outline" size="sm" onClick={handleLogout} className="hidden sm:inline-flex gap-2 rounded-lg">
+                <LogOut className="h-4 w-4" /> Sign out
+              </Button>
+              <Button variant="ghost" size="icon" onClick={handleLogout} className="sm:hidden" aria-label="Sign out">
+                <LogOut className="h-4 w-4" />
+              </Button>
+              <Link to="/admin/notifications">
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-4 w-4" />
                   {unreadCount > 0 && (

@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+﻿import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileCheck, Clock, CheckCircle2, GraduationCap, Plane } from "lucide-react";
@@ -15,12 +15,12 @@ const categories = [
 ];
 
 const countries = [
-  { name: "UAE", flag: "🇦🇪", time: "5–7 days", price: 120 },
-  { name: "Turkey", flag: "🇹🇷", time: "10–15 days", price: 90 },
-  { name: "United Kingdom", flag: "🇬🇧", time: "15–21 days", price: 250 },
-  { name: "Schengen (EU)", flag: "🇪🇺", time: "15–20 days", price: 180 },
-  { name: "USA", flag: "🇺🇸", time: "30–60 days", price: 320 },
-  { name: "Canada", flag: "🇨🇦", time: "20–30 days", price: 280 },
+  { name: "UAE", flag: "ðŸ‡¦ðŸ‡ª", time: "5-7 days", price: 120 },
+  { name: "Turkey", flag: "ðŸ‡¹ðŸ‡·", time: "10-15 days", price: 90 },
+  { name: "United Kingdom", flag: "ðŸ‡¬ðŸ‡§", time: "15-21 days", price: 250 },
+  { name: "Schengen (EU)", flag: "ðŸ‡ªðŸ‡º", time: "15-20 days", price: 180 },
+  { name: "USA", flag: "ðŸ‡ºðŸ‡¸", time: "30-60 days", price: 320 },
+  { name: "Canada", flag: "ðŸ‡¨ðŸ‡¦", time: "20-30 days", price: 280 },
 ];
 
 const requirements = [
@@ -34,7 +34,7 @@ const requirements = [
 const faqs = [
   { q: "How long does visa processing take?", a: "It varies by country, typically 5 to 30 business days. Each country card shows its expected processing time." },
   { q: "Is the visa fee refundable?", a: "Government visa fees are non-refundable. Service fees are refundable only if we have not begun processing." },
-  { q: "Do you guarantee approval?", a: "No — visa decisions are made by embassies. We have a 98% success rate and ensure your application is complete and accurate." },
+  { q: "Do you guarantee approval?", a: "No, visa decisions are made by embassies. We have a 98% success rate and ensure your application is complete and accurate." },
 ];
 
 export default function PublicVisaPage() {
@@ -74,7 +74,7 @@ export default function PublicVisaPage() {
                     </div>
                     <div className="text-right">
                       <span className="text-xs text-muted-foreground">Service fee</span>
-                      <p className="text-xl font-bold text-primary">${c.price}</p>
+                      <p className="text-xl font-bold text-primary">PKR {c.price}</p>
                     </div>
                   </div>
                   <Link to={`/contact?type=visa&country=${c.name}`}>
@@ -99,7 +99,7 @@ export default function PublicVisaPage() {
                   <CardContent className="p-4">
                     <h3 className="font-semibold text-foreground text-sm">{visa.name}</h3>
                     <p className="text-xs text-muted-foreground mt-1">{visa.duration}</p>
-                    <p className="text-xl font-bold text-primary mt-2">${visa.basePrice}</p>
+                    <p className="text-xl font-bold text-primary mt-2">PKR {visa.basePrice}</p>
                     <Link to={`/visa/${visa.packageId}`}>
                       <Button size="sm" className="w-full mt-3 gradient-primary text-primary-foreground">View details</Button>
                     </Link>
@@ -138,3 +138,5 @@ export default function PublicVisaPage() {
     </div>
   );
 }
+
+

@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+﻿import { Link, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +61,7 @@ export default function TourDetailPage() {
           <Card className="sticky top-24">
             <CardContent className="p-6">
               <span className="text-xs text-muted-foreground">From</span>
-              <p className="text-3xl font-bold text-primary">${tour.basePrice}</p>
+              <p className="text-3xl font-bold text-primary">PKR {tour.basePrice}</p>
               <p className="text-xs text-muted-foreground mb-4">per person</p>
               <Link to={`/booking?type=tour&id=${tour.packageId}`}>
                 <Button className="w-full gradient-primary text-primary-foreground">Book this tour</Button>
@@ -76,3 +76,5 @@ export default function TourDetailPage() {
     </div>
   );
 }
+
+

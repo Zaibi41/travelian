@@ -41,7 +41,7 @@ export default function BookingsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-display">Bookings</h1>
-          <p className="text-sm text-muted-foreground">Track all B2C and B2B bookings — full lifecycle management</p>
+          <p className="text-sm text-muted-foreground">Track all B2C and B2B bookings with full lifecycle management</p>
         </div>
       </div>
 
@@ -113,7 +113,7 @@ export default function BookingsPage() {
                         {bookingTickets.length > 0 ? (
                           <Badge variant="secondary" className="text-xs text-success gap-1"><Ticket className="h-3 w-3" /> Issued</Badge>
                         ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <span className="text-xs text-muted-foreground">-</span>
                         )}
                       </td>
                       <td className="p-3">

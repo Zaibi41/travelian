@@ -45,6 +45,7 @@ interface ProductCtx {
   meta: string;
   emoji: string;
   base: number;
+  currency: string;
   extra?: { airline?: string; flightNumber?: string; from?: string; to?: string; fromCode?: string; toCode?: string; date?: string; cabin?: string };
 }
 
@@ -62,6 +63,7 @@ function buildCtx(params: URLSearchParams): ProductCtx | null {
     const date = params.get("date") || (f ? format(addDays(new Date(), 14), "MMM dd, yyyy") : "");
     const cabin = params.get("cabin") || f?.class || "Economy";
     const price = Number(params.get("price")) || f?.price || 510;
+    const currency = params.get("currency") || f?.currency || "PKR";
     if (!airline) return null;
     return {
       type: "flight",
@@ -70,6 +72,7 @@ function buildCtx(params: URLSearchParams): ProductCtx | null {
       meta: `${date} · ${cabin}`,
       emoji: "✈️",
       base: price,
+      currency,
       extra: { airline, flightNumber, from, to, date, cabin },
     };
   }
@@ -86,6 +89,7 @@ function buildCtx(params: URLSearchParams): ProductCtx | null {
       meta: `${checkIn} → ${checkOut} · ${nights} night${nights > 1 ? "s" : ""}`,
       emoji: "🏨",
       base: h.pricePerNight * nights,
+      currency: "PKR",
     };
   }
   if (type === "umrah") {
@@ -98,6 +102,7 @@ function buildCtx(params: URLSearchParams): ProductCtx | null {
       meta: `${p.duration} · ${p.hotel}`,
       emoji: "🕋",
       base: p.basePrice,
+      currency: "PKR",
     };
   }
   if (type === "tour") {
@@ -110,6 +115,7 @@ function buildCtx(params: URLSearchParams): ProductCtx | null {
       meta: `${t.duration}`,
       emoji: "🗺️",
       base: t.basePrice,
+      currency: "PKR",
     };
   }
   if (type === "visa") {
@@ -122,6 +128,7 @@ function buildCtx(params: URLSearchParams): ProductCtx | null {
       meta: `${v.duration} processing`,
       emoji: "📄",
       base: v.basePrice,
+      currency: "PKR",
     };
   }
   return null;
@@ -135,7 +142,7 @@ export default function BookingPage() {
   if (!productCtx) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-muted/30 flex items-center justify-center px-4 py-16">
-        <SEO title="Secure Checkout — Travelian" description="Complete your booking securely with Travelian." />
+        <SEO title="Secure Checkout - Travelian" description="Complete your booking securely with Travelian." />
         <Card className="max-w-lg w-full shadow-elevated border-0">
           <CardContent className="p-10 text-center">
             <div className="h-16 w-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-5">
@@ -179,11 +186,11 @@ export default function BookingPage() {
   const [processing, setProcessing] = useState(false);
   const [savedBooking, setSavedBooking] = useState<BookingRecord | null>(null);
 
-  // Flight type — drives whether passport is required (international) or CNIC is allowed (domestic)
+  // Flight type controls whether passport is required (international) or CNIC is allowed (domestic).
   const [flightType, setFlightType] = useState<"international" | "domestic">("international");
   const [docType, setDocType] = useState<"passport" | "cnic">("passport");
 
-  // Traveler info — Pakistan-market defaults
+  // Traveler info uses Pakistan-market defaults.
   const [title, setTitle] = useState("mr");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -217,6 +224,7 @@ export default function BookingPage() {
   const baseTotal = productCtx.base;
   const taxes = Math.round(baseTotal * 0.08);
   const grandTotal = baseTotal + addonsTotal + taxes;
+  const formatMoney = (amount: number) => `${productCtx.currency || "PKR"} ${Math.round(amount).toLocaleString()}`;
 
   // Validation
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -296,7 +304,7 @@ export default function BookingPage() {
       seat: isFlight ? (selectedSeat || undefined) : undefined,
       addons: addonsList,
       paymentMethod,
-      pricing: { base: baseTotal, addons: addonsTotal, taxes, total: grandTotal, currency: "USD" },
+      pricing: { base: baseTotal, addons: addonsTotal, taxes, total: grandTotal, currency: productCtx.currency },
     });
     setSavedBooking(record);
     setProcessing(false);
@@ -314,7 +322,7 @@ export default function BookingPage() {
 
   return (
     <div className="bg-muted/20 min-h-screen">
-      <SEO title="Secure Checkout — Travelian" description={`Complete your ${productCtx.type} booking securely with Travelian.`} />
+      <SEO title="Secure Checkout - Travelian" description={`Complete your ${productCtx.type} booking securely with Travelian.`} />
       <h1 className="sr-only">Secure Checkout</h1>
       {/* Progress Header */}
       <div className="bg-card border-b sticky top-0 z-40">
@@ -605,7 +613,7 @@ export default function BookingPage() {
                       <h2 className="text-lg font-bold text-foreground">Choose Your Seat</h2>
                     </div>
                     <p className="text-sm text-muted-foreground mb-5">
-                      Pick your preferred seat. {selectedSeat ? `Selected: ${selectedSeat}${seatFee ? ` (+$${seatFee})` : ""}` : "Optional — we'll auto-assign at check-in."}
+                      Pick your preferred seat. {selectedSeat ? `Selected: ${selectedSeat}${seatFee ? ` (+${formatMoney(seatFee)})` : ""}` : "Optional. We'll auto-assign at check-in."}
                     </p>
                     <SeatMap selected={selectedSeat} onSelect={setSelectedSeat} />
                     {selectedSeat && (
@@ -640,7 +648,7 @@ export default function BookingPage() {
                                 <p className="text-xs text-muted-foreground mt-0.5">{addon.desc}</p>
                               </div>
                             </div>
-                            <p className="text-sm font-bold text-foreground shrink-0">+${addon.price}</p>
+                            <p className="text-sm font-bold text-foreground shrink-0">+{formatMoney(addon.price)}</p>
                           </div>
                         </div>
                       ))}
@@ -730,7 +738,7 @@ export default function BookingPage() {
                             value={cardCvv}
                             onChange={e => setCardCvv(e.target.value.replace(/\D/g, ""))}
                           />
-                          {paymentTouched && !cardCvvValid && <p className="text-xs text-destructive mt-1">3–4 digits</p>}
+                          {paymentTouched && !cardCvvValid && <p className="text-xs text-destructive mt-1">3-4 digits</p>}
                         </div>
                       </div>
                       <div>
@@ -755,7 +763,7 @@ export default function BookingPage() {
                   <div className="flex justify-between mt-6">
                     <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl" disabled={processing}>Back</Button>
                     <Button onClick={handlePay} disabled={processing} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
-                      {processing ? "Processing..." : `Pay $${grandTotal}`} <ChevronRight className="h-4 w-4 ml-1" />
+                      {processing ? "Processing..." : `Pay ${formatMoney(grandTotal)}`} <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
                 </CardContent>
@@ -814,7 +822,7 @@ export default function BookingPage() {
                       )}
                       <div className="flex justify-between font-bold border-t pt-3 text-base">
                         <span>Total Paid</span>
-                        <span className="text-primary">${grandTotal}</span>
+                        <span className="text-primary">{formatMoney(grandTotal)}</span>
                       </div>
                     </div>
                   </div>
@@ -851,21 +859,21 @@ export default function BookingPage() {
                 <div className="space-y-2.5 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Base fare</span>
-                    <span className="text-foreground font-medium">${baseTotal}</span>
+                    <span className="text-foreground font-medium">{formatMoney(baseTotal)}</span>
                   </div>
                   {selectedAddons.length > 0 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Add-ons ({selectedAddons.length})</span>
-                      <span className="text-foreground font-medium">${addonsTotal}</span>
+                      <span className="text-foreground font-medium">{formatMoney(addonsTotal)}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Taxes & fees</span>
-                    <span className="text-foreground font-medium">${taxes}</span>
+                    <span className="text-foreground font-medium">{formatMoney(taxes)}</span>
                   </div>
                   <div className="flex justify-between font-bold text-base pt-2 border-t">
                     <span>Total</span>
-                    <span className="text-primary">${grandTotal}</span>
+                    <span className="text-primary">{formatMoney(grandTotal)}</span>
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t space-y-2">

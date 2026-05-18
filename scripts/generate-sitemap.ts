@@ -2,7 +2,7 @@
 import { writeFileSync } from "fs";
 import { resolve } from "path";
 
-const BASE_URL = "https://fly-vibe-buddy.lovable.app";
+const BASE_URL = "https://travelian.pk";
 
 interface SitemapEntry {
   path: string;

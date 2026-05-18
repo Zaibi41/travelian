@@ -4,6 +4,8 @@ import { Plane, Menu, X, User, Phone, MessageCircle, Globe, ChevronDown, LogOut 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { clearSession, getSession, useSessionEvent, type AuthSession } from "@/lib/auth-session";
+import { cognitoLogoutUrl } from "@/lib/cognito-auth";
+import { roleForSession } from "@/lib/role-mapping";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,18 +36,22 @@ export function PublicNavbar() {
   const navigate = useNavigate();
   const { currency, setCurrency, language, setLanguage } = useLocale();
   const [session, setSessionState] = useState<AuthSession | null>(() => getSession());
+  const sessionRole = roleForSession(session);
 
   useEffect(() => useSessionEvent(() => setSessionState(getSession())), []);
 
   const handleLogout = () => {
     clearSession();
     toast.success("Signed out");
+    if (session?.provider === "Cognito") {
+      window.location.assign(cognitoLogoutUrl());
+      return;
+    }
     navigate("/");
   };
 
   return (
     <nav className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/50">
-      {/* Top utility bar */}
       <div className="hidden md:block bg-muted/40 border-b border-border/40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between text-xs">
           <a href={`tel:${SUPPORT_PHONE_TEL}`} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
@@ -60,8 +66,6 @@ export function PublicNavbar() {
             >
               <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
             </a>
-
-            {/* Currency switcher */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-1 px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-card font-medium">
@@ -71,7 +75,7 @@ export function PublicNavbar() {
               <DropdownMenuContent align="end" className="z-[60] bg-popover">
                 <DropdownMenuLabel className="text-xs">Currency</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {CURRENCIES.map(c => (
+                {CURRENCIES.map((c) => (
                   <DropdownMenuItem key={c.code} onClick={() => setCurrency(c.code)} className="text-xs">
                     <span className="font-semibold w-10">{c.code}</span>
                     <span className="text-muted-foreground">{c.label}</span>
@@ -80,8 +84,6 @@ export function PublicNavbar() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {/* Language switcher */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-1 px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-card font-medium">
@@ -91,7 +93,7 @@ export function PublicNavbar() {
               <DropdownMenuContent align="end" className="z-[60] bg-popover">
                 <DropdownMenuLabel className="text-xs">Language</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {LANGUAGES.map(l => (
+                {LANGUAGES.map((l) => (
                   <DropdownMenuItem key={l.code} onClick={() => setLanguage(l.code)} className="text-xs">
                     <span className="w-12">{l.label}</span>
                     <span className="text-muted-foreground">{l.native}</span>
@@ -143,6 +145,11 @@ export function PublicNavbar() {
                 <DropdownMenuContent align="end" className="z-[60] bg-popover">
                   <DropdownMenuLabel className="text-xs truncate max-w-[200px]">{session.email}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {sessionRole && (
+                    <DropdownMenuItem onClick={() => navigate("/admin")}>
+                      {sessionRole.includes("agency") ? "Agency Dashboard" : "Super Admin Dashboard"}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => navigate("/account")}>My Account</DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/my-bookings")}>My Bookings</DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -165,7 +172,7 @@ export function PublicNavbar() {
             )}
           </div>
 
-          <button className="lg:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
+          <button type="button" className="lg:hidden p-2" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen(!mobileOpen)}>
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
@@ -185,21 +192,11 @@ export function PublicNavbar() {
             <div className="flex items-center justify-between gap-2 px-3 pt-2 text-xs">
               <a href={`tel:${SUPPORT_PHONE_TEL}`} className="flex items-center gap-1.5 text-muted-foreground"><Phone className="h-3.5 w-3.5" /> {SUPPORT_PHONE}</a>
               <div className="flex items-center gap-2">
-                <select
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value as typeof currency)}
-                  className="bg-muted rounded-md px-2 py-1 text-xs"
-                  aria-label="Currency"
-                >
-                  {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                <select value={currency} onChange={(e) => setCurrency(e.target.value as typeof currency)} className="bg-muted rounded-md px-2 py-1 text-xs" aria-label="Currency">
+                  {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
                 </select>
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value as typeof language)}
-                  className="bg-muted rounded-md px-2 py-1 text-xs"
-                  aria-label="Language"
-                >
-                  {LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+                <select value={language} onChange={(e) => setLanguage(e.target.value as typeof language)} className="bg-muted rounded-md px-2 py-1 text-xs" aria-label="Language">
+                  {LANGUAGES.map((l) => <option key={l.code} value={l.code}>{l.label}</option>)}
                 </select>
               </div>
             </div>
@@ -209,6 +206,11 @@ export function PublicNavbar() {
                   <Link to="/account" className="flex-1" onClick={() => setMobileOpen(false)}>
                     <Button variant="outline" size="sm" className="w-full rounded-lg gap-2"><User className="h-4 w-4" /> Account</Button>
                   </Link>
+                  {sessionRole && (
+                    <Link to="/admin" className="flex-1" onClick={() => setMobileOpen(false)}>
+                      <Button variant="outline" size="sm" className="w-full rounded-lg">Dashboard</Button>
+                    </Link>
+                  )}
                   <Button size="sm" className="flex-1 rounded-lg gap-2" variant="destructive" onClick={() => { setMobileOpen(false); handleLogout(); }}>
                     <LogOut className="h-4 w-4" /> Sign out
                   </Button>
