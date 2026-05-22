@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/public/PageHeader";
-import { Plane, Hotel, Package, FileCheck, Map, GraduationCap, UsersRound, Shield, Headphones, Award, Zap, Search, MousePointerClick, CreditCard, Compass, MessageCircle } from "lucide-react";
+import { Plane, Hotel, Package, FileCheck, Map, GraduationCap, UsersRound, Shield, Headphones, Award, Zap, Search, MousePointerClick, CreditCard, Compass } from "lucide-react";
+import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 
 const services = [
   { icon: Plane, title: "Flight Booking", desc: "Domestic & international flights at the best fares.", to: "/flights-search" },
@@ -198,7 +199,7 @@ export default function AboutPage() {
             <Link to="/contact"><Button variant="outline" className="rounded-lg">Contact Us</Button></Link>
             <Link to="/flights-search"><Button className="rounded-lg gradient-primary text-primary-foreground">Book Flights</Button></Link>
             <a href="https://wa.me/923244440014" target="_blank" rel="noreferrer">
-              <Button variant="outline" className="rounded-lg gap-2"><MessageCircle className="h-4 w-4" /> WhatsApp Support</Button>
+              <Button variant="outline" className="rounded-lg gap-2"><WhatsAppIcon className="h-4 w-4" /> WhatsApp Support</Button>
             </a>
           </div>
         </div>

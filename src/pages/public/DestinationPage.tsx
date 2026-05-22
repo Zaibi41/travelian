@@ -22,7 +22,7 @@ const destinationMap: Record<string, {
   madinah: {
     name: "Madinah",
     country: "Saudi Arabia",
-    image: "https://images.unsplash.com/photo-1564769662533-4f00a87b4056?w=1400&h=720&fit=crop&q=80",
+    image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=1400&h=720&fit=crop&q=80",
     summary: "Find peaceful Madinah stays close to Masjid an-Nabawi with guided support from Travelian.",
     highlights: ["Central area hotels", "Ziyarat support", "Family rooms"],
   },

@@ -1,6 +1,6 @@
 import { PublicNavbar } from "./PublicNavbar";
 import { PublicFooter } from "./PublicFooter";
-import { MessageCircle } from "lucide-react";
+import { WhatsAppIcon } from "./WhatsAppIcon";
 
 export function PublicLayout({ children, showFooter = true }: { children: React.ReactNode; showFooter?: boolean }) {
   return (
@@ -15,7 +15,7 @@ export function PublicLayout({ children, showFooter = true }: { children: React.
           aria-label="Chat with Travelian on WhatsApp"
           className="fixed bottom-5 right-5 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-xl shadow-emerald-900/20 transition-transform hover:scale-105"
         >
-          <MessageCircle className="h-6 w-6" />
+          <WhatsAppIcon className="h-7 w-7" />
         </a>
       )}
       {showFooter && <PublicFooter />}

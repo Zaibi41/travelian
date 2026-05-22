@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plane, Menu, X, User, Phone, MessageCircle, Globe, ChevronDown, LogOut } from "lucide-react";
+import { Plane, Menu, X, User, Phone, Globe, ChevronDown, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { clearSession, getSession, useSessionEvent, type AuthSession } from "@/lib/auth-session";
@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CURRENCIES, LANGUAGES, useLocale } from "@/contexts/LocaleContext";
+import { WhatsAppIcon } from "./WhatsAppIcon";
 
 const navLinks = [
   { label: "Flights", href: "/" },
@@ -65,7 +66,7 @@ export function PublicNavbar() {
               rel="noreferrer"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366] text-white hover:bg-[#20BD5A] font-semibold shadow-sm"
             >
-              <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+              <WhatsAppIcon className="h-4 w-4" /> WhatsApp
             </a>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

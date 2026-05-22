@@ -4,8 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Check, Clock, Hotel, Plane, FileCheck, Calendar, MessageCircle } from "lucide-react";
+import { Check, Clock, Hotel, Plane, FileCheck, Calendar } from "lucide-react";
 import { mockPackages } from "@/data/mock";
+import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 
 export default function UmrahDetailPage() {
   const { id } = useParams();
@@ -100,10 +101,10 @@ export default function UmrahDetailPage() {
               <p className="text-xs text-muted-foreground">per person Â· {pkg.duration}</p>
               <Button className="w-full mt-4 gradient-primary text-primary-foreground" onClick={() => navigate(`/booking?type=umrah&id=${pkg.packageId}`)}>Book Now</Button>
               <Link to="/contact?type=umrah" className="block">
-                <Button variant="outline" className="w-full mt-2 gap-2"><MessageCircle className="h-4 w-4" /> Send Inquiry</Button>
+                <Button variant="outline" className="w-full mt-2 gap-2"><WhatsAppIcon className="h-4 w-4" /> Send Inquiry</Button>
               </Link>
               <a href="https://wa.me/923244440014" target="_blank" rel="noreferrer" className="block">
-                <Button variant="outline" className="w-full mt-2 gap-2"><MessageCircle className="h-4 w-4" /> WhatsApp Us</Button>
+                <Button variant="outline" className="w-full mt-2 gap-2"><WhatsAppIcon className="h-4 w-4" /> WhatsApp Us</Button>
               </a>
             </CardContent>
           </Card>

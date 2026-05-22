@@ -3,10 +3,11 @@ import { SEO } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, MapPin, ArrowRight, Shield, Headphones, CreditCard, Flame, TrendingUp, Heart, ChevronRight, Percent, Zap, Globe, Award, Plane, Check, MessageCircle } from "lucide-react";
+import { Star, MapPin, ArrowRight, Shield, Headphones, CreditCard, Flame, TrendingUp, Heart, ChevronRight, Percent, Zap, Globe, Award, Plane, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { mockPackages, mockTourPackages, mockHotels, mockBlogPosts } from "@/data/mock";
 import { getBlogImage } from "@/lib/blog-images";
+import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 
 const destinations = [
   { name: "Makkah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=400&h=500&fit=crop&q=80", properties: 234, badge: "Popular" },
@@ -14,7 +15,7 @@ const destinations = [
   { name: "Dubai", country: "UAE", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&h=500&fit=crop", properties: 3200, badge: "Trending" },
   { name: "Kuala Lumpur", country: "Malaysia", image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&h=500&fit=crop", properties: 2100 },
   { name: "Cairo", country: "Egypt", image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=400&h=500&fit=crop", properties: 890 },
-  { name: "Madinah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1564769662533-4f00a87b4056?w=400&h=500&fit=crop&q=80", properties: 156, badge: "Holy City" },
+  { name: "Madinah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=400&h=500&fit=crop&q=80", properties: 156, badge: "Holy City" },
 ];
 
 const deals = [
@@ -480,7 +481,7 @@ export default function HomePage() {
         </div>
         <div className="relative max-w-4xl mx-auto px-4 text-center">
           <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-100 text-sm px-4 py-1.5 rounded-full mb-6 border border-emerald-400/35">
-            <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+            <WhatsAppIcon className="h-4 w-4" /> WhatsApp
           </div>
           <h2 className="text-2xl md:text-4xl font-extrabold font-display text-primary-foreground mb-4">
             Plan Your Journey with Confidence
