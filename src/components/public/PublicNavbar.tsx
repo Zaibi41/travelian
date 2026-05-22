@@ -21,9 +21,10 @@ const navLinks = [
   { label: "Hotels", href: "/hotels-search" },
   { label: "Umrah", href: "/umrah-packages" },
   { label: "Tours", href: "/tour-packages" },
-  { label: "Visa", href: "/visa-services" },
+  { label: "Visas", href: "/visa-services" },
   { label: "Deals", href: "/deals" },
   { label: "About", href: "/about" },
+  { label: "Become a Partner", href: "/contact?type=agency" },
 ];
 
 const SUPPORT_PHONE = "+92 324 4440014";
@@ -53,16 +54,16 @@ export function PublicNavbar() {
   return (
     <nav className="sticky top-0 z-50 bg-card/95 backdrop-blur-md border-b border-border/50">
       <div className="hidden md:block bg-muted/40 border-b border-border/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-9 flex items-center justify-between text-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-10 flex items-center justify-between text-sm">
           <a href={`tel:${SUPPORT_PHONE_TEL}`} className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
-            <Phone className="h-3.5 w-3.5" /> 24/7 Support: <span className="font-semibold text-foreground">{SUPPORT_PHONE}</span>
+            <Phone className="h-4 w-4" /> 24/7 Support: <span className="font-bold text-foreground">{SUPPORT_PHONE}</span>
           </a>
           <div className="flex items-center gap-1">
             <a
               href={WHATSAPP_URL}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 px-2 py-1 rounded-md text-[#0a7c3a] hover:bg-emerald-50 font-medium"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366] text-white hover:bg-[#20BD5A] font-semibold shadow-sm"
             >
               <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
             </a>
@@ -132,14 +133,16 @@ export function PublicNavbar() {
           </div>
 
           <div className="hidden lg:flex items-center gap-2">
-            <Link to="/my-bookings">
-              <Button variant="ghost" size="sm" className="rounded-lg text-sm">My Bookings</Button>
-            </Link>
+            {session && (
+              <Link to="/my-bookings">
+                <Button variant="ghost" size="sm" className="rounded-lg text-sm">My Bookings</Button>
+              </Link>
+            )}
             {session ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2 rounded-lg">
-                    <User className="h-4 w-4" /> {session.name.split(" ")[0]} <ChevronDown className="h-3 w-3" />
+                    <User className="h-4 w-4" /> {(session.name || session.email || "Account").split(" ")[0]} <ChevronDown className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="z-[60] bg-popover">

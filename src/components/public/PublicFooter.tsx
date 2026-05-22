@@ -120,7 +120,7 @@ export function PublicFooter() {
         <div className="border-t border-sidebar-border mt-10 pt-8 space-y-6">
           <div className="flex flex-wrap items-center justify-center md:justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3 text-[11px] text-sidebar-muted">
-              {["IATA Accredited", "PATA Member", "SSL Secure", "PCI-DSS", "Verified by Visa"].map((t) => (
+              {["IATA Accredited", "DTS Accredited", "TAAP Member", "SSL Secure", "PCI-DSS", "Verified by Visa"].map((t) => (
                 <span key={t} className="px-2.5 py-1 rounded-md border border-sidebar-border bg-sidebar-accent/40 font-semibold tracking-wide">
                   {t}
                 </span>

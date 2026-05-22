@@ -14,7 +14,7 @@ const destinations = [
   { name: "Dubai", country: "UAE", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&h=500&fit=crop", properties: 3200, badge: "Trending" },
   { name: "Kuala Lumpur", country: "Malaysia", image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&h=500&fit=crop", properties: 2100 },
   { name: "Cairo", country: "Egypt", image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=400&h=500&fit=crop", properties: 890 },
-  { name: "Madinah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1590076215667-875d4ef2d7de?w=400&h=500&fit=crop", properties: 156, badge: "Holy City" },
+  { name: "Madinah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1564769662533-4f00a87b4056?w=400&h=500&fit=crop&q=80", properties: 156, badge: "Holy City" },
 ];
 
 const deals = [
@@ -43,7 +43,7 @@ export default function HomePage() {
   return (
     <div>
       <SEO
-        title="Travelian - Cheap Flights, Hotels, Umrah & Visa Booking"
+        title="Travelian | Flights, Hotels, Umrah & Visas"
         description="Book flights, hotels, Umrah packages, tours and visas at the best prices. 24/7 support, secure payments, and instant e-tickets. Your trusted Pakistan travel partner."
         jsonLd={[
           {
@@ -164,7 +164,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {destinations.map((d) => (
-              <Link key={d.name} to="/hotels-search" className="group">
+              <Link key={d.name} to={`/destination/${d.name.toLowerCase().replace(/\s+/g, "-")}`} className="group">
                 <div className="relative rounded-2xl overflow-hidden aspect-[3/4] shadow-card hover:shadow-hover transition-all duration-300">
                   <img src={d.image} alt={d.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" />
                   <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent" />
@@ -176,7 +176,7 @@ export default function HomePage() {
                   </button>
                   <div className="absolute bottom-3 left-3 right-3">
                     <p className="text-primary-foreground font-bold text-sm">{d.name}</p>
-                    <p className="text-primary-foreground/60 text-xs">{d.country} Â· {d.properties.toLocaleString()} properties</p>
+                    <p className="text-primary-foreground/70 text-xs">{d.country}</p>
                   </div>
                 </div>
               </Link>
@@ -223,9 +223,6 @@ export default function HomePage() {
                     <button className="absolute top-3 right-3 h-8 w-8 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-foreground/40 transition-colors">
                       <Heart className="h-4 w-4" />
                     </button>
-                    <Badge className="absolute bottom-3 left-3 bg-success text-success-foreground border-0 text-xs">
-                      Free Cancellation
-                    </Badge>
                   </div>
                   <CardContent className="p-5">
                     <div className="flex items-start justify-between gap-2">
@@ -279,8 +276,13 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {mockPackages.filter(p => p.status === 'active').slice(0, 4).map((pkg) => (
               <Card key={pkg.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 border-0 shadow-card">
-                <div className="h-40 bg-gradient-to-br from-gold/10 to-accent flex items-center justify-center relative">
-                  <span className="text-5xl group-hover:scale-110 transition-transform duration-500">ðŸ•‹</span>
+                <div className="h-40 bg-muted relative overflow-hidden">
+                  {pkg.image ? (
+                    <img src={pkg.image} alt={pkg.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-gold/10 to-accent" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" aria-hidden="true" />
                   <Badge className="absolute top-3 left-3 bg-gold text-gold-foreground border-0 text-xs">
                     <Percent className="h-3 w-3 mr-1" /> Best Value
                   </Badge>
@@ -327,8 +329,8 @@ export default function HomePage() {
               return (
                 <Link
                   key={c.country}
-                  to={`/hotels-search?country=${slug}`}
-                  aria-label={`Explore hotels in ${c.country}`}
+                  to={`/destination/${slug}`}
+                  aria-label={`Explore ${c.country}`}
                   className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl"
                 >
                   <Card className="relative overflow-hidden hover:shadow-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group border-0 shadow-card min-h-[220px] md:min-h-[260px] lg:min-h-[280px]">
@@ -356,7 +358,7 @@ export default function HomePage() {
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              window.location.href = `/hotels-search?city=${encodeURIComponent(city.toLowerCase())}`;
+                              window.location.href = `/destination/${encodeURIComponent(city.toLowerCase().replace(/\s+/g, "-"))}`;
                             }}
                             className="text-xs font-medium text-foreground bg-white/90 px-2.5 py-1 rounded-full hover:bg-white transition-colors shadow-sm"
                           >

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { TravelersClassPicker, type TravelersValue } from "@/components/public/TravelersClassPicker";
 import { AirportCombobox } from "@/components/public/AirportCombobox";
@@ -34,8 +34,15 @@ interface MultiCitySegment {
 }
 
 function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string }) {
+  const [open, setOpen] = useState(false);
+  const today = startOfDay(new Date());
+  const selectDate = (nextDate: Date | undefined) => {
+    onSelect(nextDate);
+    if (nextDate) setOpen(false);
+  };
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button type="button" className={cn(
           "flex items-center gap-2 w-full h-12 bg-muted/30 border border-muted rounded-xl px-3 text-sm text-left transition-colors hover:border-primary/30",
@@ -46,7 +53,14 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={8} avoidCollisions={false}>
-        <Calendar mode="single" selected={date} onSelect={onSelect} initialFocus className="p-3 pointer-events-auto" />
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={selectDate}
+          disabled={(day) => startOfDay(day) < today}
+          initialFocus
+          className="p-3 pointer-events-auto"
+        />
       </PopoverContent>
     </Popover>
   );

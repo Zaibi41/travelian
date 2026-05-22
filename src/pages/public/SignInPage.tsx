@@ -69,6 +69,15 @@ export default function SignInPage() {
                 <Input id="password" name="password" type="password" autoComplete="current-password" placeholder="Password" className="h-11 pl-9" />
               </div>
             </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="text-xs font-semibold text-primary hover:underline"
+                onClick={() => toast.info("Password reset is available through Travelian support while account recovery is being finalized.")}
+              >
+                Forgot password?
+              </button>
+            </div>
             <Button type="submit" disabled={loading} className="w-full h-11 gradient-primary text-primary-foreground font-semibold">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
