@@ -1,119 +1,59 @@
 import { useState } from "react";
-import { mockVisaPackages, UmrahPackage } from "@/data/mock";
+import { FileCheck, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "@/components/StatusBadge";
-import { Plus, MapPin, Clock, Pencil, Trash2, FileCheck, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useRole } from "@/contexts/RoleContext";
-import { toast } from "sonner";
+import { EmptyState } from "@/components/EmptyState";
+import { PricingBreakdownCard } from "@/components/PricingBreakdownCard";
 
 export default function VisaPackagesPage() {
-  const { currentRole } = useRole();
-  const [packages, setPackages] = useState(mockVisaPackages);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<UmrahPackage | null>(null);
-  const [form, setForm] = useState<{ name: string; description: string; basePrice: number; duration: string; city: string; status: 'active' | 'inactive'; includes: string[] }>({ name: '', description: '', basePrice: 0, duration: '', city: '', status: 'active', includes: [] });
-  const [incInput, setIncInput] = useState('');
-  const isAgency = currentRole === 'agency_owner' || currentRole === 'agency_staff';
-  const canEdit = currentRole === 'super_admin' || currentRole === 'admin';
-
-  const openAdd = () => { setEditing(null); setForm({ name: '', description: '', basePrice: 0, duration: '', city: '', status: 'active' as 'active' | 'inactive', includes: [] }); setDialogOpen(true); };
-  const openEdit = (pkg: UmrahPackage) => { setEditing(pkg); setForm({ ...pkg }); setDialogOpen(true); };
-
-  const handleSave = () => {
-    if (!form.name || !form.basePrice) { toast.error("Name and price required"); return; }
-    if (editing) {
-      setPackages(prev => prev.map(p => p.packageId === editing.packageId ? { ...p, ...form } : p));
-      toast.success("Visa package updated");
-    } else {
-      setPackages(prev => [...prev, { ...form, packageId: `v${Date.now()}`, hotel: 'N/A', category: 'visa' } as UmrahPackage]);
-      toast.success("Visa package created");
-    }
-    setDialogOpen(false);
-  };
+  const [baseCost, setBaseCost] = useState(22000);
+  const [margin, setMargin] = useState(10);
+  const [serviceFee, setServiceFee] = useState(3500);
+  const [minimumMargin, setMinimumMargin] = useState(3000);
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display">Visa Packages</h1>
-          <p className="text-sm text-muted-foreground">{isAgency ? 'Browse visa services' : 'Manage visa processing packages'}</p>
+          <h1 className="text-2xl font-bold font-display">Visa Package Management</h1>
+          <p className="text-sm text-muted-foreground">Create visit, study, business, country and Umrah visa packages with fee and service-margin control.</p>
         </div>
-        {canEdit && <Button onClick={openAdd} className="gradient-primary text-primary-foreground gap-2"><Plus className="h-4 w-4" /> Add Visa Package</Button>}
+        <Button className="gradient-primary text-primary-foreground gap-2"><Plus className="h-4 w-4" /> Create Visa Package</Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {packages.map(pkg => (
-          <Card key={pkg.packageId} className="shadow-card hover:shadow-elevated transition-shadow flex flex-col">
-            <CardHeader className="pb-2">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <FileCheck className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-base font-display">{pkg.name}</CardTitle>
-                </div>
-                <StatusBadge status={pkg.status} />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">{pkg.description}</p>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col justify-between gap-4">
-              <div className="space-y-2 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3" />{pkg.city}</div>
-                <div className="flex items-center gap-1.5"><Clock className="h-3 w-3" />Validity: {pkg.duration}</div>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {pkg.includes.map(inc => <Badge key={inc} variant="secondary" className="text-[10px]">{inc}</Badge>)}
-              </div>
-              <div className="flex items-center justify-between pt-2 border-t">
-                <div>
-                  <p className="text-xs text-muted-foreground">Processing Fee</p>
-                  <p className="text-lg font-bold font-display text-primary">${pkg.basePrice}</p>
-                </div>
-                <div className="flex gap-1">
-                  {isAgency && <Button variant="default" size="sm" className="gradient-primary text-primary-foreground">Apply</Button>}
-                  {canEdit && (
-                    <>
-                      <Button variant="outline" size="sm" onClick={() => openEdit(pkg)}><Pencil className="h-3 w-3" /></Button>
-                      <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setPackages(p => p.filter(x => x.packageId !== pkg.packageId)); toast.success("Deleted"); }}><Trash2 className="h-3 w-3" /></Button>
-                    </>
-                  )}
-                </div>
-              </div>
+      <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
+        <Card className="shadow-card">
+          <CardHeader><CardTitle className="text-base font-display">Visa details</CardTitle></CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2"><Label>Country</Label><Input placeholder="Saudi Arabia, UAE, UK, Turkey" /></div>
+            <div className="space-y-2"><Label>Visa type</Label><Select defaultValue="visit"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="country">Country visa package</SelectItem><SelectItem value="visit">Visit visa</SelectItem><SelectItem value="study">Study visa</SelectItem><SelectItem value="business">Business visa</SelectItem><SelectItem value="umrah">Umrah visa</SelectItem></SelectContent></Select></div>
+            <div className="space-y-2"><Label>Processing time</Label><Input placeholder="7 working days" /></div>
+            <div className="space-y-2"><Label>Validity</Label><Input placeholder="30 days, 90 days, 1 year" /></div>
+            <div className="space-y-2"><Label>Stay duration</Label><Input placeholder="30 days" /></div>
+            <div className="space-y-2"><Label>Status</Label><Select defaultValue="draft"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="hidden">Hidden</SelectItem></SelectContent></Select></div>
+            <div className="md:col-span-2 space-y-2"><Label>Required documents</Label><Textarea rows={4} placeholder="Passport, CNIC, photo, bank statement, invitation, employment letter..." /></div>
+            <div className="md:col-span-2 space-y-2"><Label>Terms</Label><Textarea rows={3} placeholder="Embassy decisions, refund rules, timelines and customer obligations" /></div>
+          </CardContent>
+        </Card>
+        <div className="space-y-5">
+          <Card className="shadow-card">
+            <CardHeader><CardTitle className="text-base font-display">Visa pricing</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2"><Label>Embassy / supplier fee</Label><Input type="number" value={baseCost} onChange={(event) => setBaseCost(Number(event.target.value))} /></div>
+              <div className="space-y-2"><Label>Travelian margin %</Label><Input type="number" value={margin} onChange={(event) => setMargin(Number(event.target.value))} /></div>
+              <div className="space-y-2"><Label>Service fee</Label><Input type="number" value={serviceFee} onChange={(event) => setServiceFee(Number(event.target.value))} /></div>
+              <div className="space-y-2"><Label>Minimum margin</Label><Input type="number" value={minimumMargin} onChange={(event) => setMinimumMargin(Number(event.target.value))} /></div>
             </CardContent>
           </Card>
-        ))}
+          <PricingBreakdownCard rule={{ percentage: margin, fixedAmount: serviceFee, minimumMargin }} baseCost={baseCost} />
+        </div>
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-display">{editing ? 'Edit Visa Package' : 'Add Visa Package'}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2"><Label>Name *</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
-            <div className="space-y-2"><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={2} /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Fee ($) *</Label><Input type="number" value={form.basePrice || ''} onChange={e => setForm(p => ({ ...p, basePrice: Number(e.target.value) }))} /></div>
-              <div className="space-y-2"><Label>Validity</Label><Input value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))} placeholder="e.g. 30 days" /></div>
-            </div>
-            <div className="space-y-2"><Label>Country</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
-            <div className="space-y-2">
-              <Label>Includes</Label>
-              <div className="flex gap-2">
-                <Input value={incInput} onChange={e => setIncInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (incInput.trim()) { setForm(p => ({ ...p, includes: [...p.includes, incInput.trim()] })); setIncInput(''); } } }} />
-                <Button variant="outline" type="button" onClick={() => { if (incInput.trim()) { setForm(p => ({ ...p, includes: [...p.includes, incInput.trim()] })); setIncInput(''); } }}>Add</Button>
-              </div>
-              <div className="flex flex-wrap gap-1">{form.includes.map((inc, i) => <Badge key={i} variant="secondary" className="gap-1">{inc}<button onClick={() => setForm(p => ({ ...p, includes: p.includes.filter((_, idx) => idx !== i) }))}><X className="h-3 w-3" /></button></Badge>)}</div>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <Button onClick={handleSave} className="flex-1 gradient-primary text-primary-foreground">{editing ? 'Update' : 'Create'}</Button>
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <EmptyState icon={FileCheck} title="No real visa packages configured" description="No mock visa services are displayed. Add real visa packages with required documents, processing time, embassy fee, service fee, margin and terms." />
     </div>
   );
 }

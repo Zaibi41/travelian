@@ -60,8 +60,8 @@ export const adminNavigation: AdminNavSection[] = [
     category: "Dashboard",
     items: [
       { title: "Dashboard", url: "/admin", icon: LayoutDashboard, roles: allAdminRoles },
-      { title: "Customer Portal", url: "/account", icon: UserCircle, roles: ["customer"] },
-      { title: "My Bookings", url: "/my-bookings", icon: CalendarCheck, roles: ["customer"] },
+      { title: "Customer Portal", url: "/admin/customer", icon: UserCircle, roles: ["customer"] },
+      { title: "My Bookings", url: "/admin/customer/bookings", icon: CalendarCheck, roles: ["customer"] },
     ],
   },
   {
@@ -77,7 +77,7 @@ export const adminNavigation: AdminNavSection[] = [
     items: [
       { title: "Flight Search", url: "/admin/flight-search", icon: Search, roles: agencyBookingRoles },
       { title: "Flight Results", url: "/admin/flights-search", icon: Plane, roles: agencyBookingRoles },
-      { title: "Flights Inventory", url: "/admin/flights", icon: Plane, roles: businessAdminRoles },
+      { title: "Flight Pricing & Rules", url: "/admin/flights", icon: Plane, roles: businessAdminRoles },
       { title: "Hotels Inventory", url: "/admin/hotels", icon: Hotel, roles: businessAdminRoles },
       { title: "Umrah Packages", url: "/admin/packages", icon: Package, roles: [...businessAdminRoles, ...agencyBusinessRoles] },
       { title: "Tour Packages", url: "/admin/tours", icon: Map, roles: [...businessAdminRoles, ...agencyBusinessRoles] },
@@ -133,8 +133,8 @@ export function getNavigationForRole(role: UserRole): AdminNavSection[] {
 }
 
 export function canAccessAdminPath(role: UserRole, pathname: string) {
-  if (role === "customer") return false;
   const normalized = pathname.replace(/\/+$/, "") || "/admin";
+  if (role === "customer") return normalized === "/admin/customer" || normalized.startsWith("/admin/customer/");
   if (normalized === "/admin/booking") return ["super_admin", "admin", "staff", "agency_owner", "agency_staff", "qa", "internal_support"].includes(role);
   return adminNavigation.some((section) =>
     section.items.some((item) => {

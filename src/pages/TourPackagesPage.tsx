@@ -1,121 +1,62 @@
 import { useState } from "react";
-import { mockTourPackages, UmrahPackage } from "@/data/mock";
+import { Map, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { StatusBadge } from "@/components/StatusBadge";
-import { Plus, MapPin, Clock, Hotel, Pencil, Trash2, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useRole } from "@/contexts/RoleContext";
-import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { EmptyState } from "@/components/EmptyState";
+import { PricingBreakdownCard } from "@/components/PricingBreakdownCard";
 
 export default function TourPackagesPage() {
-  const { currentRole } = useRole();
-  const [packages, setPackages] = useState(mockTourPackages);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<UmrahPackage | null>(null);
-  const [form, setForm] = useState<{ name: string; description: string; basePrice: number; duration: string; hotel: string; city: string; status: 'active' | 'inactive'; includes: string[] }>({ name: '', description: '', basePrice: 0, duration: '', hotel: '', city: '', status: 'active', includes: [] });
-  const [incInput, setIncInput] = useState('');
-  const isAgency = currentRole === 'agency_owner' || currentRole === 'agency_staff';
-  const canEdit = currentRole === 'super_admin' || currentRole === 'admin';
-
-  const openAdd = () => { setEditing(null); setForm({ name: '', description: '', basePrice: 0, duration: '', hotel: '', city: '', status: 'active' as 'active' | 'inactive', includes: [] }); setDialogOpen(true); };
-  const openEdit = (pkg: UmrahPackage) => { setEditing(pkg); setForm(pkg); setDialogOpen(true); };
-
-  const handleSave = () => {
-    if (!form.name || !form.basePrice) { toast.error("Name and price required"); return; }
-    if (editing) {
-      setPackages(prev => prev.map(p => p.packageId === editing.packageId ? { ...p, ...form } : p));
-      toast.success("Tour package updated");
-    } else {
-      setPackages(prev => [...prev, { ...form, packageId: `t${Date.now()}`, category: 'tour' } as UmrahPackage]);
-      toast.success("Tour package created");
-    }
-    setDialogOpen(false);
-  };
+  const [baseCost, setBaseCost] = useState(95000);
+  const [margin, setMargin] = useState(15);
+  const [fee, setFee] = useState(3000);
+  const [minimumMargin, setMinimumMargin] = useState(9000);
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display">Tour Packages</h1>
-          <p className="text-sm text-muted-foreground">{isAgency ? 'Browse tour packages' : 'Manage international tour packages'}</p>
+          <h1 className="text-2xl font-bold font-display">Tour Package Management</h1>
+          <p className="text-sm text-muted-foreground">Create domestic, international, group and custom tours with itinerary and margin control.</p>
         </div>
-        {canEdit && <Button onClick={openAdd} className="gradient-primary text-primary-foreground gap-2"><Plus className="h-4 w-4" /> Add Tour</Button>}
+        <Button className="gradient-primary text-primary-foreground gap-2"><Plus className="h-4 w-4" /> Create Tour</Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {packages.map(pkg => (
-          <Card key={pkg.packageId} className="shadow-card hover:shadow-elevated transition-shadow flex flex-col">
-            <CardHeader className="pb-2">
-              <div className="flex items-start justify-between">
-                <CardTitle className="text-base font-display">{pkg.name}</CardTitle>
-                <StatusBadge status={pkg.status} />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">{pkg.description}</p>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col justify-between gap-4">
-              <div className="space-y-2 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1.5"><MapPin className="h-3 w-3" />{pkg.city}</div>
-                <div className="flex items-center gap-1.5"><Clock className="h-3 w-3" />{pkg.duration}</div>
-                <div className="flex items-center gap-1.5"><Hotel className="h-3 w-3" />{pkg.hotel}</div>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {pkg.includes.map(inc => <Badge key={inc} variant="secondary" className="text-[10px]">{inc}</Badge>)}
-              </div>
-              <div className="flex items-center justify-between pt-2 border-t">
-                <div>
-                  <p className="text-xs text-muted-foreground">Base Price</p>
-                  <p className="text-lg font-bold font-display text-primary">${pkg.basePrice.toLocaleString()}</p>
-                </div>
-                <div className="flex gap-1">
-                  {isAgency && <Button variant="default" size="sm" className="gradient-primary text-primary-foreground">Book Now</Button>}
-                  {canEdit && (
-                    <>
-                      <Button variant="outline" size="sm" onClick={() => openEdit(pkg)}><Pencil className="h-3 w-3" /></Button>
-                      <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => { setPackages(p => p.filter(x => x.packageId !== pkg.packageId)); toast.success("Deleted"); }}><Trash2 className="h-3 w-3" /></Button>
-                    </>
-                  )}
-                </div>
-              </div>
+      <div className="grid gap-5 xl:grid-cols-[1fr_420px]">
+        <Card className="shadow-card">
+          <CardHeader><CardTitle className="text-base font-display">Tour details</CardTitle></CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2"><Label>Tour type</Label><Select defaultValue="international"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="domestic">Domestic</SelectItem><SelectItem value="international">International</SelectItem><SelectItem value="group">Group</SelectItem><SelectItem value="custom">Custom</SelectItem></SelectContent></Select></div>
+            <div className="space-y-2"><Label>Destination</Label><Input placeholder="Baku, Bangkok, Hunza, Turkey" /></div>
+            <div className="space-y-2"><Label>Duration</Label><Input placeholder="5 days / 4 nights" /></div>
+            <div className="space-y-2"><Label>Availability dates</Label><Input placeholder="Date range or departure dates" /></div>
+            <div className="space-y-2"><Label>Hotel details</Label><Input placeholder="Hotel names/category" /></div>
+            <div className="space-y-2"><Label>Transport</Label><Input placeholder="Private, SIC, coach, none" /></div>
+            <div className="space-y-2"><Label>Meals</Label><Input placeholder="Breakfast, half board, full board" /></div>
+            <div className="space-y-2"><Label>Status</Label><Select defaultValue="draft"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="hidden">Hidden</SelectItem></SelectContent></Select></div>
+            <div className="md:col-span-2 space-y-2"><Label>Itinerary</Label><Textarea rows={4} placeholder="Day-wise itinerary" /></div>
+            <div className="md:col-span-2 space-y-2"><Label>Inclusions / exclusions</Label><Textarea rows={3} placeholder="Flights, hotel, transport, meals, guide, visa, exclusions" /></div>
+            <div className="md:col-span-2 space-y-2"><Label>Images</Label><Input placeholder="Image URLs or upload paths" /></div>
+          </CardContent>
+        </Card>
+        <div className="space-y-5">
+          <Card className="shadow-card">
+            <CardHeader><CardTitle className="text-base font-display">Pricing</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2"><Label>Base cost</Label><Input type="number" value={baseCost} onChange={(event) => setBaseCost(Number(event.target.value))} /></div>
+              <div className="space-y-2"><Label>Travelian margin %</Label><Input type="number" value={margin} onChange={(event) => setMargin(Number(event.target.value))} /></div>
+              <div className="space-y-2"><Label>Fixed fee</Label><Input type="number" value={fee} onChange={(event) => setFee(Number(event.target.value))} /></div>
+              <div className="space-y-2"><Label>Minimum margin</Label><Input type="number" value={minimumMargin} onChange={(event) => setMinimumMargin(Number(event.target.value))} /></div>
             </CardContent>
           </Card>
-        ))}
+          <PricingBreakdownCard rule={{ percentage: margin, fixedAmount: fee, minimumMargin }} baseCost={baseCost} />
+        </div>
       </div>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="font-display">{editing ? 'Edit Tour' : 'Add Tour Package'}</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2"><Label>Name *</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} /></div>
-            <div className="space-y-2"><Label>Description</Label><Textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={3} /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Price ($) *</Label><Input type="number" value={form.basePrice || ''} onChange={e => setForm(p => ({ ...p, basePrice: Number(e.target.value) }))} /></div>
-              <div className="space-y-2"><Label>Duration</Label><Input value={form.duration} onChange={e => setForm(p => ({ ...p, duration: e.target.value }))} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Hotel</Label><Input value={form.hotel} onChange={e => setForm(p => ({ ...p, hotel: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>City/Destination</Label><Input value={form.city} onChange={e => setForm(p => ({ ...p, city: e.target.value }))} /></div>
-            </div>
-            <div className="space-y-2">
-              <Label>Includes</Label>
-              <div className="flex gap-2">
-                <Input value={incInput} onChange={e => setIncInput(e.target.value)} placeholder="e.g. Flights" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); if (incInput.trim()) { setForm(p => ({ ...p, includes: [...p.includes, incInput.trim()] })); setIncInput(''); } } }} />
-                <Button variant="outline" type="button" onClick={() => { if (incInput.trim()) { setForm(p => ({ ...p, includes: [...p.includes, incInput.trim()] })); setIncInput(''); } }}>Add</Button>
-              </div>
-              <div className="flex flex-wrap gap-1">{form.includes.map((inc, i) => <Badge key={i} variant="secondary" className="gap-1">{inc}<button onClick={() => setForm(p => ({ ...p, includes: p.includes.filter((_, idx) => idx !== i) }))}><X className="h-3 w-3" /></button></Badge>)}</div>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <Button onClick={handleSave} className="flex-1 gradient-primary text-primary-foreground">{editing ? 'Update' : 'Create Tour'}</Button>
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <EmptyState icon={Map} title="No real tour packages configured" description="No mock tour packages are displayed. Add real domestic, international, group or custom tours with itinerary, cost, margin and availability." />
     </div>
   );
 }

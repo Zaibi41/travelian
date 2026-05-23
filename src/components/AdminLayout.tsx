@@ -3,7 +3,6 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { mockNotifications } from "@/data/mock";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { clearSession, getSession } from "@/lib/auth-session";
 import { cognitoLogoutUrl } from "@/lib/cognito-auth";
@@ -14,7 +13,7 @@ import { canAccessAdminPath } from "@/lib/admin-navigation";
 import AccessDeniedPage from "@/pages/AccessDeniedPage";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
-  const unreadCount = mockNotifications.filter(n => !n.read).length;
+  const unreadCount = 0;
   const navigate = useNavigate();
   const location = useLocation();
   const { currentRole } = useRole();

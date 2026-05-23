@@ -56,6 +56,7 @@ import PaymentsPage from "./pages/PaymentsPage";
 import SecretManagerPage from "./pages/SecretManagerPage";
 import ProviderSystemsPage from "./pages/ProviderSystemsPage";
 import AgencyFlightSearchPage from "./pages/AgencyFlightSearchPage";
+import CustomerPortalPage from "./pages/CustomerPortalPage";
 import UsersPage from "./pages/UsersPage";
 import RBACPage from "./pages/RBACPage";
 import CouponsPage from "./pages/CouponsPage";
@@ -133,6 +134,8 @@ const App = () => (
             <Route path="/admin/documents" element={<AdminLayout><DocumentsPage /></AdminLayout>} />
             <Route path="/admin/notifications" element={<AdminLayout><NotificationsPage /></AdminLayout>} />
             <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
+            <Route path="/admin/customer" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />
+            <Route path="/admin/customer/bookings" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             </AdminProvider>
