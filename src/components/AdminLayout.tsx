@@ -33,10 +33,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="flex min-h-svh w-full bg-muted/20">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex items-center justify-between border-b bg-card px-4 shrink-0">
+          <header className="sticky top-0 z-30 h-14 flex items-center justify-between border-b bg-card/95 px-4 shrink-0 backdrop-blur">
             <div className="flex items-center gap-2">
               <SidebarTrigger />
               <span className="text-sm text-muted-foreground hidden sm:block">Travel Management System</span>
@@ -61,7 +61,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               </Link>
             </div>
           </header>
-          <main className="flex-1 overflow-auto bg-muted/20 p-4 md:p-6">
+          <main className="flex-1 bg-muted/20 p-4 md:p-6">
             {allowed ? children : <AccessDeniedPage />}
           </main>
         </div>

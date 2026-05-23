@@ -150,6 +150,26 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  .travelian-sidebar-nav {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  .travelian-sidebar-nav:hover {
+    scrollbar-color: hsl(var(--sidebar-muted) / 0.28) transparent;
+  }
+  .travelian-sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+  }
+  .travelian-sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .travelian-sidebar-nav::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 999px;
+  }
+  .travelian-sidebar-nav:hover::-webkit-scrollbar-thumb {
+    background: hsl(var(--sidebar-muted) / 0.24);
+  }
 
   /* Skeleton loader animation */
   @keyframes shimmer {
