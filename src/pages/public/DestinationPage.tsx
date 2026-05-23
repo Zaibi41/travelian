@@ -54,6 +54,41 @@ const destinationMap: Record<string, {
     summary: "Plan Cairo and Nile heritage trips with hotels, tours, and guided sightseeing.",
     highlights: ["Pyramids tours", "Nile stays", "Guided itineraries"],
   },
+  colombo: {
+    name: "Colombo",
+    country: "Sri Lanka",
+    image: "https://images.unsplash.com/photo-1585990990366-91e6f9a2f292?w=1400&h=720&fit=crop&q=80",
+    summary: "Plan Sri Lanka holidays with Colombo hotels, beach add-ons, and guided family itineraries.",
+    highlights: ["City hotels", "Beach extensions", "Sri Lanka tours"],
+  },
+  baku: {
+    name: "Baku",
+    country: "Azerbaijan",
+    image: "https://images.unsplash.com/photo-1600267175161-cfaa711b4a81?w=1400&h=720&fit=crop&q=80",
+    summary: "Explore Baku city breaks, Caspian stays, and Azerbaijan tour packages.",
+    highlights: ["City tours", "Caspian stays", "Family packages"],
+  },
+  bangkok: {
+    name: "Bangkok",
+    country: "Thailand",
+    image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=1400&h=720&fit=crop&q=80",
+    summary: "Book Bangkok hotels, Thailand tours, and curated shopping and family experiences.",
+    highlights: ["Thailand hotels", "Shopping tours", "Family holidays"],
+  },
+  singapore: {
+    name: "Singapore",
+    country: "Singapore",
+    image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=1400&h=720&fit=crop&q=80",
+    summary: "Discover Singapore stays, city passes, and family-friendly travel bundles.",
+    highlights: ["City hotels", "Attraction passes", "Family packages"],
+  },
+  bali: {
+    name: "Bali",
+    country: "Indonesia",
+    image: "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=1400&h=720&fit=crop&q=80",
+    summary: "Plan Bali resort stays, honeymoon escapes, and Indonesia holiday packages.",
+    highlights: ["Resort stays", "Honeymoon trips", "Private transfers"],
+  },
 };
 
 export default function DestinationPage() {
