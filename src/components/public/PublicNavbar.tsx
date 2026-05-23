@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plane, Menu, X, User, Phone, Globe, ChevronDown, LogOut, Building2 } from "lucide-react";
+import { Plane, Menu, X, User, Phone, Globe, ChevronDown, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { clearSession, getSession, useSessionEvent, type AuthSession } from "@/lib/auth-session";
@@ -25,6 +25,7 @@ const navLinks = [
   { label: "Visas", href: "/visa-services" },
   { label: "Deals", href: "/deals" },
   { label: "About", href: "/about" },
+  { label: "Become a Partner", href: "/contact?type=agency" },
 ];
 
 const SUPPORT_PHONE = "+92 324 4440014";
@@ -162,28 +163,16 @@ export function PublicNavbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center gap-2">
-                <div className="flex rounded-xl border bg-card p-1 shadow-sm">
-                  <Link to="/signin?portal=partner">
-                    <Button variant="ghost" size="sm" className="h-8 gap-1.5 rounded-lg px-2.5 text-xs">
-                      <Building2 className="h-3.5 w-3.5" /> Partner Portal
-                    </Button>
-                  </Link>
-                  <Link to="/signin?portal=agent">
-                    <Button variant="ghost" size="sm" className="h-8 gap-1.5 rounded-lg px-2.5 text-xs">
-                      <User className="h-3.5 w-3.5" /> Agent Portal
-                    </Button>
-                  </Link>
-                </div>
-                <div className="flex rounded-xl border bg-card p-1 shadow-sm">
-                  <Link to="/contact?type=agency">
-                    <Button variant="ghost" size="sm" className="h-8 rounded-lg px-2.5 text-xs">Become a Partner</Button>
-                  </Link>
-                  <Link to="/register">
-                    <Button size="sm" className="h-8 gradient-primary text-primary-foreground rounded-lg px-3 text-xs font-semibold">Register</Button>
-                  </Link>
-                </div>
-              </div>
+              <>
+                <Link to="/signin">
+                  <Button variant="outline" size="sm" className="gap-2 rounded-lg">
+                    <User className="h-4 w-4" /> Sign In
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm" className="gradient-primary text-primary-foreground rounded-lg font-semibold">Register</Button>
+                </Link>
+              </>
             )}
           </div>
 
@@ -232,25 +221,15 @@ export function PublicNavbar() {
                 </>
               ) : (
                 <>
-                  <Link to="/signin?portal=partner" className="flex-1" onClick={() => setMobileOpen(false)}>
-                    <Button variant="outline" size="sm" className="w-full rounded-lg">Partner Portal</Button>
-                  </Link>
-                  <Link to="/signin?portal=agent" className="flex-1" onClick={() => setMobileOpen(false)}>
-                    <Button variant="outline" size="sm" className="w-full rounded-lg">Agent Portal</Button>
-                  </Link>
-                </>
-              )}
-            </div>
-            {!session && (
-              <div className="flex gap-2 px-3">
-                <Link to="/contact?type=agency" className="flex-1" onClick={() => setMobileOpen(false)}>
-                  <Button variant="outline" size="sm" className="w-full rounded-lg">Become a Partner</Button>
+                  <Link to="/signin" className="flex-1" onClick={() => setMobileOpen(false)}>
+                    <Button variant="outline" size="sm" className="w-full rounded-lg">Sign In</Button>
                   </Link>
                   <Link to="/register" className="flex-1" onClick={() => setMobileOpen(false)}>
                     <Button size="sm" className="w-full gradient-primary text-primary-foreground rounded-lg">Register</Button>
                   </Link>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>

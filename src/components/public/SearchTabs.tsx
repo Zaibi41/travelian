@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Hotel, Plane, UsersRound, Car, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
+import { Hotel, Plane, UsersRound, Car, Package, Search, MapPin, Users, ChevronDown, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -14,17 +14,9 @@ import { useLocale } from "@/contexts/LocaleContext";
 const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
   { id: "hotels", label: "Hotels", icon: Hotel },
-  { id: "groupbooking", label: "Group Ticketing", icon: UsersRound },
+  { id: "packages", label: "Packages", icon: Package },
+  { id: "groupbooking", label: "Group Booking", icon: UsersRound },
   { id: "transfers", label: "Transfers", icon: Car },
-];
-
-const groupTicketingSectors = [
-  { label: "Umrah", slug: "umrah", route: "LHE / KHI / ISB to JED / MED" },
-  { label: "UAE", slug: "uae", route: "Pakistan to Dubai, Sharjah and Abu Dhabi" },
-  { label: "KSA", slug: "ksa", route: "Pakistan to Riyadh, Jeddah, Dammam and Madinah" },
-  { label: "Oman", slug: "oman", route: "Pakistan to Muscat and Salalah" },
-  { label: "Bahrain", slug: "bahrain", route: "Pakistan to Bahrain" },
-  { label: "Kuwait", slug: "kuwait", route: "Pakistan to Kuwait" },
 ];
 
 const tripTypes = [
@@ -92,6 +84,7 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
   const [hotelCheckOut, setHotelCheckOut] = useState<Date>();
   const [hotelLocation, setHotelLocation] = useState("");
   const [hotelGuests, setHotelGuests] = useState("2");
+  const [pkgDate, setPkgDate] = useState<Date>();
   const [groupFrom, setGroupFrom] = useState("");
   const [groupTo, setGroupTo] = useState("");
   const [groupDate, setGroupDate] = useState<Date>();
@@ -157,6 +150,7 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
       });
       navigate(`/hotels-search?${params.toString()}`);
     }
+    else if (activeTab === "packages") navigate("/umrah-packages");
     else if (activeTab === "groupbooking") {
       const params = new URLSearchParams({
         type: "group",
@@ -164,7 +158,7 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
         to: groupTo,
         date: groupDate ? groupDate.toISOString().slice(0, 10) : "",
       });
-      navigate(`/group-ticketing?${params.toString()}`);
+      navigate(`/contact?${params.toString()}`);
     }
     else if (activeTab === "transfers") {
       const params = new URLSearchParams({
@@ -382,29 +376,31 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
           </div>
         )}
 
+        {activeTab === "packages" && (
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-3 items-center">
+            <div className="relative">
+              <Package className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Umrah, Hajj, or custom package..." className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+            </div>
+            <DatePickerField date={pkgDate} onSelect={setPkgDate} placeholder="Travel date" />
+            <div className="relative">
+              <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Travelers" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
+            </div>
+            <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
+              <Search className="h-4 w-4 mr-2" /> Search
+            </Button>
+          </div>
+        )}
+
         {activeTab === "groupbooking" && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-              {groupTicketingSectors.map((sector) => (
-                <button
-                  key={sector.slug}
-                  type="button"
-                  onClick={() => navigate(`/group-ticketing/${sector.slug}`)}
-                  className="rounded-xl border border-muted bg-muted/30 p-3 text-left transition-all hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <span className="block text-sm font-bold text-foreground">{sector.label}</span>
-                  <span className="mt-1 block text-[11px] leading-snug text-muted-foreground">{sector.route}</span>
-                </button>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-center">
-              <AirportCombobox value={groupFrom} onChange={setGroupFrom} placeholder="From" />
-              <AirportCombobox value={groupTo} onChange={setGroupTo} placeholder="To" />
-              <DatePickerField date={groupDate} onSelect={setGroupDate} placeholder="Travel date" />
-              <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
-                <Search className="h-4 w-4 mr-2" /> Search
-              </Button>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-center">
+            <AirportCombobox value={groupFrom} onChange={setGroupFrom} placeholder="From" />
+            <AirportCombobox value={groupTo} onChange={setGroupTo} placeholder="To" />
+            <DatePickerField date={groupDate} onSelect={setGroupDate} placeholder="Travel date" />
+            <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
+              <Search className="h-4 w-4 mr-2" /> Inquire
+            </Button>
           </div>
         )}
 

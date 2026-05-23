@@ -16,11 +16,6 @@ const destinations = [
   { name: "Kuala Lumpur", country: "Malaysia", image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&h=500&fit=crop", properties: 2100 },
   { name: "Cairo", country: "Egypt", image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=400&h=500&fit=crop", properties: 890 },
   { name: "Madinah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=400&h=500&fit=crop&q=80", properties: 156, badge: "Holy City" },
-  { name: "Colombo", country: "Sri Lanka", image: "https://images.unsplash.com/photo-1585990990366-91e6f9a2f292?w=400&h=500&fit=crop&q=80", properties: 740 },
-  { name: "Baku", country: "Azerbaijan", image: "https://images.unsplash.com/photo-1600267175161-cfaa711b4a81?w=400&h=500&fit=crop&q=80", properties: 680 },
-  { name: "Bangkok", country: "Thailand", image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=400&h=500&fit=crop&q=80", properties: 2450, badge: "Hot" },
-  { name: "Singapore", country: "Singapore", image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?w=400&h=500&fit=crop&q=80", properties: 1960 },
-  { name: "Bali", country: "Indonesia", image: "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=400&h=500&fit=crop&q=80", properties: 3220 },
 ];
 
 const deals = [
@@ -45,20 +40,11 @@ const topCountries = [
   { country: "Indonesia", properties: 8920, popular: ["Bali", "Jakarta", "Yogyakarta", "Lombok"], image: "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=900&h=620&fit=crop&q=80" },
 ];
 
-const partnerAirlines = ["PIA", "AirSial", "flyadeal", "Qatar Airways", "Emirates", "Saudia", "Etihad", "Turkish Airlines"];
-
-const trustedRegistrations = [
-  { name: "SECP", detail: "Company registration" },
-  { name: "FBR", detail: "Tax registered" },
-  { name: "DTS", detail: "Travel services" },
-  { name: "IATA", detail: "Air travel standards" },
-];
-
 export default function HomePage() {
   return (
     <div>
       <SEO
-        title="Travelian | Aeroplane Flights, Hotels, Umrah & Visas"
+        title="Travelian | Flights, Hotels, Umrah & Visas"
         description="Book flights, hotels, Umrah packages, tours and visas at the best prices. 24/7 support, secure payments, and instant e-tickets. Your trusted Pakistan travel partner."
         jsonLd={[
           {
@@ -128,51 +114,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Partner Airlines */}
-      <section className="py-10 bg-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-4 mb-5">
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Our Partner Airlines</h2>
-              <p className="text-sm text-muted-foreground">Connected provider options for domestic and international travel</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-            {partnerAirlines.map((airline) => (
-              <div key={airline} className="min-h-20 rounded-2xl border bg-muted/20 p-3 flex flex-col items-center justify-center text-center shadow-sm">
-                <Plane className="h-4 w-4 text-primary mb-2" />
-                <span className="text-sm font-semibold text-foreground leading-tight">{airline}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Registered With */}
-      <section className="py-10 bg-muted/30 border-y">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-5 lg:grid-cols-[1fr_2fr] lg:items-center">
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Trusted & Registered With</h2>
-              <p className="text-sm text-muted-foreground mt-1">Travelian works with verified registration and travel standards.</p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {trustedRegistrations.map((item) => (
-                <div key={item.name} className="rounded-2xl bg-card border p-4 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                      <Check className="h-4 w-4" />
-                    </span>
-                    <span className="font-extrabold text-foreground">{item.name}</span>
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">{item.detail}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Flash Deals */}
       <section className="py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -222,7 +163,7 @@ export default function HomePage() {
               <Link to="/tour-packages">Explore All <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {destinations.map((d) => (
               <Link key={d.name} to={`/destination/${d.name.toLowerCase().replace(/\s+/g, "-")}`} className="group">
                 <div className="relative rounded-2xl overflow-hidden aspect-[3/4] shadow-card hover:shadow-hover transition-all duration-300">
