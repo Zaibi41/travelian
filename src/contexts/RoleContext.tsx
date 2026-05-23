@@ -15,6 +15,9 @@ const roleUsers: Record<UserRole, { name: string; email: string; agencyId?: stri
   staff: { name: "Omar Farooq", email: "omar@travelian.com" },
   agency_owner: { name: "Fatima Zahra", email: "fatima@alhijaz.com", agencyId: "a1", agencyName: "Al Hijaz Tours" },
   agency_staff: { name: "Hassan Raza", email: "hassan@alhijaz.com", agencyId: "a1", agencyName: "Al Hijaz Tours" },
+  customer: { name: "Travelian Customer", email: "customer@travelian.pk" },
+  qa: { name: "QA Tester", email: "qa@travelian.com" },
+  internal_support: { name: "Support Lead", email: "support@travelian.com" },
 };
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
@@ -43,7 +46,11 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     }
   };
   const currentRole = currentRoleState;
-  const currentUser = roleUsers[currentRole];
+  const session = getSession();
+  const fallbackUser = roleUsers[currentRole];
+  const currentUser = session
+    ? { ...fallbackUser, name: session.name || fallbackUser.name, email: session.email || fallbackUser.email }
+    : fallbackUser;
 
   return (
     <RoleContext.Provider value={{ currentRole, setCurrentRole, currentUser }}>

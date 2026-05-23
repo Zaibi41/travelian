@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { clearSession, getSession, useSessionEvent, type AuthSession } from "@/lib/auth-session";
 import { cognitoLogoutUrl } from "@/lib/cognito-auth";
-import { roleForSession } from "@/lib/role-mapping";
+import { isAdminPortalRole, roleForSession } from "@/lib/role-mapping";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +39,7 @@ export function PublicNavbar() {
   const { currency, setCurrency, language, setLanguage } = useLocale();
   const [session, setSessionState] = useState<AuthSession | null>(() => getSession());
   const sessionRole = roleForSession(session);
+  const showAdminPortal = isAdminPortalRole(sessionRole);
 
   useEffect(() => useSessionEvent(() => setSessionState(getSession())), []);
 
@@ -149,7 +150,7 @@ export function PublicNavbar() {
                 <DropdownMenuContent align="end" className="z-[60] bg-popover">
                   <DropdownMenuLabel className="text-xs truncate max-w-[200px]">{session.email}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {sessionRole && (
+                  {showAdminPortal && (
                     <DropdownMenuItem onClick={() => navigate("/admin")}>
                       {sessionRole.includes("agency") ? "Agency Dashboard" : "Super Admin Dashboard"}
                     </DropdownMenuItem>
@@ -210,7 +211,7 @@ export function PublicNavbar() {
                   <Link to="/account" className="flex-1" onClick={() => setMobileOpen(false)}>
                     <Button variant="outline" size="sm" className="w-full rounded-lg gap-2"><User className="h-4 w-4" /> Account</Button>
                   </Link>
-                  {sessionRole && (
+                  {showAdminPortal && (
                     <Link to="/admin" className="flex-1" onClick={() => setMobileOpen(false)}>
                       <Button variant="outline" size="sm" className="w-full rounded-lg">Dashboard</Button>
                     </Link>

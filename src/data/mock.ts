@@ -1,6 +1,6 @@
 // Mock data for Travelian Admin Panel
 
-export type UserRole = 'super_admin' | 'admin' | 'staff' | 'agency_owner' | 'agency_staff';
+export type UserRole = 'super_admin' | 'admin' | 'staff' | 'agency_owner' | 'agency_staff' | 'customer' | 'qa' | 'internal_support';
 export type AgencyStatus = 'pending' | 'active' | 'suspended' | 'rejected';
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
 export type BookingType = 'b2c' | 'b2b';

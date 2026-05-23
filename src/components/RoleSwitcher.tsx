@@ -1,7 +1,9 @@
 import { useRole } from "@/contexts/RoleContext";
 import { UserRole } from "@/data/mock";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, User, Building2, Users } from "lucide-react";
+import { Shield, User, Building2, Users, Headset, TestTube2 } from "lucide-react";
+import { canSwitchRoles } from "@/lib/role-mapping";
+import { getSession } from "@/lib/auth-session";
 
 const roleOptions: { value: UserRole; label: string; icon: React.ReactNode; color: string }[] = [
   { value: "super_admin", label: "Super Admin", icon: <Shield className="h-3.5 w-3.5" />, color: "text-primary" },
@@ -9,10 +11,16 @@ const roleOptions: { value: UserRole; label: string; icon: React.ReactNode; colo
   { value: "staff", label: "Staff", icon: <Users className="h-3.5 w-3.5" />, color: "text-muted-foreground" },
   { value: "agency_owner", label: "Agency Owner", icon: <Building2 className="h-3.5 w-3.5" />, color: "text-warning" },
   { value: "agency_staff", label: "Agency Staff", icon: <Building2 className="h-3.5 w-3.5" />, color: "text-accent-foreground" },
+  { value: "customer", label: "Customer", icon: <User className="h-3.5 w-3.5" />, color: "text-muted-foreground" },
+  { value: "qa", label: "QA Testing", icon: <TestTube2 className="h-3.5 w-3.5" />, color: "text-info" },
+  { value: "internal_support", label: "Internal Support", icon: <Headset className="h-3.5 w-3.5" />, color: "text-info" },
 ];
 
 export function RoleSwitcher() {
   const { currentRole, setCurrentRole, currentUser } = useRole();
+  if (!canSwitchRoles(getSession(), currentRole)) {
+    return <span className="text-xs text-muted-foreground hidden md:block">{currentUser.name}</span>;
+  }
 
   return (
     <div className="flex items-center gap-2">

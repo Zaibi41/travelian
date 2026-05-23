@@ -1,184 +1,85 @@
-import {
-  LayoutDashboard, Building2, Package, CalendarCheck, Wallet,
-  Users, FileText, Bell, Settings, Plane, Hotel, Map, FileCheck,
-  Tag, PenTool, Shield, Ticket, Globe, CreditCard, KeyRound, CloudCog,
-} from "lucide-react";
-import { NavLink } from "@/components/NavLink";
+import { Globe, Plane } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
-import { Button } from "@/components/ui/button";
+import { getNavigationForRole, roleLabel } from "@/lib/admin-navigation";
 import {
-  Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
-  SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
-  SidebarHeader, SidebarFooter, useSidebar,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
-
-interface NavItem {
-  title: string;
-  url: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
-
-const superAdminNav: NavItem[] = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Agencies", url: "/admin/agencies", icon: Building2 },
-  { title: "Umrah Packages", url: "/admin/packages", icon: Package },
-  { title: "Tour Packages", url: "/admin/tours", icon: Map },
-  { title: "Visa Packages", url: "/admin/visa", icon: FileCheck },
-  { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
-  { title: "Travel Tickets", url: "/admin/tickets", icon: Ticket },
-  { title: "Hotels", url: "/admin/hotels", icon: Hotel },
-  { title: "Flights", url: "/admin/flights", icon: Plane },
-  { title: "Wallet", url: "/admin/wallet", icon: Wallet },
-  { title: "Payments", url: "/admin/payments", icon: CreditCard },
-];
-
-const superAdminSystemNav: NavItem[] = [
-  { title: "Users", url: "/admin/users", icon: Users },
-  { title: "Access Control", url: "/admin/rbac", icon: Shield },
-  { title: "Provider Systems", url: "/admin/provider-systems", icon: CloudCog },
-  { title: "Secret Manager", url: "/admin/secrets", icon: KeyRound },
-  { title: "Coupons & Deals", url: "/admin/coupons", icon: Tag },
-  { title: "Blog", url: "/admin/blog", icon: PenTool },
-  { title: "Documents", url: "/admin/documents", icon: FileText },
-  { title: "Notifications", url: "/admin/notifications", icon: Bell },
-  { title: "Settings", url: "/admin/settings", icon: Settings },
-];
-
-const adminNav: NavItem[] = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Agencies", url: "/admin/agencies", icon: Building2 },
-  { title: "Umrah Packages", url: "/admin/packages", icon: Package },
-  { title: "Tour Packages", url: "/admin/tours", icon: Map },
-  { title: "Visa Packages", url: "/admin/visa", icon: FileCheck },
-  { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
-  { title: "Travel Tickets", url: "/admin/tickets", icon: Ticket },
-  { title: "Hotels", url: "/admin/hotels", icon: Hotel },
-  { title: "Flights", url: "/admin/flights", icon: Plane },
-  { title: "Wallet", url: "/admin/wallet", icon: Wallet },
-];
-
-const adminSystemNav: NavItem[] = [
-  { title: "Users", url: "/admin/users", icon: Users },
-  { title: "Coupons & Deals", url: "/admin/coupons", icon: Tag },
-  { title: "Blog", url: "/admin/blog", icon: PenTool },
-  { title: "Documents", url: "/admin/documents", icon: FileText },
-  { title: "Notifications", url: "/admin/notifications", icon: Bell },
-  { title: "Settings", url: "/admin/settings", icon: Settings },
-];
-
-const staffNav: NavItem[] = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
-  { title: "Travel Tickets", url: "/admin/tickets", icon: Ticket },
-  { title: "Documents", url: "/admin/documents", icon: FileText },
-  { title: "Notifications", url: "/admin/notifications", icon: Bell },
-];
-
-const agencyOwnerNav: NavItem[] = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Flight Search", url: "/admin/flight-search", icon: Plane },
-  { title: "Umrah Packages", url: "/admin/packages", icon: Package },
-  { title: "Tour Packages", url: "/admin/tours", icon: Map },
-  { title: "Visa Packages", url: "/admin/visa", icon: FileCheck },
-  { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
-  { title: "Travel Tickets", url: "/admin/tickets", icon: Ticket },
-  { title: "My Wallet", url: "/admin/wallet", icon: Wallet },
-];
-
-const agencyOwnerSystemNav: NavItem[] = [
-  { title: "My Staff", url: "/admin/users", icon: Users },
-  { title: "Documents", url: "/admin/documents", icon: FileText },
-  { title: "Notifications", url: "/admin/notifications", icon: Bell },
-  { title: "Settings", url: "/admin/settings", icon: Settings },
-];
-
-const agencyStaffNav: NavItem[] = [
-  { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Flight Search", url: "/admin/flight-search", icon: Plane },
-  { title: "Umrah Packages", url: "/admin/packages", icon: Package },
-  { title: "Tour Packages", url: "/admin/tours", icon: Map },
-  { title: "Visa Packages", url: "/admin/visa", icon: FileCheck },
-  { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck },
-  { title: "Travel Tickets", url: "/admin/tickets", icon: Ticket },
-  { title: "Documents", url: "/admin/documents", icon: FileText },
-  { title: "Notifications", url: "/admin/notifications", icon: Bell },
-];
-
-function getNavForRole(role: string): { main: NavItem[]; system: NavItem[] } {
-  switch (role) {
-    case 'super_admin': return { main: superAdminNav, system: superAdminSystemNav };
-    case 'admin': return { main: adminNav, system: adminSystemNav };
-    case 'staff': return { main: staffNav, system: [] };
-    case 'agency_owner': return { main: agencyOwnerNav, system: agencyOwnerSystemNav };
-    case 'agency_staff': return { main: agencyStaffNav, system: [] };
-    default: return { main: superAdminNav, system: superAdminSystemNav };
-  }
-}
 
 export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const { currentRole, currentUser } = useRole();
+  const sections = getNavigationForRole(currentRole);
+  const isAgency = currentRole === "agency_owner" || currentRole === "agency_staff";
+  const isCustomer = currentRole === "customer";
+
   const isActive = (path: string) =>
-    path === "/admin" ? location.pathname === "/admin" : location.pathname.startsWith(path);
-
-  const { main, system } = getNavForRole(currentRole);
-
-  const renderItems = (items: NavItem[]) => (
-    <SidebarMenu>
-      {items.map((item) => (
-        <SidebarMenuItem key={item.title}>
-          <SidebarMenuButton asChild isActive={isActive(item.url)}>
-            <NavLink to={item.url} end={item.url === "/admin"} activeClassName="bg-sidebar-accent text-sidebar-primary font-semibold">
-              <item.icon className="h-4 w-4 shrink-0" />
-              {!collapsed && <span>{item.title}</span>}
-            </NavLink>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      ))}
-    </SidebarMenu>
-  );
-
-  const isAgency = currentRole === 'agency_owner' || currentRole === 'agency_staff';
+    path === "/admin" ? location.pathname === "/admin" : location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border/70">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg gradient-primary">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl gradient-primary shadow-sm">
             <Plane className="h-4 w-4 text-primary-foreground" />
           </div>
           {!collapsed && (
-            <div>
-              <h1 className="text-sm font-bold font-display text-sidebar-accent-foreground">Travelian</h1>
+            <div className="min-w-0">
+              <h1 className="text-sm font-bold font-display text-sidebar-accent-foreground leading-tight">Travelian</h1>
               <p className="text-[10px] text-sidebar-muted">
-                {isAgency ? 'Agency Panel' : 'Admin Panel'}
+                {isCustomer ? "Customer Portal" : isAgency ? "Agency Portal" : "Enterprise Console"}
               </p>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>{isAgency ? 'Agency' : 'Main'}</SidebarGroupLabel>
-          <SidebarGroupContent>{renderItems(main)}</SidebarGroupContent>
-        </SidebarGroup>
-        {system.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>{isAgency ? 'Management' : 'System'}</SidebarGroupLabel>
-            <SidebarGroupContent>{renderItems(system)}</SidebarGroupContent>
+      <SidebarContent className="px-2 pb-2">
+        {sections.map((section) => (
+          <SidebarGroup key={section.category} className="py-1">
+            <SidebarGroupLabel className="h-7 px-2 text-[10px] font-bold uppercase tracking-[0.08em] text-sidebar-muted/90">
+              {section.category}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-1">
+                {section.items.map((item) => (
+                  <SidebarMenuItem key={`${section.category}-${item.url}-${item.title}`}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.url)}
+                      tooltip={collapsed ? item.title : undefined}
+                      className="h-9 rounded-xl px-2.5 text-[13px] font-medium data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-primary data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                    >
+                      <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-sidebar-primary font-semibold">
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
           </SidebarGroup>
-        )}
+        ))}
 
-        {/* Link to public site */}
-        <SidebarGroup>
+        <SidebarGroup className="mt-1 border-t border-sidebar-border/60 pt-3">
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild tooltip={collapsed ? "View Public Site" : undefined} className="h-9 rounded-xl px-2.5 text-[13px]">
                   <Link to="/" className="flex items-center gap-2 text-sidebar-muted hover:text-sidebar-accent-foreground">
                     <Globe className="h-4 w-4 shrink-0" />
                     {!collapsed && <span>View Public Site</span>}
@@ -190,13 +91,13 @@ export function AdminSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
+      <SidebarFooter className="p-3">
         {!collapsed && (
-          <div className="rounded-lg bg-sidebar-accent p-3">
-            <p className="text-xs text-sidebar-muted">Logged in as</p>
-            <p className="text-sm font-medium text-sidebar-accent-foreground">{currentUser.name}</p>
-            <p className="text-[10px] text-sidebar-muted">
-              {currentRole.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+          <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/80 p-3 shadow-sm">
+            <p className="text-[10px] uppercase tracking-[0.08em] text-sidebar-muted">Logged in as</p>
+            <p className="mt-1 truncate text-sm font-semibold text-sidebar-accent-foreground">{currentUser.name}</p>
+            <p className="mt-0.5 truncate text-[11px] text-sidebar-muted">
+              {roleLabel(currentRole)}
               {currentUser.agencyName && ` · ${currentUser.agencyName}`}
             </p>
           </div>

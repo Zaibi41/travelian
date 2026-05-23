@@ -8,10 +8,17 @@ import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { clearSession, getSession } from "@/lib/auth-session";
 import { cognitoLogoutUrl } from "@/lib/cognito-auth";
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
+import { useRole } from "@/contexts/RoleContext";
+import { canAccessAdminPath } from "@/lib/admin-navigation";
+import AccessDeniedPage from "@/pages/AccessDeniedPage";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const unreadCount = mockNotifications.filter(n => !n.read).length;
   const navigate = useNavigate();
+  const location = useLocation();
+  const { currentRole } = useRole();
+  const allowed = canAccessAdminPath(currentRole, location.pathname);
 
   const handleLogout = () => {
     const session = getSession();
@@ -54,7 +61,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               </Link>
             </div>
           </header>
-          <main className="flex-1 p-4 md:p-6 overflow-auto">{children}</main>
+          <main className="flex-1 overflow-auto bg-muted/20 p-4 md:p-6">
+            {allowed ? children : <AccessDeniedPage />}
+          </main>
         </div>
       </div>
     </SidebarProvider>
