@@ -4,6 +4,7 @@ export interface GroupTicket {
   categoryLabel?: string;
   categoryImage?: string;
   airlineName?: string;
+  airlineCode?: string;
   airlineLogo?: string;
   sector?: string;
   departureDate?: string;
@@ -26,7 +27,7 @@ function unwrapArray(payload: unknown): unknown[] {
   if (Array.isArray(payload)) return payload;
   if (payload && typeof payload === "object") {
     const record = payload as Record<string, unknown>;
-    for (const key of ["data", "groups", "available_groups", "result", "results"]) {
+    for (const key of ["groups", "data", "available_groups", "result", "results"]) {
       if (Array.isArray(record[key])) return record[key] as unknown[];
     }
   }
@@ -58,7 +59,10 @@ function titleize(input: string) {
 
 export function normalizeGroupTicket(input: unknown): GroupTicket {
   const record = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
-  const airline = value(record, ["airline_name", "airline", "airlineName", "carrier_name", "carrier"]);
+  const airlineRecord = record.airline && typeof record.airline === "object" ? record.airline as Record<string, unknown> : {};
+  const details = Array.isArray(record.details) ? record.details as Record<string, unknown>[] : [];
+  const firstDetail = details[0] || {};
+  const airline = value(record, ["airline_name", "airlineName", "carrier_name", "carrier"]) || value(airlineRecord, ["airline_name", "name", "short_name"]);
   const rawCategory = value(record, ["type_name", "type", "category", "group_type", "country", "destination", "sector"]);
   const categoryLabel = rawCategory ? titleize(String(rawCategory)) : "Available Group";
   return {
@@ -67,16 +71,17 @@ export function normalizeGroupTicket(input: unknown): GroupTicket {
     categoryLabel,
     categoryImage: value(record, ["category_image", "image", "banner", "thumbnail"]) as string | undefined,
     airlineName: airline ? String(airline) : undefined,
-    airlineLogo: value(record, ["airline_logo", "logo", "airlineLogo"]) as string | undefined,
+    airlineCode: value(airlineRecord, ["short_name", "iata", "code"]) as string | undefined,
+    airlineLogo: (value(record, ["airline_logo", "logo", "airlineLogo"]) || value(airlineRecord, ["logo_url", "logo", "logo_path"])) as string | undefined,
     sector: value(record, ["sector", "route", "routing"]) as string | undefined,
-    departureDate: value(record, ["dept_date", "departure_date", "departureDate"]) as string | undefined,
-    returnDate: value(record, ["return_date", "arrival_date", "returnDate"]) as string | undefined,
-    flightNumber: value(record, ["flight_no", "flight_number", "flightNumber"]) as string | undefined,
-    baggage: value(record, ["baggage", "bagage", "bags"]) as string | undefined,
-    seatsAvailable: value(record, ["seats", "available_seats", "seatsAvailable"]) as number | string | undefined,
+    departureDate: value(record, ["dept_date", "departure_date", "departureDate", "effective_dept_date"]) as string | undefined,
+    returnDate: value(record, ["return_date", "arrival_date", "returnDate", "arv_date"]) as string | undefined,
+    flightNumber: (value(record, ["flight_no", "flight_number", "flightNumber"]) || value(firstDetail, ["flight_no", "flight_number"])) as string | undefined,
+    baggage: (value(record, ["baggage", "bagage", "bags"]) || value(firstDetail, ["baggage", "bags"])) as string | undefined,
+    seatsAvailable: value(record, ["seats", "available_seats", "available_no_of_pax", "seatsAvailable"]) as number | string | undefined,
     fare: value(record, ["fare", "price", "amount", "selling_price"]) as number | string | undefined,
     currency: String(value(record, ["currency"]) || "PKR"),
-    status: value(record, ["status", "availability"]) as string | undefined,
+    status: (value(record, ["status", "availability"]) || (Number(value(record, ["available_no_of_pax"]) || 0) > 0 ? "available" : "sold out")) as string | undefined,
     terms: value(record, ["terms", "terms_conditions", "termsAndConditions"]) as string | undefined,
     cancellationRules: value(record, ["cancellation", "refund_policy", "cancellationRules"]) as string | undefined,
     supplierRemarks: value(record, ["remarks", "supplier_remarks", "supplierRemarks"]) as string | undefined,
@@ -133,7 +138,7 @@ export async function fetchGroupTicketCategories(signal?: AbortSignal): Promise<
 
 export async function fetchGroupTicketDetail(groupId: string, signal?: AbortSignal): Promise<GroupTicket> {
   const payload = await request(`/group-ticketing/groups/${encodeURIComponent(groupId)}`, signal);
-  const data = (payload && typeof payload === "object" && "result" in payload ? (payload as Record<string, unknown>).result : payload);
+  const data = (payload && typeof payload === "object" && "group" in payload ? (payload as Record<string, unknown>).group : payload && typeof payload === "object" && "result" in payload ? (payload as Record<string, unknown>).result : payload);
   return normalizeGroupTicket(data);
 }
 

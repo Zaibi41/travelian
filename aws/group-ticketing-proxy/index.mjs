@@ -1,8 +1,9 @@
-import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import { SecretsManagerClient, GetSecretValueCommand, PutSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 
 const secrets = new SecretsManagerClient({});
 const SECRET_ID = process.env.ALHAIDER_SECRET_ID || "travelian/providers/alhaider";
 const TOKEN_TTL_MS = Number(process.env.ALHAIDER_TOKEN_TTL_MS || 45 * 60 * 1000);
+const TOKEN_REFRESH_BUFFER_SECONDS = Number(process.env.ALHAIDER_TOKEN_REFRESH_BUFFER_SECONDS || 300);
 
 let cachedSecret;
 let cachedToken;
@@ -25,13 +26,29 @@ function json(statusCode, body) {
 async function getConfig() {
   if (cachedSecret) return cachedSecret;
   const result = await secrets.send(new GetSecretValueCommand({ SecretId: SECRET_ID }));
-  const parsed = JSON.parse(result.SecretString || "{}");
+  const parsed = parseSecret(result.SecretString || "{}");
   cachedSecret = {
     baseUrl: String(parsed.baseUrl || parsed.base_url || "").replace(/\/$/, ""),
     email: String(parsed.email || parsed.username || ""),
     password: String(parsed.password || ""),
+    token: String(parsed.token || parsed.access_token || ""),
+    tokenCreatedAt: Number(parsed.tokenCreatedAt || parsed.token_created_at || 0),
+    tokenExpiresAt: Number(parsed.expires_at || parsed.expiresAt || parsed.tokenExpiresAt || parsed.token_expires_at || 0),
   };
   return cachedSecret;
+}
+
+function parseSecret(secretString) {
+  try {
+    return JSON.parse(secretString);
+  } catch {
+    const parsed = {};
+    for (const key of ["baseUrl", "base_url", "email", "username", "password", "token", "access_token", "expires_at", "expiresAt", "tokenExpiresAt", "token_expires_at"]) {
+      const match = secretString.match(new RegExp(`${key}\\\\s*:\\\\s*['"]([^'"]+)['"]`, "i"));
+      if (match) parsed[key] = match[1];
+    }
+    return parsed;
+  }
 }
 
 function assertConfig(config) {
@@ -53,7 +70,14 @@ async function alhaiderFetch(path, init = {}) {
     },
   });
   const text = await response.text();
-  const payload = text ? JSON.parse(text) : null;
+  let payload = null;
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      throw new Error("Alhaider returned a non-JSON response");
+    }
+  }
   if (!response.ok) throw new Error(payload?.message || payload?.error || "Alhaider request failed");
   return payload;
 }
@@ -63,34 +87,76 @@ function extractToken(payload) {
   return payload.token || payload.access_token || payload.data?.token || payload.data?.access_token || payload.authorization?.token || "";
 }
 
+function extractTokenExpiresAt(payload) {
+  const value = payload?.expires_at || payload?.expiresAt || payload?.data?.expires_at || payload?.data?.expiresAt || payload?.authorization?.expires_at;
+  const asNumber = Number(value);
+  return Number.isFinite(asNumber) ? asNumber : 0;
+}
+
+function isProviderTokenUsable(token, expiresAt) {
+  if (!token || !expiresAt) return false;
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  return Number(expiresAt) - TOKEN_REFRESH_BUFFER_SECONDS > nowSeconds;
+}
+
 async function getToken() {
   if (cachedToken && Date.now() - cachedTokenAt < TOKEN_TTL_MS) return cachedToken;
   const config = await getConfig();
   assertConfig(config);
+  if (isProviderTokenUsable(config.token, config.tokenExpiresAt)) {
+    cachedToken = config.token;
+    cachedTokenAt = config.tokenCreatedAt || Date.now();
+    return cachedToken;
+  }
   const body = new FormData();
   body.append("email", config.email);
   body.append("password", config.password);
   const payload = await alhaiderFetch("/api/login", { method: "POST", body });
   const token = extractToken(payload);
   if (!token) throw new Error("Alhaider login did not return a token");
+  const tokenExpiresAt = extractTokenExpiresAt(payload);
   cachedToken = token;
   cachedTokenAt = Date.now();
+  await persistToken(config, token, cachedTokenAt, tokenExpiresAt);
   return token;
 }
 
+async function persistToken(config, token, tokenCreatedAt, tokenExpiresAt) {
+  cachedSecret = { ...config, token, tokenCreatedAt, tokenExpiresAt };
+  if (tokenExpiresAt) cachedSecret.expires_at = tokenExpiresAt;
+  await secrets.send(new PutSecretValueCommand({
+    SecretId: SECRET_ID,
+    SecretString: JSON.stringify(cachedSecret),
+  }));
+}
+
 async function authedAlhaiderFetch(path) {
+  const config = await getConfig();
   const token = await getToken();
-  return alhaiderFetch(path, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  try {
+    return await alhaiderFetch(path, { headers: { Authorization: `Bearer ${token}` } });
+  } catch (error) {
+    if (!(error instanceof Error) || !/unauthenticated|unauthorized|token/i.test(error.message)) throw error;
+    if (isProviderTokenUsable(config.token, config.tokenExpiresAt)) {
+      throw new Error("Stored Alhaider token was rejected by the provider. Revoke old sessions or update the token in Secrets Manager.");
+    }
+    cachedToken = "";
+    cachedTokenAt = 0;
+    if (cachedSecret) {
+      cachedSecret.token = "";
+      cachedSecret.tokenCreatedAt = 0;
+      cachedSecret.tokenExpiresAt = 0;
+      cachedSecret.expires_at = 0;
+    }
+    const freshToken = await getToken();
+    return alhaiderFetch(path, { headers: { Authorization: `Bearer ${freshToken}` } });
+  }
 }
 
 function unwrapArray(payload) {
   if (Array.isArray(payload)) return payload;
   if (payload && typeof payload === "object") {
-    for (const key of ["data", "groups", "available_groups", "result", "results"]) {
+    for (const key of ["groups", "data", "available_groups", "result", "results"]) {
       if (Array.isArray(payload[key])) return payload[key];
     }
   }
@@ -122,25 +188,28 @@ function titleize(input) {
 
 function normalizeGroup(input) {
   const record = input && typeof input === "object" ? input : {};
+  const airlineRecord = record.airline && typeof record.airline === "object" ? record.airline : {};
+  const firstDetail = Array.isArray(record.details) ? record.details[0] || {} : {};
   const rawCategory = value(record, ["type_name", "type", "category", "group_type", "country", "destination", "sector"]);
   const categoryLabel = titleize(rawCategory);
-  const airline = value(record, ["airline_name", "airline", "airlineName", "carrier_name", "carrier"]);
+  const airline = value(record, ["airline_name", "airlineName", "carrier_name", "carrier"]) || value(airlineRecord, ["airline_name", "name", "short_name"]);
   return {
     ...record,
     id: String(value(record, ["id", "group_id", "groupId", "booking_id"]) || ""),
     categorySlug: slugify(categoryLabel),
     categoryLabel,
     airlineName: airline ? String(airline) : undefined,
-    airlineLogo: value(record, ["airline_logo", "logo", "airlineLogo"]),
+    airlineCode: value(airlineRecord, ["short_name", "iata", "code"]),
+    airlineLogo: value(record, ["airline_logo", "logo", "airlineLogo"]) || value(airlineRecord, ["logo_url", "logo", "logo_path"]),
     sector: value(record, ["sector", "route", "routing"]),
-    departureDate: value(record, ["dept_date", "departure_date", "departureDate"]),
-    returnDate: value(record, ["return_date", "arrival_date", "returnDate"]),
-    flightNumber: value(record, ["flight_no", "flight_number", "flightNumber"]),
-    baggage: value(record, ["baggage", "bagage", "bags"]),
-    seatsAvailable: value(record, ["seats", "available_seats", "seatsAvailable"]),
+    departureDate: value(record, ["dept_date", "departure_date", "departureDate", "effective_dept_date"]),
+    returnDate: value(record, ["return_date", "arrival_date", "returnDate", "arv_date"]),
+    flightNumber: value(record, ["flight_no", "flight_number", "flightNumber"]) || value(firstDetail, ["flight_no", "flight_number"]),
+    baggage: value(record, ["baggage", "bagage", "bags"]) || value(firstDetail, ["baggage", "bags"]),
+    seatsAvailable: value(record, ["seats", "available_seats", "available_no_of_pax", "seatsAvailable"]),
     fare: value(record, ["fare", "price", "amount", "selling_price"]),
     currency: value(record, ["currency"]) || "PKR",
-    status: value(record, ["status", "availability"]),
+    status: value(record, ["status", "availability"]) || (Number(value(record, ["available_no_of_pax"]) || 0) > 0 ? "available" : "sold out"),
     terms: value(record, ["terms", "terms_conditions", "termsAndConditions"]),
     cancellationRules: value(record, ["cancellation", "refund_policy", "cancellationRules"]),
     supplierRemarks: value(record, ["remarks", "supplier_remarks", "supplierRemarks"]),
@@ -187,12 +256,19 @@ export async function handler(event) {
       return json(200, { results: filtered, providerStatus: { alhaider: "success" } });
     }
 
+    if (path.endsWith("/api/available/groups")) {
+      const groups = await fetchGroups();
+      return json(200, { groups, results: groups, providerStatus: { alhaider: "success" } });
+    }
+
     const detailMatch = path.match(/\/group-ticketing\/groups\/([^/]+)$/);
-    if (detailMatch) {
-      const groupId = decodeURIComponent(detailMatch[1]);
+    const legacyDetailMatch = path.match(/\/api\/group\/detail\/([^/]+)$/);
+    if (detailMatch || legacyDetailMatch) {
+      const groupId = decodeURIComponent((detailMatch || legacyDetailMatch)[1]);
       const payload = await authedAlhaiderFetch(`/api/group/detail/${encodeURIComponent(groupId)}`);
-      const data = payload?.data && typeof payload.data === "object" ? payload.data : payload;
-      return json(200, { result: normalizeGroup(data), providerStatus: { alhaider: "success" } });
+      const data = payload?.group && typeof payload.group === "object" ? payload.group : payload?.data && typeof payload.data === "object" ? payload.data : payload;
+      const group = normalizeGroup(data);
+      return json(200, { group, result: group, providerStatus: { alhaider: "success" } });
     }
 
     return json(404, { error: "Route not found" });
@@ -200,7 +276,7 @@ export async function handler(event) {
     console.error("group-ticketing-proxy-error", error);
     return json(502, {
       error: "Group ticketing provider is unavailable",
-      details: error instanceof Error ? error.message : "Unknown provider error",
+      details: error instanceof Error ? error.message : "Provider connection failed",
     });
   }
 }

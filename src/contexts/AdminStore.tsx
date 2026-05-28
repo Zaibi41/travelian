@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import {
   Booking, Flight, Hotel, Agency, WalletTransaction, Notification,
   TravelTicket, User, UmrahPackage, Coupon, BlogPost, BookingStatus,
@@ -140,6 +140,19 @@ const AdminContext = createContext<AdminState | undefined>(undefined);
 const initialSearchLogs: FlightSearchLog[] = [];
 const initialPaymentLinks: PaymentLink[] = [];
 const initialSecretKeys: SecretKey[] = [];
+const PACKAGE_STORAGE_KEY = "travelian:umrah-packages";
+
+function loadStoredPackages(): UmrahPackage[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(PACKAGE_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -150,7 +163,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [tickets, setTickets] = useState<TravelTicket[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [packages, setPackages] = useState<UmrahPackage[]>([]);
+  const [packages, setPackages] = useState<UmrahPackage[]>(loadStoredPackages);
   const [tourPackages] = useState<UmrahPackage[]>([]);
   const [visaPackages] = useState<UmrahPackage[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -162,6 +175,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     visaEnabled: true, mastercardEnabled: true, testMode: true,
   });
   const [secretKeys, setSecretKeys] = useState<SecretKey[]>(initialSecretKeys);
+
+  useEffect(() => {
+    window.localStorage.setItem(PACKAGE_STORAGE_KEY, JSON.stringify(packages));
+  }, [packages]);
 
   // Booking
   const updateBookingStatus = useCallback((id: string, status: BookingStatus) => {

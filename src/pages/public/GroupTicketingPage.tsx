@@ -60,6 +60,7 @@ function GroupCard({ group, category }: { group: GroupTicket; category: string }
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-foreground">{group.airlineName || "Available Group Ticket"}</h2>
+                {group.airlineCode && <Badge variant="outline">{group.airlineCode}</Badge>}
                 {group.flightNumber && <Badge variant="secondary">{group.flightNumber}</Badge>}
                 {group.status && <Badge className="bg-success/10 text-success hover:bg-success/10">{group.status}</Badge>}
               </div>

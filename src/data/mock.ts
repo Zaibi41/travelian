@@ -50,6 +50,40 @@ export interface UmrahPackage {
   includes: string[];
   category: 'umrah' | 'tour' | 'visa';
   image?: string;
+  packageType?: string;
+  makkahHotel?: string;
+  makkahHotelInfo?: string;
+  madinahHotel?: string;
+  madinahHotelInfo?: string;
+  roomSharing?: string;
+  departureCity?: string;
+  transportIncluded?: boolean;
+  visaIncluded?: boolean;
+  ticketIncluded?: boolean;
+  mealsIncluded?: boolean;
+  terms?: string;
+  seatsLabel?: string;
+  childPrice?: number;
+  infantPrice?: number;
+  flightDates?: {
+    outboundDate: string;
+    outboundRoute: string;
+    returnDate?: string;
+    returnRoute?: string;
+  }[];
+  hotelOptions?: {
+    label: string;
+    makkahHotel: string;
+    makkahInfo?: string;
+    madinahHotel: string;
+    madinahInfo?: string;
+    prices: {
+      sharing?: number;
+      quad?: number;
+      triple?: number;
+      double?: number;
+    };
+  }[];
 }
 
 export interface Booking {
