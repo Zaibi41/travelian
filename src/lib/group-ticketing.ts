@@ -1,7 +1,8 @@
-export type GroupTicketCategory = "umrah" | "uae" | "ksa" | "oman" | "bahrain" | "kuwait" | "all";
-
 export interface GroupTicket {
   id: string;
+  categorySlug?: string;
+  categoryLabel?: string;
+  categoryImage?: string;
   airlineName?: string;
   airlineLogo?: string;
   sector?: string;
@@ -19,6 +20,7 @@ export interface GroupTicket {
 }
 
 const API_BASE = import.meta.env.VITE_TRAVELIAN_API_BASE_URL || "";
+const ALL_GROUPS_SLUG = "all";
 
 function unwrapArray(payload: unknown): unknown[] {
   if (Array.isArray(payload)) return payload;
@@ -39,11 +41,31 @@ function value(record: Record<string, unknown>, keys: string[]) {
   return undefined;
 }
 
+function slugify(input: string) {
+  return input
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function titleize(input: string) {
+  return input
+    .replace(/[-_]+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 export function normalizeGroupTicket(input: unknown): GroupTicket {
   const record = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
   const airline = value(record, ["airline_name", "airline", "airlineName", "carrier_name", "carrier"]);
+  const rawCategory = value(record, ["type_name", "type", "category", "group_type", "country", "destination", "sector"]);
+  const categoryLabel = rawCategory ? titleize(String(rawCategory)) : "Available Group";
   return {
     id: String(value(record, ["id", "group_id", "groupId", "booking_id"]) || ""),
+    categorySlug: slugify(categoryLabel),
+    categoryLabel,
+    categoryImage: value(record, ["category_image", "image", "banner", "thumbnail"]) as string | undefined,
     airlineName: airline ? String(airline) : undefined,
     airlineLogo: value(record, ["airline_logo", "logo", "airlineLogo"]) as string | undefined,
     sector: value(record, ["sector", "route", "routing"]) as string | undefined,
@@ -70,7 +92,7 @@ async function request(path: string, signal?: AbortSignal) {
   return response.json();
 }
 
-export async function fetchGroupTickets(category: GroupTicketCategory, signal?: AbortSignal): Promise<GroupTicket[]> {
+export async function fetchGroupTickets(category = ALL_GROUPS_SLUG, signal?: AbortSignal): Promise<GroupTicket[]> {
   const query = new URLSearchParams({
     type: "null",
     airline_id: "null",
@@ -80,21 +102,36 @@ export async function fetchGroupTickets(category: GroupTicketCategory, signal?: 
   const payload = await request(`/api/available/groups?${query.toString()}`, signal);
   const groups = unwrapArray(payload).map(normalizeGroupTicket).filter((group) => group.id);
 
-  if (category === "all") return groups;
-  const keywordMap: Record<GroupTicketCategory, string[]> = {
-    umrah: ["umrah", "jeddah", "madinah", "med", "jed", "makkah"],
-    uae: ["uae", "dubai", "dxb", "sharjah", "auh"],
-    ksa: ["ksa", "saudi", "riyadh", "jeddah", "madinah", "ruh", "jed", "med"],
-    oman: ["oman", "muscat", "mct"],
-    bahrain: ["bahrain", "bah"],
-    kuwait: ["kuwait", "kwi"],
-    all: [],
-  };
-  const keywords = keywordMap[category];
-  return groups.filter((group) => {
-    const haystack = `${group.sector || ""} ${group.airlineName || ""}`.toLowerCase();
-    return keywords.some((keyword) => haystack.includes(keyword));
+  if (!category || category === ALL_GROUPS_SLUG) return groups;
+  return groups.filter((group) => group.categorySlug === category);
+}
+
+export interface GroupTicketCategory {
+  slug: string;
+  label: string;
+  count: number;
+  image?: string;
+}
+
+export function deriveGroupTicketCategories(groups: GroupTicket[]): GroupTicketCategory[] {
+  const bySlug = new Map<string, GroupTicketCategory>();
+  groups.forEach((group) => {
+    const slug = group.categorySlug || slugify(group.categoryLabel || "available-group");
+    const label = group.categoryLabel || titleize(slug);
+    const existing = bySlug.get(slug);
+    if (existing) {
+      existing.count += 1;
+      if (!existing.image && group.categoryImage) existing.image = group.categoryImage;
+      return;
+    }
+    bySlug.set(slug, { slug, label, count: 1, image: group.categoryImage });
   });
+  return Array.from(bySlug.values()).sort((a, b) => a.label.localeCompare(b.label));
+}
+
+export async function fetchGroupTicketCategories(signal?: AbortSignal): Promise<GroupTicketCategory[]> {
+  const groups = await fetchGroupTickets(ALL_GROUPS_SLUG, signal);
+  return deriveGroupTicketCategories(groups);
 }
 
 export async function fetchGroupTicketDetail(groupId: string, signal?: AbortSignal): Promise<GroupTicket> {

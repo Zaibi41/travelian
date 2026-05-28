@@ -6,13 +6,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/public/PageHeader";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
-import { GroupTicketingCategories, groupCategoryLabel } from "@/components/public/GroupTicketingCategories";
+import { GroupTicketingCategories } from "@/components/public/GroupTicketingCategories";
 import {
   fetchGroupTicketDetail,
   fetchGroupTickets,
   groupTicketWhatsAppMessage,
   type GroupTicket,
-  type GroupTicketCategory,
 } from "@/lib/group-ticketing";
 
 function whatsappHref(message: string) {
@@ -119,7 +118,7 @@ function GroupCard({ group, category }: { group: GroupTicket; category: string }
 
 export default function GroupTicketingPage() {
   const { category = "all" } = useParams();
-  const selectedCategory = (["umrah", "uae", "ksa", "oman", "bahrain", "kuwait", "all"].includes(category) ? category : "all") as GroupTicketCategory;
+  const selectedCategory = category;
   const [groups, setGroups] = useState<GroupTicket[]>([]);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
@@ -140,7 +139,9 @@ export default function GroupTicketingPage() {
 
   useEffect(load, [selectedCategory]);
 
-  const label = groupCategoryLabel(selectedCategory);
+  const label = selectedCategory === "all"
+    ? "All Available Group Tickets"
+    : groups[0]?.categoryLabel || selectedCategory.replace(/[-_]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
   return (
     <div>
