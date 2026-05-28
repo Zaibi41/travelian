@@ -165,7 +165,7 @@ export default function GroupTicketingPage() {
           <div className="rounded-2xl border bg-card p-8 text-center shadow-card">
             <Info className="mx-auto h-10 w-10 text-muted-foreground" />
             <h2 className="mt-4 text-lg font-bold">Group ticketing is temporarily unavailable</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Please try again or contact Travelian on WhatsApp for the latest availability.</p>
+            <p className="mt-2 text-sm text-muted-foreground">Travelian API Gateway is online, but the Alhaider supplier connection needs valid provider credentials in Secrets Manager before live groups can load.</p>
             <Button className="mt-5 rounded-xl" onClick={load}>Retry</Button>
           </div>
         )}

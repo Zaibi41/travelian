@@ -17,6 +17,12 @@ const airlineCodes: Record<string, string> = {
   travelport: "1G",
 };
 
+const localAirlineLogos: Record<string, string> = {
+  airsial: "/airline-logos/airsial.png",
+  "air sial": "/airline-logos/airsial.png",
+  flynas: "/airline-logos/flynas.png",
+};
+
 function resolveCode(airline: string, flightNumber?: string) {
   const flightPrefix = flightNumber?.match(/^[A-Z0-9]{2}/i)?.[0]?.toUpperCase();
   if (flightPrefix) return flightPrefix;
@@ -25,7 +31,22 @@ function resolveCode(airline: string, flightNumber?: string) {
 
 export function AirlineLogo({ airline, flightNumber }: { airline: string; flightNumber?: string }) {
   const [failed, setFailed] = useState(false);
+  const localLogo = localAirlineLogos[airline.toLowerCase()];
   const code = resolveCode(airline, flightNumber);
+
+  if (localLogo && !failed) {
+    return (
+      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-border">
+        <img
+          src={localLogo}
+          alt={`${airline} logo`}
+          className="h-full w-full object-contain p-2"
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      </div>
+    );
+  }
 
   if (!code || failed) {
     return (

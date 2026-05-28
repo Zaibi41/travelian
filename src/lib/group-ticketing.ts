@@ -19,7 +19,7 @@ export interface GroupTicket {
   supplierRemarks?: string;
 }
 
-const API_BASE = import.meta.env.VITE_TRAVELIAN_API_BASE_URL || "";
+const API_BASE = (import.meta.env.VITE_TRAVELIAN_API_BASE_URL || "https://api.travelian.pk").replace(/\/$/, "");
 const ALL_GROUPS_SLUG = "all";
 
 function unwrapArray(payload: unknown): unknown[] {
@@ -93,17 +93,11 @@ async function request(path: string, signal?: AbortSignal) {
 }
 
 export async function fetchGroupTickets(category = ALL_GROUPS_SLUG, signal?: AbortSignal): Promise<GroupTicket[]> {
-  const query = new URLSearchParams({
-    type: "null",
-    airline_id: "null",
-    sector: "",
-    dept_date: "null",
-  });
-  const payload = await request(`/api/available/groups?${query.toString()}`, signal);
+  const query = new URLSearchParams({ category });
+  const payload = await request(`/group-ticketing/groups?${query.toString()}`, signal);
   const groups = unwrapArray(payload).map(normalizeGroupTicket).filter((group) => group.id);
 
-  if (!category || category === ALL_GROUPS_SLUG) return groups;
-  return groups.filter((group) => group.categorySlug === category);
+  return groups;
 }
 
 export interface GroupTicketCategory {
@@ -130,13 +124,16 @@ export function deriveGroupTicketCategories(groups: GroupTicket[]): GroupTicketC
 }
 
 export async function fetchGroupTicketCategories(signal?: AbortSignal): Promise<GroupTicketCategory[]> {
+  const payload = await request("/group-ticketing/categories", signal);
+  const categories = unwrapArray(payload) as GroupTicketCategory[];
+  if (categories.length) return categories;
   const groups = await fetchGroupTickets(ALL_GROUPS_SLUG, signal);
   return deriveGroupTicketCategories(groups);
 }
 
 export async function fetchGroupTicketDetail(groupId: string, signal?: AbortSignal): Promise<GroupTicket> {
-  const payload = await request(`/api/group/detail/${encodeURIComponent(groupId)}`, signal);
-  const data = (payload && typeof payload === "object" && "data" in payload ? (payload as Record<string, unknown>).data : payload);
+  const payload = await request(`/group-ticketing/groups/${encodeURIComponent(groupId)}`, signal);
+  const data = (payload && typeof payload === "object" && "result" in payload ? (payload as Record<string, unknown>).result : payload);
   return normalizeGroupTicket(data);
 }
 
