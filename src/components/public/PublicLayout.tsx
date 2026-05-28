@@ -1,6 +1,7 @@
 import { PublicNavbar } from "./PublicNavbar";
 import { PublicFooter } from "./PublicFooter";
 import { WhatsAppIcon } from "./WhatsAppIcon";
+import { MoveToTopButton } from "@/components/MoveToTopButton";
 
 export function PublicLayout({ children, showFooter = true }: { children: React.ReactNode; showFooter?: boolean }) {
   return (
@@ -8,6 +9,8 @@ export function PublicLayout({ children, showFooter = true }: { children: React.
       <PublicNavbar />
       <main className={showFooter ? "flex-1" : "flex-1 min-h-0 overflow-hidden"}>{children}</main>
       {showFooter && (
+        <>
+        <MoveToTopButton />
         <a
           href="https://wa.me/923244440014?text=Hi%2C%20I%20need%20help%20with%20a%20Travelian%20booking."
           target="_blank"
@@ -17,6 +20,7 @@ export function PublicLayout({ children, showFooter = true }: { children: React.
         >
           <WhatsAppIcon className="h-7 w-7" />
         </a>
+        </>
       )}
       {showFooter && <PublicFooter />}
     </div>

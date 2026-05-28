@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Hotel, Plane, UsersRound, Car, Package, Search, MapPin, Users, ChevronDown, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
+import { Hotel, Plane, UsersRound, Car, Package, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -10,12 +10,13 @@ import { cn } from "@/lib/utils";
 import { TravelersClassPicker, type TravelersValue } from "@/components/public/TravelersClassPicker";
 import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { useLocale } from "@/contexts/LocaleContext";
+import { GroupTicketingCategories } from "@/components/public/GroupTicketingCategories";
 
 const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
   { id: "hotels", label: "Hotels", icon: Hotel },
   { id: "packages", label: "Packages", icon: Package },
-  { id: "groupbooking", label: "Group Booking", icon: UsersRound },
+  { id: "groupbooking", label: "Group Ticketing", icon: UsersRound },
   { id: "transfers", label: "Transfers", icon: Car },
 ];
 
@@ -85,9 +86,6 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
   const [hotelLocation, setHotelLocation] = useState("");
   const [hotelGuests, setHotelGuests] = useState("2");
   const [pkgDate, setPkgDate] = useState<Date>();
-  const [groupFrom, setGroupFrom] = useState("");
-  const [groupTo, setGroupTo] = useState("");
-  const [groupDate, setGroupDate] = useState<Date>();
   const [transDate, setTransDate] = useState<Date>();
   const [transferPickup, setTransferPickup] = useState("");
   const [transferDropoff, setTransferDropoff] = useState("");
@@ -152,13 +150,7 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
     }
     else if (activeTab === "packages") navigate("/umrah-packages");
     else if (activeTab === "groupbooking") {
-      const params = new URLSearchParams({
-        type: "group",
-        from: groupFrom,
-        to: groupTo,
-        date: groupDate ? groupDate.toISOString().slice(0, 10) : "",
-      });
-      navigate(`/contact?${params.toString()}`);
+      navigate("/group-ticketing");
     }
     else if (activeTab === "transfers") {
       const params = new URLSearchParams({
@@ -394,13 +386,17 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
         )}
 
         {activeTab === "groupbooking" && (
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-center">
-            <AirportCombobox value={groupFrom} onChange={setGroupFrom} placeholder="From" />
-            <AirportCombobox value={groupTo} onChange={setGroupTo} placeholder="To" />
-            <DatePickerField date={groupDate} onSelect={setGroupDate} placeholder="Travel date" />
-            <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
-              <Search className="h-4 w-4 mr-2" /> Inquire
-            </Button>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-foreground">Group Ticketing</h3>
+                <p className="text-sm text-muted-foreground">Choose a live group ticket category.</p>
+              </div>
+              <Button onClick={handleSearch} variant="outline" className="hidden sm:inline-flex rounded-xl">
+                View All
+              </Button>
+            </div>
+            <GroupTicketingCategories compact />
           </div>
         )}
 

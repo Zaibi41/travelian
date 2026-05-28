@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plane, UserPlus, Loader2, Mail, Lock, User, KeyRound, Phone, Briefcase, CheckSquare } from "lucide-react";
+import { Plane, UserPlus, Loader2, Mail, User, KeyRound, Phone, Briefcase, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
 import { confirmSignUp, signUpWithPassword } from "@/lib/cognito-auth";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
@@ -140,17 +141,11 @@ export default function RegisterPage() {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                    <Input id="password" name="password" type="password" autoComplete="new-password" placeholder="At least 8 characters" className="h-11 pl-9" />
-                  </div>
+                  <PasswordInput id="password" name="password" autoComplete="new-password" placeholder="At least 8 characters" />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="confirmPassword">Confirm password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                    <Input id="confirmPassword" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Repeat password" className="h-11 pl-9" />
-                  </div>
+                  <PasswordInput id="confirmPassword" name="confirmPassword" autoComplete="new-password" placeholder="Repeat password" />
                 </div>
                 <label className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-border/70 bg-muted/30 p-3 text-xs text-muted-foreground">
                   <input name="terms" type="checkbox" className="mt-0.5 h-4 w-4 rounded border-border" />

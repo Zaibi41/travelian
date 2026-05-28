@@ -40,6 +40,8 @@ export function PublicNavbar() {
   const [session, setSessionState] = useState<AuthSession | null>(() => getSession());
   const sessionRole = roleForSession(session);
   const showAdminPortal = isAdminPortalRole(sessionRole);
+  const isSuperAdmin = ["super_admin", "admin", "qa", "internal_support"].includes(sessionRole);
+  const isAgency = sessionRole === "agency_owner" || sessionRole === "agency_staff";
 
   useEffect(() => useSessionEvent(() => setSessionState(getSession())), []);
 
@@ -150,13 +152,17 @@ export function PublicNavbar() {
                 <DropdownMenuContent align="end" className="z-[60] bg-popover">
                   <DropdownMenuLabel className="text-xs truncate max-w-[200px]">{session.email}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {showAdminPortal && (
-                    <DropdownMenuItem onClick={() => navigate("/admin")}>
-                      {sessionRole.includes("agency") ? "Agency Dashboard" : "Super Admin Dashboard"}
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem onClick={() => navigate("/account")}>My Account</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/my-bookings")}>My Bookings</DropdownMenuItem>
+                  {isSuperAdmin && <DropdownMenuItem onClick={() => navigate("/admin")}>Super Admin Dashboard</DropdownMenuItem>}
+                  {isSuperAdmin && <DropdownMenuItem onClick={() => navigate("/admin/settings")}>Account Settings</DropdownMenuItem>}
+                  {isSuperAdmin && <DropdownMenuItem onClick={() => navigate("/")}>View Public Site</DropdownMenuItem>}
+                  {isAgency && <DropdownMenuItem onClick={() => navigate("/admin")}>Agency Dashboard</DropdownMenuItem>}
+                  {isAgency && <DropdownMenuItem onClick={() => navigate("/admin/bookings")}>My Bookings</DropdownMenuItem>}
+                  {isAgency && <DropdownMenuItem onClick={() => navigate("/admin/wallet")}>Wallet</DropdownMenuItem>}
+                  {isAgency && <DropdownMenuItem onClick={() => navigate("/admin")}>Reports</DropdownMenuItem>}
+                  {!showAdminPortal && <DropdownMenuItem onClick={() => navigate("/admin/customer")}>My Account</DropdownMenuItem>}
+                  {!showAdminPortal && <DropdownMenuItem onClick={() => navigate("/admin/customer/bookings")}>My Bookings</DropdownMenuItem>}
+                  {!showAdminPortal && <DropdownMenuItem onClick={() => navigate("/admin/customer/wallet")}>Wallet</DropdownMenuItem>}
+                  {!showAdminPortal && <DropdownMenuItem onClick={() => navigate("/admin/customer/support")}>Support</DropdownMenuItem>}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                     <LogOut className="h-4 w-4 mr-2" /> Sign out

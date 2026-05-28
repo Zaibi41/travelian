@@ -1,8 +1,5 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import {
-  mockBookings, mockFlights, mockHotels, mockAgencies, mockTransactions,
-  mockNotifications, mockTickets, mockUsers, mockPackages, mockTourPackages,
-  mockVisaPackages, mockCoupons, mockBlogPosts,
   Booking, Flight, Hotel, Agency, WalletTransaction, Notification,
   TravelTicket, User, UmrahPackage, Coupon, BlogPost, BookingStatus,
 } from "@/data/mock";
@@ -140,41 +137,24 @@ interface AdminState {
 
 const AdminContext = createContext<AdminState | undefined>(undefined);
 
-const initialSearchLogs: FlightSearchLog[] = [
-  { id: 'fs1', route: 'LHE → JED', date: '2025-04-15', resultsCount: 3, userName: 'Ali Raza', timestamp: '2025-03-28 10:30', status: 'found' },
-  { id: 'fs2', route: 'ISB → MED', date: '2025-04-16', resultsCount: 2, userName: 'Aisha Begum', timestamp: '2025-03-28 11:00', status: 'found' },
-  { id: 'fs3', route: 'KHI → RUH', date: '2025-05-01', resultsCount: 0, userName: 'Usman Sheikh', timestamp: '2025-03-28 12:15', status: 'not_found' },
-  { id: 'fs4', route: 'LHE → CAI', date: '2025-06-10', resultsCount: 0, userName: 'Rabia Anwar', timestamp: '2025-03-27 09:45', status: 'not_found' },
-  { id: 'fs5', route: 'KHI → DXB', date: '2025-04-18', resultsCount: 5, userName: 'Khadija Noor', timestamp: '2025-03-27 14:20', status: 'found' },
-];
-
-const initialPaymentLinks: PaymentLink[] = [
-  { id: 'pl1', bookingId: 'b3', customerName: 'Usman Sheikh', customerEmail: 'usman@yahoo.com', amount: 1200, status: 'pending', createdAt: '2025-03-28', expiresAt: '2025-04-04', link: 'https://pay.travelian.com/pl1' },
-  { id: 'pl2', bookingId: 'b1', customerName: 'Ali Raza', customerEmail: 'ali@gmail.com', amount: 2200, status: 'paid', createdAt: '2025-03-01', expiresAt: '2025-03-08', paymentMethod: 'visa', link: 'https://pay.travelian.com/pl2' },
-];
-
-const initialSecretKeys: SecretKey[] = [
-  { id: 'sk1', name: 'AMADEUS_API_KEY', category: 'flight_api', value: '••••••••••••amad', environment: 'production', lastUpdated: '2025-03-15', createdBy: 'Ahmed Khan' },
-  { id: 'sk2', name: 'STRIPE_SECRET_KEY', category: 'payment', value: '••••••••••••sk_live', environment: 'production', lastUpdated: '2025-03-10', createdBy: 'Ahmed Khan' },
-  { id: 'sk3', name: 'STRIPE_TEST_KEY', category: 'payment', value: '••••••••••••sk_test', environment: 'staging', lastUpdated: '2025-03-10', createdBy: 'Ahmed Khan' },
-  { id: 'sk4', name: 'BOOKING_COM_API', category: 'hotel_api', value: '••••••••••••bcom', environment: 'production', lastUpdated: '2025-02-20', createdBy: 'Ahmed Khan' },
-  { id: 'sk5', name: 'TWILIO_SID', category: 'sms', value: '••••••••••••twil', environment: 'production', lastUpdated: '2025-01-15', createdBy: 'Ahmed Khan' },
-];
+const initialSearchLogs: FlightSearchLog[] = [];
+const initialPaymentLinks: PaymentLink[] = [];
+const initialSecretKeys: SecretKey[] = [];
 
 export function AdminProvider({ children }: { children: ReactNode }) {
-  const [bookings, setBookings] = useState<Booking[]>(mockBookings);
-  const [flights, setFlights] = useState<Flight[]>(mockFlights);
-  const [hotels, setHotels] = useState<Hotel[]>(mockHotels);
-  const [agencies, setAgencies] = useState<Agency[]>(mockAgencies);
-  const [transactions, setTransactions] = useState<WalletTransaction[]>(mockTransactions);
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
-  const [tickets, setTickets] = useState<TravelTicket[]>(mockTickets);
-  const [users, setUsers] = useState<User[]>(mockUsers);
-  const [packages, setPackages] = useState<UmrahPackage[]>(mockPackages);
-  const [tourPackages] = useState<UmrahPackage[]>(mockTourPackages);
-  const [visaPackages] = useState<UmrahPackage[]>(mockVisaPackages);
-  const [coupons, setCoupons] = useState<Coupon[]>(mockCoupons);
-  const [blogPosts] = useState<BlogPost[]>(mockBlogPosts);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [flights, setFlights] = useState<Flight[]>([]);
+  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [agencies, setAgencies] = useState<Agency[]>([]);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [tickets, setTickets] = useState<TravelTicket[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [packages, setPackages] = useState<UmrahPackage[]>([]);
+  const [tourPackages] = useState<UmrahPackage[]>([]);
+  const [visaPackages] = useState<UmrahPackage[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [blogPosts] = useState<BlogPost[]>([]);
   const [flightSearchLogs, setFlightSearchLogs] = useState<FlightSearchLog[]>(initialSearchLogs);
   const [paymentLinks, setPaymentLinks] = useState<PaymentLink[]>(initialPaymentLinks);
   const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({

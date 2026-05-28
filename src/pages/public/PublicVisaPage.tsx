@@ -1,55 +1,36 @@
-﻿import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, Clock, FileCheck, GraduationCap, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { FileCheck, Clock, CheckCircle2, GraduationCap, Plane } from "lucide-react";
-import { Link } from "react-router-dom";
-import { mockVisaPackages } from "@/data/mock";
+import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/public/PageHeader";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 
 const categories = [
   { name: "Visit Visa", icon: Plane },
   { name: "Study Visa", icon: GraduationCap },
-  { name: "Work Visa", icon: FileCheck },
+  { name: "Business Visa", icon: FileCheck },
   { name: "Umrah Visa", icon: FileCheck },
 ];
 
-const countries = [
-  { name: "UAE", flag: "ðŸ‡¦ðŸ‡ª", time: "5-7 days", price: 120 },
-  { name: "Turkey", flag: "ðŸ‡¹ðŸ‡·", time: "10-15 days", price: 90 },
-  { name: "United Kingdom", flag: "ðŸ‡¬ðŸ‡§", time: "15-21 days", price: 250 },
-  { name: "Schengen (EU)", flag: "ðŸ‡ªðŸ‡º", time: "15-20 days", price: 180 },
-  { name: "USA", flag: "ðŸ‡ºðŸ‡¸", time: "30-60 days", price: 320 },
-  { name: "Canada", flag: "ðŸ‡¨ðŸ‡¦", time: "20-30 days", price: 280 },
-];
-
 const requirements = [
-  "Valid passport (6+ months)",
+  "Valid passport with 6+ months validity",
   "Recent passport-size photographs",
-  "Bank statements (last 6 months)",
-  "Travel itinerary & hotel bookings",
-  "Cover letter & invitation (if applicable)",
-];
-
-const faqs = [
-  { q: "How long does visa processing take?", a: "It varies by country, typically 5 to 30 business days. Each country card shows its expected processing time." },
-  { q: "Is the visa fee refundable?", a: "Government visa fees are non-refundable. Service fees are refundable only if we have not begun processing." },
-  { q: "Do you guarantee approval?", a: "No, visa decisions are made by embassies. We have a 98% success rate and ensure your application is complete and accurate." },
+  "Bank statements when required",
+  "Travel itinerary and hotel bookings when required",
+  "Cover letter or invitation if applicable",
 ];
 
 export default function PublicVisaPage() {
-  const visas = mockVisaPackages.filter(v => v.status === 'active');
+  const visas: never[] = [];
 
   return (
     <div>
-      <PageHeader title="Visa Services" tagline="Hassle-free visa processing for visit, study and Umrah" />
+      <PageHeader title="Visa Services" tagline="Database-managed visa packages with transparent processing details" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
-        {/* Categories */}
         <section>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {categories.map(c => (
-              <Card key={c.name} className="text-center border-0 shadow-card hover:shadow-elevated transition-all cursor-pointer">
+              <Card key={c.name} className="text-center border-0 shadow-card">
                 <CardContent className="p-5">
                   <div className="h-11 w-11 rounded-xl bg-gold-light flex items-center justify-center mx-auto mb-3"><c.icon className="h-5 w-5 text-gold" /></div>
                   <p className="font-semibold text-foreground text-sm">{c.name}</p>
@@ -59,58 +40,25 @@ export default function PublicVisaPage() {
           </div>
         </section>
 
-        {/* Country cards */}
-        <section>
-          <h2 className="text-lg font-bold text-foreground mb-4">Popular Countries</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {countries.map(c => (
-              <Card key={c.name} className="border-0 shadow-card">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl">{c.flag}</p>
-                      <h3 className="font-semibold text-foreground mt-1">{c.name}</h3>
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><Clock className="h-3 w-3" /> {c.time}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs text-muted-foreground">Service fee</span>
-                      <p className="text-xl font-bold text-primary">PKR {c.price}</p>
-                    </div>
-                  </div>
-                  <Link to={`/contact?type=visa&country=${c.name}`}>
-                    <Button size="sm" className="w-full mt-3 gradient-primary text-primary-foreground">Apply Now</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
+        {visas.length === 0 && (
+          <div className="rounded-2xl border bg-card p-8 text-center shadow-card">
+            <FileCheck className="mx-auto h-12 w-12 text-muted-foreground" />
+            <h2 className="mt-4 text-xl font-bold text-foreground">No visa packages are published right now</h2>
+            <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
+              Travelian only shows active visa packages from the database. Contact our visa team for country, visa type, processing time, required documents and final pricing.
+            </p>
+            <a
+              href="https://wa.me/923244440014?text=Hello%20Travelian%2C%20please%20share%20visa%20service%20details."
+              target="_blank"
+              rel="noreferrer"
+            >
+              <Button className="mt-5 rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
+                <WhatsAppIcon className="mr-2 h-4 w-4" /> Ask Visa Team
+              </Button>
+            </a>
           </div>
-        </section>
-
-        {/* Existing mock visa packages */}
-        {visas.length > 0 && (
-          <section>
-            <h2 className="text-lg font-bold text-foreground mb-4">Featured Visa Packages</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {visas.map(visa => (
-                <Card key={visa.packageId} className="overflow-hidden border-0 shadow-card text-center">
-                  <div className="h-32 bg-gradient-to-br from-success/10 to-accent flex items-center justify-center">
-                    <FileCheck className="h-12 w-12 text-success/30" />
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-foreground text-sm">{visa.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">{visa.duration}</p>
-                    <p className="text-xl font-bold text-primary mt-2">PKR {visa.basePrice}</p>
-                    <Link to={`/visa/${visa.packageId}`}>
-                      <Button size="sm" className="w-full mt-3 gradient-primary text-primary-foreground">View details</Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </section>
         )}
 
-        {/* Requirements */}
         <section>
           <h2 className="text-lg font-bold text-foreground mb-4">General Requirements</h2>
           <div className="bg-muted/40 rounded-2xl p-6">
@@ -122,21 +70,16 @@ export default function PublicVisaPage() {
           </div>
         </section>
 
-        {/* FAQ */}
-        <section className="max-w-3xl mx-auto">
-          <h2 className="text-lg font-bold text-foreground mb-4 text-center">FAQs</h2>
-          <Accordion type="single" collapsible>
-            {faqs.map((f, i) => (
-              <AccordionItem key={i} value={`f-${i}`}>
-                <AccordionTrigger className="text-left">{f.q}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground">{f.a}</AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+        <section className="rounded-2xl border bg-card p-6 shadow-card">
+          <div className="flex items-start gap-3">
+            <Clock className="mt-1 h-5 w-5 text-primary" />
+            <div>
+              <h2 className="font-bold text-foreground">Processing times vary by country</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Travelian confirms embassy fee, service fee, validity, stay duration and terms before collecting payment.</p>
+            </div>
+          </div>
         </section>
       </div>
     </div>
   );
 }
-
-

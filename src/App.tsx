@@ -40,6 +40,7 @@ import TourDetailPage from "./pages/public/TourDetailPage";
 import VisaDetailPage from "./pages/public/VisaDetailPage";
 import BlogDetailPage from "./pages/public/BlogDetailPage";
 import DestinationPage from "./pages/public/DestinationPage";
+import GroupTicketingPage from "./pages/public/GroupTicketingPage";
 
 // Admin pages
 import DashboardPage from "./pages/DashboardPage";
@@ -99,6 +100,8 @@ const App = () => (
             <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
             <Route path="/deals" element={<PublicLayout><DealsPage /></PublicLayout>} />
             <Route path="/destination/:slug" element={<PublicLayout><DestinationPage /></PublicLayout>} />
+            <Route path="/group-ticketing" element={<PublicLayout><GroupTicketingPage /></PublicLayout>} />
+            <Route path="/group-ticketing/:category" element={<PublicLayout><GroupTicketingPage /></PublicLayout>} />
             <Route path="/booking" element={<PublicLayout><BookingPage /></PublicLayout>} />
             <Route path="/account" element={<PublicLayout><AccountPage /></PublicLayout>} />
             <Route path="/my-bookings" element={<PublicLayout><MyBookingsPage /></PublicLayout>} />
@@ -135,7 +138,7 @@ const App = () => (
             <Route path="/admin/notifications" element={<AdminLayout><NotificationsPage /></AdminLayout>} />
             <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
             <Route path="/admin/customer" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />
-            <Route path="/admin/customer/bookings" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />
+            <Route path="/admin/customer/*" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             </AdminProvider>

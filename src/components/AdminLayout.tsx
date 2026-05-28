@@ -11,6 +11,7 @@ import { useLocation } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
 import { canAccessAdminPath } from "@/lib/admin-navigation";
 import AccessDeniedPage from "@/pages/AccessDeniedPage";
+import { MoveToTopButton } from "@/components/MoveToTopButton";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const unreadCount = 0;
@@ -63,6 +64,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           <main className="flex-1 bg-muted/20 p-4 md:p-6">
             {allowed ? children : <AccessDeniedPage />}
           </main>
+          <MoveToTopButton className="bottom-6" />
         </div>
       </div>
     </SidebarProvider>

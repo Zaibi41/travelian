@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plane, Loader2, Mail, Lock } from "lucide-react";
+import { Plane, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { signInWithPassword } from "@/lib/cognito-auth";
 import { roleForSession } from "@/lib/role-mapping";
 import { useRole } from "@/contexts/RoleContext";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function SignInPage() {
   const navigate = useNavigate();
@@ -64,10 +65,7 @@ export default function SignInPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                <Input id="password" name="password" type="password" autoComplete="current-password" placeholder="Password" className="h-11 pl-9" />
-              </div>
+              <PasswordInput id="password" name="password" autoComplete="current-password" placeholder="Password" />
             </div>
             <div className="flex justify-end">
               <button

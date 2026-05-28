@@ -64,14 +64,14 @@ export function AdminSidebar() {
           <SidebarMenu className="gap-1">
             {allItems.map((item) => (
               <SidebarMenuItem key={`collapsed-${item.url}-${item.title}`}>
-                <SidebarMenuButton
+              <SidebarMenuButton
                   asChild
                   isActive={isActive(item.url)}
                   tooltip={item.title}
-                  className="mx-auto h-8 w-8 rounded-xl p-0 data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-primary data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                  className="mx-auto h-9 w-9 rounded-xl p-0 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                 >
-                  <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-sidebar-primary">
-                    <item.icon className="h-4 w-4 shrink-0" />
+                  <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground">
+                    <item.icon className="h-[18px] w-[18px] shrink-0" />
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -105,10 +105,10 @@ export function AdminSidebar() {
                           <SidebarMenuButton
                             asChild
                             isActive={isActive(item.url)}
-                            className="h-8 rounded-xl px-2.5 text-[12.5px] font-medium data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-primary data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                            className="h-9 rounded-xl px-2.5 text-[13px] font-semibold data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                           >
-                            <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-sidebar-primary font-semibold">
-                              <item.icon className="h-4 w-4 shrink-0" />
+                            <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground font-semibold">
+                              <item.icon className="h-[18px] w-[18px] shrink-0" />
                               <span>{item.title}</span>
                             </NavLink>
                           </SidebarMenuButton>

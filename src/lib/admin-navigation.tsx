@@ -8,6 +8,8 @@ import {
   CreditCard,
   FileCheck,
   FileText,
+  Gift,
+  Heart,
   Hotel,
   KeyRound,
   LayoutDashboard,
@@ -62,6 +64,7 @@ export const adminNavigation: AdminNavSection[] = [
       { title: "Dashboard", url: "/admin", icon: LayoutDashboard, roles: allAdminRoles },
       { title: "Customer Portal", url: "/admin/customer", icon: UserCircle, roles: ["customer"] },
       { title: "My Bookings", url: "/admin/customer/bookings", icon: CalendarCheck, roles: ["customer"] },
+      { title: "Profile", url: "/admin/customer/profile", icon: UserCircle, roles: ["customer"] },
     ],
   },
   {
@@ -77,18 +80,24 @@ export const adminNavigation: AdminNavSection[] = [
     items: [
       { title: "Flight Search", url: "/admin/flight-search", icon: Search, roles: agencyBookingRoles },
       { title: "Flight Results", url: "/admin/flights-search", icon: Plane, roles: agencyBookingRoles },
+      { title: "Search Flights", url: "/admin/customer/flights", icon: Plane, roles: ["customer"] },
+      { title: "Search Hotels", url: "/admin/customer/hotels", icon: Hotel, roles: ["customer"] },
       { title: "Flight Pricing & Rules", url: "/admin/flights", icon: Plane, roles: businessAdminRoles },
       { title: "Hotels Inventory", url: "/admin/hotels", icon: Hotel, roles: businessAdminRoles },
       { title: "Umrah Packages", url: "/admin/packages", icon: Package, roles: [...businessAdminRoles, ...agencyBusinessRoles] },
       { title: "Tour Packages", url: "/admin/tours", icon: Map, roles: [...businessAdminRoles, ...agencyBusinessRoles] },
       { title: "Visa Packages", url: "/admin/visa", icon: FileCheck, roles: [...businessAdminRoles, ...agencyBusinessRoles] },
+      { title: "Umrah Packages", url: "/admin/customer/umrah", icon: Package, roles: ["customer"] },
+      { title: "Visa Services", url: "/admin/customer/visa", icon: FileCheck, roles: ["customer"] },
     ],
   },
   {
     category: "Financial",
     items: [
       { title: "Wallet", url: "/admin/wallet", icon: Wallet, roles: [...businessAdminRoles, ...agencyBusinessRoles] },
+      { title: "Wallet", url: "/admin/customer/wallet", icon: Wallet, roles: ["customer"] },
       { title: "Payments", url: "/admin/payments", icon: CreditCard, roles: businessAdminRoles },
+      { title: "Payments", url: "/admin/customer/payments", icon: CreditCard, roles: ["customer"] },
     ],
   },
   {
@@ -96,6 +105,9 @@ export const adminNavigation: AdminNavSection[] = [
     items: [
       { title: "Documents", url: "/admin/documents", icon: FileText, roles: bookingOpsRoles },
       { title: "Notifications", url: "/admin/notifications", icon: Bell, roles: bookingOpsRoles },
+      { title: "Wishlist", url: "/admin/customer/wishlist", icon: Heart, roles: ["customer"] },
+      { title: "Rewards", url: "/admin/customer/rewards", icon: Gift, roles: ["customer"] },
+      { title: "Support", url: "/admin/customer/support", icon: Bell, roles: ["customer"] },
       { title: "Content Blog", url: "/admin/blog", icon: PenTool, roles: businessAdminRoles },
     ],
   },

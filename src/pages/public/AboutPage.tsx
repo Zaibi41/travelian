@@ -13,7 +13,7 @@ const services = [
   { icon: FileCheck, title: "Visit Visas", desc: "Hassle-free visit visa processing for 50+ countries.", to: "/visa-services" },
   { icon: GraduationCap, title: "Study Visas", desc: "Expert guidance for your study abroad journey.", to: "/visa-services" },
   { icon: Map, title: "Tours", desc: "Curated tours to top destinations around the world.", to: "/tour-packages" },
-  { icon: UsersRound, title: "Group Booking", desc: "Special rates for groups of 10 or more.", to: "/contact?type=group" },
+  { icon: UsersRound, title: "Group Ticketing", desc: "Live group ticket availability for Umrah and regional sectors.", to: "/group-ticketing" },
 ];
 
 const why = [

@@ -8,7 +8,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil } from "lucide-react";
-import type { Flight } from "@/data/mock";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -18,6 +17,8 @@ import { searchFlights, type TravelianFlight } from "@/lib/travelian-api";
 import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { FlightSearchLoader } from "@/components/public/FlightSearchLoader";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
+import { AirlineLogo } from "@/components/public/AirlineLogo";
+import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 
 export default function PublicFlightsPage({ bookingPath = "/booking", adminMode = false }: { bookingPath?: string; adminMode?: boolean } = {}) {
   const { currency: selectedCurrency, setCurrency } = useLocale();
@@ -149,6 +150,24 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
   const formatFare = (price: number, currency = "PKR") => {
     return `${currency || "PKR"} ${Math.round(price).toLocaleString()}`;
+  };
+
+  const flightWhatsAppHref = (flight: TravelianFlight) => {
+    const message = [
+      "Hello Travelian,",
+      "",
+      "I need help with this flight:",
+      "",
+      `Airline: ${flight.airline}`,
+      `Flight: ${flight.flightNumber}`,
+      `Route: ${flight.origin} to ${flight.destination}`,
+      `Date: ${format(departDate, "MMM dd, yyyy")}`,
+      `Cabin: ${flight.class}`,
+      `Fare: ${formatFare(flight.price, flight.currency)}`,
+      "",
+      "Please guide me with booking details.",
+    ].join("\n");
+    return `https://wa.me/923244440014?text=${encodeURIComponent(message)}`;
   };
 
   const bestFlight = filtered.length > 0 ? filtered.reduce((best, f) => f.price < best.price ? f : best, filtered[0]) : null;
@@ -335,9 +354,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   <CardContent className="p-5">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex items-center gap-4 flex-1">
-                        <div className="h-12 w-12 rounded-xl bg-accent flex items-center justify-center shrink-0">
-                          <Plane className="h-6 w-6 text-primary" />
-                        </div>
+                        <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} />
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <p className="text-sm font-semibold text-foreground">{flight.airline}</p>
@@ -378,9 +395,16 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             <Coffee className="h-3 w-3 text-muted-foreground" />
                           </div>
                         </div>
-                        <Link to={`${bookingPath}?type=flight&flightId=${flight.flightId}&airline=${encodeURIComponent(flight.airline)}&flightNo=${encodeURIComponent(flight.flightNumber)}&from=${encodeURIComponent(flight.origin)}&to=${encodeURIComponent(flight.destination)}&date=${encodeURIComponent(format(departDate, "MMM dd, yyyy"))}&cabin=${encodeURIComponent(flight.class)}&price=${flight.price}&currency=${encodeURIComponent(flight.currency || "PKR")}`}>
-                          <Button className="gradient-primary text-primary-foreground rounded-xl h-11 px-5">Select</Button>
-                        </Link>
+                        <div className="flex flex-col gap-2">
+                          <Link to={`${bookingPath}?type=flight&flightId=${flight.flightId}&airline=${encodeURIComponent(flight.airline)}&flightNo=${encodeURIComponent(flight.flightNumber)}&from=${encodeURIComponent(flight.origin)}&to=${encodeURIComponent(flight.destination)}&date=${encodeURIComponent(format(departDate, "MMM dd, yyyy"))}&cabin=${encodeURIComponent(flight.class)}&price=${flight.price}&currency=${encodeURIComponent(flight.currency || "PKR")}`}>
+                            <Button className="gradient-primary text-primary-foreground rounded-xl h-11 px-5">Continue Booking</Button>
+                          </Link>
+                          <a href={flightWhatsAppHref(flight)} target="_blank" rel="noreferrer">
+                            <Button variant="outline" size="sm" className="w-full rounded-xl gap-2">
+                              <WhatsAppIcon className="h-4 w-4" /> WhatsApp Help
+                            </Button>
+                          </a>
+                        </div>
                       </div>
                     </div>
 
@@ -389,7 +413,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       <div className="mt-5 pt-5 border-t grid grid-cols-1 md:grid-cols-3 gap-3 animate-fade-in">
                         {(flight.fareOptions || []).length === 0 && (
                           <div className="md:col-span-3 rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
-                            Fare options were not returned by the provider for this offer. Select the main fare to continue.
+                            Fare options were not returned by the provider for this offer. Continue with the main fare.
                           </div>
                         )}
                         {(flight.fareOptions || []).map(fare => (
@@ -417,7 +441,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 className={`w-full mt-3 rounded-lg ${fare.popular ? "gradient-primary text-primary-foreground" : ""}`}
                                 variant={fare.popular ? "default" : "outline"}
                               >
-                                Select {fare.tier}
+                                Continue {fare.tier}
                               </Button>
                             </Link>
                           </div>
