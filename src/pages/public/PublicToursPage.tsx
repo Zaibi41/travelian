@@ -12,7 +12,7 @@ const whatsappBase = "https://wa.me/923244440014";
 
 export default function PublicToursPage() {
   const { tourPackages } = useAdmin();
-  const activeTours = tourPackages.filter((tour) => tour.status === "active");
+  const activeTours = tourPackages.filter((tour) => tour.status === "active" && !tour.archivedAt && !tour.deletedAt);
 
   return (
     <div>

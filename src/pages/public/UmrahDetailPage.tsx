@@ -15,7 +15,7 @@ function formatPrice(value?: number) {
 export default function UmrahDetailPage() {
   const { id } = useParams();
   const { packages } = useAdmin();
-  const item = packages.find((entry) => entry.packageId === id && entry.status === "active");
+  const item = packages.find((entry) => entry.packageId === id && entry.status === "active" && !entry.archivedAt && !entry.deletedAt);
 
   if (!item) {
     return (

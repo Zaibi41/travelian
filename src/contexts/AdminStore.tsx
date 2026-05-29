@@ -114,6 +114,8 @@ interface AdminState {
   updatePackage: (id: string, data: Partial<UmrahPackage>) => void;
   deletePackage: (id: string) => void;
   addTourPackage: (p: UmrahPackage) => void;
+  updateTourPackage: (id: string, data: Partial<UmrahPackage>) => void;
+  deleteTourPackage: (id: string) => void;
 
   // Coupon actions
   addCoupon: (c: Coupon) => void;
@@ -256,8 +258,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   // Packages
   const addPackage = useCallback((pk: UmrahPackage) => setPackages(p => [...p, pk]), []);
   const updatePackage = useCallback((id: string, data: Partial<UmrahPackage>) => setPackages(p => p.map(pk => pk.packageId === id ? { ...pk, ...data } : pk)), []);
-  const deletePackage = useCallback((id: string) => setPackages(p => p.filter(pk => pk.packageId !== id)), []);
+  const deletePackage = useCallback((id: string) => setPackages(p => p.map(pk => pk.packageId === id ? { ...pk, deletedAt: new Date().toISOString(), status: 'inactive' } : pk)), []);
   const addTourPackage = useCallback((pk: UmrahPackage) => setTourPackages(p => [...p, pk]), []);
+  const updateTourPackage = useCallback((id: string, data: Partial<UmrahPackage>) => setTourPackages(p => p.map(pk => pk.packageId === id ? { ...pk, ...data } : pk)), []);
+  const deleteTourPackage = useCallback((id: string) => setTourPackages(p => p.map(pk => pk.packageId === id ? { ...pk, deletedAt: new Date().toISOString(), status: 'inactive' } : pk)), []);
 
   // Coupons
   const addCoupon = useCallback((c: Coupon) => setCoupons(p => [...p, c]), []);
@@ -305,7 +309,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       addWalletFunds, deductWalletFunds,
       addNotification, markNotificationRead, markAllRead,
       addUser, updateUser, deleteUser,
-      addPackage, updatePackage, deletePackage, addTourPackage,
+      addPackage, updatePackage, deletePackage, addTourPackage, updateTourPackage, deleteTourPackage,
       addCoupon, updateCoupon, deleteCoupon,
       addFlightSearchLog, addPaymentLink, updatePaymentLink,
       updatePaymentConfig, addSecretKey, updateSecretKey, deleteSecretKey,

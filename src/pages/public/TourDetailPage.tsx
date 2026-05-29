@@ -15,7 +15,7 @@ function lines(value?: string) {
 export default function TourDetailPage() {
   const { id } = useParams();
   const { tourPackages } = useAdmin();
-  const tour = tourPackages.find((item) => item.packageId === id && item.status === "active");
+  const tour = tourPackages.find((item) => item.packageId === id && item.status === "active" && !item.archivedAt && !item.deletedAt);
 
   if (!tour) {
     return (

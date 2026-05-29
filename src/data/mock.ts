@@ -94,6 +94,8 @@ export interface UmrahPackage {
   contactNumbers?: string;
   childInfantNote?: string;
   exclusions?: string;
+  archivedAt?: string;
+  deletedAt?: string;
 }
 
 export interface Booking {

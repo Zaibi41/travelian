@@ -18,7 +18,7 @@ const whatsappBase = "https://wa.me/923244440014";
 
 export default function PublicPackagesPage() {
   const { packages } = useAdmin();
-  const activePackages = packages.filter((item) => item.category === "umrah" && item.status === "active");
+  const activePackages = packages.filter((item) => item.category === "umrah" && item.status === "active" && !item.archivedAt && !item.deletedAt);
 
   return (
     <div>
