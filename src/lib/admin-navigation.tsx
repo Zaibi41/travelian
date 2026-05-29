@@ -1,28 +1,44 @@
 import type { ComponentType } from "react";
 import {
+  BadgePercent,
+  Banknote,
   BarChart3,
   Bell,
+  BookOpen,
   Building2,
   CalendarCheck,
+  ClipboardCheck,
   CloudCog,
   CreditCard,
+  FileBarChart,
   FileCheck,
   FileText,
   Gift,
+  Globe,
   Heart,
+  HelpCircle,
   Hotel,
+  Image,
   KeyRound,
+  Landmark,
   LayoutDashboard,
+  LifeBuoy,
+  ListChecks,
   Map,
+  MessageCircle,
   Package,
   PenTool,
   Plane,
+  Receipt,
+  RefreshCw,
   Search,
   Settings,
   Shield,
+  ShieldCheck,
   Tag,
   Ticket,
   UserCircle,
+  UserCog,
   Users,
   Wallet,
 } from "lucide-react";
@@ -30,13 +46,24 @@ import type { UserRole } from "@/data/mock";
 
 export type AdminNavCategory =
   | "Dashboard"
+  | "Search & Book"
+  | "Bookings & Ticketing"
   | "Sales & Bookings"
-  | "Search & Reservations"
+  | "Inventory & Services"
+  | "Pricing & Revenue"
   | "Financial"
+  | "Agency Finance"
+  | "Wallet & Payments"
   | "Operations"
+  | "Customers"
+  | "Staff Management"
   | "Management"
   | "Reports"
-  | "System";
+  | "Website & CMS"
+  | "Account"
+  | "Support"
+  | "System"
+  | "System / Gateway Settings";
 
 export interface AdminNavItem {
   title: string;
@@ -50,86 +77,229 @@ export interface AdminNavSection {
   items: AdminNavItem[];
 }
 
-const allAdminRoles: UserRole[] = ["super_admin", "admin", "staff", "agency_owner", "agency_staff", "qa", "internal_support"];
-const systemRoles: UserRole[] = ["super_admin", "qa", "internal_support"];
-const businessAdminRoles: UserRole[] = ["super_admin", "admin", "qa", "internal_support"];
-const agencyBusinessRoles: UserRole[] = ["agency_owner"];
-const bookingOpsRoles: UserRole[] = ["super_admin", "admin", "staff", "agency_owner", "agency_staff", "qa", "internal_support"];
-const flightBookingRoles: UserRole[] = ["super_admin", "admin", "staff", "agency_owner", "agency_staff", "qa", "internal_support"];
+const publicSearchRoles: UserRole[] = ["super_admin", "admin", "staff", "agency_owner", "agency_staff", "customer", "qa", "internal_support"];
+const platformOwnerRoles: UserRole[] = ["super_admin", "qa", "internal_support"];
+const internalAdminRoles: UserRole[] = ["super_admin", "admin", "qa", "internal_support"];
+const internalOpsRoles: UserRole[] = ["super_admin", "admin", "staff", "qa", "internal_support"];
+const agencyRoles: UserRole[] = ["agency_owner", "agency_staff"];
+const agencyOwnerRoles: UserRole[] = ["agency_owner"];
+const agencyStaffRoles: UserRole[] = ["agency_staff"];
+const customerRoles: UserRole[] = ["customer"];
+const allPortalRoles: UserRole[] = [...publicSearchRoles];
+
+function item(title: string, url: string, icon: AdminNavItem["icon"], roles: UserRole[]): AdminNavItem {
+  return { title, url, icon, roles };
+}
 
 export const adminNavigation: AdminNavSection[] = [
   {
     category: "Dashboard",
     items: [
-      { title: "Dashboard", url: "/admin", icon: LayoutDashboard, roles: allAdminRoles },
-      { title: "Customer Portal", url: "/admin/customer", icon: UserCircle, roles: ["customer"] },
-      { title: "My Bookings", url: "/admin/customer/bookings", icon: CalendarCheck, roles: ["customer"] },
-      { title: "Profile", url: "/admin/customer/profile", icon: UserCircle, roles: ["customer"] },
+      item("Dashboard", "/admin", LayoutDashboard, ["super_admin", "admin", "staff", "qa", "internal_support"]),
+      item("Agency Overview", "/admin", LayoutDashboard, agencyOwnerRoles),
+      item("My Overview", "/admin", LayoutDashboard, ["agency_staff", "customer"]),
     ],
   },
   {
-    category: "Sales & Bookings",
+    category: "Search & Book",
     items: [
-      { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck, roles: bookingOpsRoles },
-      { title: "Ticket Bookings & Invoices", url: "/admin/tickets", icon: Ticket, roles: bookingOpsRoles },
-      { title: "Coupons & Deals", url: "/admin/coupons", icon: Tag, roles: businessAdminRoles },
+      item("Flights", "/admin/flights-search", Plane, publicSearchRoles),
+      item("Hotels", "/admin/customer/hotels", Hotel, publicSearchRoles),
+      item("Umrah Packages", "/admin/packages", Package, [...internalAdminRoles, ...agencyRoles]),
+      item("Umrah Packages", "/admin/customer/umrah", Package, customerRoles),
+      item("Tour Packages", "/admin/tours", Map, [...internalAdminRoles, ...agencyRoles]),
+      item("Visa Services", "/admin/visa", FileCheck, [...internalAdminRoles, ...agencyRoles]),
+      item("Visa Services", "/admin/customer/visa", FileCheck, customerRoles),
+      item("Group Ticketing", "/group-ticketing", Users, publicSearchRoles),
     ],
   },
   {
-    category: "Search & Reservations",
+    category: "Bookings & Ticketing",
     items: [
-      { title: "Flight Booking", url: "/admin/flights-search", icon: Search, roles: flightBookingRoles },
-      { title: "Search Flights", url: "/admin/customer/flights", icon: Plane, roles: ["customer"] },
-      { title: "Search Hotels", url: "/admin/customer/hotels", icon: Hotel, roles: ["customer"] },
-      { title: "Flight Pricing & Rules", url: "/admin/flights", icon: Plane, roles: businessAdminRoles },
-      { title: "Hotels Inventory", url: "/admin/hotels", icon: Hotel, roles: businessAdminRoles },
-      { title: "Umrah Packages", url: "/admin/packages", icon: Package, roles: [...businessAdminRoles, ...agencyBusinessRoles] },
-      { title: "Tour Packages", url: "/admin/tours", icon: Map, roles: [...businessAdminRoles, ...agencyBusinessRoles] },
-      { title: "Visa Packages", url: "/admin/visa", icon: FileCheck, roles: [...businessAdminRoles, ...agencyBusinessRoles] },
-      { title: "Umrah Packages", url: "/admin/customer/umrah", icon: Package, roles: ["customer"] },
-      { title: "Visa Services", url: "/admin/customer/visa", icon: FileCheck, roles: ["customer"] },
+      item("All Bookings", "/admin/bookings", CalendarCheck, internalAdminRoles),
+      item("My Assigned Bookings", "/admin/bookings", CalendarCheck, ["staff"]),
+      item("My Agency Bookings", "/admin/bookings", CalendarCheck, agencyOwnerRoles),
+      item("My Bookings", "/admin/bookings", CalendarCheck, agencyStaffRoles),
+      item("My Bookings", "/admin/customer/bookings", CalendarCheck, customerRoles),
+      item("Create Booking", "/admin/flights-search", Search, [...internalOpsRoles, ...agencyStaffRoles]),
+      item("Ticketing & Invoices", "/admin/tickets", Ticket, [...internalAdminRoles, ...agencyRoles]),
+      item("Invoices", "/admin/tickets", Receipt, customerRoles),
+      item("Refunds & Cancellations", "/admin/bookings", RefreshCw, [...internalAdminRoles, ...agencyRoles, ...customerRoles]),
+      item("Booking Requests", "/admin/bookings", ClipboardCheck, [...internalAdminRoles, ...agencyOwnerRoles]),
+      item("Pending Requests", "/admin/bookings", ListChecks, ["staff"]),
+    ],
+  },
+  {
+    category: "Inventory & Services",
+    items: [
+      item("Hotels Inventory", "/admin/hotels", Hotel, internalAdminRoles),
+      item("Umrah Packages", "/admin/packages", Package, internalAdminRoles),
+      item("Tour Packages", "/admin/tours", Map, internalAdminRoles),
+      item("Visa Packages", "/admin/visa", FileCheck, internalAdminRoles),
+    ],
+  },
+  {
+    category: "Pricing & Revenue",
+    items: [
+      item("Flight Pricing & Rules", "/admin/flights", Plane, internalAdminRoles),
+      item("Hotel Markup Rules", "/admin/hotels", Hotel, platformOwnerRoles),
+      item("Package Markup Rules", "/admin/packages", BadgePercent, platformOwnerRoles),
+      item("Agency Pricing Rules", "/admin/agencies", Building2, platformOwnerRoles),
+      item("Deals & Promotions", "/admin/coupons", Tag, internalAdminRoles),
+      item("Commission Rules", "/admin/settings", BadgePercent, platformOwnerRoles),
     ],
   },
   {
     category: "Financial",
     items: [
-      { title: "Wallet", url: "/admin/wallet", icon: Wallet, roles: [...businessAdminRoles, ...agencyBusinessRoles] },
-      { title: "Wallet", url: "/admin/customer/wallet", icon: Wallet, roles: ["customer"] },
-      { title: "Payments", url: "/admin/payments", icon: CreditCard, roles: businessAdminRoles },
-      { title: "Payments", url: "/admin/customer/payments", icon: CreditCard, roles: ["customer"] },
+      item("Wallets", "/admin/wallet", Wallet, internalAdminRoles),
+      item("Add / Adjust Balance", "/admin/wallet", Banknote, platformOwnerRoles),
+      item("Payment Requests", "/admin/payments", CreditCard, internalAdminRoles),
+      item("Online Payments", "/admin/payments", CreditCard, internalAdminRoles),
+      item("Bank Transfers", "/admin/wallet", Landmark, internalAdminRoles),
+      item("1Link Payments", "/admin/payments", CreditCard, internalAdminRoles),
+      item("Card Payments", "/admin/payments", CreditCard, internalAdminRoles),
+      item("Deposit Approvals", "/admin/wallet", ShieldCheck, platformOwnerRoles),
+      item("Transactions Ledger", "/admin/wallet", Receipt, internalAdminRoles),
+      item("Refunds", "/admin/bookings", RefreshCw, internalAdminRoles),
+      item("Reconciliation", "/admin/payments", FileBarChart, platformOwnerRoles),
+      item("Credit Limits", "/admin/wallet", Shield, platformOwnerRoles),
+      item("Payment Gateways", "/admin/payments", CloudCog, platformOwnerRoles),
+    ],
+  },
+  {
+    category: "Agency Finance",
+    items: [
+      item("Wallet", "/admin/wallet", Wallet, agencyRoles),
+      item("Add Balance", "/admin/wallet", Banknote, agencyRoles),
+      item("Pay via 1Link", "/admin/wallet", CreditCard, agencyRoles),
+      item("Pay by Card", "/admin/wallet", CreditCard, agencyRoles),
+      item("Bank Transfer", "/admin/wallet", Landmark, agencyRoles),
+      item("Deposit Request", "/admin/wallet", ClipboardCheck, agencyRoles),
+      item("Payment History", "/admin/payments", Receipt, agencyOwnerRoles),
+      item("Transactions", "/admin/wallet", Receipt, agencyRoles),
+      item("Invoices", "/admin/tickets", Receipt, agencyRoles),
+      item("Refunds", "/admin/bookings", RefreshCw, agencyRoles),
+      item("Credit Limit", "/admin/wallet", Shield, agencyOwnerRoles),
+    ],
+  },
+  {
+    category: "Wallet & Payments",
+    items: [
+      item("Wallet", "/admin/customer/wallet", Wallet, customerRoles),
+      item("Add Balance", "/admin/customer/wallet", Banknote, customerRoles),
+      item("Pay by Card", "/admin/customer/payments", CreditCard, customerRoles),
+      item("Pay via 1Link", "/admin/customer/payments", CreditCard, customerRoles),
+      item("Bank Transfer", "/admin/customer/payments", Landmark, customerRoles),
+      item("Payments", "/admin/customer/payments", CreditCard, customerRoles),
+      item("Transactions", "/admin/customer/wallet", Receipt, customerRoles),
+      item("Invoices", "/admin/customer/bookings", Receipt, customerRoles),
+      item("Refunds", "/admin/customer/bookings", RefreshCw, customerRoles),
     ],
   },
   {
     category: "Operations",
     items: [
-      { title: "Documents", url: "/admin/documents", icon: FileText, roles: bookingOpsRoles },
-      { title: "Notifications", url: "/admin/notifications", icon: Bell, roles: bookingOpsRoles },
-      { title: "Wishlist", url: "/admin/customer/wishlist", icon: Heart, roles: ["customer"] },
-      { title: "Rewards", url: "/admin/customer/rewards", icon: Gift, roles: ["customer"] },
-      { title: "Support", url: "/admin/customer/support", icon: Bell, roles: ["customer"] },
-      { title: "Content Blog", url: "/admin/blog", icon: PenTool, roles: businessAdminRoles },
+      item("Failed Searches / API Issues", "/admin/flights", CloudCog, internalOpsRoles),
+      item("Support Tickets", "/admin/notifications", LifeBuoy, internalOpsRoles),
+      item("Notifications", "/admin/notifications", Bell, internalOpsRoles),
+      item("Document Center", "/admin/documents", FileText, internalOpsRoles),
+      item("Manual Booking Requests", "/admin/bookings", ClipboardCheck, internalOpsRoles),
+      item("Approvals Center", "/admin/wallet", ShieldCheck, platformOwnerRoles),
+      item("Follow-ups", "/admin/notifications", Bell, ["staff"]),
+    ],
+  },
+  {
+    category: "Customers",
+    items: [
+      item("Customers", "/admin/users", Users, internalAdminRoles),
+      item("My Customers", "/admin/users", Users, agencyOwnerRoles),
+      item("Passenger Profiles", "/admin/users", UserCircle, agencyRoles),
+      item("Customer Requests", "/admin/bookings", MessageCircle, internalOpsRoles),
+      item("Customer Documents", "/admin/documents", FileText, [...internalOpsRoles, ...agencyRoles]),
+    ],
+  },
+  {
+    category: "Staff Management",
+    items: [
+      item("Agency Staff", "/admin/users", Users, agencyOwnerRoles),
+      item("Staff Permissions", "/admin/users", Shield, agencyOwnerRoles),
     ],
   },
   {
     category: "Management",
     items: [
-      { title: "Agencies", url: "/admin/agencies", icon: Building2, roles: businessAdminRoles },
-      { title: "Users & Staff", url: "/admin/users", icon: Users, roles: [...businessAdminRoles, ...agencyBusinessRoles] },
-      { title: "Access Control", url: "/admin/rbac", icon: Shield, roles: systemRoles },
+      item("Agencies", "/admin/agencies", Building2, internalAdminRoles),
+      item("Customers", "/admin/users", Users, internalAdminRoles),
+      item("Users & Staff", "/admin/users", UserCog, internalAdminRoles),
+      item("Suppliers / API Providers", "/admin/provider-systems", CloudCog, platformOwnerRoles),
+      item("Airline Logo Library", "/admin/provider-systems", Image, platformOwnerRoles),
     ],
   },
   {
     category: "Reports",
     items: [
-      { title: "Business Reports", url: "/admin", icon: BarChart3, roles: [...businessAdminRoles, ...agencyBusinessRoles] },
+      item("Business Reports", "/admin", BarChart3, platformOwnerRoles),
+      item("Sales Reports", "/admin", FileBarChart, ["super_admin", "admin", "qa", "internal_support"]),
+      item("Financial Reports", "/admin/wallet", FileBarChart, platformOwnerRoles),
+      item("Agency Reports", "/admin", FileBarChart, [...platformOwnerRoles, ...agencyOwnerRoles]),
+      item("API Performance Reports", "/admin/provider-systems", BarChart3, platformOwnerRoles),
+      item("My Work Report", "/admin", FileBarChart, ["staff"]),
+      item("Booking Report", "/admin/bookings", FileBarChart, ["staff", "agency_staff"]),
+      item("Wallet Report", "/admin/wallet", FileBarChart, agencyOwnerRoles),
+      item("Staff Performance", "/admin/users", BarChart3, agencyOwnerRoles),
+    ],
+  },
+  {
+    category: "Website & CMS",
+    items: [
+      item("Website Banners", "/admin/settings", Image, platformOwnerRoles),
+      item("Blog / News", "/admin/blog", PenTool, internalAdminRoles),
+      item("Static Pages", "/admin/settings", BookOpen, platformOwnerRoles),
+      item("Testimonials", "/admin/settings", MessageCircle, platformOwnerRoles),
+    ],
+  },
+  {
+    category: "Support",
+    items: [
+      item("Help Center", "/admin/customer/support", HelpCircle, customerRoles),
+      item("WhatsApp Support", "/admin/customer/support", MessageCircle, [...agencyRoles, ...customerRoles]),
+      item("Support Tickets", "/admin/customer/support", LifeBuoy, [...agencyRoles, ...customerRoles]),
+      item("Notifications", "/admin/customer/support", Bell, [...agencyRoles, ...customerRoles]),
+    ],
+  },
+  {
+    category: "Account",
+    items: [
+      item("Profile", "/admin/customer/profile", UserCircle, ["admin", "staff", "customer"]),
+      item("Agency Profile", "/admin/settings", Building2, agencyOwnerRoles),
+      item("My Profile", "/admin/users", UserCircle, agencyRoles),
+      item("Passengers", "/admin/customer/profile", Users, customerRoles),
+      item("Documents", "/admin/customer/profile", FileText, customerRoles),
+      item("Wishlist", "/admin/customer/wishlist", Heart, customerRoles),
+      item("Rewards", "/admin/customer/rewards", Gift, customerRoles),
+      item("Change Password", "/admin/settings", KeyRound, allPortalRoles),
+    ],
+  },
+  {
+    category: "System / Gateway Settings",
+    items: [
+      item("Gateway Settings", "/admin/payments", Settings, platformOwnerRoles),
+      item("UBL Settings", "/admin/secrets", Landmark, platformOwnerRoles),
+      item("1Link Settings", "/admin/secrets", CreditCard, platformOwnerRoles),
+      item("Payment Webhook Logs", "/admin/provider-systems", CloudCog, platformOwnerRoles),
+      item("Payment Failure Logs", "/admin/provider-systems", CloudCog, platformOwnerRoles),
     ],
   },
   {
     category: "System",
     items: [
-      { title: "Provider Systems", url: "/admin/provider-systems", icon: CloudCog, roles: systemRoles },
-      { title: "Secret Manager", url: "/admin/secrets", icon: KeyRound, roles: systemRoles },
-      { title: "Settings", url: "/admin/settings", icon: Settings, roles: [...businessAdminRoles, ...agencyBusinessRoles] },
+      item("Roles & Permissions", "/admin/rbac", Shield, platformOwnerRoles),
+      item("API Settings", "/admin/provider-systems", CloudCog, platformOwnerRoles),
+      item("Secret Manager", "/admin/secrets", KeyRound, platformOwnerRoles),
+      item("Audit Logs", "/admin/provider-systems", FileText, platformOwnerRoles),
+      item("General Settings", "/admin/settings", Settings, internalAdminRoles),
+      item("View Public Site", "/", Globe, []),
     ],
   },
 ];
@@ -138,20 +308,21 @@ export function getNavigationForRole(role: UserRole): AdminNavSection[] {
   return adminNavigation
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => item.roles.includes(role)),
+      items: section.items.filter((navItem) => navItem.roles.includes(role)),
     }))
     .filter((section) => section.items.length > 0);
 }
 
 export function canAccessAdminPath(role: UserRole, pathname: string) {
   const normalized = pathname.replace(/\/+$/, "") || "/admin";
-  if (role === "customer") return normalized === "/admin/customer" || normalized.startsWith("/admin/customer/");
-  if (normalized === "/admin/booking") return ["super_admin", "admin", "staff", "agency_owner", "agency_staff", "qa", "internal_support"].includes(role);
+  if (normalized === "/admin/booking") return publicSearchRoles.includes(role);
+  if (role === "customer" && normalized === "/admin") return true;
   return adminNavigation.some((section) =>
-    section.items.some((item) => {
-      if (!item.roles.includes(role)) return false;
-      if (item.url === "/admin") return normalized === "/admin";
-      return normalized === item.url || normalized.startsWith(`${item.url}/`);
+    section.items.some((navItem) => {
+      if (!navItem.roles.includes(role)) return false;
+      if (!navItem.url.startsWith("/admin")) return false;
+      if (navItem.url === "/admin") return normalized === "/admin";
+      return normalized === navItem.url || normalized.startsWith(`${navItem.url}/`);
     }),
   );
 }

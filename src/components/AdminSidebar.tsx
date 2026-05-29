@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, Globe, Plane } from "lucide-react";
+import { ChevronRight, Globe } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
@@ -45,8 +45,8 @@ export function AdminSidebar() {
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/70">
       <SidebarHeader className="px-3 py-3">
         <div className="flex items-center gap-2.5 rounded-2xl border border-sidebar-border/60 bg-sidebar-accent/35 px-2.5 py-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl gradient-primary shadow-sm">
-            <Plane className="h-4 w-4 text-primary-foreground" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl gradient-primary shadow-sm">
+            <img src="/travelian-icon.svg" alt="" className="h-5 w-5 object-contain" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
@@ -68,18 +68,18 @@ export function AdminSidebar() {
                   asChild
                   isActive={isActive(item.url)}
                   tooltip={item.title}
-                  className="mx-auto h-9 w-9 rounded-xl p-0 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                  className="mx-auto h-10 w-10 rounded-xl p-0 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                 >
-                  <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground">
-                    <item.icon className="h-[18px] w-[18px] shrink-0" />
+                  <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground" className="flex h-full w-full items-center justify-center">
+                    <item.icon className="h-5 w-5 shrink-0" />
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
             <SidebarMenuItem className="mt-2 border-t border-sidebar-border/60 pt-2">
-              <SidebarMenuButton asChild tooltip="View Public Site" className="mx-auto h-8 w-8 rounded-xl p-0">
+              <SidebarMenuButton asChild tooltip="View Public Site" className="mx-auto h-10 w-10 rounded-xl p-0">
                 <Link to="/" className="flex items-center justify-center text-sidebar-muted hover:text-sidebar-accent-foreground">
-                  <Globe className="h-4 w-4 shrink-0" />
+                  <Globe className="h-5 w-5 shrink-0" />
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -105,10 +105,10 @@ export function AdminSidebar() {
                           <SidebarMenuButton
                             asChild
                             isActive={isActive(item.url)}
-                            className="h-9 rounded-xl px-2.5 text-[13px] font-semibold data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                            className="h-9 rounded-xl px-2.5 text-[13.5px] font-semibold data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                           >
                             <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground font-semibold">
-                              <item.icon className="h-[18px] w-[18px] shrink-0" />
+                              <item.icon className="h-5 w-5 shrink-0" />
                               <span>{item.title}</span>
                             </NavLink>
                           </SidebarMenuButton>

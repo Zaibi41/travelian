@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { useAdmin } from "@/contexts/AdminStore";
+import { getSession } from "@/lib/auth-session";
 
 const whatsappBase = "https://wa.me/923244440014";
 const siteBase = "https://www.travelian.pk";
@@ -53,6 +54,8 @@ export default function UmrahDetailPage() {
     "",
     "Please share availability and booking details.",
   ].join("\n");
+  const bookingPath = `/booking?type=umrah&id=${encodeURIComponent(item.packageId)}`;
+  const bookingLink = getSession() ? bookingPath : `/signin?redirect=${encodeURIComponent(bookingPath)}`;
 
   return (
     <div className="bg-muted/30">
@@ -75,7 +78,7 @@ export default function UmrahDetailPage() {
               <p className="mt-1 text-sm text-muted-foreground">Per person, package terms apply</p>
               <div className="mt-5 grid gap-2">
                 <Button asChild className="gradient-primary text-primary-foreground">
-                  <Link to={`/booking?type=umrah&id=${encodeURIComponent(item.packageId)}`}>Book Now</Link>
+                  <Link to={bookingLink}>Book Now</Link>
                 </Button>
                 <a href={`${whatsappBase}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer">
                   <Button variant="outline" className="w-full"><WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp Inquiry</Button>

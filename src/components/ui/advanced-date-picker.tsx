@@ -79,7 +79,7 @@ export function AdvancedDatePicker({
             dropdown_month: "min-w-[124px]",
             dropdown_year: "min-w-[88px]",
             vhidden: "sr-only",
-            nav: "pointer-events-none absolute inset-x-1 top-1 flex items-center justify-between",
+            nav: "hidden",
             nav_button: cn(
               buttonVariants({ variant: "outline" }),
               "pointer-events-auto h-9 w-9 bg-background p-0 opacity-80 hover:opacity-100",

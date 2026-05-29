@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { PasswordInput } from "@/components/PasswordInput";
 
 export default function SignInPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { setCurrentRole } = useRole();
   const [loading, setLoading] = useState(false);
 
@@ -31,7 +32,8 @@ export default function SignInPage() {
       const role = roleForSession(session);
       if (role) setCurrentRole(role);
       toast.success("Welcome back");
-      navigate(role ? "/admin" : "/account");
+      const redirect = searchParams.get("redirect");
+      navigate(redirect && redirect.startsWith("/") ? redirect : role ? "/admin" : "/account");
     } catch (error) {
       setLoading(false);
       toast.error(error instanceof Error ? error.message : "Sign in failed. Please try again.");

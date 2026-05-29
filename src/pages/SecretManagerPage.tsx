@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PasswordInput } from "@/components/PasswordInput";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Shield, Plus, Pencil, Trash2, Key, Eye, EyeOff, Lock, AlertTriangle } from "lucide-react";
@@ -162,7 +163,7 @@ export default function SecretManagerPage() {
           <DialogHeader><DialogTitle className="font-display">{editing ? 'Update Secret Key' : 'Add Secret Key'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2"><Label>Key Name *</Label><Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value.toUpperCase().replace(/\s/g, '_') }))} className="font-mono" placeholder="e.g. STRIPE_API_KEY" /></div>
-            <div className="space-y-2"><Label>{editing ? 'New Value (leave blank to keep)' : 'Value *'}</Label><Input type="password" value={form.value} onChange={e => setForm(p => ({ ...p, value: e.target.value }))} /></div>
+            <div className="space-y-2"><Label>{editing ? 'New Value (leave blank to keep)' : 'Value *'}</Label><PasswordInput value={form.value} onChange={e => setForm(p => ({ ...p, value: e.target.value }))} /></div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Category</Label>

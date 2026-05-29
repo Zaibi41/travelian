@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default function SettingsPage() {
   return (
@@ -22,11 +23,11 @@ export default function SettingsPage() {
           </div>
           <div className="space-y-2">
             <Label>Support Email</Label>
-            <Input defaultValue="support@travelian.com" />
+            <Input defaultValue="support@travelian.pk" />
           </div>
           <div className="space-y-2">
             <Label>Default Currency</Label>
-            <Input defaultValue="USD" />
+            <Input defaultValue="PKR" />
           </div>
         </CardContent>
       </Card>
@@ -37,7 +38,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">Email Notifications</p>
-              <p className="text-xs text-muted-foreground">Receive booking & agency alerts via email</p>
+              <p className="text-xs text-muted-foreground">Receive booking and agency alerts via email</p>
             </div>
             <Switch defaultChecked />
           </div>
@@ -56,15 +57,15 @@ export default function SettingsPage() {
         <CardHeader><CardTitle className="text-base font-display">Payment</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Stripe API Key</Label>
-            <Input type="password" defaultValue="sk_test_••••••••" />
+            <Label>Gateway API Key</Label>
+            <PasswordInput defaultValue="sk_live_••••••••" />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">Test Mode</p>
-              <p className="text-xs text-muted-foreground">Use Stripe test environment</p>
+              <p className="text-xs text-muted-foreground">Use payment gateway test environment</p>
             </div>
-            <Switch defaultChecked />
+            <Switch />
           </div>
         </CardContent>
       </Card>
