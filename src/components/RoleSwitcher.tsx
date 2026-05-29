@@ -4,6 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Shield, User, Building2, Users, Headset, TestTube2 } from "lucide-react";
 import { canSwitchRoles } from "@/lib/role-mapping";
 import { getSession } from "@/lib/auth-session";
+import { canAccessAdminPath } from "@/lib/admin-navigation";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const roleOptions: { value: UserRole; label: string; icon: React.ReactNode; color: string }[] = [
   { value: "super_admin", label: "Super Admin", icon: <Shield className="h-3.5 w-3.5" />, color: "text-primary" },
@@ -18,13 +20,21 @@ const roleOptions: { value: UserRole; label: string; icon: React.ReactNode; colo
 
 export function RoleSwitcher() {
   const { currentRole, setCurrentRole, currentUser } = useRole();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const switchRole = (role: UserRole) => {
+    setCurrentRole(role);
+    if (!canAccessAdminPath(role, location.pathname)) {
+      navigate(role === "customer" ? "/admin/customer" : "/admin");
+    }
+  };
   if (!canSwitchRoles(getSession(), currentRole)) {
     return <span className="text-xs text-muted-foreground hidden md:block">{currentUser.name}</span>;
   }
 
   return (
     <div className="flex items-center gap-2">
-      <Select value={currentRole} onValueChange={(v) => setCurrentRole(v as UserRole)}>
+      <Select value={currentRole} onValueChange={(v) => switchRole(v as UserRole)}>
         <SelectTrigger className="w-[180px] h-9 text-xs">
           <SelectValue />
         </SelectTrigger>
