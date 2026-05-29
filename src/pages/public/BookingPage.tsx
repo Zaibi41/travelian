@@ -16,8 +16,10 @@ import { saveBooking, type BookingRecord } from "@/lib/booking-store";
 import { downloadETicket } from "@/lib/eticket-pdf";
 import { toast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
-import { mockHotels, mockPackages, mockTourPackages, mockVisaPackages, mockFlights } from "@/data/mock";
+import { mockHotels, mockPackages, mockTourPackages, mockVisaPackages, mockFlights, type TravelTicket } from "@/data/mock";
 import { format, addDays } from "date-fns";
+import { useAdmin } from "@/contexts/AdminStore";
+import { getSession } from "@/lib/auth-session";
 
 const steps = [
   { id: 1, label: "Traveler Details" },
@@ -137,6 +139,7 @@ function buildCtx(params: URLSearchParams): ProductCtx | null {
 export default function BookingPage() {
   const [params] = useSearchParams();
   const productCtx = useMemo(() => buildCtx(params), [params]);
+  const { addTicket } = useAdmin();
 
   // Empty state if no booking context provided
   if (!productCtx) {
@@ -307,6 +310,51 @@ export default function BookingPage() {
       pricing: { base: baseTotal, addons: addonsTotal, taxes, total: grandTotal, currency: productCtx.currency },
     });
     setSavedBooking(record);
+    if (isFlight && record.flight) {
+      const session = getSession();
+      const traveler = record.travelers[0];
+      const issuedTicket: TravelTicket = {
+        ticketId: `tk-${Date.now()}`,
+        bookingId: record.id,
+        passengerName: `${traveler.firstName} ${traveler.lastName}`.trim(),
+        type: "flight",
+        origin: record.flight.from,
+        destination: record.flight.to,
+        departureDate: record.flight.date,
+        seatNumber: record.seat || "",
+        status: "issued",
+        price: record.pricing.total,
+        ticketNumber: `${record.flight.flightNumber || "TRV"}-${record.pnr}`,
+        pnr: record.pnr,
+        airline: record.flight.airline,
+        flightNumber: record.flight.flightNumber,
+        title: traveler.title,
+        firstName: traveler.firstName,
+        lastName: traveler.lastName,
+        passengerType: "Adult",
+        dateOfBirth: traveler.dob?.slice(0, 10),
+        passportNumber: traveler.docNumber,
+        passportExpiry: traveler.expiryDate?.slice(0, 10),
+        originAirport: record.flight.from,
+        destinationAirport: record.flight.to,
+        departureTime: record.flight.departTime,
+        arrivalTime: record.flight.arriveTime,
+        duration: record.flight.duration,
+        baseFare: record.pricing.base,
+        tax: record.pricing.taxes,
+        checkinBaggageKg: 20,
+        cabinBaggageKg: 7,
+        invoiceNumber: `INV-${record.pnr}`,
+        customerEmail: record.contact.email,
+        customerPhone: record.contact.phone,
+        cognitoSub: session?.sub,
+        cognitoEmail: session?.email,
+        source: window.location.pathname.startsWith("/admin") ? "agency_portal" : "checkout",
+        issuedBy: session?.email || "checkout",
+        createdAt: record.createdAt,
+      };
+      addTicket(issuedTicket);
+    }
     setProcessing(false);
     setStep(4);
     toast({ title: "Payment successful", description: `Booking ${record.pnr} confirmed.` });

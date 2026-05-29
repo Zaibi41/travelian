@@ -15,7 +15,7 @@ const cards = [
 export default function DashboardPage() {
   const { currentRole, currentUser } = useRole();
   const isAgency = currentRole === "agency_owner" || currentRole === "agency_staff";
-  const isSuperAdmin = currentRole === "super_admin";
+  const canManageTicketInvoices = ["super_admin", "admin", "agency_owner", "qa", "internal_support"].includes(currentRole);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -27,7 +27,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <Button asChild className="gradient-primary text-primary-foreground">
-          <Link to={isAgency ? "/admin/flight-search" : "/admin/flights"}>{isAgency ? "Search Flights" : "Manage Pricing Rules"}</Link>
+          <Link to="/admin/flights-search">{isAgency ? "Search Flights" : "Flight Booking"}</Link>
         </Button>
       </div>
 
@@ -48,7 +48,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {isSuperAdmin && (
+      {canManageTicketInvoices && (
         <div className="grid gap-4 lg:grid-cols-2">
           <Card className="shadow-card">
             <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -58,11 +58,11 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h2 className="font-bold text-foreground">Ticket Booking</h2>
-                  <p className="text-sm text-muted-foreground">Create direct customer flight ticket records without using mock data.</p>
+                  <p className="text-sm text-muted-foreground">Search flights, book for customers, issue tickets and keep user records.</p>
                 </div>
               </div>
               <Button asChild className="gradient-primary text-primary-foreground">
-                <Link to="/admin/tickets">Add Ticket</Link>
+                <Link to="/admin/flights-search">Start Flight Booking</Link>
               </Button>
             </CardContent>
           </Card>
@@ -74,7 +74,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h2 className="font-bold text-foreground">Ticket Invoice</h2>
-                  <p className="text-sm text-muted-foreground">Generate a customer-ready PDF invoice for direct Travelian flight requests.</p>
+                  <p className="text-sm text-muted-foreground">Generate and share customer-ready ticket invoices from issued records.</p>
                 </div>
               </div>
               <Button asChild variant="outline">
@@ -89,8 +89,8 @@ export default function DashboardPage() {
         icon={Plane}
         title="No production data connected yet"
         description="Dashboard charts, revenue cards, booking tables and alerts intentionally show no mock data. Connect real bookings, payments, provider health and search logs to populate this dashboard."
-        actionLabel={isAgency ? "Start Flight Search" : "Open Flight Pricing"}
-        onAction={() => { window.location.href = isAgency ? "/admin/flight-search" : "/admin/flights"; }}
+        actionLabel={isAgency ? "Start Flight Search" : "Open Flight Booking"}
+        onAction={() => { window.location.href = "/admin/flights-search"; }}
       />
     </div>
   );

@@ -80,6 +80,8 @@ export function downloadTicketInvoice(ticket: TravelTicket) {
   row(doc, "Date of Birth", ticket.dateOfBirth || "", 106, 96);
   row(doc, "Passport", ticket.passportNumber || "", 150, 96, 40);
   row(doc, "Passport Expiry", ticket.passportExpiry || "", 18, 112);
+  row(doc, "Customer Email", ticket.customerEmail || ticket.cognitoEmail || "", 62, 112);
+  row(doc, "Customer Phone", ticket.customerPhone || "", 128, 112);
 
   section(doc, "Flight Details", "3", 128);
   doc.setFillColor(255, 255, 255);

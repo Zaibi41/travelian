@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Download, FileText, Pencil, Plane, Plus, Receipt, Search, Trash2 } from "lucide-react";
+import { Download, FileText, MessageCircle, Pencil, Plane, Plus, Receipt, Search, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,6 +47,12 @@ const emptyForm: Omit<TravelTicket, "ticketId"> = {
   checkinBaggageKg: 20,
   cabinBaggageKg: 7,
   notes: "",
+  customerEmail: "",
+  customerPhone: "",
+  cognitoSub: "",
+  cognitoEmail: "",
+  source: "admin_manual",
+  issuedBy: "",
 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -69,6 +75,30 @@ function toTicket(form: Omit<TravelTicket, "ticketId">, existingId?: string): Tr
     cabinBaggageKg: Number(form.cabinBaggageKg || 0),
     invoiceNumber: form.invoiceNumber || `INV-${ticketId.replace(/[^a-z0-9]/gi, "").slice(-8).toUpperCase()}`,
   };
+}
+
+function invoiceMessage(ticket: TravelTicket) {
+  return [
+    "Hello,",
+    "",
+    "Travelian has prepared your flight ticket invoice.",
+    "",
+    `Passenger: ${ticket.passengerName}`,
+    `Airline: ${ticket.airline || "Please confirm"} ${ticket.flightNumber || ""}`.trim(),
+    `Route: ${ticket.origin || "---"} to ${ticket.destination || "---"}`,
+    `Departure: ${ticket.departureDate || "Please confirm"} ${ticket.departureTime || ""}`.trim(),
+    `Ticket: ${ticket.ticketNumber}`,
+    `PNR: ${ticket.pnr || ticket.bookingId || "Please confirm"}`,
+    `Total: PKR ${Number(ticket.price || 0).toLocaleString()}`,
+    "",
+    "Please review the attached invoice/ticket details and contact Travelian for any changes.",
+  ].join("\n");
+}
+
+function whatsappHref(ticket: TravelTicket) {
+  const phone = (ticket.customerPhone || "").replace(/[^\d]/g, "");
+  const target = phone || "923244440014";
+  return `https://wa.me/${target}?text=${encodeURIComponent(invoiceMessage(ticket))}`;
 }
 
 export default function TicketsPage() {
@@ -122,6 +152,30 @@ export default function TicketsPage() {
       toast.success("Ticket booking saved");
     }
     setDialogOpen(false);
+  };
+
+  const issueAndDownload = (ticket: TravelTicket) => {
+    const issued = { ...ticket, status: "issued" as const };
+    updateTicket(ticket.ticketId, issued);
+    downloadTicketInvoice(issued);
+    toast.success("Ticket issued and invoice downloaded");
+  };
+
+  const handleSaveAndInvoice = () => {
+    if (!form.ticketNumber.trim()) {
+      toast.error("Ticket number is required");
+      return;
+    }
+    if (!form.passengerName.trim() && !form.firstName?.trim()) {
+      toast.error("Passenger name is required");
+      return;
+    }
+    const payload = toTicket({ ...form, status: "issued" }, editing?.ticketId);
+    if (editing) updateTicket(editing.ticketId, payload);
+    else addTicket(payload);
+    downloadTicketInvoice(payload);
+    setDialogOpen(false);
+    toast.success("Ticket issued and invoice downloaded");
   };
 
   return (
@@ -192,7 +246,11 @@ export default function TicketsPage() {
                       <td className="p-3"><StatusBadge status={ticket.status} /></td>
                       <td className="p-3">
                         <div className="flex gap-1">
+                          {ticket.status !== "issued" && <Button variant="ghost" size="icon" onClick={() => issueAndDownload(ticket)} title="Issue and download invoice"><Send className="h-4 w-4" /></Button>}
                           <Button variant="ghost" size="icon" onClick={() => downloadTicketInvoice(ticket)} title="Download invoice"><Download className="h-4 w-4" /></Button>
+                          <a href={whatsappHref(ticket)} target="_blank" rel="noreferrer" title="Share on WhatsApp">
+                            <Button variant="ghost" size="icon"><MessageCircle className="h-4 w-4 text-success" /></Button>
+                          </a>
                           {canEdit && <Button variant="ghost" size="icon" onClick={() => openEdit(ticket)} title="Edit"><Pencil className="h-4 w-4" /></Button>}
                           {canEdit && <Button variant="ghost" size="icon" onClick={() => deleteTicket(ticket.ticketId)} title="Soft delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                         </div>
@@ -237,6 +295,13 @@ export default function TicketsPage() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-4">
+              <Field label="Customer Email"><Input type="email" value={form.customerEmail || ""} onChange={e => setForm(p => ({ ...p, customerEmail: e.target.value }))} /></Field>
+              <Field label="Customer WhatsApp/Phone"><Input value={form.customerPhone || ""} onChange={e => setForm(p => ({ ...p, customerPhone: e.target.value }))} placeholder="+923001234567" /></Field>
+              <Field label="Cognito User ID"><Input value={form.cognitoSub || ""} onChange={e => setForm(p => ({ ...p, cognitoSub: e.target.value }))} placeholder="Optional Cognito sub" /></Field>
+              <Field label="Cognito Email"><Input value={form.cognitoEmail || ""} onChange={e => setForm(p => ({ ...p, cognitoEmail: e.target.value }))} placeholder="Optional signed-in email" /></Field>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-4">
               <Field label="Flight Number"><Input value={form.flightNumber || ""} onChange={e => setForm(p => ({ ...p, flightNumber: e.target.value }))} placeholder="OV-505" /></Field>
               <Field label="Origin"><Input value={form.origin} onChange={e => setForm(p => ({ ...p, origin: e.target.value.toUpperCase() }))} placeholder="MCT" /></Field>
               <Field label="Destination"><Input value={form.destination} onChange={e => setForm(p => ({ ...p, destination: e.target.value.toUpperCase() }))} placeholder="SKT" /></Field>
@@ -262,6 +327,7 @@ export default function TicketsPage() {
 
             <div className="flex flex-col gap-2 pt-2 sm:flex-row">
               <Button onClick={handleSave} className="flex-1 gradient-primary text-primary-foreground">{editing ? "Update Ticket Booking" : "Save Ticket Booking"}</Button>
+              <Button onClick={handleSaveAndInvoice} variant="outline" className="flex-1">Issue & Download Invoice</Button>
               <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             </div>
           </div>

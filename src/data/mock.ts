@@ -276,6 +276,12 @@ export interface TravelTicket {
   cabinBaggageKg?: number;
   notes?: string;
   invoiceNumber?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  cognitoSub?: string;
+  cognitoEmail?: string;
+  source?: 'admin_manual' | 'checkout' | 'agency_portal';
+  issuedBy?: string;
   createdAt?: string;
   updatedAt?: string;
   deletedAt?: string;

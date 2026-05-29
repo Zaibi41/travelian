@@ -54,8 +54,8 @@ const allAdminRoles: UserRole[] = ["super_admin", "admin", "staff", "agency_owne
 const systemRoles: UserRole[] = ["super_admin", "qa", "internal_support"];
 const businessAdminRoles: UserRole[] = ["super_admin", "admin", "qa", "internal_support"];
 const agencyBusinessRoles: UserRole[] = ["agency_owner"];
-const agencyBookingRoles: UserRole[] = ["agency_owner", "agency_staff"];
 const bookingOpsRoles: UserRole[] = ["super_admin", "admin", "staff", "agency_owner", "agency_staff", "qa", "internal_support"];
+const flightBookingRoles: UserRole[] = ["super_admin", "admin", "staff", "agency_owner", "agency_staff", "qa", "internal_support"];
 
 export const adminNavigation: AdminNavSection[] = [
   {
@@ -71,15 +71,14 @@ export const adminNavigation: AdminNavSection[] = [
     category: "Sales & Bookings",
     items: [
       { title: "Bookings", url: "/admin/bookings", icon: CalendarCheck, roles: bookingOpsRoles },
-      { title: "Travel Tickets", url: "/admin/tickets", icon: Ticket, roles: bookingOpsRoles },
+      { title: "Ticket Bookings & Invoices", url: "/admin/tickets", icon: Ticket, roles: bookingOpsRoles },
       { title: "Coupons & Deals", url: "/admin/coupons", icon: Tag, roles: businessAdminRoles },
     ],
   },
   {
     category: "Search & Reservations",
     items: [
-      { title: "Flight Search", url: "/admin/flight-search", icon: Search, roles: agencyBookingRoles },
-      { title: "Flight Results", url: "/admin/flights-search", icon: Plane, roles: agencyBookingRoles },
+      { title: "Flight Booking", url: "/admin/flights-search", icon: Search, roles: flightBookingRoles },
       { title: "Search Flights", url: "/admin/customer/flights", icon: Plane, roles: ["customer"] },
       { title: "Search Hotels", url: "/admin/customer/hotels", icon: Hotel, roles: ["customer"] },
       { title: "Flight Pricing & Rules", url: "/admin/flights", icon: Plane, roles: businessAdminRoles },
