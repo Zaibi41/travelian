@@ -5,6 +5,8 @@ export type AgencyStatus = 'pending' | 'active' | 'suspended' | 'rejected';
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
 export type BookingType = 'b2c' | 'b2b';
 export type TransactionType = 'credit' | 'debit';
+export type WalletMethod = 'card' | '1link' | 'bank_transfer' | 'manual' | 'booking' | 'refund';
+export type WalletStatus = 'pending' | 'approved' | 'rejected' | 'reversed' | 'cancelled';
 
 export interface User {
   userId: string;
@@ -125,6 +127,54 @@ export interface WalletTransaction {
   description: string;
   balanceAfter: number;
   createdAt: string;
+}
+
+export interface WalletLedgerEntry {
+  ledgerId: string;
+  agencyId: string;
+  agencyName: string;
+  type: TransactionType;
+  amount: number;
+  method: WalletMethod;
+  status: Exclude<WalletStatus, 'pending'>;
+  reference: string;
+  description: string;
+  balanceAfter: number;
+  createdBy: string;
+  approvedBy?: string;
+  depositRequestId?: string;
+  createdAt: string;
+  approvedAt?: string;
+}
+
+export interface WalletDepositRequest {
+  depositId: string;
+  agencyId: string;
+  agencyName: string;
+  amount: number;
+  method: Extract<WalletMethod, 'card' | '1link' | 'bank_transfer'>;
+  status: WalletStatus;
+  reference: string;
+  providerReference?: string;
+  transferDate?: string;
+  proofUrl?: string;
+  notes?: string;
+  requestedBy: string;
+  approvedBy?: string;
+  rejectedBy?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+}
+
+export interface PaymentWebhookEvent {
+  eventId: string;
+  provider: 'card' | '1link';
+  providerReference: string;
+  depositRequestId: string;
+  status: 'processed' | 'duplicate' | 'failed';
+  receivedAt: string;
 }
 
 export interface Notification {

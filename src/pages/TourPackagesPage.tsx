@@ -146,9 +146,9 @@ export default function TourPackagesPage() {
                   <p className="mt-1 font-bold text-primary">PKR {tour.basePrice.toLocaleString()}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" size="sm" onClick={() => openEdit(tour)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
-                  <Button variant="outline" size="sm" onClick={() => updateTourPackage(tour.packageId, { archivedAt: tour.archivedAt ? undefined : new Date().toISOString(), status: "inactive" })}><Archive className="mr-2 h-4 w-4" /> {tour.archivedAt ? "Unarchive" : "Archive"}</Button>
-                  <Button variant="destructive" size="sm" onClick={() => deleteTourPackage(tour.packageId)}><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
+                  <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => openEdit(tour)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                  <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => updateTourPackage(tour.packageId, { archivedAt: tour.archivedAt ? undefined : new Date().toISOString(), status: "inactive" })}><Archive className="mr-2 h-4 w-4" /> {tour.archivedAt ? "Unarchive" : "Archive"}</Button>
+                  <Button variant="destructive" size="sm" className="h-9 px-3" onClick={() => deleteTourPackage(tour.packageId)}><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
                 </div>
               </div>
             ))}
