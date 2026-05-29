@@ -15,6 +15,7 @@ const timeline = [
 ];
 
 const whatsappBase = "https://wa.me/923244440014";
+const siteBase = "https://www.travelian.pk";
 
 export default function PublicPackagesPage() {
   const { packages } = useAdmin();
@@ -72,7 +73,7 @@ export default function PublicPackagesPage() {
                   <div className="grid grid-cols-2 gap-2">
                     <Button asChild className="gradient-primary text-primary-foreground"><Link to={`/umrah/${item.packageId}`}>View Details</Link></Button>
                     <a
-                      href={`${whatsappBase}?text=${encodeURIComponent(`Hello Travelian,\n\nI want to inquire about this Umrah package:\n${item.name}\nDuration: ${item.duration}\nPrice: PKR ${item.basePrice.toLocaleString()}`)}`}
+                      href={`${whatsappBase}?text=${encodeURIComponent(`Hello Travelian,\n\nI want to inquire about this Umrah package:\n${item.name}\nDuration: ${item.duration}\nPrice: PKR ${item.basePrice.toLocaleString()}\nPackage URL: ${siteBase}/umrah/${item.packageId}`)}`}
                       target="_blank"
                       rel="noreferrer"
                     >

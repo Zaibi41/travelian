@@ -22,6 +22,7 @@ export interface GroupTicket {
 
 const API_BASE = (import.meta.env.VITE_TRAVELIAN_API_BASE_URL || "https://api.travelian.pk").replace(/\/$/, "");
 const ALL_GROUPS_SLUG = "all";
+const SITE_BASE = "https://www.travelian.pk";
 
 function unwrapArray(payload: unknown): unknown[] {
   if (Array.isArray(payload)) return payload;
@@ -156,6 +157,8 @@ export function groupTicketWhatsAppMessage(category: string, group: GroupTicket)
     `Baggage: ${group.baggage || "Please confirm"}`,
     `Seats Available: ${group.seatsAvailable || "Please confirm"}`,
     `Fare: ${group.fare ? `${group.currency || "PKR"} ${group.fare}` : "Please confirm"}`,
+    `Group ID: ${group.id}`,
+    `Listing URL: ${SITE_BASE}/group-ticketing/${group.categorySlug || "all"}`,
     "",
     "Please share availability and booking details.",
   ].join("\n");

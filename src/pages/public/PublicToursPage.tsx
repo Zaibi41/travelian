@@ -9,6 +9,7 @@ import { useAdmin } from "@/contexts/AdminStore";
 
 const categories = ["Domestic tours", "International tours", "Group tours", "Custom tours"];
 const whatsappBase = "https://wa.me/923244440014";
+const siteBase = "https://www.travelian.pk";
 
 export default function PublicToursPage() {
   const { tourPackages } = useAdmin();
@@ -66,7 +67,7 @@ export default function PublicToursPage() {
                   {tour.agentDiscount && <Badge variant="secondary">{tour.agentDiscount}</Badge>}
                   <div className="grid grid-cols-2 gap-2">
                     <Button asChild className="gradient-primary text-primary-foreground"><Link to={`/tour/${tour.packageId}`}>View Details</Link></Button>
-                    <a href={`${whatsappBase}?text=${encodeURIComponent(`Hello Travelian,\n\nI want to inquire about this tour:\n${tour.name}\nDates: ${tour.travelDates || "Please confirm"}\nPrice from: PKR ${tour.basePrice.toLocaleString()}`)}`} target="_blank" rel="noreferrer">
+                    <a href={`${whatsappBase}?text=${encodeURIComponent(`Hello Travelian,\n\nI want to inquire about this tour:\n${tour.name}\nDates: ${tour.travelDates || "Please confirm"}\nPrice from: PKR ${tour.basePrice.toLocaleString()}\nPackage URL: ${siteBase}/tour/${tour.packageId}`)}`} target="_blank" rel="noreferrer">
                       <Button variant="outline" className="w-full"><WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp</Button>
                     </a>
                   </div>

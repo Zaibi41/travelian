@@ -7,6 +7,7 @@ import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { useAdmin } from "@/contexts/AdminStore";
 
 const whatsappBase = "https://wa.me/923244440014";
+const siteBase = "https://www.travelian.pk";
 
 function lines(value?: string) {
   return (value || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
@@ -45,6 +46,7 @@ export default function TourDetailPage() {
     `Travel Dates: ${tour.travelDates || "Please confirm"}`,
     `Duration: ${tour.duration}`,
     `Price From: PKR ${tour.basePrice.toLocaleString()}`,
+    `Package URL: ${siteBase}/tour/${tour.packageId}`,
     tour.contactNumbers ? `Contact shown: ${tour.contactNumbers}` : "",
     "",
     "Please share availability and booking details.",

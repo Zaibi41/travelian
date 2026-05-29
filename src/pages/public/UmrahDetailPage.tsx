@@ -7,6 +7,7 @@ import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { useAdmin } from "@/contexts/AdminStore";
 
 const whatsappBase = "https://wa.me/923244440014";
+const siteBase = "https://www.travelian.pk";
 
 function formatPrice(value?: number) {
   return value ? `PKR ${value.toLocaleString()}` : "On request";
@@ -48,6 +49,7 @@ export default function UmrahDetailPage() {
     `Madinah Hotel: ${item.madinahHotel || "Please confirm"}`,
     `Room Sharing: ${item.roomSharing || "Please confirm"}`,
     `Price From: PKR ${item.basePrice.toLocaleString()}`,
+    `Package URL: ${siteBase}/umrah/${item.packageId}`,
     "",
     "Please share availability and booking details.",
   ].join("\n");
