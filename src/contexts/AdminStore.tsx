@@ -113,6 +113,7 @@ interface AdminState {
   addPackage: (p: UmrahPackage) => void;
   updatePackage: (id: string, data: Partial<UmrahPackage>) => void;
   deletePackage: (id: string) => void;
+  addTourPackage: (p: UmrahPackage) => void;
 
   // Coupon actions
   addCoupon: (c: Coupon) => void;
@@ -141,11 +142,12 @@ const initialSearchLogs: FlightSearchLog[] = [];
 const initialPaymentLinks: PaymentLink[] = [];
 const initialSecretKeys: SecretKey[] = [];
 const PACKAGE_STORAGE_KEY = "travelian:umrah-packages";
+const TOUR_PACKAGE_STORAGE_KEY = "travelian:tour-packages";
 
-function loadStoredPackages(): UmrahPackage[] {
+function loadStoredItems(key: string): UmrahPackage[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(PACKAGE_STORAGE_KEY);
+    const raw = window.localStorage.getItem(key);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
@@ -163,8 +165,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [tickets, setTickets] = useState<TravelTicket[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [packages, setPackages] = useState<UmrahPackage[]>(loadStoredPackages);
-  const [tourPackages] = useState<UmrahPackage[]>([]);
+  const [packages, setPackages] = useState<UmrahPackage[]>(() => loadStoredItems(PACKAGE_STORAGE_KEY));
+  const [tourPackages, setTourPackages] = useState<UmrahPackage[]>(() => loadStoredItems(TOUR_PACKAGE_STORAGE_KEY));
   const [visaPackages] = useState<UmrahPackage[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [blogPosts] = useState<BlogPost[]>([]);
@@ -179,6 +181,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     window.localStorage.setItem(PACKAGE_STORAGE_KEY, JSON.stringify(packages));
   }, [packages]);
+
+  useEffect(() => {
+    window.localStorage.setItem(TOUR_PACKAGE_STORAGE_KEY, JSON.stringify(tourPackages));
+  }, [tourPackages]);
 
   // Booking
   const updateBookingStatus = useCallback((id: string, status: BookingStatus) => {
@@ -251,6 +257,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const addPackage = useCallback((pk: UmrahPackage) => setPackages(p => [...p, pk]), []);
   const updatePackage = useCallback((id: string, data: Partial<UmrahPackage>) => setPackages(p => p.map(pk => pk.packageId === id ? { ...pk, ...data } : pk)), []);
   const deletePackage = useCallback((id: string) => setPackages(p => p.filter(pk => pk.packageId !== id)), []);
+  const addTourPackage = useCallback((pk: UmrahPackage) => setTourPackages(p => [...p, pk]), []);
 
   // Coupons
   const addCoupon = useCallback((c: Coupon) => setCoupons(p => [...p, c]), []);
@@ -298,7 +305,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       addWalletFunds, deductWalletFunds,
       addNotification, markNotificationRead, markAllRead,
       addUser, updateUser, deleteUser,
-      addPackage, updatePackage, deletePackage,
+      addPackage, updatePackage, deletePackage, addTourPackage,
       addCoupon, updateCoupon, deleteCoupon,
       addFlightSearchLog, addPaymentLink, updatePaymentLink,
       updatePaymentConfig, addSecretKey, updateSecretKey, deleteSecretKey,

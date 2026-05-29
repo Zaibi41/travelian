@@ -84,6 +84,16 @@ export interface UmrahPackage {
       double?: number;
     };
   }[];
+  travelDates?: string;
+  hotelsText?: string;
+  packageIncludesText?: string;
+  pricingText?: string;
+  itineraryText?: string;
+  agentDiscount?: string;
+  urgencyText?: string;
+  contactNumbers?: string;
+  childInfantNote?: string;
+  exclusions?: string;
 }
 
 export interface Booking {

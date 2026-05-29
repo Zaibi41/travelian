@@ -1,12 +1,18 @@
-import { Map, MessageCircle } from "lucide-react";
+import { CalendarDays, Map, MessageCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/public/PageHeader";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { useAdmin } from "@/contexts/AdminStore";
 
 const categories = ["Domestic tours", "International tours", "Group tours", "Custom tours"];
+const whatsappBase = "https://wa.me/923244440014";
 
 export default function PublicToursPage() {
-  const tours: never[] = [];
+  const { tourPackages } = useAdmin();
+  const activeTours = tourPackages.filter((tour) => tour.status === "active");
 
   return (
     <div>
@@ -25,23 +31,49 @@ export default function PublicToursPage() {
           </div>
         </section>
 
-        {tours.length === 0 && (
+        {activeTours.length === 0 ? (
           <div className="rounded-2xl border bg-card p-8 text-center shadow-card">
             <Map className="mx-auto h-12 w-12 text-muted-foreground" />
             <h2 className="mt-4 text-xl font-bold text-foreground">No tour packages are published right now</h2>
             <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
-              Travelian only displays active tour packages from the database. Our team can still prepare a custom itinerary with hotels, transport, meals and availability dates.
+              Travelian only displays active tour packages from admin inventory. Our team can still prepare a custom itinerary with hotels, transport, meals and availability dates.
             </p>
-            <a
-              href="https://wa.me/923244440014?text=Hello%20Travelian%2C%20please%20help%20me%20with%20a%20custom%20tour%20package."
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a href={`${whatsappBase}?text=${encodeURIComponent("Hello Travelian, please help me with a custom tour package.")}`} target="_blank" rel="noreferrer">
               <Button className="mt-5 rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> Request a Tour
               </Button>
             </a>
           </div>
+        ) : (
+          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {activeTours.map((tour) => (
+              <Card key={tour.packageId} className="overflow-hidden border-0 shadow-card">
+                {tour.image ? (
+                  <img src={tour.image} alt={tour.name} className="h-48 w-full object-cover" />
+                ) : (
+                  <div className="flex h-48 items-center justify-center bg-primary/10"><Map className="h-12 w-12 text-primary" /></div>
+                )}
+                <CardContent className="space-y-4 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <Badge className="mb-2 capitalize">{tour.packageType || "Tour"}</Badge>
+                      <h2 className="text-lg font-bold text-foreground">{tour.name}</h2>
+                      <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground"><CalendarDays className="h-4 w-4" /> {tour.travelDates || tour.duration}</p>
+                    </div>
+                    <p className="text-right text-lg font-black text-primary">PKR {tour.basePrice.toLocaleString()}</p>
+                  </div>
+                  <p className="line-clamp-3 whitespace-pre-line text-sm text-muted-foreground">{tour.hotelsText || tour.description}</p>
+                  {tour.agentDiscount && <Badge variant="secondary">{tour.agentDiscount}</Badge>}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button asChild className="gradient-primary text-primary-foreground"><Link to={`/tour/${tour.packageId}`}>View Details</Link></Button>
+                    <a href={`${whatsappBase}?text=${encodeURIComponent(`Hello Travelian,\n\nI want to inquire about this tour:\n${tour.name}\nDates: ${tour.travelDates || "Please confirm"}\nPrice from: PKR ${tour.basePrice.toLocaleString()}`)}`} target="_blank" rel="noreferrer">
+                      <Button variant="outline" className="w-full"><WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp</Button>
+                    </a>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </section>
         )}
 
         <section className="rounded-2xl border bg-muted/30 p-6">
