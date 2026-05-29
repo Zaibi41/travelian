@@ -4,6 +4,11 @@ import {
   TravelTicket, User, UmrahPackage, Coupon, BlogPost, BookingStatus,
   WalletLedgerEntry, WalletDepositRequest, PaymentWebhookEvent, WalletMethod,
 } from "@/data/mock";
+import {
+  listPackages as listRemotePackages,
+  savePackage as saveRemotePackage,
+  softDeletePackage as softDeleteRemotePackage,
+} from "@/lib/package-api";
 
 // ─── Flight Search Log ───
 export interface FlightSearchLog {
@@ -166,23 +171,9 @@ const AdminContext = createContext<AdminState | undefined>(undefined);
 const initialSearchLogs: FlightSearchLog[] = [];
 const initialPaymentLinks: PaymentLink[] = [];
 const initialSecretKeys: SecretKey[] = [];
-const PACKAGE_STORAGE_KEY = "travelian:umrah-packages";
-const TOUR_PACKAGE_STORAGE_KEY = "travelian:tour-packages";
 const WALLET_LEDGER_STORAGE_KEY = "travelian:wallet-ledger";
 const WALLET_DEPOSITS_STORAGE_KEY = "travelian:wallet-deposits";
 const PAYMENT_WEBHOOK_STORAGE_KEY = "travelian:payment-webhook-events";
-
-function loadStoredItems(key: string): UmrahPackage[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 function loadStoredArray<T>(key: string): T[] {
   if (typeof window === "undefined") return [];
@@ -205,8 +196,8 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [tickets, setTickets] = useState<TravelTicket[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [packages, setPackages] = useState<UmrahPackage[]>(() => loadStoredItems(PACKAGE_STORAGE_KEY));
-  const [tourPackages, setTourPackages] = useState<UmrahPackage[]>(() => loadStoredItems(TOUR_PACKAGE_STORAGE_KEY));
+  const [packages, setPackages] = useState<UmrahPackage[]>([]);
+  const [tourPackages, setTourPackages] = useState<UmrahPackage[]>([]);
   const [visaPackages] = useState<UmrahPackage[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [blogPosts] = useState<BlogPost[]>([]);
@@ -222,12 +213,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [paymentWebhookEvents, setPaymentWebhookEvents] = useState<PaymentWebhookEvent[]>(() => loadStoredArray<PaymentWebhookEvent>(PAYMENT_WEBHOOK_STORAGE_KEY));
 
   useEffect(() => {
-    window.localStorage.setItem(PACKAGE_STORAGE_KEY, JSON.stringify(packages));
-  }, [packages]);
-
-  useEffect(() => {
-    window.localStorage.setItem(TOUR_PACKAGE_STORAGE_KEY, JSON.stringify(tourPackages));
-  }, [tourPackages]);
+    let cancelled = false;
+    Promise.all([listRemotePackages("umrah"), listRemotePackages("tour")])
+      .then(([umrahItems, tourItems]) => {
+        if (cancelled) return;
+        setPackages(umrahItems);
+        setTourPackages(tourItems);
+      })
+      .catch(error => console.error("Unable to load package content from AWS", error));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(WALLET_LEDGER_STORAGE_KEY, JSON.stringify(walletLedger));
@@ -442,12 +439,42 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const deleteUser = useCallback((id: string) => setUsers(p => p.filter(u => u.userId !== id)), []);
 
   // Packages
-  const addPackage = useCallback((pk: UmrahPackage) => setPackages(p => [...p, pk]), []);
-  const updatePackage = useCallback((id: string, data: Partial<UmrahPackage>) => setPackages(p => p.map(pk => pk.packageId === id ? { ...pk, ...data } : pk)), []);
-  const deletePackage = useCallback((id: string) => setPackages(p => p.map(pk => pk.packageId === id ? { ...pk, deletedAt: new Date().toISOString(), status: 'inactive' } : pk)), []);
-  const addTourPackage = useCallback((pk: UmrahPackage) => setTourPackages(p => [...p, pk]), []);
-  const updateTourPackage = useCallback((id: string, data: Partial<UmrahPackage>) => setTourPackages(p => p.map(pk => pk.packageId === id ? { ...pk, ...data } : pk)), []);
-  const deleteTourPackage = useCallback((id: string) => setTourPackages(p => p.map(pk => pk.packageId === id ? { ...pk, deletedAt: new Date().toISOString(), status: 'inactive' } : pk)), []);
+  const addPackage = useCallback((pk: UmrahPackage) => {
+    setPackages(p => [pk, ...p]);
+    saveRemotePackage({ ...pk, category: "umrah" })
+      .then(saved => setPackages(p => p.map(item => item.packageId === pk.packageId ? saved : item)))
+      .catch(error => console.error("Unable to save Umrah package", error));
+  }, []);
+  const updatePackage = useCallback((id: string, data: Partial<UmrahPackage>) => setPackages(previous => {
+    const existing = previous.find(pk => pk.packageId === id);
+    if (!existing) return previous;
+    const next = { ...existing, ...data, category: "umrah" as const };
+    saveRemotePackage(next).catch(error => console.error("Unable to update Umrah package", error));
+    return previous.map(pk => pk.packageId === id ? next : pk);
+  }), []);
+  const deletePackage = useCallback((id: string) => {
+    const deletedAt = new Date().toISOString();
+    setPackages(p => p.map(pk => pk.packageId === id ? { ...pk, deletedAt, status: 'inactive' } : pk));
+    softDeleteRemotePackage("umrah", id).catch(error => console.error("Unable to delete Umrah package", error));
+  }, []);
+  const addTourPackage = useCallback((pk: UmrahPackage) => {
+    setTourPackages(p => [pk, ...p]);
+    saveRemotePackage({ ...pk, category: "tour" })
+      .then(saved => setTourPackages(p => p.map(item => item.packageId === pk.packageId ? saved : item)))
+      .catch(error => console.error("Unable to save tour package", error));
+  }, []);
+  const updateTourPackage = useCallback((id: string, data: Partial<UmrahPackage>) => setTourPackages(previous => {
+    const existing = previous.find(pk => pk.packageId === id);
+    if (!existing) return previous;
+    const next = { ...existing, ...data, category: "tour" as const };
+    saveRemotePackage(next).catch(error => console.error("Unable to update tour package", error));
+    return previous.map(pk => pk.packageId === id ? next : pk);
+  }), []);
+  const deleteTourPackage = useCallback((id: string) => {
+    const deletedAt = new Date().toISOString();
+    setTourPackages(p => p.map(pk => pk.packageId === id ? { ...pk, deletedAt, status: 'inactive' } : pk));
+    softDeleteRemotePackage("tour", id).catch(error => console.error("Unable to delete tour package", error));
+  }, []);
 
   // Coupons
   const addCoupon = useCallback((c: Coupon) => setCoupons(p => [...p, c]), []);

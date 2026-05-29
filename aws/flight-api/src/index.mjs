@@ -1,0 +1,231 @@
+import { json, method, normalizePath, readJson, requestId } from "./http.mjs";
+import { providerAction, searchFlights } from "./services/flights.mjs";
+import { searchHotels, searchTransfers } from "./services/products.mjs";
+import {
+  deleteBlogPost,
+  getBlogPost,
+  getPackage,
+  listBlogPosts,
+  listPackages,
+  softDeletePackage,
+  upsertBlogPost,
+  upsertPackage
+} from "./services/content.mjs";
+import { requireFields, validateHotelSearchRequest, validateSearchRequest, validateTransferSearchRequest } from "./validation.mjs";
+import { requireApiAuth } from "./auth.mjs";
+
+const routes = {
+  "GET /health": health,
+  "POST /flights/search": flightsSearch,
+  "POST /hotels/search": hotelsSearch,
+  "POST /transfers/search": transfersSearch,
+  "POST /flights/price": flightsPrice,
+  "GET /flights/fare-rules": fareRules,
+  "GET /flights/seat-map": seatMap,
+  "POST /bookings": createBooking,
+  "GET /bookings/{bookingId}": retrieveBooking,
+  "POST /bookings/{bookingId}/ticket": issueTicket,
+  "POST /bookings/{bookingId}/cancel": cancelBooking,
+  "POST /bookings/{bookingId}/exchange/search": exchangeSearch,
+  "POST /bookings/{bookingId}/exchange/price": exchangePrice,
+  "POST /bookings/{bookingId}/exchange/commit": exchangeCommit,
+  "GET /bookings/{bookingId}/documents": documents,
+  "GET /content/blog-posts": listBlog,
+  "POST /content/blog-posts": saveBlog,
+  "GET /content/blog-posts/{slug}": getBlog,
+  "DELETE /content/blog-posts/{slug}": removeBlog,
+  "GET /content/packages": listPackageContent,
+  "POST /content/packages": savePackageContent,
+  "GET /content/packages/{category}/{packageId}": getPackageContent,
+  "DELETE /content/packages/{category}/{packageId}": removePackageContent
+};
+
+export async function handler(event) {
+  const reqId = requestId(event);
+  if (method(event) === "OPTIONS") return json(204, {});
+
+  try {
+    const path = normalizePath(event);
+    const routeKey = `${method(event)} ${routePattern(path)}`;
+    const route = routes[routeKey];
+    if (!route) return json(404, { requestId: reqId, error: "Not found" });
+    await requireApiAuth(event, routeKey);
+    const result = await route(event, path);
+    return json(200, { requestId: reqId, ...result });
+  } catch (error) {
+    console.error(JSON.stringify({ requestId: reqId, message: error.message, details: error.details }));
+    return json(error.statusCode || 500, {
+      requestId: reqId,
+      error: error.message || "Internal server error",
+      details: error.details
+    });
+  }
+}
+
+async function health() {
+  return {
+    status: "ok",
+    service: "travelian-flight-api",
+    providers: (process.env.ENABLED_PROVIDERS || "travelport,flyadeal,airsial,pia").split(",")
+  };
+}
+
+async function flightsSearch(event) {
+  const request = validateSearchRequest(await readJson(event));
+  return searchFlights(request);
+}
+
+async function hotelsSearch(event) {
+  const request = validateHotelSearchRequest(await readJson(event));
+  return searchHotels(request);
+}
+
+async function transfersSearch(event) {
+  const request = validateTransferSearchRequest(await readJson(event));
+  return searchTransfers(request);
+}
+
+async function flightsPrice(event) {
+  const body = await readJson(event);
+  requireFields(body, ["provider", "offerId"]);
+  return { result: await providerAction(body.provider, "priceOffer", body) };
+}
+
+async function fareRules(event) {
+  const query = event.queryStringParameters || {};
+  requireFields(query, ["provider", "offerId"]);
+  return { result: await providerAction(query.provider, "fareRules", query) };
+}
+
+async function seatMap(event) {
+  const query = event.queryStringParameters || {};
+  requireFields(query, ["provider", "offerId"]);
+  return { result: await providerAction(query.provider, "seatMap", query) };
+}
+
+async function createBooking(event) {
+  const body = await readJson(event);
+  requireFields(body, ["provider", "offerId", "travelers", "contact"]);
+  return { result: await providerAction(body.provider, "createBooking", body) };
+}
+
+async function retrieveBooking(event, path) {
+  const provider = providerFromQuery(event);
+  return { result: await providerAction(provider, "retrieveBooking", { bookingId: bookingId(path) }) };
+}
+
+async function issueTicket(event, path) {
+  const body = await readJson(event);
+  const provider = body.provider || providerFromQuery(event);
+  return { result: await providerAction(provider, "issueTicket", { ...body, bookingId: bookingId(path) }) };
+}
+
+async function cancelBooking(event, path) {
+  const body = await readJson(event);
+  const provider = body.provider || providerFromQuery(event);
+  return { result: await providerAction(provider, "cancelBooking", { ...body, bookingId: bookingId(path) }) };
+}
+
+async function exchangeSearch(event, path) {
+  const body = await readJson(event);
+  const provider = body.provider || providerFromQuery(event);
+  return { result: await providerAction(provider, "exchangeSearch", { ...body, bookingId: bookingId(path) }) };
+}
+
+async function exchangePrice(event, path) {
+  const body = await readJson(event);
+  const provider = body.provider || providerFromQuery(event);
+  return { result: await providerAction(provider, "exchangePrice", { ...body, bookingId: bookingId(path) }) };
+}
+
+async function exchangeCommit(event, path) {
+  const body = await readJson(event);
+  const provider = body.provider || providerFromQuery(event);
+  return { result: await providerAction(provider, "exchangeCommit", { ...body, bookingId: bookingId(path) }) };
+}
+
+async function documents(event, path) {
+  const provider = providerFromQuery(event);
+  return { result: await providerAction(provider, "documents", { bookingId: bookingId(path) }) };
+}
+
+async function listBlog(event) {
+  const status = event.queryStringParameters?.status;
+  return { items: await listBlogPosts({ status }) };
+}
+
+async function getBlog(event, path) {
+  const item = await getBlogPost(decodeURIComponent(path.split("/")[3]));
+  if (!item) {
+    const error = new Error("Blog post not found");
+    error.statusCode = 404;
+    throw error;
+  }
+  return { item };
+}
+
+async function saveBlog(event) {
+  const body = await readJson(event);
+  requireFields(body, ["title"]);
+  return { item: await upsertBlogPost(body) };
+}
+
+async function removeBlog(event, path) {
+  return { result: await deleteBlogPost(decodeURIComponent(path.split("/")[3])) };
+}
+
+async function listPackageContent(event) {
+  const category = event.queryStringParameters?.category;
+  const includeDeleted = event.queryStringParameters?.includeDeleted === "true";
+  requireFields({ category }, ["category"]);
+  return { items: await listPackages({ category, includeDeleted }) };
+}
+
+async function getPackageContent(event, path) {
+  const [, , , category, packageId] = path.split("/");
+  const item = await getPackage(decodeURIComponent(category), decodeURIComponent(packageId));
+  if (!item || item.deletedAt) {
+    const error = new Error("Package not found");
+    error.statusCode = 404;
+    throw error;
+  }
+  return { item };
+}
+
+async function savePackageContent(event) {
+  const body = await readJson(event);
+  requireFields(body, ["category", "name"]);
+  return { item: await upsertPackage(body.category, body) };
+}
+
+async function removePackageContent(event, path) {
+  const [, , , category, packageId] = path.split("/");
+  return { item: await softDeletePackage(decodeURIComponent(category), decodeURIComponent(packageId)) };
+}
+
+function routePattern(path) {
+  if (/^\/bookings\/[^/]+$/.test(path)) return "/bookings/{bookingId}";
+  if (/^\/bookings\/[^/]+\/ticket$/.test(path)) return "/bookings/{bookingId}/ticket";
+  if (/^\/bookings\/[^/]+\/cancel$/.test(path)) return "/bookings/{bookingId}/cancel";
+  if (/^\/bookings\/[^/]+\/exchange\/search$/.test(path)) return "/bookings/{bookingId}/exchange/search";
+  if (/^\/bookings\/[^/]+\/exchange\/price$/.test(path)) return "/bookings/{bookingId}/exchange/price";
+  if (/^\/bookings\/[^/]+\/exchange\/commit$/.test(path)) return "/bookings/{bookingId}/exchange/commit";
+  if (/^\/bookings\/[^/]+\/documents$/.test(path)) return "/bookings/{bookingId}/documents";
+  if (/^\/content\/blog-posts\/[^/]+$/.test(path)) return "/content/blog-posts/{slug}";
+  if (/^\/content\/packages\/[^/]+\/[^/]+$/.test(path)) return "/content/packages/{category}/{packageId}";
+  return path;
+}
+
+function bookingId(path) {
+  return decodeURIComponent(path.split("/")[2]);
+}
+
+function providerFromQuery(event) {
+  const provider = event.queryStringParameters?.provider;
+  if (!provider) {
+    const error = new Error("provider query parameter is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  return provider;
+}
