@@ -130,6 +130,16 @@ async function persistToken(config, token, tokenCreatedAt, tokenExpiresAt) {
   }));
 }
 
+async function clearStoredToken(config) {
+  cachedToken = "";
+  cachedTokenAt = 0;
+  cachedSecret = { ...config, token: "", tokenCreatedAt: 0, tokenExpiresAt: 0, expires_at: 0 };
+  await secrets.send(new PutSecretValueCommand({
+    SecretId: SECRET_ID,
+    SecretString: JSON.stringify(cachedSecret),
+  }));
+}
+
 async function authedAlhaiderFetch(path) {
   const config = await getConfig();
   const token = await getToken();
@@ -138,15 +148,16 @@ async function authedAlhaiderFetch(path) {
   } catch (error) {
     if (!(error instanceof Error) || !/unauthenticated|unauthorized|token/i.test(error.message)) throw error;
     if (isProviderTokenUsable(config.token, config.tokenExpiresAt)) {
-      throw new Error("Stored Alhaider token was rejected by the provider. Revoke old sessions or update the token in Secrets Manager.");
-    }
-    cachedToken = "";
-    cachedTokenAt = 0;
-    if (cachedSecret) {
-      cachedSecret.token = "";
-      cachedSecret.tokenCreatedAt = 0;
-      cachedSecret.tokenExpiresAt = 0;
-      cachedSecret.expires_at = 0;
+      await clearStoredToken(config);
+    } else {
+      cachedToken = "";
+      cachedTokenAt = 0;
+      if (cachedSecret) {
+        cachedSecret.token = "";
+        cachedSecret.tokenCreatedAt = 0;
+        cachedSecret.tokenExpiresAt = 0;
+        cachedSecret.expires_at = 0;
+      }
     }
     const freshToken = await getToken();
     return alhaiderFetch(path, { headers: { Authorization: `Bearer ${freshToken}` } });
