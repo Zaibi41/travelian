@@ -1,5 +1,5 @@
 import { CalendarDays, Check, Hotel, Package, Plane, Users } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -74,7 +74,9 @@ export default function UmrahDetailPage() {
               <p className="mt-1 text-4xl font-black text-primary">PKR {item.basePrice.toLocaleString()}</p>
               <p className="mt-1 text-sm text-muted-foreground">Per person, package terms apply</p>
               <div className="mt-5 grid gap-2">
-                <Button className="gradient-primary text-primary-foreground">Book Now</Button>
+                <Button asChild className="gradient-primary text-primary-foreground">
+                  <Link to={`/booking?type=umrah&id=${encodeURIComponent(item.packageId)}`}>Book Now</Link>
+                </Button>
                 <a href={`${whatsappBase}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer">
                   <Button variant="outline" className="w-full"><WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp Inquiry</Button>
                 </a>

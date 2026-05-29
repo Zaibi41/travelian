@@ -51,7 +51,13 @@ interface ProductCtx {
   extra?: { airline?: string; flightNumber?: string; from?: string; to?: string; fromCode?: string; toCode?: string; date?: string; cabin?: string };
 }
 
-function buildCtx(params: URLSearchParams): ProductCtx | null {
+interface PackageInventory {
+  packages: typeof mockPackages;
+  tourPackages: typeof mockTourPackages;
+  visaPackages: typeof mockVisaPackages;
+}
+
+function buildCtx(params: URLSearchParams, inventory: PackageInventory): ProductCtx | null {
   const type = (params.get("type") as BookingType) || (params.get("airline") ? "flight" : null);
   if (!type) return null;
   const id = params.get("id") || params.get("flightId") || "";
@@ -95,20 +101,20 @@ function buildCtx(params: URLSearchParams): ProductCtx | null {
     };
   }
   if (type === "umrah") {
-    const p = mockPackages.find(x => x.packageId === id);
+    const p = inventory.packages.find(x => x.packageId === id && !x.deletedAt);
     if (!p) return null;
     return {
       type: "umrah",
       title: p.name,
-      subtitle: p.city,
-      meta: `${p.duration} · ${p.hotel}`,
+      subtitle: p.city || p.departureCity || "Travelian Umrah",
+      meta: [p.duration, p.hotel || [p.makkahHotel, p.madinahHotel].filter(Boolean).join(" / ")].filter(Boolean).join(" · "),
       emoji: "🕋",
       base: p.basePrice,
       currency: "PKR",
     };
   }
   if (type === "tour") {
-    const t = mockTourPackages.find(x => x.packageId === id);
+    const t = inventory.tourPackages.find(x => x.packageId === id && !x.deletedAt);
     if (!t) return null;
     return {
       type: "tour",
@@ -121,7 +127,7 @@ function buildCtx(params: URLSearchParams): ProductCtx | null {
     };
   }
   if (type === "visa") {
-    const v = mockVisaPackages.find(x => x.packageId === id);
+    const v = inventory.visaPackages.find(x => x.packageId === id && !x.deletedAt);
     if (!v) return null;
     return {
       type: "visa",
@@ -138,8 +144,8 @@ function buildCtx(params: URLSearchParams): ProductCtx | null {
 
 export default function BookingPage() {
   const [params] = useSearchParams();
-  const productCtx = useMemo(() => buildCtx(params), [params]);
-  const { addTicket } = useAdmin();
+  const { addTicket, packages, tourPackages, visaPackages } = useAdmin();
+  const productCtx = useMemo(() => buildCtx(params, { packages, tourPackages, visaPackages }), [params, packages, tourPackages, visaPackages]);
 
   // Empty state if no booking context provided
   if (!productCtx) {

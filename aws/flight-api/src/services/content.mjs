@@ -1,7 +1,14 @@
 import { DeleteCommand, GetCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { db } from "../db.mjs";
 
 const tableName = process.env.CONTENT_TABLE;
+const mediaBucket = process.env.MEDIA_BUCKET || "travelian.pk";
+const mediaBucketRegion = process.env.MEDIA_BUCKET_REGION || "eu-north-1";
+const mediaPublicBaseUrl = (process.env.MEDIA_PUBLIC_BASE_URL || "https://www.travelian.pk").replace(/\/$/, "");
+const packageImagePrefix = (process.env.PACKAGE_IMAGE_PREFIX || "package-images").replace(/^\/+|\/+$/g, "");
+const s3 = new S3Client({ region: mediaBucketRegion });
 
 export async function listBlogPosts({ status } = {}) {
   ensureTable();
@@ -122,6 +129,59 @@ export async function softDeletePackage(category, packageId) {
   });
 }
 
+export async function createPackageImageUploadUrl({ category, fileName, contentType }) {
+  const normalizedCategory = packageCategory(category);
+  const safeName = sanitizeFileName(fileName);
+  const safeContentType = String(contentType || "application/octet-stream");
+  if (!safeContentType.startsWith("image/")) {
+    const error = new Error("Only image uploads are allowed");
+    error.statusCode = 400;
+    throw error;
+  }
+  const extension = extensionFromFileName(safeName, safeContentType);
+  const key = `${packageImagePrefix}/${normalizedCategory}/${Date.now()}-${randomSuffix()}${extension}`;
+  const uploadUrl = await getSignedUrl(
+    s3,
+    new PutObjectCommand({
+      Bucket: mediaBucket,
+      Key: key,
+      ContentType: safeContentType,
+    }),
+    { expiresIn: 600 }
+  );
+  return {
+    key,
+    uploadUrl,
+    publicUrl: `${mediaPublicBaseUrl}/${key}`,
+    expiresIn: 600,
+  };
+}
+
+export async function listPackageImages({ category }) {
+  const normalizedCategory = packageCategory(category);
+  const prefix = `${packageImagePrefix}/${normalizedCategory}/`;
+  const result = await s3.send(new ListObjectsV2Command({
+    Bucket: mediaBucket,
+    Prefix: prefix,
+    MaxKeys: 1000,
+  }));
+  return (result.Contents || [])
+    .filter(item => item.Key && !item.Key.endsWith("/"))
+    .map(item => ({
+      key: item.Key,
+      url: `${mediaPublicBaseUrl}/${item.Key}`,
+      updatedAt: item.LastModified?.toISOString?.() || "",
+      size: item.Size || 0,
+    }))
+    .filter(item => /\.(avif|gif|jpe?g|png|webp)$/i.test(item.key));
+}
+
+export async function getRandomPackageImage({ category }) {
+  const images = await listPackageImages({ category });
+  if (!images.length) return null;
+  return images[Math.floor(Math.random() * images.length)];
+}
+
 export async function listTickets({ includeDeleted = false } = {}) {
   ensureTable();
   const result = await db.send(new QueryCommand({
@@ -197,13 +257,45 @@ function slugify(value = "") {
 }
 
 function packagePk(category) {
-  const normalized = String(category || "").toLowerCase();
+  const normalized = packageCategory(category);
+  return `PACKAGE#${normalized.toUpperCase()}`;
+}
+
+function packageCategory(category) {
+  const normalized = String(category || "").toLowerCase().trim();
   if (!["umrah", "tour", "visa"].includes(normalized)) {
     const error = new Error("Invalid package category");
     error.statusCode = 400;
     throw error;
   }
-  return `PACKAGE#${normalized.toUpperCase()}`;
+  return normalized;
+}
+
+function sanitizeFileName(fileName = "") {
+  const sanitized = String(fileName).split(/[\\/]/).pop()?.toLowerCase().replace(/[^a-z0-9.]+/g, "-").replace(/-+/g, "-") || "";
+  if (!sanitized) {
+    const error = new Error("fileName is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  return sanitized;
+}
+
+function extensionFromFileName(fileName, contentType) {
+  const fromName = fileName.match(/\.(avif|gif|jpe?g|png|webp)$/i)?.[0]?.toLowerCase();
+  if (fromName) return fromName === ".jpeg" ? ".jpg" : fromName;
+  const map = {
+    "image/avif": ".avif",
+    "image/gif": ".gif",
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+  };
+  return map[contentType] || ".jpg";
+}
+
+function randomSuffix() {
+  return Math.random().toString(36).slice(2, 10);
 }
 
 function ensureTable() {

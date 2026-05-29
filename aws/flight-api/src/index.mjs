@@ -2,11 +2,14 @@ import { json, method, normalizePath, readJson, requestId } from "./http.mjs";
 import { providerAction, searchFlights } from "./services/flights.mjs";
 import { searchHotels, searchTransfers } from "./services/products.mjs";
 import {
+  createPackageImageUploadUrl,
   deleteBlogPost,
+  getRandomPackageImage,
   getBlogPost,
   getPackage,
   listTickets,
   listBlogPosts,
+  listPackageImages,
   listPackages,
   softDeletePackage,
   softDeleteTicket,
@@ -39,6 +42,9 @@ const routes = {
   "DELETE /content/blog-posts/{slug}": removeBlog,
   "GET /content/packages": listPackageContent,
   "POST /content/packages": savePackageContent,
+  "GET /content/package-images": listPackageImageContent,
+  "GET /content/package-images/random": randomPackageImageContent,
+  "POST /content/package-images/upload-url": createPackageImageUploadContent,
   "GET /content/packages/{category}/{packageId}": getPackageContent,
   "DELETE /content/packages/{category}/{packageId}": removePackageContent,
   "GET /content/tickets": listTicketContent,
@@ -207,6 +213,24 @@ async function savePackageContent(event) {
 async function removePackageContent(event, path) {
   const [, , , category, packageId] = path.split("/");
   return { item: await softDeletePackage(decodeURIComponent(category), decodeURIComponent(packageId)) };
+}
+
+async function listPackageImageContent(event) {
+  const category = event.queryStringParameters?.category;
+  requireFields({ category }, ["category"]);
+  return { items: await listPackageImages({ category }) };
+}
+
+async function randomPackageImageContent(event) {
+  const category = event.queryStringParameters?.category;
+  requireFields({ category }, ["category"]);
+  return { item: await getRandomPackageImage({ category }) };
+}
+
+async function createPackageImageUploadContent(event) {
+  const body = await readJson(event);
+  requireFields(body, ["category", "fileName", "contentType"]);
+  return { item: await createPackageImageUploadUrl(body) };
 }
 
 async function listTicketContent(event) {

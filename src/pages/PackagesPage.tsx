@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Archive, Edit, Package, Plus, Trash2 } from "lucide-react";
+import { Archive, Edit, ImageIcon, Package, Plus, Trash2, Upload } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { EmptyState } from "@/components/EmptyState";
 import { useAdmin } from "@/contexts/AdminStore";
 import { UmrahPackage } from "@/data/mock";
+import { getRandomPackageImage, uploadPackageImage } from "@/lib/package-image-api";
 import { toast } from "sonner";
 
 const defaultForm = {
@@ -108,33 +109,76 @@ export default function PackagesPage() {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<UmrahForm>(defaultForm);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const visiblePackages = packages.filter((item) => !item.deletedAt);
 
   const setField = (field: keyof UmrahForm, value: string) => setForm((current) => ({ ...current, [field]: value }));
   const openNew = () => {
     setEditingId(null);
-    setForm(defaultForm);
+    setForm({ ...defaultForm });
+    setSelectedImageFile(null);
     setOpen(true);
   };
   const openEdit = (item: UmrahPackage) => {
     setEditingId(item.packageId);
     setForm(toForm(item));
+    setSelectedImageFile(null);
     setOpen(true);
   };
-  const handleSave = () => {
+
+  const handleImageUpload = async () => {
+    if (!selectedImageFile) return toast.error("Please choose an image first");
+    setImageUploading(true);
+    try {
+      const publicUrl = await uploadPackageImage("umrah", selectedImageFile);
+      setField("image", publicUrl);
+      setSelectedImageFile(null);
+      toast.success("Image uploaded to Umrah package folder");
+    } catch (error) {
+      console.error(error);
+      toast.error("Image upload failed. Please try again.");
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const resolveImageUrl = async () => {
+    if (form.image.trim()) return form.image.trim();
+    if (selectedImageFile) return uploadPackageImage("umrah", selectedImageFile);
+    try {
+      return await getRandomPackageImage("umrah");
+    } catch (error) {
+      console.error("Unable to select default Umrah image", error);
+      return undefined;
+    }
+  };
+
+  const handleSave = async () => {
     if (!form.title.trim()) return toast.error("Package title is required");
     if (!form.duration.trim()) return toast.error("Duration is required");
     if (!form.makkahHotel.trim()) return toast.error("Makkah hotel is required");
     if (!form.madinahHotel.trim()) return toast.error("Madinah hotel is required");
-    const payload = buildPackage(form);
-    if (editingId) {
-      updatePackage(editingId, payload);
-      toast.success("Umrah package updated");
-    } else {
-      addPackage({ ...payload, packageId: `umrah-${Date.now()}` });
-      toast.success("Umrah package saved");
+    setSaving(true);
+    try {
+      const imageUrl = await resolveImageUrl();
+      const payload = buildPackage({ ...form, image: imageUrl || "" });
+      if (editingId) {
+        updatePackage(editingId, payload);
+        toast.success("Umrah package updated");
+      } else {
+        addPackage({ ...payload, packageId: `umrah-${Date.now()}` });
+        toast.success(imageUrl ? "Umrah package saved with image" : "Umrah package saved");
+      }
+      setSelectedImageFile(null);
+      setOpen(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Package could not be saved. Please try again.");
+    } finally {
+      setSaving(false);
     }
-    setOpen(false);
   };
 
   return (
@@ -176,7 +220,10 @@ export default function PackagesPage() {
         </Card>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setSelectedImageFile(null);
+      }}>
         <DialogContent className="max-h-[92vh] max-w-5xl overflow-y-auto">
           <DialogHeader><DialogTitle>{editingId ? "Edit Umrah Package" : "Add New Umrah Package"}</DialogTitle></DialogHeader>
           <div className="grid gap-4 md:grid-cols-2">
@@ -194,7 +241,34 @@ export default function PackagesPage() {
             <div className="space-y-2"><Label>Seats label</Label><Input value={form.seatsLabel} onChange={(event) => setField("seatsLabel", event.target.value)} /></div>
             <div className="space-y-2"><Label>Child price</Label><Input type="number" value={form.childPrice} onChange={(event) => setField("childPrice", event.target.value)} /></div>
             <div className="space-y-2"><Label>Infant price</Label><Input type="number" value={form.infantPrice} onChange={(event) => setField("infantPrice", event.target.value)} /></div>
-            <div className="space-y-2 md:col-span-2"><Label>Image or banner URL</Label><Input value={form.image} onChange={(event) => setField("image", event.target.value)} /></div>
+            <div className="space-y-3 md:col-span-2">
+              <Label>Image or banner</Label>
+              <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+                <Input value={form.image} onChange={(event) => setField("image", event.target.value)} placeholder="Image URL, uploaded path, or leave blank for random Umrah image" />
+                <Button type="button" variant="outline" className="gap-2" onClick={handleImageUpload} disabled={!selectedImageFile || imageUploading}>
+                  <Upload className="h-4 w-4" /> {imageUploading ? "Uploading..." : "Upload"}
+                </Button>
+              </div>
+              <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+                <Input type="file" accept="image/*" onChange={(event) => setSelectedImageFile(event.target.files?.[0] || null)} />
+                <p className="text-xs text-muted-foreground">
+                  Blank image fields auto-select from the S3 folder <span className="font-medium">package-images/umrah</span>.
+                </p>
+              </div>
+              {form.image ? (
+                <div className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
+                  <img src={form.image} alt="Umrah package preview" className="h-16 w-24 rounded-lg object-cover" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">Current package image</p>
+                    <p className="truncate text-xs text-muted-foreground">{form.image}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
+                  <ImageIcon className="h-4 w-4" /> No image selected. Travelian will choose a random Umrah image during save if the S3 folder has images.
+                </div>
+              )}
+            </div>
             <div className="space-y-2 md:col-span-2"><Label>Flight dates</Label><Textarea rows={4} value={form.flightDates} onChange={(event) => setField("flightDates", event.target.value)} placeholder="18 JUN LHE-JED | 08 JUL JED-LHE" /></div>
             <div className="space-y-2 md:col-span-2"><Label>Hotel options</Label><Textarea rows={4} value={form.hotelOptions} onChange={(event) => setField("hotelOptions", event.target.value)} placeholder="Option 1: Bait Al-Hajeej 2 / Jood Al-Marjan" /></div>
             <div className="space-y-2 md:col-span-2"><Label>Package includes</Label><Textarea rows={5} value={form.includes} onChange={(event) => setField("includes", event.target.value)} /></div>
@@ -202,7 +276,7 @@ export default function PackagesPage() {
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} className="gradient-primary text-primary-foreground">Save Package</Button>
+            <Button onClick={handleSave} disabled={saving || imageUploading} className="gradient-primary text-primary-foreground">{saving ? "Saving..." : "Save Package"}</Button>
           </div>
         </DialogContent>
       </Dialog>

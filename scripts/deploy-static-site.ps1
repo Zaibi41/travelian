@@ -24,7 +24,8 @@ aws s3 sync dist "s3://$Bucket" `
   --cache-control "public,max-age=31536000,immutable" `
   --exclude "index.html" `
   --exclude "sitemap.xml" `
-  --exclude "robots.txt"
+  --exclude "robots.txt" `
+  --exclude "package-images/*"
 
 aws s3 cp dist/index.html "s3://$Bucket/index.html" `
   --profile $Profile `
