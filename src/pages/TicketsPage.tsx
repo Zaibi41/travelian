@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Download, FileText, MessageCircle, Pencil, Plane, Plus, Receipt, Search, Send, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Download, FileText, MessageCircle, Pencil, Plane, Plus, Receipt, Search, Send, Trash2, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,8 @@ import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useAdmin } from "@/contexts/AdminStore";
 import { useRole } from "@/contexts/RoleContext";
-import type { TravelTicket } from "@/data/mock";
+import type { CustomerProfile, TravelTicket } from "@/data/mock";
+import { listCustomers, saveCustomer } from "@/lib/customer-api";
 import { downloadTicketInvoice } from "@/lib/ticket-invoice-pdf";
 
 const emptyForm: Omit<TravelTicket, "ticketId"> = {
@@ -49,10 +50,23 @@ const emptyForm: Omit<TravelTicket, "ticketId"> = {
   notes: "",
   customerEmail: "",
   customerPhone: "",
+  customerId: "",
   cognitoSub: "",
   cognitoEmail: "",
   source: "admin_manual",
   issuedBy: "",
+};
+
+const emptyCustomer: Omit<CustomerProfile, "customerId"> = {
+  name: "",
+  email: "",
+  phone: "",
+  title: "Mr",
+  firstName: "",
+  lastName: "",
+  dateOfBirth: "",
+  passportNumber: "",
+  passportExpiry: "",
 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -108,6 +122,12 @@ export default function TicketsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<TravelTicket | null>(null);
   const [form, setForm] = useState<Omit<TravelTicket, "ticketId">>(emptyForm);
+  const [customers, setCustomers] = useState<CustomerProfile[]>([]);
+  const [customerSearch, setCustomerSearch] = useState("");
+  const [showCustomerResults, setShowCustomerResults] = useState(false);
+  const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [newCustomer, setNewCustomer] = useState<Omit<CustomerProfile, "customerId">>(emptyCustomer);
+  const [savingCustomer, setSavingCustomer] = useState(false);
 
   const canEdit = currentRole !== "agency_staff";
   const visibleTickets = tickets.filter(ticket => !ticket.deletedAt);
@@ -121,9 +141,73 @@ export default function TicketsPage() {
     );
   }, [search, visibleTickets]);
 
+  const matchingCustomers = useMemo(() => {
+    const term = customerSearch.trim().toLowerCase();
+    if (!term) return customers.slice(0, 8);
+    return customers
+      .filter(customer => [customer.name, customer.email, customer.phone, customer.passportNumber]
+        .filter(Boolean)
+        .some(value => String(value).toLowerCase().includes(term)))
+      .slice(0, 8);
+  }, [customerSearch, customers]);
+
+  useEffect(() => {
+    let cancelled = false;
+    listCustomers()
+      .then(items => {
+        if (!cancelled) setCustomers(items);
+      })
+      .catch(error => console.error("Unable to load customer profiles", error));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectCustomer = (customer: CustomerProfile) => {
+    setForm(previous => ({
+      ...previous,
+      customerId: customer.customerId,
+      customerEmail: customer.email || "",
+      customerPhone: customer.phone || "",
+      passengerName: customer.name,
+      title: customer.title || previous.title,
+      firstName: customer.firstName || "",
+      lastName: customer.lastName || "",
+      dateOfBirth: customer.dateOfBirth || "",
+      passportNumber: customer.passportNumber || "",
+      passportExpiry: customer.passportExpiry || "",
+    }));
+    setCustomerSearch(customer.name);
+    setShowCustomerResults(false);
+  };
+
+  const handleSaveCustomer = async () => {
+    const name = newCustomer.name.trim() || [newCustomer.firstName, newCustomer.lastName].filter(Boolean).join(" ").trim();
+    if (!name) {
+      toast.error("Customer name is required");
+      return;
+    }
+    setSavingCustomer(true);
+    try {
+      const saved = await saveCustomer({ ...newCustomer, name });
+      setCustomers(previous => [saved, ...previous.filter(item => item.customerId !== saved.customerId)]);
+      selectCustomer(saved);
+      setNewCustomer(emptyCustomer);
+      setShowNewCustomer(false);
+      toast.success("Customer profile saved");
+    } catch (error) {
+      console.error("Unable to save customer profile", error);
+      toast.error("Customer profile could not be saved");
+    } finally {
+      setSavingCustomer(false);
+    }
+  };
+
   const openAdd = () => {
     setEditing(null);
     setForm({ ...emptyForm, bookingId: `INV-${Date.now()}` });
+    setCustomerSearch("");
+    setShowNewCustomer(false);
     setDialogOpen(true);
   };
 
@@ -131,6 +215,8 @@ export default function TicketsPage() {
     setEditing(ticket);
     const { ticketId, ...editable } = ticket;
     setForm({ ...emptyForm, ...editable });
+    setCustomerSearch(ticket.passengerName || ticket.customerEmail || "");
+    setShowNewCustomer(false);
     setDialogOpen(true);
   };
 
@@ -294,11 +380,66 @@ export default function TicketsPage() {
               <Field label="Invoice Number"><Input value={form.invoiceNumber || ""} onChange={e => setForm(p => ({ ...p, invoiceNumber: e.target.value }))} placeholder="Auto generated" /></Field>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="rounded-lg border bg-muted/20 p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end">
+                <div className="relative flex-1 space-y-2">
+                  <Label>Customer Search</Label>
+                  <div className="relative">
+                    <Users className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      value={customerSearch}
+                      onChange={event => {
+                        setCustomerSearch(event.target.value);
+                        setShowCustomerResults(true);
+                      }}
+                      onFocus={() => setShowCustomerResults(true)}
+                      placeholder="Search by name, email, phone or passport number"
+                      className="pl-9"
+                    />
+                  </div>
+                  {showCustomerResults && (
+                    <div className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-md border bg-background p-1 shadow-lg">
+                      {matchingCustomers.length ? matchingCustomers.map(customer => (
+                        <button
+                          key={customer.customerId}
+                          type="button"
+                          onClick={() => selectCustomer(customer)}
+                          className="w-full rounded px-3 py-2 text-left transition-colors hover:bg-muted"
+                        >
+                          <span className="block text-sm font-semibold">{customer.name}</span>
+                          <span className="block text-xs text-muted-foreground">{[customer.email, customer.phone, customer.passportNumber].filter(Boolean).join(" | ") || "Customer profile"}</span>
+                        </button>
+                      )) : (
+                        <p className="px-3 py-2 text-sm text-muted-foreground">No matching customer profile found.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <Button type="button" variant="outline" onClick={() => setShowNewCustomer(value => !value)} className="gap-2">
+                  <UserPlus className="h-4 w-4" /> Add New Customer
+                </Button>
+              </div>
+              {form.customerId && (
+                <p className="mt-3 text-xs font-medium text-success">Customer profile selected. Ticket details are linked automatically.</p>
+              )}
+              {showNewCustomer && (
+                <div className="mt-4 grid gap-4 border-t pt-4">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Field label="Customer Name *"><Input value={newCustomer.name} onChange={event => setNewCustomer(previous => ({ ...previous, name: event.target.value }))} /></Field>
+                    <Field label="Customer Email"><Input type="email" value={newCustomer.email || ""} onChange={event => setNewCustomer(previous => ({ ...previous, email: event.target.value }))} /></Field>
+                    <Field label="Customer WhatsApp/Phone"><Input value={newCustomer.phone || ""} onChange={event => setNewCustomer(previous => ({ ...previous, phone: event.target.value }))} placeholder="+923001234567" /></Field>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="button" onClick={handleSaveCustomer} disabled={savingCustomer}>{savingCustomer ? "Saving..." : "Save Customer Profile"}</Button>
+                    <Button type="button" variant="outline" onClick={() => setShowNewCustomer(false)}>Cancel</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
               <Field label="Customer Email"><Input type="email" value={form.customerEmail || ""} onChange={e => setForm(p => ({ ...p, customerEmail: e.target.value }))} /></Field>
               <Field label="Customer WhatsApp/Phone"><Input value={form.customerPhone || ""} onChange={e => setForm(p => ({ ...p, customerPhone: e.target.value }))} placeholder="+923001234567" /></Field>
-              <Field label="Cognito User ID"><Input value={form.cognitoSub || ""} onChange={e => setForm(p => ({ ...p, cognitoSub: e.target.value }))} placeholder="Optional Cognito sub" /></Field>
-              <Field label="Cognito Email"><Input value={form.cognitoEmail || ""} onChange={e => setForm(p => ({ ...p, cognitoEmail: e.target.value }))} placeholder="Optional signed-in email" /></Field>
             </div>
 
             <div className="grid gap-4 md:grid-cols-4">

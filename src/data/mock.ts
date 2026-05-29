@@ -278,6 +278,7 @@ export interface TravelTicket {
   invoiceNumber?: string;
   customerEmail?: string;
   customerPhone?: string;
+  customerId?: string;
   cognitoSub?: string;
   cognitoEmail?: string;
   source?: 'admin_manual' | 'checkout' | 'agency_portal';
@@ -285,6 +286,21 @@ export interface TravelTicket {
   createdAt?: string;
   updatedAt?: string;
   deletedAt?: string;
+}
+
+export interface CustomerProfile {
+  customerId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  title?: string;
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  passportNumber?: string;
+  passportExpiry?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ModulePermission {

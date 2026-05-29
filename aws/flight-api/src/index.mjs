@@ -9,11 +9,13 @@ import {
   getPackage,
   listTickets,
   listBlogPosts,
+  listCustomers,
   listPackageImages,
   listPackages,
   softDeletePackage,
   softDeleteTicket,
   upsertBlogPost,
+  upsertCustomer,
   upsertPackage,
   upsertTicket
 } from "./services/content.mjs";
@@ -49,7 +51,9 @@ const routes = {
   "DELETE /content/packages/{category}/{packageId}": removePackageContent,
   "GET /content/tickets": listTicketContent,
   "POST /content/tickets": saveTicketContent,
-  "DELETE /content/tickets/{ticketId}": removeTicketContent
+  "DELETE /content/tickets/{ticketId}": removeTicketContent,
+  "GET /content/customers": listCustomerContent,
+  "POST /content/customers": saveCustomerContent
 };
 
 export async function handler(event) {
@@ -246,6 +250,16 @@ async function saveTicketContent(event) {
 
 async function removeTicketContent(event, path) {
   return { item: await softDeleteTicket(decodeURIComponent(path.split("/")[3])) };
+}
+
+async function listCustomerContent() {
+  return { items: await listCustomers() };
+}
+
+async function saveCustomerContent(event) {
+  const body = await readJson(event);
+  requireFields(body, ["name"]);
+  return { item: await upsertCustomer(body) };
 }
 
 function routePattern(path) {

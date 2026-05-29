@@ -1,6 +1,7 @@
 import { DeleteCommand, GetCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { randomUUID } from "node:crypto";
 import { db } from "../db.mjs";
 
 const tableName = process.env.CONTENT_TABLE;
@@ -245,6 +246,50 @@ export async function softDeleteTicket(ticketId) {
     status: "cancelled",
     deletedAt: new Date().toISOString()
   });
+}
+
+export async function listCustomers() {
+  ensureTable();
+  const result = await db.send(new QueryCommand({
+    TableName: tableName,
+    KeyConditionExpression: "pk = :pk",
+    ExpressionAttributeValues: { ":pk": "CUSTOMER" }
+  }));
+  return (result.Items || [])
+    .map(fromItem)
+    .filter(item => !item.deletedAt)
+    .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
+}
+
+export async function getCustomer(customerId) {
+  ensureTable();
+  const result = await db.send(new GetCommand({
+    TableName: tableName,
+    Key: { pk: "CUSTOMER", sk: `CUSTOMER#${customerId}` }
+  }));
+  return result.Item ? fromItem(result.Item) : null;
+}
+
+export async function upsertCustomer(input) {
+  ensureTable();
+  const now = new Date().toISOString();
+  const customerId = input.customerId || randomUUID();
+  const existing = await getCustomer(customerId);
+  const item = {
+    ...(existing || {}),
+    ...input,
+    customerId,
+    name: input.name || existing?.name || "",
+    email: input.email || existing?.email || "",
+    phone: input.phone || existing?.phone || "",
+    createdAt: existing?.createdAt || input.createdAt || now,
+    updatedAt: now
+  };
+  await db.send(new PutCommand({
+    TableName: tableName,
+    Item: { pk: "CUSTOMER", sk: `CUSTOMER#${customerId}`, ...item }
+  }));
+  return item;
 }
 
 function fromItem(item) {
