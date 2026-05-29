@@ -1,4 +1,4 @@
-import { BarChart3, CalendarCheck, CreditCard, Plane, Wallet } from "lucide-react";
+import { BarChart3, CalendarCheck, CreditCard, FileText, Plane, Receipt, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
@@ -15,6 +15,7 @@ const cards = [
 export default function DashboardPage() {
   const { currentRole, currentUser } = useRole();
   const isAgency = currentRole === "agency_owner" || currentRole === "agency_staff";
+  const isSuperAdmin = currentRole === "super_admin";
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -46,6 +47,43 @@ export default function DashboardPage() {
           </Card>
         ))}
       </div>
+
+      {isSuperAdmin && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card className="shadow-card">
+            <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Receipt className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-foreground">Ticket Booking</h2>
+                  <p className="text-sm text-muted-foreground">Create direct customer flight ticket records without using mock data.</p>
+                </div>
+              </div>
+              <Button asChild className="gradient-primary text-primary-foreground">
+                <Link to="/admin/tickets">Add Ticket</Link>
+              </Button>
+            </CardContent>
+          </Card>
+          <Card className="shadow-card">
+            <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-foreground">Ticket Invoice</h2>
+                  <p className="text-sm text-muted-foreground">Generate a customer-ready PDF invoice for direct Travelian flight requests.</p>
+                </div>
+              </div>
+              <Button asChild variant="outline">
+                <Link to="/admin/tickets">Generate Invoice</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <EmptyState
         icon={Plane}

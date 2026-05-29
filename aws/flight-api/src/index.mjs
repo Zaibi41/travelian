@@ -5,11 +5,14 @@ import {
   deleteBlogPost,
   getBlogPost,
   getPackage,
+  listTickets,
   listBlogPosts,
   listPackages,
   softDeletePackage,
+  softDeleteTicket,
   upsertBlogPost,
-  upsertPackage
+  upsertPackage,
+  upsertTicket
 } from "./services/content.mjs";
 import { requireFields, validateHotelSearchRequest, validateSearchRequest, validateTransferSearchRequest } from "./validation.mjs";
 import { requireApiAuth } from "./auth.mjs";
@@ -37,7 +40,10 @@ const routes = {
   "GET /content/packages": listPackageContent,
   "POST /content/packages": savePackageContent,
   "GET /content/packages/{category}/{packageId}": getPackageContent,
-  "DELETE /content/packages/{category}/{packageId}": removePackageContent
+  "DELETE /content/packages/{category}/{packageId}": removePackageContent,
+  "GET /content/tickets": listTicketContent,
+  "POST /content/tickets": saveTicketContent,
+  "DELETE /content/tickets/{ticketId}": removeTicketContent
 };
 
 export async function handler(event) {
@@ -203,6 +209,21 @@ async function removePackageContent(event, path) {
   return { item: await softDeletePackage(decodeURIComponent(category), decodeURIComponent(packageId)) };
 }
 
+async function listTicketContent(event) {
+  const includeDeleted = event.queryStringParameters?.includeDeleted === "true";
+  return { items: await listTickets({ includeDeleted }) };
+}
+
+async function saveTicketContent(event) {
+  const body = await readJson(event);
+  requireFields(body, ["passengerName", "ticketNumber"]);
+  return { item: await upsertTicket(body) };
+}
+
+async function removeTicketContent(event, path) {
+  return { item: await softDeleteTicket(decodeURIComponent(path.split("/")[3])) };
+}
+
 function routePattern(path) {
   if (/^\/bookings\/[^/]+$/.test(path)) return "/bookings/{bookingId}";
   if (/^\/bookings\/[^/]+\/ticket$/.test(path)) return "/bookings/{bookingId}/ticket";
@@ -213,6 +234,7 @@ function routePattern(path) {
   if (/^\/bookings\/[^/]+\/documents$/.test(path)) return "/bookings/{bookingId}/documents";
   if (/^\/content\/blog-posts\/[^/]+$/.test(path)) return "/content/blog-posts/{slug}";
   if (/^\/content\/packages\/[^/]+\/[^/]+$/.test(path)) return "/content/packages/{category}/{packageId}";
+  if (/^\/content\/tickets\/[^/]+$/.test(path)) return "/content/tickets/{ticketId}";
   return path;
 }
 

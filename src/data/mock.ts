@@ -255,6 +255,30 @@ export interface TravelTicket {
   status: 'issued' | 'cancelled' | 'used' | 'pending';
   price: number;
   ticketNumber: string;
+  pnr?: string;
+  airline?: string;
+  flightNumber?: string;
+  title?: string;
+  firstName?: string;
+  lastName?: string;
+  passengerType?: 'Adult' | 'Child' | 'Infant';
+  dateOfBirth?: string;
+  passportNumber?: string;
+  passportExpiry?: string;
+  originAirport?: string;
+  destinationAirport?: string;
+  departureTime?: string;
+  arrivalTime?: string;
+  duration?: string;
+  baseFare?: number;
+  tax?: number;
+  checkinBaggageKg?: number;
+  cabinBaggageKg?: number;
+  notes?: string;
+  invoiceNumber?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string;
 }
 
 export interface ModulePermission {

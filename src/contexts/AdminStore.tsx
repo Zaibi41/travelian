@@ -9,6 +9,11 @@ import {
   savePackage as saveRemotePackage,
   softDeletePackage as softDeleteRemotePackage,
 } from "@/lib/package-api";
+import {
+  listTickets as listRemoteTickets,
+  saveTicket as saveRemoteTicket,
+  softDeleteTicket as softDeleteRemoteTicket,
+} from "@/lib/ticket-api";
 
 // ─── Flight Search Log ───
 export interface FlightSearchLog {
@@ -102,6 +107,7 @@ interface AdminState {
   // Ticket actions
   addTicket: (t: TravelTicket) => void;
   updateTicket: (id: string, data: Partial<TravelTicket>) => void;
+  deleteTicket: (id: string) => void;
   issueTicketForBooking: (bookingId: string) => void;
 
   // Wallet actions
@@ -227,6 +233,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    listRemoteTickets()
+      .then(items => {
+        if (!cancelled) setTickets(items);
+      })
+      .catch(error => console.error("Unable to load tickets from AWS", error));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     window.localStorage.setItem(WALLET_LEDGER_STORAGE_KEY, JSON.stringify(walletLedger));
   }, [walletLedger]);
 
@@ -262,10 +280,24 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   // Tickets
   const addTicket = useCallback((t: TravelTicket) => {
-    setTickets(p => [...p, t]);
+    setTickets(p => [t, ...p]);
+    saveRemoteTicket(t)
+      .then(saved => setTickets(p => p.map(item => item.ticketId === t.ticketId ? saved : item)))
+      .catch(error => console.error("Unable to save ticket", error));
     setNotifications(p => [{ id: `n${Date.now()}`, title: 'Ticket Issued', message: `Ticket ${t.ticketNumber} issued for ${t.passengerName}`, type: 'booking', read: false, createdAt: new Date().toISOString() }, ...p]);
   }, []);
-  const updateTicket = useCallback((id: string, data: Partial<TravelTicket>) => setTickets(p => p.map(t => t.ticketId === id ? { ...t, ...data } : t)), []);
+  const updateTicket = useCallback((id: string, data: Partial<TravelTicket>) => setTickets(previous => {
+    const existing = previous.find(t => t.ticketId === id);
+    if (!existing) return previous;
+    const next = { ...existing, ...data };
+    saveRemoteTicket(next).catch(error => console.error("Unable to update ticket", error));
+    return previous.map(t => t.ticketId === id ? next : t);
+  }), []);
+  const deleteTicket = useCallback((id: string) => {
+    const deletedAt = new Date().toISOString();
+    setTickets(p => p.map(t => t.ticketId === id ? { ...t, deletedAt, status: "cancelled" } : t));
+    softDeleteRemoteTicket(id).catch(error => console.error("Unable to delete ticket", error));
+  }, []);
   const issueTicketForBooking = useCallback((bookingId: string) => {
     const booking = bookings.find(b => b.bookingId === bookingId);
     if (!booking) return;
@@ -518,7 +550,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       addFlight, updateFlight, deleteFlight,
       addHotel, updateHotel, deleteHotel,
       addAgency, updateAgency,
-      addTicket, updateTicket, issueTicketForBooking,
+      addTicket, updateTicket, deleteTicket, issueTicketForBooking,
       addWalletFunds, deductWalletFunds, createWalletDeposit, approveWalletDeposit, rejectWalletDeposit, manualWalletAdjustment,
       addNotification, markNotificationRead, markAllRead,
       addUser, updateUser, deleteUser,

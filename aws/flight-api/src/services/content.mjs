@@ -122,6 +122,71 @@ export async function softDeletePackage(category, packageId) {
   });
 }
 
+export async function listTickets({ includeDeleted = false } = {}) {
+  ensureTable();
+  const result = await db.send(new QueryCommand({
+    TableName: tableName,
+    KeyConditionExpression: "pk = :pk",
+    ExpressionAttributeValues: { ":pk": "TICKET" }
+  }));
+  return (result.Items || [])
+    .map(fromItem)
+    .filter(item => includeDeleted || !item.deletedAt)
+    .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
+}
+
+export async function getTicket(ticketId) {
+  ensureTable();
+  const result = await db.send(new GetCommand({
+    TableName: tableName,
+    Key: { pk: "TICKET", sk: `TICKET#${ticketId}` }
+  }));
+  return result.Item ? fromItem(result.Item) : null;
+}
+
+export async function upsertTicket(input) {
+  ensureTable();
+  const now = new Date().toISOString();
+  const ticketId = input.ticketId || `tk-${Date.now()}`;
+  const existing = await getTicket(ticketId);
+  const item = {
+    ...(existing || {}),
+    ...input,
+    ticketId,
+    bookingId: input.bookingId || existing?.bookingId || `INV-${Date.now()}`,
+    passengerName: input.passengerName || existing?.passengerName || "",
+    type: input.type || existing?.type || "flight",
+    origin: input.origin || existing?.origin || "",
+    destination: input.destination || existing?.destination || "",
+    departureDate: input.departureDate || existing?.departureDate || "",
+    seatNumber: input.seatNumber || existing?.seatNumber || "",
+    status: input.status || existing?.status || "pending",
+    price: Number(input.price ?? existing?.price ?? 0),
+    ticketNumber: input.ticketNumber || existing?.ticketNumber || "",
+    createdAt: existing?.createdAt || input.createdAt || now,
+    updatedAt: now
+  };
+  await db.send(new PutCommand({
+    TableName: tableName,
+    Item: { pk: "TICKET", sk: `TICKET#${ticketId}`, ...item }
+  }));
+  return item;
+}
+
+export async function softDeleteTicket(ticketId) {
+  const existing = await getTicket(ticketId);
+  if (!existing) {
+    const error = new Error("Ticket not found");
+    error.statusCode = 404;
+    throw error;
+  }
+  return upsertTicket({
+    ...existing,
+    status: "cancelled",
+    deletedAt: new Date().toISOString()
+  });
+}
+
 function fromItem(item) {
   const { pk, sk, ...post } = item;
   return post;
