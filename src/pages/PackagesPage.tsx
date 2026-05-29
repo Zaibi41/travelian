@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Archive, Edit, ImageIcon, Package, Plus, Trash2, Upload } from "lucide-react";
+import { Archive, Edit, ImageIcon, Package, Plus, Search, Trash2, Upload } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,6 +104,13 @@ function buildPackage(form: UmrahForm): Omit<UmrahPackage, "packageId"> {
   };
 }
 
+function createPackageId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export default function PackagesPage() {
   const { packages, addPackage, updatePackage, deletePackage } = useAdmin();
   const [open, setOpen] = useState(false);
@@ -112,7 +119,20 @@ export default function PackagesPage() {
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const visiblePackages = packages.filter((item) => !item.deletedAt);
+  const normalizedSearch = searchQuery.toLowerCase().trim();
+  const filteredPackages = normalizedSearch
+    ? visiblePackages.filter((item) => [
+        item.packageId,
+        item.name,
+        item.duration,
+        item.makkahHotel,
+        item.madinahHotel,
+        item.departureCity,
+        item.city,
+      ].filter(Boolean).join(" ").toLowerCase().includes(normalizedSearch))
+    : visiblePackages;
 
   const setField = (field: keyof UmrahForm, value: string) => setForm((current) => ({ ...current, [field]: value }));
   const openNew = () => {
@@ -168,7 +188,7 @@ export default function PackagesPage() {
         updatePackage(editingId, payload);
         toast.success("Umrah package updated");
       } else {
-        addPackage({ ...payload, packageId: `umrah-${Date.now()}` });
+        addPackage({ ...payload, packageId: createPackageId() });
         toast.success(imageUrl ? "Umrah package saved with image" : "Umrah package saved");
       }
       setSelectedImageFile(null);
@@ -195,9 +215,29 @@ export default function PackagesPage() {
         <EmptyState icon={Package} title="No Umrah packages configured" description="Add a real package. Draft records stay in admin; only active records show on the public frontend." actionLabel="Add New Package" onAction={openNew} />
       ) : (
         <Card className="shadow-card">
-          <CardHeader><CardTitle className="text-base font-display">Umrah packages</CardTitle></CardHeader>
+          <CardHeader className="gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <CardTitle className="text-base font-display">Umrah packages</CardTitle>
+              <p className="mt-1 text-xs text-muted-foreground">Search by package name, hotel, city or package ID from the WhatsApp URL.</p>
+            </div>
+            <div className="relative w-full lg:max-w-md">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                className="pl-9"
+                placeholder="Search name or ID, e.g. 550e8400-e29b..."
+              />
+            </div>
+          </CardHeader>
           <CardContent className="grid gap-3">
-            {visiblePackages.map((item) => (
+            {filteredPackages.length === 0 ? (
+              <div className="rounded-xl border border-dashed p-8 text-center">
+                <Search className="mx-auto h-8 w-8 text-muted-foreground" />
+                <h2 className="mt-3 font-semibold">No package found</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Try searching by exact package ID from the public Umrah URL or by package name.</p>
+              </div>
+            ) : filteredPackages.map((item) => (
               <div key={item.packageId} className="flex flex-col gap-4 rounded-xl border p-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -207,6 +247,7 @@ export default function PackagesPage() {
                     </Badge>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">{item.duration || "Duration not set"} · {item.hotel || "Hotels not set"} · {item.city || "Departure city not set"}</p>
+                  <p className="mt-1 max-w-full break-all text-xs text-muted-foreground">ID: <span className="font-mono">{item.packageId}</span></p>
                   <p className="mt-1 font-bold text-primary">PKR {item.basePrice.toLocaleString()}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
