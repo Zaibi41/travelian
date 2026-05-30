@@ -134,6 +134,25 @@ function whatsappHref(ticket: TravelTicket) {
   return `https://wa.me/${target}?text=${encodeURIComponent(invoiceMessage(ticket))}`;
 }
 
+function invoiceReadinessIssues(ticket: TravelTicket) {
+  const requiredText = [
+    ["PNR", ticket.pnr],
+    ["passenger name", ticket.passengerName],
+    ["ticket number", ticket.ticketNumber],
+    ["airline", ticket.airline],
+    ["flight number", ticket.flightNumber],
+    ["origin", ticket.origin],
+    ["destination", ticket.destination],
+    ["departure date", ticket.departureDate],
+    ["departure time", ticket.departureTime],
+    ["arrival time", ticket.arrivalTime],
+    ["duration", ticket.duration],
+  ] as const;
+  const missing = requiredText.filter(([, value]) => !String(value || "").trim()).map(([label]) => label);
+  if (!(Number(ticket.price) > 0)) missing.push("fare amount");
+  return missing;
+}
+
 export default function TicketsPage() {
   const { currentRole } = useRole();
   const { tickets, addTicket, updateTicket, deleteTicket } = useAdmin();
@@ -262,6 +281,13 @@ export default function TicketsPage() {
       return;
     }
     const payload = toTicket(form, editing?.ticketId);
+    if (payload.status === "issued") {
+      const missing = invoiceReadinessIssues(payload);
+      if (missing.length) {
+        toast.error(`Complete invoice details before issuing: ${missing.join(", ")}`);
+        return;
+      }
+    }
     if (editing) {
       updateTicket(editing.ticketId, payload);
       toast.success("Ticket booking updated");
@@ -273,6 +299,11 @@ export default function TicketsPage() {
   };
 
   const issueAndDownload = (ticket: TravelTicket) => {
+    const missing = invoiceReadinessIssues(ticket);
+    if (missing.length) {
+      toast.error(`Complete invoice details before issuing: ${missing.join(", ")}`);
+      return;
+    }
     const issued = { ...ticket, status: "issued" as const };
     updateTicket(ticket.ticketId, issued);
     downloadTicketInvoice(issued);
@@ -289,11 +320,25 @@ export default function TicketsPage() {
       return;
     }
     const payload = toTicket({ ...form, status: "issued" }, editing?.ticketId);
+    const missing = invoiceReadinessIssues(payload);
+    if (missing.length) {
+      toast.error(`Complete invoice details before issuing: ${missing.join(", ")}`);
+      return;
+    }
     if (editing) updateTicket(editing.ticketId, payload);
     else addTicket(payload);
     downloadTicketInvoice(payload);
     setDialogOpen(false);
     toast.success("Ticket issued and invoice downloaded");
+  };
+
+  const downloadInvoice = (ticket: TravelTicket) => {
+    const missing = invoiceReadinessIssues(ticket);
+    if (missing.length) {
+      toast.error(`Complete invoice details before downloading: ${missing.join(", ")}`);
+      return;
+    }
+    downloadTicketInvoice(ticket);
   };
 
   return (
@@ -365,7 +410,7 @@ export default function TicketsPage() {
                       <td className="p-3">
                         <div className="flex gap-1">
                           {ticket.status !== "issued" && <Button variant="ghost" size="icon" onClick={() => issueAndDownload(ticket)} title="Issue and download invoice"><Send className="h-4 w-4" /></Button>}
-                          <Button variant="ghost" size="icon" onClick={() => downloadTicketInvoice(ticket)} title="Download invoice"><Download className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" onClick={() => downloadInvoice(ticket)} title="Download invoice"><Download className="h-4 w-4" /></Button>
                           <a href={whatsappHref(ticket)} target="_blank" rel="noreferrer" title="Share on WhatsApp">
                             <Button variant="ghost" size="icon"><MessageCircle className="h-4 w-4 text-success" /></Button>
                           </a>

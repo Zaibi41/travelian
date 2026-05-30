@@ -65,8 +65,7 @@ function invoiceCss() {
     :root{--navy:#061f52;--teal:#007d82;--gold:#c99319;--text:#243147;--muted:#68758a;--line:#d8dee8;--white:#fff;}
     *{box-sizing:border-box;}
     .travelian-invoice-stage{position:fixed;left:-10000px;top:0;width:210mm;background:#fff;color:var(--text);font-family:Arial,Helvetica,sans-serif;}
-    .ticket-page{width:210mm;height:297mm;margin:0;background:var(--white);border:8px solid var(--navy);padding:20px 24px 0;color:var(--text);overflow:hidden;display:flex;flex-direction:column;}
-    .ticket-main{flex:1;min-height:0;}
+    .ticket-page{width:210mm;min-height:297mm;margin:0;background:var(--white);border:8px solid var(--navy);padding:20px 24px 0;color:var(--text);overflow:hidden;}
     .header{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;align-items:center;border-bottom:1.5px solid var(--navy);padding-bottom:18px;margin-bottom:20px;}
     .brand{display:flex;align-items:center;gap:16px;}
     .logo{width:72px;height:72px;border:3px solid var(--navy);border-radius:50%;display:flex;justify-content:center;align-items:center;position:relative;color:var(--navy);font-family:Georgia,serif;font-size:45px;font-weight:800;overflow:hidden;}
@@ -134,7 +133,7 @@ function invoiceHtml(ticket: TravelTicket) {
 
   return `
     <div id="ticket" class="ticket-page">
-      <div class="ticket-main">
+      <div>
         <header class="header">
           <div class="brand">
             <div class="logo">T</div>
