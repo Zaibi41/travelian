@@ -6,10 +6,12 @@ export class ProviderAdapter {
   }
 
   async searchFlights(request) {
-    return buildMockOffers(request, this.name);
+    if (mockProvidersEnabled()) return buildMockOffers(request, this.name);
+    throw unavailable(this.name, "flight search");
   }
 
   async priceOffer(payload) {
+    if (!mockProvidersEnabled()) throw unavailable(this.name, "fare pricing");
     const currency = String(payload.currency || process.env.DEFAULT_CURRENCY || "PKR").trim().toUpperCase();
     return {
       provider: this.name,
@@ -27,6 +29,7 @@ export class ProviderAdapter {
   }
 
   async fareRules(payload) {
+    if (!mockProvidersEnabled()) throw unavailable(this.name, "fare rules");
     return {
       provider: this.name,
       offerId: payload.offerId,
@@ -39,6 +42,7 @@ export class ProviderAdapter {
   }
 
   async seatMap(payload) {
+    if (!mockProvidersEnabled()) throw unavailable(this.name, "seat map");
     return {
       provider: this.name,
       offerId: payload.offerId,
@@ -48,6 +52,7 @@ export class ProviderAdapter {
   }
 
   async createBooking(payload) {
+    if (!mockProvidersEnabled()) throw unavailable(this.name, "booking");
     return {
       provider: this.name,
       bookingId: `${this.name}-${crypto.randomUUID()}`,
@@ -58,6 +63,7 @@ export class ProviderAdapter {
   }
 
   async issueTicket(payload) {
+    if (!mockProvidersEnabled()) throw unavailable(this.name, "ticketing");
     return {
       provider: this.name,
       bookingId: payload.bookingId,
@@ -67,6 +73,7 @@ export class ProviderAdapter {
   }
 
   async retrieveBooking(payload) {
+    if (!mockProvidersEnabled()) throw unavailable(this.name, "booking retrieval");
     return {
       provider: this.name,
       bookingId: payload.bookingId,
@@ -75,6 +82,7 @@ export class ProviderAdapter {
   }
 
   async cancelBooking(payload) {
+    if (!mockProvidersEnabled()) throw unavailable(this.name, "booking cancellation");
     return {
       provider: this.name,
       bookingId: payload.bookingId,
@@ -83,6 +91,7 @@ export class ProviderAdapter {
   }
 
   async exchangeSearch(payload) {
+    if (!mockProvidersEnabled()) throw unavailable(this.name, "exchange search");
     return {
       provider: this.name,
       bookingId: payload.bookingId,
@@ -91,10 +100,12 @@ export class ProviderAdapter {
   }
 
   async exchangePrice(payload) {
+    if (!mockProvidersEnabled()) throw unavailable(this.name, "exchange pricing");
     return this.priceOffer(payload);
   }
 
   async exchangeCommit(payload) {
+    if (!mockProvidersEnabled()) throw unavailable(this.name, "exchange commit");
     return {
       provider: this.name,
       bookingId: payload.bookingId,
@@ -103,10 +114,22 @@ export class ProviderAdapter {
   }
 
   async documents(payload) {
+    if (!mockProvidersEnabled()) throw unavailable(this.name, "documents");
     return {
       provider: this.name,
       bookingId: payload.bookingId,
       documents: []
     };
   }
+}
+
+function mockProvidersEnabled() {
+  return process.env.ENABLE_MOCK_PROVIDERS === "true";
+}
+
+function unavailable(provider, action) {
+  const error = new Error(`${provider} live ${action} adapter is not configured`);
+  error.provider = provider;
+  error.statusCode = 503;
+  return error;
 }
