@@ -2,34 +2,14 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import type { TravelTicket } from "@/data/mock";
 
-const LOGO_URL = "/invoice-assets/logo.jpeg";
-
 function fullPassengerName(ticket: TravelTicket) {
-  const fromParts = [ticket.title, ticket.firstName, ticket.lastName].filter(Boolean).join(" ");
-  return fromParts || ticket.passengerName || "Passenger";
-}
-
-function splitPassengerName(ticket: TravelTicket) {
-  if (ticket.firstName || ticket.lastName) {
-    return { firstName: ticket.firstName || "", lastName: ticket.lastName || "" };
-  }
-  const parts = String(ticket.passengerName || "").trim().split(/\s+/);
-  return { firstName: parts.slice(0, 1).join(" "), lastName: parts.slice(1).join(" ") };
+  return [ticket.title, ticket.firstName, ticket.lastName].filter(Boolean).join(" ")
+    || ticket.passengerName
+    || "Passenger";
 }
 
 function invoiceNumber(ticket: TravelTicket) {
   return ticket.invoiceNumber || `INV-${ticket.ticketId.replace(/[^a-z0-9]/gi, "").slice(-8).toUpperCase()}`;
-}
-
-function statusValue(ticket: TravelTicket) {
-  if (ticket.status === "cancelled") return "cancelled";
-  if (ticket.status === "pending") return "pending";
-  return "confirmed";
-}
-
-function statusLabel(ticket: TravelTicket) {
-  const status = statusValue(ticket);
-  return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
 function formatDate(value?: string) {
@@ -41,8 +21,9 @@ function formatDate(value?: string) {
   return value;
 }
 
-function airportName(value?: string, fallback?: string) {
-  return value || fallback || "";
+function formatCurrency(value?: number) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "";
+  return `PKR ${value.toLocaleString("en-PK")}`;
 }
 
 function escapeHtml(value?: string | number) {
@@ -54,205 +35,228 @@ function escapeHtml(value?: string | number) {
     .replace(/'/g, "&#039;");
 }
 
-function invoiceCss() {
+function optionalInfo(label: string, value?: string) {
+  if (!value) return "";
   return `
-    :root{--navy:#0f2a66;--amber:#e0a11a;--muted:#6b7280;--line:#e5e7eb;--surface:#f8fafc;--ok:#15803d;--ok-bg:#dcfce7;--bad:#b91c1c;--bad-bg:#fee2e2;--warn:#b45309;--warn-bg:#fef3c7;}
-    *{box-sizing:border-box;}
-    .travelian-invoice-stage{position:fixed;left:-10000px;top:0;width:210mm;background:#fff;color:#1f2937;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
-    .page{width:210mm;max-width:100%;min-height:297mm;margin:0 auto;background:#fff;display:flex;align-items:stretch;box-shadow:0 24px 64px rgba(15,42,102,0.12),0 0 0 1px rgba(15,42,102,0.06);position:relative;border-radius:8px;overflow:hidden;}
-    .watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);opacity:0.045;width:420px;pointer-events:none;z-index:0;}
-    .content{flex:1;min-width:0;min-height:0;padding:22px 26px 20px;position:relative;z-index:1;display:flex;flex-direction:column;}
-    .header{display:flex;justify-content:space-between;align-items:center;gap:24px;padding-bottom:8px;border-bottom:2px solid var(--navy);margin-bottom:0;}
-    .brand-box{display:flex;gap:0;align-items:center;}
-    .brand{font-size:19px;font-weight:800;color:var(--navy);letter-spacing:-0.02em;}
-    .title{text-align:right;align-self:center;}
-    .title h1{font-size:18px;color:var(--amber);margin:0;font-weight:800;letter-spacing:0.14em;}
-    .info-section{margin-top:12px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;box-shadow:0 1px 3px rgba(15,42,102,0.06);}
-    .info-section-head{display:flex;align-items:center;gap:10px;padding:7px 12px;background:linear-gradient(90deg,var(--surface) 0%,#fff 100%);border-bottom:1px solid var(--line);font-size:11px;font-weight:800;color:var(--navy);letter-spacing:0.06em;text-transform:uppercase;}
-    .info-section-head .num{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;background:var(--navy);color:#fff;border-radius:6px;font-size:10px;}
-    .info-section-head.subtle{background:#fff;color:var(--muted);font-weight:700;}
-    .info-section-head.subtle::before{content:"";width:6px;height:15px;background:#ffb300;border-radius:2px;margin-right:4px;}
-    .info-section-body{padding:11px 13px 12px;}
-    .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 16px;}
-    .field-grid.cols-4{grid-template-columns:repeat(4,minmax(0,1fr));}
-    .field .label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;display:block;}
-    .export-plain-value{display:block;width:100%;font-size:14px;font-weight:600;color:#111827;line-height:1.45;padding:2px 0;}
-    .export-plain-pnr{font-size:18px;font-weight:800;color:var(--navy);letter-spacing:0.08em;}
-    .export-status-pill{display:inline-flex!important;align-items:center;width:auto!important;padding:5px 12px!important;border-radius:999px;font-size:11px!important;font-weight:800!important;letter-spacing:0.06em;text-transform:uppercase;line-height:1.2;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-    .export-status-pill--confirmed{background:#dcfce7;color:#15803d;}
-    .export-status-pill--cancelled{background:#fee2e2;color:#b91c1c;}
-    .export-status-pill--pending{background:#fef3c7;color:#b45309;}
-    .passenger-section .info-section-body{padding:8px 10px 9px;}
-    .passenger-table{width:100%;border-collapse:separate;border-spacing:0;table-layout:fixed;}
-    .passenger-table th,.passenger-table td{text-align:left;vertical-align:top;padding:6px 8px;}
-    .passenger-table th{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--line);}
-    .passenger-table td{border-bottom:1px solid #eef2f7;}
-    .passenger-table tr:last-child td{border-bottom:none;}
-    .passenger-table .export-plain-value{font-size:13px;}
-    .flight{margin-bottom:14px;padding:11px 13px;border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#fbfcff 0%,#fff 45%);}
-    .flight:last-child{margin-bottom:0;}
-    .airline{display:flex;align-items:center;gap:0;font-size:12px;color:var(--muted);margin-bottom:10px;}
-    .route-visual{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:56px;}
-    .route-end{flex:0 0 auto;min-width:72px;}
-    .route-end--to{text-align:right;}
-    .route-end .code{font-size:22px;font-weight:800;color:var(--navy);letter-spacing:0.06em;line-height:1.15;margin-top:2px;}
-    .route-end .airport-name{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.2;max-width:155px;}
-    .route-hint{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;font-weight:700;}
-    .route-end--to .route-hint{text-align:right;}
-    .route-center{flex:1;display:flex;align-items:center;min-width:0;padding:0 2px;margin-top:14px;}
-    .route-line{flex:1;border-radius:1px;background:linear-gradient(90deg,#0f2a66 0%,#0f2a66 28%,#ffb300 58%,#0f2a66 100%);opacity:1;height:3px;min-width:20px;}
-    .route-mid{flex-shrink:0;display:flex;flex-direction:row;align-items:center;justify-content:center;padding:0 10px;text-align:center;gap:6px;}
-    .route-mid-plane{font-size:14px;line-height:1;color:var(--navy);opacity:0.72;transform:rotate(0deg);}
-    .route-mid-duration{font-size:13px;font-weight:800;color:var(--navy);letter-spacing:0.02em;white-space:nowrap;margin-top:0;}
-    .route-times{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px;}
-    .route-times .time{font-size:12px;color:var(--muted);font-weight:700;}
-    .route-times .time.to{text-align:right;}
-    .dual-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px;}
-    .table-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;}
-    .table-row:last-child{border-bottom:none;}
-    .table-row.total{font-weight:800;color:var(--navy);}
-    .baggage-cell{display:inline-flex;align-items:center;gap:8px;font-weight:800;color:var(--navy);}
-    .baggage-unit{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:0.08em;user-select:none;}
-    .terms-body{font-size:12px;line-height:1.55;color:#374151;padding:2px 0 4px;}
-    .terms-body ul{list-style:none;margin:0;padding:0;}
-    .terms-body li{position:relative;padding-left:1.15em;margin-bottom:7px;}
-    .terms-body li:last-child{margin-bottom:0;}
-    .terms-body li::before{content:"*";position:absolute;left:0;top:0.15em;color:#ffb300;font-weight:900;font-size:1.2em;line-height:1;}
-    .terms-body strong{color:var(--navy);font-weight:800;}
-    .footer{margin-top:8px;padding-top:14px;border-top:none;font-size:12px;color:var(--muted);}
-    .footer-bottom{margin-top:6px;background:linear-gradient(135deg,var(--navy) 0%,#152a5c 100%);color:#fff;text-align:left;padding:7px 10px;font-size:11px;font-weight:600;line-height:1.25;border-radius:0 0 8px 8px;border:1px solid rgba(244,166,42,0.35);border-top:none;}
-    .footer-bottom-contact{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;}
-    .footer-bottom-item{display:flex;align-items:center;gap:4px;white-space:nowrap;}
-    .footer-bottom-label{opacity:0.8;font-size:9px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;}
-  `;
-}
-
-function invoiceHtml(ticket: TravelTicket) {
-  const passenger = splitPassengerName(ticket);
-  const airline = `${ticket.airline || "Airline"}${ticket.flightNumber ? ` • ${ticket.flightNumber}` : ""}`;
-  const status = statusValue(ticket);
-
-  return `
-    <div id="ticket" class="page">
-      <img src="${LOGO_URL}" alt="" class="watermark" />
-      <div class="content">
-        <div class="header">
-          <div class="brand-box"><div class="brand">TRAVELIAN</div></div>
-          <div class="title"><h1>BOOKING INFORMATION</h1></div>
-        </div>
-
-        <div class="info-section">
-          <div class="info-section-head"><span class="num">1</span> Booking details</div>
-          <div class="info-section-body">
-            <div class="field-grid cols-4">
-              <div class="field"><span class="label">PNR</span><span class="export-plain-value export-plain-pnr">${escapeHtml(ticket.pnr || ticket.bookingId)}</span></div>
-              <div class="field"><span class="label">Status</span><span class="export-plain-value export-status-pill export-status-pill--${status}">${escapeHtml(statusLabel(ticket).toUpperCase())}</span></div>
-              <div class="field"><span class="label">Ticket number</span><span class="export-plain-value">${escapeHtml(ticket.ticketNumber)}</span></div>
-              <div class="field"><span class="label">Airline</span><span class="export-plain-value">${escapeHtml(airline)}</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="info-section passenger-section">
-          <div class="info-section-head"><span class="num">2</span> Passenger details</div>
-          <div class="info-section-body">
-            <table class="passenger-table">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>First name</th>
-                  <th>Last name</th>
-                  <th>Passenger type</th>
-                  <th>Date of birth</th>
-                  <th>Passport number</th>
-                  <th>Passport expiry</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><span class="export-plain-value">${escapeHtml(ticket.title || "Mr")}</span></td>
-                  <td><span class="export-plain-value">${escapeHtml(passenger.firstName || fullPassengerName(ticket))}</span></td>
-                  <td><span class="export-plain-value">${escapeHtml(passenger.lastName)}</span></td>
-                  <td><span class="export-plain-value">${escapeHtml(ticket.passengerType || "Adult")}</span></td>
-                  <td><span class="export-plain-value">${escapeHtml(formatDate(ticket.dateOfBirth))}</span></td>
-                  <td><span class="export-plain-value">${escapeHtml(ticket.passportNumber)}</span></td>
-                  <td><span class="export-plain-value">${escapeHtml(formatDate(ticket.passportExpiry))}</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="info-section">
-          <div class="info-section-head"><span class="num">3</span> Flight details</div>
-          <div class="info-section-body">
-            <div class="flight">
-              <div class="airline"><span>${escapeHtml(airline)}</span></div>
-              <div class="route-visual">
-                <div class="route-end route-end--from">
-                  <div class="route-hint">From</div>
-                  <div class="code">${escapeHtml(ticket.origin || "---")}</div>
-                  <div class="airport-name">${escapeHtml(airportName(ticket.originAirport, "Departure Airport"))}</div>
-                </div>
-                <div class="route-center">
-                  <div class="route-line"></div>
-                  <div class="route-mid"><span class="route-mid-plane" aria-hidden="true">&#9992;</span></div>
-                  <div class="route-line"></div>
-                </div>
-                <div class="route-end route-end--to">
-                  <div class="route-hint">To</div>
-                  <div class="code">${escapeHtml(ticket.destination || "---")}</div>
-                  <div class="airport-name">${escapeHtml(airportName(ticket.destinationAirport, "Arrival Airport"))}</div>
-                </div>
-              </div>
-              <div class="route-times">
-                <div class="time">${escapeHtml(ticket.departureTime || ticket.departureDate || "")}</div>
-                <div class="route-mid"><div class="route-mid-duration">${escapeHtml(ticket.duration || "")}</div></div>
-                <div class="time to">${escapeHtml(ticket.arrivalTime || "")}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="fareBaggageGrid" class="dual-grid">
-          <div class="info-section" style="margin-top:0;">
-            <div class="info-section-head subtle">Baggage</div>
-            <div class="info-section-body">
-              <div class="table-row"><span>Check-in</span><span class="baggage-cell"><span>${escapeHtml(ticket.checkinBaggageKg ?? 20)}</span><span class="baggage-unit">KG</span></span></div>
-              <div class="table-row"><span>Cabin</span><span class="baggage-cell"><span>${escapeHtml(ticket.cabinBaggageKg ?? 7)}</span><span class="baggage-unit">KG</span></span></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="info-section">
-          <div class="info-section-head"><span class="num">4</span> Terms &amp; conditions</div>
-          <div class="info-section-body">
-            <div class="terms-body">
-              <ul>
-                <li>Arrive at least <strong>4 hours</strong> before departure. Bring your <strong>passport</strong> and any <strong>visa</strong> or entry documents required for your destination.</li>
-                <li><strong>Reconfirm</strong> your flight with the <strong>airline</strong> before you travel. <strong>Baggage</strong> limits follow the <strong>operating airline's</strong> policy (check your ticket or the airline's website).</li>
-                <li>Fares are <strong>non-refundable</strong> unless your ticket says otherwise. <strong>Flight times</strong> can change; always verify the latest schedule with the airline.</li>
-                <li>This e-ticket is a booking summary only; carriage is subject to the airline's rules and applicable law.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <div class="footer">
-          <div class="footer-bottom">
-            <div class="footer-bottom-contact">
-              <div class="footer-bottom-item"><span class="footer-bottom-label">Web</span><span>www.travelian.pk</span></div>
-              <div class="footer-bottom-item"><span class="footer-bottom-label">Email</span><span>travelian.pk@gmail.com</span></div>
-              <div class="footer-bottom-item"><span class="footer-bottom-label">Phone</span><span>0300-4440014 / 0324-4440014</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="info-item">
+      <div class="info-label">${escapeHtml(label)}</div>
+      <div class="info-value">${escapeHtml(value)}</div>
     </div>
   `;
 }
 
-async function imageReady(root: HTMLElement) {
+function optionalSideInfo(label: string, value?: string) {
+  if (!value) return "";
+  return `
+    <div>
+      <div class="label">${escapeHtml(label)}</div>
+      <div class="value-med">${escapeHtml(value)}</div>
+    </div>
+  `;
+}
+
+function optionalFare(label: string, value?: number) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "";
+  return `<div class="fare-line"><span>${escapeHtml(label)}</span><strong>${escapeHtml(formatCurrency(value))}</strong></div>`;
+}
+
+function invoiceCss() {
+  return `
+    :root{--navy:#061f52;--teal:#007d82;--gold:#c99319;--text:#243147;--muted:#68758a;--line:#d8dee8;--white:#fff;}
+    *{box-sizing:border-box;}
+    .travelian-invoice-stage{position:fixed;left:-10000px;top:0;width:210mm;background:#fff;color:var(--text);font-family:Arial,Helvetica,sans-serif;}
+    .ticket-page{width:210mm;height:297mm;margin:0;background:var(--white);border:8px solid var(--navy);padding:20px 24px 0;color:var(--text);overflow:hidden;display:flex;flex-direction:column;}
+    .ticket-main{flex:1;min-height:0;}
+    .header{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:24px;align-items:center;border-bottom:1.5px solid var(--navy);padding-bottom:18px;margin-bottom:20px;}
+    .brand{display:flex;align-items:center;gap:16px;}
+    .logo{width:72px;height:72px;border:3px solid var(--navy);border-radius:50%;display:flex;justify-content:center;align-items:center;position:relative;color:var(--navy);font-family:Georgia,serif;font-size:45px;font-weight:800;overflow:hidden;}
+    .logo::before{content:"";position:absolute;inset:10px;border-radius:50%;border:1px solid #d4dae4;}
+    .logo::after{content:"\\2708";position:absolute;bottom:8px;font-family:Arial,Helvetica,sans-serif;font-size:18px;color:var(--teal);}
+    .brand-name{font-family:Georgia,serif;font-size:44px;font-weight:800;color:var(--navy);line-height:.95;}
+    .brand-name span{color:var(--teal);}
+    .tagline{margin-top:8px;font-size:11px;letter-spacing:2.2px;white-space:nowrap;text-transform:uppercase;color:var(--teal);}
+    .doc-title{font-size:20px;max-width:310px;line-height:1.15;font-weight:900;color:var(--navy);text-transform:uppercase;text-align:right;align-self:center;}
+    .section-title{display:flex;align-items:center;gap:12px;margin:19px 0 13px;}
+    .section-icon{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#00565d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:21px;flex:0 0 auto;}
+    .section-title h2{margin:0;color:var(--navy);font-size:20px;text-transform:uppercase;white-space:nowrap;}
+    .title-line{flex:1;height:1px;background:var(--line);}
+    .pnr{margin-left:auto;font-size:20px;font-weight:900;color:var(--navy);white-space:nowrap;}
+    .pnr span{color:var(--teal);}
+    .card{border:1.5px solid var(--line);border-radius:10px;background:#fff;padding:18px 20px;}
+    .flight-card{display:grid;grid-template-columns:155px minmax(0,1.12fr) minmax(0,1.12fr) 125px;gap:20px;align-items:stretch;}
+    .flight-card>div{border-right:1px solid var(--line);padding-right:16px;}
+    .flight-card>div:last-child{border-right:0;padding-right:0;}
+    .label{color:var(--teal);font-weight:900;font-size:13px;text-transform:uppercase;margin-bottom:10px;}
+    .value-large{font-size:28px;font-weight:900;color:var(--navy);line-height:1.1;}
+    .value-med{font-size:21px;font-weight:900;color:var(--navy);line-height:1.2;}
+    .small{font-size:12px;line-height:1.42;}
+    .muted{color:var(--muted);}
+    .dash{border-top:1px dashed #b9c3d2;margin:16px 0;}
+    .route-wrap{position:relative;}
+    .route-plane{position:absolute;left:100%;top:58px;transform:translateX(-50%);color:var(--navy);font-size:34px;z-index:2;white-space:nowrap;}
+    .route-plane::before,.route-plane::after{content:"";display:inline-block;width:28px;border-top:1px dashed #8794aa;vertical-align:middle;margin:0 8px 10px;}
+    .date-time{margin-top:54px;display:flex;align-items:flex-start;gap:8px;}
+    .date-time+.date-time{margin-top:14px;}
+    .mini-icon{color:var(--teal);font-size:18px;width:22px;display:inline-block;}
+    .side-stack{display:grid;gap:18px;align-content:start;}
+    .info-row{display:grid;grid-template-columns:1.25fr 1.05fr .9fr 1.05fr 1.45fr;padding:0;}
+    .info-item{border-right:1px solid var(--line);padding:14px 12px;min-height:74px;}
+    .info-item:last-child{border-right:0;}
+    .info-label{color:var(--teal);font-size:11px;font-weight:900;text-transform:uppercase;margin-bottom:9px;}
+    .info-value{color:var(--navy);font-weight:900;font-size:12.5px;line-height:1.35;overflow-wrap:anywhere;word-break:normal;}
+    .fare-table{border:1.5px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;}
+    .fare-head{background:var(--navy);color:#fff;padding:12px 15px;text-transform:uppercase;font-weight:900;font-size:14px;}
+    .fare-line{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:11px 15px;font-size:13px;}
+    .fare-total{display:flex;justify-content:space-between;gap:12px;padding:14px 15px;font-weight:900;color:var(--navy);font-size:18px;}
+    .baggage-row{display:grid;grid-template-columns:repeat(2,1fr);max-width:390px;padding:0;}
+    .baggage-item{display:flex;align-items:center;gap:14px;padding:14px 18px;border-right:1px solid var(--line);}
+    .baggage-item:last-child{border-right:0;}
+    .bag-icon{color:var(--teal);font-size:30px;}
+    .important-list{list-style:none;margin:0;padding:0;display:grid;gap:12px;}
+    .important-list li{display:flex;gap:12px;align-items:flex-start;font-size:13px;line-height:1.45;}
+    .num{width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;flex:0 0 auto;}
+    .thanks{margin:16px 0;display:flex;justify-content:center;align-items:center;gap:24px;color:var(--teal);font-family:Georgia,serif;font-style:italic;font-size:21px;}
+    .thanks::before,.thanks::after{content:"";width:190px;height:1px;background:var(--teal);}
+    .footer{margin:0 -24px;background:var(--navy);color:#fff;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:center;padding:18px 30px;font-size:14px;}
+    .footer-item{display:flex;justify-content:center;align-items:center;gap:10px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.45);}
+    .footer-item:last-child{border-right:0;}
+    .footer-icon{width:28px;height:28px;border:1px solid rgba(255,255,255,.65);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;}
+  `;
+}
+
+function invoiceHtml(ticket: TravelTicket) {
+  const passengerName = fullPassengerName(ticket);
+  const status = ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1);
+  const fareRows = `${optionalFare("Base Fare", ticket.baseFare)}${optionalFare("Taxes & Fees", ticket.tax)}`;
+  const extraNote = ticket.notes
+    ? `<li><span class="num">3</span><span>${escapeHtml(ticket.notes)}</span></li>`
+    : "";
+
+  return `
+    <div id="ticket" class="ticket-page">
+      <div class="ticket-main">
+        <header class="header">
+          <div class="brand">
+            <div class="logo">T</div>
+            <div>
+              <div class="brand-name">Travelian<span>.</span></div>
+              <div class="tagline">Your Trusted Travel Partner</div>
+            </div>
+          </div>
+          <div class="doc-title">E-Ticket Receipt &amp; Itinerary</div>
+        </header>
+
+        <div class="section-title">
+          <div class="section-icon">&#9992;</div>
+          <h2>Flight Information</h2>
+          <div class="title-line"></div>
+          <div class="pnr">PNR: <span>${escapeHtml(ticket.pnr || ticket.bookingId)}</span></div>
+        </div>
+
+        <div class="card flight-card">
+          <div>
+            <div class="label">Flight</div>
+            <div class="value-large">${escapeHtml(ticket.flightNumber || "Not specified")}</div>
+            <div class="dash"></div>
+            <div class="label muted">Operated By</div>
+            <div class="small">${escapeHtml(ticket.airline || "Not specified")}</div>
+          </div>
+
+          <div class="route-wrap">
+            <div class="label">Departure</div>
+            <div class="small">${escapeHtml(ticket.origin)}</div>
+            <div class="value-med">${escapeHtml(ticket.origin)}</div>
+            <div class="small">${escapeHtml(ticket.originAirport || "")}</div>
+            <div class="route-plane">&#9992;</div>
+            <div class="date-time"><span class="mini-icon">&#9635;</span><div><b>${escapeHtml(formatDate(ticket.departureDate))}</b></div></div>
+            <div class="date-time"><span class="mini-icon">&#9711;</span><div><b>${escapeHtml(ticket.departureTime || "")}</b><br><span class="small">Local Time</span></div></div>
+          </div>
+
+          <div>
+            <div class="label">Arrival</div>
+            <div class="small">${escapeHtml(ticket.destination)}</div>
+            <div class="value-med">${escapeHtml(ticket.destination)}</div>
+            <div class="small">${escapeHtml(ticket.destinationAirport || "")}</div>
+            <div class="date-time"><span class="mini-icon">&#9635;</span><div><b>${escapeHtml(formatDate(ticket.departureDate))}</b></div></div>
+            <div class="date-time"><span class="mini-icon">&#9711;</span><div><b>${escapeHtml(ticket.arrivalTime || "")}</b><br><span class="small">Local Time</span></div></div>
+          </div>
+
+          <div class="side-stack">
+            ${optionalSideInfo("Duration", ticket.duration)}
+            ${optionalSideInfo("Status", status)}
+            ${optionalSideInfo("Invoice", invoiceNumber(ticket))}
+          </div>
+        </div>
+
+        <div class="section-title">
+          <div class="section-icon">&#9679;</div>
+          <h2>Passenger Details</h2>
+          <div class="title-line"></div>
+        </div>
+        <div class="card info-row">
+          ${optionalInfo("Name", passengerName)}
+          ${optionalInfo("Passport Number", ticket.passportNumber)}
+          ${optionalInfo("Seat Number", ticket.seatNumber)}
+          ${optionalInfo("Contact Number", ticket.customerPhone)}
+          ${optionalInfo("Email", ticket.customerEmail)}
+        </div>
+
+        <div class="section-title">
+          <div class="section-icon">$</div>
+          <h2>Fare Details</h2>
+          <div class="title-line"></div>
+        </div>
+        <div class="fare-table">
+          <div class="fare-head">Payment Summary</div>
+          ${fareRows}
+          <div class="fare-total"><span>Total Amount</span><span>${escapeHtml(formatCurrency(ticket.price))}</span></div>
+        </div>
+
+        <div class="section-title">
+          <div class="section-icon">&#9635;</div>
+          <h2>Baggage Information</h2>
+          <div class="title-line"></div>
+        </div>
+        <div class="card baggage-row">
+          <div class="baggage-item">
+            <div class="bag-icon">&#9635;</div>
+            <div><div class="info-label">Checked Baggage</div><div class="value-med">${ticket.checkinBaggageKg == null ? "Not specified" : `${escapeHtml(ticket.checkinBaggageKg)} KG`}</div></div>
+          </div>
+          <div class="baggage-item">
+            <div class="bag-icon">&#9636;</div>
+            <div><div class="info-label">Cabin Baggage</div><div class="value-med">${ticket.cabinBaggageKg == null ? "Not specified" : `${escapeHtml(ticket.cabinBaggageKg)} KG`}</div></div>
+          </div>
+        </div>
+
+        <div class="section-title">
+          <div class="section-icon">i</div>
+          <h2>Important Information</h2>
+          <div class="title-line"></div>
+        </div>
+        <div class="card">
+          <ul class="important-list">
+            <li><span class="num">1</span><span>Reach the airport at least 4 hours before the departure time.</span></li>
+            <li><span class="num">2</span><span>Flight schedule is subject to airline confirmation. Reconfirm your flight before departure.</span></li>
+            ${extraNote}
+          </ul>
+        </div>
+      </div>
+
+      <div class="thanks">Thank you for choosing Travelian.</div>
+      <footer class="footer">
+        <div class="footer-item"><span class="footer-icon">&#9742;</span> +92 324 4440014</div>
+        <div class="footer-item"><span class="footer-icon">&#9993;</span> travelian.pk@gmail.com</div>
+        <div class="footer-item"><span class="footer-icon">&#9678;</span> www.travelian.pk</div>
+      </footer>
+    </div>
+  `;
+}
+
+export function renderTicketInvoicePreview(ticket: TravelTicket) {
+  return `<style>${invoiceCss()}</style>${invoiceHtml(ticket)}`;
+}
+
+async function imagesReady(root: HTMLElement) {
   const images = Array.from(root.querySelectorAll("img"));
   await Promise.all(images.map((image) => {
     if (image.complete) return Promise.resolve();
@@ -266,11 +270,11 @@ async function imageReady(root: HTMLElement) {
 export async function downloadTicketInvoice(ticket: TravelTicket) {
   const stage = document.createElement("div");
   stage.className = "travelian-invoice-stage";
-  stage.innerHTML = `<style>${invoiceCss()}</style>${invoiceHtml(ticket)}`;
+  stage.innerHTML = renderTicketInvoicePreview(ticket);
   document.body.appendChild(stage);
 
   try {
-    await imageReady(stage);
+    await imagesReady(stage);
     const ticketElement = stage.querySelector("#ticket") as HTMLElement | null;
     if (!ticketElement) throw new Error("Invoice template could not be rendered.");
 
@@ -287,21 +291,7 @@ export async function downloadTicketInvoice(ticket: TravelTicket) {
     });
 
     const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
-    const margin = 7;
-    const maxW = pageW - margin * 2;
-    const maxH = pageH - margin * 2;
-    const ratio = canvas.height / canvas.width;
-    let width = maxW;
-    let height = width * ratio;
-    if (height > maxH) {
-      height = maxH;
-      width = height / ratio;
-    }
-    const x = margin + (maxW - width) / 2;
-    const y = margin + (maxH - height) / 2;
-    pdf.addImage(canvas.toDataURL("image/png"), "PNG", x, y, width, height);
+    pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, 210, 297);
     pdf.save(`${invoiceNumber(ticket)}.pdf`);
   } finally {
     stage.remove();
