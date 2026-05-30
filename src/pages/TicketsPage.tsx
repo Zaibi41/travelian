@@ -69,6 +69,25 @@ const emptyCustomer: Omit<CustomerProfile, "customerId"> = {
   passportExpiry: "",
 };
 
+function customerDraftFromTicket(form: Omit<TravelTicket, "ticketId">): Omit<CustomerProfile, "customerId"> {
+  return {
+    name: form.passengerName || [form.firstName, form.lastName].filter(Boolean).join(" ").trim(),
+    email: form.customerEmail || "",
+    phone: form.customerPhone || "",
+    title: form.title || "Mr",
+    firstName: form.firstName || "",
+    lastName: form.lastName || "",
+    dateOfBirth: form.dateOfBirth || "",
+    passportNumber: form.passportNumber || "",
+    passportExpiry: form.passportExpiry || "",
+  };
+}
+
+function splitCustomerName(name = "") {
+  const [firstName = "", ...lastNameParts] = name.trim().split(/\s+/).filter(Boolean);
+  return { firstName, lastName: lastNameParts.join(" ") };
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div className="space-y-2"><Label>{label}</Label>{children}</div>;
 }
@@ -164,18 +183,19 @@ export default function TicketsPage() {
   }, []);
 
   const selectCustomer = (customer: CustomerProfile) => {
+    const parsedName = splitCustomerName(customer.name);
     setForm(previous => ({
       ...previous,
       customerId: customer.customerId,
-      customerEmail: customer.email || "",
-      customerPhone: customer.phone || "",
-      passengerName: customer.name,
+      customerEmail: customer.email || previous.customerEmail,
+      customerPhone: customer.phone || previous.customerPhone,
+      passengerName: customer.name || previous.passengerName,
       title: customer.title || previous.title,
-      firstName: customer.firstName || "",
-      lastName: customer.lastName || "",
-      dateOfBirth: customer.dateOfBirth || "",
-      passportNumber: customer.passportNumber || "",
-      passportExpiry: customer.passportExpiry || "",
+      firstName: customer.firstName || parsedName.firstName || previous.firstName,
+      lastName: customer.lastName || parsedName.lastName || previous.lastName,
+      dateOfBirth: customer.dateOfBirth || previous.dateOfBirth,
+      passportNumber: customer.passportNumber || previous.passportNumber,
+      passportExpiry: customer.passportExpiry || previous.passportExpiry,
     }));
     setCustomerSearch(customer.name);
     setShowCustomerResults(false);
@@ -213,6 +233,14 @@ export default function TicketsPage() {
     setCustomerSearch("");
     setShowNewCustomer(false);
     setDialogOpen(true);
+  };
+
+  const toggleNewCustomer = () => {
+    setShowNewCustomer(previous => {
+      const next = !previous;
+      if (next) setNewCustomer(customerDraftFromTicket(form));
+      return next;
+    });
   };
 
   const openEdit = (ticket: TravelTicket) => {
@@ -419,7 +447,7 @@ export default function TicketsPage() {
                     </div>
                   )}
                 </div>
-                <Button type="button" variant="outline" onClick={() => setShowNewCustomer(value => !value)} className="gap-2">
+                <Button type="button" variant="outline" onClick={toggleNewCustomer} className="gap-2">
                   <UserPlus className="h-4 w-4" /> Add New Customer
                 </Button>
               </div>

@@ -59,6 +59,7 @@ import ProviderSystemsPage from "./pages/ProviderSystemsPage";
 import AgencyFlightSearchPage from "./pages/AgencyFlightSearchPage";
 import CustomerPortalPage from "./pages/CustomerPortalPage";
 import UsersPage from "./pages/UsersPage";
+import CustomersPage from "./pages/CustomersPage";
 import RBACPage from "./pages/RBACPage";
 import CouponsPage from "./pages/CouponsPage";
 import BlogPage from "./pages/BlogPage";
@@ -129,6 +130,7 @@ const App = () => (
             <Route path="/admin/wallet" element={<AdminLayout><WalletPage /></AdminLayout>} />
             <Route path="/admin/payments" element={<AdminLayout><PaymentsPage /></AdminLayout>} />
             <Route path="/admin/users" element={<AdminLayout><UsersPage /></AdminLayout>} />
+            <Route path="/admin/customers" element={<AdminLayout><CustomersPage /></AdminLayout>} />
             <Route path="/admin/rbac" element={<AdminLayout><RBACPage /></AdminLayout>} />
             <Route path="/admin/provider-systems" element={<AdminLayout><ProviderSystemsPage /></AdminLayout>} />
             <Route path="/admin/secrets" element={<AdminLayout><SecretManagerPage /></AdminLayout>} />

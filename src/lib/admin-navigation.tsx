@@ -212,9 +212,9 @@ export const adminNavigation: AdminNavSection[] = [
   {
     category: "Customers",
     items: [
-      item("Customers", "/admin/users", Users, internalAdminRoles),
-      item("My Customers", "/admin/users", Users, agencyOwnerRoles),
-      item("Passenger Profiles", "/admin/users", UserCircle, agencyRoles),
+      item("Customers", "/admin/customers", Users, internalAdminRoles),
+      item("My Customers", "/admin/customers", Users, agencyOwnerRoles),
+      item("Passenger Profiles", "/admin/customers", UserCircle, agencyRoles),
       item("Customer Requests", "/admin/bookings", MessageCircle, internalOpsRoles),
       item("Customer Documents", "/admin/documents", FileText, [...internalOpsRoles, ...agencyRoles]),
     ],
@@ -230,7 +230,7 @@ export const adminNavigation: AdminNavSection[] = [
     category: "Management",
     items: [
       item("Agencies", "/admin/agencies", Building2, internalAdminRoles),
-      item("Customers", "/admin/users", Users, internalAdminRoles),
+      item("Customers", "/admin/customers", Users, internalAdminRoles),
       item("Users & Staff", "/admin/users", UserCog, internalAdminRoles),
       item("Suppliers / API Providers", "/admin/provider-systems", CloudCog, platformOwnerRoles),
       item("Airline Logo Library", "/admin/provider-systems", Image, platformOwnerRoles),
