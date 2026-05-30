@@ -267,9 +267,14 @@ export interface TravelTicket {
   passportExpiry?: string;
   originAirport?: string;
   destinationAirport?: string;
+  originCity?: string;
+  destinationCity?: string;
+  arrivalDate?: string;
   departureTime?: string;
   arrivalTime?: string;
   duration?: string;
+  terminal?: string;
+  cabinClass?: string;
   baseFare?: number;
   tax?: number;
   checkinBaggageKg?: number;

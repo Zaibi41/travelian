@@ -40,9 +40,14 @@ const emptyForm: Omit<TravelTicket, "ticketId"> = {
   passportExpiry: "",
   originAirport: "",
   destinationAirport: "",
+  originCity: "",
+  destinationCity: "",
+  arrivalDate: "",
   departureTime: "",
   arrivalTime: "",
   duration: "",
+  terminal: "",
+  cabinClass: "Economy",
   baseFare: 0,
   tax: 0,
   checkinBaggageKg: 20,
@@ -537,6 +542,14 @@ export default function TicketsPage() {
               <Field label="Destination Airport"><Input value={form.destinationAirport || ""} onChange={e => setForm(p => ({ ...p, destinationAirport: e.target.value }))} /></Field>
               <Field label="Departure Time"><Input type="time" value={form.departureTime || ""} onChange={e => setForm(p => ({ ...p, departureTime: e.target.value }))} /></Field>
               <Field label="Arrival Time"><Input type="time" value={form.arrivalTime || ""} onChange={e => setForm(p => ({ ...p, arrivalTime: e.target.value }))} /></Field>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-5">
+              <Field label="Origin City"><Input value={form.originCity || ""} onChange={e => setForm(p => ({ ...p, originCity: e.target.value }))} placeholder="Lahore" /></Field>
+              <Field label="Destination City"><Input value={form.destinationCity || ""} onChange={e => setForm(p => ({ ...p, destinationCity: e.target.value }))} placeholder="Dubai" /></Field>
+              <Field label="Arrival Date"><Input type="date" value={form.arrivalDate || ""} onChange={e => setForm(p => ({ ...p, arrivalDate: e.target.value }))} /></Field>
+              <Field label="Terminal"><Input value={form.terminal || ""} onChange={e => setForm(p => ({ ...p, terminal: e.target.value }))} placeholder="3" /></Field>
+              <Field label="Cabin / Class"><Input value={form.cabinClass || ""} onChange={e => setForm(p => ({ ...p, cabinClass: e.target.value }))} placeholder="Economy" /></Field>
             </div>
 
             <div className="grid gap-4 md:grid-cols-5">
