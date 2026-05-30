@@ -1,0 +1,13 @@
+{
+  "name": "travelian-skypass-proxy",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "check": "node --check index.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.734.0"
+  }
+}
