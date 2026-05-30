@@ -94,7 +94,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function toTicket(form: Omit<TravelTicket, "ticketId">, existingId?: string): TravelTicket {
   const firstLast = [form.firstName, form.lastName].filter(Boolean).join(" ").trim();
-  const total = Number(form.price || 0) || Number(form.baseFare || 0) + Number(form.tax || 0);
+  const fareComponentsTotal = Number(form.baseFare || 0) + Number(form.tax || 0);
+  const total = fareComponentsTotal || Number(form.price || 0);
   const ticketId = existingId || `tk-${Date.now()}`;
   return {
     ...form,

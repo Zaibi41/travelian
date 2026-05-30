@@ -37,8 +37,9 @@ function escapeHtml(value?: string | number) {
 
 function optionalInfo(label: string, value?: string) {
   if (!value) return "";
+  const className = label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   return `
-    <div class="info-item">
+    <div class="info-item info-${className}">
       <div class="info-label">${escapeHtml(label)}</div>
       <div class="info-value">${escapeHtml(value)}</div>
     </div>
@@ -58,6 +59,12 @@ function optionalSideInfo(label: string, value?: string) {
 function optionalFare(label: string, value?: number) {
   if (typeof value !== "number" || !Number.isFinite(value)) return "";
   return `<div class="fare-line"><span>${escapeHtml(label)}</span><strong>${escapeHtml(formatCurrency(value))}</strong></div>`;
+}
+
+function totalFare(ticket: TravelTicket) {
+  const baseFare = Number(ticket.baseFare || 0);
+  const tax = Number(ticket.tax || 0);
+  return baseFare || tax ? baseFare + tax : Number(ticket.price || 0);
 }
 
 function icon(name: "plane" | "user" | "fare" | "briefcase" | "info" | "calendar" | "clock" | "phone" | "mail" | "globe" | "carryOn") {
@@ -87,7 +94,6 @@ function invoiceCss() {
     .brand{display:flex;align-items:center;gap:16px;}
     .logo{width:72px;height:72px;border:3px solid var(--navy);border-radius:50%;display:flex;justify-content:center;align-items:center;position:relative;color:var(--navy);font-family:Georgia,serif;font-size:45px;font-weight:800;overflow:hidden;}
     .logo::before{content:"";position:absolute;inset:10px;border-radius:50%;border:1px solid #d4dae4;}
-    .logo .icon{position:absolute;bottom:7px;width:20px;height:20px;color:var(--teal);stroke-width:2.4;}
     .brand-name{font-family:Georgia,serif;font-size:44px;font-weight:800;color:var(--navy);line-height:.95;}
     .brand-name span{color:var(--teal);}
     .tagline{margin-top:8px;font-size:11px;letter-spacing:2.2px;white-space:nowrap;text-transform:uppercase;color:var(--teal);}
@@ -97,13 +103,13 @@ function invoiceCss() {
     .icon-plane{fill:currentColor;stroke:none;}
     .section-icon{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#00565d);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
     .section-icon .icon{width:20px;height:20px;}
-    .section-title h2{margin:0;color:var(--navy);font-size:20px;text-transform:uppercase;white-space:nowrap;}
+    .section-title h2{margin:0;color:var(--navy);font-size:20px;line-height:1;text-transform:uppercase;white-space:nowrap;}
     .title-line{flex:1;height:1px;background:var(--line);}
     .pnr{margin-left:auto;font-size:20px;font-weight:900;color:var(--navy);white-space:nowrap;}
     .pnr span{color:var(--teal);}
     .card{border:1.5px solid var(--line);border-radius:10px;background:#fff;padding:18px 20px;}
-    .flight-card{display:grid;grid-template-columns:155px minmax(0,1.12fr) minmax(0,1.12fr) 125px;gap:20px;align-items:stretch;}
-    .flight-card>div{border-right:1px solid var(--line);padding-right:16px;}
+    .flight-card{display:grid;grid-template-columns:132px minmax(0,1fr) minmax(0,1fr) 150px;gap:14px;align-items:stretch;}
+    .flight-card>div{border-right:1px solid var(--line);padding-right:12px;}
     .flight-card>div:last-child{border-right:0;padding-right:0;}
     .label{color:var(--teal);font-weight:900;font-size:13px;text-transform:uppercase;margin-bottom:10px;}
     .value-large{font-size:28px;font-weight:900;color:var(--navy);line-height:1.1;}
@@ -113,19 +119,22 @@ function invoiceCss() {
     .dash{border-top:1px dashed #b9c3d2;margin:16px 0;}
     .route-wrap{position:relative;}
     .route-plane{position:absolute;left:100%;top:110px;transform:translateX(-50%);display:flex;align-items:center;color:var(--navy);z-index:2;}
-    .route-plane .icon{width:34px;height:34px;flex:0 0 auto;}
-    .route-plane::before,.route-plane::after{content:"";display:block;width:30px;border-top:1px dashed #8794aa;margin:0 8px;}
+    .route-plane .icon{width:32px;height:32px;flex:0 0 auto;transform:rotate(90deg);}
+    .route-plane::before,.route-plane::after{content:"";display:block;width:34px;border-top:1px dashed #8794aa;margin:0 7px;}
     .airport-name{max-width:145px;min-height:34px;padding-right:4px;color:var(--muted);overflow-wrap:anywhere;}
-    .date-time{margin-top:54px;display:flex;align-items:flex-start;gap:8px;}
+    .date-time{margin-top:54px;display:grid;grid-template-columns:18px minmax(0,1fr);align-items:center;gap:9px;}
     .date-time+.date-time{margin-top:14px;}
     .mini-icon{color:var(--teal);width:18px;display:inline-block;flex:0 0 auto;}
     .mini-icon .icon{width:16px;height:16px;stroke-width:2.2;}
-    .side-stack{display:grid;gap:18px;align-content:start;}
-    .info-row{display:grid;grid-template-columns:1.25fr 1.05fr .9fr 1.05fr 1.45fr;padding:0;}
-    .info-item{border-right:1px solid var(--line);padding:14px 12px;min-height:74px;}
+    .side-stack{display:grid;gap:16px;align-content:start;}
+    .side-stack .value-med{overflow-wrap:normal;word-break:normal;}
+    .side-stack>div:last-child .value-med{font-size:18px;white-space:nowrap;}
+    .info-row{display:flex;padding:0;}
+    .info-item{min-width:0;flex:1;border-right:1px solid var(--line);padding:14px 12px;min-height:74px;}
     .info-item:last-child{border-right:0;}
     .info-label{color:var(--teal);font-size:11px;font-weight:900;text-transform:uppercase;margin-bottom:9px;}
     .info-value{color:var(--navy);font-weight:900;font-size:12.5px;line-height:1.35;overflow-wrap:anywhere;word-break:normal;}
+    .info-contact-number .info-value,.info-email .info-value{font-size:11.5px;white-space:nowrap;overflow-wrap:normal;}
     .fare-table{border:1.5px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;}
     .fare-head{background:var(--navy);color:#fff;padding:12px 15px;text-transform:uppercase;font-weight:900;font-size:14px;}
     .fare-line{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:11px 15px;font-size:13px;}
@@ -138,13 +147,13 @@ function invoiceCss() {
     .baggage-copy{min-width:0;}
     .baggage-copy .info-label{white-space:nowrap;}
     .important-list{list-style:none;margin:0;padding:0;display:grid;gap:12px;}
-    .important-list li{display:flex;gap:12px;align-items:flex-start;font-size:13px;line-height:1.45;}
-    .num{width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;flex:0 0 auto;}
-    .thanks{margin:16px 0;display:grid;grid-template-columns:minmax(72px,1fr) auto minmax(72px,1fr);align-items:center;gap:24px;color:var(--teal);font-family:Georgia,serif;font-style:italic;font-size:21px;}
+    .important-list li{display:flex;gap:12px;align-items:center;font-size:13px;line-height:1.45;}
+    .num{width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;display:grid;place-items:center;font-weight:900;font-size:12px;line-height:1;flex:0 0 auto;}
+    .thanks{margin:16px 0;display:grid;grid-template-columns:minmax(72px,1fr) auto minmax(72px,1fr);align-items:center;gap:20px;color:var(--teal);font-family:Georgia,serif;font-style:italic;font-size:21px;}
     .thanks::before,.thanks::after{content:"";height:1px;background:var(--teal);}
-    .thanks span{white-space:nowrap;}
-    .footer{margin:0 -24px;background:var(--navy);color:#fff;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:center;padding:18px 30px;font-size:14px;}
-    .footer-item{display:flex;justify-content:center;align-items:center;gap:10px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.45);}
+    .thanks span{white-space:nowrap;text-align:center;}
+    .footer{margin:0 -24px;background:var(--navy);color:#fff;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:center;padding:15px 24px;font-size:13px;}
+    .footer-item{display:flex;min-width:0;justify-content:center;align-items:center;gap:9px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.45);}
     .footer-item:last-child{border-right:0;}
     .footer-icon{width:28px;height:28px;border:1px solid rgba(255,255,255,.65);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;}
     .footer-icon .icon{width:15px;height:15px;stroke-width:1.8;}
@@ -164,7 +173,7 @@ function invoiceHtml(ticket: TravelTicket) {
       <div>
         <header class="header">
           <div class="brand">
-            <div class="logo">T${icon("plane")}</div>
+            <div class="logo">T</div>
             <div>
               <div class="brand-name">Travelian<span>.</span></div>
               <div class="tagline">Your Trusted Travel Partner</div>
@@ -236,7 +245,7 @@ function invoiceHtml(ticket: TravelTicket) {
         <div class="fare-table">
           <div class="fare-head">Payment Summary</div>
           ${fareRows}
-          <div class="fare-total"><span>Total Amount</span><span>${escapeHtml(formatCurrency(ticket.price))}</span></div>
+          <div class="fare-total"><span>Total Amount</span><span>${escapeHtml(formatCurrency(totalFare(ticket)))}</span></div>
         </div>
 
         <div class="section-title">
