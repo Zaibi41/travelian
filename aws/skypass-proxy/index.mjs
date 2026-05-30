@@ -173,6 +173,8 @@ async function getProviderConfig() {
   const secret = await getSecret(PROVIDER_SECRET_ID);
   cachedProviderConfig = {
     baseUrl: String(secret.baseUrl || secret.base_url || "https://dev.skypass.pk").replace(/\/$/, ""),
+    productionBaseUrl: String(secret.productionBaseUrl || secret.production_base_url || "https://api.skypass.pk").replace(/\/$/, ""),
+    developmentBaseUrl: String(secret.developmentBaseUrl || secret.development_base_url || "https://dev.skypass.pk").replace(/\/$/, ""),
     apiKey: String(secret.apiKey || secret.api_key || ""),
     apiSecret: String(secret.apiSecret || secret.api_secret || ""),
     token: String(secret.token || secret.access_token || ""),
@@ -215,11 +217,16 @@ async function getTravelianClientKey() {
 
 async function getSecret(secretId) {
   const result = await secrets.send(new GetSecretValueCommand({ SecretId: secretId }));
-  try {
-    return JSON.parse(result.SecretString || "{}");
-  } catch {
-    return result.SecretString || "";
+  let parsed = result.SecretString || "{}";
+  for (let index = 0; index < 2 && typeof parsed === "string"; index += 1) {
+    const normalized = parsed.replace(/^(?:\uFEFF|\u00EF\u00BB\u00BF)/, "").trim();
+    try {
+      parsed = JSON.parse(normalized);
+    } catch {
+      return normalized;
+    }
   }
+  return parsed;
 }
 
 function providerFormData(body, route, params) {

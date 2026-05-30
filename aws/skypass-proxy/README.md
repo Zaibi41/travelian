@@ -34,7 +34,9 @@ Travelian application backend.
 
 ```json
 {
-  "baseUrl": "https://dev.skypass.pk",
+  "baseUrl": "https://api.skypass.pk",
+  "productionBaseUrl": "https://api.skypass.pk",
+  "developmentBaseUrl": "https://dev.skypass.pk",
   "apiKey": "",
   "apiSecret": "",
   "token": "",
