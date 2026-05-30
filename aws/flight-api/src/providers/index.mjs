@@ -1,15 +1,17 @@
 import { TravelportAdapter } from "./travelport.mjs";
 import { createAirSialAdapter, createFlyadealAdapter, createPiaAdapter } from "./direct-airline.mjs";
+import { SkypassAdapter } from "./skypass.mjs";
 
 const allProviders = {
   travelport: new TravelportAdapter(),
+  skypass: new SkypassAdapter(),
   flyadeal: createFlyadealAdapter(),
   airsial: createAirSialAdapter(),
   pia: createPiaAdapter()
 };
 
 export function enabledProviders(requested) {
-  const configured = (process.env.ENABLED_PROVIDERS || "travelport,flyadeal,airsial,pia")
+  const configured = (process.env.ENABLED_PROVIDERS || "travelport,skypass,flyadeal,airsial,pia")
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);

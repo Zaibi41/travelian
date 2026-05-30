@@ -82,7 +82,7 @@ async function health() {
   return {
     status: "ok",
     service: "travelian-flight-api",
-    providers: (process.env.ENABLED_PROVIDERS || "travelport,flyadeal,airsial,pia").split(",")
+    providers: (process.env.ENABLED_PROVIDERS || "travelport,skypass,flyadeal,airsial,pia").split(",")
   };
 }
 

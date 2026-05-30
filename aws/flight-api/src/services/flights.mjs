@@ -5,10 +5,17 @@ export async function searchFlights(request) {
   const providers = enabledProviders(request.providers);
   const startedAt = Date.now();
   const settled = await Promise.allSettled(
-    providers.map(async (provider) => ({
-      provider: provider.name,
-      results: await withTimeout(provider.searchFlights(request), provider.name)
-    }))
+    providers.map(async (provider) => {
+      try {
+        return {
+          provider: provider.name,
+          results: await withTimeout(provider.searchFlights(request), provider.name)
+        };
+      } catch (error) {
+        error.provider ||= provider.name;
+        throw error;
+      }
+    })
   );
 
   const providerStatus = {};
