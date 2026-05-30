@@ -21,11 +21,20 @@ export function AdminSidebar() {
   const location = useLocation();
   const { currentRole, currentUser } = useRole();
   const sections = useMemo(() => getNavigationForRole(currentRole), [currentRole]);
-  const isActive = (path: string) =>
+  const isPathActive = (path: string) =>
     path === "/admin" ? location.pathname === "/admin" : location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const activeItemKey = useMemo(() => {
+    for (const section of sections) {
+      const item = section.items.find((candidate) => isPathActive(candidate.url));
+      if (item) return `${section.category}-${item.url}-${item.title}`;
+    }
+    return undefined;
+  }, [location.pathname, sections]);
+  const isActive = (category: string, path: string, title: string) =>
+    activeItemKey === `${category}-${path}-${title}`;
   const activeCategory = useMemo(
-    () => sections.find((section) => section.items.some((item) => isActive(item.url)))?.category,
-    [location.pathname, sections],
+    () => sections.find((section) => section.items.some((item) => isPathActive(item.url)))?.category,
+    [activeItemKey, sections],
   );
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const isAgency = currentRole === "agency_owner" || currentRole === "agency_staff";
@@ -39,7 +48,7 @@ export function AdminSidebar() {
     setOpenGroups(next);
   }, [activeCategory, collapsed, currentRole]);
 
-  const allItems = sections.flatMap((section) => section.items);
+  const allItems = sections.flatMap((section) => section.items.map((item) => ({ ...item, category: section.category })));
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/70">
@@ -66,7 +75,7 @@ export function AdminSidebar() {
               <SidebarMenuItem key={`collapsed-${item.url}-${item.title}`}>
               <SidebarMenuButton
                   asChild
-                  isActive={isActive(item.url)}
+                  isActive={isActive(item.category, item.url, item.title)}
                   tooltip={item.title}
                   className="mx-auto h-10 w-10 rounded-xl p-0 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                 >
@@ -104,7 +113,7 @@ export function AdminSidebar() {
                         <SidebarMenuItem key={`${section.category}-${item.url}-${item.title}`}>
                           <SidebarMenuButton
                             asChild
-                            isActive={isActive(item.url)}
+                            isActive={isActive(section.category, item.url, item.title)}
                             className="h-9 rounded-xl px-2.5 text-[13.5px] font-semibold data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                           >
                             <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground font-semibold">

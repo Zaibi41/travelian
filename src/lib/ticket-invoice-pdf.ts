@@ -4,14 +4,6 @@ import type { TravelTicket } from "@/data/mock";
 
 const LOGO_URL = "/invoice-assets/logo.jpeg";
 
-function money(value?: number) {
-  return Number(value || 0).toLocaleString();
-}
-
-function totalAmount(ticket: TravelTicket) {
-  return Number(ticket.price || 0) || Number(ticket.baseFare || 0) + Number(ticket.tax || 0);
-}
-
 function fullPassengerName(ticket: TravelTicket) {
   const fromParts = [ticket.title, ticket.firstName, ticket.lastName].filter(Boolean).join(" ");
   return fromParts || ticket.passengerName || "Passenger";
@@ -115,7 +107,7 @@ function invoiceCss() {
     .route-times{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px;}
     .route-times .time{font-size:12px;color:var(--muted);font-weight:700;}
     .route-times .time.to{text-align:right;}
-    .dual-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;}
+    .dual-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px;}
     .table-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;}
     .table-row:last-child{border-bottom:none;}
     .table-row.total{font-weight:800;color:var(--navy);}
@@ -137,7 +129,6 @@ function invoiceCss() {
 
 function invoiceHtml(ticket: TravelTicket) {
   const passenger = splitPassengerName(ticket);
-  const total = totalAmount(ticket);
   const airline = `${ticket.airline || "Airline"}${ticket.flightNumber ? ` • ${ticket.flightNumber}` : ""}`;
   const status = statusValue(ticket);
 
@@ -224,14 +215,6 @@ function invoiceHtml(ticket: TravelTicket) {
         </div>
 
         <div id="fareBaggageGrid" class="dual-grid">
-          <div class="info-section fare-panel" style="margin-top:0;">
-            <div class="info-section-head subtle">Fare</div>
-            <div class="info-section-body">
-              <div class="table-row"><span>Base</span><span>${escapeHtml(money(ticket.baseFare || total))}</span></div>
-              <div class="table-row"><span>Tax</span><span>${escapeHtml(money(ticket.tax || 0))}</span></div>
-              <div class="table-row total"><span>Total</span><span>${escapeHtml(money(total))}</span></div>
-            </div>
-          </div>
           <div class="info-section" style="margin-top:0;">
             <div class="info-section-head subtle">Baggage</div>
             <div class="info-section-body">
@@ -247,7 +230,7 @@ function invoiceHtml(ticket: TravelTicket) {
             <div class="terms-body">
               <ul>
                 <li>Arrive at least <strong>4 hours</strong> before departure. Bring your <strong>passport</strong> and any <strong>visa</strong> or entry documents required for your destination.</li>
-                <li><strong>Reconfirm</strong> your flight with the <strong>airline</strong> before you travel. <strong>Baggage</strong> limits follow the <strong>operating airline's</strong> policy.</li>
+                <li><strong>Reconfirm</strong> your flight with the <strong>airline</strong> before you travel. <strong>Baggage</strong> limits follow the <strong>operating airline's</strong> policy (check your ticket or the airline's website).</li>
                 <li>Fares are <strong>non-refundable</strong> unless your ticket says otherwise. <strong>Flight times</strong> can change; always verify the latest schedule with the airline.</li>
                 <li>This e-ticket is a booking summary only; carriage is subject to the airline's rules and applicable law.</li>
               </ul>

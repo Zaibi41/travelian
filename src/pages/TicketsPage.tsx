@@ -187,6 +187,10 @@ export default function TicketsPage() {
       toast.error("Customer name is required");
       return;
     }
+    if (!newCustomer.passportNumber?.trim()) {
+      toast.error("Passport number is required");
+      return;
+    }
     setSavingCustomer(true);
     try {
       const saved = await saveCustomer({ ...newCustomer, name });
@@ -197,7 +201,7 @@ export default function TicketsPage() {
       toast.success("Customer profile saved");
     } catch (error) {
       console.error("Unable to save customer profile", error);
-      toast.error("Customer profile could not be saved");
+      toast.error(error instanceof Error ? error.message : "Customer profile could not be saved");
     } finally {
       setSavingCustomer(false);
     }
@@ -382,7 +386,7 @@ export default function TicketsPage() {
 
             <div className="rounded-lg border bg-muted/20 p-4">
               <div className="flex flex-col gap-3 md:flex-row md:items-end">
-                <div className="relative flex-1 space-y-2">
+                <div className="relative flex-1 space-y-2" onBlur={() => window.setTimeout(() => setShowCustomerResults(false), 120)}>
                   <Label>Customer Search</Label>
                   <div className="relative">
                     <Users className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -428,6 +432,11 @@ export default function TicketsPage() {
                     <Field label="Customer Name *"><Input value={newCustomer.name} onChange={event => setNewCustomer(previous => ({ ...previous, name: event.target.value }))} /></Field>
                     <Field label="Customer Email"><Input type="email" value={newCustomer.email || ""} onChange={event => setNewCustomer(previous => ({ ...previous, email: event.target.value }))} /></Field>
                     <Field label="Customer WhatsApp/Phone"><Input value={newCustomer.phone || ""} onChange={event => setNewCustomer(previous => ({ ...previous, phone: event.target.value }))} placeholder="+923001234567" /></Field>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <Field label="Passport Number *"><Input value={newCustomer.passportNumber || ""} onChange={event => setNewCustomer(previous => ({ ...previous, passportNumber: event.target.value.toUpperCase() }))} /></Field>
+                    <Field label="Passport Expiry"><Input type="date" value={newCustomer.passportExpiry || ""} onChange={event => setNewCustomer(previous => ({ ...previous, passportExpiry: event.target.value }))} /></Field>
+                    <Field label="Date of Birth"><Input type="date" value={newCustomer.dateOfBirth || ""} onChange={event => setNewCustomer(previous => ({ ...previous, dateOfBirth: event.target.value }))} /></Field>
                   </div>
                   <div className="flex gap-2">
                     <Button type="button" onClick={handleSaveCustomer} disabled={savingCustomer}>{savingCustomer ? "Saving..." : "Save Customer Profile"}</Button>

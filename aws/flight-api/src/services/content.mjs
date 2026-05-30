@@ -1,4 +1,4 @@
-import { DeleteCommand, GetCommand, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { DeleteCommand, GetCommand, PutCommand, QueryCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
@@ -275,6 +275,12 @@ export async function upsertCustomer(input) {
   const now = new Date().toISOString();
   const customerId = input.customerId || randomUUID();
   const existing = await getCustomer(customerId);
+  const passportNumber = normalizePassportNumber(input.passportNumber || existing?.passportNumber);
+  if (!passportNumber) {
+    const error = new Error("Passport number is required");
+    error.statusCode = 400;
+    throw error;
+  }
   const item = {
     ...(existing || {}),
     ...input,
@@ -282,13 +288,47 @@ export async function upsertCustomer(input) {
     name: input.name || existing?.name || "",
     email: input.email || existing?.email || "",
     phone: input.phone || existing?.phone || "",
+    passportNumber,
     createdAt: existing?.createdAt || input.createdAt || now,
     updatedAt: now
   };
-  await db.send(new PutCommand({
-    TableName: tableName,
-    Item: { pk: "CUSTOMER", sk: `CUSTOMER#${customerId}`, ...item }
-  }));
+  const previousPassportNumber = normalizePassportNumber(existing?.passportNumber);
+  const passportKey = { pk: "CUSTOMER_PASSPORT", sk: `PASSPORT#${passportNumber}` };
+  const transactItems = [];
+  if (previousPassportNumber && previousPassportNumber !== passportNumber) {
+    transactItems.push({
+      Delete: {
+        TableName: tableName,
+        Key: { pk: "CUSTOMER_PASSPORT", sk: `PASSPORT#${previousPassportNumber}` },
+        ConditionExpression: "customerId = :customerId",
+        ExpressionAttributeValues: { ":customerId": customerId }
+      }
+    });
+  }
+  transactItems.push({
+    Put: {
+      TableName: tableName,
+      Item: { ...passportKey, customerId, updatedAt: now },
+      ConditionExpression: "attribute_not_exists(pk) OR customerId = :customerId",
+      ExpressionAttributeValues: { ":customerId": customerId }
+    }
+  });
+  transactItems.push({
+    Put: {
+      TableName: tableName,
+      Item: { pk: "CUSTOMER", sk: `CUSTOMER#${customerId}`, ...item }
+    }
+  });
+  try {
+    await db.send(new TransactWriteCommand({ TransactItems: transactItems }));
+  } catch (error) {
+    if (error.name === "TransactionCanceledException") {
+      const conflict = new Error("A customer with this passport number already exists");
+      conflict.statusCode = 409;
+      throw conflict;
+    }
+    throw error;
+  }
   return item;
 }
 
@@ -341,6 +381,10 @@ function extensionFromFileName(fileName, contentType) {
 
 function randomSuffix() {
   return Math.random().toString(36).slice(2, 10);
+}
+
+function normalizePassportNumber(value = "") {
+  return String(value).trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
 function ensureTable() {

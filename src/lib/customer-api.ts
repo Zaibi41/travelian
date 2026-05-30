@@ -15,7 +15,7 @@ export async function saveCustomer(customer: Omit<CustomerProfile, "customerId">
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(customer),
   });
-  if (!response.ok) throw new Error("Unable to save customer");
   const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error || "Unable to save customer");
   return payload.item;
 }

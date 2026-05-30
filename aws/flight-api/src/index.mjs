@@ -258,7 +258,7 @@ async function listCustomerContent() {
 
 async function saveCustomerContent(event) {
   const body = await readJson(event);
-  requireFields(body, ["name"]);
+  requireFields(body, ["name", "passportNumber"]);
   return { item: await upsertCustomer(body) };
 }
 
