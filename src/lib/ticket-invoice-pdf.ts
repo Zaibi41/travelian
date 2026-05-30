@@ -60,6 +60,23 @@ function optionalFare(label: string, value?: number) {
   return `<div class="fare-line"><span>${escapeHtml(label)}</span><strong>${escapeHtml(formatCurrency(value))}</strong></div>`;
 }
 
+function icon(name: "plane" | "user" | "fare" | "briefcase" | "info" | "calendar" | "clock" | "phone" | "mail" | "globe" | "carryOn") {
+  const paths = {
+    plane: '<path d="M21.7 16.2v-2.1l-8.2-5V3.7a1.5 1.5 0 0 0-3 0v5.4l-8.2 5v2.1l8.2-2.6v4.9l-2.1 1.6v1.6l3.6-1 3.6 1v-1.6l-2.1-1.6v-4.9z"/>',
+    user: '<path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>',
+    fare: '<path d="M12 2v20"/><path d="M17 5.5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+    briefcase: '<rect width="18" height="14" x="3" y="6" rx="2"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/><path d="M10 12v2h4v-2"/>',
+    info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    calendar: '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    phone: '<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.4 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7A2 2 0 0 1 22 16.9z"/>',
+    mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-10 6L2 7"/>',
+    globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20"/><path d="M12 2a15 15 0 0 0 0 20"/>',
+    carryOn: '<rect width="14" height="18" x="5" y="3" rx="2"/><path d="M9 3V1h6v2"/><path d="M9 7h6"/><path d="M9 11h6"/><path d="M9 15h6"/>',
+  };
+  return `<svg class="icon icon-${name}" viewBox="0 0 24 24" aria-hidden="true">${paths[name]}</svg>`;
+}
+
 function invoiceCss() {
   return `
     :root{--navy:#061f52;--teal:#007d82;--gold:#c99319;--text:#243147;--muted:#68758a;--line:#d8dee8;--white:#fff;}
@@ -70,13 +87,16 @@ function invoiceCss() {
     .brand{display:flex;align-items:center;gap:16px;}
     .logo{width:72px;height:72px;border:3px solid var(--navy);border-radius:50%;display:flex;justify-content:center;align-items:center;position:relative;color:var(--navy);font-family:Georgia,serif;font-size:45px;font-weight:800;overflow:hidden;}
     .logo::before{content:"";position:absolute;inset:10px;border-radius:50%;border:1px solid #d4dae4;}
-    .logo::after{content:"\\2708";position:absolute;bottom:8px;font-family:Arial,Helvetica,sans-serif;font-size:18px;color:var(--teal);}
+    .logo .icon{position:absolute;bottom:7px;width:20px;height:20px;color:var(--teal);stroke-width:2.4;}
     .brand-name{font-family:Georgia,serif;font-size:44px;font-weight:800;color:var(--navy);line-height:.95;}
     .brand-name span{color:var(--teal);}
     .tagline{margin-top:8px;font-size:11px;letter-spacing:2.2px;white-space:nowrap;text-transform:uppercase;color:var(--teal);}
     .doc-title{font-size:20px;max-width:310px;line-height:1.15;font-weight:900;color:var(--navy);text-transform:uppercase;text-align:right;align-self:center;}
     .section-title{display:flex;align-items:center;gap:12px;margin:19px 0 13px;}
-    .section-icon{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#00565d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:21px;flex:0 0 auto;}
+    .icon{display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round;stroke-width:1.9;}
+    .icon-plane{fill:currentColor;stroke:none;}
+    .section-icon{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#00565d);color:#fff;display:flex;align-items:center;justify-content:center;flex:0 0 auto;}
+    .section-icon .icon{width:20px;height:20px;}
     .section-title h2{margin:0;color:var(--navy);font-size:20px;text-transform:uppercase;white-space:nowrap;}
     .title-line{flex:1;height:1px;background:var(--line);}
     .pnr{margin-left:auto;font-size:20px;font-weight:900;color:var(--navy);white-space:nowrap;}
@@ -92,11 +112,14 @@ function invoiceCss() {
     .muted{color:var(--muted);}
     .dash{border-top:1px dashed #b9c3d2;margin:16px 0;}
     .route-wrap{position:relative;}
-    .route-plane{position:absolute;left:100%;top:58px;transform:translateX(-50%);color:var(--navy);font-size:34px;z-index:2;white-space:nowrap;}
-    .route-plane::before,.route-plane::after{content:"";display:inline-block;width:28px;border-top:1px dashed #8794aa;vertical-align:middle;margin:0 8px 10px;}
+    .route-plane{position:absolute;left:100%;top:110px;transform:translateX(-50%);display:flex;align-items:center;color:var(--navy);z-index:2;}
+    .route-plane .icon{width:34px;height:34px;flex:0 0 auto;}
+    .route-plane::before,.route-plane::after{content:"";display:block;width:30px;border-top:1px dashed #8794aa;margin:0 8px;}
+    .airport-name{max-width:145px;min-height:34px;padding-right:4px;color:var(--muted);overflow-wrap:anywhere;}
     .date-time{margin-top:54px;display:flex;align-items:flex-start;gap:8px;}
     .date-time+.date-time{margin-top:14px;}
-    .mini-icon{color:var(--teal);font-size:18px;width:22px;display:inline-block;}
+    .mini-icon{color:var(--teal);width:18px;display:inline-block;flex:0 0 auto;}
+    .mini-icon .icon{width:16px;height:16px;stroke-width:2.2;}
     .side-stack{display:grid;gap:18px;align-content:start;}
     .info-row{display:grid;grid-template-columns:1.25fr 1.05fr .9fr 1.05fr 1.45fr;padding:0;}
     .info-item{border-right:1px solid var(--line);padding:14px 12px;min-height:74px;}
@@ -107,19 +130,24 @@ function invoiceCss() {
     .fare-head{background:var(--navy);color:#fff;padding:12px 15px;text-transform:uppercase;font-weight:900;font-size:14px;}
     .fare-line{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:11px 15px;font-size:13px;}
     .fare-total{display:flex;justify-content:space-between;gap:12px;padding:14px 15px;font-weight:900;color:var(--navy);font-size:18px;}
-    .baggage-row{display:grid;grid-template-columns:repeat(2,1fr);max-width:390px;padding:0;}
-    .baggage-item{display:flex;align-items:center;gap:14px;padding:14px 18px;border-right:1px solid var(--line);}
+    .baggage-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));max-width:430px;padding:0;}
+    .baggage-item{display:flex;min-width:0;align-items:center;gap:14px;padding:14px 16px;border-right:1px solid var(--line);}
     .baggage-item:last-child{border-right:0;}
-    .bag-icon{color:var(--teal);font-size:30px;}
+    .bag-icon{color:var(--teal);flex:0 0 auto;}
+    .bag-icon .icon{width:28px;height:28px;stroke-width:2;}
+    .baggage-copy{min-width:0;}
+    .baggage-copy .info-label{white-space:nowrap;}
     .important-list{list-style:none;margin:0;padding:0;display:grid;gap:12px;}
     .important-list li{display:flex;gap:12px;align-items:flex-start;font-size:13px;line-height:1.45;}
     .num{width:22px;height:22px;border-radius:50%;background:var(--teal);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;flex:0 0 auto;}
-    .thanks{margin:16px 0;display:flex;justify-content:center;align-items:center;gap:24px;color:var(--teal);font-family:Georgia,serif;font-style:italic;font-size:21px;}
-    .thanks::before,.thanks::after{content:"";width:190px;height:1px;background:var(--teal);}
+    .thanks{margin:16px 0;display:grid;grid-template-columns:minmax(72px,1fr) auto minmax(72px,1fr);align-items:center;gap:24px;color:var(--teal);font-family:Georgia,serif;font-style:italic;font-size:21px;}
+    .thanks::before,.thanks::after{content:"";height:1px;background:var(--teal);}
+    .thanks span{white-space:nowrap;}
     .footer{margin:0 -24px;background:var(--navy);color:#fff;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:center;padding:18px 30px;font-size:14px;}
     .footer-item{display:flex;justify-content:center;align-items:center;gap:10px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.45);}
     .footer-item:last-child{border-right:0;}
     .footer-icon{width:28px;height:28px;border:1px solid rgba(255,255,255,.65);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;}
+    .footer-icon .icon{width:15px;height:15px;stroke-width:1.8;}
   `;
 }
 
@@ -136,7 +164,7 @@ function invoiceHtml(ticket: TravelTicket) {
       <div>
         <header class="header">
           <div class="brand">
-            <div class="logo">T</div>
+            <div class="logo">T${icon("plane")}</div>
             <div>
               <div class="brand-name">Travelian<span>.</span></div>
               <div class="tagline">Your Trusted Travel Partner</div>
@@ -146,7 +174,7 @@ function invoiceHtml(ticket: TravelTicket) {
         </header>
 
         <div class="section-title">
-          <div class="section-icon">&#9992;</div>
+          <div class="section-icon">${icon("plane")}</div>
           <h2>Flight Information</h2>
           <div class="title-line"></div>
           <div class="pnr">PNR: <span>${escapeHtml(ticket.pnr || ticket.bookingId)}</span></div>
@@ -165,19 +193,19 @@ function invoiceHtml(ticket: TravelTicket) {
             <div class="label">Departure</div>
             <div class="small">${escapeHtml(ticket.origin)}</div>
             <div class="value-med">${escapeHtml(ticket.origin)}</div>
-            <div class="small">${escapeHtml(ticket.originAirport || "")}</div>
-            <div class="route-plane">&#9992;</div>
-            <div class="date-time"><span class="mini-icon">&#9635;</span><div><b>${escapeHtml(formatDate(ticket.departureDate))}</b></div></div>
-            <div class="date-time"><span class="mini-icon">&#9711;</span><div><b>${escapeHtml(ticket.departureTime || "")}</b><br><span class="small">Local Time</span></div></div>
+            <div class="small airport-name">${escapeHtml(ticket.originAirport || "")}</div>
+            <div class="route-plane">${icon("plane")}</div>
+            <div class="date-time"><span class="mini-icon">${icon("calendar")}</span><div><b>${escapeHtml(formatDate(ticket.departureDate))}</b></div></div>
+            <div class="date-time"><span class="mini-icon">${icon("clock")}</span><div><b>${escapeHtml(ticket.departureTime || "")}</b><br><span class="small">Local Time</span></div></div>
           </div>
 
           <div>
             <div class="label">Arrival</div>
             <div class="small">${escapeHtml(ticket.destination)}</div>
             <div class="value-med">${escapeHtml(ticket.destination)}</div>
-            <div class="small">${escapeHtml(ticket.destinationAirport || "")}</div>
-            <div class="date-time"><span class="mini-icon">&#9635;</span><div><b>${escapeHtml(formatDate(ticket.departureDate))}</b></div></div>
-            <div class="date-time"><span class="mini-icon">&#9711;</span><div><b>${escapeHtml(ticket.arrivalTime || "")}</b><br><span class="small">Local Time</span></div></div>
+            <div class="small airport-name">${escapeHtml(ticket.destinationAirport || "")}</div>
+            <div class="date-time"><span class="mini-icon">${icon("calendar")}</span><div><b>${escapeHtml(formatDate(ticket.departureDate))}</b></div></div>
+            <div class="date-time"><span class="mini-icon">${icon("clock")}</span><div><b>${escapeHtml(ticket.arrivalTime || "")}</b><br><span class="small">Local Time</span></div></div>
           </div>
 
           <div class="side-stack">
@@ -188,7 +216,7 @@ function invoiceHtml(ticket: TravelTicket) {
         </div>
 
         <div class="section-title">
-          <div class="section-icon">&#9679;</div>
+          <div class="section-icon">${icon("user")}</div>
           <h2>Passenger Details</h2>
           <div class="title-line"></div>
         </div>
@@ -201,7 +229,7 @@ function invoiceHtml(ticket: TravelTicket) {
         </div>
 
         <div class="section-title">
-          <div class="section-icon">$</div>
+          <div class="section-icon">${icon("fare")}</div>
           <h2>Fare Details</h2>
           <div class="title-line"></div>
         </div>
@@ -212,23 +240,23 @@ function invoiceHtml(ticket: TravelTicket) {
         </div>
 
         <div class="section-title">
-          <div class="section-icon">&#9635;</div>
+          <div class="section-icon">${icon("briefcase")}</div>
           <h2>Baggage Information</h2>
           <div class="title-line"></div>
         </div>
         <div class="card baggage-row">
           <div class="baggage-item">
-            <div class="bag-icon">&#9635;</div>
-            <div><div class="info-label">Checked Baggage</div><div class="value-med">${ticket.checkinBaggageKg == null ? "Not specified" : `${escapeHtml(ticket.checkinBaggageKg)} KG`}</div></div>
+            <div class="bag-icon">${icon("briefcase")}</div>
+            <div class="baggage-copy"><div class="info-label">Checked Baggage</div><div class="value-med">${ticket.checkinBaggageKg == null ? "Not specified" : `${escapeHtml(ticket.checkinBaggageKg)} KG`}</div></div>
           </div>
           <div class="baggage-item">
-            <div class="bag-icon">&#9636;</div>
-            <div><div class="info-label">Cabin Baggage</div><div class="value-med">${ticket.cabinBaggageKg == null ? "Not specified" : `${escapeHtml(ticket.cabinBaggageKg)} KG`}</div></div>
+            <div class="bag-icon">${icon("carryOn")}</div>
+            <div class="baggage-copy"><div class="info-label">Cabin Baggage</div><div class="value-med">${ticket.cabinBaggageKg == null ? "Not specified" : `${escapeHtml(ticket.cabinBaggageKg)} KG`}</div></div>
           </div>
         </div>
 
         <div class="section-title">
-          <div class="section-icon">i</div>
+          <div class="section-icon">${icon("info")}</div>
           <h2>Important Information</h2>
           <div class="title-line"></div>
         </div>
@@ -241,11 +269,11 @@ function invoiceHtml(ticket: TravelTicket) {
         </div>
       </div>
 
-      <div class="thanks">Thank you for choosing Travelian.</div>
+      <div class="thanks"><span>Thank you for choosing Travelian.</span></div>
       <footer class="footer">
-        <div class="footer-item"><span class="footer-icon">&#9742;</span> +92 324 4440014</div>
-        <div class="footer-item"><span class="footer-icon">&#9993;</span> travelian.pk@gmail.com</div>
-        <div class="footer-item"><span class="footer-icon">&#9678;</span> www.travelian.pk</div>
+        <div class="footer-item"><span class="footer-icon">${icon("phone")}</span> +92 324 4440014</div>
+        <div class="footer-item"><span class="footer-icon">${icon("mail")}</span> travelian.pk@gmail.com</div>
+        <div class="footer-item"><span class="footer-icon">${icon("globe")}</span> www.travelian.pk</div>
       </footer>
     </div>
   `;
