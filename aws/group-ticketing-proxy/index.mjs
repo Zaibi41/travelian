@@ -4,10 +4,13 @@ const secrets = new SecretsManagerClient({});
 const SECRET_ID = process.env.ALHAIDER_SECRET_ID || "travelian/providers/alhaider";
 const TOKEN_TTL_MS = Number(process.env.ALHAIDER_TOKEN_TTL_MS || 45 * 60 * 1000);
 const TOKEN_REFRESH_BUFFER_SECONDS = Number(process.env.ALHAIDER_TOKEN_REFRESH_BUFFER_SECONDS || 300);
+const LOGIN_BACKOFF_MS = Number(process.env.ALHAIDER_LOGIN_BACKOFF_MS || 5 * 60 * 1000);
 
 let cachedSecret;
 let cachedToken;
 let cachedTokenAt = 0;
+let loginBlockedUntil = 0;
+let loginBlockedReason = "";
 
 const corsHeaders = {
   "access-control-allow-origin": process.env.CORS_ORIGIN || "*",
@@ -125,13 +128,25 @@ async function getToken({ forceRefresh = false } = {}) {
     cachedTokenAt = config.tokenCreatedAt || Date.now();
     return cachedToken;
   }
+  if (Date.now() < loginBlockedUntil) {
+    throw new Error(loginBlockedReason || "Alhaider login is temporarily unavailable");
+  }
   const body = new FormData();
   body.append("email", config.email);
   body.append("password", config.password);
-  const payload = await alhaiderFetch("/api/login", { method: "POST", body });
+  let payload;
+  try {
+    payload = await alhaiderFetch("/api/login", { method: "POST", body });
+  } catch (error) {
+    loginBlockedUntil = Date.now() + LOGIN_BACKOFF_MS;
+    loginBlockedReason = error instanceof Error ? error.message : "Alhaider login is temporarily unavailable";
+    throw error;
+  }
   const token = extractToken(payload);
   if (!token) throw new Error("Alhaider login did not return a token");
   const tokenExpiresAt = extractTokenExpiresAt(payload);
+  loginBlockedUntil = 0;
+  loginBlockedReason = "";
   cachedToken = token;
   cachedTokenAt = Date.now();
   await persistToken(config, token, cachedTokenAt, tokenExpiresAt);
@@ -196,13 +211,46 @@ function titleize(input) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function normalizeLeg(input) {
+  const record = input && typeof input === "object" ? input : {};
+  return {
+    id: String(value(record, ["id"]) || ""),
+    sequence: Number(value(record, ["sr", "sequence", "segment"]) || 0),
+    flightNumber: value(record, ["flight_no", "flight_number", "flightNumber"]),
+    flightDate: value(record, ["flight_date", "date", "departure_date"]),
+    origin: value(record, ["origin", "from", "departure"]),
+    destination: value(record, ["destination", "to", "arrival"]),
+    baggage: value(record, ["baggage", "bags"]),
+    departureTime: value(record, ["dept_time", "departure_time", "departureTime"]),
+    arrivalTime: value(record, ["arv_time", "arrival_time", "arrivalTime"]),
+  };
+}
+
+function routeFromLegs(legs) {
+  if (!legs.length) return undefined;
+  return [legs[0].origin, ...legs.map((leg) => leg.destination)].filter(Boolean).join("-");
+}
+
+function isRoundTrip(legs, sector) {
+  if (legs.length < 2) return false;
+  const firstOrigin = String(legs[0].origin || "").toUpperCase();
+  const finalDestination = String(legs[legs.length - 1].destination || "").toUpperCase();
+  if (firstOrigin && finalDestination && firstOrigin === finalDestination) return true;
+  const routeParts = String(sector || "").toUpperCase().split("-").filter(Boolean);
+  return routeParts.length > 2 && routeParts[0] === routeParts[routeParts.length - 1];
+}
+
 function normalizeGroup(input) {
   const record = input && typeof input === "object" ? input : {};
   const airlineRecord = record.airline && typeof record.airline === "object" ? record.airline : {};
-  const firstDetail = Array.isArray(record.details) ? record.details[0] || {} : {};
+  const itinerary = (Array.isArray(record.details) ? record.details : []).map(normalizeLeg);
+  const firstDetail = itinerary[0] || {};
+  const lastDetail = itinerary[itinerary.length - 1] || {};
   const rawCategory = value(record, ["type_name", "type", "category", "group_type", "country", "destination", "sector"]);
   const categoryLabel = titleize(rawCategory);
   const airline = value(record, ["airline_name", "airlineName", "carrier_name", "carrier"]) || value(airlineRecord, ["airline_name", "name", "short_name"]);
+  const sector = value(record, ["sector", "route", "routing"]) || routeFromLegs(itinerary);
+  const roundTrip = isRoundTrip(itinerary, sector);
   return {
     ...record,
     id: String(value(record, ["id", "group_id", "groupId", "booking_id"]) || ""),
@@ -211,11 +259,13 @@ function normalizeGroup(input) {
     airlineName: airline ? String(airline) : undefined,
     airlineCode: value(airlineRecord, ["short_name", "iata", "code"]),
     airlineLogo: value(record, ["airline_logo", "logo", "airlineLogo"]) || value(airlineRecord, ["logo_url", "logo", "logo_path"]),
-    sector: value(record, ["sector", "route", "routing"]),
-    departureDate: value(record, ["dept_date", "departure_date", "departureDate", "effective_dept_date"]),
-    returnDate: value(record, ["return_date", "arrival_date", "returnDate", "arv_date"]),
-    flightNumber: value(record, ["flight_no", "flight_number", "flightNumber"]) || value(firstDetail, ["flight_no", "flight_number"]),
-    baggage: value(record, ["baggage", "bagage", "bags"]) || value(firstDetail, ["baggage", "bags"]),
+    sector,
+    tripType: roundTrip ? "round-trip" : "one-way",
+    itinerary,
+    departureDate: value(record, ["dept_date", "departure_date", "departureDate", "effective_dept_date"]) || firstDetail.flightDate,
+    returnDate: roundTrip ? value(record, ["return_date", "returnDate"]) || lastDetail.flightDate : undefined,
+    flightNumber: value(record, ["flight_no", "flight_number", "flightNumber"]) || firstDetail.flightNumber,
+    baggage: value(record, ["baggage", "bagage", "bags"]) || firstDetail.baggage,
     seatsAvailable: value(record, ["seats", "available_seats", "available_no_of_pax", "seatsAvailable"]),
     fare: value(record, ["fare", "price", "amount", "selling_price"]),
     currency: value(record, ["currency"]) || "PKR",

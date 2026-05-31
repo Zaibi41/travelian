@@ -62,6 +62,7 @@ function GroupCard({ group, category }: { group: GroupTicket; category: string }
                 <h2 className="text-lg font-bold text-foreground">{group.airlineName || "Available Group Ticket"}</h2>
                 {group.airlineCode && <Badge variant="outline">{group.airlineCode}</Badge>}
                 {group.flightNumber && <Badge variant="secondary">{group.flightNumber}</Badge>}
+                {group.tripType && <Badge variant="outline" className="capitalize">{group.tripType}</Badge>}
                 {group.status && <Badge className="bg-success/10 text-success hover:bg-success/10">{group.status}</Badge>}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">{group.sector || "Route will be confirmed by Travelian"}</p>
@@ -107,6 +108,23 @@ function GroupCard({ group, category }: { group: GroupTicket; category: string }
                   <h3 className="font-semibold text-foreground">Terms and supplier remarks</h3>
                   <p className="mt-2 text-sm text-muted-foreground">{active.terms || active.supplierRemarks || "Detailed terms will be confirmed by Travelian before booking."}</p>
                   {active.cancellationRules && <p className="mt-2 text-sm text-muted-foreground">Cancellation: {active.cancellationRules}</p>}
+                </div>
+              </div>
+            )}
+            {!loadingDetail && active.itinerary && active.itinerary.length > 0 && (
+              <div className="mt-4 border-t pt-4">
+                <h3 className="font-semibold text-foreground">Itinerary</h3>
+                <div className="mt-3 grid gap-3">
+                  {active.itinerary.map((leg, index) => (
+                    <div key={leg.id || `${leg.flightNumber}-${leg.flightDate}-${index}`} className="grid gap-2 rounded-xl border bg-background p-3 text-sm md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center">
+                      <div>
+                        <p className="font-semibold text-foreground">{leg.origin || "Origin TBA"} to {leg.destination || "Destination TBA"}</p>
+                        <p className="text-muted-foreground">{leg.flightDate || "Date TBA"} · {leg.flightNumber || "Flight TBA"}</p>
+                      </div>
+                      <p className="text-muted-foreground">{leg.departureTime || "Time TBA"} - {leg.arrivalTime || "Time TBA"}</p>
+                      <p className="text-muted-foreground"><Luggage className="mr-1 inline h-3.5 w-3.5" />{leg.baggage || active.baggage || "Baggage TBA"}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

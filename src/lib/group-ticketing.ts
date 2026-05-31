@@ -1,3 +1,15 @@
+export interface GroupTicketLeg {
+  id?: string;
+  sequence?: number;
+  flightNumber?: string;
+  flightDate?: string;
+  origin?: string;
+  destination?: string;
+  baggage?: string;
+  departureTime?: string;
+  arrivalTime?: string;
+}
+
 export interface GroupTicket {
   id: string;
   categorySlug?: string;
@@ -7,6 +19,8 @@ export interface GroupTicket {
   airlineCode?: string;
   airlineLogo?: string;
   sector?: string;
+  tripType?: "one-way" | "round-trip";
+  itinerary?: GroupTicketLeg[];
   departureDate?: string;
   returnDate?: string;
   flightNumber?: string;
@@ -58,14 +72,46 @@ function titleize(input: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function normalizeLeg(input: unknown): GroupTicketLeg {
+  const record = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
+  return {
+    id: String(value(record, ["id"]) || ""),
+    sequence: Number(value(record, ["sr", "sequence", "segment"]) || 0),
+    flightNumber: value(record, ["flight_no", "flight_number", "flightNumber"]) as string | undefined,
+    flightDate: value(record, ["flight_date", "flightDate", "date", "departure_date"]) as string | undefined,
+    origin: value(record, ["origin", "from", "departure"]) as string | undefined,
+    destination: value(record, ["destination", "to", "arrival"]) as string | undefined,
+    baggage: value(record, ["baggage", "bags"]) as string | undefined,
+    departureTime: value(record, ["dept_time", "departure_time", "departureTime"]) as string | undefined,
+    arrivalTime: value(record, ["arv_time", "arrival_time", "arrivalTime"]) as string | undefined,
+  };
+}
+
+function routeFromLegs(legs: GroupTicketLeg[]) {
+  if (!legs.length) return undefined;
+  return [legs[0].origin, ...legs.map((leg) => leg.destination)].filter(Boolean).join("-");
+}
+
+function isRoundTrip(legs: GroupTicketLeg[], sector?: string) {
+  if (legs.length < 2) return false;
+  const firstOrigin = String(legs[0].origin || "").toUpperCase();
+  const finalDestination = String(legs[legs.length - 1].destination || "").toUpperCase();
+  if (firstOrigin && finalDestination && firstOrigin === finalDestination) return true;
+  const routeParts = String(sector || "").toUpperCase().split("-").filter(Boolean);
+  return routeParts.length > 2 && routeParts[0] === routeParts[routeParts.length - 1];
+}
+
 export function normalizeGroupTicket(input: unknown): GroupTicket {
   const record = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
   const airlineRecord = record.airline && typeof record.airline === "object" ? record.airline as Record<string, unknown> : {};
-  const details = Array.isArray(record.details) ? record.details as Record<string, unknown>[] : [];
-  const firstDetail = details[0] || {};
+  const itinerary = (Array.isArray(record.itinerary) ? record.itinerary : Array.isArray(record.details) ? record.details : []).map(normalizeLeg);
+  const firstDetail = itinerary[0] || {};
+  const lastDetail = itinerary[itinerary.length - 1] || {};
   const airline = value(record, ["airline_name", "airlineName", "carrier_name", "carrier"]) || value(airlineRecord, ["airline_name", "name", "short_name"]);
   const rawCategory = value(record, ["type_name", "type", "category", "group_type", "country", "destination", "sector"]);
   const categoryLabel = rawCategory ? titleize(String(rawCategory)) : "Available Group";
+  const sector = (value(record, ["sector", "route", "routing"]) || routeFromLegs(itinerary)) as string | undefined;
+  const roundTrip = isRoundTrip(itinerary, sector);
   return {
     id: String(value(record, ["id", "group_id", "groupId", "booking_id"]) || ""),
     categorySlug: slugify(categoryLabel),
@@ -74,11 +120,13 @@ export function normalizeGroupTicket(input: unknown): GroupTicket {
     airlineName: airline ? String(airline) : undefined,
     airlineCode: value(airlineRecord, ["short_name", "iata", "code"]) as string | undefined,
     airlineLogo: (value(record, ["airline_logo", "logo", "airlineLogo"]) || value(airlineRecord, ["logo_url", "logo", "logo_path"])) as string | undefined,
-    sector: value(record, ["sector", "route", "routing"]) as string | undefined,
-    departureDate: value(record, ["dept_date", "departure_date", "departureDate", "effective_dept_date"]) as string | undefined,
-    returnDate: value(record, ["return_date", "arrival_date", "returnDate", "arv_date"]) as string | undefined,
-    flightNumber: (value(record, ["flight_no", "flight_number", "flightNumber"]) || value(firstDetail, ["flight_no", "flight_number"])) as string | undefined,
-    baggage: (value(record, ["baggage", "bagage", "bags"]) || value(firstDetail, ["baggage", "bags"])) as string | undefined,
+    sector,
+    tripType: roundTrip ? "round-trip" : "one-way",
+    itinerary,
+    departureDate: (value(record, ["dept_date", "departure_date", "departureDate", "effective_dept_date"]) || firstDetail.flightDate) as string | undefined,
+    returnDate: roundTrip ? (value(record, ["return_date", "returnDate"]) || lastDetail.flightDate) as string | undefined : undefined,
+    flightNumber: (value(record, ["flight_no", "flight_number", "flightNumber"]) || firstDetail.flightNumber) as string | undefined,
+    baggage: (value(record, ["baggage", "bagage", "bags"]) || firstDetail.baggage) as string | undefined,
     seatsAvailable: value(record, ["seats", "available_seats", "available_no_of_pax", "seatsAvailable"]) as number | string | undefined,
     fare: value(record, ["fare", "price", "amount", "selling_price"]) as number | string | undefined,
     currency: String(value(record, ["currency"]) || "PKR"),
@@ -144,6 +192,9 @@ export async function fetchGroupTicketDetail(groupId: string, signal?: AbortSign
 }
 
 export function groupTicketWhatsAppMessage(category: string, group: GroupTicket) {
+  const itinerary = group.itinerary?.length
+    ? ["", "Itinerary:", ...group.itinerary.map((leg) => `- ${leg.flightDate || "Date TBA"} ${leg.flightNumber || "Flight TBA"}: ${leg.origin || "Origin TBA"} to ${leg.destination || "Destination TBA"}${leg.departureTime || leg.arrivalTime ? ` (${leg.departureTime || "TBA"} - ${leg.arrivalTime || "TBA"})` : ""}`)]
+    : [];
   return [
     "Hello Travelian,",
     "",
@@ -159,6 +210,7 @@ export function groupTicketWhatsAppMessage(category: string, group: GroupTicket)
     `Fare: ${group.fare ? `${group.currency || "PKR"} ${group.fare}` : "Please confirm"}`,
     `Group ID: ${group.id}`,
     `Listing URL: ${SITE_BASE}/group-ticketing/${group.categorySlug || "all"}`,
+    ...itinerary,
     "",
     "Please share availability and booking details.",
   ].join("\n");
