@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from "react";
-import { UserRole } from "@/data/mock";
+import { UserRole } from "@/data/models";
 import { getSession } from "@/lib/auth-session";
 import { roleForSession } from "@/lib/role-mapping";
 
@@ -10,14 +10,14 @@ interface RoleContextType {
 }
 
 const roleUsers: Record<UserRole, { name: string; email: string; agencyId?: string; agencyName?: string }> = {
-  super_admin: { name: "Ahmed Khan", email: "ahmed@travelian.com" },
-  admin: { name: "Sara Ali", email: "sara@travelian.com" },
-  staff: { name: "Omar Farooq", email: "omar@travelian.com" },
-  agency_owner: { name: "Fatima Zahra", email: "fatima@alhijaz.com", agencyId: "a1", agencyName: "Al Hijaz Tours" },
-  agency_staff: { name: "Hassan Raza", email: "hassan@alhijaz.com", agencyId: "a1", agencyName: "Al Hijaz Tours" },
-  customer: { name: "Travelian Customer", email: "customer@travelian.pk" },
-  qa: { name: "QA Tester", email: "qa@travelian.com" },
-  internal_support: { name: "Support Lead", email: "support@travelian.com" },
+  super_admin: { name: "Super Admin", email: "" },
+  admin: { name: "Admin", email: "" },
+  staff: { name: "Staff", email: "" },
+  agency_owner: { name: "Agency Owner", email: "" },
+  agency_staff: { name: "Agency Staff", email: "" },
+  customer: { name: "Customer", email: "" },
+  qa: { name: "QA", email: "" },
+  internal_support: { name: "Internal Support", email: "" },
 };
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
@@ -32,7 +32,7 @@ function getInitialRole(): UserRole {
   } catch {
     // localStorage can be unavailable in non-browser rendering.
   }
-  return "super_admin";
+  return "customer";
 }
 
 export function RoleProvider({ children }: { children: ReactNode }) {

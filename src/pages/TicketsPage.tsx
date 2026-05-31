@@ -13,7 +13,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/StatusBadge";
 import { useAdmin } from "@/contexts/AdminStore";
 import { useRole } from "@/contexts/RoleContext";
-import type { CustomerProfile, TravelTicket } from "@/data/mock";
+import type { CustomerProfile, TravelTicket } from "@/data/models";
 import { listCustomers, saveCustomer } from "@/lib/customer-api";
 import { downloadTicketInvoice } from "@/lib/ticket-invoice-pdf";
 

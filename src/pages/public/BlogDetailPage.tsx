@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, User } from "lucide-react";
-import type { BlogPost } from "@/data/mock";
+import type { BlogPost } from "@/data/models";
 import { SEO } from "@/components/SEO";
 import { getBlogPost } from "@/lib/content-api";
 import { getBlogImage } from "@/lib/blog-images";

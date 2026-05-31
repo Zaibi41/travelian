@@ -42,7 +42,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import type { UserRole } from "@/data/mock";
+import type { UserRole } from "@/data/models";
 
 export type AdminNavCategory =
   | "Dashboard"

@@ -1,5 +1,5 @@
 import { useRole } from "@/contexts/RoleContext";
-import { UserRole } from "@/data/mock";
+import { UserRole } from "@/data/models";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, User, Building2, Users, Headset, TestTube2 } from "lucide-react";
 import { canSwitchRoles } from "@/lib/role-mapping";

@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/EmptyState";
 import { useAdmin } from "@/contexts/AdminStore";
-import { UmrahPackage } from "@/data/mock";
+import { UmrahPackage } from "@/data/models";
 import { toast } from "sonner";
 
 const defaultForm = {

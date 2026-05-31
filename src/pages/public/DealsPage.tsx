@@ -1,23 +1,21 @@
-﻿import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Flame, Clock, Percent, Zap, Tag, Star, MapPin, Heart, ArrowRight, Check, Copy } from "lucide-react";
+import { Flame, Clock, Percent, Zap, Tag, MapPin, Heart, ArrowRight, Check, Copy, Hotel } from "lucide-react";
 import { Link } from "react-router-dom";
-import { mockCoupons, mockHotels, mockPackages } from "@/data/mock";
 import { useState } from "react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
+import { useAdmin } from "@/contexts/AdminStore";
+import type { Hotel } from "@/data/models";
 
-const flashDeals = [
-  { title: "Makkah Hotels Flash Sale", discount: "40% OFF", desc: "5-star hotels near Haram at unbeatable prices", bg: "gradient-deal", expiry: "2 days", category: "Hotels", to: "/hotels-search" },
-  { title: "Summer Tour Early Bird", discount: "Save PKR 300", desc: "Book Turkey & Egypt tours before May", bg: "gradient-primary", expiry: "15 days", category: "Tours", to: "/tour-packages" },
-  { title: "Umrah Economy Special", discount: "From PKR 799", desc: "7-night economy package with flights", bg: "gradient-hero", expiry: "Limited", category: "Umrah", to: "/umrah-packages" },
-  { title: "First Booking Bonus", discount: "PKR 50 OFF", desc: "Use code WELCOME50 on your first booking", bg: "gradient-deal", expiry: "Ongoing", category: "All", to: "/hotels-search" },
-];
+const flashDeals: Array<{ title: string; discount: string; desc: string; bg: string; expiry: string; category: string; to: string }> = [];
 
 export default function DealsPage() {
+  const { coupons } = useAdmin();
   const today = new Date().toISOString().slice(0, 10);
-  const activeCoupons = mockCoupons.filter(c => c.status === 'active' && c.validUntil >= today);
+  const activeCoupons = coupons.filter(c => c.status === 'active' && c.validUntil >= today);
+  const discountedHotels: Hotel[] = [];
   const [copied, setCopied] = useState<string | null>(null);
 
   const onCopy = (code: string) => {
@@ -64,6 +62,7 @@ export default function DealsPage() {
                 </div>
               </Link>
             ))}
+            {flashDeals.length === 0 && <p className="col-span-full text-sm text-muted-foreground">No flash deals are active right now.</p>}
           </div>
         </div>
 
@@ -100,6 +99,7 @@ export default function DealsPage() {
                 </CardContent>
               </Card>
             ))}
+            {activeCoupons.length === 0 && <p className="col-span-full text-sm text-muted-foreground">No promo codes are active right now.</p>}
           </div>
         </div>
 
@@ -115,12 +115,11 @@ export default function DealsPage() {
             </Link>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mockHotels.filter(h => h.status === 'active').slice(0, 3).map(hotel => (
+            {discountedHotels.map(hotel => (
               <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
                 <Card className="overflow-hidden hover:shadow-elevated transition-all group">
                   <div className="h-40 bg-gradient-to-br from-warning/10 to-accent flex items-center justify-center relative">
-                    <span className="text-5xl group-hover:scale-110 transition-transform">ðŸ¨</span>
-                    <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground border-0 text-xs">30% OFF</Badge>
+                    <Hotel className="h-12 w-12 text-primary/40 transition-transform group-hover:scale-110" />
                     <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground">
                       <Heart className="h-3.5 w-3.5" />
                     </button>
@@ -130,15 +129,14 @@ export default function DealsPage() {
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin className="h-3 w-3" /> {hotel.city}</p>
                     <div className="flex items-end justify-between mt-3">
                       <div>
-                        <span className="text-xs text-muted-foreground line-through">PKR {Math.round(hotel.pricePerNight * 1.3)}</span>
-                        <p className="text-lg font-bold text-destructive">PKR {hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
+                        <p className="text-lg font-bold text-foreground">PKR {hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
                       </div>
-                      <div className="bg-primary text-primary-foreground text-xs font-bold px-1.5 py-0.5 rounded">9.{hotel.starRating}</div>
                     </div>
                   </CardContent>
                 </Card>
               </Link>
             ))}
+            {discountedHotels.length === 0 && <p className="col-span-full text-sm text-muted-foreground">No discounted hotels are active right now.</p>}
           </div>
         </div>
       </div>

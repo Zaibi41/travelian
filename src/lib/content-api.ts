@@ -1,4 +1,4 @@
-import { mockBlogPosts, type BlogPost } from "@/data/mock";
+import type { BlogPost } from "@/data/models";
 
 const API_BASE_URL = (import.meta.env.VITE_TRAVELIAN_API_BASE_URL || "https://api.travelian.pk").replace(/\/$/, "");
 
@@ -37,5 +37,5 @@ export async function deleteBlogPost(slug: string) {
 }
 
 export function fallbackBlogPosts(status?: BlogPost["status"]) {
-  return status ? mockBlogPosts.filter(post => post.status === status) : mockBlogPosts;
+  return [];
 }

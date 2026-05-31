@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
-import { Agency, AgencyStatus } from "@/data/mock";
+import { Agency, AgencyStatus } from "@/data/models";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

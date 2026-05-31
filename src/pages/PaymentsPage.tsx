@@ -208,7 +208,7 @@ export default function PaymentsPage() {
                   <ShieldCheck className="h-5 w-5 text-success" />
                   <span className="text-sm font-semibold">Secure Payment Processing</span>
                 </div>
-                <p className="text-xs text-muted-foreground">All payments are processed securely with SSL encryption and PCI-DSS compliance.</p>
+                <p className="text-xs text-muted-foreground">Enable payment methods only after the configured provider has been verified for production use.</p>
               </div>
               <div className="flex items-center justify-between">
                 <div>

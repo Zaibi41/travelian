@@ -189,7 +189,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     <div className={adminMode ? "-m-4 md:-m-6 bg-muted/30 min-h-[calc(100vh-3.5rem)]" : ""}>
       <SEO
         title={`Flights ${from} to ${to} - Travelian`}
-        description={`Compare and book ${from} to ${to} flights on ${format(departDate, "PPP")}. Best fares, instant e-ticket, secure checkout.`}
+        description={`Compare available ${from} to ${to} flight fares for ${format(departDate, "PPP")}.`}
       />
       {/* Visually-hidden H1 for SEO/a11y, keeps premium look intact */}
       <h1 className="sr-only">Flight search results: {from} to {to}</h1>

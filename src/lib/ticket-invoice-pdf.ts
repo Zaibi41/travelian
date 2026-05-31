@@ -1,6 +1,6 @@
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
-import type { TravelTicket } from "@/data/mock";
+import type { TravelTicket } from "@/data/models";
 
 type InvoiceIcon =
   | "plane"

@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { CustomerProfile } from "@/data/mock";
+import type { CustomerProfile } from "@/data/models";
 import { listCustomers, saveCustomer } from "@/lib/customer-api";
 
 const emptyCustomer: Omit<CustomerProfile, "customerId"> = {

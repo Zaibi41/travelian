@@ -88,7 +88,7 @@ export default function DashboardPage() {
       <EmptyState
         icon={Plane}
         title="No production data connected yet"
-        description="Dashboard charts, revenue cards, booking tables and alerts intentionally show no mock data. Connect real bookings, payments, provider health and search logs to populate this dashboard."
+        description="Connect bookings, payments, provider health and search logs to populate this dashboard."
         actionLabel={isAgency ? "Start Flight Search" : "Open Flight Booking"}
         onAction={() => { window.location.href = "/admin/flights-search"; }}
       />

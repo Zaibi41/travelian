@@ -90,20 +90,37 @@ function extractToken(payload) {
 function extractTokenExpiresAt(payload) {
   const value = payload?.expires_at || payload?.expiresAt || payload?.data?.expires_at || payload?.data?.expiresAt || payload?.authorization?.expires_at;
   const asNumber = Number(value);
-  return Number.isFinite(asNumber) ? asNumber : 0;
+  if (Number.isFinite(asNumber) && asNumber > 0) return asNumber;
+  return tokenExpiry(extractToken(payload));
+}
+
+function tokenExpiry(token) {
+  try {
+    const [, payload] = String(token || "").split(".");
+    if (!payload) return 0;
+    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    const expiresAt = Number(parsed.exp);
+    return Number.isFinite(expiresAt) ? expiresAt : 0;
+  } catch {
+    return 0;
+  }
 }
 
 function isProviderTokenUsable(token, expiresAt) {
-  if (!token || !expiresAt) return false;
+  if (!token) return false;
+  const effectiveExpiry = Number(expiresAt) || tokenExpiry(token);
+  // Some supplier tokens do not include expiry metadata. Reuse them until the
+  // supplier explicitly rejects them instead of consuming another login slot.
+  if (!effectiveExpiry) return true;
   const nowSeconds = Math.floor(Date.now() / 1000);
-  return Number(expiresAt) - TOKEN_REFRESH_BUFFER_SECONDS > nowSeconds;
+  return effectiveExpiry - TOKEN_REFRESH_BUFFER_SECONDS > nowSeconds;
 }
 
-async function getToken() {
-  if (cachedToken && Date.now() - cachedTokenAt < TOKEN_TTL_MS) return cachedToken;
+async function getToken({ forceRefresh = false } = {}) {
+  if (!forceRefresh && cachedToken && Date.now() - cachedTokenAt < TOKEN_TTL_MS) return cachedToken;
   const config = await getConfig();
   assertConfig(config);
-  if (isProviderTokenUsable(config.token, config.tokenExpiresAt)) {
+  if (!forceRefresh && isProviderTokenUsable(config.token, config.tokenExpiresAt)) {
     cachedToken = config.token;
     cachedTokenAt = config.tokenCreatedAt || Date.now();
     return cachedToken;
@@ -130,36 +147,18 @@ async function persistToken(config, token, tokenCreatedAt, tokenExpiresAt) {
   }));
 }
 
-async function clearStoredToken(config) {
-  cachedToken = "";
-  cachedTokenAt = 0;
-  cachedSecret = { ...config, token: "", tokenCreatedAt: 0, tokenExpiresAt: 0, expires_at: 0 };
-  await secrets.send(new PutSecretValueCommand({
-    SecretId: SECRET_ID,
-    SecretString: JSON.stringify(cachedSecret),
-  }));
-}
-
 async function authedAlhaiderFetch(path) {
-  const config = await getConfig();
   const token = await getToken();
   try {
     return await alhaiderFetch(path, { headers: { Authorization: `Bearer ${token}` } });
   } catch (error) {
     if (!(error instanceof Error) || !/unauthenticated|unauthorized|token/i.test(error.message)) throw error;
-    if (isProviderTokenUsable(config.token, config.tokenExpiresAt)) {
-      await clearStoredToken(config);
-    } else {
-      cachedToken = "";
-      cachedTokenAt = 0;
-      if (cachedSecret) {
-        cachedSecret.token = "";
-        cachedSecret.tokenCreatedAt = 0;
-        cachedSecret.tokenExpiresAt = 0;
-        cachedSecret.expires_at = 0;
-      }
-    }
-    const freshToken = await getToken();
+    cachedToken = "";
+    cachedTokenAt = 0;
+    // Keep the last supplier token in Secrets Manager until replacement login
+    // succeeds. This preserves a recoverable token when the supplier account
+    // has reached its concurrent-session limit.
+    const freshToken = await getToken({ forceRefresh: true });
     return alhaiderFetch(path, { headers: { Authorization: `Bearer ${freshToken}` } });
   }
 }

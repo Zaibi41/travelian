@@ -39,7 +39,7 @@ export function GroupTicketingCategories({ compact = false }: { compact?: boolea
     return (
       <div className="rounded-2xl border bg-card p-5 shadow-card">
         <p className="text-sm font-semibold text-foreground">Group categories could not be loaded</p>
-        <p className="mt-1 text-sm text-muted-foreground">Travelian API Gateway is online, but the group supplier is not returning categories yet. Please retry after provider credentials are configured.</p>
+        <p className="mt-1 text-sm text-muted-foreground">The group supplier is temporarily unavailable. Please retry shortly or contact Travelian for the latest availability.</p>
         <Button variant="outline" size="sm" className="mt-4 rounded-xl" onClick={load}>
           <RefreshCw className="mr-2 h-4 w-4" /> Retry
         </Button>

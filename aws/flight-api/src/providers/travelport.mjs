@@ -1,5 +1,4 @@
 import { ProviderAdapter } from "./provider-base.mjs";
-import { buildMockHotels, buildMockOffers, buildMockTransfers } from "./mock-data.mjs";
 import { getSecretJson } from "../secrets.mjs";
 
 export class TravelportAdapter extends ProviderAdapter {
@@ -10,10 +9,6 @@ export class TravelportAdapter extends ProviderAdapter {
   }
 
   async searchFlights(request) {
-    if (process.env.ENABLE_MOCK_PROVIDERS === "true") {
-      return buildMockOffers(request, this.name);
-    }
-
     const token = await this.accessToken();
     const payload = this.toSearchPayload(request);
     const response = await this.post("/catalog/search/catalogproductofferings", payload, token);
@@ -21,10 +16,6 @@ export class TravelportAdapter extends ProviderAdapter {
   }
 
   async searchHotels(request) {
-    if (process.env.ENABLE_MOCK_PROVIDERS === "true") {
-      return buildMockHotels(request, this.name);
-    }
-
     const token = await this.accessToken();
     const payload = this.toHotelSearchPayload(request);
     const response = await this.post("/hotel/search/properties/search", payload, token);
@@ -32,10 +23,6 @@ export class TravelportAdapter extends ProviderAdapter {
   }
 
   async searchTransfers(request) {
-    if (process.env.ENABLE_MOCK_PROVIDERS === "true") {
-      return buildMockTransfers(request, this.name);
-    }
-
     const token = await this.accessToken();
     const payload = this.toTransferSearchPayload(request);
     const response = await this.post("/vehicle/search", payload, token);
@@ -43,7 +30,6 @@ export class TravelportAdapter extends ProviderAdapter {
   }
 
   async priceOffer(payload) {
-    if (process.env.ENABLE_MOCK_PROVIDERS === "true") return super.priceOffer(payload);
     return {
       provider: this.name,
       offerId: payload.offerId,
@@ -54,7 +40,6 @@ export class TravelportAdapter extends ProviderAdapter {
   }
 
   async createBooking(payload) {
-    if (process.env.ENABLE_MOCK_PROVIDERS === "true") return super.createBooking(payload);
     return {
       provider: this.name,
       status: "notImplemented",

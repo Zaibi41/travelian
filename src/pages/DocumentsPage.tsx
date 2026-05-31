@@ -2,13 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Upload, Download, Eye, Trash2 } from "lucide-react";
 
-const mockDocs = [
-  { id: 'd1', name: 'passport_ali_raza.pdf', type: 'Passport', bookingId: 'b1', uploadedBy: 'Ali Raza', size: '2.4 MB', uploadedAt: '2025-03-01' },
-  { id: 'd2', name: 'visa_aisha_begum.pdf', type: 'Visa', bookingId: 'b2', uploadedBy: 'Al Hijaz Tours', size: '1.8 MB', uploadedAt: '2025-03-10' },
-  { id: 'd3', name: 'ticket_usman_sheikh.pdf', type: 'Ticket', bookingId: 'b3', uploadedBy: 'Safar Tours', size: '0.9 MB', uploadedAt: '2025-03-15' },
-  { id: 'd4', name: 'passport_khadija_noor.pdf', type: 'Passport', bookingId: 'b4', uploadedBy: 'Khadija Noor', size: '3.1 MB', uploadedAt: '2025-02-28' },
-  { id: 'd5', name: 'hotel_voucher_b2.pdf', type: 'Voucher', bookingId: 'b2', uploadedBy: 'System', size: '0.5 MB', uploadedAt: '2025-03-12' },
-];
+const documents: Array<{ id: string; name: string; type: string; bookingId: string; uploadedBy: string; size: string; uploadedAt: string }> = [];
 
 const typeIcon: Record<string, string> = {
   Passport: 'bg-info/10 text-info',
@@ -46,7 +40,7 @@ export default function DocumentsPage() {
                 </tr>
               </thead>
               <tbody>
-                {mockDocs.map(doc => (
+                {documents.map(doc => (
                   <tr key={doc.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
@@ -70,6 +64,13 @@ export default function DocumentsPage() {
                     </td>
                   </tr>
                 ))}
+                {documents.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="p-10 text-center text-sm text-muted-foreground">
+                      No documents have been uploaded yet.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

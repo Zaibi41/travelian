@@ -100,10 +100,7 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
   }, [allAirports, query]);
 
   return (
-    <Popover open={open} onOpenChange={(nextOpen) => {
-      setOpen(nextOpen);
-      if (nextOpen) loadFullAirports();
-    }}>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -136,7 +133,7 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
             value={query}
             onValueChange={(nextQuery) => {
               setQuery(nextQuery);
-              if (nextQuery.trim()) loadFullAirports();
+              if (nextQuery.trim().length >= 2) loadFullAirports();
             }}
             placeholder="Search city, airport, or IATA code..."
           />

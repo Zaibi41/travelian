@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, MapPin, Wifi, UtensilsCrossed, Dumbbell, Search, SlidersHorizontal, Grid3X3, List, Heart, X, ChevronDown, Map as MapIcon, ArrowUpDown, Users, Waves, Coffee } from "lucide-react";
+import { Star, MapPin, Wifi, UtensilsCrossed, Dumbbell, Search, SlidersHorizontal, Grid3X3, List, Heart, X, ChevronDown, Map as MapIcon, ArrowUpDown, Users, Waves, Coffee, Hotel } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { searchHotels, type HotelOffer } from "@/lib/travelian-api";
@@ -306,7 +306,7 @@ export default function PublicHotelsPage() {
                   <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
                     <Card className="overflow-hidden group hover:shadow-elevated transition-all h-full">
                       <div className="h-44 bg-gradient-to-br from-warning/10 to-accent relative flex items-center justify-center">
-                        <span className="text-5xl group-hover:scale-110 transition-transform">ðŸ¨</span>
+                        <Hotel className="h-12 w-12 text-primary/40 transition-transform group-hover:scale-110" />
                         <div className="absolute top-3 left-3 flex items-center gap-0.5">
                           {Array.from({ length: hotel.starRating }).map((_, i) => (
                             <Star key={i} className="h-3 w-3 fill-warning text-warning" />
@@ -315,9 +315,7 @@ export default function PublicHotelsPage() {
                         <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-foreground/40 transition-colors">
                           <Heart className="h-3.5 w-3.5" />
                         </button>
-                        <Badge className="absolute bottom-3 left-3 bg-success/90 text-success-foreground border-0 text-[10px]">
-                          Free Cancellation
-                        </Badge>
+                        {hotel.refundable && <Badge className="absolute bottom-3 left-3 bg-success/90 text-success-foreground border-0 text-[10px]">Refundable</Badge>}
                       </div>
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-2">
@@ -327,11 +325,7 @@ export default function PublicHotelsPage() {
                               <MapPin className="h-3 w-3 shrink-0" /> {hotel.city}, {hotel.country}
                             </p>
                           </div>
-                          <div className="shrink-0">
-                            <div className="bg-primary text-primary-foreground text-xs font-bold px-1.5 py-0.5 rounded">
-                              9.{hotel.starRating}
-                            </div>
-                          </div>
+                          <span className="shrink-0 text-xs text-muted-foreground">{hotel.provider}</span>
                         </div>
                         <div className="flex flex-wrap gap-1 mt-2">
                           {hotel.amenities.slice(0, 3).map(a => (
@@ -340,10 +334,9 @@ export default function PublicHotelsPage() {
                         </div>
                         <div className="flex items-end justify-between mt-3 pt-3 border-t">
                           <div>
-                            <span className="text-xs text-muted-foreground line-through">PKR {Math.round(hotel.pricePerNight * 1.25)}</span>
-                            <p className="text-lg font-bold text-destructive">PKR {hotel.pricePerNight}<span className="text-[10px] font-normal text-muted-foreground">/night</span></p>
+                            <p className="text-lg font-bold text-foreground">{hotel.currency} {hotel.pricePerNight}<span className="text-[10px] font-normal text-muted-foreground">/night</span></p>
                           </div>
-                          <Badge variant="outline" className="text-destructive border-destructive/30 text-[10px]">20% OFF</Badge>
+                          <span className="text-[10px] text-muted-foreground">{hotel.rooms} room option{hotel.rooms === 1 ? "" : "s"}</span>
                         </div>
                       </CardContent>
                     </Card>
@@ -357,7 +350,7 @@ export default function PublicHotelsPage() {
                     <Card className="overflow-hidden hover:shadow-elevated transition-all">
                       <div className="flex flex-col md:flex-row">
                         <div className="w-full md:w-72 h-48 md:h-auto bg-gradient-to-br from-warning/10 to-accent flex items-center justify-center shrink-0 relative">
-                          <span className="text-5xl">ðŸ¨</span>
+                          <Hotel className="h-12 w-12 text-primary/40" />
                           <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground">
                             <Heart className="h-3.5 w-3.5" />
                           </button>
@@ -376,32 +369,19 @@ export default function PublicHotelsPage() {
                                   <MapPin className="h-3.5 w-3.5" /> {hotel.city}, {hotel.country}
                                 </p>
                               </div>
-                              <div className="text-right shrink-0">
-                                <div className="bg-primary text-primary-foreground text-sm font-bold px-2.5 py-1 rounded-lg">
-                                  9.{hotel.starRating}
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">Excellent</p>
-                                <p className="text-[10px] text-muted-foreground">1,234 reviews</p>
-                              </div>
+                              <span className="text-xs text-muted-foreground shrink-0">{hotel.provider}</span>
                             </div>
                             <div className="flex flex-wrap gap-1.5 mt-3">
                               {hotel.amenities.map(a => (
                                 <span key={a} className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{a}</span>
                               ))}
                             </div>
-                            <div className="flex gap-2 mt-2">
-                              <Badge className="bg-success/10 text-success border-0 text-[10px]">Free Cancellation</Badge>
-                              <Badge className="bg-info/10 text-info border-0 text-[10px]">Breakfast Included</Badge>
-                            </div>
+                            {hotel.refundable && <Badge className="mt-2 bg-success/10 text-success border-0 text-[10px]">Refundable</Badge>}
                           </div>
                           <div className="flex items-end justify-between mt-4 pt-3 border-t">
                             <div>
-                              <span className="text-xs text-muted-foreground">1 night, 2 adults</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm text-muted-foreground line-through">PKR {Math.round(hotel.pricePerNight * 1.3)}</span>
-                                <p className="text-2xl font-bold text-destructive">PKR {hotel.pricePerNight}</p>
-                              </div>
-                              <span className="text-[10px] text-muted-foreground">+PKR 12 taxes & fees</span>
+                              <span className="text-xs text-muted-foreground">Per night</span>
+                              <p className="text-2xl font-bold text-foreground">{hotel.currency} {hotel.pricePerNight}</p>
                             </div>
                             <Button className="gradient-primary text-primary-foreground">Select Room</Button>
                           </div>
@@ -431,7 +411,7 @@ export default function PublicHotelsPage() {
           <h2 className="text-lg font-bold text-foreground mb-4 text-center">Hotel Booking FAQs</h2>
           <Accordion type="single" collapsible>
             {[
-              { q: "Can I cancel my hotel booking?", a: "Most hotels offer free cancellation. Specific terms are shown on each property." },
+              { q: "Can I cancel my hotel booking?", a: "Cancellation terms depend on the selected rate. Confirm the supplier terms before booking." },
               { q: "When am I charged?", a: "Either at booking or at the property, depending on the rate selected." },
               { q: "Are taxes included?", a: "Prices shown include applicable taxes unless noted otherwise." },
             ].map((f, i) => (

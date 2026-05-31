@@ -1,0 +1,362 @@
+// Shared Travelian domain models and permission catalog.
+
+export type UserRole = 'super_admin' | 'admin' | 'staff' | 'agency_owner' | 'agency_staff' | 'customer' | 'qa' | 'internal_support';
+export type AgencyStatus = 'pending' | 'active' | 'suspended' | 'rejected';
+export type BookingStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed';
+export type BookingType = 'b2c' | 'b2b';
+export type TransactionType = 'credit' | 'debit';
+export type WalletMethod = 'card' | '1link' | 'bank_transfer' | 'manual' | 'booking' | 'refund';
+export type WalletStatus = 'pending' | 'approved' | 'rejected' | 'reversed' | 'cancelled';
+
+export interface User {
+  userId: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  agencyId?: string;
+  parentAgencyId?: string;
+  designation?: string;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  moduleAccess?: string[];
+}
+
+export interface Agency {
+  agencyId: string;
+  agencyName: string;
+  email: string;
+  phone: string;
+  status: AgencyStatus;
+  commissionRate: number;
+  walletBalance: number;
+  contactPerson: string;
+  city: string;
+  createdAt: string;
+  totalBookings: number;
+  address?: string;
+  licenseNo?: string;
+  parentAgencyId?: string;
+  agencyType?: 'main' | 'sub';
+  ownerUserId?: string;
+}
+
+export interface UmrahPackage {
+  packageId: string;
+  name: string;
+  description: string;
+  basePrice: number;
+  duration: string;
+  hotel: string;
+  city: string;
+  status: 'active' | 'inactive';
+  includes: string[];
+  category: 'umrah' | 'tour' | 'visa';
+  image?: string;
+  packageType?: string;
+  makkahHotel?: string;
+  makkahHotelInfo?: string;
+  madinahHotel?: string;
+  madinahHotelInfo?: string;
+  roomSharing?: string;
+  departureCity?: string;
+  transportIncluded?: boolean;
+  visaIncluded?: boolean;
+  ticketIncluded?: boolean;
+  mealsIncluded?: boolean;
+  terms?: string;
+  seatsLabel?: string;
+  childPrice?: number;
+  infantPrice?: number;
+  flightDates?: {
+    outboundDate: string;
+    outboundRoute: string;
+    returnDate?: string;
+    returnRoute?: string;
+  }[];
+  hotelOptions?: {
+    label: string;
+    makkahHotel: string;
+    makkahInfo?: string;
+    madinahHotel: string;
+    madinahInfo?: string;
+    prices: {
+      sharing?: number;
+      quad?: number;
+      triple?: number;
+      double?: number;
+    };
+  }[];
+  travelDates?: string;
+  hotelsText?: string;
+  packageIncludesText?: string;
+  pricingText?: string;
+  itineraryText?: string;
+  agentDiscount?: string;
+  urgencyText?: string;
+  contactNumbers?: string;
+  childInfantNote?: string;
+  exclusions?: string;
+  archivedAt?: string;
+  deletedAt?: string;
+}
+
+export interface Booking {
+  bookingId: string;
+  packageId: string;
+  packageName: string;
+  customerName: string;
+  customerEmail: string;
+  agencyId?: string;
+  agencyName?: string;
+  type: BookingType;
+  status: BookingStatus;
+  paymentType: 'stripe' | 'wallet' | 'bank_transfer';
+  totalAmount: number;
+  commission: number;
+  travelers: number;
+  departureDate: string;
+  createdAt: string;
+}
+
+export interface WalletTransaction {
+  transactionId: string;
+  agencyId: string;
+  agencyName: string;
+  type: TransactionType;
+  amount: number;
+  description: string;
+  balanceAfter: number;
+  createdAt: string;
+}
+
+export interface WalletLedgerEntry {
+  ledgerId: string;
+  agencyId: string;
+  agencyName: string;
+  type: TransactionType;
+  amount: number;
+  method: WalletMethod;
+  status: Exclude<WalletStatus, 'pending'>;
+  reference: string;
+  description: string;
+  balanceAfter: number;
+  createdBy: string;
+  approvedBy?: string;
+  depositRequestId?: string;
+  createdAt: string;
+  approvedAt?: string;
+}
+
+export interface WalletDepositRequest {
+  depositId: string;
+  agencyId: string;
+  agencyName: string;
+  amount: number;
+  method: Extract<WalletMethod, 'card' | '1link' | 'bank_transfer'>;
+  status: WalletStatus;
+  reference: string;
+  providerReference?: string;
+  transferDate?: string;
+  proofUrl?: string;
+  notes?: string;
+  requestedBy: string;
+  approvedBy?: string;
+  rejectedBy?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+}
+
+export interface PaymentWebhookEvent {
+  eventId: string;
+  provider: 'card' | '1link';
+  providerReference: string;
+  depositRequestId: string;
+  status: 'processed' | 'duplicate' | 'failed';
+  receivedAt: string;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'booking' | 'wallet' | 'agency' | 'system';
+  read: boolean;
+  createdAt: string;
+}
+
+export interface Hotel {
+  hotelId: string;
+  name: string;
+  city: string;
+  country: string;
+  starRating: number;
+  pricePerNight: number;
+  rooms: number;
+  amenities: string[];
+  status: 'active' | 'inactive';
+  image?: string;
+}
+
+export interface Flight {
+  flightId: string;
+  airline: string;
+  flightNumber: string;
+  origin: string;
+  destination: string;
+  departureTime: string;
+  arrivalTime: string;
+  price: number;
+  currency?: string;
+  seats: number;
+  status: 'scheduled' | 'delayed' | 'cancelled';
+  class: 'economy' | 'business' | 'first';
+}
+
+export interface Coupon {
+  couponId: string;
+  code: string;
+  description: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrder: number;
+  maxUses: number;
+  usedCount: number;
+  validFrom: string;
+  validUntil: string;
+  status: 'active' | 'expired' | 'inactive';
+  applicableTo: 'all' | 'umrah' | 'tour' | 'visa';
+}
+
+export interface BlogPost {
+  postId: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  author: string;
+  category: string;
+  status: 'published' | 'draft';
+  publishedAt: string;
+  tags: string[];
+  image?: string;
+}
+
+export interface TravelTicket {
+  ticketId: string;
+  bookingId: string;
+  passengerName: string;
+  type: 'flight' | 'bus' | 'train';
+  origin: string;
+  destination: string;
+  departureDate: string;
+  seatNumber: string;
+  status: 'issued' | 'cancelled' | 'used' | 'pending';
+  price: number;
+  ticketNumber: string;
+  pnr?: string;
+  airline?: string;
+  flightNumber?: string;
+  title?: string;
+  firstName?: string;
+  lastName?: string;
+  passengerType?: 'Adult' | 'Child' | 'Infant';
+  dateOfBirth?: string;
+  passportNumber?: string;
+  passportExpiry?: string;
+  originAirport?: string;
+  destinationAirport?: string;
+  originCity?: string;
+  destinationCity?: string;
+  arrivalDate?: string;
+  departureTime?: string;
+  arrivalTime?: string;
+  duration?: string;
+  terminal?: string;
+  cabinClass?: string;
+  baseFare?: number;
+  tax?: number;
+  checkinBaggageKg?: number;
+  cabinBaggageKg?: number;
+  notes?: string;
+  invoiceNumber?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  customerId?: string;
+  cognitoSub?: string;
+  cognitoEmail?: string;
+  source?: 'admin_manual' | 'checkout' | 'agency_portal';
+  issuedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string;
+}
+
+export interface CustomerProfile {
+  customerId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  title?: string;
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  passportNumber?: string;
+  passportExpiry?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ModulePermission {
+  moduleId: string;
+  moduleName: string;
+  description: string;
+  icon: string;
+}
+
+// Users
+
+// Agencies
+
+// Packages
+
+
+
+// Bookings
+
+// Transactions
+
+// Notifications
+
+// Hotels
+
+// Flights
+
+// Coupons
+
+// Blog Posts
+
+// Travel Tickets
+
+// Module Permissions
+export const availableModules: ModulePermission[] = [
+  { moduleId: 'dashboard', moduleName: 'Dashboard', description: 'View system dashboard and analytics', icon: 'LayoutDashboard' },
+  { moduleId: 'agencies', moduleName: 'Agencies', description: 'Manage travel agencies', icon: 'Building2' },
+  { moduleId: 'packages', moduleName: 'Umrah Packages', description: 'Manage Umrah packages', icon: 'Package' },
+  { moduleId: 'tours', moduleName: 'Tour Packages', description: 'Manage tour packages', icon: 'Map' },
+  { moduleId: 'visa', moduleName: 'Visa Packages', description: 'Manage visa services', icon: 'FileCheck' },
+  { moduleId: 'bookings', moduleName: 'Bookings', description: 'Manage all bookings', icon: 'CalendarCheck' },
+  { moduleId: 'tickets', moduleName: 'Travel Tickets', description: 'Issue and manage travel tickets', icon: 'Ticket' },
+  { moduleId: 'wallet', moduleName: 'Wallet', description: 'Manage agency wallets', icon: 'Wallet' },
+  { moduleId: 'hotels', moduleName: 'Hotels', description: 'Manage hotel listings', icon: 'Hotel' },
+  { moduleId: 'flights', moduleName: 'Flights', description: 'Manage flight inventory', icon: 'Plane' },
+  { moduleId: 'users', moduleName: 'Users', description: 'Manage system users', icon: 'Users' },
+  { moduleId: 'coupons', moduleName: 'Coupons & Deals', description: 'Manage promotional offers', icon: 'Tag' },
+  { moduleId: 'blog', moduleName: 'Blog', description: 'Manage blog posts', icon: 'PenTool' },
+  { moduleId: 'documents', moduleName: 'Documents', description: 'Manage uploaded documents', icon: 'FileText' },
+  { moduleId: 'notifications', moduleName: 'Notifications', description: 'System notifications', icon: 'Bell' },
+  { moduleId: 'settings', moduleName: 'Settings', description: 'System settings', icon: 'Settings' },
+  { moduleId: 'rbac', moduleName: 'Access Control', description: 'Manage role-based access', icon: 'Shield' },
+];
+

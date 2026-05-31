@@ -21,7 +21,7 @@ export default function BookingsPage() {
       <EmptyState
         icon={CalendarCheck}
         title="No real bookings yet"
-        description="Mock bookings are hidden from production UI. Confirmed API and checkout bookings will populate this lifecycle table with payment, ticketing and invoice status."
+        description="Confirmed API and checkout bookings will populate this lifecycle table with payment, ticketing and invoice status."
       />
     </div>
   );

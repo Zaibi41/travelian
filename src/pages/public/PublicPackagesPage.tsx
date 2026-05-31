@@ -59,7 +59,7 @@ export default function PublicPackagesPage() {
                     <div>
                       <Badge className="mb-2 capitalize">{item.packageType || "Umrah"}</Badge>
                       <h2 className="text-lg font-bold text-foreground">{item.name}</h2>
-                      <p className="text-sm text-muted-foreground">{item.duration}{item.seatsLabel ? ` · ${item.seatsLabel}` : ""}</p>
+                      <p className="text-sm text-muted-foreground">{item.duration}{item.seatsLabel ? ` | ${item.seatsLabel}` : ""}</p>
                     </div>
                     <p className="text-right text-xl font-black text-primary">PKR {item.basePrice.toLocaleString()}</p>
                   </div>

@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAdmin } from "@/contexts/AdminStore";
 import { useRole } from "@/contexts/RoleContext";
-import type { User, UserRole } from "@/data/mock";
+import type { User, UserRole } from "@/data/models";
 import { toast } from "sonner";
 
 const roleLabels: Record<string, { label: string; color: string }> = {

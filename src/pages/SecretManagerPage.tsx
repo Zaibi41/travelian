@@ -28,7 +28,7 @@ const envColors: Record<string, string> = {
 };
 
 export default function SecretManagerPage() {
-  const { currentRole } = useRole();
+  const { currentRole, currentUser } = useRole();
   const { secretKeys, addSecretKey, updateSecretKey, deleteSecretKey } = useAdmin();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<SecretKey | null>(null);
@@ -67,7 +67,7 @@ export default function SecretManagerPage() {
     if (editing) {
       updateSecretKey(editing.id, {
         name: form.name, category: form.category, environment: form.environment,
-        ...(form.value ? { value: '••••••••••••' + form.value.slice(-4) } : {}),
+        ...(form.value ? { value: '************' + form.value.slice(-4) } : {}),
         lastUpdated: new Date().toISOString().split('T')[0],
       });
       toast.success("Secret key updated");
@@ -75,8 +75,8 @@ export default function SecretManagerPage() {
       if (!form.value) { toast.error("Key value is required"); return; }
       addSecretKey({
         id: `sk${Date.now()}`, name: form.name, category: form.category,
-        value: '••••••••••••' + form.value.slice(-4), environment: form.environment,
-        lastUpdated: new Date().toISOString().split('T')[0], createdBy: 'Ahmed Khan',
+        value: '************' + form.value.slice(-4), environment: form.environment,
+        lastUpdated: new Date().toISOString().split('T')[0], createdBy: currentUser.name,
       });
       toast.success("Secret key added");
     }
@@ -138,13 +138,13 @@ export default function SecretManagerPage() {
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <p className="text-xs font-mono text-muted-foreground">
-                          {visibleKeys.has(sk.id) ? sk.value : '••••••••••••••••'}
+                          {visibleKeys.has(sk.id) ? sk.value : '****************'}
                         </p>
                         <button onClick={() => toggleVisibility(sk.id)} className="text-muted-foreground hover:text-foreground">
                           {visibleKeys.has(sk.id) ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                         </button>
                       </div>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Updated: {sk.lastUpdated} · By: {sk.createdBy}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Updated: {sk.lastUpdated} | By: {sk.createdBy}</p>
                     </div>
                   </div>
                   <div className="flex gap-1">

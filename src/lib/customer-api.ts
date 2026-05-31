@@ -1,4 +1,4 @@
-import type { CustomerProfile } from "@/data/mock";
+import type { CustomerProfile } from "@/data/models";
 
 const API_BASE_URL = (import.meta.env.VITE_TRAVELIAN_API_BASE_URL || "https://api.travelian.pk").replace(/\/$/, "");
 

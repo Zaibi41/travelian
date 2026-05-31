@@ -1,4 +1,4 @@
-import type { UserRole } from "@/data/mock";
+import type { UserRole } from "@/data/models";
 import type { AuthSession } from "@/lib/auth-session";
 
 const ROLE_GROUPS: UserRole[] = ["super_admin", "admin", "staff", "agency_owner", "agency_staff", "customer", "qa", "internal_support"];

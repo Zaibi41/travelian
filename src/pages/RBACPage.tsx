@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { mockUsers, availableModules, User, UserRole } from "@/data/mock";
+import { availableModules, User, UserRole } from "@/data/models";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 export default function RBACPage() {
   const { currentRole } = useRole();
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<string>(users[0]?.userId || '');
 
   if (currentRole !== 'super_admin') {

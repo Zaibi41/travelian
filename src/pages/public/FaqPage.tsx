@@ -2,11 +2,11 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { PageHeader } from "@/components/public/PageHeader";
 
 const faqs = [
-  { q: "How do I book a flight on Travelian?", a: "Use our flight search on the homepage, pick a fare, fill in traveler details, and pay securely. Your e-ticket is issued instantly." },
-  { q: "Can I cancel or change my booking?", a: "Yes, most fares allow free cancellation within 24 hours. Specific rules depend on the airline or hotel policy shown at checkout." },
-  { q: "Do you offer Umrah packages with visa?", a: "Yes. Our Umrah packages include flight, hotel, transport and Umrah visa processing." },
-  { q: "What payment methods do you accept?", a: "Visa, Mastercard, Amex, PayPal, bank transfer, and Travelian Wallet." },
-  { q: "Is Travelian safe to use?", a: "All transactions are 256-bit SSL encrypted. We are a verified travel platform with 24/7 customer support." },
+  { q: "How do I book a flight on Travelian?", a: "Use our flight search on the homepage, select an available fare, and continue with the available booking flow." },
+  { q: "Can I cancel or change my booking?", a: "Cancellation and change rules depend on the selected airline, hotel or package policy. Confirm the applicable terms before booking." },
+  { q: "Do you offer Umrah packages with visa?", a: "Published Umrah packages show the services included in each package. Contact our team when you need a custom option." },
+  { q: "What payment methods do you accept?", a: "Available payment methods are confirmed during the booking process. Contact our team if you need payment assistance." },
+  { q: "How do I get booking support?", a: "Contact the Travelian team by phone, email or WhatsApp for booking assistance." },
   { q: "How do I contact support?", a: "Email travelian.pk@gmail.com, call +92 324 4440014 or message us on WhatsApp." },
 ];
 

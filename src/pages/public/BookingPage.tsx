@@ -12,14 +12,13 @@ import { CountryPicker } from "@/components/ui/country-picker";
 import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Globe, MapPin, Armchair, Search, Hotel, FileCheck, Map } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { SeatMap } from "@/components/booking/SeatMap";
-import { saveBooking, type BookingRecord } from "@/lib/booking-store";
+import type { BookingRecord } from "@/lib/booking-store";
 import { downloadETicket } from "@/lib/eticket-pdf";
 import { toast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
-import { mockHotels, mockPackages, mockTourPackages, mockVisaPackages, mockFlights, type TravelTicket } from "@/data/mock";
+import type { UmrahPackage } from "@/data/models";
 import { format, addDays } from "date-fns";
 import { useAdmin } from "@/contexts/AdminStore";
-import { getSession } from "@/lib/auth-session";
 
 const steps = [
   { id: 1, label: "Traveler Details" },
@@ -28,13 +27,7 @@ const steps = [
   { id: 4, label: "Confirmation" },
 ];
 
-const addons = [
-  { id: "insurance", name: "Travel Insurance", desc: "Full coverage for trip cancellation, medical, and baggage", price: 29, popular: true },
-  { id: "breakfast", name: "Daily Breakfast", desc: "Buffet breakfast for 2 adults", price: 45 },
-  { id: "transfer", name: "Airport Transfer", desc: "Private car pickup", price: 35 },
-  { id: "seat", name: "Preferred Seat", desc: "Choose your preferred seat on the flight", price: 15 },
-  { id: "lounge", name: "Lounge Access", desc: "Airport lounge access before departure", price: 40 },
-];
+const addons: Array<{ id: string; name: string; desc: string; price: number; popular?: boolean }> = [];
 
 const currentYear = new Date().getFullYear();
 
@@ -52,9 +45,9 @@ interface ProductCtx {
 }
 
 interface PackageInventory {
-  packages: typeof mockPackages;
-  tourPackages: typeof mockTourPackages;
-  visaPackages: typeof mockVisaPackages;
+  packages: UmrahPackage[];
+  tourPackages: UmrahPackage[];
+  visaPackages: UmrahPackage[];
 }
 
 function buildCtx(params: URLSearchParams, inventory: PackageInventory): ProductCtx | null {
@@ -63,42 +56,28 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
   const id = params.get("id") || params.get("flightId") || "";
 
   if (type === "flight") {
-    const f = mockFlights.find(x => x.flightId === id);
-    const airline = params.get("airline") || f?.airline || "";
-    const flightNumber = params.get("flightNo") || f?.flightNumber || "";
-    const from = params.get("from") || f?.origin || "";
-    const to = params.get("to") || f?.destination || "";
-    const date = params.get("date") || (f ? format(addDays(new Date(), 14), "MMM dd, yyyy") : "");
-    const cabin = params.get("cabin") || f?.class || "Economy";
-    const price = Number(params.get("price")) || f?.price || 510;
-    const currency = params.get("currency") || f?.currency || "PKR";
-    if (!airline) return null;
+    const airline = params.get("airline") || "";
+    const flightNumber = params.get("flightNo") || "";
+    const from = params.get("from") || "";
+    const to = params.get("to") || "";
+    const date = params.get("date") || "";
+    const cabin = params.get("cabin") || "Economy";
+    const price = Number(params.get("price"));
+    const currency = params.get("currency") || "PKR";
+    if (!airline || !flightNumber || !from || !to || !date || !Number.isFinite(price) || price <= 0) return null;
     return {
       type: "flight",
-      title: `${airline} · ${flightNumber}`,
-      subtitle: `${from} → ${to}`,
-      meta: `${date} · ${cabin}`,
-      emoji: "✈️",
+      title: `${airline} - ${flightNumber}`,
+      subtitle: `${from} to ${to}`,
+      meta: `${date} - ${cabin}`,
+      emoji: "",
       base: price,
       currency,
       extra: { airline, flightNumber, from, to, date, cabin },
     };
   }
   if (type === "hotel") {
-    const h = mockHotels.find(x => x.hotelId === id);
-    if (!h) return null;
-    const checkIn = params.get("checkIn") || format(addDays(new Date(), 7), "MMM dd, yyyy");
-    const checkOut = params.get("checkOut") || format(addDays(new Date(), 10), "MMM dd, yyyy");
-    const nights = Number(params.get("nights")) || 3;
-    return {
-      type: "hotel",
-      title: h.name,
-      subtitle: `${h.city}, ${h.country} · ${h.starRating}★`,
-      meta: `${checkIn} → ${checkOut} · ${nights} night${nights > 1 ? "s" : ""}`,
-      emoji: "🏨",
-      base: h.pricePerNight * nights,
-      currency: "PKR",
-    };
+    return null;
   }
   if (type === "umrah") {
     const p = inventory.packages.find(x => x.packageId === id && !x.deletedAt);
@@ -107,8 +86,8 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
       type: "umrah",
       title: p.name,
       subtitle: p.city || p.departureCity || "Travelian Umrah",
-      meta: [p.duration, p.hotel || [p.makkahHotel, p.madinahHotel].filter(Boolean).join(" / ")].filter(Boolean).join(" · "),
-      emoji: "🕋",
+      meta: [p.duration, p.hotel || [p.makkahHotel, p.madinahHotel].filter(Boolean).join(" / ")].filter(Boolean).join(" | "),
+      emoji: "",
       base: p.basePrice,
       currency: "PKR",
     };
@@ -121,7 +100,7 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
       title: t.name,
       subtitle: t.city,
       meta: `${t.duration}`,
-      emoji: "🗺️",
+      emoji: "",
       base: t.basePrice,
       currency: "PKR",
     };
@@ -134,7 +113,7 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
       title: v.name,
       subtitle: v.city,
       meta: `${v.duration} processing`,
-      emoji: "📄",
+      emoji: "",
       base: v.basePrice,
       currency: "PKR",
     };
@@ -144,7 +123,7 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
 
 export default function BookingPage() {
   const [params] = useSearchParams();
-  const { addTicket, packages, tourPackages, visaPackages } = useAdmin();
+  const { packages, tourPackages, visaPackages } = useAdmin();
   const productCtx = useMemo(() => buildCtx(params, { packages, tourPackages, visaPackages }), [params, packages, tourPackages, visaPackages]);
 
   // Empty state if no booking context provided
@@ -228,10 +207,10 @@ export default function BookingPage() {
     setSelectedAddons(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  const seatFee = isFlight && selectedSeat && parseInt(selectedSeat) <= 3 ? 15 : 0;
+  const seatFee = 0;
   const addonsTotal = addons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.price, 0) + seatFee;
   const baseTotal = productCtx.base;
-  const taxes = Math.round(baseTotal * 0.08);
+  const taxes = 0;
   const grandTotal = baseTotal + addonsTotal + taxes;
   const formatMoney = (amount: number) => `${productCtx.currency || "PKR"} ${Math.round(amount).toLocaleString()}`;
 
@@ -283,89 +262,11 @@ export default function BookingPage() {
   const handlePay = async () => {
     setPaymentTouched(true);
     if (!paymentValid) return;
-    setProcessing(true);
-    await new Promise(r => setTimeout(r, 1200)); // mock processing
-    const addonsList = addons.filter(a => selectedAddons.includes(a.id)).map(a => ({ id: a.id, name: a.name, price: a.price }));
-    if (seatFee) addonsList.push({ id: "seat-premium", name: `Premium seat ${selectedSeat}`, price: seatFee });
-    const record = saveBooking({
-      type: productCtx.type,
-      flight: isFlight ? {
-        airline: ctxAirline,
-        flightNumber: ctxFlightNo,
-        from: ctxFrom,
-        fromCode: ctxFromCode,
-        to: ctxTo,
-        toCode: ctxToCode,
-        date: ctxDate,
-        departTime: "08:30",
-        arriveTime: "13:00",
-        duration: "4h 30m",
-        cabin: ctxCabin,
-      } : undefined,
-      travelers: [{
-        title, firstName, lastName, gender,
-        dob: dob?.toISOString(),
-        docType: requiresPassport ? "passport" : "cnic",
-        docNumber, nationality, issuanceCountry,
-        expiryDate: expiryDate?.toISOString(),
-      }],
-      contact: { email, phone: `${phoneCode} ${phone}`, altPhone: altPhone ? `${altPhoneCode} ${altPhone}` : undefined },
-      seat: isFlight ? (selectedSeat || undefined) : undefined,
-      addons: addonsList,
-      paymentMethod,
-      pricing: { base: baseTotal, addons: addonsTotal, taxes, total: grandTotal, currency: productCtx.currency },
+    toast({
+      title: "Online payment is temporarily unavailable",
+      description: "Please contact Travelian support to complete this booking request.",
     });
-    setSavedBooking(record);
-    if (isFlight && record.flight) {
-      const session = getSession();
-      const traveler = record.travelers[0];
-      const issuedTicket: TravelTicket = {
-        ticketId: `tk-${Date.now()}`,
-        bookingId: record.id,
-        passengerName: `${traveler.firstName} ${traveler.lastName}`.trim(),
-        type: "flight",
-        origin: record.flight.from,
-        destination: record.flight.to,
-        departureDate: record.flight.date,
-        seatNumber: record.seat || "",
-        status: "issued",
-        price: record.pricing.total,
-        ticketNumber: `${record.flight.flightNumber || "TRV"}-${record.pnr}`,
-        pnr: record.pnr,
-        airline: record.flight.airline,
-        flightNumber: record.flight.flightNumber,
-        title: traveler.title,
-        firstName: traveler.firstName,
-        lastName: traveler.lastName,
-        passengerType: "Adult",
-        dateOfBirth: traveler.dob?.slice(0, 10),
-        passportNumber: traveler.docNumber,
-        passportExpiry: traveler.expiryDate?.slice(0, 10),
-        originAirport: record.flight.from,
-        destinationAirport: record.flight.to,
-        departureTime: record.flight.departTime,
-        arrivalTime: record.flight.arriveTime,
-        duration: record.flight.duration,
-        baseFare: record.pricing.base,
-        tax: record.pricing.taxes,
-        checkinBaggageKg: 20,
-        cabinBaggageKg: 7,
-        invoiceNumber: `INV-${record.pnr}`,
-        customerEmail: record.contact.email,
-        customerPhone: record.contact.phone,
-        cognitoSub: session?.sub,
-        cognitoEmail: session?.email,
-        source: window.location.pathname.startsWith("/admin") ? "agency_portal" : "checkout",
-        issuedBy: session?.email || "checkout",
-        createdAt: record.createdAt,
-      };
-      addTicket(issuedTicket);
-    }
-    setProcessing(false);
-    setStep(4);
-    toast({ title: "Payment successful", description: `Booking ${record.pnr} confirmed.` });
   };
-
   const formatCardNumber = (v: string) => v.replace(/\D/g, "").slice(0, 19).replace(/(.{4})/g, "$1 ").trim();
   const formatExpiry = (v: string) => {
     const d = v.replace(/\D/g, "").slice(0, 4);
@@ -725,8 +626,8 @@ export default function BookingPage() {
                   <p className="text-sm text-muted-foreground mb-6">Choose how you'd like to pay</p>
                   <div className="space-y-3 mb-6">
                     {[
-                      { id: "card", label: "Credit/Debit Card", icon: CreditCard, desc: "Visa, Mastercard, AMEX", badges: ["💳 Visa", "💳 MC"] },
-                      { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "PayPal, Apple Pay, Google Pay" },
+                      { id: "card", label: "Credit/Debit Card", icon: CreditCard, desc: "Available after gateway configuration" },
+                      { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "Available after wallet payment configuration" },
                       { id: "bank", label: "Bank Transfer", icon: Building2, desc: "Direct bank transfer" },
                     ].map(method => (
                       <div
@@ -805,13 +706,13 @@ export default function BookingPage() {
                         />
                         {paymentTouched && !cardNameValid && <p className="text-xs text-destructive mt-1">Cardholder name required</p>}
                       </div>
-                      <p className="text-xs text-muted-foreground">Demo mode: no real charge will be made.</p>
+                      <p className="text-xs text-muted-foreground">Online card payment will be enabled after the payment gateway is connected.</p>
                     </div>
                   )}
 
                   <div className="flex items-start gap-2 mt-5 p-3 bg-success/5 rounded-xl border border-success/20">
                     <Lock className="h-4 w-4 text-success shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground">Your payment is secured with 256-bit SSL encryption. We never store your card details.</p>
+                    <p className="text-xs text-muted-foreground">Online payment remains unavailable until the payment gateway configuration is complete.</p>
                   </div>
 
                   <div className="flex justify-between mt-6">
@@ -932,10 +833,10 @@ export default function BookingPage() {
                 </div>
                 <div className="mt-4 pt-4 border-t space-y-2">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Shield className="h-3.5 w-3.5 text-success" /> Best Price Guarantee
+                    <Shield className="h-3.5 w-3.5 text-success" /> Live supplier fare
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Lock className="h-3.5 w-3.5 text-success" /> Secure Payment
+                    <Lock className="h-3.5 w-3.5 text-success" /> Gateway verification required
                   </div>
                 </div>
               </CardContent>

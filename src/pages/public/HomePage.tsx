@@ -3,49 +3,47 @@ import { SEO } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, MapPin, ArrowRight, Shield, Headphones, CreditCard, Flame, TrendingUp, Heart, ChevronRight, Percent, Zap, Globe, Award, Plane, Check } from "lucide-react";
+import { Star, MapPin, ArrowRight, Shield, Headphones, CreditCard, Flame, TrendingUp, Heart, ChevronRight, Percent, Zap, Globe, Award, Plane, Check, Hotel } from "lucide-react";
 import { Link } from "react-router-dom";
-import { mockPackages, mockTourPackages, mockHotels, mockBlogPosts } from "@/data/mock";
 import { getBlogImage } from "@/lib/blog-images";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { useAdmin } from "@/contexts/AdminStore";
 
 const destinations = [
-  { name: "Makkah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=400&h=500&fit=crop&q=80", properties: 234, badge: "Popular" },
-  { name: "Istanbul", country: "Turkey", image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=400&h=500&fit=crop", properties: 1850 },
-  { name: "Dubai", country: "UAE", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&h=500&fit=crop", properties: 3200, badge: "Trending" },
-  { name: "Kuala Lumpur", country: "Malaysia", image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&h=500&fit=crop", properties: 2100 },
-  { name: "Cairo", country: "Egypt", image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=400&h=500&fit=crop", properties: 890 },
-  { name: "Madinah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=400&h=500&fit=crop&q=80", properties: 156, badge: "Holy City" },
+  { name: "Makkah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=400&h=500&fit=crop&q=80", badge: "Popular" },
+  { name: "Istanbul", country: "Turkey", image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=400&h=500&fit=crop" },
+  { name: "Dubai", country: "UAE", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&h=500&fit=crop", badge: "Trending" },
+  { name: "Kuala Lumpur", country: "Malaysia", image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&h=500&fit=crop" },
+  { name: "Cairo", country: "Egypt", image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=400&h=500&fit=crop" },
+  { name: "Madinah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=400&h=500&fit=crop&q=80", badge: "Holy City" },
 ];
 
-const deals = [
-  { title: "Flash Sale: Makkah Hotels", discount: "Up to 40% OFF", desc: "Limited time offer on 5-star hotels near Haram", bg: "gradient-deal", expiry: "Ends in 2 days" },
-  { title: "Early Bird: Summer Tours", discount: "Save PKR 200", desc: "Book Turkey & Dubai tours before April", bg: "gradient-primary", expiry: "Book by Apr 30" },
-  { title: "Umrah Package Deal", discount: "From PKR 899", desc: "Economy 7-night Umrah with flights included", bg: "gradient-hero", expiry: "Limited seats" },
-];
+const deals: Array<{ title: string; discount: string; desc: string; bg: string; expiry: string }> = [];
 
 const features = [
-  { icon: Shield, title: "Secure Booking", desc: "256-bit SSL encrypted payments" },
-  { icon: Award, title: "Best Price Guarantee", desc: "Find it cheaper? We'll match it" },
+  { icon: Shield, title: "Booking Support", desc: "Help from search through ticketing" },
+  { icon: Award, title: "Live Fare Search", desc: "Compare available supplier fares" },
   { icon: Percent, title: "No Hidden Charges", desc: "Transparent pricing, no surprises" },
   { icon: Headphones, title: "24/7 Support", desc: "Round the clock assistance" },
 ];
 
 const topCountries = [
-  { country: "Saudi Arabia", properties: 2340, popular: ["Makkah", "Madinah", "Riyadh", "Jeddah"], image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=900&h=620&fit=crop&q=80" },
-  { country: "Turkey", properties: 5670, popular: ["Istanbul", "Antalya", "Cappadocia", "Bodrum"], image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=900&h=620&fit=crop&q=80" },
-  { country: "UAE", properties: 4120, popular: ["Dubai", "Abu Dhabi", "Sharjah", "Ras Al Khaimah"], image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=900&h=620&fit=crop&q=80" },
-  { country: "Malaysia", properties: 3890, popular: ["KL", "Langkawi", "Penang", "Johor Bahru"], image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=900&h=620&fit=crop&q=80" },
-  { country: "Egypt", properties: 1890, popular: ["Cairo", "Luxor", "Sharm El Sheikh", "Hurghada"], image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=900&h=620&fit=crop&q=80" },
-  { country: "Indonesia", properties: 8920, popular: ["Bali", "Jakarta", "Yogyakarta", "Lombok"], image: "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=900&h=620&fit=crop&q=80" },
+  { country: "Saudi Arabia", popular: ["Makkah", "Madinah", "Riyadh", "Jeddah"], image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=900&h=620&fit=crop&q=80" },
+  { country: "Turkey", popular: ["Istanbul", "Antalya", "Cappadocia", "Bodrum"], image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=900&h=620&fit=crop&q=80" },
+  { country: "UAE", popular: ["Dubai", "Abu Dhabi", "Sharjah", "Ras Al Khaimah"], image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=900&h=620&fit=crop&q=80" },
+  { country: "Malaysia", popular: ["KL", "Langkawi", "Penang", "Johor Bahru"], image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=900&h=620&fit=crop&q=80" },
+  { country: "Egypt", popular: ["Cairo", "Luxor", "Sharm El Sheikh", "Hurghada"], image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=900&h=620&fit=crop&q=80" },
+  { country: "Indonesia", popular: ["Bali", "Jakarta", "Yogyakarta", "Lombok"], image: "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=900&h=620&fit=crop&q=80" },
 ];
 
 export default function HomePage() {
+  const { hotels, packages, tourPackages, blogPosts } = useAdmin();
+
   return (
     <div>
       <SEO
         title="Travelian | Flights, Hotels, Umrah & Visas"
-        description="Book flights, hotels, Umrah packages, tours and visas at the best prices. 24/7 support, secure payments, and instant e-tickets. Your trusted Pakistan travel partner."
+        description="Search available flights and browse Travelian hotels, Umrah packages, tours and visa services."
         jsonLd={[
           {
             "@context": "https://schema.org",
@@ -144,6 +142,11 @@ export default function HomePage() {
                 </span>
               </Link>
             ))}
+            {deals.length === 0 && (
+              <Card className="col-span-full border-dashed shadow-none">
+                <CardContent className="p-6 text-sm text-muted-foreground">No active promotions are available right now.</CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </section>
@@ -157,7 +160,7 @@ export default function HomePage() {
                 <TrendingUp className="h-5 w-5 text-primary" />
                 <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Trending Destinations</h2>
               </div>
-              <p className="text-sm text-muted-foreground">Most booked destinations this month</p>
+              <p className="text-sm text-muted-foreground">Explore popular destinations</p>
             </div>
             <Button variant="outline" size="sm" asChild className="hidden md:flex rounded-lg">
               <Link to="/tour-packages">Explore All <ArrowRight className="h-4 w-4 ml-1" /></Link>
@@ -199,7 +202,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {mockHotels.filter(h => h.status === 'active').slice(0, 3).map((hotel) => (
+            {hotels.filter(h => h.status === 'active').slice(0, 3).map((hotel) => (
               <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
                 <Card className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
                   <div className="h-48 relative overflow-hidden bg-muted">
@@ -212,7 +215,7 @@ export default function HomePage() {
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent text-6xl transition-transform duration-500 group-hover:scale-110">
-                        ðŸ¨
+                        <Hotel className="h-12 w-12 text-primary/40" />
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/25 to-transparent pointer-events-none" />
@@ -233,12 +236,6 @@ export default function HomePage() {
                           <MapPin className="h-3 w-3" /> {hotel.city}, {hotel.country}
                         </p>
                       </div>
-                      <div className="text-right shrink-0">
-                        <div className="bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded-lg">
-                          9.{hotel.starRating}
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">Excellent</p>
-                      </div>
                     </div>
                     <div className="flex flex-wrap gap-1.5 mt-3">
                       {hotel.amenities.slice(0, 4).map(a => (
@@ -247,17 +244,18 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-end justify-between mt-4 pt-3 border-t">
                       <div>
-                        <span className="text-xs text-muted-foreground line-through">PKR {Math.round(hotel.pricePerNight * 1.3)}</span>
                         <p className="text-xl font-bold text-foreground">PKR {hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
                       </div>
-                      <Badge variant="outline" className="text-gold border-gold/30 text-xs">
-                        Save {Math.round(30)}%
-                      </Badge>
                     </div>
                   </CardContent>
                 </Card>
               </Link>
             ))}
+            {hotels.length === 0 && (
+              <Card className="col-span-full border-dashed shadow-none">
+                <CardContent className="p-6 text-sm text-muted-foreground">No featured hotels are available right now.</CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </section>
@@ -275,7 +273,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {mockPackages.filter(p => p.status === 'active').slice(0, 4).map((pkg) => (
+            {packages.filter(p => p.status === 'active' && !p.deletedAt).slice(0, 4).map((pkg) => (
               <Card key={pkg.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 border-0 shadow-card">
                 <div className="h-40 bg-muted relative overflow-hidden">
                   {pkg.image ? (
@@ -311,6 +309,11 @@ export default function HomePage() {
                 </CardContent>
               </Card>
             ))}
+            {packages.length === 0 && (
+              <Card className="col-span-full border-dashed shadow-none">
+                <CardContent className="p-6 text-sm text-muted-foreground">No Umrah packages are published right now.</CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </section>
@@ -348,7 +351,7 @@ export default function HomePage() {
                         </span>
                         <div>
                           <h3 className="font-semibold text-white drop-shadow-sm">{c.country}</h3>
-                          <p className="text-xs text-white/80">{c.properties.toLocaleString()} properties</p>
+                          <p className="text-xs text-white/80">Explore destinations</p>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -389,7 +392,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {mockTourPackages.filter(t => t.status === 'active').map((tour) => (
+            {tourPackages.filter(t => t.status === 'active' && !t.deletedAt).map((tour) => (
               <Card key={tour.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
                 <div className="relative h-44 overflow-hidden bg-muted">
                   {tour.image ? (
@@ -400,9 +403,7 @@ export default function HomePage() {
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-info/10 to-accent">
-                      <span className="text-5xl">
-                        {tour.city.includes('Istanbul') ? 'ðŸ•Œ' : tour.city.includes('Dubai') ? 'ðŸ™ï¸' : 'ðŸŒ´'}
-                      </span>
+                      <Globe className="h-12 w-12 text-primary/40" />
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" aria-hidden="true" />
@@ -429,6 +430,11 @@ export default function HomePage() {
                 </CardContent>
               </Card>
             ))}
+            {tourPackages.length === 0 && (
+              <Card className="col-span-full border-dashed shadow-none">
+                <CardContent className="p-6 text-sm text-muted-foreground">No tour packages are published right now.</CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </section>
@@ -446,7 +452,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {mockBlogPosts.filter(b => b.status === 'published').slice(0, 3).map((post) => (
+            {blogPosts.filter(b => b.status === 'published').slice(0, 3).map((post) => (
               <Link key={post.postId} to={`/blog/${post.slug}`} aria-label={post.title} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl">
                 <Card className="overflow-hidden hover:shadow-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group border-0 shadow-card h-full">
                   <div className="h-44 overflow-hidden bg-muted">
@@ -469,6 +475,11 @@ export default function HomePage() {
                 </Card>
               </Link>
             ))}
+            {blogPosts.length === 0 && (
+              <Card className="col-span-full border-dashed shadow-none">
+                <CardContent className="p-6 text-sm text-muted-foreground">No travel guides are published right now.</CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </section>

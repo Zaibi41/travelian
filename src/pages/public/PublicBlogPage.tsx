@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import type { BlogPost } from "@/data/mock";
+import type { BlogPost } from "@/data/models";
 import { listBlogPosts } from "@/lib/content-api";
 import { getBlogImage } from "@/lib/blog-images";
 

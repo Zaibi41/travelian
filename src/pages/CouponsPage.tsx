@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { mockCoupons, Coupon } from "@/data/mock";
+import { Coupon } from "@/data/models";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import { toast } from "sonner";
 
 export default function CouponsPage() {
   const { currentRole } = useRole();
-  const [coupons, setCoupons] = useState(mockCoupons);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Coupon | null>(null);

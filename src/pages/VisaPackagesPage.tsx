@@ -53,7 +53,7 @@ export default function VisaPackagesPage() {
         </div>
       </div>
 
-      <EmptyState icon={FileCheck} title="No real visa packages configured" description="No mock visa services are displayed. Add real visa packages with required documents, processing time, embassy fee, service fee, margin and terms." />
+      <EmptyState icon={FileCheck} title="No visa packages configured" description="Add published visa packages with required documents, processing time, embassy fee, service fee, margin and terms." />
     </div>
   );
 }

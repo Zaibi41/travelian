@@ -3,7 +3,7 @@ import {
   Booking, Flight, Hotel, Agency, WalletTransaction, Notification,
   TravelTicket, User, UmrahPackage, Coupon, BlogPost, BookingStatus,
   WalletLedgerEntry, WalletDepositRequest, PaymentWebhookEvent, WalletMethod,
-} from "@/data/mock";
+} from "@/data/models";
 import {
   listPackages as listRemotePackages,
   savePackage as saveRemotePackage,
@@ -15,7 +15,7 @@ import {
   softDeleteTicket as softDeleteRemoteTicket,
 } from "@/lib/ticket-api";
 
-// ─── Flight Search Log ───
+// Flight Search Log
 export interface FlightSearchLog {
   id: string;
   route: string;
@@ -27,7 +27,7 @@ export interface FlightSearchLog {
   status: 'found' | 'not_found';
 }
 
-// ─── Payment Link ───
+// Payment Link
 export interface PaymentLink {
   id: string;
   bookingId: string;
@@ -41,7 +41,7 @@ export interface PaymentLink {
   link: string;
 }
 
-// ─── Payment Config ───
+// Payment Config
 export interface PaymentConfig {
   cardEnabled: boolean;
   walletEnabled: boolean;
@@ -51,7 +51,7 @@ export interface PaymentConfig {
   testMode: boolean;
 }
 
-// ─── Secret Key ───
+// Secret Key
 export interface SecretKey {
   id: string;
   name: string;
@@ -301,15 +301,15 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const issueTicketForBooking = useCallback((bookingId: string) => {
     const booking = bookings.find(b => b.bookingId === bookingId);
     if (!booking) return;
-    const newTicket: TravelTicket = {
-      ticketId: `tk${Date.now()}`, bookingId, passengerName: booking.customerName,
-      type: 'flight', origin: 'Origin', destination: 'Destination',
-      departureDate: booking.departureDate, seatNumber: `${Math.floor(Math.random() * 30 + 1)}${['A','B','C','D'][Math.floor(Math.random()*4)]}`,
-      status: 'issued', price: booking.totalAmount, ticketNumber: `TKT-${Date.now().toString(36).toUpperCase()}`,
-    };
-    addTicket(newTicket);
-    updateBookingStatus(bookingId, 'confirmed');
-  }, [bookings, addTicket, updateBookingStatus]);
+    setNotifications(p => [{
+      id: `n${Date.now()}`,
+      title: 'Provider ticket required',
+      message: `Booking ${bookingId} cannot be issued until the airline provider returns a valid ticket number.`,
+      type: 'booking',
+      read: false,
+      createdAt: new Date().toISOString(),
+    }, ...p]);
+  }, [bookings]);
 
   // Wallet
   const ledgerBalanceForAgency = useCallback((agencyId: string, ledger = walletLedger) => (
