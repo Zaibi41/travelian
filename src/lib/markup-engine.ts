@@ -34,13 +34,13 @@ export interface PricingBreakdown {
 }
 
 export function calculateSellingPrice(baseCost: number, rule: Pick<MarkupRule, "percentage" | "fixedAmount" | "minimumMargin">, discountAmount = 0): PricingBreakdown {
-  const percentageMarkup = baseCost * (Math.max(0, rule.percentage) / 100);
-  const rawMarkup = percentageMarkup + Math.max(0, rule.fixedAmount);
+  const percentageMarkup = baseCost * (rule.percentage / 100);
+  const rawMarkup = percentageMarkup + rule.fixedAmount;
   const minimumMarkup = Math.max(0, rule.minimumMargin);
-  const markupAmount = Math.max(rawMarkup, minimumMarkup);
+  const markupAmount = minimumMarkup > 0 ? Math.max(rawMarkup, minimumMarkup) : rawMarkup;
   const maxDiscount = Math.max(0, markupAmount - minimumMarkup);
   const protectedDiscount = Math.min(Math.max(0, discountAmount), maxDiscount);
-  const finalSellingPrice = baseCost + markupAmount - protectedDiscount;
+  const finalSellingPrice = Math.max(0, baseCost + markupAmount - protectedDiscount);
   const profit = finalSellingPrice - baseCost;
 
   return {

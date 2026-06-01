@@ -1,32 +1,93 @@
-import { useMemo, useState } from "react";
-import { AlertTriangle, Activity, BarChart3, Plane, Plus, Route, ShieldCheck, SlidersHorizontal, Tags } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useMemo, useState } from "react";
+import { Activity, AlertTriangle, BarChart3, Plus, ShieldCheck, SlidersHorizontal, Tags, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
 import { PricingBreakdownCard } from "@/components/PricingBreakdownCard";
+import { deletePricingRule, fetchEnabledFlightProviders, listPricingRules, savePricingRule } from "@/lib/pricing-rule-api";
 import type { MarkupRule, MarkupScope } from "@/lib/markup-engine";
 
-const apiSources = ["Travelport", "Sabre", "Amadeus", "Airline APIs"];
-const emptyRules: MarkupRule[] = [];
+const scopeOptions: MarkupScope[] = ["global", "supplier", "airline", "route", "cabin", "agency", "b2c", "seasonal"];
 
 export default function FlightsPage() {
-  const [scope, setScope] = useState<MarkupScope>("global");
+  const [scope, setScope] = useState<MarkupScope>("supplier");
   const [serviceTarget, setServiceTarget] = useState("");
-  const [percentage, setPercentage] = useState(8);
-  const [fixedAmount, setFixedAmount] = useState(2500);
-  const [minimumMargin, setMinimumMargin] = useState(1500);
+  const [percentage, setPercentage] = useState(0);
+  const [fixedAmount, setFixedAmount] = useState(0);
+  const [minimumMargin, setMinimumMargin] = useState(0);
   const [baseFare, setBaseFare] = useState(74550);
   const [discount, setDiscount] = useState(0);
+  const [providers, setProviders] = useState<string[]>([]);
+  const [rules, setRules] = useState<MarkupRule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const draftRule = useMemo(
     () => ({ percentage, fixedAmount, minimumMargin }),
     [percentage, fixedAmount, minimumMargin],
   );
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([listPricingRules("flights"), fetchEnabledFlightProviders()])
+      .then(([savedRules, enabledProviders]) => {
+        if (!active) return;
+        setRules(savedRules);
+        setProviders(enabledProviders);
+        if (enabledProviders.includes("skypass")) setServiceTarget("skypass");
+      })
+      .catch((error: Error) => toast.error(error.message))
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const saveRule = async () => {
+    if (requiresTarget(scope) && !serviceTarget.trim()) {
+      toast.error("Select or enter a target for this pricing rule.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const rule = await savePricingRule({
+        id: "",
+        name: pricingRuleName(scope, serviceTarget),
+        service: "flights",
+        scope,
+        target: requiresTarget(scope) ? serviceTarget.trim() : "",
+        percentage,
+        fixedAmount,
+        minimumMargin,
+        enabled: true,
+      });
+      setRules((current) => [rule, ...current.filter((item) => item.id !== rule.id)]);
+      toast.success("Flight pricing rule saved.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to save pricing rule.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeRule = async (rule: MarkupRule) => {
+    if (!window.confirm(`Remove "${rule.name}"?`)) return;
+    try {
+      await deletePricingRule(rule.service, rule.id);
+      setRules((current) => current.filter((item) => item.id !== rule.id));
+      toast.success("Pricing rule removed.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to remove pricing rule.");
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -34,30 +95,37 @@ export default function FlightsPage() {
         <div>
           <h1 className="text-2xl font-bold font-display">Flight Pricing & Rules</h1>
           <p className="text-sm text-muted-foreground">
-            Flights are API-driven. Manage supplier priority, markups, deals, API health and fare simulation.
+            Apply server-side pricing adjustments to live API fares by provider, airline, route, cabin or agency.
           </p>
         </div>
-        <Button className="gradient-primary text-primary-foreground gap-2">
+        <Button
+          className="gradient-primary gap-2 text-primary-foreground"
+          onClick={() => document.getElementById("create-flight-pricing-rule")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        >
           <Plus className="h-4 w-4" /> Create Markup Rule
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {apiSources.map((source) => (
-          <Card key={source} className="shadow-card">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Activity className="h-5 w-5" />
+      {providers.length > 0 ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {providers.map((provider) => (
+            <Card key={provider} className="shadow-card">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <Activity className="h-5 w-5" />
+                  </div>
+                  <Badge variant="secondary">Enabled</Badge>
                 </div>
-                <Badge variant="secondary">Not configured</Badge>
-              </div>
-              <h3 className="mt-4 font-bold text-foreground">{source}</h3>
-              <p className="mt-1 text-xs text-muted-foreground">Connect credentials and health checks through Provider Systems.</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <h3 className="mt-4 font-bold text-foreground">{providerLabel(provider)}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">Available in the production flight-search provider registry.</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <EmptyState icon={Activity} title="No flight providers enabled" description="Onboard a flight provider before creating supplier-specific pricing rules." />
+      )}
 
       <Tabs defaultValue="markup" className="space-y-5">
         <TabsList className="flex h-auto flex-wrap justify-start">
@@ -70,67 +138,98 @@ export default function FlightsPage() {
         </TabsList>
 
         <TabsContent value="markup" className="grid gap-5 xl:grid-cols-[1fr_420px]">
-          <Card className="shadow-card">
+          <Card id="create-flight-pricing-rule" className="scroll-mt-6 shadow-card">
             <CardHeader>
               <CardTitle className="text-base font-display">Create pricing rule</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>Markup scope</Label>
-                <Select value={scope} onValueChange={(value) => setScope(value as MarkupScope)}>
+                <Label>Pricing scope</Label>
+                <Select value={scope} onValueChange={(value) => {
+                  setScope(value as MarkupScope);
+                  setServiceTarget(value === "supplier" && providers.includes("skypass") ? "skypass" : "");
+                }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {["global", "supplier", "airline", "route", "cabin", "agency", "b2c", "seasonal"].map((item) => (
-                      <SelectItem key={item} value={item}>{item.replace(/\b\w/g, (l) => l.toUpperCase())}</SelectItem>
+                    {scopeOptions.map((item) => (
+                      <SelectItem key={item} value={item}>{titleCase(item)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
+              <RuleTarget scope={scope} providers={providers} value={serviceTarget} onChange={setServiceTarget} />
               <div className="space-y-2">
-                <Label>Target</Label>
-                <Input value={serviceTarget} onChange={(event) => setServiceTarget(event.target.value)} placeholder="e.g. EK, LHE-DXB, Economy, Agency ID" />
-              </div>
-              <div className="space-y-2">
-                <Label>Percentage markup</Label>
+                <Label>Percentage adjustment</Label>
                 <Input type="number" value={percentage} onChange={(event) => setPercentage(Number(event.target.value))} />
               </div>
               <div className="space-y-2">
-                <Label>Fixed PKR service fee</Label>
+                <Label>Fixed PKR adjustment</Label>
                 <Input type="number" value={fixedAmount} onChange={(event) => setFixedAmount(Number(event.target.value))} />
+                <p className="text-xs text-muted-foreground">Use a signed value. Example: <span className="font-semibold text-foreground">-500</span> reduces each matching fare by PKR 500.</p>
               </div>
               <div className="space-y-2">
                 <Label>Minimum margin protection</Label>
-                <Input type="number" value={minimumMargin} onChange={(event) => setMinimumMargin(Number(event.target.value))} />
+                <Input min={0} type="number" value={minimumMargin} onChange={(event) => setMinimumMargin(Number(event.target.value))} />
+                <p className="text-xs text-muted-foreground">Keep this at 0 when a negative supplier adjustment must be applied.</p>
               </div>
               <div className="flex items-end">
-                <Button className="w-full gradient-primary text-primary-foreground">Save rule</Button>
+                <Button className="w-full gradient-primary text-primary-foreground" disabled={saving} onClick={saveRule}>
+                  {saving ? "Saving..." : "Save rule"}
+                </Button>
               </div>
             </CardContent>
           </Card>
           <PricingBreakdownCard rule={draftRule} baseCost={baseFare} discount={discount} />
-          <div className="xl:col-span-2">
-            <EmptyState
-              icon={SlidersHorizontal}
-              title="No flight markup rules configured"
-              description="Create global, supplier, airline, route, cabin, agency, B2C or seasonal rules. Until configured, API fares should not be artificially changed."
-            />
+          <div className="space-y-3 xl:col-span-2">
+            <h2 className="text-base font-bold font-display">Saved flight pricing rules</h2>
+            {loading ? (
+              <Card className="shadow-card"><CardContent className="p-5 text-sm text-muted-foreground">Loading pricing rules...</CardContent></Card>
+            ) : rules.length === 0 ? (
+              <EmptyState
+                icon={SlidersHorizontal}
+                title="No flight pricing rules configured"
+                description="Live API fares are returned unchanged until a saved server-side pricing rule matches the fare."
+              />
+            ) : (
+              <div className="grid gap-3 lg:grid-cols-2">
+                {rules.map((rule) => (
+                  <Card key={rule.id} className="shadow-card">
+                    <CardContent className="flex items-center justify-between gap-4 p-4">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-bold text-foreground">{rule.name}</h3>
+                          <Badge variant="secondary">{titleCase(rule.scope)}</Badge>
+                        </div>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {rule.percentage}% + PKR {rule.fixedAmount.toLocaleString()} adjustment
+                          {rule.minimumMargin > 0 ? ` · minimum margin PKR ${rule.minimumMargin.toLocaleString()}` : ""}
+                        </p>
+                      </div>
+                      <Button variant="outline" size="icon" title="Remove pricing rule" onClick={() => removeRule(rule)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="deals">
-          <EmptyState icon={Tags} title="No flight promotions configured" description="Deals are marketing discounts and remain separate from markup. Add date ranges, coupon codes and minimum-margin approval rules before publishing offers." />
+          <EmptyState icon={Tags} title="No flight promotions configured" description="Deals are marketing discounts and remain separate from pricing adjustments." />
         </TabsContent>
 
         <TabsContent value="priority">
-          <EmptyState icon={ShieldCheck} title="No supplier priority rules configured" description="Rank Travelport, Sabre, Amadeus and airline APIs once provider credentials and contracts are active." />
+          <EmptyState icon={ShieldCheck} title="No supplier priority rules configured" description="Rank onboarded flight providers after supplier priority logic is configured." />
         </TabsContent>
 
         <TabsContent value="health">
-          <EmptyState icon={Activity} title="No live API health data yet" description="Provider health should come from real API checks. Configure provider credentials in System before showing status." />
+          <EmptyState icon={Activity} title="Provider registry loaded" description="Enabled provider systems are listed above. Detailed provider monitoring is not configured yet." />
         </TabsContent>
 
         <TabsContent value="failed">
-          <EmptyState icon={AlertTriangle} title="No failed searches recorded" description="Failed search monitoring will populate from production search logs when API requests return no valid fares or provider errors." />
+          <EmptyState icon={AlertTriangle} title="No failed searches recorded" description="Failed-search monitoring will populate from production search logs when provider requests fail." />
         </TabsContent>
 
         <TabsContent value="simulator" className="grid gap-5 xl:grid-cols-[1fr_420px]">
@@ -162,4 +261,66 @@ export default function FlightsPage() {
       </Tabs>
     </div>
   );
+}
+
+function RuleTarget({ scope, providers, value, onChange }: { scope: MarkupScope; providers: string[]; value: string; onChange: (value: string) => void }) {
+  if (!requiresTarget(scope)) {
+    return (
+      <div className="space-y-2">
+        <Label>Target</Label>
+        <Input disabled value="Applies to all matching fares" />
+      </div>
+    );
+  }
+  if (scope === "supplier") {
+    return (
+      <div className="space-y-2">
+        <Label>API provider</Label>
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger><SelectValue placeholder="Select onboarded provider" /></SelectTrigger>
+          <SelectContent>
+            {providers.map((provider) => <SelectItem key={provider} value={provider}>{providerLabel(provider)}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      <Label>{titleCase(scope)} target</Label>
+      <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder={targetPlaceholder(scope)} />
+    </div>
+  );
+}
+
+function requiresTarget(scope: MarkupScope) {
+  return !["global", "b2c"].includes(scope);
+}
+
+function pricingRuleName(scope: MarkupScope, target: string) {
+  return requiresTarget(scope) ? `${titleCase(scope)}: ${target.trim()}` : `${titleCase(scope)} flight pricing`;
+}
+
+function targetPlaceholder(scope: MarkupScope) {
+  if (scope === "airline") return "e.g. EK or Emirates";
+  if (scope === "route") return "e.g. LHE-DXB";
+  if (scope === "cabin") return "e.g. Economy";
+  if (scope === "agency") return "Agency ID";
+  if (scope === "seasonal") return "Season or campaign reference";
+  return "Rule target";
+}
+
+function providerLabel(provider: string) {
+  const labels: Record<string, string> = {
+    airsial: "AirSial",
+    flyadeal: "flyadeal",
+    pia: "PIA",
+    skypass: "SkyPass",
+    travelport: "Travelport",
+  };
+  return labels[provider.toLowerCase()] || titleCase(provider);
+}
+
+function titleCase(value: string) {
+  return value.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }

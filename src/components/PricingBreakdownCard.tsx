@@ -11,7 +11,7 @@ export function PricingBreakdownCard({ rule, baseCost, discount = 0 }: { rule: P
       </CardHeader>
       <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
         <Row label="Base cost" value={`PKR ${pricing.baseCost.toLocaleString()}`} />
-        <Row label="Markup amount" value={`PKR ${pricing.markupAmount.toLocaleString()}`} />
+        <Row label="Price adjustment" value={`PKR ${pricing.markupAmount.toLocaleString()}`} />
         <Row label="Discount" value={`PKR ${pricing.discountAmount.toLocaleString()}`} />
         <Row label="Final selling price" value={`PKR ${pricing.finalSellingPrice.toLocaleString()}`} strong />
         <Row label="Travelian profit" value={`PKR ${pricing.profit.toLocaleString()}`} strong />

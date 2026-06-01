@@ -1,4 +1,5 @@
 import { enabledProviders, getProvider } from "../providers/index.mjs";
+import { applyFlightPricingRules } from "./pricing.mjs";
 
 export async function searchFlights(request) {
   const searchId = crypto.randomUUID();
@@ -34,7 +35,7 @@ export async function searchFlights(request) {
     searchId,
     durationMs: Date.now() - startedAt,
     providerStatus,
-    results: sortOffers(results)
+    results: sortOffers(await applyFlightPricingRules(results))
   };
 }
 

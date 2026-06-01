@@ -183,6 +183,67 @@ export async function getRandomPackageImage({ category }) {
   return images[Math.floor(Math.random() * images.length)];
 }
 
+export async function listPricingRules({ service = "flights", includeDeleted = false } = {}) {
+  ensureTable();
+  const result = await db.send(new QueryCommand({
+    TableName: tableName,
+    KeyConditionExpression: "pk = :pk",
+    ExpressionAttributeValues: { ":pk": pricingRulePk(service) }
+  }));
+  return (result.Items || [])
+    .map(fromItem)
+    .filter(item => includeDeleted || !item.deletedAt)
+    .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
+}
+
+export async function upsertPricingRule(input) {
+  ensureTable();
+  const now = new Date().toISOString();
+  const service = pricingRuleService(input.service);
+  const ruleId = input.ruleId || randomUUID();
+  const existing = await getPricingRule(service, ruleId);
+  const scope = pricingRuleScope(input.scope || existing?.scope);
+  const item = {
+    ...(existing || {}),
+    ...input,
+    ruleId,
+    service,
+    scope,
+    name: String(input.name || existing?.name || pricingRuleName(scope, input.target)),
+    target: String(input.target ?? existing?.target ?? "").trim(),
+    percentage: finiteNumber(input.percentage ?? existing?.percentage),
+    fixedAmount: finiteNumber(input.fixedAmount ?? existing?.fixedAmount),
+    minimumMargin: Math.max(0, finiteNumber(input.minimumMargin ?? existing?.minimumMargin)),
+    enabled: input.enabled === undefined ? existing?.enabled !== false : Boolean(input.enabled),
+    createdAt: existing?.createdAt || input.createdAt || now,
+    updatedAt: now
+  };
+  if (!["global", "b2c"].includes(scope) && !item.target) {
+    const error = new Error("Target is required for this pricing rule scope");
+    error.statusCode = 400;
+    throw error;
+  }
+  await db.send(new PutCommand({
+    TableName: tableName,
+    Item: { pk: pricingRulePk(service), sk: `RULE#${ruleId}`, ...item }
+  }));
+  return item;
+}
+
+export async function softDeletePricingRule(service, ruleId) {
+  const existing = await getPricingRule(service, ruleId);
+  if (!existing) {
+    const error = new Error("Pricing rule not found");
+    error.statusCode = 404;
+    throw error;
+  }
+  return upsertPricingRule({
+    ...existing,
+    enabled: false,
+    deletedAt: new Date().toISOString()
+  });
+}
+
 export async function listTickets({ includeDeleted = false } = {}) {
   ensureTable();
   const result = await db.send(new QueryCommand({
@@ -344,6 +405,53 @@ function slugify(value = "") {
 function packagePk(category) {
   const normalized = packageCategory(category);
   return `PACKAGE#${normalized.toUpperCase()}`;
+}
+
+function pricingRulePk(service) {
+  return `PRICING_RULE#${pricingRuleService(service).toUpperCase()}`;
+}
+
+async function getPricingRule(service, ruleId) {
+  const result = await db.send(new GetCommand({
+    TableName: tableName,
+    Key: { pk: pricingRulePk(service), sk: `RULE#${ruleId}` }
+  }));
+  return result.Item ? fromItem(result.Item) : null;
+}
+
+function pricingRuleService(service) {
+  const normalized = String(service || "").toLowerCase().trim();
+  if (!["flights", "hotels", "umrah", "tours", "visas", "all"].includes(normalized)) {
+    const error = new Error("Invalid pricing rule service");
+    error.statusCode = 400;
+    throw error;
+  }
+  return normalized;
+}
+
+function pricingRuleScope(scope) {
+  const normalized = String(scope || "").toLowerCase().trim();
+  if (!["global", "service", "supplier", "airline", "route", "cabin", "agency", "b2c", "seasonal", "city", "country"].includes(normalized)) {
+    const error = new Error("Invalid pricing rule scope");
+    error.statusCode = 400;
+    throw error;
+  }
+  return normalized;
+}
+
+function pricingRuleName(scope, target) {
+  const normalizedTarget = String(target || "").trim();
+  return normalizedTarget ? `${scope}: ${normalizedTarget}` : `${scope} pricing rule`;
+}
+
+function finiteNumber(value) {
+  const number = Number(value ?? 0);
+  if (!Number.isFinite(number)) {
+    const error = new Error("Pricing rule values must be valid numbers");
+    error.statusCode = 400;
+    throw error;
+  }
+  return number;
 }
 
 function packageCategory(category) {

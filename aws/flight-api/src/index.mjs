@@ -10,12 +10,15 @@ import {
   listTickets,
   listBlogPosts,
   listCustomers,
+  listPricingRules,
   listPackageImages,
   listPackages,
+  softDeletePricingRule,
   softDeletePackage,
   softDeleteTicket,
   upsertBlogPost,
   upsertCustomer,
+  upsertPricingRule,
   upsertPackage,
   upsertTicket
 } from "./services/content.mjs";
@@ -53,7 +56,10 @@ const routes = {
   "POST /content/tickets": saveTicketContent,
   "DELETE /content/tickets/{ticketId}": removeTicketContent,
   "GET /content/customers": listCustomerContent,
-  "POST /content/customers": saveCustomerContent
+  "POST /content/customers": saveCustomerContent,
+  "GET /content/pricing-rules": listPricingRuleContent,
+  "POST /content/pricing-rules": savePricingRuleContent,
+  "DELETE /content/pricing-rules/{service}/{ruleId}": removePricingRuleContent
 };
 
 export async function handler(event) {
@@ -262,6 +268,23 @@ async function saveCustomerContent(event) {
   return { item: await upsertCustomer(body) };
 }
 
+async function listPricingRuleContent(event) {
+  const service = event.queryStringParameters?.service || "flights";
+  const includeDeleted = event.queryStringParameters?.includeDeleted === "true";
+  return { items: await listPricingRules({ service, includeDeleted }) };
+}
+
+async function savePricingRuleContent(event) {
+  const body = await readJson(event);
+  requireFields(body, ["service", "scope"]);
+  return { item: await upsertPricingRule(body) };
+}
+
+async function removePricingRuleContent(event, path) {
+  const [, , , service, ruleId] = path.split("/");
+  return { item: await softDeletePricingRule(decodeURIComponent(service), decodeURIComponent(ruleId)) };
+}
+
 function routePattern(path) {
   if (/^\/bookings\/[^/]+$/.test(path)) return "/bookings/{bookingId}";
   if (/^\/bookings\/[^/]+\/ticket$/.test(path)) return "/bookings/{bookingId}/ticket";
@@ -273,6 +296,7 @@ function routePattern(path) {
   if (/^\/content\/blog-posts\/[^/]+$/.test(path)) return "/content/blog-posts/{slug}";
   if (/^\/content\/packages\/[^/]+\/[^/]+$/.test(path)) return "/content/packages/{category}/{packageId}";
   if (/^\/content\/tickets\/[^/]+$/.test(path)) return "/content/tickets/{ticketId}";
+  if (/^\/content\/pricing-rules\/[^/]+\/[^/]+$/.test(path)) return "/content/pricing-rules/{service}/{ruleId}";
   return path;
 }
 
