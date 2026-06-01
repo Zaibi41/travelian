@@ -42,8 +42,13 @@ export function AdminSidebar() {
 
   useEffect(() => {
     const next: Record<string, boolean> = {};
+    const keepPricingVisible = ["super_admin", "admin", "qa", "internal_support"].includes(currentRole);
     sections.forEach((section, index) => {
-      next[section.category] = collapsed || section.category === activeCategory || (!activeCategory && index === 0);
+      next[section.category] =
+        collapsed ||
+        section.category === activeCategory ||
+        (keepPricingVisible && section.category === "Pricing & Revenue") ||
+        (!activeCategory && index === 0);
     });
     setOpenGroups(next);
   }, [activeCategory, collapsed, currentRole]);

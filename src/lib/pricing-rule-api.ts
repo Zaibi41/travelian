@@ -11,12 +11,13 @@ export async function listPricingRules(service: MarkupRule["service"] = "flights
 }
 
 export async function savePricingRule(rule: Omit<MarkupRule, "id"> & { id?: string }): Promise<MarkupRule> {
+  const { id, ...pricingRule } = rule;
   const response = await fetch(`${API_BASE_URL}/content/pricing-rules`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      ...rule,
-      ruleId: rule.id,
+      ...pricingRule,
+      ruleId: id || undefined,
     }),
   });
   const payload = await response.json().catch(() => null);
