@@ -1,16 +1,9 @@
-import { SecretsManagerClient, GetSecretValueCommand, PutSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 
 const secrets = new SecretsManagerClient({});
 const SECRET_ID = process.env.ALHAIDER_SECRET_ID || "travelian/providers/alhaider";
-const TOKEN_TTL_MS = Number(process.env.ALHAIDER_TOKEN_TTL_MS || 45 * 60 * 1000);
-const TOKEN_REFRESH_BUFFER_SECONDS = Number(process.env.ALHAIDER_TOKEN_REFRESH_BUFFER_SECONDS || 300);
-const LOGIN_BACKOFF_MS = Number(process.env.ALHAIDER_LOGIN_BACKOFF_MS || 5 * 60 * 1000);
 
 let cachedSecret;
-let cachedToken;
-let cachedTokenAt = 0;
-let loginBlockedUntil = 0;
-let loginBlockedReason = "";
 
 const corsHeaders = {
   "access-control-allow-origin": process.env.CORS_ORIGIN || "*",
@@ -32,11 +25,7 @@ async function getConfig() {
   const parsed = parseSecret(result.SecretString || "{}");
   cachedSecret = {
     baseUrl: String(parsed.baseUrl || parsed.base_url || "").replace(/\/$/, ""),
-    email: String(parsed.email || parsed.username || ""),
-    password: String(parsed.password || ""),
     token: String(parsed.token || parsed.access_token || ""),
-    tokenCreatedAt: Number(parsed.tokenCreatedAt || parsed.token_created_at || 0),
-    tokenExpiresAt: Number(parsed.expires_at || parsed.expiresAt || parsed.tokenExpiresAt || parsed.token_expires_at || 0),
   };
   return cachedSecret;
 }
@@ -46,7 +35,7 @@ function parseSecret(secretString) {
     return JSON.parse(secretString);
   } catch {
     const parsed = {};
-    for (const key of ["baseUrl", "base_url", "email", "username", "password", "token", "access_token", "expires_at", "expiresAt", "tokenExpiresAt", "token_expires_at"]) {
+    for (const key of ["baseUrl", "base_url", "token", "access_token"]) {
       const match = secretString.match(new RegExp(`${key}\\\\s*:\\\\s*['"]([^'"]+)['"]`, "i"));
       if (match) parsed[key] = match[1];
     }
@@ -57,8 +46,7 @@ function parseSecret(secretString) {
 function assertConfig(config) {
   const missing = [];
   if (!config.baseUrl) missing.push("baseUrl");
-  if (!config.email) missing.push("email");
-  if (!config.password) missing.push("password");
+  if (!config.token) missing.push("token");
   if (missing.length) throw new Error(`Alhaider provider secret is missing: ${missing.join(", ")}`);
 }
 
@@ -85,96 +73,14 @@ async function alhaiderFetch(path, init = {}) {
   return payload;
 }
 
-function extractToken(payload) {
-  if (!payload || typeof payload !== "object") return "";
-  return payload.token || payload.access_token || payload.data?.token || payload.data?.access_token || payload.authorization?.token || "";
-}
-
-function extractTokenExpiresAt(payload) {
-  const value = payload?.expires_at || payload?.expiresAt || payload?.data?.expires_at || payload?.data?.expiresAt || payload?.authorization?.expires_at;
-  const asNumber = Number(value);
-  if (Number.isFinite(asNumber) && asNumber > 0) return asNumber;
-  return tokenExpiry(extractToken(payload));
-}
-
-function tokenExpiry(token) {
-  try {
-    const [, payload] = String(token || "").split(".");
-    if (!payload) return 0;
-    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    const expiresAt = Number(parsed.exp);
-    return Number.isFinite(expiresAt) ? expiresAt : 0;
-  } catch {
-    return 0;
-  }
-}
-
-function isProviderTokenUsable(token, expiresAt) {
-  if (!token) return false;
-  const effectiveExpiry = Number(expiresAt) || tokenExpiry(token);
-  // Some supplier tokens do not include expiry metadata. Reuse them until the
-  // supplier explicitly rejects them instead of consuming another login slot.
-  if (!effectiveExpiry) return true;
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  return effectiveExpiry - TOKEN_REFRESH_BUFFER_SECONDS > nowSeconds;
-}
-
-async function getToken({ forceRefresh = false } = {}) {
-  if (!forceRefresh && cachedToken && Date.now() - cachedTokenAt < TOKEN_TTL_MS) return cachedToken;
+async function authedAlhaiderFetch(path) {
   const config = await getConfig();
   assertConfig(config);
-  if (!forceRefresh && isProviderTokenUsable(config.token, config.tokenExpiresAt)) {
-    cachedToken = config.token;
-    cachedTokenAt = config.tokenCreatedAt || Date.now();
-    return cachedToken;
-  }
-  if (Date.now() < loginBlockedUntil) {
-    throw new Error(loginBlockedReason || "Alhaider login is temporarily unavailable");
-  }
-  const body = new FormData();
-  body.append("email", config.email);
-  body.append("password", config.password);
-  let payload;
   try {
-    payload = await alhaiderFetch("/api/login", { method: "POST", body });
-  } catch (error) {
-    loginBlockedUntil = Date.now() + LOGIN_BACKOFF_MS;
-    loginBlockedReason = error instanceof Error ? error.message : "Alhaider login is temporarily unavailable";
-    throw error;
-  }
-  const token = extractToken(payload);
-  if (!token) throw new Error("Alhaider login did not return a token");
-  const tokenExpiresAt = extractTokenExpiresAt(payload);
-  loginBlockedUntil = 0;
-  loginBlockedReason = "";
-  cachedToken = token;
-  cachedTokenAt = Date.now();
-  await persistToken(config, token, cachedTokenAt, tokenExpiresAt);
-  return token;
-}
-
-async function persistToken(config, token, tokenCreatedAt, tokenExpiresAt) {
-  cachedSecret = { ...config, token, tokenCreatedAt, tokenExpiresAt };
-  if (tokenExpiresAt) cachedSecret.expires_at = tokenExpiresAt;
-  await secrets.send(new PutSecretValueCommand({
-    SecretId: SECRET_ID,
-    SecretString: JSON.stringify(cachedSecret),
-  }));
-}
-
-async function authedAlhaiderFetch(path) {
-  const token = await getToken();
-  try {
-    return await alhaiderFetch(path, { headers: { Authorization: `Bearer ${token}` } });
+    return await alhaiderFetch(path, { headers: { Authorization: `Bearer ${config.token}` } });
   } catch (error) {
     if (!(error instanceof Error) || !/unauthenticated|unauthorized|token/i.test(error.message)) throw error;
-    cachedToken = "";
-    cachedTokenAt = 0;
-    // Keep the last supplier token in Secrets Manager until replacement login
-    // succeeds. This preserves a recoverable token when the supplier account
-    // has reached its concurrent-session limit.
-    const freshToken = await getToken({ forceRefresh: true });
-    return alhaiderFetch(path, { headers: { Authorization: `Bearer ${freshToken}` } });
+    throw new Error("Stored Alhaider token was rejected by the provider. Revoke an old supplier session and replace the token in Secrets Manager.");
   }
 }
 
