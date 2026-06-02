@@ -41,17 +41,9 @@ export function AdminSidebar() {
   const isCustomer = currentRole === "customer";
 
   useEffect(() => {
-    const next: Record<string, boolean> = {};
-    const keepPricingVisible = ["super_admin", "admin", "qa", "internal_support"].includes(currentRole);
-    sections.forEach((section, index) => {
-      next[section.category] =
-        collapsed ||
-        section.category === activeCategory ||
-        (keepPricingVisible && section.category === "Pricing & Revenue") ||
-        (!activeCategory && index === 0);
-    });
-    setOpenGroups(next);
-  }, [activeCategory, collapsed, currentRole]);
+    const categoryToOpen = activeCategory || sections[0]?.category;
+    setOpenGroups(categoryToOpen ? { [categoryToOpen]: true } : {});
+  }, [activeCategory, currentRole, sections]);
 
   const allItems = sections.flatMap((section) => section.items.map((item) => ({ ...item, category: section.category })));
 
@@ -106,13 +98,13 @@ export function AdminSidebar() {
                 <Collapsible
                   key={section.category}
                   open={open}
-                  onOpenChange={(nextOpen) => setOpenGroups((previous) => ({ ...previous, [section.category]: nextOpen }))}
+                  onOpenChange={(nextOpen) => setOpenGroups(nextOpen ? { [section.category]: true } : {})}
                 >
-                  <CollapsibleTrigger className="group flex h-7 w-full items-center justify-between rounded-lg px-2 text-[10px] font-bold uppercase tracking-[0.08em] text-sidebar-muted/90 transition-colors hover:bg-sidebar-accent/45 hover:text-sidebar-accent-foreground">
+                  <CollapsibleTrigger className="group flex h-9 w-full items-center justify-between rounded-lg px-2.5 text-[12px] font-bold uppercase tracking-[0.04em] text-sidebar-muted transition-colors hover:bg-sidebar-accent/55 hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent/80 data-[state=open]:text-sidebar-accent-foreground">
                     <span>{section.category}</span>
-                    <ChevronRight className="h-3.5 w-3.5 transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                    <ChevronRight className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90" />
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                  <CollapsibleContent className="ml-2 overflow-hidden border-l border-sidebar-border/70 pl-1.5 data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
                     <SidebarMenu className="gap-0.5 pb-1">
                       {section.items.map((item) => (
                         <SidebarMenuItem key={`${section.category}-${item.url}-${item.title}`}>
