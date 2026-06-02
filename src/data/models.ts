@@ -96,6 +96,12 @@ export interface UmrahPackage {
   contactNumbers?: string;
   childInfantNote?: string;
   exclusions?: string;
+  processingTime?: string;
+  validity?: string;
+  stayDuration?: string;
+  requiredDocuments?: string[];
+  embassyFee?: number;
+  serviceFee?: number;
   expiresAt?: string;
   archivedAt?: string;
   deletedAt?: string;
@@ -213,6 +219,12 @@ export interface Flight {
   seats: number;
   status: 'scheduled' | 'delayed' | 'cancelled';
   class: 'economy' | 'business' | 'first';
+  duration?: string;
+  stops?: number;
+  baggage?: string;
+  meal?: string;
+  returnDepartureTime?: string;
+  returnArrivalTime?: string;
 }
 
 export interface Coupon {

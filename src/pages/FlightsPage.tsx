@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { PricingBreakdownCard } from "@/components/PricingBreakdownCard";
 import { deletePricingRule, fetchEnabledFlightProviders, listPricingRules, savePricingRule } from "@/lib/pricing-rule-api";
 import type { MarkupRule, MarkupScope } from "@/lib/markup-engine";
+import { listFlightSearchLogs, type FlightSearchLogRecord } from "@/lib/flight-search-log-api";
 
 const scopeOptions: MarkupScope[] = ["global", "supplier", "airline", "route", "cabin", "agency", "b2c", "seasonal"];
 
@@ -28,6 +29,7 @@ export default function FlightsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
+  const [searchLogs, setSearchLogs] = useState<FlightSearchLogRecord[]>([]);
 
   const draftRule = useMemo(
     () => ({
@@ -40,11 +42,12 @@ export default function FlightsPage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([listPricingRules("flights"), fetchEnabledFlightProviders()])
-      .then(([savedRules, enabledProviders]) => {
+    Promise.all([listPricingRules("flights"), fetchEnabledFlightProviders(), listFlightSearchLogs()])
+      .then(([savedRules, enabledProviders, logs]) => {
         if (!active) return;
         setRules(savedRules);
         setProviders(enabledProviders);
+        setSearchLogs(logs);
         if (enabledProviders.includes("skypass")) setServiceTarget("skypass");
       })
       .catch((error: Error) => toast.error(error.message))
@@ -271,7 +274,32 @@ export default function FlightsPage() {
         </TabsContent>
 
         <TabsContent value="failed">
-          <EmptyState icon={AlertTriangle} title="No failed searches recorded" description="Failed-search monitoring will populate from production search logs when provider requests fail." />
+          {searchLogs.filter(log => log.status !== "found").length === 0 ? (
+            <EmptyState icon={AlertTriangle} title="No failed searches recorded" description="No-result and provider-error searches will appear here after live requests are recorded." />
+          ) : (
+            <Card className="shadow-card">
+              <CardContent className="overflow-x-auto p-0">
+                <table className="w-full min-w-[760px] text-left text-sm">
+                  <thead className="border-b bg-muted/40 text-xs uppercase text-muted-foreground">
+                    <tr><th className="p-3">Route</th><th className="p-3">Trip</th><th className="p-3">Departure</th><th className="p-3">Return</th><th className="p-3">Providers</th><th className="p-3">Status</th><th className="p-3">Time</th></tr>
+                  </thead>
+                  <tbody>
+                    {searchLogs.filter(log => log.status !== "found").map(log => (
+                      <tr key={log.searchLogId} className="border-b last:border-0">
+                        <td className="p-3 font-semibold">{log.route}</td>
+                        <td className="p-3 capitalize">{log.tripType}</td>
+                        <td className="p-3">{log.departureDate}</td>
+                        <td className="p-3">{log.returnDate || "-"}</td>
+                        <td className="p-3 text-xs text-muted-foreground">{Object.entries(log.providers || {}).map(([provider, status]) => `${provider}: ${status}`).join(", ")}</td>
+                        <td className="p-3"><Badge variant={log.status === "error" ? "destructive" : "secondary"}>{log.status.replace("_", " ")}</Badge></td>
+                        <td className="p-3 text-xs text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="simulator" className="grid gap-5 xl:grid-cols-[1fr_420px]">

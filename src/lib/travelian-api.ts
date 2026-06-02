@@ -3,9 +3,16 @@ import type { Flight } from "@/data/models";
 const API_BASE_URL = (import.meta.env.VITE_TRAVELIAN_API_BASE_URL || "https://api.travelian.pk").replace(/\/$/, "");
 
 export interface FlightSearchInput {
+  tripType: "oneway" | "roundtrip" | "multicity";
   from: string;
   to: string;
   departureDate: string;
+  returnDate?: string;
+  segments?: {
+    from: string;
+    to: string;
+    date: string;
+  }[];
   cabin: string;
   currency: string;
   passengers: {
@@ -25,6 +32,12 @@ interface FlightOffer {
   departureTime: string;
   arrivalTime: string;
   cabin: string;
+  duration?: string | null;
+  stops?: number | null;
+  baggage?: string | null;
+  meal?: string | null;
+  returnDepartureTime?: string | null;
+  returnArrivalTime?: string | null;
   price: {
     currency: string;
     total: number;
@@ -136,10 +149,12 @@ export async function searchFlights(input: FlightSearchInput, signal?: AbortSign
     headers: { "Content-Type": "application/json" },
     signal,
     body: JSON.stringify({
-      tripType: "oneway",
+      tripType: input.tripType,
       origin,
       destination,
       departureDate: input.departureDate,
+      returnDate: input.returnDate,
+      segments: input.segments,
       cabin: input.cabin,
       passengers: input.passengers,
       currency: input.currency || "PKR",
@@ -234,6 +249,12 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
     status: "scheduled",
     class: normalizeCabin(offer.cabin),
     fareOptions: offer.fareOptions || [],
+    duration: offer.duration || undefined,
+    stops: offer.stops ?? undefined,
+    baggage: offer.baggage || undefined,
+    meal: offer.meal || undefined,
+    returnDepartureTime: offer.returnDepartureTime ? formatFlightDateTime(offer.returnDepartureTime) : undefined,
+    returnArrivalTime: offer.returnArrivalTime ? formatFlightDateTime(offer.returnArrivalTime) : undefined,
   };
 }
 
@@ -244,7 +265,8 @@ function normalizeCabin(cabin: string): Flight["class"] {
   return "economy";
 }
 
-function formatFlightDateTime(value: string) {
+function formatFlightDateTime(value: string | null | undefined) {
+  if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value.replace("T", " ").slice(0, 16);
   const yyyy = date.getFullYear();

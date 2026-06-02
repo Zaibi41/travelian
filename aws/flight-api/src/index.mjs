@@ -11,6 +11,7 @@ import {
   listBlogPosts,
   listCustomers,
   listPricingRules,
+  listFlightSearchLogs,
   listPackageImages,
   listPackages,
   softDeletePricingRule,
@@ -58,6 +59,7 @@ const routes = {
   "GET /content/customers": listCustomerContent,
   "POST /content/customers": saveCustomerContent,
   "GET /content/pricing-rules": listPricingRuleContent,
+  "GET /content/flight-search-logs": listFlightSearchLogContent,
   "POST /content/pricing-rules": savePricingRuleContent,
   "DELETE /content/pricing-rules/{service}/{ruleId}": removePricingRuleContent
 };
@@ -272,6 +274,10 @@ async function listPricingRuleContent(event) {
   const service = event.queryStringParameters?.service || "flights";
   const includeDeleted = event.queryStringParameters?.includeDeleted === "true";
   return { items: await listPricingRules({ service, includeDeleted }) };
+}
+
+async function listFlightSearchLogContent() {
+  return { items: await listFlightSearchLogs() };
 }
 
 async function savePricingRuleContent(event) {

@@ -1,4 +1,4 @@
-import { Check, Clock, Hotel, Package } from "lucide-react";
+import { CalendarDays, Check, Clock, Headphones, Hotel, MapPin, Package, Plane, ShieldCheck, Tag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -45,41 +45,36 @@ export default function PublicPackagesPage() {
             </a>
           </div>
         ) : (
-          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <section className="grid gap-6">
             {activePackages.map((item) => (
               <Card key={item.packageId} className="overflow-hidden border-0 shadow-card">
-                {item.image ? (
-                  <img src={item.image} alt={item.name} className="h-52 w-full object-cover" />
-                ) : (
-                  <div className="flex h-52 items-center justify-center bg-primary/10">
-                    <Package className="h-12 w-12 text-primary" />
+                <CardContent className="grid gap-0 p-0 lg:grid-cols-[340px_1fr]">
+                  <div className="relative min-h-[280px] bg-primary/10">
+                    {item.image ? <img src={item.image} alt={item.name} className="absolute inset-0 h-full w-full object-cover" /> : <div className="flex h-full min-h-[280px] items-center justify-center"><Package className="h-14 w-14 text-primary" /></div>}
+                    <Badge className="absolute left-4 top-4 bg-primary text-primary-foreground capitalize">{item.packageType || "Umrah"} package</Badge>
+                    <div className="absolute inset-x-4 bottom-4 rounded-lg bg-slate-950/70 p-3 text-sm text-white"><ShieldCheck className="mr-2 inline h-4 w-4" /> Trusted Travelian inventory</div>
                   </div>
-                )}
-                <CardContent className="space-y-4 p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <Badge className="mb-2 capitalize">{item.packageType || "Umrah"}</Badge>
-                      <h2 className="text-lg font-bold text-foreground">{item.name}</h2>
-                      <p className="text-sm text-muted-foreground">{item.duration}{item.seatsLabel ? ` | ${item.seatsLabel}` : ""}</p>
+                  <div className="space-y-5 p-5 md:p-6">
+                    <h2 className="text-xl font-black text-foreground md:text-2xl">{item.name}</h2>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <p className="rounded-lg bg-muted/50 p-3 text-sm"><CalendarDays className="mr-2 inline h-4 w-4 text-primary" /><strong>{item.duration}</strong></p>
+                      <p className="rounded-lg bg-muted/50 p-3 text-sm"><MapPin className="mr-2 inline h-4 w-4 text-primary" /><strong>{item.departureCity || item.city || "On request"}</strong></p>
+                      <p className="rounded-lg bg-muted/50 p-3 text-sm"><Tag className="mr-2 inline h-4 w-4 text-success" /> From <strong>PKR {item.basePrice.toLocaleString()}</strong></p>
                     </div>
-                    <p className="text-right text-xl font-black text-primary">PKR {item.basePrice.toLocaleString()}</p>
-                  </div>
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <p className="flex gap-2"><Hotel className="mt-0.5 h-4 w-4 text-primary" /> {item.makkahHotel || "Makkah hotel"} / {item.madinahHotel || "Madinah hotel"}</p>
-                    <p>{item.departureCity || item.city || "Departure city on request"}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {item.includes.slice(0, 5).map((include) => <Badge key={include} variant="secondary">{include}</Badge>)}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button asChild className="gradient-primary text-primary-foreground"><Link to={`/umrah/${item.packageId}`}>View Details</Link></Button>
+                    <div className="grid gap-2 rounded-xl border p-4 text-sm md:grid-cols-2"><p><Hotel className="mr-2 inline h-4 w-4 text-primary" /> Makkah: <strong>{item.makkahHotel || "On request"}</strong></p><p><Hotel className="mr-2 inline h-4 w-4 text-primary" /> Madinah: <strong>{item.madinahHotel || "On request"}</strong></p></div>
+                    {item.hotelOptions?.[0] && <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{Object.entries(item.hotelOptions[0].prices).map(([label, price]) => <div key={label} className="rounded-lg bg-muted/50 p-3 text-center text-sm capitalize"><p className="text-muted-foreground">{label}</p><strong>{price ? `PKR ${price.toLocaleString()}` : "On request"}</strong></div>)}</div>}
+                    <div className="flex flex-wrap gap-2">{item.includes.slice(0, 5).map(include => <Badge key={include} variant="secondary">{include}</Badge>)}</div>
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <Button asChild className="gradient-primary text-primary-foreground"><Link to={`/umrah/${item.packageId}`}>View Details</Link></Button>
                     <a
                       href={`${whatsappBase}?text=${encodeURIComponent(`Hello Travelian,\n\nI want to inquire about this Umrah package:\n${item.name}\nDuration: ${item.duration}\nPrice: PKR ${item.basePrice.toLocaleString()}\nPackage URL: ${siteBase}/umrah/${item.packageId}`)}`}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      <Button variant="outline" className="w-full"><WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp</Button>
+                      <Button className="w-full bg-[#25D366] text-white hover:bg-[#20bd5a]"><WhatsAppIcon className="mr-2 h-4 w-4" /> Book on WhatsApp</Button>
                     </a>
+                    <Button asChild variant="outline"><Link to={`/booking?type=umrah&id=${encodeURIComponent(item.packageId)}`}><Headphones className="mr-2 h-4 w-4" /> Enquire Now</Link></Button>
+                  </div>
                   </div>
                 </CardContent>
               </Card>

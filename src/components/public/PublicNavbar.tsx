@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plane, Menu, X, User, Phone, Globe, ChevronDown, LogOut } from "lucide-react";
+import { Menu, X, User, Phone, Globe, ChevronDown, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { clearSession, getSession, useSessionEvent, type AuthSession } from "@/lib/auth-session";
@@ -113,11 +113,8 @@ export function PublicNavbar() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary shadow-sm">
-              <Plane className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-extrabold font-display text-foreground tracking-tight">Travelian</span>
+          <Link to="/" className="flex items-center">
+            <img src="/travelian-official-logo.jpg" alt="Travelian" className="h-11 w-auto max-w-[210px] object-contain" />
           </Link>
 
           <div className="hidden lg:flex items-center gap-1">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Archive, Edit, Map, Plus, Trash2 } from "lucide-react";
+import { Archive, Edit, ImageIcon, Map, Plus, Trash2, Upload, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { useAdmin } from "@/contexts/AdminStore";
 import { UmrahPackage } from "@/data/models";
 import { toast } from "sonner";
+import { getRandomPackageImage, uploadPackageImage } from "@/lib/package-image-api";
 
 const defaultForm = {
   title: "",
@@ -89,32 +90,56 @@ export default function TourPackagesPage() {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<TourForm>(defaultForm);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const visibleTours = tourPackages.filter((tour) => !tour.deletedAt);
 
   const setField = (field: keyof TourForm, value: string) => setForm((current) => ({ ...current, [field]: value }));
   const openNew = () => {
     setEditingId(null);
     setForm(defaultForm);
+    setSelectedImageFile(null);
     setOpen(true);
   };
   const openEdit = (tour: UmrahPackage) => {
     setEditingId(tour.packageId);
     setForm(toForm(tour));
+    setSelectedImageFile(null);
     setOpen(true);
   };
-  const handleSave = () => {
+  const handleImageFile = (file?: File) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return toast.error("Select an image file");
+    if (file.size > 5 * 1024 * 1024) return toast.error("Image must be 5 MB or smaller");
+    setSelectedImageFile(file);
+    setField("image", URL.createObjectURL(file));
+  };
+  const resolveImageUrl = async () => {
+    if (selectedImageFile) return uploadPackageImage("tour", selectedImageFile);
+    if (form.image && !form.image.startsWith("blob:")) return form.image;
+    return getRandomPackageImage("tour").catch(() => undefined);
+  };
+  const handleSave = async () => {
     if (!form.title.trim()) return toast.error("Tour title is required");
     if (!form.destination.trim()) return toast.error("Destination is required");
     if (!form.travelDates.trim()) return toast.error("Travel dates are required");
-    const payload = buildTour(form);
-    if (editingId) {
-      updateTourPackage(editingId, payload);
-      toast.success("Tour package updated");
-    } else {
-      addTourPackage({ ...payload, packageId: `tour-${Date.now()}` });
-      toast.success("Tour package saved");
+    setUploadingImage(true);
+    try {
+      const image = await resolveImageUrl();
+      const payload = buildTour({ ...form, image: image || "" });
+      if (editingId) {
+        updateTourPackage(editingId, payload);
+        toast.success("Tour package updated");
+      } else {
+        addTourPackage({ ...payload, packageId: `tour-${Date.now()}` });
+        toast.success("Tour package saved");
+      }
+      setOpen(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save the tour package");
+    } finally {
+      setUploadingImage(false);
     }
-    setOpen(false);
   };
 
   return (
@@ -167,7 +192,14 @@ export default function TourPackagesPage() {
             <div className="space-y-2"><Label>Travel dates</Label><Input value={form.travelDates} onChange={(event) => setField("travelDates", event.target.value)} placeholder="08 JUN - 16 JUN" /></div>
             <div className="space-y-2"><Label>Status</Label><Select value={form.status} onValueChange={(value) => setField("status", value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">Active / Published</SelectItem><SelectItem value="draft">Draft</SelectItem></SelectContent></Select></div>
             <div className="space-y-2"><Label>Starting price</Label><Input type="number" value={form.basePrice} onChange={(event) => setField("basePrice", event.target.value)} /></div>
-            <div className="space-y-2"><Label>Image URL</Label><Input value={form.image} onChange={(event) => setField("image", event.target.value)} /></div>
+            <div className="space-y-2">
+              <Label>Tour image</Label>
+              <div className="flex gap-2">
+                <Input value={form.image} onChange={(event) => setField("image", event.target.value)} placeholder="Upload an image or enter a URL" />
+                <Button type="button" variant="outline" asChild><label className="cursor-pointer"><Upload className="mr-2 h-4 w-4" /> Upload<input className="hidden" type="file" accept="image/*" onChange={(event) => handleImageFile(event.target.files?.[0])} /></label></Button>
+              </div>
+              {form.image ? <div className="flex items-center gap-3"><img src={form.image} alt="Tour preview" className="h-16 w-24 rounded-lg object-cover" /><Button type="button" variant="ghost" size="sm" onClick={() => { setSelectedImageFile(null); setField("image", ""); }}><X className="mr-1 h-4 w-4" /> Remove</Button></div> : <p className="flex items-center gap-2 text-xs text-muted-foreground"><ImageIcon className="h-4 w-4" /> A related S3 fallback image is selected when available.</p>}
+            </div>
             <div className="space-y-2"><Label>Agent discount</Label><Input value={form.agentDiscount} onChange={(event) => setField("agentDiscount", event.target.value)} /></div>
             <div className="space-y-2"><Label>Booking contact numbers</Label><Input value={form.contactNumbers} onChange={(event) => setField("contactNumbers", event.target.value)} /></div>
             <div className="space-y-2 md:col-span-2"><Label>Hotels</Label><Textarea rows={4} value={form.hotelsText} onChange={(event) => setField("hotelsText", event.target.value)} /></div>
@@ -178,7 +210,7 @@ export default function TourPackagesPage() {
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} className="gradient-primary text-primary-foreground">Save Tour</Button>
+            <Button onClick={handleSave} disabled={uploadingImage} className="gradient-primary text-primary-foreground">{uploadingImage ? "Saving..." : "Save Tour"}</Button>
           </div>
         </DialogContent>
       </Dialog>

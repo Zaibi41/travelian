@@ -19,6 +19,30 @@ import { FlightSearchLoader } from "@/components/public/FlightSearchLoader";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
 import { AirlineLogo } from "@/components/public/AirlineLogo";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
+
+type FlightTripType = "oneway" | "roundtrip" | "multicity";
+type FlightSegment = { from: string; to: string; date: Date | undefined };
+
+function tripTypeFromParam(value: string | null): FlightTripType {
+  return value === "roundtrip" || value === "multicity" ? value : "oneway";
+}
+
+function segmentsFromParam(value: string | null): FlightSegment[] {
+  if (!value) return [];
+  try {
+    const segments = JSON.parse(value);
+    return Array.isArray(segments)
+      ? segments.map((segment) => ({
+        from: String(segment.from || ""),
+        to: String(segment.to || ""),
+        date: parseDateOnly(segment.date),
+      }))
+      : [];
+  } catch {
+    return [];
+  }
+}
 
 export default function PublicFlightsPage({ bookingPath = "/booking", adminMode = false }: { bookingPath?: string; adminMode?: boolean } = {}) {
   const { currency: selectedCurrency, setCurrency } = useLocale();
@@ -26,12 +50,16 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const initFrom = params.get("from") || "LHE";
   const initTo = params.get("to") || "JED";
   const initDateStr = params.get("depart");
+  const initReturnDateStr = params.get("return");
+  const initTripType = tripTypeFromParam(params.get("trip"));
   const initCabin = params.get("cabin") || "Economy";
   const initCurrency = (params.get("currency") as CurrencyCode) || selectedCurrency || "PKR";
   const initAdults = parseInt(params.get("adults") || "1") || 1;
   const initChildren = parseInt(params.get("children") || "0") || 0;
   const initInfants = parseInt(params.get("infants") || "0") || 0;
-  const initDate = initDateStr ? new Date(initDateStr) : new Date();
+  const initDate = parseDateOnly(initDateStr) || new Date();
+  const initReturnDate = parseDateOnly(initReturnDateStr);
+  const initSegments = segmentsFromParam(params.get("segments"));
 
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState(initFrom);
@@ -45,6 +73,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [sort, setSort] = useState("best");
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
   const [departDate, setDepartDate] = useState<Date>(initDate);
+  const [returnDate, setReturnDate] = useState<Date | undefined>(initReturnDate);
+  const [tripType, setTripType] = useState<FlightTripType>(initTripType);
+  const [segments, setSegments] = useState<FlightSegment[]>(initSegments);
   const [selectedDayIndex, setSelectedDayIndex] = useState(3);
   const [modifyOpen, setModifyOpen] = useState(false);
   const [apiFlights, setApiFlights] = useState<TravelianFlight[]>([]);
@@ -55,6 +86,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [editFrom, setEditFrom] = useState(from);
   const [editTo, setEditTo] = useState(to);
   const [editDate, setEditDate] = useState<Date | undefined>(departDate);
+  const [editReturnDate, setEditReturnDate] = useState<Date | undefined>(returnDate);
+  const [editTripType, setEditTripType] = useState<FlightTripType>(tripType);
+  const [editSegments, setEditSegments] = useState<FlightSegment[]>(segments);
   const [editTravelers, setEditTravelers] = useState<TravelersValue>(travelers);
   const [editCurrency, setEditCurrency] = useState<CurrencyCode>(currency);
 
@@ -62,24 +96,55 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     setEditFrom(from);
     setEditTo(to);
     setEditDate(departDate);
+    setEditReturnDate(returnDate);
+    setEditTripType(tripType);
+    setEditSegments(segments.length ? segments : [
+      { from, to, date: departDate },
+      { from: to, to: "", date: returnDate },
+    ]);
     setEditTravelers(travelers);
     setEditCurrency(currency);
     setModifyOpen(true);
   };
 
   const applyModify = () => {
-    setFrom(editFrom);
-    setTo(editTo);
-    if (editDate) setDepartDate(editDate);
+    const effectiveSegments = editTripType === "multicity" ? editSegments : [];
+    if (editTripType === "roundtrip" && (!editReturnDate || (editDate && editReturnDate < editDate))) {
+      setApiMessage("Select a return date on or after the departure date.");
+      return;
+    }
+    if (editTripType === "multicity" && (effectiveSegments.length < 2 || effectiveSegments.some((segment) => !/^[A-Z]{3}$/.test(segment.from) || !/^[A-Z]{3}$/.test(segment.to) || segment.from === segment.to || !segment.date))) {
+      setApiMessage("Complete each multi-city flight with different airports and a travel date.");
+      return;
+    }
+    const firstSegment = effectiveSegments[0];
+    const effectiveFrom = firstSegment?.from || editFrom;
+    const effectiveTo = firstSegment?.to || editTo;
+    const effectiveDate = firstSegment?.date || editDate || departDate;
+    setFrom(effectiveFrom);
+    setTo(effectiveTo);
+    setDepartDate(effectiveDate);
+    setReturnDate(editTripType === "roundtrip" ? editReturnDate : undefined);
+    setTripType(editTripType);
+    setSegments(effectiveSegments);
     setTravelers(editTravelers);
     setSearchCurrency(editCurrency);
     setCurrency(editCurrency);
     setSelectedAirlines([]);
     setSelectedFlight(null);
     setParams(new URLSearchParams({
-      from: editFrom,
-      to: editTo,
-      depart: editDate ? format(editDate, "yyyy-MM-dd") : format(departDate, "yyyy-MM-dd"),
+      from: effectiveFrom,
+      to: effectiveTo,
+      depart: formatDateOnly(effectiveDate),
+      trip: editTripType,
+      ...(editTripType === "roundtrip" && editReturnDate ? { return: formatDateOnly(editReturnDate) } : {}),
+      ...(editTripType === "multicity" ? {
+        segments: JSON.stringify(effectiveSegments.map((segment) => ({
+          from: segment.from,
+          to: segment.to,
+          date: segment.date ? formatDateOnly(segment.date) : "",
+        }))),
+      } : {}),
       adults: String(editTravelers.adults),
       children: String(editTravelers.children),
       infants: String(editTravelers.infants),
@@ -104,7 +169,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     searchFlights({
       from,
       to,
-      departureDate: format(departDate, "yyyy-MM-dd"),
+      tripType,
+      departureDate: formatDateOnly(departDate),
+      returnDate: returnDate ? formatDateOnly(returnDate) : undefined,
+      segments: segments.map((segment) => ({
+        from: segment.from,
+        to: segment.to,
+        date: segment.date ? formatDateOnly(segment.date) : "",
+      })),
       cabin: travelers.cabin,
       currency,
       passengers: {
@@ -128,7 +200,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       });
 
     return () => controller.abort();
-  }, [from, to, departDate, travelers, currency]);
+  }, [from, to, departDate, returnDate, tripType, segments, travelers, currency]);
 
   const flights = apiFlights;
   const maxPrice = Math.max(700, ...flights.map(f => f.price));
@@ -206,6 +278,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 <span className="font-semibold truncate">{to}</span>
                 <span className="text-primary-foreground/60 text-xs">-</span>
                 <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{format(departDate, "EEE, MMM d")}</span>
+                {tripType === "roundtrip" && returnDate && <span className="text-primary-foreground/80 text-xs whitespace-nowrap">to {format(returnDate, "EEE, MMM d")}</span>}
+                {tripType === "multicity" && <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{segments.length} flights</span>}
                 <span className="text-primary-foreground/60 text-xs">-</span>
                 <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{formatTravelers(travelers)}</span>
                 <span className="text-primary-foreground/60 text-xs">-</span>
@@ -371,28 +445,37 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               <p className="text-xs text-muted-foreground">{flight.origin}</p>
                             </div>
                             <div className="flex-1 flex flex-col items-center px-2">
-                              <span className="text-[10px] text-muted-foreground font-medium">{getDuration(flight.departureTime, flight.arrivalTime)}</span>
+                              <span className="text-[10px] text-muted-foreground font-medium">{flight.duration || getDuration(flight.departureTime, flight.arrivalTime)}</span>
                               <div className="w-full h-px bg-border my-1.5 relative">
                                 <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-2 border-primary bg-card" />
                                 <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-primary" />
                               </div>
-                              <span className="text-[10px] text-success font-medium">Non-stop</span>
+                              <span className="text-[10px] text-success font-medium">{flight.stops ? `${flight.stops} stop${flight.stops === 1 ? "" : "s"}` : "Non-stop"}</span>
                             </div>
                             <div className="text-center">
                               <p className="text-xl font-bold text-foreground">{flight.arrivalTime.split(' ')[1]}</p>
                               <p className="text-xs text-muted-foreground">{flight.destination}</p>
                             </div>
                           </div>
+                          {tripType === "roundtrip" && flight.returnDepartureTime && flight.returnArrivalTime && (
+                            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-[11px] text-muted-foreground">
+                              <Badge variant="outline" className="rounded-md text-[10px]">Return</Badge>
+                              <span className="font-medium text-foreground">{flight.destination} to {flight.origin}</span>
+                              <span>{flight.returnDepartureTime}</span>
+                              <span>to</span>
+                              <span>{flight.returnArrivalTime}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-4 md:border-l md:pl-5">
                         <div className="text-right">
                           <p className="text-2xl font-bold text-foreground">{formatFare(flight.price, flight.currency)}</p>
                           <p className="text-[10px] text-muted-foreground">per person, incl. tax</p>
-                          <div className="flex items-center gap-1.5 mt-1.5 justify-end">
-                            <Wifi className="h-3 w-3 text-muted-foreground" />
-                            <Luggage className="h-3 w-3 text-muted-foreground" />
-                            <Coffee className="h-3 w-3 text-muted-foreground" />
+                          <div className="mt-2 space-y-1 text-[10px] text-muted-foreground">
+                            <p className="flex items-center justify-end gap-1"><Luggage className="h-3 w-3" /> {flight.baggage || "Baggage info not available"}</p>
+                            <p className="flex items-center justify-end gap-1"><Coffee className="h-3 w-3" /> {flight.meal || "Meal info not available"}</p>
+                            <p className="flex items-center justify-end gap-1"><Wifi className="h-3 w-3" /> Amenities subject to airline</p>
                           </div>
                         </div>
                         <div className="flex flex-col gap-2">
@@ -476,6 +559,48 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             <DialogTitle>Modify Search</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
+            <div className="flex flex-wrap gap-2">
+              {([
+                ["oneway", "One-way"],
+                ["roundtrip", "Round-trip"],
+                ["multicity", "Multi-city"],
+              ] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setEditTripType(value)}
+                  className={cn(
+                    "rounded-lg px-3 py-2 text-xs font-semibold transition-colors",
+                    editTripType === value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {editTripType === "multicity" ? (
+              <div className="space-y-3">
+                {editSegments.map((segment, index) => (
+                  <div key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
+                    <AirportCombobox value={segment.from} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, from: value } : item))} placeholder="From airport" />
+                    <AirportCombobox value={segment.to} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, to: value } : item))} placeholder="To airport" />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button type="button" className="flex h-11 items-center gap-2 rounded-xl border border-input bg-background px-3 text-left text-sm">
+                          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                          {segment.date ? format(segment.date, "MMM dd, yyyy") : "Select date"}
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 z-[300]" align="start">
+                        <Calendar mode="single" selected={segment.date} onSelect={(date) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, date } : item))} initialFocus />
+                      </PopoverContent>
+                    </Popover>
+                    <Button type="button" variant="outline" size="sm" disabled={editSegments.length <= 2} onClick={() => setEditSegments((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Remove</Button>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={() => setEditSegments((current) => [...current, { from: "", to: "", date: undefined }])}>Add flight</Button>
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-end">
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">From</label>
@@ -491,6 +616,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 <AirportCombobox value={editTo} onChange={setEditTo} className="h-11" placeholder="To airport" />
               </div>
             </div>
+            )}
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Departure Date</label>
               <Popover>
@@ -505,6 +631,22 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 </PopoverContent>
               </Popover>
             </div>
+            {editTripType === "roundtrip" && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Return Date</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="flex items-center gap-2 h-11 w-full bg-background border border-input rounded-xl px-3 text-sm text-left">
+                      <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                      {editReturnDate ? format(editReturnDate, "MMM dd, yyyy") : "Select return date"}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-[300]" align="start" side="bottom" sideOffset={8} avoidCollisions={false}>
+                    <Calendar mode="single" selected={editReturnDate} onSelect={setEditReturnDate} initialFocus className="p-3 pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Travelers & Class</label>
               <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} />

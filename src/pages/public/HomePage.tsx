@@ -52,7 +52,7 @@ export default function HomePage() {
             "@type": "Organization",
             name: "Travelian",
             url: "https://travelian.pk",
-            logo: "https://travelian.pk/travelian-favicon.jpg",
+            logo: "https://travelian.pk/travelian-official-icon.png",
             sameAs: [
               "https://www.facebook.com/Travelian.pk/",
               "https://www.instagram.com/travelian.pk/",

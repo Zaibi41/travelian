@@ -9,6 +9,11 @@ export function validateSearchRequest(input) {
     destination: String(input.destination || input.to || "").trim().toUpperCase(),
     departureDate: input.departureDate || input.date,
     returnDate: input.returnDate || null,
+    segments: Array.isArray(input.segments) ? input.segments.map(segment => ({
+      from: String(segment.from || "").trim().toUpperCase(),
+      to: String(segment.to || "").trim().toUpperCase(),
+      date: segment.date,
+    })) : [],
     cabin: input.cabin || input.class || "Economy",
     passengers: {
       adults: Number(input.passengers?.adults ?? input.adults ?? input.person ?? 1),
@@ -28,6 +33,14 @@ export function validateSearchRequest(input) {
   if (!isIsoDate(request.departureDate)) errors.push("departureDate must be YYYY-MM-DD");
   if (request.tripType === "roundtrip" && !isIsoDate(request.returnDate)) {
     errors.push("returnDate is required for roundtrip searches");
+  }
+  if (request.tripType === "multicity") {
+    if (request.segments.length < 2) errors.push("at least two segments are required for multicity searches");
+    request.segments.forEach((segment, index) => {
+      if (!AIRPORT_RE.test(segment.from) || !AIRPORT_RE.test(segment.to) || segment.from === segment.to || !isIsoDate(segment.date)) {
+        errors.push(`segment ${index + 1} must include different IATA airports and a YYYY-MM-DD date`);
+      }
+    });
   }
   if (request.passengers.adults < 1) errors.push("at least one adult passenger is required");
   if (request.passengers.children < 0 || request.passengers.infants < 0) {

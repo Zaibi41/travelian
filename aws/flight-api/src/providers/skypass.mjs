@@ -9,12 +9,23 @@ export class SkypassAdapter extends ProviderAdapter {
   }
 
   async searchFlights(request) {
+    if (request.tripType === "multicity") return [];
     const clientKey = await this.clientKey();
-    const query = new URLSearchParams({
-      sector: `${request.origin}-${request.destination}`,
-      limit: "100",
-      page: "1",
-    });
+    const firstPage = await this.fetchTicketsPage(clientKey, 1);
+    const lastPage = Math.min(Number(firstPage?.tickets?.last_page || 1), 10);
+    const remainingPages = lastPage > 1
+      ? await Promise.all(Array.from({ length: lastPage - 1 }, (_, index) => this.fetchTicketsPage(clientKey, index + 2)))
+      : [];
+    const records = [firstPage, ...remainingPages]
+      .flatMap((payload) => Array.isArray(payload?.tickets?.data) ? payload.tickets.data : []);
+    return records
+      .filter((record) => this.matchesRequest(record, request))
+      .map((record) => this.normalizeOffer(record, request))
+      .filter(Boolean);
+  }
+
+  async fetchTicketsPage(clientKey, page) {
+    const query = new URLSearchParams({ limit: "100", page: String(page) });
     const response = await fetch(`${this.baseUrl}/tickets?${query}`, {
       headers: {
         accept: "application/json",
@@ -24,13 +35,7 @@ export class SkypassAdapter extends ProviderAdapter {
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw this.error(payload?.details || payload?.error || `Skypass request failed with ${response.status}`);
-
-    const records = payload?.tickets?.data;
-    if (!Array.isArray(records)) return [];
-    return records
-      .filter((record) => this.matchesRequest(record, request))
-      .map((record) => this.normalizeOffer(record, request))
-      .filter(Boolean);
+    return payload;
   }
 
   async clientKey() {
@@ -44,6 +49,18 @@ export class SkypassAdapter extends ProviderAdapter {
     const sectors = Array.isArray(record?.sectors) ? record.sectors : [];
     const first = sectors[0];
     const last = sectors[sectors.length - 1];
+    const outboundMatches = sectors.some((sector) => String(sector.destination || "").toUpperCase() === request.destination);
+    if (request.tripType === "roundtrip") {
+      return Boolean(
+        first
+        && last
+        && String(first.departure || "").toUpperCase() === request.origin
+        && String(first.departure_date || record.min_departure_date || "") === request.departureDate
+        && outboundMatches
+        && String(last.destination || "").toUpperCase() === request.origin
+        && String(last.departure_date || "") === request.returnDate
+      );
+    }
     return Boolean(
       first
       && last
@@ -57,6 +74,11 @@ export class SkypassAdapter extends ProviderAdapter {
     const sectors = record.sectors;
     const first = sectors[0];
     const last = sectors[sectors.length - 1];
+    const outboundLastIndex = request.tripType === "roundtrip"
+      ? Math.max(0, sectors.findIndex((sector) => String(sector.destination || "").toUpperCase() === request.destination))
+      : sectors.length - 1;
+    const outboundLast = sectors[outboundLastIndex] || last;
+    const returnFirst = request.tripType === "roundtrip" ? sectors[outboundLastIndex + 1] : null;
     const total = Number(record.adult_price);
     if (!Number.isFinite(total) || total <= 0) return null;
 
@@ -68,12 +90,15 @@ export class SkypassAdapter extends ProviderAdapter {
       origin: request.origin,
       destination: request.destination,
       departureTime: dateTime(first.departure_date, first.departure_time),
-      arrivalTime: dateTime(last.arrival_date || last.departure_date, last.arrival_time),
-      duration: durationBetween(first.departure_date, first.departure_time, last.arrival_date || last.departure_date, last.arrival_time),
-      stops: Math.max(sectors.length - 1, 0),
+      arrivalTime: dateTime(outboundLast.arrival_date || outboundLast.departure_date, outboundLast.arrival_time),
+      returnDepartureTime: returnFirst ? dateTime(returnFirst.departure_date, returnFirst.departure_time) : null,
+      returnArrivalTime: returnFirst ? dateTime(last.arrival_date || last.departure_date, last.arrival_time) : null,
+      duration: durationBetween(first.departure_date, first.departure_time, outboundLast.arrival_date || outboundLast.departure_date, outboundLast.arrival_time),
+      stops: Math.max(outboundLastIndex, 0),
       cabin: request.cabin,
       fareBrand: record.service_type || null,
       baggage: [...new Set(sectors.map((sector) => sector.baggage).filter(Boolean))].join(", ") || null,
+      meal: record.meal === undefined || record.meal === null ? null : String(record.meal),
       refundable: null,
       fareOptions: [
         {

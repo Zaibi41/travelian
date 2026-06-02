@@ -96,12 +96,21 @@ export class TravelportAdapter extends ProviderAdapter {
     return {
       CatalogProductOfferingsQueryRequest: {
         CatalogProductOfferingsRequest: {
-          SearchCriteriaFlight: [
+          SearchCriteriaFlight: request.tripType === "multicity" ? request.segments.map(segment => ({
+            departureDate: segment.date,
+            From: { value: segment.from },
+            To: { value: segment.to }
+          })) : [
             {
               departureDate: request.departureDate,
               From: { value: request.origin },
               To: { value: request.destination }
-            }
+            },
+            ...(request.tripType === "roundtrip" ? [{
+              departureDate: request.returnDate,
+              From: { value: request.destination },
+              To: { value: request.origin }
+            }] : [])
           ],
           PassengerCriteria: [
             { passengerTypeCode: "ADT", number: request.passengers.adults },

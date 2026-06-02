@@ -27,7 +27,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <Button asChild className="gradient-primary text-primary-foreground">
-          <Link to="/admin/flights-search">{isAgency ? "Search Flights" : "Flight Booking"}</Link>
+          <Link to="/admin/flight-search">{isAgency ? "Search Flights" : "Flight Booking"}</Link>
         </Button>
       </div>
 
@@ -62,7 +62,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <Button asChild className="gradient-primary text-primary-foreground">
-                <Link to="/admin/flights-search">Start Flight Booking</Link>
+                <Link to="/admin/flight-search">Start Flight Booking</Link>
               </Button>
             </CardContent>
           </Card>
@@ -90,7 +90,7 @@ export default function DashboardPage() {
         title="No production data connected yet"
         description="Connect bookings, payments, provider health and search logs to populate this dashboard."
         actionLabel={isAgency ? "Start Flight Search" : "Open Flight Booking"}
-        onAction={() => { window.location.href = "/admin/flights-search"; }}
+        onAction={() => { window.location.href = "/admin/flight-search"; }}
       />
     </div>
   );

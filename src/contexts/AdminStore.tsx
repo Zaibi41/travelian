@@ -150,6 +150,9 @@ interface AdminState {
   addTourPackage: (p: UmrahPackage) => void;
   updateTourPackage: (id: string, data: Partial<UmrahPackage>) => void;
   deleteTourPackage: (id: string) => void;
+  addVisaPackage: (p: UmrahPackage) => void;
+  updateVisaPackage: (id: string, data: Partial<UmrahPackage>) => void;
+  deleteVisaPackage: (id: string) => void;
 
   // Coupon actions
   addCoupon: (c: Coupon) => void;
@@ -204,7 +207,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>([]);
   const [packages, setPackages] = useState<UmrahPackage[]>([]);
   const [tourPackages, setTourPackages] = useState<UmrahPackage[]>([]);
-  const [visaPackages] = useState<UmrahPackage[]>([]);
+  const [visaPackages, setVisaPackages] = useState<UmrahPackage[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [blogPosts] = useState<BlogPost[]>([]);
   const [flightSearchLogs, setFlightSearchLogs] = useState<FlightSearchLog[]>(initialSearchLogs);
@@ -220,11 +223,12 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([listRemotePackages("umrah"), listRemotePackages("tour")])
-      .then(([umrahItems, tourItems]) => {
+    Promise.all([listRemotePackages("umrah"), listRemotePackages("tour"), listRemotePackages("visa")])
+      .then(([umrahItems, tourItems, visaItems]) => {
         if (cancelled) return;
         setPackages(umrahItems);
         setTourPackages(tourItems);
+        setVisaPackages(visaItems);
       })
       .catch(error => console.error("Unable to load package content from AWS", error));
     return () => {
@@ -507,6 +511,24 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setTourPackages(p => p.map(pk => pk.packageId === id ? { ...pk, deletedAt, status: 'inactive' } : pk));
     softDeleteRemotePackage("tour", id).catch(error => console.error("Unable to delete tour package", error));
   }, []);
+  const addVisaPackage = useCallback((pk: UmrahPackage) => {
+    setVisaPackages(p => [pk, ...p]);
+    saveRemotePackage({ ...pk, category: "visa" })
+      .then(saved => setVisaPackages(p => p.map(item => item.packageId === pk.packageId ? saved : item)))
+      .catch(error => console.error("Unable to save visa package", error));
+  }, []);
+  const updateVisaPackage = useCallback((id: string, data: Partial<UmrahPackage>) => setVisaPackages(previous => {
+    const existing = previous.find(pk => pk.packageId === id);
+    if (!existing) return previous;
+    const next = { ...existing, ...data, category: "visa" as const };
+    saveRemotePackage(next).catch(error => console.error("Unable to update visa package", error));
+    return previous.map(pk => pk.packageId === id ? next : pk);
+  }), []);
+  const deleteVisaPackage = useCallback((id: string) => {
+    const deletedAt = new Date().toISOString();
+    setVisaPackages(p => p.map(pk => pk.packageId === id ? { ...pk, deletedAt, status: "inactive" } : pk));
+    softDeleteRemotePackage("visa", id).catch(error => console.error("Unable to delete visa package", error));
+  }, []);
 
   // Coupons
   const addCoupon = useCallback((c: Coupon) => setCoupons(p => [...p, c]), []);
@@ -555,6 +577,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       addNotification, markNotificationRead, markAllRead,
       addUser, updateUser, deleteUser,
       addPackage, updatePackage, deletePackage, addTourPackage, updateTourPackage, deleteTourPackage,
+      addVisaPackage, updateVisaPackage, deleteVisaPackage,
       addCoupon, updateCoupon, deleteCoupon,
       addFlightSearchLog, addPaymentLink, updatePaymentLink,
       updatePaymentConfig, addSecretKey, updateSecretKey, deleteSecretKey,

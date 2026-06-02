@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Plane, Mail, Phone, MapPin, Facebook, Instagram } from "lucide-react";
+import { Mail, Phone, MapPin, Facebook, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const SUPPORT_PHONE = "+92 324 4440014";
@@ -30,8 +30,8 @@ export function PublicFooter() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           <div className="col-span-2 md:col-span-1">
             <Link to="/" onClick={scrollToTop} className="flex items-center gap-2 mb-4">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
-                <Plane className="h-4 w-4 text-primary-foreground" />
+              <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-white">
+                <img src="/travelian-official-icon.png" alt="" className="h-9 w-9 object-cover" />
               </div>
               <span className="text-lg font-bold font-display text-sidebar-accent-foreground">Travelian</span>
             </Link>

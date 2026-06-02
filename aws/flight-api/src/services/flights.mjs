@@ -1,5 +1,6 @@
 import { enabledProviders, getProvider } from "../providers/index.mjs";
 import { applyFlightPricingRules } from "./pricing.mjs";
+import { recordFlightSearch } from "./content.mjs";
 
 export async function searchFlights(request) {
   const searchId = crypto.randomUUID();
@@ -31,11 +32,19 @@ export async function searchFlights(request) {
     }
   }
 
+  const pricedResults = sortOffers(await applyFlightPricingRules(results));
+  await recordFlightSearch({
+    request,
+    providerStatus,
+    resultsCount: pricedResults.length,
+    durationMs: Date.now() - startedAt,
+  }).catch(error => console.error("flight-search-log-error", error.message));
+
   return {
     searchId,
     durationMs: Date.now() - startedAt,
     providerStatus,
-    results: sortOffers(await applyFlightPricingRules(results))
+    results: pricedResults
   };
 }
 

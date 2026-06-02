@@ -183,6 +183,44 @@ export async function getRandomPackageImage({ category }) {
   return images[Math.floor(Math.random() * images.length)];
 }
 
+export async function recordFlightSearch({ request, providerStatus, resultsCount, durationMs }) {
+  ensureTable();
+  const createdAt = new Date().toISOString();
+  const searchLogId = randomUUID();
+  const hasProviderError = Object.values(providerStatus || {}).some(status => status !== "success");
+  const item = {
+    searchLogId,
+    route: `${request.origin}-${request.destination}`,
+    tripType: request.tripType,
+    departureDate: request.departureDate,
+    returnDate: request.returnDate || "",
+    cabin: request.cabin,
+    passengers: request.passengers,
+    providers: providerStatus,
+    resultsCount,
+    durationMs,
+    status: resultsCount > 0 ? "found" : hasProviderError ? "error" : "not_found",
+    createdAt,
+  };
+  await db.send(new PutCommand({
+    TableName: tableName,
+    Item: { pk: "FLIGHT_SEARCH_LOG", sk: `SEARCH#${createdAt}#${searchLogId}`, ...item },
+  }));
+  return item;
+}
+
+export async function listFlightSearchLogs() {
+  ensureTable();
+  const result = await db.send(new QueryCommand({
+    TableName: tableName,
+    KeyConditionExpression: "pk = :pk",
+    ExpressionAttributeValues: { ":pk": "FLIGHT_SEARCH_LOG" },
+    ScanIndexForward: false,
+    Limit: 100,
+  }));
+  return (result.Items || []).map(fromItem);
+}
+
 export async function listPricingRules({ service = "flights", includeDeleted = false } = {}) {
   ensureTable();
   const result = await db.send(new QueryCommand({

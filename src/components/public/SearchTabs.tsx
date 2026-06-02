@@ -11,6 +11,7 @@ import { TravelersClassPicker, type TravelersValue } from "@/components/public/T
 import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { useLocale } from "@/contexts/LocaleContext";
 import { GroupTicketingCategories } from "@/components/public/GroupTicketingCategories";
+import { formatDateOnly } from "@/lib/date-only";
 
 const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
@@ -127,11 +128,44 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
 
   const handleSearch = () => {
     if (activeTab === "flights") {
+      if (tripType === "multicity") {
+        const validSegments = multiCitySegments.every((segment) =>
+          /^[A-Z]{3}$/.test(segment.from) &&
+          /^[A-Z]{3}$/.test(segment.to) &&
+          segment.from !== segment.to &&
+          !!segment.date &&
+          segment.date >= today
+        );
+        if (!validSegments) {
+          setErrors({ depart: "Complete each multi-city flight with different airports and a valid date" });
+          return;
+        }
+        const segments = multiCitySegments.map((segment) => ({
+          from: segment.from,
+          to: segment.to,
+          date: formatDateOnly(segment.date!),
+        }));
+        const first = segments[0];
+        const params = new URLSearchParams({
+          from: first.from,
+          to: first.to,
+          depart: first.date,
+          segments: JSON.stringify(segments),
+          adults: String(travelers.adults),
+          children: String(travelers.children),
+          infants: String(travelers.infants),
+          cabin: travelers.cabin,
+          trip: tripType,
+          currency,
+        });
+        navigate(`${flightResultsPath}?${params.toString()}`);
+        return;
+      }
       if (!validateFlights()) return;
       const params = new URLSearchParams({
         from: fromValue, to: toValue,
-        depart: departDate ? departDate.toISOString().slice(0, 10) : "",
-        ...(tripType === "roundtrip" && returnDate ? { return: returnDate.toISOString().slice(0, 10) } : {}),
+        depart: departDate ? formatDateOnly(departDate) : "",
+        ...(tripType === "roundtrip" && returnDate ? { return: formatDateOnly(returnDate) } : {}),
         adults: String(travelers.adults), children: String(travelers.children), infants: String(travelers.infants),
         cabin: travelers.cabin, trip: tripType, currency,
       });
@@ -141,8 +175,8 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
     if (activeTab === "hotels") {
       const params = new URLSearchParams({
         location: hotelLocation || "Dubai",
-        checkIn: hotelCheckIn ? hotelCheckIn.toISOString().slice(0, 10) : "",
-        checkOut: hotelCheckOut ? hotelCheckOut.toISOString().slice(0, 10) : "",
+        checkIn: hotelCheckIn ? formatDateOnly(hotelCheckIn) : "",
+        checkOut: hotelCheckOut ? formatDateOnly(hotelCheckOut) : "",
         adults: hotelGuests || "2",
         currency,
       });
@@ -156,7 +190,7 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
       const params = new URLSearchParams({
         pickup: transferPickup || "Dubai International Airport",
         dropoff: transferDropoff || "Downtown Dubai",
-        pickupDate: transDate ? transDate.toISOString().slice(0, 10) : "",
+        pickupDate: transDate ? formatDateOnly(transDate) : "",
         passengers: transferPassengers || "1",
         currency,
       });
@@ -262,6 +296,7 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
                   </div>
                 ))}
                 <div className="flex items-center justify-between gap-3 pt-1">
+                  {errors.depart && <p className="text-xs text-destructive">{errors.depart}</p>}
                   <button
                     type="button"
                     onClick={addMultiCitySegment}

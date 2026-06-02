@@ -103,7 +103,7 @@ export const adminNavigation: AdminNavSection[] = [
   {
     category: "Search & Book",
     items: [
-      item("Flights", "/admin/flights-search", Plane, publicSearchRoles),
+      item("Flights", "/admin/flight-search", Plane, publicSearchRoles),
       item("Hotels", "/admin/customer/hotels", Hotel, publicSearchRoles),
       item("Umrah Packages", "/admin/packages", Package, [...internalAdminRoles, ...agencyRoles]),
       item("Umrah Packages", "/admin/customer/umrah", Package, customerRoles),
@@ -121,7 +121,7 @@ export const adminNavigation: AdminNavSection[] = [
       item("My Agency Bookings", "/admin/bookings", CalendarCheck, agencyOwnerRoles),
       item("My Bookings", "/admin/bookings", CalendarCheck, agencyStaffRoles),
       item("My Bookings", "/admin/customer/bookings", CalendarCheck, customerRoles),
-      item("Create Booking", "/admin/flights-search", Search, [...internalOpsRoles, ...agencyStaffRoles]),
+      item("Create Booking", "/admin/flight-search", Search, [...internalOpsRoles, ...agencyStaffRoles]),
       item("Ticketing & Invoices", "/admin/tickets", Ticket, [...internalAdminRoles, ...agencyRoles]),
       item("Invoices", "/admin/tickets", Receipt, customerRoles),
       item("Refunds & Cancellations", "/admin/bookings", RefreshCw, [...internalAdminRoles, ...agencyRoles, ...customerRoles]),

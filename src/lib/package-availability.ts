@@ -5,7 +5,11 @@ export function isPackageExpired(item: Pick<UmrahPackage, "expiresAt">, today = 
 }
 
 export function isPublishedUmrahPackage(item: UmrahPackage) {
-  return item.category === "umrah" &&
+  return isPublishedPackage(item, "umrah");
+}
+
+export function isPublishedPackage(item: UmrahPackage, category: UmrahPackage["category"]) {
+  return item.category === category &&
     item.status === "active" &&
     !item.archivedAt &&
     !item.deletedAt &&
