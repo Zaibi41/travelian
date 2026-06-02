@@ -7,9 +7,12 @@ import {
   getRandomPackageImage,
   getBlogPost,
   getPackage,
+  getNotificationSettings,
   listTickets,
   listBlogPosts,
+  listBookingRequests,
   listCustomers,
+  listNotificationLogs,
   listPricingRules,
   listFlightSearchLogs,
   listPackageImages,
@@ -18,11 +21,14 @@ import {
   softDeletePackage,
   softDeleteTicket,
   upsertBlogPost,
+  upsertBookingRequest,
   upsertCustomer,
+  upsertNotificationSettings,
   upsertPricingRule,
   upsertPackage,
   upsertTicket
 } from "./services/content.mjs";
+import { notifyAdminOfBookingRequest, runJourneyReminders } from "./services/notifications.mjs";
 import { requireFields, validateHotelSearchRequest, validateSearchRequest, validateTransferSearchRequest } from "./validation.mjs";
 import { requireApiAuth } from "./auth.mjs";
 
@@ -58,6 +64,13 @@ const routes = {
   "DELETE /content/tickets/{ticketId}": removeTicketContent,
   "GET /content/customers": listCustomerContent,
   "POST /content/customers": saveCustomerContent,
+  "GET /content/booking-requests": listBookingRequestContent,
+  "POST /content/booking-requests": createBookingRequestContent,
+  "PATCH /content/booking-requests/{requestId}": updateBookingRequestContent,
+  "GET /content/notification-settings": getNotificationSettingContent,
+  "POST /content/notification-settings": saveNotificationSettingContent,
+  "GET /content/notification-logs": listNotificationLogContent,
+  "POST /tasks/journey-reminders": sendJourneyReminderTask,
   "GET /content/pricing-rules": listPricingRuleContent,
   "GET /content/flight-search-logs": listFlightSearchLogContent,
   "POST /content/pricing-rules": savePricingRuleContent,
@@ -65,6 +78,9 @@ const routes = {
 };
 
 export async function handler(event) {
+  if (event?.source === "aws.events" && event?.["detail-type"] === "Scheduled Event") {
+    return runJourneyReminders();
+  }
   const reqId = requestId(event);
   if (method(event) === "OPTIONS") return json(204, {});
 
@@ -270,6 +286,39 @@ async function saveCustomerContent(event) {
   return { item: await upsertCustomer(body) };
 }
 
+async function listBookingRequestContent(event) {
+  return { items: await listBookingRequests(event.queryStringParameters || {}) };
+}
+
+async function createBookingRequestContent(event) {
+  const body = await readJson(event);
+  requireFields(body, ["type", "customerName", "phone"]);
+  const item = await upsertBookingRequest(body);
+  return { item: await notifyAdminOfBookingRequest(item) };
+}
+
+async function updateBookingRequestContent(event, path) {
+  const body = await readJson(event);
+  const requestId = decodeURIComponent(path.split("/")[3]);
+  return { item: await upsertBookingRequest({ ...body, requestId }) };
+}
+
+async function getNotificationSettingContent() {
+  return { item: await getNotificationSettings() };
+}
+
+async function saveNotificationSettingContent(event) {
+  return { item: await upsertNotificationSettings(await readJson(event)) };
+}
+
+async function listNotificationLogContent() {
+  return { items: await listNotificationLogs() };
+}
+
+async function sendJourneyReminderTask() {
+  return { result: await runJourneyReminders() };
+}
+
 async function listPricingRuleContent(event) {
   const service = event.queryStringParameters?.service || "flights";
   const includeDeleted = event.queryStringParameters?.includeDeleted === "true";
@@ -302,6 +351,7 @@ function routePattern(path) {
   if (/^\/content\/blog-posts\/[^/]+$/.test(path)) return "/content/blog-posts/{slug}";
   if (/^\/content\/packages\/[^/]+\/[^/]+$/.test(path)) return "/content/packages/{category}/{packageId}";
   if (/^\/content\/tickets\/[^/]+$/.test(path)) return "/content/tickets/{ticketId}";
+  if (/^\/content\/booking-requests\/[^/]+$/.test(path)) return "/content/booking-requests/{requestId}";
   if (/^\/content\/pricing-rules\/[^/]+\/[^/]+$/.test(path)) return "/content/pricing-rules/{service}/{ruleId}";
   return path;
 }

@@ -358,6 +358,171 @@ export async function softDeleteTicket(ticketId) {
   });
 }
 
+export async function listBookingRequests({ status, type } = {}) {
+  ensureTable();
+  const result = await db.send(new QueryCommand({
+    TableName: tableName,
+    KeyConditionExpression: "pk = :pk",
+    ExpressionAttributeValues: { ":pk": "BOOKING_REQUEST" },
+    ScanIndexForward: false
+  }));
+  return (result.Items || [])
+    .map(fromItem)
+    .filter(item => !status || item.status === status)
+    .filter(item => !type || item.type === type)
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+}
+
+export async function getBookingRequest(requestId) {
+  ensureTable();
+  const result = await db.send(new GetCommand({
+    TableName: tableName,
+    Key: { pk: "BOOKING_REQUEST", sk: `REQUEST#${requestId}` }
+  }));
+  return result.Item ? fromItem(result.Item) : null;
+}
+
+export async function upsertBookingRequest(input) {
+  ensureTable();
+  const now = new Date().toISOString();
+  const requestId = input.requestId || randomUUID();
+  const existing = await getBookingRequest(requestId);
+  const type = bookingRequestType(input.type || existing?.type);
+  const status = bookingRequestStatus(input.status || existing?.status || "new");
+  const customerName = String(input.customerName || existing?.customerName || "").trim();
+  const phone = String(input.phone || existing?.phone || "").trim();
+  if (!customerName || !phone) {
+    const error = new Error("Customer name and phone number are required");
+    error.statusCode = 400;
+    throw error;
+  }
+  const item = {
+    ...(existing || {}),
+    ...input,
+    requestId,
+    type,
+    status,
+    customerName,
+    phone,
+    email: String(input.email ?? existing?.email ?? "").trim(),
+    packageId: String(input.packageId ?? existing?.packageId ?? "").trim(),
+    packageName: String(input.packageName ?? existing?.packageName ?? "").trim(),
+    selectedOption: String(input.selectedOption ?? existing?.selectedOption ?? "").trim(),
+    notes: String(input.notes ?? existing?.notes ?? "").trim(),
+    assignedStaff: String(input.assignedStaff ?? existing?.assignedStaff ?? "").trim(),
+    notificationStatus: input.notificationStatus || existing?.notificationStatus || "pending",
+    notificationError: String(input.notificationError ?? existing?.notificationError ?? "").trim(),
+    createdAt: existing?.createdAt || input.createdAt || now,
+    updatedAt: now
+  };
+  await db.send(new PutCommand({
+    TableName: tableName,
+    Item: { pk: "BOOKING_REQUEST", sk: `REQUEST#${requestId}`, ...item }
+  }));
+  return item;
+}
+
+export async function getNotificationSettings() {
+  ensureTable();
+  const result = await db.send(new GetCommand({
+    TableName: tableName,
+    Key: { pk: "SETTINGS", sk: "NOTIFICATIONS" }
+  }));
+  return {
+    adminNotificationEmail: "",
+    adminNotificationPhone: "",
+    emailNotificationsEnabled: false,
+    smsNotificationsEnabled: false,
+    whatsappNotificationsEnabled: false,
+    journeyReminderEnabled: false,
+    journeyReminderHoursBefore: 24,
+    journeyReminderTemplate: "Dear [Passenger Name],\nThank you for booking with Travelian. Your flight [Flight No.] from [Origin] to [Destination] is scheduled for [Date/Time]. We wish you a safe and pleasant journey.",
+    ...(result.Item ? fromItem(result.Item) : {})
+  };
+}
+
+export async function upsertNotificationSettings(input) {
+  ensureTable();
+  const existing = await getNotificationSettings();
+  const item = {
+    ...existing,
+    ...input,
+    adminNotificationEmail: String(input.adminNotificationEmail ?? existing.adminNotificationEmail ?? "").trim(),
+    adminNotificationPhone: String(input.adminNotificationPhone ?? existing.adminNotificationPhone ?? "").trim(),
+    emailNotificationsEnabled: Boolean(input.emailNotificationsEnabled),
+    smsNotificationsEnabled: Boolean(input.smsNotificationsEnabled),
+    whatsappNotificationsEnabled: Boolean(input.whatsappNotificationsEnabled),
+    journeyReminderEnabled: Boolean(input.journeyReminderEnabled),
+    journeyReminderHoursBefore: Math.max(1, finiteNumber(input.journeyReminderHoursBefore ?? existing.journeyReminderHoursBefore ?? 24)),
+    journeyReminderTemplate: String(input.journeyReminderTemplate ?? existing.journeyReminderTemplate ?? "").trim(),
+    updatedAt: new Date().toISOString()
+  };
+  await db.send(new PutCommand({
+    TableName: tableName,
+    Item: { pk: "SETTINGS", sk: "NOTIFICATIONS", ...item }
+  }));
+  return item;
+}
+
+export async function listNotificationLogs() {
+  ensureTable();
+  const result = await db.send(new QueryCommand({
+    TableName: tableName,
+    KeyConditionExpression: "pk = :pk",
+    ExpressionAttributeValues: { ":pk": "NOTIFICATION_LOG" },
+    ScanIndexForward: false,
+    Limit: 100
+  }));
+  return (result.Items || []).map(fromItem);
+}
+
+export async function recordNotificationLog(input) {
+  ensureTable();
+  const createdAt = input.createdAt || new Date().toISOString();
+  const logId = input.logId || randomUUID();
+  const item = { ...input, logId, createdAt };
+  await db.send(new PutCommand({
+    TableName: tableName,
+    Item: { pk: "NOTIFICATION_LOG", sk: `LOG#${createdAt}#${logId}`, ...item }
+  }));
+  return item;
+}
+
+export async function getJourneyReminder(ticketId, departureDate) {
+  ensureTable();
+  const result = await db.send(new GetCommand({
+    TableName: tableName,
+    Key: { pk: "JOURNEY_REMINDER", sk: `TICKET#${ticketId}#${departureDate}` }
+  }));
+  return result.Item ? fromItem(result.Item) : null;
+}
+
+export async function reserveJourneyReminder(input) {
+  ensureTable();
+  const item = { ...input, status: "pending", createdAt: input.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() };
+  try {
+    await db.send(new PutCommand({
+      TableName: tableName,
+      Item: { pk: "JOURNEY_REMINDER", sk: `TICKET#${input.ticketId}#${input.departureDate}`, ...item },
+      ConditionExpression: "attribute_not_exists(pk)"
+    }));
+    return true;
+  } catch (error) {
+    if (error.name === "ConditionalCheckFailedException") return false;
+    throw error;
+  }
+}
+
+export async function upsertJourneyReminder(input) {
+  ensureTable();
+  const item = { ...input, updatedAt: new Date().toISOString() };
+  await db.send(new PutCommand({
+    TableName: tableName,
+    Item: { pk: "JOURNEY_REMINDER", sk: `TICKET#${input.ticketId}#${input.departureDate}`, ...item }
+  }));
+  return item;
+}
+
 export async function listCustomers() {
   ensureTable();
   const result = await db.send(new QueryCommand({
@@ -546,6 +711,26 @@ function randomSuffix() {
 
 function normalizePassportNumber(value = "") {
   return String(value).trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+function bookingRequestType(value) {
+  const normalized = String(value || "").toLowerCase().trim().replace(/\s+/g, "_");
+  if (!["umrah", "tour", "visa", "study_visa", "visit_visa", "service", "package"].includes(normalized)) {
+    const error = new Error("Invalid booking request type");
+    error.statusCode = 400;
+    throw error;
+  }
+  return normalized;
+}
+
+function bookingRequestStatus(value) {
+  const normalized = String(value || "").toLowerCase().trim().replace(/[\s/]+/g, "_");
+  if (!["new", "contacted", "in_progress", "waiting_for_documents", "payment_pending", "confirmed", "cancelled_lost"].includes(normalized)) {
+    const error = new Error("Invalid booking request status");
+    error.statusCode = 400;
+    throw error;
+  }
+  return normalized;
 }
 
 function ensureTable() {

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/EmptyState";
 import { useAdmin } from "@/contexts/AdminStore";
 import { UmrahPackage } from "@/data/models";
@@ -133,6 +134,7 @@ export default function PackagesPage() {
   const [imageUploading, setImageUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [deletingPackage, setDeletingPackage] = useState<UmrahPackage | null>(null);
   const visiblePackages = packages.filter((item) => !item.deletedAt);
   const normalizedSearch = searchQuery.toLowerCase().trim();
   const filteredPackages = normalizedSearch
@@ -268,7 +270,7 @@ export default function PackagesPage() {
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => openEdit(item)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
                   <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => updatePackage(item.packageId, { archivedAt: item.archivedAt ? undefined : new Date().toISOString(), status: "inactive" })}><Archive className="mr-2 h-4 w-4" /> {item.archivedAt ? "Unarchive" : "Archive"}</Button>
-                  <Button variant="destructive" size="sm" className="h-9 px-3" onClick={() => deletePackage(item.packageId)}><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
+                  <Button variant="destructive" size="sm" className="h-9 px-3" onClick={() => setDeletingPackage(item)}><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
                 </div>
               </div>
             ))}
@@ -337,6 +339,23 @@ export default function PackagesPage() {
           </div>
         </DialogContent>
       </Dialog>
+      <AlertDialog open={!!deletingPackage} onOpenChange={open => !open && setDeletingPackage(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate Umrah package?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingPackage?.name} will be hidden from the public site. Existing booking request history is preserved. Use Archive instead when you may publish the package again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => {
+              if (deletingPackage) deletePackage(deletingPackage.packageId);
+              setDeletingPackage(null);
+            }}>Deactivate Package</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

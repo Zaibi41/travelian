@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/public/PageHeader";
+import { PackageImage } from "@/components/public/PackageImage";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
@@ -50,7 +51,7 @@ export default function PublicPackagesPage() {
               <Card key={item.packageId} className="overflow-hidden border-0 shadow-card">
                 <CardContent className="grid gap-0 p-0 lg:grid-cols-[340px_1fr]">
                   <div className="relative min-h-[280px] bg-primary/10">
-                    {item.image ? <img src={item.image} alt={item.name} className="absolute inset-0 h-full w-full object-cover" /> : <div className="flex h-full min-h-[280px] items-center justify-center"><Package className="h-14 w-14 text-primary" /></div>}
+                    <PackageImage src={item.image} alt={item.name} className="absolute inset-0" />
                     <Badge className="absolute left-4 top-4 bg-primary text-primary-foreground capitalize">{item.packageType || "Umrah"} package</Badge>
                     <div className="absolute inset-x-4 bottom-4 rounded-lg bg-slate-950/70 p-3 text-sm text-white"><ShieldCheck className="mr-2 inline h-4 w-4" /> Trusted Travelian inventory</div>
                   </div>
@@ -73,7 +74,7 @@ export default function PublicPackagesPage() {
                     >
                       <Button className="w-full bg-[#25D366] text-white hover:bg-[#20bd5a]"><WhatsAppIcon className="mr-2 h-4 w-4" /> Book on WhatsApp</Button>
                     </a>
-                    <Button asChild variant="outline"><Link to={`/booking?type=umrah&id=${encodeURIComponent(item.packageId)}`}><Headphones className="mr-2 h-4 w-4" /> Enquire Now</Link></Button>
+                    <Button asChild variant="outline"><Link to={`/request-booking?type=umrah&id=${encodeURIComponent(item.packageId)}`}><Headphones className="mr-2 h-4 w-4" /> Enquire Now</Link></Button>
                   </div>
                   </div>
                 </CardContent>

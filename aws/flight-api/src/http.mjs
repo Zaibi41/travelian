@@ -4,7 +4,7 @@ export function json(statusCode, body, headers = {}) {
     headers: {
       "content-type": "application/json; charset=utf-8",
       "access-control-allow-origin": process.env.CORS_ORIGIN || "*",
-      "access-control-allow-methods": "GET,POST,DELETE,OPTIONS",
+      "access-control-allow-methods": "GET,POST,PATCH,DELETE,OPTIONS",
       "access-control-allow-headers": "content-type,authorization,x-request-id,x-travelian-api-key",
       ...headers
     },

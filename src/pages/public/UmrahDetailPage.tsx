@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { PackageImage } from "@/components/public/PackageImage";
 import { useAdmin } from "@/contexts/AdminStore";
-import { getSession } from "@/lib/auth-session";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 
 const whatsappBase = "https://wa.me/923244440014";
@@ -55,8 +55,7 @@ export default function UmrahDetailPage() {
     "",
     "Please share availability and booking details.",
   ].join("\n");
-  const bookingPath = `/booking?type=umrah&id=${encodeURIComponent(item.packageId)}`;
-  const bookingLink = getSession() ? bookingPath : `/signin?redirect=${encodeURIComponent(bookingPath)}`;
+  const bookingLink = `/request-booking?type=umrah&id=${encodeURIComponent(item.packageId)}`;
 
   return (
     <div className="bg-muted/30">
@@ -91,7 +90,7 @@ export default function UmrahDetailPage() {
       </section>
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        {item.image && <img src={item.image} alt={item.name} className="max-h-[520px] w-full rounded-2xl object-cover shadow-card" />}
+        <PackageImage src={item.image} alt={item.name} className="h-[320px] w-full rounded-2xl shadow-card md:h-[520px]" />
 
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <div className="space-y-6">

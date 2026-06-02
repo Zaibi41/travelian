@@ -25,7 +25,6 @@ const navLinks = [
   { label: "Visas", href: "/visa-services" },
   { label: "Deals", href: "/deals" },
   { label: "About", href: "/about" },
-  { label: "Become a Partner", href: "/contact?type=agency" },
 ];
 
 const SUPPORT_PHONE = "+92 324 4440014";

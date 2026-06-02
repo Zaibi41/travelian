@@ -1,9 +1,10 @@
 import { CalendarDays, Check, Hotel, Map, Plane, Tag } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { PackageImage } from "@/components/public/PackageImage";
 import { useAdmin } from "@/contexts/AdminStore";
 
 const whatsappBase = "https://wa.me/923244440014";
@@ -74,13 +75,14 @@ export default function TourDetailPage() {
               <a href={`${whatsappBase}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer">
                 <Button className="mt-5 w-full bg-[#25D366] text-white hover:bg-[#20bd5a]"><WhatsAppIcon className="mr-2 h-4 w-4" /> Contact for Booking</Button>
               </a>
+              <Button asChild variant="outline" className="mt-2 w-full"><Link to={`/request-booking?type=tour&id=${encodeURIComponent(tour.packageId)}`}>Enquire Now</Link></Button>
             </CardContent>
           </Card>
         </div>
       </section>
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        {tour.image && <img src={tour.image} alt={tour.name} className="max-h-[460px] w-full rounded-2xl object-cover shadow-card" />}
+        <PackageImage src={tour.image} alt={tour.name} className="h-[300px] w-full rounded-2xl shadow-card md:h-[460px]" />
 
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <div className="space-y-6">

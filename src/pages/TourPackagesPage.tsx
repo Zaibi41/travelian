@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/EmptyState";
 import { useAdmin } from "@/contexts/AdminStore";
 import { UmrahPackage } from "@/data/models";
@@ -88,6 +89,7 @@ function buildTour(form: TourForm): Omit<UmrahPackage, "packageId"> {
 export default function TourPackagesPage() {
   const { tourPackages, addTourPackage, updateTourPackage, deleteTourPackage } = useAdmin();
   const [open, setOpen] = useState(false);
+  const [deletingTour, setDeletingTour] = useState<UmrahPackage | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<TourForm>(defaultForm);
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -173,7 +175,7 @@ export default function TourPackagesPage() {
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => openEdit(tour)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
                   <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => updateTourPackage(tour.packageId, { archivedAt: tour.archivedAt ? undefined : new Date().toISOString(), status: "inactive" })}><Archive className="mr-2 h-4 w-4" /> {tour.archivedAt ? "Unarchive" : "Archive"}</Button>
-                  <Button variant="destructive" size="sm" className="h-9 px-3" onClick={() => deleteTourPackage(tour.packageId)}><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
+                  <Button variant="destructive" size="sm" className="h-9 px-3" onClick={() => setDeletingTour(tour)}><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
                 </div>
               </div>
             ))}
@@ -214,6 +216,23 @@ export default function TourPackagesPage() {
           </div>
         </DialogContent>
       </Dialog>
+      <AlertDialog open={!!deletingTour} onOpenChange={open => !open && setDeletingTour(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deactivate tour package?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingTour?.name} will be hidden from the public site. Existing booking request history is preserved. Use Archive instead when you may publish the package again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => {
+              if (deletingTour) deleteTourPackage(deletingTour.packageId);
+              setDeletingTour(null);
+            }}>Deactivate Package</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

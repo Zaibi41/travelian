@@ -7,6 +7,7 @@ import { Star, MapPin, ArrowRight, Shield, Headphones, CreditCard, Flame, Trendi
 import { Link } from "react-router-dom";
 import { getBlogImage } from "@/lib/blog-images";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { PackageImage } from "@/components/public/PackageImage";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 
@@ -278,11 +279,7 @@ export default function HomePage() {
             {publishedUmrahPackages.slice(0, 4).map((pkg) => (
               <Card key={pkg.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 border-0 shadow-card">
                 <div className="h-40 bg-muted relative overflow-hidden">
-                  {pkg.image ? (
-                    <img src={pkg.image} alt={pkg.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
-                  ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-gold/10 to-accent" />
-                  )}
+                  <PackageImage src={pkg.image} alt={pkg.name} className="absolute inset-0" imageClassName="transition-transform duration-500 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" aria-hidden="true" />
                   <Badge className="absolute top-3 left-3 bg-gold text-gold-foreground border-0 text-xs">
                     <Percent className="h-3 w-3 mr-1" /> Best Value
@@ -397,17 +394,7 @@ export default function HomePage() {
             {tourPackages.filter(t => t.status === 'active' && !t.deletedAt).map((tour) => (
               <Card key={tour.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
                 <div className="relative h-44 overflow-hidden bg-muted">
-                  {tour.image ? (
-                    <img
-                      src={tour.image}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-info/10 to-accent">
-                      <Globe className="h-12 w-12 text-primary/40" />
-                    </div>
-                  )}
+                  <PackageImage src={tour.image} alt={tour.name} className="absolute inset-0" imageClassName="transition-transform duration-500 group-hover:scale-105" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" aria-hidden="true" />
                   <Badge className="absolute top-3 left-3 z-10 bg-primary text-primary-foreground border-0 text-xs rounded-lg shadow-sm">{tour.duration}</Badge>
                   <button type="button" className="absolute top-3 right-3 z-10 h-8 w-8 rounded-full bg-black/35 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors">

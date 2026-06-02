@@ -321,6 +321,50 @@ export interface CustomerProfile {
   updatedAt?: string;
 }
 
+export type BookingRequestType = 'umrah' | 'tour' | 'visa' | 'study_visa' | 'visit_visa' | 'service' | 'package';
+export type BookingRequestStatus = 'new' | 'contacted' | 'in_progress' | 'waiting_for_documents' | 'payment_pending' | 'confirmed' | 'cancelled_lost';
+
+export interface BookingRequest {
+  requestId: string;
+  type: BookingRequestType;
+  packageId?: string;
+  packageName?: string;
+  customerName: string;
+  phone: string;
+  email?: string;
+  selectedOption?: string;
+  status: BookingRequestStatus;
+  notes?: string;
+  assignedStaff?: string;
+  notificationStatus?: 'pending' | 'sent' | 'failed';
+  notificationError?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface NotificationSettings {
+  adminNotificationEmail: string;
+  adminNotificationPhone: string;
+  emailNotificationsEnabled: boolean;
+  smsNotificationsEnabled: boolean;
+  whatsappNotificationsEnabled: boolean;
+  journeyReminderEnabled: boolean;
+  journeyReminderHoursBefore: number;
+  journeyReminderTemplate: string;
+  updatedAt?: string;
+}
+
+export interface NotificationDeliveryLog {
+  logId: string;
+  purpose: string;
+  relatedId?: string;
+  channel: string;
+  recipient?: string;
+  status: 'pending' | 'sent' | 'failed';
+  error?: string;
+  createdAt: string;
+}
+
 export interface ModulePermission {
   moduleId: string;
   moduleName: string;

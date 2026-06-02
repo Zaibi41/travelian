@@ -41,6 +41,7 @@ import VisaDetailPage from "./pages/public/VisaDetailPage";
 import BlogDetailPage from "./pages/public/BlogDetailPage";
 import DestinationPage from "./pages/public/DestinationPage";
 import GroupTicketingPage from "./pages/public/GroupTicketingPage";
+import BookingRequestPage from "./pages/public/BookingRequestPage";
 
 // Admin pages
 import DashboardPage from "./pages/DashboardPage";
@@ -67,6 +68,7 @@ import DocumentsPage from "./pages/DocumentsPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
+import BookingRequestsPage from "./pages/BookingRequestsPage";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +106,7 @@ const App = () => (
             <Route path="/group-ticketing" element={<PublicLayout><GroupTicketingPage /></PublicLayout>} />
             <Route path="/group-ticketing/:category" element={<PublicLayout><GroupTicketingPage /></PublicLayout>} />
             <Route path="/booking" element={<PublicLayout><BookingPage /></PublicLayout>} />
+            <Route path="/request-booking" element={<PublicLayout><BookingRequestPage /></PublicLayout>} />
             <Route path="/account" element={<PublicLayout><AccountPage /></PublicLayout>} />
             <Route path="/my-bookings" element={<PublicLayout><MyBookingsPage /></PublicLayout>} />
             <Route path="/signin" element={<PublicLayout showFooter={false}><SignInPage /></PublicLayout>} />
@@ -121,6 +124,7 @@ const App = () => (
             <Route path="/admin/tours" element={<AdminLayout><TourPackagesPage /></AdminLayout>} />
             <Route path="/admin/visa" element={<AdminLayout><VisaPackagesPage /></AdminLayout>} />
             <Route path="/admin/bookings" element={<AdminLayout><BookingsPage /></AdminLayout>} />
+            <Route path="/admin/booking-requests" element={<AdminLayout><BookingRequestsPage /></AdminLayout>} />
             <Route path="/admin/tickets" element={<AdminLayout><TicketsPage /></AdminLayout>} />
             <Route path="/admin/hotels" element={<AdminLayout><HotelsPage /></AdminLayout>} />
             <Route path="/admin/flights" element={<AdminLayout><FlightsPage /></AdminLayout>} />

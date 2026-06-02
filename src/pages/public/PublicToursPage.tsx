@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/public/PageHeader";
+import { PackageImage } from "@/components/public/PackageImage";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { useAdmin } from "@/contexts/AdminStore";
 
@@ -49,11 +50,7 @@ export default function PublicToursPage() {
           <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {activeTours.map((tour) => (
               <Card key={tour.packageId} className="overflow-hidden border-0 shadow-card">
-                {tour.image ? (
-                  <img src={tour.image} alt={tour.name} className="h-48 w-full object-cover" />
-                ) : (
-                  <div className="flex h-48 items-center justify-center bg-primary/10"><Map className="h-12 w-12 text-primary" /></div>
-                )}
+                <PackageImage src={tour.image} alt={tour.name} className="h-48 w-full" />
                 <CardContent className="space-y-4 p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div>
