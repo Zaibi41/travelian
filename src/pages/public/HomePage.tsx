@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { getBlogImage } from "@/lib/blog-images";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { useAdmin } from "@/contexts/AdminStore";
+import { isPublishedUmrahPackage } from "@/lib/package-availability";
 
 const destinations = [
   { name: "Makkah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=400&h=500&fit=crop&q=80", badge: "Popular" },
@@ -38,6 +39,7 @@ const topCountries = [
 
 export default function HomePage() {
   const { hotels, packages, tourPackages, blogPosts } = useAdmin();
+  const publishedUmrahPackages = packages.filter(isPublishedUmrahPackage);
 
   return (
     <div>
@@ -273,7 +275,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {packages.filter(p => p.status === 'active' && !p.deletedAt).slice(0, 4).map((pkg) => (
+            {publishedUmrahPackages.slice(0, 4).map((pkg) => (
               <Card key={pkg.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 border-0 shadow-card">
                 <div className="h-40 bg-muted relative overflow-hidden">
                   {pkg.image ? (
@@ -309,7 +311,7 @@ export default function HomePage() {
                 </CardContent>
               </Card>
             ))}
-            {packages.length === 0 && (
+            {publishedUmrahPackages.length === 0 && (
               <Card className="col-span-full border-dashed shadow-none">
                 <CardContent className="p-6 text-sm text-muted-foreground">No Umrah packages are published right now.</CardContent>
               </Card>

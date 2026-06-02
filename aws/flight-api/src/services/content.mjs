@@ -200,9 +200,20 @@ export async function upsertPricingRule(input) {
   ensureTable();
   const now = new Date().toISOString();
   const service = pricingRuleService(input.service);
-  const ruleId = input.ruleId || randomUUID();
-  const existing = await getPricingRule(service, ruleId);
+  let ruleId = input.ruleId;
+  let existing = ruleId ? await getPricingRule(service, ruleId) : null;
   const scope = pricingRuleScope(input.scope || existing?.scope);
+  const target = String(input.target ?? existing?.target ?? "").trim();
+  if (scope === "supplier" && target) {
+    const supplierRule = (await listPricingRules({ service })).find(rule =>
+      rule.scope === "supplier" && normalizePricingTarget(rule.target) === normalizePricingTarget(target)
+    );
+    if (supplierRule && supplierRule.ruleId !== ruleId) {
+      ruleId = supplierRule.ruleId;
+      existing = supplierRule;
+    }
+  }
+  ruleId ||= randomUUID();
   const item = {
     ...(existing || {}),
     ...input,
@@ -210,7 +221,7 @@ export async function upsertPricingRule(input) {
     service,
     scope,
     name: String(input.name || existing?.name || pricingRuleName(scope, input.target)),
-    target: String(input.target ?? existing?.target ?? "").trim(),
+    target,
     percentage: finiteNumber(input.percentage ?? existing?.percentage),
     fixedAmount: finiteNumber(input.fixedAmount ?? existing?.fixedAmount),
     minimumMargin: Math.max(0, finiteNumber(input.minimumMargin ?? existing?.minimumMargin)),
@@ -442,6 +453,10 @@ function pricingRuleScope(scope) {
 function pricingRuleName(scope, target) {
   const normalizedTarget = String(target || "").trim();
   return normalizedTarget ? `${scope}: ${normalizedTarget}` : `${scope} pricing rule`;
+}
+
+function normalizePricingTarget(value = "") {
+  return String(value).trim().toLowerCase();
 }
 
 function finiteNumber(value) {

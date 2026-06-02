@@ -96,6 +96,7 @@ export interface UmrahPackage {
   contactNumbers?: string;
   childInfantNote?: string;
   exclusions?: string;
+  expiresAt?: string;
   archivedAt?: string;
   deletedAt?: string;
 }

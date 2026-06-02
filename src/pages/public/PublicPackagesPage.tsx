@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/public/PageHeader";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { useAdmin } from "@/contexts/AdminStore";
+import { isPublishedUmrahPackage } from "@/lib/package-availability";
 
 const timeline = [
   { step: "Choose Package", desc: "Select an active Travelian Umrah package once inventory is published." },
@@ -19,7 +20,7 @@ const siteBase = "https://www.travelian.pk";
 
 export default function PublicPackagesPage() {
   const { packages } = useAdmin();
-  const activePackages = packages.filter((item) => item.category === "umrah" && item.status === "active" && !item.archivedAt && !item.deletedAt);
+  const activePackages = packages.filter(isPublishedUmrahPackage);
 
   return (
     <div>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, BarChart3, Plus, ShieldCheck, SlidersHorizontal, Tags, Trash2 } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, Pencil, Plus, ShieldCheck, SlidersHorizontal, Tags, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,18 +18,23 @@ const scopeOptions: MarkupScope[] = ["global", "supplier", "airline", "route", "
 export default function FlightsPage() {
   const [scope, setScope] = useState<MarkupScope>("supplier");
   const [serviceTarget, setServiceTarget] = useState("");
-  const [percentage, setPercentage] = useState(0);
-  const [fixedAmount, setFixedAmount] = useState(0);
-  const [minimumMargin, setMinimumMargin] = useState(0);
+  const [percentage, setPercentage] = useState("0");
+  const [fixedAmount, setFixedAmount] = useState("0");
+  const [minimumMargin, setMinimumMargin] = useState("0");
   const [baseFare, setBaseFare] = useState(74550);
   const [discount, setDiscount] = useState(0);
   const [providers, setProviders] = useState<string[]>([]);
   const [rules, setRules] = useState<MarkupRule[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
 
   const draftRule = useMemo(
-    () => ({ percentage, fixedAmount, minimumMargin }),
+    () => ({
+      percentage: pricingNumberOrZero(percentage),
+      fixedAmount: pricingNumberOrZero(fixedAmount),
+      minimumMargin: pricingNumberOrZero(minimumMargin),
+    }),
     [percentage, fixedAmount, minimumMargin],
   );
 
@@ -56,26 +61,58 @@ export default function FlightsPage() {
       toast.error("Select or enter a target for this pricing rule.");
       return;
     }
+    const parsedPercentage = parsePricingNumber(percentage);
+    const parsedFixedAmount = parsePricingNumber(fixedAmount);
+    const parsedMinimumMargin = parsePricingNumber(minimumMargin);
+    if (parsedPercentage === null || parsedFixedAmount === null || parsedMinimumMargin === null) {
+      toast.error("Enter valid numeric values for the pricing adjustment.");
+      return;
+    }
+    if (parsedMinimumMargin < 0) {
+      toast.error("Minimum margin protection cannot be negative.");
+      return;
+    }
     setSaving(true);
     try {
       const rule = await savePricingRule({
-        id: "",
+        id: editingRuleId || "",
         name: pricingRuleName(scope, serviceTarget),
         service: "flights",
         scope,
         target: requiresTarget(scope) ? serviceTarget.trim() : "",
-        percentage,
-        fixedAmount,
-        minimumMargin,
+        percentage: parsedPercentage,
+        fixedAmount: parsedFixedAmount,
+        minimumMargin: parsedMinimumMargin,
         enabled: true,
       });
       setRules((current) => [rule, ...current.filter((item) => item.id !== rule.id)]);
-      toast.success("Flight pricing rule saved.");
+      setEditingRuleId(null);
+      toast.success(editingRuleId ? "Flight pricing rule updated." : "Flight pricing rule saved.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to save pricing rule.");
     } finally {
       setSaving(false);
     }
+  };
+
+  const startNewRule = () => {
+    setEditingRuleId(null);
+    setScope("supplier");
+    setServiceTarget(providers.includes("skypass") ? "skypass" : "");
+    setPercentage("0");
+    setFixedAmount("0");
+    setMinimumMargin("0");
+    scrollToPricingForm();
+  };
+
+  const startEditRule = (rule: MarkupRule) => {
+    setEditingRuleId(rule.id);
+    setScope(rule.scope);
+    setServiceTarget(rule.target || "");
+    setPercentage(String(rule.percentage));
+    setFixedAmount(String(rule.fixedAmount));
+    setMinimumMargin(String(rule.minimumMargin));
+    scrollToPricingForm();
   };
 
   const removeRule = async (rule: MarkupRule) => {
@@ -100,7 +137,7 @@ export default function FlightsPage() {
         </div>
         <Button
           className="gradient-primary gap-2 text-primary-foreground"
-          onClick={() => document.getElementById("create-flight-pricing-rule")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          onClick={startNewRule}
         >
           <Plus className="h-4 w-4" /> Create Markup Rule
         </Button>
@@ -140,7 +177,7 @@ export default function FlightsPage() {
         <TabsContent value="markup" className="grid gap-5 xl:grid-cols-[1fr_420px]">
           <Card id="create-flight-pricing-rule" className="scroll-mt-6 shadow-card">
             <CardHeader>
-              <CardTitle className="text-base font-display">Create pricing rule</CardTitle>
+              <CardTitle className="text-base font-display">{editingRuleId ? "Edit pricing rule" : "Create pricing rule"}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -160,21 +197,21 @@ export default function FlightsPage() {
               <RuleTarget scope={scope} providers={providers} value={serviceTarget} onChange={setServiceTarget} />
               <div className="space-y-2">
                 <Label>Percentage adjustment</Label>
-                <Input type="number" value={percentage} onChange={(event) => setPercentage(Number(event.target.value))} />
+                <Input inputMode="decimal" type="text" value={percentage} onChange={(event) => updatePricingText(event.target.value, setPercentage, true)} />
               </div>
               <div className="space-y-2">
                 <Label>Fixed PKR adjustment</Label>
-                <Input type="number" value={fixedAmount} onChange={(event) => setFixedAmount(Number(event.target.value))} />
+                <Input inputMode="decimal" type="text" value={fixedAmount} onChange={(event) => updatePricingText(event.target.value, setFixedAmount, true)} />
                 <p className="text-xs text-muted-foreground">Use a signed value. Example: <span className="font-semibold text-foreground">-500</span> reduces each matching fare by PKR 500.</p>
               </div>
               <div className="space-y-2">
                 <Label>Minimum margin protection</Label>
-                <Input min={0} type="number" value={minimumMargin} onChange={(event) => setMinimumMargin(Number(event.target.value))} />
+                <Input inputMode="decimal" type="text" value={minimumMargin} onChange={(event) => updatePricingText(event.target.value, setMinimumMargin, false)} />
                 <p className="text-xs text-muted-foreground">Keep this at 0 when a negative supplier adjustment must be applied.</p>
               </div>
               <div className="flex items-end">
                 <Button className="w-full gradient-primary text-primary-foreground" disabled={saving} onClick={saveRule}>
-                  {saving ? "Saving..." : "Save rule"}
+                  {saving ? "Saving..." : editingRuleId ? "Update rule" : "Save rule"}
                 </Button>
               </div>
             </CardContent>
@@ -205,9 +242,14 @@ export default function FlightsPage() {
                           {rule.minimumMargin > 0 ? ` · minimum margin PKR ${rule.minimumMargin.toLocaleString()}` : ""}
                         </p>
                       </div>
-                      <Button variant="outline" size="icon" title="Remove pricing rule" onClick={() => removeRule(rule)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <div className="flex shrink-0 gap-2">
+                        <Button variant="outline" size="icon" title="Edit pricing rule" onClick={() => startEditRule(rule)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="icon" title="Remove pricing rule" onClick={() => removeRule(rule)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -323,4 +365,22 @@ function providerLabel(provider: string) {
 
 function titleCase(value: string) {
   return value.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function scrollToPricingForm() {
+  document.getElementById("create-flight-pricing-rule")?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function updatePricingText(value: string, setValue: (value: string) => void, allowNegative: boolean) {
+  const pattern = allowNegative ? /^-?\d*(\.\d*)?$/ : /^\d*(\.\d*)?$/;
+  if (pattern.test(value)) setValue(value);
+}
+
+function parsePricingNumber(value: string) {
+  const parsed = Number(value);
+  return value.trim() !== "" && Number.isFinite(parsed) ? parsed : null;
+}
+
+function pricingNumberOrZero(value: string) {
+  return parsePricingNumber(value) ?? 0;
 }

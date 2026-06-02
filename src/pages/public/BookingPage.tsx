@@ -17,6 +17,7 @@ import { downloadETicket } from "@/lib/eticket-pdf";
 import { toast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
 import type { UmrahPackage } from "@/data/models";
+import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { format, addDays } from "date-fns";
 import { useAdmin } from "@/contexts/AdminStore";
 
@@ -80,7 +81,7 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
     return null;
   }
   if (type === "umrah") {
-    const p = inventory.packages.find(x => x.packageId === id && !x.deletedAt);
+    const p = inventory.packages.find(x => x.packageId === id && isPublishedUmrahPackage(x));
     if (!p) return null;
     return {
       type: "umrah",

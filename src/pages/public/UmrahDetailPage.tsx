@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { useAdmin } from "@/contexts/AdminStore";
 import { getSession } from "@/lib/auth-session";
+import { isPublishedUmrahPackage } from "@/lib/package-availability";
 
 const whatsappBase = "https://wa.me/923244440014";
 const siteBase = "https://www.travelian.pk";
@@ -17,7 +18,7 @@ function formatPrice(value?: number) {
 export default function UmrahDetailPage() {
   const { id } = useParams();
   const { packages } = useAdmin();
-  const item = packages.find((entry) => entry.packageId === id && entry.status === "active" && !entry.archivedAt && !entry.deletedAt);
+  const item = packages.find((entry) => entry.packageId === id && isPublishedUmrahPackage(entry));
 
   if (!item) {
     return (
