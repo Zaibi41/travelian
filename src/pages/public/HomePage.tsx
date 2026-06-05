@@ -364,7 +364,7 @@ export default function HomePage() {
                         </span>
                         <div>
                           <h3 className="font-semibold text-white drop-shadow-sm">{c.country}</h3>
-                          <p className="text-xs text-white/80">Explore destinations</p>
+                          <p className="text-xs text-white/80">{c.properties}+ properties · {c.popular.length} popular cities</p>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
