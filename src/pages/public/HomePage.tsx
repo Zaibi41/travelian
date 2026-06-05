@@ -223,60 +223,56 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {hotels.filter(h => h.status === 'active').slice(0, 3).map((hotel) => (
-              <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
-                <Card className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
-                  <div className="h-48 relative overflow-hidden bg-muted">
-                    {hotel.image ? (
-                      <img
-                        src={hotel.image}
-                        alt={hotel.name}
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent text-6xl transition-transform duration-500 group-hover:scale-110">
-                        <Hotel className="h-12 w-12 text-primary/40" />
+            {(() => {
+              const live = hotels.filter(h => h.status === 'active').slice(0, 3);
+              const items = live.length > 0
+                ? live.map(h => ({ key: h.hotelId, href: `/hotel/${h.hotelId}`, name: h.name, city: h.city, country: h.country, starRating: h.starRating, pricePerNight: h.pricePerNight, amenities: h.amenities, image: h.image }))
+                : fallbackHotels.map(h => ({ key: h.id, href: '/hotels-search', name: h.name, city: h.city, country: h.country, starRating: h.starRating, pricePerNight: h.pricePerNight, amenities: h.amenities, image: h.image }));
+              return items.map((hotel) => (
+                <Link to={hotel.href} key={hotel.key}>
+                  <Card className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
+                    <div className="h-48 relative overflow-hidden bg-muted">
+                      {hotel.image ? (
+                        <img src={hotel.image} alt={hotel.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent text-6xl transition-transform duration-500 group-hover:scale-110">
+                          <Hotel className="h-12 w-12 text-primary/40" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/25 to-transparent pointer-events-none" />
+                      <div className="absolute top-3 left-3 flex items-center gap-1">
+                        {Array.from({ length: hotel.starRating }).map((_, i) => (
+                          <Star key={i} className="h-3.5 w-3.5 fill-gold text-gold" />
+                        ))}
                       </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/25 to-transparent pointer-events-none" />
-                    <div className="absolute top-3 left-3 flex items-center gap-1">
-                      {Array.from({ length: hotel.starRating }).map((_, i) => (
-                        <Star key={i} className="h-3.5 w-3.5 fill-gold text-gold" />
-                      ))}
+                      <button className="absolute top-3 right-3 h-8 w-8 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-foreground/40 transition-colors" aria-label="Save to wishlist">
+                        <Heart className="h-4 w-4" />
+                      </button>
                     </div>
-                    <button className="absolute top-3 right-3 h-8 w-8 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-foreground/40 transition-colors">
-                      <Heart className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h3 className="font-semibold text-foreground">{hotel.name}</h3>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                          <MapPin className="h-3 w-3" /> {hotel.city}, {hotel.country}
-                        </p>
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="font-semibold text-foreground">{hotel.name}</h3>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <MapPin className="h-3 w-3" /> {hotel.city}, {hotel.country}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {hotel.amenities.slice(0, 4).map(a => (
-                        <span key={a} className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{a}</span>
-                      ))}
-                    </div>
-                    <div className="flex items-end justify-between mt-4 pt-3 border-t">
-                      <div>
-                        <p className="text-xl font-bold text-foreground">PKR {hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {hotel.amenities.slice(0, 4).map(a => (
+                          <span key={a} className="text-[11px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{a}</span>
+                        ))}
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-            {hotels.length === 0 && (
-              <Card className="col-span-full border-dashed shadow-none">
-                <CardContent className="p-6 text-sm text-muted-foreground">No featured hotels are available right now.</CardContent>
-              </Card>
-            )}
+                      <div className="flex items-end justify-between mt-4 pt-3 border-t">
+                        <div>
+                          <p className="text-xl font-bold text-foreground">PKR {hotel.pricePerNight.toLocaleString()}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ));
+            })()}
           </div>
         </div>
       </section>
