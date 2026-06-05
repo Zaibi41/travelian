@@ -405,39 +405,40 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {tourPackages.filter(t => t.status === 'active' && !t.deletedAt).map((tour) => (
-              <Card key={tour.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
-                <div className="relative h-44 overflow-hidden bg-muted">
-                  <PackageImage src={tour.image} alt={tour.name} className="absolute inset-0" imageClassName="transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" aria-hidden="true" />
-                  <Badge className="absolute top-3 left-3 z-10 bg-primary text-primary-foreground border-0 text-xs rounded-lg shadow-sm">{tour.duration}</Badge>
-                  <button type="button" className="absolute top-3 right-3 z-10 h-8 w-8 rounded-full bg-black/35 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors">
-                    <Heart className="h-4 w-4" />
-                  </button>
-                </div>
-                <CardContent className="p-5">
-                  <h3 className="font-semibold text-foreground">{tour.name}</h3>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                    <MapPin className="h-3 w-3" /> {tour.city}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{tour.description}</p>
-                  <div className="flex items-end justify-between mt-4 pt-3 border-t">
-                    <div>
-                      <span className="text-xs text-muted-foreground">From</span>
-                      <p className="text-xl font-bold text-foreground">PKR {tour.basePrice}</p>
-                    </div>
-                    <Button asChild size="sm" variant="outline" className="text-xs h-8 rounded-lg">
-                      <Link to="/tour-packages" aria-label={`View details for ${tour.name}`}>View Details</Link>
-                    </Button>
+            {(() => {
+              const live = tourPackages.filter(t => t.status === 'active' && !t.deletedAt);
+              const items = live.length > 0
+                ? live.map(t => ({ key: t.packageId, href: '/tour-packages', name: t.name, city: t.city, duration: t.duration, basePrice: t.basePrice, description: t.description, image: t.image }))
+                : fallbackTours.map(t => ({ key: t.id, href: '/tour-packages', name: t.name, city: t.city, duration: t.duration, basePrice: t.basePrice, description: t.description, image: t.image }));
+              return items.map((tour) => (
+                <Card key={tour.key} className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
+                  <div className="relative h-44 overflow-hidden bg-muted">
+                    <PackageImage src={tour.image} alt={tour.name} className="absolute inset-0" imageClassName="transition-transform duration-500 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" aria-hidden="true" />
+                    <Badge className="absolute top-3 left-3 z-10 bg-primary text-primary-foreground border-0 text-xs rounded-lg shadow-sm">{tour.duration}</Badge>
+                    <button type="button" aria-label="Save to wishlist" className="absolute top-3 right-3 z-10 h-8 w-8 rounded-full bg-black/35 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors">
+                      <Heart className="h-4 w-4" />
+                    </button>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-            {tourPackages.length === 0 && (
-              <Card className="col-span-full border-dashed shadow-none">
-                <CardContent className="p-6 text-sm text-muted-foreground">No tour packages are published right now.</CardContent>
-              </Card>
-            )}
+                  <CardContent className="p-5">
+                    <h3 className="font-semibold text-foreground">{tour.name}</h3>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                      <MapPin className="h-3 w-3" /> {tour.city}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{tour.description}</p>
+                    <div className="flex items-end justify-between mt-4 pt-3 border-t">
+                      <div>
+                        <span className="text-xs text-muted-foreground">From</span>
+                        <p className="text-xl font-bold text-foreground">PKR {tour.basePrice.toLocaleString()}</p>
+                      </div>
+                      <Button asChild size="sm" variant="outline" className="text-xs h-8 rounded-lg">
+                        <Link to={tour.href} aria-label={`View details for ${tour.name}`}>View Details</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ));
+            })()}
           </div>
         </div>
       </section>
