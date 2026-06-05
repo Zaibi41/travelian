@@ -35,7 +35,7 @@ export function PublicFooter() {
               </div>
               <span className="text-lg font-bold font-display text-sidebar-accent-foreground">Travelian</span>
             </Link>
-            <p className="text-sm text-sidebar-muted leading-relaxed mb-4">Travel support for flights, hotels, Umrah packages, study abroad and visa services.</p>
+            <p className="text-sm text-sidebar-muted leading-relaxed mb-4">Travel support for flights, hotels, Umrah packages, tours and visa services.</p>
             <div className="flex gap-2">
               <a href="https://www.facebook.com/Travelian.pk/" target="_blank" rel="noreferrer" aria-label="Travelian on Facebook" className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-muted hover:text-sidebar-primary"><Facebook className="h-4 w-4" /></a>
               <a href="https://www.instagram.com/travelian.pk/" target="_blank" rel="noreferrer" aria-label="Travelian on Instagram" className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-muted hover:text-sidebar-primary"><Instagram className="h-4 w-4" /></a>
@@ -48,7 +48,7 @@ export function PublicFooter() {
               <li><Link to="/" onClick={scrollToTop} className="hover:text-sidebar-primary">Flights</Link></li>
               <li><Link to="/hotels-search" className="hover:text-sidebar-primary">Hotels</Link></li>
               <li><Link to="/umrah-packages" className="hover:text-sidebar-primary">Umrah Packages</Link></li>
-              <li><Link to="/study-abroad" className="hover:text-sidebar-primary">Study Abroad</Link></li>
+              <li><Link to="/tour-packages" className="hover:text-sidebar-primary">Tours</Link></li>
               <li><Link to="/visa-services" className="hover:text-sidebar-primary">Visa Services</Link></li>
             </ul>
           </div>

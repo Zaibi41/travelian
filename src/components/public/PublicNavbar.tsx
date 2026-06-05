@@ -21,7 +21,6 @@ const navLinks = [
   { label: "Flights", href: "/" },
   { label: "Hotels", href: "/hotels-search" },
   { label: "Umrah", href: "/umrah-packages" },
-  { label: "Study Abroad", href: "/study-abroad" },
   { label: "Visas", href: "/visa-services" },
   { label: "Deals", href: "/deals" },
   { label: "About", href: "/about" },
