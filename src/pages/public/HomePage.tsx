@@ -456,68 +456,30 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {blogPosts.filter(b => b.status === 'published').slice(0, 3).map((post) => (
-              <Link key={post.postId} to={`/blog/${post.slug}`} aria-label={post.title} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl">
-                <Card className="overflow-hidden hover:shadow-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group border-0 shadow-card h-full">
-                  <div className="h-44 overflow-hidden bg-muted">
-                    <img
-                      src={getBlogImage(post)}
-                      alt={post.title}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  </div>
-                  <CardContent className="p-5">
-                    <Badge variant="secondary" className="mb-2 text-xs rounded-md">{post.category}</Badge>
-                    <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">{post.title}</h3>
-                    <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{post.excerpt}</p>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs text-muted-foreground">
-                      <span>By {post.author}</span>
-                      <span>{post.publishedAt}</span>
+            {(() => {
+              const live = blogPosts.filter(b => b.status === 'published').slice(0, 3);
+              const items = live.length > 0
+                ? live.map(p => ({ key: p.postId, href: `/blog/${p.slug}`, title: p.title, excerpt: p.excerpt, category: p.category, author: p.author, publishedAt: p.publishedAt, image: getBlogImage(p) }))
+                : fallbackGuides.map(g => ({ key: g.id, href: '/blog-public', title: g.title, excerpt: g.excerpt, category: g.category, author: g.author, publishedAt: g.publishedAt, image: g.image }));
+              return items.map((post) => (
+                <Link key={post.key} to={post.href} aria-label={post.title} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl">
+                  <Card className="overflow-hidden hover:shadow-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group border-0 shadow-card h-full">
+                    <div className="h-44 overflow-hidden bg-muted">
+                      <img src={post.image} alt={post.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
                     </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-            {blogPosts.length === 0 && (
-              <Card className="col-span-full border-dashed shadow-none">
-                <CardContent className="p-6 text-sm text-muted-foreground">No travel guides are published right now.</CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* WhatsApp CTA */}
-      <section className="py-16 gradient-primary relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-primary-foreground/20 rounded-full -mr-48 -mt-48" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-gold/20 rounded-full -ml-32 -mb-32" />
-        </div>
-        <div className="relative max-w-4xl mx-auto px-4 text-center">
-          <div className="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-100 text-sm px-4 py-1.5 rounded-full mb-6 border border-emerald-400/35">
-            <WhatsAppIcon className="h-4 w-4" /> WhatsApp
-          </div>
-          <h2 className="text-2xl md:text-4xl font-extrabold font-display text-primary-foreground mb-4">
-            Plan Your Journey with Confidence
-          </h2>
-          <p className="text-primary-foreground/85 mb-8 max-w-lg mx-auto text-base md:text-lg">
-            Book Umrah, flights, and visas with trusted experts. Fast processing, best prices, and full support.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button size="lg" className="font-semibold rounded-xl bg-[#25D366] text-white hover:bg-[#20BD5A] border-0 shadow-lg shadow-emerald-900/20" asChild>
-              <a href="https://wa.me/923244440014?text=Hi%2C%20I%27d%20like%20a%20free%20quote%20for%20my%20travel%20plans." target="_blank" rel="noopener noreferrer">
-                Get a Free Quote
-              </a>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-2 border-primary-foreground/80 bg-primary-foreground text-primary hover:bg-primary-foreground/90 hover:text-primary font-semibold rounded-xl shadow-sm"
-              asChild
-            >
-              <Link to="/umrah-packages">Browse Packages</Link>
-            </Button>
+                    <CardContent className="p-5">
+                      <Badge variant="secondary" className="mb-2 text-xs rounded-md">{post.category}</Badge>
+                      <h3 className="font-semibold text-foreground line-clamp-2 group-hover:text-primary transition-colors">{post.title}</h3>
+                      <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{post.excerpt}</p>
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t text-xs text-muted-foreground">
+                        <span>By {post.author}</span>
+                        <span>{post.publishedAt}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ));
+            })()}
           </div>
         </div>
       </section>
