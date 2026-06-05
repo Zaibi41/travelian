@@ -201,6 +201,7 @@ export default function HomePage() {
                   <div className="absolute bottom-3 left-3 right-3">
                     <p className="text-primary-foreground font-bold text-sm">{d.name}</p>
                     <p className="text-primary-foreground/70 text-xs">{d.country}</p>
+                    <p className="text-gold text-[11px] font-semibold mt-1">From PKR {d.priceFrom.toLocaleString()}</p>
                   </div>
                 </div>
               </Link>
