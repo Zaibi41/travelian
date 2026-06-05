@@ -223,8 +223,32 @@ export interface Flight {
   stops?: number;
   baggage?: string;
   meal?: string;
+  segments?: FlightItinerarySegment[];
+  layovers?: FlightLayover[];
   returnDepartureTime?: string;
   returnArrivalTime?: string;
+}
+
+export interface FlightItinerarySegment {
+  id?: string | null;
+  carrier?: string | null;
+  flightNumber?: string | null;
+  origin?: string | null;
+  destination?: string | null;
+  departureTime?: string | null;
+  arrivalTime?: string | null;
+  departureTerminal?: string | null;
+  arrivalTerminal?: string | null;
+  duration?: string | null;
+  equipment?: string | null;
+}
+
+export interface FlightLayover {
+  location?: string | null;
+  arrivalTime?: string | null;
+  departureTime?: string | null;
+  duration?: string | null;
+  nextFlightNumber?: string | null;
 }
 
 export interface Coupon {

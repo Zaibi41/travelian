@@ -15,7 +15,7 @@ const entries: SitemapEntry[] = [
   { path: "/hotels-search", changefreq: "daily", priority: "0.9" },
   { path: "/flights-search", changefreq: "daily", priority: "0.9" },
   { path: "/umrah-packages", changefreq: "weekly", priority: "0.8" },
-  { path: "/tour-packages", changefreq: "weekly", priority: "0.8" },
+  { path: "/study-abroad", changefreq: "weekly", priority: "0.8" },
   { path: "/visa-services", changefreq: "weekly", priority: "0.8" },
   { path: "/deals", changefreq: "daily", priority: "0.8" },
   { path: "/blog-public", changefreq: "weekly", priority: "0.6" },

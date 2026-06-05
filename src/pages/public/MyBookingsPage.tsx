@@ -9,6 +9,16 @@ import { downloadETicket } from "@/lib/eticket-pdf";
 import { toast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
 
+function statusClass(status: BookingRecord["status"]) {
+  if (status === "confirmed" || status === "ticket_issued" || status === "payment_received") return "bg-success/10 text-success border-0";
+  if (status === "held" || status === "pending_payment") return "bg-warning/10 text-warning border-0";
+  return "bg-destructive/10 text-destructive border-0";
+}
+
+function statusLabel(status: BookingRecord["status"]) {
+  return status.replace(/_/g, " ");
+}
+
 export default function MyBookingsPage() {
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
 
@@ -69,8 +79,8 @@ export default function MyBookingsPage() {
                           <h3 className="font-semibold text-foreground">
                             {b.flight ? `${b.flight.from} → ${b.flight.to}` : b.type.toUpperCase()}
                           </h3>
-                          <Badge className={b.status === "confirmed" ? "bg-success/10 text-success border-0" : "bg-destructive/10 text-destructive border-0"}>
-                            {b.status}
+                          <Badge className={statusClass(b.status)}>
+                            {statusLabel(b.status)}
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5 font-mono">PNR: {b.pnr} · {b.id}</p>
@@ -107,7 +117,7 @@ export default function MyBookingsPage() {
                     <Button size="sm" variant="outline" className="rounded-lg gap-1.5" onClick={() => downloadETicket(b)}>
                       <Download className="h-3.5 w-3.5" /> E-Ticket
                     </Button>
-                    {b.status === "confirmed" && (
+                    {(b.status === "confirmed" || b.status === "held" || b.status === "pending_payment") && (
                       <Button size="sm" variant="outline" className="rounded-lg gap-1.5 text-destructive hover:text-destructive" onClick={() => handleCancel(b.id)}>
                         <X className="h-3.5 w-3.5" /> Cancel
                       </Button>

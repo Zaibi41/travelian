@@ -325,7 +325,6 @@ export default function PublicHotelsPage() {
                               <MapPin className="h-3 w-3 shrink-0" /> {hotel.city}, {hotel.country}
                             </p>
                           </div>
-                          <span className="shrink-0 text-xs text-muted-foreground">{hotel.provider}</span>
                         </div>
                         <div className="flex flex-wrap gap-1 mt-2">
                           {hotel.amenities.slice(0, 3).map(a => (
@@ -369,7 +368,6 @@ export default function PublicHotelsPage() {
                                   <MapPin className="h-3.5 w-3.5" /> {hotel.city}, {hotel.country}
                                 </p>
                               </div>
-                              <span className="text-xs text-muted-foreground shrink-0">{hotel.provider}</span>
                             </div>
                             <div className="flex flex-wrap gap-1.5 mt-3">
                               {hotel.amenities.map(a => (

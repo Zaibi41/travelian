@@ -21,7 +21,7 @@ const navLinks = [
   { label: "Flights", href: "/" },
   { label: "Hotels", href: "/hotels-search" },
   { label: "Umrah", href: "/umrah-packages" },
-  { label: "Tours", href: "/tour-packages" },
+  { label: "Study Abroad", href: "/study-abroad" },
   { label: "Visas", href: "/visa-services" },
   { label: "Deals", href: "/deals" },
   { label: "About", href: "/about" },
@@ -113,7 +113,8 @@ export function PublicNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center">
-            <img src="/travelian-official-logo.jpg" alt="Travelian" className="h-11 w-auto max-w-[210px] object-contain" />
+            <img src="/travelian-brand-logo.png" alt="Travelian" className="h-12 w-12 rounded-full object-contain" />
+            <span className="ml-2 text-xl font-black tracking-tight text-foreground">Travelian</span>
           </Link>
 
           <div className="hidden lg:flex items-center gap-1">

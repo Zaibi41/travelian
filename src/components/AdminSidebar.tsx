@@ -4,7 +4,6 @@ import { Link, useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
 import { getNavigationForRole, roleLabel } from "@/lib/admin-navigation";
-import { cn } from "@/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Sidebar,
@@ -50,10 +49,10 @@ export function AdminSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/70">
-      <SidebarHeader className={cn("py-3", collapsed ? "px-2" : "px-3")}>
-        <div className={cn("flex items-center rounded-2xl border border-sidebar-border/60 bg-sidebar-accent/35 py-2", collapsed ? "justify-center px-0" : "gap-2.5 px-2.5")}>
+      <SidebarHeader className="px-3 py-3">
+        <div className={collapsed ? "flex items-center justify-center rounded-2xl border border-sidebar-border/60 bg-sidebar-accent/35 px-1.5 py-2" : "flex items-center gap-2.5 rounded-2xl border border-sidebar-border/60 bg-sidebar-accent/35 px-2.5 py-2"}>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl gradient-primary shadow-sm">
-            <img src="/travelian-official-icon.png" alt="" className="h-7 w-7 object-contain" />
+            <img src="/travelian-brand-logo.png" alt="" className="h-7 w-7 object-contain" />
           </div>
           {!collapsed && (
             <div className="min-w-0">
@@ -143,7 +142,7 @@ export function AdminSidebar() {
         )}
       </div>
 
-      <SidebarFooter className={cn("mt-auto border-t border-sidebar-border/60", collapsed ? "p-2" : "p-3")}>
+      <SidebarFooter className="mt-auto border-t border-sidebar-border/60 p-3">
         {!collapsed && (
           <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/80 p-2.5 shadow-sm">
             <p className="text-[10px] uppercase tracking-[0.08em] text-sidebar-muted">Logged in as</p>

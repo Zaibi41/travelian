@@ -26,6 +26,7 @@ interface FlightOffer {
   provider: string;
   offerId: string;
   airline: string;
+  airlineImage?: string | null;
   flightNumber: string;
   origin: string;
   destination: string;
@@ -36,10 +37,14 @@ interface FlightOffer {
   stops?: number | null;
   baggage?: string | null;
   meal?: string | null;
+  segments?: Flight["segments"];
+  layovers?: Flight["layovers"];
   returnDepartureTime?: string | null;
   returnArrivalTime?: string | null;
   price: {
     currency: string;
+    base?: number | null;
+    taxes?: number | null;
     total: number;
   };
   fareOptions?: FareOption[];
@@ -61,12 +66,14 @@ export interface FareOption {
   bags: string;
   change: string;
   refund: string;
+  amenities?: string[];
   popular?: boolean;
 }
 
 export type TravelianFlight = Flight & {
   provider?: string;
   offerId?: string;
+  airlineImage?: string;
   fareOptions?: FareOption[];
 };
 
@@ -132,7 +139,8 @@ export interface TransferOffer {
 }
 
 export function extractAirportCode(value: string) {
-  const match = value.match(/\(([A-Z]{3})\)/i) || value.trim().match(/^([A-Z]{3})$/i);
+  const text = String(value || "");
+  const match = text.match(/\(([A-Z]{3})\)/i) || text.trim().match(/^([A-Z]{3})$/i);
   return match?.[1].toUpperCase() || "";
 }
 
@@ -233,33 +241,50 @@ export async function searchTransfers(input: TransferSearchInput, signal?: Abort
 }
 
 function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
+  const flightNumber = safeText(offer.flightNumber, "Not specified");
+  const airline = safeText(offer.airline, "Airline");
+  const origin = safeText(offer.origin);
+  const destination = safeText(offer.destination);
+  const cabin = safeText(offer.cabin, "Economy");
+
   return {
-    flightId: offer.offerId,
-    provider: offer.provider,
-    offerId: offer.offerId,
-    airline: offer.airline,
-    flightNumber: offer.flightNumber,
-    origin: offer.origin,
-    destination: offer.destination,
+    flightId: safeText(offer.offerId, `${safeText(offer.provider, "provider")}-${flightNumber}`),
+    provider: safeText(offer.provider),
+    offerId: safeText(offer.offerId),
+    airlineImage: safeText(offer.airlineImage),
+    airline,
+    flightNumber,
+    origin,
+    destination,
     departureTime: formatFlightDateTime(offer.departureTime),
     arrivalTime: formatFlightDateTime(offer.arrivalTime),
     price: offer.price?.total || 0,
     currency: offer.price?.currency || "PKR",
     seats: 9,
     status: "scheduled",
-    class: normalizeCabin(offer.cabin),
+    class: normalizeCabin(cabin),
     fareOptions: offer.fareOptions || [],
     duration: offer.duration || undefined,
     stops: offer.stops ?? undefined,
     baggage: offer.baggage || undefined,
     meal: offer.meal || undefined,
+    segments: (offer.segments || []).map((segment) => ({
+      ...segment,
+      departureTime: formatFlightDateTime(segment.departureTime),
+      arrivalTime: formatFlightDateTime(segment.arrivalTime),
+    })),
+    layovers: (offer.layovers || []).map((layover) => ({
+      ...layover,
+      arrivalTime: formatFlightDateTime(layover.arrivalTime),
+      departureTime: formatFlightDateTime(layover.departureTime),
+    })),
     returnDepartureTime: offer.returnDepartureTime ? formatFlightDateTime(offer.returnDepartureTime) : undefined,
     returnArrivalTime: offer.returnArrivalTime ? formatFlightDateTime(offer.returnArrivalTime) : undefined,
   };
 }
 
 function normalizeCabin(cabin: string): Flight["class"] {
-  const value = cabin.toLowerCase();
+  const value = String(cabin || "").toLowerCase();
   if (value.includes("business")) return "business";
   if (value.includes("first")) return "first";
   return "economy";
@@ -267,12 +292,19 @@ function normalizeCabin(cabin: string): Flight["class"] {
 
 function formatFlightDateTime(value: string | null | undefined) {
   if (!value) return "";
+  const text = String(value);
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value.replace("T", " ").slice(0, 16);
+  if (Number.isNaN(date.getTime())) return text.replace("T", " ").slice(0, 16);
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   const hh = String(date.getHours()).padStart(2, "0");
   const min = String(date.getMinutes()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
+}
+
+function safeText(value: unknown, fallback = "") {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim();
+  return text || fallback;
 }

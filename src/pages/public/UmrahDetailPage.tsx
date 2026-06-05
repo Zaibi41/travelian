@@ -1,10 +1,10 @@
-import { CalendarDays, Check, Hotel, Package, Plane, Users } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { CalendarDays, Check, Package, Plane, Users } from "lucide-react";
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
-import { PackageImage } from "@/components/public/PackageImage";
+import { UmrahPackageShowcase } from "@/components/public/UmrahPackageShowcase";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 
@@ -12,7 +12,7 @@ const whatsappBase = "https://wa.me/923244440014";
 const siteBase = "https://www.travelian.pk";
 
 function formatPrice(value?: number) {
-  return value ? `PKR ${value.toLocaleString()}` : "On request";
+  return value && value > 0 ? `PKR ${value.toLocaleString()}` : "On request";
 }
 
 export default function UmrahDetailPage() {
@@ -22,7 +22,7 @@ export default function UmrahDetailPage() {
 
   if (!item) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+      <div className="mx-auto max-w-4xl px-4 py-14 sm:px-6 lg:px-8">
         <div className="rounded-2xl border bg-card p-8 text-center shadow-card">
           <Package className="mx-auto h-12 w-12 text-muted-foreground" />
           <h1 className="mt-4 text-2xl font-bold text-foreground">Package details are not published</h1>
@@ -45,79 +45,32 @@ export default function UmrahDetailPage() {
     "I want to inquire about this Umrah package:",
     "",
     `Package: ${item.name}`,
-    `Duration: ${item.duration}`,
+    `Duration: ${item.duration || "Please confirm"}`,
     `Departure City: ${item.departureCity || item.city || "Please confirm"}`,
-    `Makkah Hotel: ${item.makkahHotel || "Please confirm"}`,
-    `Madinah Hotel: ${item.madinahHotel || "Please confirm"}`,
+    `Makkah Hotel: ${item.makkahHotel || item.hotelOptions?.[0]?.makkahHotel || "Please confirm"}`,
+    `Madinah Hotel: ${item.madinahHotel || item.hotelOptions?.[0]?.madinahHotel || "Please confirm"}`,
     `Room Sharing: ${item.roomSharing || "Please confirm"}`,
-    `Price From: PKR ${item.basePrice.toLocaleString()}`,
+    `Price From: ${formatPrice(item.basePrice)}`,
     `Package URL: ${siteBase}/umrah/${item.packageId}`,
     "",
     "Please share availability and booking details.",
   ].join("\n");
-  const bookingLink = `/request-booking?type=umrah&id=${encodeURIComponent(item.packageId)}`;
 
   return (
-    <div className="bg-muted/30">
-      <section className="gradient-hero">
-        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_420px] lg:px-8">
-          <div className="text-primary-foreground">
-            <Badge className="mb-4 bg-white/15 text-primary-foreground hover:bg-white/20">{item.seatsLabel || "Travelian Umrah"}</Badge>
-            <h1 className="text-3xl font-black tracking-tight md:text-5xl">{item.name}</h1>
-            <p className="mt-3 max-w-3xl text-primary-foreground/80">{item.description}</p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              <Badge className="bg-white/15 text-primary-foreground hover:bg-white/20">{item.duration}</Badge>
-              {item.departureCity && <Badge className="bg-white/15 text-primary-foreground hover:bg-white/20">{item.departureCity}</Badge>}
-              {item.packageType && <Badge className="bg-white/15 text-primary-foreground hover:bg-white/20 capitalize">{item.packageType}</Badge>}
-            </div>
-          </div>
-          <Card className="border-white/10 bg-white shadow-2xl">
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground">Starting from</p>
-              <p className="mt-1 text-4xl font-black text-primary">PKR {item.basePrice.toLocaleString()}</p>
-              <p className="mt-1 text-sm text-muted-foreground">Per person, package terms apply</p>
-              <div className="mt-5 grid gap-2">
-                <Button asChild className="gradient-primary text-primary-foreground">
-                  <Link to={bookingLink}>Book Now</Link>
-                </Button>
-                <a href={`${whatsappBase}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer">
-                  <Button variant="outline" className="w-full"><WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp Inquiry</Button>
-                </a>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-        <PackageImage src={item.image} alt={item.name} className="h-[320px] w-full rounded-2xl shadow-card md:h-[520px]" />
+    <div className="bg-muted/30 py-8">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+        <UmrahPackageShowcase item={item} detailMode />
 
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <div className="space-y-6">
-            <Card className="shadow-card">
-              <CardHeader><CardTitle className="flex items-center gap-2"><Hotel className="h-5 w-5 text-primary" /> Hotels</CardTitle></CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Makkah Hotel</p>
-                  <h2 className="mt-1 text-lg font-bold">{item.makkahHotel || "On request"}</h2>
-                  {item.makkahHotelInfo && <p className="mt-1 text-sm text-muted-foreground">{item.makkahHotelInfo}</p>}
-                </div>
-                <div className="rounded-xl border p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Madinah Hotel</p>
-                  <h2 className="mt-1 text-lg font-bold">{item.madinahHotel || "On request"}</h2>
-                  {item.madinahHotelInfo && <p className="mt-1 text-sm text-muted-foreground">{item.madinahHotelInfo}</p>}
-                </div>
-              </CardContent>
-            </Card>
-
             {item.flightDates?.length ? (
               <Card className="shadow-card">
                 <CardHeader><CardTitle className="flex items-center gap-2"><Plane className="h-5 w-5 text-primary" /> Flight dates</CardTitle></CardHeader>
                 <CardContent className="grid gap-3">
                   {item.flightDates.map((row, index) => (
                     <div key={`${row.outboundDate}-${index}`} className="grid gap-3 rounded-xl border p-4 md:grid-cols-2">
-                      <div><p className="text-xs text-muted-foreground">Outbound</p><p className="font-semibold">{row.outboundDate || "Date on request"} {row.outboundRoute ? `· ${row.outboundRoute}` : ""}</p></div>
-                      <div><p className="text-xs text-muted-foreground">Return</p><p className="font-semibold">{row.returnDate || "Date on request"} {row.returnRoute ? `· ${row.returnRoute}` : ""}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Outbound</p><p className="font-semibold">{row.outboundDate || "Date on request"} {row.outboundRoute ? `- ${row.outboundRoute}` : ""}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Return</p><p className="font-semibold">{row.returnDate || "Date on request"} {row.returnRoute ? `- ${row.returnRoute}` : ""}</p></div>
                     </div>
                   ))}
                 </CardContent>
@@ -126,9 +79,9 @@ export default function UmrahDetailPage() {
 
             {item.hotelOptions?.length ? (
               <Card className="shadow-card">
-                <CardHeader><CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-primary" /> Hotel options & prices</CardTitle></CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Users className="h-5 w-5 text-primary" /> Additional hotel options</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
-                  {item.hotelOptions.map((option, index) => (
+                  {item.hotelOptions.slice(1).map((option, index) => (
                     <div key={`${option.label}-${index}`} className="rounded-xl border p-4">
                       <h2 className="font-bold">{option.label}</h2>
                       <div className="mt-3 grid gap-3 md:grid-cols-2">
@@ -143,18 +96,26 @@ export default function UmrahDetailPage() {
                       </div>
                     </div>
                   ))}
+                  {item.hotelOptions.length <= 1 && <p className="text-sm text-muted-foreground">No additional hotel options are published for this package.</p>}
                 </CardContent>
               </Card>
             ) : null}
+
+            {item.description && (
+              <Card className="shadow-card">
+                <CardHeader><CardTitle>Package overview</CardTitle></CardHeader>
+                <CardContent><p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{item.description}</p></CardContent>
+              </Card>
+            )}
           </div>
 
           <aside className="space-y-6">
             <Card className="shadow-card">
               <CardHeader><CardTitle className="flex items-center gap-2"><Check className="h-5 w-5 text-primary" /> Package includes</CardTitle></CardHeader>
               <CardContent className="space-y-2">
-                {item.includes.map((include) => (
+                {(item.includes || []).length ? (item.includes || []).map((include) => (
                   <p key={include} className="flex items-center gap-2 text-sm"><Check className="h-4 w-4 text-success" /> {include}</p>
-                ))}
+                )) : <p className="text-sm text-muted-foreground">Package inclusions are available on request.</p>}
               </CardContent>
             </Card>
 
@@ -171,7 +132,7 @@ export default function UmrahDetailPage() {
             {item.terms && (
               <Card className="shadow-card">
                 <CardHeader><CardTitle>Terms and conditions</CardTitle></CardHeader>
-                <CardContent><p className="whitespace-pre-line text-sm text-muted-foreground">{item.terms}</p></CardContent>
+                <CardContent><p className="whitespace-pre-line text-sm leading-7 text-muted-foreground">{item.terms}</p></CardContent>
               </Card>
             )}
 

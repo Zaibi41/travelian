@@ -306,6 +306,58 @@ export async function listTickets({ includeDeleted = false } = {}) {
     .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
 }
 
+export async function listBookings({ includeDeleted = false } = {}) {
+  ensureTable();
+  const result = await db.send(new QueryCommand({
+    TableName: tableName,
+    KeyConditionExpression: "pk = :pk",
+    ExpressionAttributeValues: { ":pk": "BOOKING" }
+  }));
+  return (result.Items || [])
+    .map(fromItem)
+    .filter(item => includeDeleted || !item.deletedAt)
+    .sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+}
+
+export async function getBookingRecord(bookingId) {
+  ensureTable();
+  const result = await db.send(new GetCommand({
+    TableName: tableName,
+    Key: { pk: "BOOKING", sk: `BOOKING#${bookingId}` }
+  }));
+  return result.Item ? fromItem(result.Item) : null;
+}
+
+export async function upsertBookingRecord(input) {
+  ensureTable();
+  const now = new Date().toISOString();
+  const id = input.id || input.bookingId || `TRV-${Date.now()}`;
+  const existing = await getBookingRecord(id);
+  const item = {
+    ...(existing || {}),
+    ...input,
+    id,
+    bookingId: input.bookingId || existing?.bookingId || id,
+    pnr: input.pnr || existing?.pnr || "",
+    type: input.type || existing?.type || "flight",
+    status: input.status || existing?.status || "held",
+    travelers: Array.isArray(input.travelers) ? input.travelers : existing?.travelers || [],
+    contact: input.contact || existing?.contact || {},
+    addons: Array.isArray(input.addons) ? input.addons : existing?.addons || [],
+    paymentMethod: input.paymentMethod || existing?.paymentMethod || "hold",
+    paymentStatus: input.paymentStatus || existing?.paymentStatus || "unpaid",
+    ticketStatus: input.ticketStatus || existing?.ticketStatus || "not_issued",
+    pricing: input.pricing || existing?.pricing || { base: 0, addons: 0, taxes: 0, total: 0, currency: "PKR" },
+    createdAt: existing?.createdAt || input.createdAt || now,
+    updatedAt: now
+  };
+  await db.send(new PutCommand({
+    TableName: tableName,
+    Item: { pk: "BOOKING", sk: `BOOKING#${id}`, ...item }
+  }));
+  return item;
+}
+
 export async function getTicket(ticketId) {
   ensureTable();
   const result = await db.send(new GetCommand({

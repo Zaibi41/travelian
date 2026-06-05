@@ -44,6 +44,16 @@ function segmentsFromParam(value: string | null): FlightSegment[] {
   }
 }
 
+function startOfLocalDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function clampToToday(date: Date | undefined) {
+  const today = startOfLocalDay(new Date());
+  if (!date) return today;
+  return startOfLocalDay(date) < today ? today : date;
+}
+
 export default function PublicFlightsPage({ bookingPath = "/booking", adminMode = false }: { bookingPath?: string; adminMode?: boolean } = {}) {
   const { currency: selectedCurrency, setCurrency } = useLocale();
   const [params, setParams] = useSearchParams();
@@ -57,7 +67,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const initAdults = parseInt(params.get("adults") || "1") || 1;
   const initChildren = parseInt(params.get("children") || "0") || 0;
   const initInfants = parseInt(params.get("infants") || "0") || 0;
-  const initDate = parseDateOnly(initDateStr) || new Date();
+  const initDate = clampToToday(parseDateOnly(initDateStr));
   const initReturnDate = parseDateOnly(initReturnDateStr);
   const initSegments = segmentsFromParam(params.get("segments"));
 
@@ -76,7 +86,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [returnDate, setReturnDate] = useState<Date | undefined>(initReturnDate);
   const [tripType, setTripType] = useState<FlightTripType>(initTripType);
   const [segments, setSegments] = useState<FlightSegment[]>(initSegments);
-  const [selectedDayIndex, setSelectedDayIndex] = useState(3);
   const [modifyOpen, setModifyOpen] = useState(false);
   const [apiFlights, setApiFlights] = useState<TravelianFlight[]>([]);
   const [apiStatus, setApiStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -120,7 +129,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     const firstSegment = effectiveSegments[0];
     const effectiveFrom = firstSegment?.from || editFrom;
     const effectiveTo = firstSegment?.to || editTo;
-    const effectiveDate = firstSegment?.date || editDate || departDate;
+    const effectiveDate = clampToToday(firstSegment?.date || editDate || departDate);
     setFrom(effectiveFrom);
     setTo(effectiveTo);
     setDepartDate(effectiveDate);
@@ -217,6 +226,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
   const getDuration = (dep: string, arr: string) => {
     const ms = new Date(arr).getTime() - new Date(dep).getTime();
+    if (!Number.isFinite(ms) || ms < 0) return "Duration TBA";
     return `${Math.floor(ms / 3600000)}h ${Math.round((ms % 3600000) / 60000)}m`;
   };
 
@@ -242,17 +252,50 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return `https://wa.me/923244440014?text=${encodeURIComponent(message)}`;
   };
 
+  const bookingHref = (flight: TravelianFlight, fare?: { tier: string; price: { base?: number | null; taxes?: number | null; total: number; currency?: string }; amenities?: string[] }) => {
+    const query = new URLSearchParams({
+      type: "flight",
+      flightId: flight.flightId,
+      airline: flight.airline,
+      flightNo: flight.flightNumber,
+      from: flight.origin,
+      to: flight.destination,
+      date: format(departDate, "MMM dd, yyyy"),
+      cabin: flight.class,
+      trip: tripType,
+      adults: String(travelers.adults),
+      children: String(travelers.children),
+      infants: String(travelers.infants),
+      price: String(fare?.price.total ?? flight.price),
+      currency: fare?.price.currency || flight.currency || "PKR",
+    });
+    if (fare?.tier) query.set("fare", fare.tier);
+    if (Number.isFinite(Number(fare?.price.base))) query.set("baseFare", String(fare?.price.base));
+    if (Number.isFinite(Number(fare?.price.taxes))) query.set("taxes", String(fare?.price.taxes));
+    if (fare?.amenities?.length) query.set("farePerks", fare.amenities.join("|"));
+    if (flight.layovers?.length) query.set("layovers", JSON.stringify(flight.layovers));
+    if (flight.segments?.length) query.set("segments", JSON.stringify(flight.segments));
+    if (tripType === "roundtrip" && returnDate) query.set("return", format(returnDate, "MMM dd, yyyy"));
+    return `${bookingPath}?${query.toString()}`;
+  };
+
   const bestFlight = filtered.length > 0 ? filtered.reduce((best, f) => f.price < best.price ? f : best, filtered[0]) : null;
   const fastestFlight = filtered.length > 0 ? filtered.reduce((fast, f) => {
     const fDur = new Date(f.arrivalTime).getTime() - new Date(f.departureTime).getTime();
     const fastDur = new Date(fast.arrivalTime).getTime() - new Date(fast.departureTime).getTime();
+    if (!Number.isFinite(fDur)) return fast;
+    if (!Number.isFinite(fastDur)) return f;
     return fDur < fastDur ? f : fast;
   }, filtered[0]) : null;
 
-  // 7 days centered around selected date (index 3 = center)
+  // Seven bookable dates. Past travel dates are never shown as search options.
   const dateFlexDays = useMemo(() => {
+    const today = startOfLocalDay(new Date());
+    const selected = startOfLocalDay(departDate);
+    const daysFromToday = Math.max(0, Math.floor((selected.getTime() - today.getTime()) / 86400000));
+    const start = selected <= today ? today : addDays(selected, -Math.min(3, daysFromToday));
     return Array.from({ length: 7 }, (_, i) => {
-      const d = addDays(departDate, i - 3);
+      const d = addDays(start, i);
       return { date: d };
     });
   }, [departDate]);
@@ -306,19 +349,17 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               <button
                 key={i}
                 onClick={() => {
-                  setSelectedDayIndex(i);
-                  setDepartDate(day.date);
-                  setSelectedDayIndex(3);
+                  setDepartDate(clampToToday(day.date));
                 }}
                 className={cn(
                   "flex flex-col items-center px-4 py-2 rounded-xl text-xs font-medium transition-all min-w-[100px] shrink-0",
-                  selectedDayIndex === i
+                  formatDateOnly(day.date) === formatDateOnly(departDate)
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted/50",
                 )}
               >
                 <span>{format(day.date, "EEE, MMM d")}</span>
-                <span className={cn("text-[10px] mt-0.5", selectedDayIndex === i ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                <span className={cn("text-[10px] mt-0.5", formatDateOnly(day.date) === formatDateOnly(departDate) ? "text-primary-foreground/80" : "text-muted-foreground")}>
                   See Price
                 </span>
               </button>
@@ -416,19 +457,21 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               const isBest = bestFlight?.flightId === flight.flightId;
               const isCheapest = sort === "price-asc" && idx === 0;
               const isFastest = fastestFlight?.flightId === flight.flightId;
+              const hasFareOptions = (flight.fareOptions || []).length > 0;
+              const fareOptionsOpen = selectedFlight === flight.flightId;
 
               return (
                 <Card
                   key={flight.flightId}
-                  className={`overflow-hidden transition-all duration-300 border-0 shadow-card hover:shadow-hover cursor-pointer ${
-                    selectedFlight === flight.flightId ? "ring-2 ring-primary" : ""
+                  className={`overflow-hidden transition-all duration-300 border-0 shadow-card hover:shadow-hover ${hasFareOptions ? "cursor-pointer" : ""} ${
+                    fareOptionsOpen ? "ring-2 ring-primary" : ""
                   }`}
-                  onClick={() => setSelectedFlight(flight.flightId)}
+                  onClick={() => hasFareOptions && setSelectedFlight((current) => current === flight.flightId ? null : flight.flightId)}
                 >
                   <CardContent className="p-5">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex items-center gap-4 flex-1">
-                        <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} />
+                        <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={flight.airlineImage} />
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <p className="text-sm font-semibold text-foreground">{flight.airline}</p>
@@ -441,7 +484,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           </div>
                           <div className="flex items-center gap-3 mt-3">
                             <div className="text-center">
-                              <p className="text-xl font-bold text-foreground">{flight.departureTime.split(' ')[1]}</p>
+                              <p className="text-xl font-bold text-foreground">{flight.departureTime.split(' ')[1] || "TBA"}</p>
                               <p className="text-xs text-muted-foreground">{flight.origin}</p>
                             </div>
                             <div className="flex-1 flex flex-col items-center px-2">
@@ -453,7 +496,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               <span className="text-[10px] text-success font-medium">{flight.stops ? `${flight.stops} stop${flight.stops === 1 ? "" : "s"}` : "Non-stop"}</span>
                             </div>
                             <div className="text-center">
-                              <p className="text-xl font-bold text-foreground">{flight.arrivalTime.split(' ')[1]}</p>
+                              <p className="text-xl font-bold text-foreground">{flight.arrivalTime.split(' ')[1] || "TBA"}</p>
                               <p className="text-xs text-muted-foreground">{flight.destination}</p>
                             </div>
                           </div>
@@ -479,9 +522,24 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           </div>
                         </div>
                         <div className="flex flex-col gap-2">
-                          <Link to={`${bookingPath}?type=flight&flightId=${flight.flightId}&airline=${encodeURIComponent(flight.airline)}&flightNo=${encodeURIComponent(flight.flightNumber)}&from=${encodeURIComponent(flight.origin)}&to=${encodeURIComponent(flight.destination)}&date=${encodeURIComponent(format(departDate, "MMM dd, yyyy"))}&cabin=${encodeURIComponent(flight.class)}&price=${flight.price}&currency=${encodeURIComponent(flight.currency || "PKR")}`}>
+                          <Link to={bookingHref(flight)}>
                             <Button className="gradient-primary text-primary-foreground rounded-xl h-11 px-5">Continue Booking</Button>
                           </Link>
+                          {hasFareOptions && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="w-full rounded-xl"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setSelectedFlight((current) => current === flight.flightId ? null : flight.flightId);
+                              }}
+                            >
+                              {fareOptionsOpen ? "Hide Fare Options" : "View Fare Options"}
+                            </Button>
+                          )}
                           <a href={flightWhatsAppHref(flight)} target="_blank" rel="noreferrer">
                             <Button variant="outline" size="sm" className="w-full rounded-xl gap-2">
                               <WhatsAppIcon className="h-4 w-4" /> WhatsApp Help
@@ -491,44 +549,31 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       </div>
                     </div>
 
-                    {/* Expanded fare options */}
-                    {selectedFlight === flight.flightId && (
-                      <div className="mt-5 pt-5 border-t grid grid-cols-1 md:grid-cols-3 gap-3 animate-fade-in">
-                        {(flight.fareOptions || []).length === 0 && (
-                          <div className="md:col-span-3 rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">
-                            Fare options were not returned by the provider for this offer. Continue with the main fare.
-                          </div>
-                        )}
-                        {(flight.fareOptions || []).map(fare => (
-                          <div
-                            key={fare.tier}
-                            className={`border rounded-xl p-4 relative transition-all hover:border-primary/50 ${
-                              fare.popular ? "border-gold bg-gold-light/30 shadow-premium" : ""
-                            }`}
-                          >
-                            {fare.popular && (
-                              <Badge className="absolute -top-2 left-1/2 -translate-x-1/2 bg-gold text-gold-foreground border-0 text-[10px]">
-                                Popular
-                              </Badge>
-                            )}
-                            <h4 className="font-semibold text-foreground text-sm">{fare.tier}</h4>
-                            <p className="text-xl font-bold text-foreground mt-1">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</p>
-                            <div className="mt-3 space-y-1.5 text-xs text-muted-foreground">
-                              <p className="flex items-center gap-1.5"><Luggage className="h-3 w-3" /> {fare.bags}</p>
-                              <p className="flex items-center gap-1.5"><ArrowLeftRight className="h-3 w-3" /> {fare.change}</p>
-                              <p className="flex items-center gap-1.5"><Shield className="h-3 w-3" /> {fare.refund}</p>
+                    {hasFareOptions && fareOptionsOpen && (
+                      <div className="mt-5 border-t pt-4 animate-fade-in">
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                          <p className="text-sm font-semibold text-foreground">Fare options</p>
+                          <p className="text-xs text-muted-foreground">Choose the fare rule that fits this passenger.</p>
+                        </div>
+                        <div className="overflow-hidden rounded-xl border">
+                          {(flight.fareOptions || []).map((fare) => (
+                            <div key={fare.tier} className="grid gap-3 border-b bg-card p-3 text-sm last:border-b-0 md:grid-cols-[1.1fr_1fr_1fr_1fr_auto] md:items-center">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-foreground">{fare.tier}</span>
+                                {fare.popular && <Badge className="bg-gold text-gold-foreground border-0 text-[10px]">Popular</Badge>}
+                              </div>
+                              <span className="flex items-center gap-1.5 text-muted-foreground"><Luggage className="h-3.5 w-3.5 text-primary" /> {fare.bags || flight.baggage || "Baggage TBA"}</span>
+                              <span className="flex items-center gap-1.5 text-muted-foreground"><Coffee className="h-3.5 w-3.5 text-primary" /> {flight.meal || "Meal info not available"}</span>
+                              <span className="text-muted-foreground">{fare.refund || "Refund rule on request"}</span>
+                              <div className="flex items-center justify-between gap-3 md:justify-end">
+                                <span className="whitespace-nowrap text-base font-black text-foreground">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</span>
+                                <Link to={bookingHref(flight, fare)}>
+                                  <Button size="sm" className="rounded-lg">Book Fare</Button>
+                                </Link>
+                              </div>
                             </div>
-                            <Link to={`${bookingPath}?type=flight&flightId=${flight.flightId}&airline=${encodeURIComponent(flight.airline)}&flightNo=${encodeURIComponent(flight.flightNumber)}&from=${encodeURIComponent(flight.origin)}&to=${encodeURIComponent(flight.destination)}&date=${encodeURIComponent(format(departDate, "MMM dd, yyyy"))}&cabin=${encodeURIComponent(flight.class)}&fare=${fare.tier}&price=${fare.price.total}&currency=${encodeURIComponent(fare.price.currency || flight.currency || "PKR")}`}>
-                              <Button
-                                size="sm"
-                                className={`w-full mt-3 rounded-lg ${fare.popular ? "gradient-primary text-primary-foreground" : ""}`}
-                                variant={fare.popular ? "default" : "outline"}
-                              >
-                                Continue {fare.tier}
-                              </Button>
-                            </Link>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     )}
                   </CardContent>

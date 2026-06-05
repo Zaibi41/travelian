@@ -14,6 +14,7 @@ const airlineCodes: Record<string, string> = {
   qr: "QR",
   sv: "SV",
   tk: "TK",
+  ul: "UL",
   xy: "XY",
   pia: "PK",
   "pakistan international airlines": "PK",
@@ -45,7 +46,7 @@ const airlineCodes: Record<string, string> = {
 };
 
 const localAirlineLogos: Record<string, string> = {
-  "1g": "/airline-logos/travelport.png",
+  "1g": "/airline-logos/travelport.svg",
   "9p": "/airline-logos/fly-jinnah.png",
   ek: "/airline-logos/emirates.png",
   ey: "/airline-logos/etihad.png",
@@ -95,21 +96,27 @@ const localAirlineLogos: Record<string, string> = {
   "saudi airline": "/airline-logos/saudia.png",
   "saudi airlines": "/airline-logos/saudia.png",
   "srilankan airlines": "/airline-logos/srilankan-airlines.png",
+  "sri lankan airlines": "/airline-logos/srilankan-airlines.png",
   srilankan: "/airline-logos/srilankan-airlines.png",
-  travelport: "/airline-logos/travelport.png",
+  "sri lankan": "/airline-logos/srilankan-airlines.png",
+  srilanka: "/airline-logos/srilankan-airlines.png",
+  ul: "/airline-logos/srilankan-airlines.png",
+  travelport: "/airline-logos/travelport.svg",
   turkish: "/airline-logos/turkish-airlines.png",
   "turkish airlines": "/airline-logos/turkish-airlines.png",
 };
 
 function resolveCode(airline: string, flightNumber?: string) {
-  const flightPrefix = flightNumber?.match(/^[A-Z0-9]{2}/i)?.[0]?.toUpperCase();
+  const flightText = String(flightNumber || "").trim();
+  const flightPrefix = flightText.match(/^[A-Z0-9]{2}/i)?.[0]?.toUpperCase();
   if (flightPrefix) return flightPrefix;
-  return airlineCodes[airline.toLowerCase()] || "";
+  return airlineCodes[String(airline || "").toLowerCase()] || "";
 }
 
-export function AirlineLogo({ airline, flightNumber }: { airline: string; flightNumber?: string }) {
+export function AirlineLogo({ airline, flightNumber }: { airline: string; flightNumber?: string; imageUrl?: string | null }) {
   const [failed, setFailed] = useState(false);
-  const normalizedAirline = airline.toLowerCase().trim();
+  const airlineName = String(airline || "Airline");
+  const normalizedAirline = airlineName.toLowerCase().trim();
   const code = resolveCode(airline, flightNumber);
   const localLogo = localAirlineLogos[normalizedAirline] || localAirlineLogos[code.toLowerCase()];
   const logoShell = "flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-white to-slate-50 shadow-[0_6px_18px_rgba(15,23,42,0.08)] ring-1 ring-slate-900/5";
@@ -120,7 +127,7 @@ export function AirlineLogo({ airline, flightNumber }: { airline: string; flight
       <div className={logoShell}>
         <img
           src={localLogo}
-          alt={`${airline} logo`}
+          alt={`${airlineName} logo`}
           className={logoImage}
           loading="lazy"
           onError={() => setFailed(true)}
@@ -138,14 +145,8 @@ export function AirlineLogo({ airline, flightNumber }: { airline: string; flight
   }
 
   return (
-    <div className={logoShell}>
-      <img
-        src={`https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/${code}.svg`}
-        alt={`${airline} logo`}
-        className={logoImage}
-        loading="lazy"
-        onError={() => setFailed(true)}
-      />
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/15">
+      <Plane className="h-6 w-6" />
     </div>
   );
 }

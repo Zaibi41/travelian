@@ -6,6 +6,7 @@ import {
   deleteBlogPost,
   getRandomPackageImage,
   getBlogPost,
+  listBookings,
   getPackage,
   getNotificationSettings,
   listTickets,
@@ -22,6 +23,7 @@ import {
   softDeleteTicket,
   upsertBlogPost,
   upsertBookingRequest,
+  upsertBookingRecord,
   upsertCustomer,
   upsertNotificationSettings,
   upsertPricingRule,
@@ -61,6 +63,8 @@ const routes = {
   "DELETE /content/packages/{category}/{packageId}": removePackageContent,
   "GET /content/tickets": listTicketContent,
   "POST /content/tickets": saveTicketContent,
+  "GET /content/bookings": listBookingContent,
+  "POST /content/bookings": saveBookingContent,
   "DELETE /content/tickets/{ticketId}": removeTicketContent,
   "GET /content/customers": listCustomerContent,
   "POST /content/customers": saveCustomerContent,
@@ -270,6 +274,17 @@ async function saveTicketContent(event) {
   const body = await readJson(event);
   requireFields(body, ["passengerName", "ticketNumber"]);
   return { item: await upsertTicket(body) };
+}
+
+async function listBookingContent(event) {
+  const includeDeleted = event.queryStringParameters?.includeDeleted === "true";
+  return { items: await listBookings({ includeDeleted }) };
+}
+
+async function saveBookingContent(event) {
+  const body = await readJson(event);
+  requireFields(body, ["id", "type", "status", "travelers", "contact", "pricing"]);
+  return { item: await upsertBookingRecord(body) };
 }
 
 async function removeTicketContent(event, path) {

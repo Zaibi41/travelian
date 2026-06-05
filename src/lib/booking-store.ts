@@ -1,8 +1,9 @@
 // LocalStorage-backed booking persistence for Travelian (frontend-only)
 
-export type BookingStatus = "confirmed" | "cancelled";
+export type BookingStatus = "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired";
 
 export interface BookingTraveler {
+  passengerType?: "adult" | "child" | "infant";
   title: string;
   firstName: string;
   lastName: string;
@@ -16,7 +17,7 @@ export interface BookingTraveler {
 }
 
 export interface BookingContact {
-  email: string;
+  email?: string;
   phone: string;
   altPhone?: string;
 }
@@ -55,6 +56,9 @@ export interface BookingRecord {
   seat?: string;
   addons: { id: string; name: string; price: number }[];
   paymentMethod: string;
+  paymentStatus?: "unpaid" | "pending" | "paid";
+  ticketStatus?: "not_issued" | "issued";
+  holdExpiresAt?: string;
   pricing: BookingPricing;
 }
 
