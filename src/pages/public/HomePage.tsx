@@ -3,39 +3,61 @@ import { SEO } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, MapPin, ArrowRight, Shield, Headphones, CreditCard, Flame, TrendingUp, Heart, ChevronRight, Percent, Zap, Globe, Award, Plane, Check, Hotel } from "lucide-react";
+import { Star, MapPin, ArrowRight, ShieldCheck, Flame, TrendingUp, Heart, ChevronRight, Percent, Globe, Users, Plane, Hotel } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getBlogImage } from "@/lib/blog-images";
-import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { PackageImage } from "@/components/public/PackageImage";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 
 const destinations = [
-  { name: "Makkah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=400&h=500&fit=crop&q=80", badge: "Popular" },
-  { name: "Istanbul", country: "Turkey", image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=400&h=500&fit=crop" },
-  { name: "Dubai", country: "UAE", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&h=500&fit=crop", badge: "Trending" },
-  { name: "Kuala Lumpur", country: "Malaysia", image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&h=500&fit=crop" },
-  { name: "Cairo", country: "Egypt", image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=400&h=500&fit=crop" },
-  { name: "Madinah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=400&h=500&fit=crop&q=80", badge: "Holy City" },
+  { name: "Makkah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=400&h=500&fit=crop&q=80", badge: "Popular", priceFrom: 89000 },
+  { name: "Istanbul", country: "Turkey", image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=400&h=500&fit=crop", priceFrom: 64500 },
+  { name: "Dubai", country: "UAE", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&h=500&fit=crop", badge: "Trending", priceFrom: 52000 },
+  { name: "Kuala Lumpur", country: "Malaysia", image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=400&h=500&fit=crop", priceFrom: 98000 },
+  { name: "Cairo", country: "Egypt", image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=400&h=500&fit=crop", priceFrom: 76500 },
+  { name: "Madinah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=400&h=500&fit=crop&q=80", badge: "Holy City", priceFrom: 92500 },
 ];
 
-const deals: Array<{ title: string; discount: string; desc: string; bg: string; expiry: string }> = [];
+const deals = [
+  { title: "Eid Umrah Special", discount: "Up to 25% off", desc: "21-day premium packages with 5★ hotels in Makkah & Madinah.", bg: "gradient-deal", expiry: "Ends in 6 days", to: "/umrah-packages" },
+  { title: "Dubai City Break", discount: "From PKR 52,000", desc: "Return flights + 3 nights stay near Burj Khalifa.", bg: "gradient-primary", expiry: "Limited seats", to: "/packages-search" },
+  { title: "Istanbul Long Weekend", discount: "15% off bundle", desc: "Flights + Bosphorus cruise + Sultanahmet hotel.", bg: "gradient-gold", expiry: "This week only", to: "/packages-search" },
+];
 
 const features = [
-  { icon: Shield, title: "Booking Support", desc: "Help from search through ticketing" },
-  { icon: Award, title: "Live Fare Search", desc: "Compare available supplier fares" },
-  { icon: Percent, title: "No Hidden Charges", desc: "Transparent pricing, no surprises" },
-  { icon: Headphones, title: "24/7 Support", desc: "Round the clock assistance" },
+  { icon: Users, title: "1M+ trips booked", desc: "Pakistan's trusted travel partner since 2019" },
+  { icon: Star, title: "4.8 / 5 rating", desc: "From 12,400+ verified traveller reviews" },
+  { icon: ShieldCheck, title: "PCI-DSS secure", desc: "Bank-grade encrypted payments" },
+  { icon: Percent, title: "No hidden fees", desc: "Transparent fares, free cancellation options" },
 ];
 
 const topCountries = [
-  { country: "Saudi Arabia", popular: ["Makkah", "Madinah", "Riyadh", "Jeddah"], image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=900&h=620&fit=crop&q=80" },
-  { country: "Turkey", popular: ["Istanbul", "Antalya", "Cappadocia", "Bodrum"], image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=900&h=620&fit=crop&q=80" },
-  { country: "UAE", popular: ["Dubai", "Abu Dhabi", "Sharjah", "Ras Al Khaimah"], image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=900&h=620&fit=crop&q=80" },
-  { country: "Malaysia", popular: ["KL", "Langkawi", "Penang", "Johor Bahru"], image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=900&h=620&fit=crop&q=80" },
-  { country: "Egypt", popular: ["Cairo", "Luxor", "Sharm El Sheikh", "Hurghada"], image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=900&h=620&fit=crop&q=80" },
-  { country: "Indonesia", popular: ["Bali", "Jakarta", "Yogyakarta", "Lombok"], image: "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=900&h=620&fit=crop&q=80" },
+  { country: "Saudi Arabia", popular: ["Makkah", "Madinah", "Riyadh", "Jeddah"], image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=900&h=620&fit=crop&q=80", properties: 248 },
+  { country: "Turkey", popular: ["Istanbul", "Antalya", "Cappadocia", "Bodrum"], image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=900&h=620&fit=crop&q=80", properties: 312 },
+  { country: "UAE", popular: ["Dubai", "Abu Dhabi", "Sharjah", "Ras Al Khaimah"], image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=900&h=620&fit=crop&q=80", properties: 418 },
+  { country: "Malaysia", popular: ["KL", "Langkawi", "Penang", "Johor Bahru"], image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=900&h=620&fit=crop&q=80", properties: 186 },
+  { country: "Egypt", popular: ["Cairo", "Luxor", "Sharm El Sheikh", "Hurghada"], image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=900&h=620&fit=crop&q=80", properties: 142 },
+  { country: "Indonesia", popular: ["Bali", "Jakarta", "Yogyakarta", "Lombok"], image: "https://images.unsplash.com/photo-1537953773345-d172ccf13cf1?w=900&h=620&fit=crop&q=80", properties: 224 },
+];
+
+// Curated fallbacks so the home page never shows empty rails
+const fallbackHotels = [
+  { id: "fh-1", name: "Pullman Zamzam Madinah", city: "Madinah", country: "Saudi Arabia", starRating: 5, pricePerNight: 28500, amenities: ["Haram view", "Free WiFi", "Breakfast", "24h reception"], image: "https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800&h=600&fit=crop&q=80" },
+  { id: "fh-2", name: "Atlantis The Palm", city: "Dubai", country: "UAE", starRating: 5, pricePerNight: 64200, amenities: ["Beachfront", "Pool", "Spa", "Aquaventure"], image: "https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&h=600&fit=crop&q=80" },
+  { id: "fh-3", name: "Four Seasons Bosphorus", city: "Istanbul", country: "Turkey", starRating: 5, pricePerNight: 48900, amenities: ["Sea view", "Spa", "Fitness", "Restaurant"], image: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800&h=600&fit=crop&q=80" },
+];
+
+const fallbackTours = [
+  { id: "ft-1", name: "Cappadocia Hot Air Balloon", city: "Cappadocia, Turkey", duration: "4 Days", basePrice: 145000, description: "Sunrise balloon ride, cave hotel stay, Goreme open-air museum, ATV tour.", image: "https://images.unsplash.com/photo-1641128324972-af3212f0f6bd?w=800&h=600&fit=crop&q=80" },
+  { id: "ft-2", name: "Bali Cultural Escape", city: "Bali, Indonesia", duration: "6 Days", basePrice: 198000, description: "Ubud rice terraces, Uluwatu temple, beach villas and Mount Batur sunrise hike.", image: "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=800&h=600&fit=crop&q=80" },
+  { id: "ft-3", name: "Egypt Pyramids & Nile", city: "Cairo, Egypt", duration: "5 Days", basePrice: 172000, description: "Giza pyramids, Egyptian museum, Nile dinner cruise and Khan El Khalili bazaar.", image: "https://images.unsplash.com/photo-1568322445389-f64ac2515020?w=800&h=600&fit=crop&q=80" },
+];
+
+const fallbackGuides = [
+  { id: "fg-1", slug: "umrah-first-time-checklist", title: "First-time Umrah: a complete checklist", excerpt: "Documents, dress code, rituals, and packing tips for a smooth pilgrimage.", category: "Umrah", author: "Travelian Team", publishedAt: "May 2026", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=800&h=500&fit=crop&q=80" },
+  { id: "fg-2", slug: "dubai-on-a-budget", title: "Dubai on a budget: 5 days under PKR 150k", excerpt: "Where to stay, eat, and explore without overspending in the City of Gold.", category: "City Guide", author: "Travelian Team", publishedAt: "Apr 2026", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&h=500&fit=crop&q=80" },
+  { id: "fg-3", slug: "schengen-visa-pakistan", title: "Schengen visa from Pakistan, explained", excerpt: "Document list, embassy appointments, financial proof, and approval timelines.", category: "Visa", author: "Travelian Team", publishedAt: "Mar 2026", image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=500&fit=crop&q=80" },
 ];
 
 export default function HomePage() {
