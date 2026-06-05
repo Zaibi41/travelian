@@ -167,11 +167,6 @@ export default function HomePage() {
                 </span>
               </Link>
             ))}
-            {deals.length === 0 && (
-              <Card className="col-span-full border-dashed shadow-none">
-                <CardContent className="p-6 text-sm text-muted-foreground">No active promotions are available right now.</CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </section>
