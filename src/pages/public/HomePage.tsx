@@ -201,7 +201,7 @@ export default function HomePage() {
       </section>
 
       {/* Featured Hotels */}
-      {activeHotels.length > 0 && (
+      {(
       <section className="py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
@@ -214,7 +214,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {activeHotels.slice(0, 3).map((hotel) => (
+            {displayHotels.slice(0, 3).map((hotel) => (
               <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
                 <Card className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
                   <div className="h-48 relative overflow-hidden bg-muted">
@@ -269,7 +269,7 @@ export default function HomePage() {
       )}
 
       {/* Umrah Packages */}
-      {publishedUmrahPackages.length > 0 && (
+      {(
       <section className="py-10 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
@@ -282,7 +282,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {publishedUmrahPackages.slice(0, 4).map((pkg) => (
+            {displayUmrah.slice(0, 4).map((pkg) => (
               <Card key={pkg.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 border-0 shadow-card">
                 <div className="h-40 bg-muted relative overflow-hidden">
                   <PackageImage src={pkg.image} alt={pkg.name} className="absolute inset-0" imageClassName="transition-transform duration-500 group-hover:scale-105" />
@@ -384,7 +384,7 @@ export default function HomePage() {
       </section>
 
       {/* Popular Tours */}
-      {activeTours.length > 0 && (
+      {(
       <section className="py-10 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
@@ -397,7 +397,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {activeTours.map((tour) => (
+            {displayTours.slice(0, 3).map((tour) => (
               <Card key={tour.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
                 <div className="relative h-44 overflow-hidden bg-muted">
                   <PackageImage src={tour.image} alt={tour.name} className="absolute inset-0" imageClassName="transition-transform duration-500 group-hover:scale-105" />
@@ -431,7 +431,7 @@ export default function HomePage() {
       )}
 
       {/* Travel Guides */}
-      {publishedBlogPosts.length > 0 && (
+      {(
       <section className="py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
@@ -444,7 +444,7 @@ export default function HomePage() {
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {publishedBlogPosts.slice(0, 3).map((post) => (
+            {displayBlog.slice(0, 3).map((post) => (
               <Link key={post.postId} to={`/blog/${post.slug}`} aria-label={post.title} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-2xl">
                 <Card className="overflow-hidden hover:shadow-hover hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group border-0 shadow-card h-full">
                   <div className="h-44 overflow-hidden bg-muted">
