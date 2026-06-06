@@ -9,6 +9,7 @@ import { getBlogImage } from "@/lib/blog-images";
 import { PackageImage } from "@/components/public/PackageImage";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
+import { useMemo } from "react";
 
 const destinations = [
   { name: "Makkah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=400&h=500&fit=crop&q=80", badge: "Popular", priceFrom: 165000 },
@@ -23,7 +24,7 @@ const features = [
   { icon: TrendingUp, title: "1M+ trips booked", desc: "Trusted by travelers across Pakistan" },
   { icon: Star, title: "4.8 / 5 rating", desc: "From 12,400+ verified reviews" },
   { icon: Shield, title: "PCI-DSS secure", desc: "Bank-grade encryption on every payment" },
-  { icon: Headphones, title: "24/7 human support", desc: "WhatsApp, phone & email — minutes to reply" },
+  { icon: Headphones, title: "24/7 human support", desc: "WhatsApp, phone and email support" },
 ];
 
 const topCountries = [
@@ -50,24 +51,56 @@ const fallbackTours = [
 ];
 
 const fallbackBlogPosts = [
-  { postId: "fb1", slug: "umrah-checklist-first-timers", title: "Umrah Checklist for First-Time Pilgrims", excerpt: "Documents, dress code, packing list and the rituals — everything you need before flying out.", category: "Umrah", author: "Travelian Team", publishedAt: "May 28, 2026", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=800&h=520&fit=crop&q=80" },
+  { postId: "fb1", slug: "umrah-checklist-first-timers", title: "Umrah Checklist for First-Time Pilgrims", excerpt: "Documents, dress code, packing list and the rituals - everything you need before flying out.", category: "Umrah", author: "Travelian Team", publishedAt: "May 28, 2026", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=800&h=520&fit=crop&q=80" },
   { postId: "fb2", slug: "best-time-to-visit-dubai", title: "Best Time to Visit Dubai (and Cheapest Months to Fly)", excerpt: "How to balance weather, fares and event calendars across the year.", category: "Dubai", author: "Travelian Team", publishedAt: "May 22, 2026", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=800&h=520&fit=crop&q=80" },
   { postId: "fb3", slug: "schengen-visa-pakistan-2026", title: "Schengen Visa from Pakistan in 2026: Step-by-Step", excerpt: "Required documents, embassy choice, and how to maximise approval odds.", category: "Visa", author: "Travelian Team", publishedAt: "May 14, 2026", image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=520&fit=crop&q=80" },
 ];
 
 const fallbackDeals = [
-  { id: "fd1", title: "Eid Sale — Dubai from PKR 62,000", subtitle: "PIA & flydubai direct", badge: "-25%", to: "/flights-search?from=LHE&to=DXB" },
-  { id: "fd2", title: "Umrah Saver — 15 nights from PKR 245,000", subtitle: "5★ Makkah + Madinah", badge: "Limited", to: "/umrah-packages" },
+  { id: "fd1", title: "Eid Sale - Dubai from PKR 62,000", subtitle: "PIA & flydubai direct", badge: "-25%", to: "/flights-search?from=LHE&to=DXB" },
+  { id: "fd2", title: "Umrah Saver - 15 nights from PKR 245,000", subtitle: "5-star Makkah + Madinah", badge: "Limited", to: "/umrah-packages" },
   { id: "fd3", title: "Istanbul weekend from PKR 89,000", subtitle: "Turkish Airlines, 4 nights", badge: "Hot", to: "/flights-search?from=LHE&to=IST" },
-  { id: "fd4", title: "Bali honeymoon — 6 nights from PKR 245,000", subtitle: "Private villa + transfers", badge: "Featured", to: "/tour-packages" },
+  { id: "fd4", title: "Bali honeymoon - 6 nights from PKR 245,000", subtitle: "Private villa + transfers", badge: "Featured", to: "/tour-packages" },
 ];
 
 const fallbackUmrah = [
   { packageId: "fu1", name: "15-Night Premium Umrah", description: "5★ Makkah Clock Tower + Pullman Madinah, direct Saudia flights.", basePrice: 298000, duration: "15 days", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=800&h=520&fit=crop&q=80", includes: ["Visa", "Air ticket", "5★ hotels", "Ziyarat", "Transport"] },
   { packageId: "fu2", name: "10-Night Economy Umrah", description: "Budget 3★ stays near Haram, weekend departures from Lahore.", basePrice: 178000, duration: "10 days", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=800&h=520&fit=crop&q=80", includes: ["Visa", "Air ticket", "3★ hotels", "Ziyarat"] },
   { packageId: "fu3", name: "21-Night Family Umrah", description: "Family suites in Makkah + Madinah, includes meals.", basePrice: 365000, duration: "21 days", image: "https://images.unsplash.com/photo-1519817650390-64a93db51149?w=800&h=520&fit=crop&q=80", includes: ["Visa", "Air ticket", "4★ hotels", "Meals", "Ziyarat"] },
-  { packageId: "fu4", name: "7-Night Express Umrah", description: "Short itinerary for working professionals — quick turnaround.", basePrice: 145000, duration: "7 days", image: "https://images.unsplash.com/photo-1591129841117-3adfd313a592?w=800&h=520&fit=crop&q=80", includes: ["Visa", "Air ticket", "3★ hotels"] },
+  { packageId: "fu4", name: "7-Night Express Umrah", description: "Short itinerary for working professionals - quick turnaround.", basePrice: 145000, duration: "7 days", image: "https://images.unsplash.com/photo-1591129841117-3adfd313a592?w=800&h=520&fit=crop&q=80", includes: ["Visa", "Air ticket", "3-star hotels"] },
 ];
+
+const reviewCards = [
+  { name: "Ayesha Khan", trip: "Lahore to Dubai", quote: "Travelian found the right fare quickly and kept the whole booking calm.", rating: "4.9" },
+  { name: "Bilal Travels", trip: "Agency Umrah group", quote: "The team handled changes, invoices and passenger follow-up without delays.", rating: "4.8" },
+  { name: "Sana Malik", trip: "Family Turkey tour", quote: "Hotels, transfers and support were exactly what we expected.", rating: "5.0" },
+];
+
+const partnerNames = ["Travelport", "PIA", "AirSial", "flydubai", "Etihad", "Qatar Airways", "Fly Jinnah"];
+
+function getRecentFlightSearches() {
+  if (typeof window === "undefined") return [];
+  const candidates: Array<{ from: string; to: string; depart?: string; travelers?: string }> = [];
+  try {
+    const raw = localStorage.getItem("travelian.recentFlightSearches") || localStorage.getItem("travelian_recent_searches");
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (Array.isArray(parsed)) {
+      parsed.slice(0, 4).forEach((item) => {
+        if (item?.from && item?.to) {
+          candidates.push({
+            from: String(item.from).slice(0, 3).toUpperCase(),
+            to: String(item.to).slice(0, 3).toUpperCase(),
+            depart: item.depart || item.date,
+            travelers: item.travelers,
+          });
+        }
+      });
+    }
+  } catch {
+    return [];
+  }
+  return candidates;
+}
 
 export default function HomePage() {
   const { hotels, packages, tourPackages, blogPosts } = useAdmin();
@@ -80,6 +113,7 @@ export default function HomePage() {
   const displayTours = activeTours.length ? activeTours : fallbackTours;
   const displayBlog = publishedBlogPosts.length ? publishedBlogPosts : fallbackBlogPosts;
   const displayUmrah = publishedUmrahPackages.length ? publishedUmrahPackages : fallbackUmrah;
+  const recentSearches = useMemo(() => getRecentFlightSearches(), []);
 
   return (
     <div>
@@ -248,7 +282,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {displayHotels.slice(0, 3).map((hotel) => (
-              <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
+              <Link to={activeHotels.length ? `/hotel/${hotel.hotelId}` : "/hotels-search"} key={hotel.hotelId}>
                 <Card className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
                   <div className="h-48 relative overflow-hidden bg-muted">
                     {hotel.image ? (
@@ -338,7 +372,7 @@ export default function HomePage() {
                       <span className="text-[10px] text-muted-foreground">{pkg.duration}</span>
                       <p className="text-lg font-bold text-primary">PKR {pkg.basePrice}</p>
                     </div>
-                    <Link to={`/umrah/${pkg.packageId}`}>
+                    <Link to={publishedUmrahPackages.length ? `/umrah/${pkg.packageId}` : "/umrah-packages"}>
                       <Button size="sm" className="gradient-primary text-primary-foreground text-xs h-8 rounded-lg">Book Now</Button>
                     </Link>
                   </div>
@@ -383,7 +417,7 @@ export default function HomePage() {
                         <div>
                           <h3 className="font-semibold text-white drop-shadow-sm">{c.country}</h3>
                           <p className="text-xs text-white/80">
-                            {c.properties.toLocaleString()}+ properties · from <span className="text-gold font-semibold">PKR {c.priceFrom.toLocaleString()}</span>
+                            {c.properties.toLocaleString()}+ properties - from <span className="text-gold font-semibold">PKR {c.priceFrom.toLocaleString()}</span>
                           </p>
                         </div>
                       </div>
@@ -497,6 +531,103 @@ export default function HomePage() {
               </Link>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Reviews and partner proof */}
+      <section className="py-10 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+            <div>
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Trusted by travelers and agencies</h2>
+                  <p className="text-sm text-muted-foreground">Real support, transparent fares and managed service from search to ticketing.</p>
+                </div>
+                <Badge variant="secondary" className="hidden sm:inline-flex rounded-full">4.8 from 12k reviews</Badge>
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                {reviewCards.map((review) => (
+                  <Card key={review.name} className="border-0 shadow-card">
+                    <CardContent className="p-5">
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-1 text-gold">
+                          {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" />)}
+                        </div>
+                        <span className="text-xs font-bold text-primary">{review.rating}</span>
+                      </div>
+                      <p className="text-sm text-foreground">"{review.quote}"</p>
+                      <div className="mt-4 border-t pt-3">
+                        <p className="text-sm font-semibold text-foreground">{review.name}</p>
+                        <p className="text-xs text-muted-foreground">{review.trip}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+            <Card className="border-0 shadow-card">
+              <CardContent className="p-5">
+                <h3 className="font-bold text-foreground">Connected supplier network</h3>
+                <p className="mt-1 text-xs text-muted-foreground">Availability depends on live supplier health and contract configuration.</p>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  {partnerNames.map((name) => (
+                    <div key={name} className="rounded-xl border bg-background px-3 py-2 text-center text-xs font-semibold text-muted-foreground">
+                      {name}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-primary px-4 py-3 text-primary-foreground">
+                    <p className="text-[10px] uppercase tracking-wide opacity-75">Coming soon</p>
+                    <p className="text-sm font-bold">iOS App</p>
+                  </div>
+                  <div className="rounded-xl bg-foreground px-4 py-3 text-background">
+                    <p className="text-[10px] uppercase tracking-wide opacity-75">Coming soon</p>
+                    <p className="text-sm font-bold">Android App</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Recent searches */}
+      <section className="py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Recent Searches</h2>
+              <p className="text-sm text-muted-foreground">Continue from your latest flight searches on this device.</p>
+            </div>
+          </div>
+          {recentSearches.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {recentSearches.map((item, index) => (
+                <Link
+                  key={`${item.from}-${item.to}-${index}`}
+                  to={`/flights-search?from=${item.from}&to=${item.to}${item.depart ? `&depart=${encodeURIComponent(item.depart)}` : ""}`}
+                  className="rounded-2xl border bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-card"
+                >
+                  <p className="text-sm font-bold text-foreground">{item.from} to {item.to}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{item.depart || "Choose travel date"} - {item.travelers || "Travelers"}</p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <Card className="border-dashed shadow-none">
+              <CardContent className="flex flex-col items-start gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold text-foreground">No recent searches yet</p>
+                  <p className="text-sm text-muted-foreground">Search a route and Travelian will keep it here for quick access.</p>
+                </div>
+                <Button asChild className="rounded-xl">
+                  <Link to="/">Start a search</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </section>
     </div>

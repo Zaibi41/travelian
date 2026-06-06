@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AdvancedDatePicker } from "@/components/ui/advanced-date-picker";
 import { CountryCodePicker } from "@/components/ui/country-code-picker";
 import { CountryPicker } from "@/components/ui/country-picker";
-import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Globe, MapPin, Search, Hotel, FileCheck, Map } from "lucide-react";
+import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Search } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 // SeatMap is intentionally paused in the UI for now. Keep the component available for the future seat-selection phase.
 // import { SeatMap } from "@/components/booking/SeatMap";
@@ -22,10 +22,11 @@ import type { UmrahPackage } from "@/data/models";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { format, addDays } from "date-fns";
 import { useAdmin } from "@/contexts/AdminStore";
+import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
 
 const steps = [
   { id: 1, label: "Traveler Details" },
-  { id: 2, label: "Seats & Add-ons" },
+  { id: 2, label: "Review" },
   { id: 3, label: "Payment" },
   { id: 4, label: "Confirmation" },
 ];
@@ -33,6 +34,16 @@ const steps = [
 const addons: Array<{ id: string; name: string; desc: string; price: number; popular?: boolean }> = [];
 
 const currentYear = new Date().getFullYear();
+const RATE_PER_USD: Record<string, number> = {
+  ...Object.fromEntries(CURRENCIES.map((currency) => [currency.code, currency.rate])),
+  INR: 83,
+};
+
+function convertCurrencyAmount(amount: number, fromCurrency: string, toCurrency: CurrencyCode) {
+  const fromRate = RATE_PER_USD[String(fromCurrency || toCurrency).toUpperCase()] || RATE_PER_USD[toCurrency] || 1;
+  const toRate = RATE_PER_USD[toCurrency] || fromRate;
+  return amount / fromRate * toRate;
+}
 
 type BookingType = "flight" | "hotel" | "umrah" | "tour" | "visa";
 
@@ -150,6 +161,7 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
 export default function BookingPage() {
   const [params] = useSearchParams();
   const { packages, tourPackages, visaPackages } = useAdmin();
+  const { currency: activeCurrency } = useLocale();
   const productCtx = useMemo(() => buildCtx(params, { packages, tourPackages, visaPackages }), [params, packages, tourPackages, visaPackages]);
 
   // Empty state if no booking context provided
@@ -201,12 +213,16 @@ export default function BookingPage() {
   const ctxSegments = productCtx.extra?.segments || [];
   const ctxBaseFare = productCtx.extra?.baseFare;
   const ctxTaxes = productCtx.extra?.taxes;
+  const sourceCurrency = String(productCtx.currency || activeCurrency || "PKR").toUpperCase();
+  const displayCurrency = activeCurrency || "PKR";
+  const sourceCurrencyLabel = sourceCurrency === displayCurrency ? "" : `Supplier fare received in ${sourceCurrency}. Displayed in ${displayCurrency}.`;
   const knownBaseFare = typeof ctxBaseFare === "number" && Number.isFinite(ctxBaseFare) && ctxBaseFare > 0;
   const knownTaxes = typeof ctxTaxes === "number" && Number.isFinite(ctxTaxes) && ctxTaxes > 0;
   const fareBaseTotal = knownBaseFare ? ctxBaseFare * passengerTotal : null;
   const fareTaxesTotal = knownTaxes ? ctxTaxes * passengerTotal : null;
   const passengerSummary = `${passengerTotal} ${passengerTotal === 1 ? "Adult" : "Travelers"}`;
-  const stopSummary = `${Math.max(0, ctxSegments.length - 1)} Stop${ctxSegments.length - 1 === 1 ? "" : "s"}`;
+  const stopCount = Math.max(0, ctxSegments.length > 1 ? ctxSegments.length - 1 : ctxLayovers.length);
+  const stopSummary = `${stopCount} Stop${stopCount === 1 ? "" : "s"}`;
   const totalDuration = ctxSegments.length
     ? (() => {
       const first = ctxSegments[0]?.departureTime;
@@ -234,9 +250,7 @@ export default function BookingPage() {
   const [processing, setProcessing] = useState(false);
   const [savedBooking, setSavedBooking] = useState<BookingRecord | null>(null);
 
-  // Flight type controls whether passport is required (international) or CNIC is allowed (domestic).
-  const [flightType, setFlightType] = useState<"international" | "domestic">("international");
-  const [docType, setDocType] = useState<"passport" | "cnic">("passport");
+  const docType: "passport" = "passport";
 
   const [passengerForms, setPassengerForms] = useState<PassengerForm[]>(() =>
     passengerLabels.map((passenger) => createPassengerForm(passenger.type, passenger.label)),
@@ -252,7 +266,7 @@ export default function BookingPage() {
   // Validation touch tracking
   const [touched, setTouched] = useState(false);
 
-  const requiresPassport = flightType === "international" || docType === "passport";
+  const requiresPassport = true;
 
   useEffect(() => {
     setPassengerForms((current) =>
@@ -283,7 +297,8 @@ export default function BookingPage() {
   const baseTotal = isFlight ? productCtx.base * passengerTotal : productCtx.base;
   const taxes = 0;
   const grandTotal = baseTotal + addonsTotal + taxes;
-  const formatMoney = (amount: number) => `${productCtx.currency || "PKR"} ${Math.round(amount).toLocaleString()}`;
+  const displayAmount = (amount: number) => convertCurrencyAmount(amount, sourceCurrency, displayCurrency);
+  const formatMoney = (amount: number) => `${displayCurrency} ${Math.round(displayAmount(amount)).toLocaleString()}`;
 
   // Validation
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -313,6 +328,57 @@ export default function BookingPage() {
   const handleContinue = () => {
     setTouched(true);
     if (isStep1Valid) setStep(2);
+  };
+
+  const draftKey = useMemo(() => `travelian.bookingDraft.${params.toString()}`, [params]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(draftKey);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as {
+        passengerForms?: PassengerForm[];
+        email?: string;
+        phoneCode?: string;
+        phone?: string;
+        altPhoneCode?: string;
+        altPhone?: string;
+      };
+      if (Array.isArray(draft.passengerForms) && draft.passengerForms.length === passengerLabels.length) {
+        setPassengerForms(draft.passengerForms);
+      }
+      if (draft.email) setEmail(draft.email);
+      if (draft.phoneCode) setPhoneCode(draft.phoneCode);
+      if (draft.phone) setPhone(draft.phone);
+      if (draft.altPhoneCode) setAltPhoneCode(draft.altPhoneCode);
+      if (draft.altPhone) setAltPhone(draft.altPhone);
+    } catch {
+      localStorage.removeItem(draftKey);
+    }
+  }, [draftKey, passengerLabels.length]);
+
+  const saveProgress = () => {
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({
+        passengerForms,
+        email,
+        phoneCode,
+        phone,
+        altPhoneCode,
+        altPhone,
+        savedAt: new Date().toISOString(),
+      }));
+      toast({
+        title: "Progress saved",
+        description: "This booking draft is saved on this device.",
+      });
+    } catch {
+      toast({
+        title: "Unable to save draft",
+        description: "Browser storage is unavailable. Please keep this page open.",
+        variant: "destructive",
+      });
+    }
   };
 
   useEffect(() => {
@@ -409,11 +475,11 @@ export default function BookingPage() {
         ticketStatus: "not_issued",
         holdExpiresAt: addDays(new Date(), 1).toISOString(),
         pricing: {
-          base: baseTotal,
-          addons: addonsTotal,
-          taxes,
-          total: grandTotal,
-          currency: productCtx.currency || "PKR",
+          base: Math.round(displayAmount(baseTotal)),
+          addons: Math.round(displayAmount(addonsTotal)),
+          taxes: Math.round(displayAmount(taxes)),
+          total: Math.round(displayAmount(grandTotal)),
+          currency: displayCurrency,
         },
       });
       try {
@@ -493,39 +559,6 @@ export default function BookingPage() {
           <div className="lg:col-span-2 space-y-6">
             {step === 1 && (
               <div className="space-y-6 animate-fade-in">
-                {/* Flight type toggle (drives document logic) */}
-                <Card className="shadow-card border-0">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                      <div className="flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-medium text-foreground">Flight type</span>
-                      </div>
-                      <div className="flex items-center bg-muted rounded-lg p-0.5">
-                        {[
-                          { id: "international", label: "International", icon: Globe },
-                          { id: "domestic", label: "Domestic", icon: MapPin },
-                        ].map(t => (
-                          <button
-                            key={t.id}
-                            type="button"
-                            onClick={() => {
-                              setFlightType(t.id as any);
-                              if (t.id === "international") setDocType("passport");
-                            }}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                              flightType === t.id ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
-                            }`}
-                          >
-                            <t.icon className="h-3.5 w-3.5" />
-                            {t.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
                 <Card className="shadow-card border-0">
                   <CardContent className="p-6">
                     <h2 className="text-lg font-bold text-foreground mb-1">Traveler Information</h2>
@@ -599,32 +632,6 @@ export default function BookingPage() {
                           />
                           {touched && errors[`passenger-${index}-lastName`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-lastName`]}</p>}
                         </div>
-
-                        {flightType === "domestic" && (
-                          <div className="md:col-span-2">
-                            <Label className="text-sm font-medium">Document Type *</Label>
-                            <div className="flex items-center bg-muted rounded-lg p-0.5 mt-1.5 w-fit">
-                              {[
-                                { id: "cnic", label: "CNIC" },
-                                { id: "passport", label: "Passport" },
-                              ].map(t => (
-                                <button
-                                  key={t.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setDocType(t.id as any);
-                                    setPassengerForms((current) => current.map((item) => ({ ...item, docNumber: "" })));
-                                  }}
-                                  className={`px-4 py-1.5 text-xs font-medium rounded-md transition-all ${
-                                    docType === t.id ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"
-                                  }`}
-                                >
-                                  {t.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
 
                         <div>
                           <Label className="text-sm font-medium">Date of Birth *</Label>
@@ -704,6 +711,7 @@ export default function BookingPage() {
                           onChange={e => setEmail(e.target.value)}
                         />
                         {touched && errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+                        {!email.trim() && <p className="text-xs text-muted-foreground mt-1">Optional, but recommended for e-ticket delivery.</p>}
                       </div>
                       <div className="md:col-span-2">
                         <Label className="text-sm font-medium">Mobile Number *</Label>
@@ -741,8 +749,16 @@ export default function BookingPage() {
                   <AlertCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   <p className="text-xs text-muted-foreground">Name must match exactly as shown on your {requiresPassport ? "passport" : "CNIC"}.</p>
                 </div>
+                <div className="grid gap-2 rounded-2xl border bg-card p-3 text-xs text-muted-foreground sm:grid-cols-3">
+                  <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-success" /> Secure SSL checkout</span>
+                  <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-success" /> Your card is not charged yet</span>
+                  <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-success" /> Supplier verification before ticketing</span>
+                </div>
                 <div className="flex flex-wrap justify-end gap-2">
-                  <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
+                  <Button variant="ghost" onClick={saveProgress} disabled={processing} className="rounded-xl h-11 px-5">
+                    Save & Continue Later
+                  </Button>
+                  <Button variant="outline" onClick={handleHoldBooking} disabled={processing} title="Hold this booking with payment pending so Travelian can verify and process it manually." className="rounded-xl h-11 px-5">
                     Hold Booking
                   </Button>
                   <Button onClick={handleContinue} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
@@ -768,11 +784,11 @@ export default function BookingPage() {
                     <div className="flex justify-between mt-6 gap-3">
                       <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl">Back</Button>
                       <div className="flex flex-wrap justify-end gap-2">
-                        <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
+                        <Button variant="outline" onClick={handleHoldBooking} disabled={processing} title="Hold this booking with payment pending so Travelian can verify and process it manually." className="rounded-xl h-11 px-5">
                           Hold Booking
                         </Button>
                         <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
-                          Continue Payment <ChevronRight className="h-4 w-4 ml-1" />
+                          Continue <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
                       </div>
                     </div>
@@ -1042,6 +1058,7 @@ export default function BookingPage() {
                 )}
                 <div className="rounded-2xl border bg-white p-3 text-sm">
                   <p className="mb-2 font-bold text-foreground">Fare Summary</p>
+                  {sourceCurrencyLabel && <p className="mb-2 text-[11px] text-muted-foreground">{sourceCurrencyLabel}</p>}
                   {isFlight && passengerTotal > 1 && (
                     <>
                       <div className="flex justify-between">

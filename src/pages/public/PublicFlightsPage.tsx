@@ -53,42 +53,6 @@ function clampToToday(date: Date | undefined) {
   if (!date) return today;
   return startOfLocalDay(date) < today ? today : date;
 }
-// Curated fallback fares used when no live results come back, so users always
-// see bookable options on common routes (preview / demo / outage).
-function buildFallbackFlights(from: string, to: string, date: string, currency: string): TravelianFlight[] {
-  const base = [
-    { airline: "PIA", flightNumber: "PK-211", depart: "00:30", arrive: "03:45", duration: "3h 15m", stops: 0, price: 62000, baggage: "30kg", meal: "Hot meal" },
-    { airline: "Emirates", flightNumber: "EK-625", depart: "08:50", arrive: "11:10", duration: "3h 20m", stops: 0, price: 84500, baggage: "35kg", meal: "Hot meal" },
-    { airline: "flydubai", flightNumber: "FZ-336", depart: "14:15", arrive: "17:25", duration: "3h 10m", stops: 0, price: 58900, baggage: "20kg", meal: "Snack" },
-    { airline: "Qatar Airways", flightNumber: "QR-633", depart: "19:40", arrive: "01:55", duration: "5h 15m", stops: 1, price: 78900, baggage: "30kg", meal: "Hot meal" },
-    { airline: "Saudia", flightNumber: "SV-727", depart: "22:10", arrive: "03:30", duration: "4h 20m", stops: 1, price: 71200, baggage: "30kg", meal: "Hot meal" },
-  ];
-  const datePrefix = (() => {
-    try { return format(parseDateOnly(date) || new Date(date), "yyyy-MM-dd"); }
-    catch { return format(new Date(), "yyyy-MM-dd"); }
-  })();
-  return base.map((f, idx) => ({
-    flightId: `fb-${idx}-${from}-${to}`,
-    airline: f.airline,
-    flightNumber: f.flightNumber,
-    origin: from,
-    destination: to,
-    departureTime: `${datePrefix} ${f.depart}`,
-    arrivalTime: `${datePrefix} ${f.arrive}`,
-    price: f.price,
-    currency,
-    seats: 24,
-    status: "scheduled",
-    class: "economy",
-    duration: f.duration,
-    stops: f.stops,
-    baggage: f.baggage,
-    meal: f.meal,
-    provider: "Travelian Curated",
-    offerId: `fallback-${idx}`,
-  } as TravelianFlight));
-}
-
 
 export default function PublicFlightsPage({ bookingPath = "/booking", adminMode = false }: { bookingPath?: string; adminMode?: boolean } = {}) {
   const { currency: selectedCurrency, setCurrency } = useLocale();
@@ -232,21 +196,18 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       },
     }, controller.signal)
       .then(result => {
-        const live = result.flights;
-        const flightsToShow = live.length ? live : buildFallbackFlights(from, to, formatDateOnly(departDate), currency);
-        setApiFlights(flightsToShow);
-        const liveMaxPrice = Math.max(700, ...flightsToShow.map(f => f.price));
+        setApiFlights(result.flights);
+        const liveMaxPrice = Math.max(700, ...result.flights.map(f => f.price));
         setPriceRange([0, Math.ceil(liveMaxPrice / 1000) * 1000]);
         setApiStatus("success");
-        setApiMessage(live.length ? "" : "Showing curated sample fares — live providers returned no results.");
+        setApiMessage(result.flights.length ? "" : "No live bookable fares returned for this search.");
       })
       .catch(error => {
         if (controller.signal.aborted) return;
-        const fallback = buildFallbackFlights(from, to, formatDateOnly(departDate), currency);
-        setApiFlights(fallback);
-        setPriceRange([0, Math.ceil(Math.max(700, ...fallback.map(f => f.price)) / 1000) * 1000]);
-        setApiStatus("success");
-        setApiMessage("Showing curated sample fares — live providers are temporarily unavailable.");
+        setApiFlights([]);
+        setPriceRange([0, 700]);
+        setApiStatus("error");
+        setApiMessage(error instanceof Error ? error.message : "Live flight search is unavailable. Please modify your search and try again.");
       });
 
     return () => controller.abort();
@@ -262,8 +223,16 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return true;
   });
 
+  const durationMs = (flight: TravelianFlight) => new Date(flight.arrivalTime).getTime() - new Date(flight.departureTime).getTime();
   if (sort === "price-asc") filtered.sort((a, b) => a.price - b.price);
   else if (sort === "price-desc") filtered.sort((a, b) => b.price - a.price);
+  else if (sort === "fastest") filtered.sort((a, b) => {
+    const aDuration = durationMs(a);
+    const bDuration = durationMs(b);
+    if (!Number.isFinite(aDuration)) return 1;
+    if (!Number.isFinite(bDuration)) return -1;
+    return aDuration - bDuration;
+  });
 
   const getDuration = (dep: string, arr: string) => {
     const ms = new Date(arr).getTime() - new Date(dep).getTime();
@@ -341,6 +310,22 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     });
   }, [departDate]);
 
+  const airlineOptions = useMemo(() => Array.from(new Set(flights.map(f => f.airline).filter(Boolean))).sort(), [flights]);
+  const activeFilterLabels = [
+    ...selectedAirlines.map((airline) => ({ key: `airline-${airline}`, label: airline, onRemove: () => toggleAirline(airline) })),
+    ...(search ? [{ key: "search", label: `Search: ${search}`, onRemove: () => setSearch("") }] : []),
+  ];
+  const hasFilterChanges = activeFilterLabels.length > 0 || priceRange[0] > 0 || priceRange[1] < maxPrice;
+  const tryDate = (date: Date) => {
+    const safeDate = clampToToday(date);
+    setDepartDate(safeDate);
+    setSelectedAirlines([]);
+    setSearch("");
+    const next = new URLSearchParams(params);
+    next.set("depart", formatDateOnly(safeDate));
+    setParams(next, { replace: true });
+  };
+
   return (
     <div className={adminMode ? "-m-4 md:-m-6 bg-muted/30 min-h-[calc(100vh-3.5rem)]" : ""}>
       <SEO
@@ -407,7 +392,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               <button
                 key={i}
                 onClick={() => {
-                  setDepartDate(clampToToday(day.date));
+                  tryDate(day.date);
                 }}
                 className={cn(
                   "flex flex-col items-center px-4 py-2 rounded-xl text-xs font-medium transition-all min-w-[100px] shrink-0",
@@ -418,7 +403,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               >
                 <span>{format(day.date, "EEE, MMM d")}</span>
                 <span className={cn("text-[10px] mt-0.5", formatDateOnly(day.date) === formatDateOnly(departDate) ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                  See Price
+                  {formatDateOnly(day.date) === formatDateOnly(departDate) && bestFlight ? formatFare(bestFlight.price, bestFlight.currency) : "-"}
                 </span>
               </button>
             ))}
@@ -427,6 +412,54 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       </div>
 
       <div className={cn(adminMode ? "px-4 md:px-6 py-5" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6")}>
+        <nav className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
+          <Link to="/" className="hover:text-foreground">Home</Link>
+          <span>/</span>
+          <span>Flights</span>
+          <span>/</span>
+          <span className="text-foreground">{from} to {to}</span>
+        </nav>
+
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm">
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              {apiStatus === "loading" ? "Searching live fares" : `${filtered.length} live ${filtered.length === 1 ? "fare" : "fares"}`}
+            </p>
+            <p className="text-xs text-muted-foreground">{from} to {to} · {format(departDate, "dd MMM yyyy")}</p>
+          </div>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            Sort
+            <select
+              value={sort}
+              onChange={(event) => setSort(event.target.value)}
+              className="h-9 rounded-xl border border-input bg-background px-3 text-sm text-foreground"
+            >
+              <option value="best">Recommended</option>
+              <option value="price-asc">Cheapest first</option>
+              <option value="fastest">Fastest first</option>
+              <option value="price-desc">Highest price</option>
+            </select>
+          </label>
+        </div>
+
+        {(activeFilterLabels.length > 0 || hasFilterChanges) && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {activeFilterLabels.map(filter => (
+              <button key={filter.key} type="button" onClick={filter.onRemove} className="rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground">
+                {filter.label} x
+              </button>
+            ))}
+            {priceRange[0] > 0 || priceRange[1] < maxPrice ? (
+              <span className="rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground">
+                {formatFare(priceRange[0], currency)} - {formatFare(priceRange[1], currency)}
+              </span>
+            ) : null}
+            <Button variant="ghost" size="sm" className="h-7 rounded-full text-xs" onClick={() => { setSelectedAirlines([]); setPriceRange([0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)]); setSearch(""); }}>
+              Clear all
+            </Button>
+          </div>
+        )}
+
         {/* Sort Tags */}
         <div className="flex items-center gap-3 mb-6 overflow-x-auto scrollbar-hide">
           {[
@@ -447,9 +480,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               {s.sub && <span className="text-xs opacity-70">{s.sub}</span>}
             </button>
           ))}
-          <span className="text-sm text-muted-foreground ml-auto shrink-0">
-            {apiStatus === "loading" ? "Searching live fares" : `${filtered.length} flights found`}
-          </span>
         </div>
 
         {apiStatus === "error" && (
@@ -460,19 +490,25 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
         <div className="flex gap-6">
           {/* Sidebar Filters */}
-          <aside className="hidden md:block w-56 xl:w-64 shrink-0 space-y-5">
+          <aside className="hidden md:block w-56 xl:w-64 shrink-0 space-y-5 sticky top-24 self-start">
             <Card className="shadow-card border-0">
               <CardContent className="p-5">
                 <h3 className="font-semibold text-foreground text-sm mb-4">Price Range</h3>
                 <Slider value={priceRange} onValueChange={setPriceRange} min={0} max={Math.max(700, Math.ceil(maxPrice / 1000) * 1000)} step={100} className="mb-3" />
-                <div className="flex justify-between text-xs text-muted-foreground"><span>{formatFare(priceRange[0], currency)}</span><span>{formatFare(priceRange[1], currency)}</span></div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <input value={priceRange[0]} onChange={(event) => setPriceRange([Number(event.target.value) || 0, priceRange[1]])} className="h-8 rounded-lg border bg-background px-2" aria-label="Minimum price" />
+                  <input value={priceRange[1]} onChange={(event) => setPriceRange([priceRange[0], Number(event.target.value) || priceRange[1]])} className="h-8 rounded-lg border bg-background px-2" aria-label="Maximum price" />
+                </div>
               </CardContent>
             </Card>
             <Card className="shadow-card border-0">
               <CardContent className="p-5">
                 <h3 className="font-semibold text-foreground text-sm mb-3">Airlines</h3>
                 <div className="space-y-2.5">
-                  {Array.from(new Set(flights.map(f => f.airline))).map(a => (
+                  {airlineOptions.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Airlines appear here after live fares are returned.</p>
+                  )}
+                  {airlineOptions.map(a => (
                     <label key={a} className="flex items-center gap-2 cursor-pointer group">
                       <Checkbox checked={selectedAirlines.includes(a)} onCheckedChange={() => toggleAirline(a)} />
                       <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">{a}</span>
@@ -640,15 +676,27 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             })}
 
             {apiStatus !== "loading" && filtered.length === 0 && (
-              <div className="text-center py-16">
+              <div className="rounded-3xl border bg-card px-6 py-14 text-center shadow-card">
                 <Plane className="mx-auto mb-4 h-14 w-14 text-muted-foreground" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">No flights found</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  No bookable live fares returned. Modify the search and try again.
+                  No bookable live fares returned for this exact search. Try nearby travel dates, clear filters, or ask Travelian to check manually.
                 </p>
-                <Button variant="outline" className="rounded-lg" onClick={() => { setSelectedAirlines([]); setPriceRange([0, 700]); setSearch(""); }}>
-                  Clear All Filters
-                </Button>
+                <div className="mb-5 flex flex-wrap justify-center gap-2">
+                  {[1, 2, 3].map((offset) => (
+                    <Button key={offset} variant="outline" size="sm" className="rounded-lg" onClick={() => tryDate(addDays(departDate, offset))}>
+                      Try {format(addDays(departDate, offset), "MMM d")}
+                    </Button>
+                  ))}
+                </div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button variant="outline" className="rounded-lg" onClick={() => { setSelectedAirlines([]); setPriceRange([0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)]); setSearch(""); }}>
+                    Clear All Filters
+                  </Button>
+                  <a href={`https://wa.me/923244440014?text=${encodeURIComponent(`Hello Travelian,\n\nPlease check live fares for ${from} to ${to} on ${format(departDate, "MMM dd, yyyy")}.\n\nTravelers: ${formatTravelers(travelers)}\nCurrency: ${currency}`)}`} target="_blank" rel="noreferrer">
+                    <Button className="rounded-lg gap-2"><WhatsAppIcon className="h-4 w-4" /> Ask Travelian</Button>
+                  </a>
+                </div>
               </div>
             )}
           </div>
