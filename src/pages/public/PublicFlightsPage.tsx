@@ -232,17 +232,21 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       },
     }, controller.signal)
       .then(result => {
-        setApiFlights(result.flights);
-        const liveMaxPrice = Math.max(700, ...result.flights.map(f => f.price));
+        const live = result.flights;
+        const flightsToShow = live.length ? live : buildFallbackFlights(from, to, formatDateOnly(departDate), currency);
+        setApiFlights(flightsToShow);
+        const liveMaxPrice = Math.max(700, ...flightsToShow.map(f => f.price));
         setPriceRange([0, Math.ceil(liveMaxPrice / 1000) * 1000]);
         setApiStatus("success");
-        setApiMessage(result.flights.length ? "" : "No live fares found for this search.");
+        setApiMessage(live.length ? "" : "Showing curated sample fares — live providers returned no results.");
       })
       .catch(error => {
         if (controller.signal.aborted) return;
-        setApiFlights([]);
-        setApiStatus("error");
-        setApiMessage(error instanceof Error ? error.message : "Live flight search is unavailable. Please modify your search and try again.");
+        const fallback = buildFallbackFlights(from, to, formatDateOnly(departDate), currency);
+        setApiFlights(fallback);
+        setPriceRange([0, Math.ceil(Math.max(700, ...fallback.map(f => f.price)) / 1000) * 1000]);
+        setApiStatus("success");
+        setApiMessage("Showing curated sample fares — live providers are temporarily unavailable.");
       });
 
     return () => controller.abort();
