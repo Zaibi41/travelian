@@ -76,6 +76,11 @@ export default function HomePage() {
   const activeTours = tourPackages.filter(t => t.status === "active" && !t.deletedAt);
   const publishedBlogPosts = blogPosts.filter(b => b.status === "published");
 
+  const displayHotels = activeHotels.length ? activeHotels : fallbackHotels;
+  const displayTours = activeTours.length ? activeTours : fallbackTours;
+  const displayBlog = publishedBlogPosts.length ? publishedBlogPosts : fallbackBlogPosts;
+  const displayUmrah = publishedUmrahPackages.length ? publishedUmrahPackages : fallbackUmrah;
+
   return (
     <div>
       <SEO
