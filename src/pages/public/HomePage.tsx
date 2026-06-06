@@ -184,8 +184,13 @@ export default function HomePage() {
                   <div className="absolute bottom-3 left-3 right-3">
                     <p className="text-primary-foreground font-bold text-sm">{d.name}</p>
                     <p className="text-primary-foreground/70 text-xs">{d.country}</p>
+                    {d.priceFrom && (
+                      <p className="text-primary-foreground text-[11px] font-semibold mt-1">
+                        from <span className="text-gold">PKR {d.priceFrom.toLocaleString()}</span>
+                      </p>
+                    )}
                     <span className="mt-2 inline-flex items-center rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-primary shadow-sm">
-                      Explore trips
+                      Explore trips <ArrowRight className="h-3 w-3 ml-1" />
                     </span>
                   </div>
                 </div>
