@@ -154,6 +154,40 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Today's Deals */}
+      <section className="py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Percent className="h-5 w-5 text-primary" />
+                <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Today's Deals</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">Live promotions, updated daily</p>
+            </div>
+            <Button variant="outline" size="sm" asChild className="rounded-lg">
+              <Link to="/deals">View all <ArrowRight className="h-4 w-4 ml-1" /></Link>
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {fallbackDeals.map((d) => (
+              <Link key={d.id} to={d.to} className="group">
+                <Card className="border-0 shadow-card hover:shadow-hover transition-all duration-300 h-full">
+                  <CardContent className="p-5 flex flex-col gap-2">
+                    <Badge className="self-start bg-gold text-gold-foreground border-0 text-xs">{d.badge}</Badge>
+                    <h3 className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors">{d.title}</h3>
+                    <p className="text-xs text-muted-foreground">{d.subtitle}</p>
+                    <span className="mt-1 inline-flex items-center text-xs font-semibold text-primary">
+                      Grab deal <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Trending Destinations */}
       <section className="py-10 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
