@@ -348,7 +348,9 @@ export default function HomePage() {
                         </span>
                         <div>
                           <h3 className="font-semibold text-white drop-shadow-sm">{c.country}</h3>
-                          <p className="text-xs text-white/80">{c.popular.length} popular cities</p>
+                          <p className="text-xs text-white/80">
+                            {c.properties.toLocaleString()}+ properties · from <span className="text-gold font-semibold">PKR {c.priceFrom.toLocaleString()}</span>
+                          </p>
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
