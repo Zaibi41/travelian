@@ -358,7 +358,24 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               <div className="flex items-center gap-2 text-primary-foreground text-sm flex-wrap min-w-0">
                 <Plane className="h-4 w-4 shrink-0" />
                 <span className="font-semibold truncate">{from}</span>
-                <ArrowLeftRight className="h-3.5 w-3.5 opacity-60 shrink-0" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newFrom = to;
+                    const newTo = from;
+                    setFrom(newFrom);
+                    setTo(newTo);
+                    setSelectedFlight(null);
+                    const next = new URLSearchParams(params);
+                    next.set("from", newFrom);
+                    next.set("to", newTo);
+                    setParams(next, { replace: true });
+                  }}
+                  aria-label="Swap origin and destination"
+                  className="h-6 w-6 rounded-full border border-primary-foreground/30 flex items-center justify-center text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0"
+                >
+                  <ArrowLeftRight className="h-3.5 w-3.5" />
+                </button>
                 <span className="font-semibold truncate">{to}</span>
                 <span className="text-primary-foreground/60 text-xs">-</span>
                 <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{format(departDate, "EEE, MMM d")}</span>
