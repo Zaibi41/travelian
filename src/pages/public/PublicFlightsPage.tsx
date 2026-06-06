@@ -59,7 +59,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [params, setParams] = useSearchParams();
   const initFrom = params.get("from") || "LHE";
   const initTo = params.get("to") || "JED";
-  const initDateStr = params.get("depart");
+  // Accept both `depart` (canonical) and `date` (used by older booking-flow links)
+  const initDateStr = params.get("depart") || params.get("date");
   const initReturnDateStr = params.get("return");
   const initTripType = tripTypeFromParam(params.get("trip"));
   const initCabin = params.get("cabin") || "Economy";
