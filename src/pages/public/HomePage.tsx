@@ -201,7 +201,7 @@ export default function HomePage() {
       </section>
 
       {/* Featured Hotels */}
-      {(
+      {
       <section className="py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
@@ -269,7 +269,7 @@ export default function HomePage() {
       )}
 
       {/* Umrah Packages */}
-      {(
+      {
       <section className="py-10 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
@@ -384,7 +384,7 @@ export default function HomePage() {
       </section>
 
       {/* Popular Tours */}
-      {(
+      {
       <section className="py-10 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
@@ -431,7 +431,7 @@ export default function HomePage() {
       )}
 
       {/* Travel Guides */}
-      {(
+      {
       <section className="py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-8">
