@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Flame, Clock, Percent, Zap, Tag, MapPin, Heart, ArrowRight, Check, Copy, Hotel } from "lucide-react";
+import { Flame, Clock, Percent, Zap, Tag, MapPin, Heart, ArrowRight, Check, Copy, Hotel as HotelIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -119,7 +119,7 @@ export default function DealsPage() {
               <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
                 <Card className="overflow-hidden hover:shadow-elevated transition-all group">
                   <div className="h-40 bg-gradient-to-br from-warning/10 to-accent flex items-center justify-center relative">
-                    <Hotel className="h-12 w-12 text-primary/40 transition-transform group-hover:scale-110" />
+                    <HotelIcon className="h-12 w-12 text-primary/40 transition-transform group-hover:scale-110" />
                     <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground">
                       <Heart className="h-3.5 w-3.5" />
                     </button>

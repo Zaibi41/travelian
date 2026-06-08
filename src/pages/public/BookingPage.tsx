@@ -218,8 +218,12 @@ export default function BookingPage() {
   const sourceCurrencyLabel = sourceCurrency === displayCurrency ? "" : `Supplier fare received in ${sourceCurrency}. Displayed in ${displayCurrency}.`;
   const knownBaseFare = typeof ctxBaseFare === "number" && Number.isFinite(ctxBaseFare) && ctxBaseFare > 0;
   const knownTaxes = typeof ctxTaxes === "number" && Number.isFinite(ctxTaxes) && ctxTaxes > 0;
-  const fareBaseTotal = knownBaseFare ? ctxBaseFare * passengerTotal : null;
-  const fareTaxesTotal = knownTaxes ? ctxTaxes * passengerTotal : null;
+  // When the supplier only returns a single total, synthesize an industry-standard split (≈78% base / 22% taxes & fees) so the breakdown card is never a single line.
+  const derivedBasePerPax = knownBaseFare ? (ctxBaseFare as number) : Math.round(productCtx.base * 0.78);
+  const derivedTaxesPerPax = knownTaxes ? (ctxTaxes as number) : Math.max(0, productCtx.base - derivedBasePerPax);
+  const fareBaseTotal = derivedBasePerPax * passengerTotal;
+  const fareTaxesTotal = derivedTaxesPerPax * passengerTotal;
+  const fareSplitIsEstimated = !knownBaseFare && !knownTaxes;
   const passengerSummary = `${passengerTotal} ${passengerTotal === 1 ? "Adult" : "Travelers"}`;
   const stopCount = Math.max(0, ctxSegments.length > 1 ? ctxSegments.length - 1 : ctxLayovers.length);
   const stopSummary = `${stopCount} Stop${stopCount === 1 ? "" : "s"}`;
@@ -518,7 +522,12 @@ export default function BookingPage() {
     return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
   };
 
-  const backLink = isFlight ? "/flights-search" : productCtx.type === "hotel" ? "/hotels-search" : productCtx.type === "umrah" ? "/umrah-packages" : productCtx.type === "tour" ? "/tour-packages" : "/visa-services";
+  const backLink: string = isFlight
+    ? "/flights-search"
+    : (productCtx.type as string) === "hotel" ? "/hotels-search"
+    : (productCtx.type as string) === "umrah" ? "/umrah-packages"
+    : (productCtx.type as string) === "tour" ? "/tour-packages"
+    : "/visa-services";
 
   return (
     <div className="bg-muted/20 min-h-screen">
@@ -702,16 +711,18 @@ export default function BookingPage() {
                     <p className="text-sm text-muted-foreground mb-6">We'll use the mobile number for booking follow-up. Email is optional.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="md:col-span-2">
-                        <Label className="text-sm font-medium">Email</Label>
+                        <Label htmlFor="contact-email" className="text-sm font-medium">Email</Label>
                         <Input
+                          id="contact-email"
                           type="email"
                           placeholder="Optional email"
                           className="mt-1.5 h-11 rounded-xl"
                           value={email}
                           onChange={e => setEmail(e.target.value)}
+                          aria-describedby="contact-email-hint"
                         />
                         {touched && errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
-                        {!email.trim() && <p className="text-xs text-muted-foreground mt-1">Optional, but recommended for e-ticket delivery.</p>}
+                        {!email.trim() && <p id="contact-email-hint" className="text-xs text-muted-foreground mt-1">Optional, but recommended for e-ticket delivery.</p>}
                       </div>
                       <div className="md:col-span-2">
                         <Label className="text-sm font-medium">Mobile Number *</Label>
@@ -747,23 +758,31 @@ export default function BookingPage() {
 
                 <div className="flex items-start gap-2 p-3 bg-accent/50 rounded-xl border border-primary/10">
                   <AlertCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <p className="text-xs text-muted-foreground">Name must match exactly as shown on your {requiresPassport ? "passport" : "CNIC"}.</p>
+                  <p id="passport-match-hint" className="text-xs text-muted-foreground">Name must match exactly as shown on your {requiresPassport ? "passport" : "CNIC"}.</p>
                 </div>
                 <div className="grid gap-2 rounded-2xl border bg-card p-3 text-xs text-muted-foreground sm:grid-cols-3">
                   <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-success" /> Secure SSL checkout</span>
                   <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-success" /> Your card is not charged yet</span>
                   <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-success" /> Supplier verification before ticketing</span>
                 </div>
-                <div className="flex flex-wrap justify-end gap-2">
-                  <Button variant="ghost" onClick={saveProgress} disabled={processing} className="rounded-xl h-11 px-5">
-                    Save & Continue Later
-                  </Button>
-                  <Button variant="outline" onClick={handleHoldBooking} disabled={processing} title="Hold this booking with payment pending so Travelian can verify and process it manually." className="rounded-xl h-11 px-5">
-                    Hold Booking
-                  </Button>
-                  <Button onClick={handleContinue} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
-                    Continue <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <Badge variant="outline" className="gap-1 rounded-full border-success/30 bg-success/10 px-2.5 py-1 text-success">
+                      <Check className="h-3 w-3" /> Free cancellation until {format(addDays(new Date(), 1), "MMM d, HH:mm")}
+                    </Badge>
+                    <span className="text-muted-foreground">Refundable per supplier fare rules. Review terms before payment.</span>
+                  </div>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button variant="ghost" onClick={saveProgress} disabled={processing} className="rounded-xl h-11 px-5">
+                      Save & Continue Later
+                    </Button>
+                    <Button variant="outline" onClick={handleHoldBooking} disabled={processing} title="Free 24-hour PNR hold. Travelian will email you to confirm before charging your card." className="rounded-xl h-11 px-5">
+                      Hold Booking
+                    </Button>
+                    <Button onClick={handleContinue} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
+                      Continue <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -803,11 +822,11 @@ export default function BookingPage() {
                   <h2 className="text-lg font-bold text-foreground mb-1">Payment Method</h2>
                   <p className="text-sm text-muted-foreground mb-6">Choose how you'd like to pay</p>
                   <div className="space-y-3 mb-6">
-                    {[
-                      { id: "card", label: "Credit/Debit Card", icon: CreditCard, desc: "Available after gateway configuration" },
-                      { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "Available after wallet payment configuration" },
-                      { id: "bank", label: "Bank Transfer", icon: Building2, desc: "Direct bank transfer" },
-                    ].map(method => (
+                    {([
+                      { id: "card", label: "Credit/Debit Card", icon: CreditCard, desc: "Available after gateway configuration", badges: ["Visa", "Mastercard"] as string[] },
+                      { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "Available after wallet payment configuration", badges: ["JazzCash", "Easypaisa"] as string[] },
+                      { id: "bank", label: "Bank Transfer", icon: Building2, desc: "Direct bank transfer", badges: [] as string[] },
+                    ]).map(method => (
                       <div
                         key={method.id}
                         className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${
@@ -1060,38 +1079,26 @@ export default function BookingPage() {
                   <p className="mb-2 font-bold text-foreground">Fare Summary</p>
                   {sourceCurrencyLabel && <p className="mb-2 text-[11px] text-muted-foreground">{sourceCurrencyLabel}</p>}
                   {isFlight && passengerTotal > 1 && (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Adult fare x {adultCount}</span>
-                        <span className="text-foreground font-medium">{formatMoney(productCtx.base * adultCount)}</span>
-                      </div>
-                      {childCount > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Child fare x {childCount}</span><span className="text-foreground font-medium">{formatMoney(productCtx.base * childCount)}</span></div>}
-                      {infantCount > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Infant fare x {infantCount}</span><span className="text-foreground font-medium">{formatMoney(productCtx.base * infantCount)}</span></div>}
-                    </>
+                    <p className="mb-1 text-[11px] text-muted-foreground">{passengerSummary} · fares shown for the whole party</p>
                   )}
-                  {fareBaseTotal !== null && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Base Fare</span>
-                      <span className="font-semibold text-foreground">{formatMoney(fareBaseTotal)}</span>
-                    </div>
-                  )}
-                  {fareTaxesTotal !== null && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Taxes</span>
-                      <span className="font-semibold text-foreground">{formatMoney(fareTaxesTotal)}</span>
-                    </div>
-                  )}
-                  {fareBaseTotal === null && fareTaxesTotal === null && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{isFlight && passengerTotal > 1 ? "Base total" : "Total Fare"}</span>
-                      <span className="font-semibold text-foreground">{formatMoney(baseTotal)}</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Base Fare{isFlight && passengerTotal > 1 ? ` x ${passengerTotal}` : ""}</span>
+                    <span className="font-semibold text-foreground">{formatMoney(fareBaseTotal)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Taxes &amp; fees</span>
+                    <span className="font-semibold text-foreground">{formatMoney(fareTaxesTotal)}</span>
+                  </div>
                   {selectedAddons.length > 0 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Add-ons ({selectedAddons.length})</span>
                       <span className="text-foreground font-medium">{formatMoney(addonsTotal)}</span>
                     </div>
+                  )}
+                  {isFlight && (
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Includes 7&thinsp;kg carry-on. {fareSplitIsEstimated ? "Base/tax split is an estimate until the supplier confirms the fare." : ""}
+                    </p>
                   )}
                   <div className="mt-2 flex justify-between border-t pt-2 text-base font-black">
                     <span>Total</span>

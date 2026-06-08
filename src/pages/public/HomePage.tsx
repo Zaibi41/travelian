@@ -112,7 +112,10 @@ export default function HomePage() {
   const displayHotels = activeHotels.length ? activeHotels : fallbackHotels;
   const displayTours = activeTours.length ? activeTours : fallbackTours;
   const displayBlog = publishedBlogPosts.length ? publishedBlogPosts : fallbackBlogPosts;
-  const displayUmrah = publishedUmrahPackages.length ? publishedUmrahPackages : fallbackUmrah;
+  // If live admin data is missing images or all share the same hero, fall through to curated fallbacks so the rail never looks duplicated.
+  const distinctImageCount = new Set(publishedUmrahPackages.map(p => p.image || "")).size;
+  const liveUmrahLooksDuplicated = publishedUmrahPackages.length > 1 && distinctImageCount <= 1;
+  const displayUmrah = (publishedUmrahPackages.length && !liveUmrahLooksDuplicated) ? publishedUmrahPackages : fallbackUmrah;
   const recentSearches = useMemo(() => getRecentFlightSearches(), []);
 
   return (

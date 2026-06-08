@@ -73,8 +73,8 @@ function buildPackage(form: UmrahForm): Omit<UmrahPackage, "packageId"> {
     const [outbound, inbound] = line.split("|").map((part) => part.trim());
     return { outboundDate: outbound, outboundRoute: "", returnDate: inbound || undefined, returnRoute: undefined };
   });
-  const hotelOptions = form.hotelOptions.split(/\r?\n/).map((line, index) => line.trim()).filter(Boolean).map((line) => ({
-    label: line.split(":")[0] || `Option ${index + 1}`,
+  const hotelOptions = form.hotelOptions.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line, idx) => ({
+    label: line.split(":")[0] || `Option ${idx + 1}`,
     makkahHotel: line,
     madinahHotel: "",
     prices: {},
@@ -110,12 +110,13 @@ function buildPackage(form: UmrahForm): Omit<UmrahPackage, "packageId"> {
 }
 
 function createPackageId() {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
+  const g: any = typeof crypto !== "undefined" ? crypto : undefined;
+  if (g && typeof g.randomUUID === "function") {
+    return g.randomUUID();
   }
   const bytes = new Uint8Array(16);
-  if (typeof crypto !== "undefined" && "getRandomValues" in crypto) {
-    crypto.getRandomValues(bytes);
+  if (g && typeof g.getRandomValues === "function") {
+    g.getRandomValues(bytes);
   } else {
     for (let index = 0; index < bytes.length; index += 1) bytes[index] = Math.floor(Math.random() * 256);
   }

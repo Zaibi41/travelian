@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -184,6 +185,17 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     setApiStatus("loading");
     setApiMessage("Searching live providers...");
 
+    // Persist this search so the Home page Recent Searches rail can show it.
+    try {
+      const key = "travelian.recentFlightSearches";
+      const raw = localStorage.getItem(key);
+      const list: Array<{ from: string; to: string; depart: string; travelers: string; ts: number }> = raw ? JSON.parse(raw) : [];
+      const entry = { from, to, depart: formatDateOnly(departDate), travelers: formatTravelers(travelers), ts: Date.now() };
+      const dedup = [entry, ...list.filter(x => !(x.from === entry.from && x.to === entry.to && x.depart === entry.depart))].slice(0, 6);
+      localStorage.setItem(key, JSON.stringify(dedup));
+    } catch { /* localStorage unavailable */ }
+
+
     searchFlights({
       from,
       to,
@@ -256,8 +268,17 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return `${Math.floor(ms / 3600000)}h ${Math.round((ms % 3600000) / 60000)}m`;
   };
 
-  const formatFare = (price: number, currency = "PKR") => {
-    return `${currency || "PKR"} ${Math.round(price).toLocaleString()}`;
+  const RATE_PER_USD: Record<string, number> = {
+    ...Object.fromEntries(CURRENCIES.map((c) => [c.code, c.rate])),
+    INR: 83,
+  };
+  const formatFare = (price: number, srcCurrency = "PKR") => {
+    const src = String(srcCurrency || "PKR").toUpperCase();
+    const dst = (selectedCurrency || "PKR").toUpperCase();
+    const fromRate = RATE_PER_USD[src] ?? RATE_PER_USD[dst] ?? 1;
+    const toRate = RATE_PER_USD[dst] ?? fromRate;
+    const converted = src === dst ? price : (price / fromRate) * toRate;
+    return `${dst} ${Math.round(converted).toLocaleString()}`;
   };
 
   const expiryLabel = `${Math.floor(expirySeconds / 60)}:${String(expirySeconds % 60).padStart(2, "0")}`;
@@ -599,7 +620,32 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
           {/* Results */}
           <div className="flex-1 space-y-4">
-            {apiStatus === "loading" && <FlightSearchLoader from={from} to={to} />}
+            {apiStatus === "loading" && (
+              <>
+                <FlightSearchLoader from={from} to={to} />
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={`skel-${i}`} className="border-0 shadow-card animate-pulse">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between gap-6">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-10 w-10 rounded-xl" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-3 w-24" />
+                            <Skeleton className="h-3 w-16" />
+                          </div>
+                        </div>
+                        <div className="hidden flex-1 items-center gap-4 md:flex">
+                          <div className="space-y-2 text-right"><Skeleton className="ml-auto h-4 w-16" /><Skeleton className="ml-auto h-3 w-10" /></div>
+                          <Skeleton className="h-px flex-1" />
+                          <div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-3 w-10" /></div>
+                        </div>
+                        <div className="space-y-2 text-right"><Skeleton className="ml-auto h-5 w-24" /><Skeleton className="ml-auto h-9 w-28 rounded-lg" /></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            )}
 
             {apiStatus !== "loading" && filtered.map((flight, idx) => {
               const isBest = bestFlight?.flightId === flight.flightId;
@@ -972,8 +1018,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   <p className="font-semibold text-foreground">Layovers</p>
                   <div className="mt-3 space-y-2">
                     {detailsFlight.layovers.map((layover, index) => (
-                      <p key={`${layover.airport}-${index}`} className="text-sm text-muted-foreground">
-                        {layover.airport}: arrives {layover.arrivalTime || "TBA"}, flies again {layover.departureTime || "TBA"} · Layover {layover.duration || "TBA"}
+                      <p key={`${layover.location || "layover"}-${index}`} className="text-sm text-muted-foreground">
+                        {layover.location || "Connection"}: arrives {layover.arrivalTime || "TBA"}, flies again {layover.departureTime || "TBA"} · Layover {layover.duration || "TBA"}
                       </p>
                     ))}
                   </div>
