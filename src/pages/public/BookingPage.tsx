@@ -522,7 +522,12 @@ export default function BookingPage() {
     return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
   };
 
-  const backLink = isFlight ? "/flights-search" : productCtx.type === "hotel" ? "/hotels-search" : productCtx.type === "umrah" ? "/umrah-packages" : productCtx.type === "tour" ? "/tour-packages" : "/visa-services";
+  const backLink: string = isFlight
+    ? "/flights-search"
+    : (productCtx.type as string) === "hotel" ? "/hotels-search"
+    : (productCtx.type as string) === "umrah" ? "/umrah-packages"
+    : (productCtx.type as string) === "tour" ? "/tour-packages"
+    : "/visa-services";
 
   return (
     <div className="bg-muted/20 min-h-screen">
