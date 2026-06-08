@@ -185,6 +185,17 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     setApiStatus("loading");
     setApiMessage("Searching live providers...");
 
+    // Persist this search so the Home page Recent Searches rail can show it.
+    try {
+      const key = "travelian.recentFlightSearches";
+      const raw = localStorage.getItem(key);
+      const list: Array<{ from: string; to: string; depart: string; travelers: string; ts: number }> = raw ? JSON.parse(raw) : [];
+      const entry = { from, to, depart: formatDateOnly(departDate), travelers: formatTravelers(travelers), ts: Date.now() };
+      const dedup = [entry, ...list.filter(x => !(x.from === entry.from && x.to === entry.to && x.depart === entry.depart))].slice(0, 6);
+      localStorage.setItem(key, JSON.stringify(dedup));
+    } catch { /* localStorage unavailable */ }
+
+
     searchFlights({
       from,
       to,
