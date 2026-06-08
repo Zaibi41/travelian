@@ -1,81 +1,54 @@
-## Re-audit findings (Home + /flights-search + /booking)
+## Re-audit results (Home + /flights-search + /booking)
 
-I re-checked the live preview at 1280px and full-page screenshots. Batch 1 partially landed but several home items did not take effect, and the two new pages have their own gaps. Grouped by page, in order of impact.
-
----
-
-### 1. Home page — still outstanding from Batch 1
-
-What I expected vs. what I see:
-
-- Trust bar still reads the generic four items ("Secure booking / 4.8 rated support / No Hidden Charges / 24/7 Support"). The promised concrete numbers ("1M+ trips booked", "4.8★ from 12k reviews", "PCI-DSS secure") are not visible. → Re-apply.
-- Trending Destinations cards do not show the `from PKR …` price overlay we agreed on. Only the badge (Popular/Trending/Holy City) is present. → Re-apply with overlay.
-- Umrah Packages rail: all 3 cards use the **same Makkah hero image** and nearly identical titles ("21 Days Luxury / 21 Days / 21 Day Premium"). Looks like seed data, not curated. → Vary imagery + copy, add nights/from-price/inclusions chips, distinct CTAs.
-- Sections **Today's Deals, Featured Hotels, Popular Tours, Travel Guides** are now completely **gone** from the home page (previous build had them as empty rails — now removed entirely). The home jumps Country grid → footer CTA, which is too short for an enterprise OTA. → Restore those four rails using the fallback data we built, between Umrah and Country grid.
-- Country cards still only say "4 popular cities" — no property count, no `from PKR`, no rating. → Add 1 metric line per card.
-- Single dark "Need help planning your journey?" CTA above footer is fine, but home is missing: reviews carousel, partner logos, app badges, and a recent-searches rail (localStorage-driven).
+Big progress since last pass — most Batch 1b/2/3 items have landed. Here is what is **still outstanding**, grouped by impact. Pick one or say "go in order".
 
 ---
 
-### 2. `/flights-search` — critical issues
+### Home — minor leftovers
 
-Tested `LHE → DXB, Jun 09 2026, 1 adult, economy, one-way`.
+- **Umrah Packages rail** — the three cards still use the **same Makkah hero image** and near-identical titles ("21 Days Luxury / 21 Days / 21 Day Premium"). Looks like seed data. Vary imagery (Madinah skyline, Kaaba night, Jabal Nur), differentiate copy + chip set (Visa / 5★ hotel / Ziyarat), distinct CTAs.
+- **Recent Searches** rail says "No recent searches yet" even after a search — not wired to localStorage write on PublicFlightsPage submit. Wire it.
+- No **reviews carousel** and no **partner logos** rail (Visa / Mastercard / JazzCash / Easypaisa / IATA / PIA). Add a thin trust strip + 3-card reviews row before footer.
+- No **app-download badges** (iOS / Android "coming soon" exists in supplier block but not above-the-fold-friendly).
 
-Critical
-- **0 flights found** empty state. The live provider call returns nothing and there is no curated fallback. Enterprise sites never show 0 results without alternative suggestions. → Add: (a) seeded mock fares for top routes so the rail is never empty in dev/preview, (b) "Try flexible dates / nearby airports / next 3 days" suggestions when truly empty.
-- Date strip is **out of sync with the search date**. URL says Jun 09 but the active pill shows "Fri, Jun 5" and the strip starts there. Each pill says "See Price" instead of the actual fare. → Center strip on selected date ±3, fetch min fare per day, show "PKR X" or "—".
-- Airlines filter box is **empty** — it should list carriers found in the result set (or a curated top list pre-fetch).
+### /flights-search — remaining gaps
 
-Layout / UX
-- No results count + sort dropdown row ("12 results · Sort: Recommended ▾"). Only Best/Cheapest/Fastest pill tabs.
-- No loading **skeleton cards** — page shows a thin progress bar then jumps to empty.
-- No applied-filter chips above results, no "Clear all".
-- Filters sidebar is not sticky on scroll; price slider has no input fields.
-- Modify-Search bar at top is good but lacks an inline **swap (⇄)** icon between LHE and DXB (it shows the arrows icon decoratively, not interactive) and no "Add return" affordance.
-- No breadcrumbs (`Home / Flights / LHE → DXB`).
-- Missing: compare drawer trigger, price-alert subscribe, CO₂ filter, baggage filter, refundable filter.
-- Mobile: no bottom sheet for filters/sort, no sticky "Sort & Filter" CTA.
-- SEO: no `BreadcrumbList` or `ItemList` JSON-LD, no canonical with the route in slug form (`/flights/LHE-DXB/2026-06-09`).
+Tested LHE→DXB Jun 15. Results, breadcrumbs, sort dropdown, swap icon, price-range inputs and date-strip prices all working now. Remaining:
 
----
+- **Currency** — prices still rendered as `INR 33,467` even though the site switcher is PKR. Currency override / conversion not applied to result cards or to the date-strip pill. Route through `useLocale().formatPrice` (treat supplier amount as the base and convert).
+- **Loading state** — initial 1–2s shows blank with only a progress bar; no **skeleton cards** in the results column.
+- No **applied-filter chips** row above results with "Clear all" (price slider / airlines / stops / time).
+- Filter sidebar still **not sticky** on scroll. Add `sticky top-20` on lg+.
+- No **baggage / refundable / CO₂** filters, no **compare drawer**, no **price-alert subscribe** ("Notify me when LHE→DXB drops below PKR 80,000").
+- No **bottom sheet** for filters/sort on mobile + no sticky "Sort & Filter" CTA.
+- SEO: missing `BreadcrumbList` + `ItemList` JSON-LD; URL not slugged (`/flights/LHE-DXB/2026-06-15`).
+- Truly-empty state still has no "Try flexible dates / nearby airports" suggestion block (only the curated fallback prevents zero-results today).
 
-### 3. `/booking` — critical issues
+### /booking — remaining gaps
 
-Tested step 1 of flight booking.
+Reached step 1 via a real flight click. Currency converts to PKR (+ note "Supplier fare received in INR"), segments + 1 Stop derived correctly, redundant type toggle removed, trust strip + Save & Continue Later present. Remaining:
 
-Data correctness
-- Currency shows **INR 33,467** while the site switcher is PKR. The URL carried `currency=INR` and the page took it literally without converting. → Convert via LocaleContext, or override to active currency and show original as tooltip.
-- Itinerary card shows **"0 Stops"** but the URL `layovers` array contains a CMB stop. Stop count is wrong. → Derive from `segments.length - 1`.
-- Fare Summary is a single line (`Total Fare`). No base / taxes / fees / add-ons breakdown, no "Includes 7kg carry-on" line. → Use `PricingBreakdownCard`.
-
-Form / flow
-- "Flight type — International / Domestic" toggle at the top is **redundant** for a route that's already known (LHE→DXB is international). → Auto-detect from segments; remove the toggle, or hide when both endpoints are determined.
-- No **"Free cancellation until …"** badge or fare-rules summary near the CTA.
-- "Hold Booking" button needs a tooltip explaining what it does (free 24-hour PNR hold? deposit?). Today it's unlabeled.
-- Step indicator (1 Traveler · 2 Seats · 3 Payment · 4 Confirmation) is not sticky on mobile.
-- No trust strip near Continue (PCI badge, "Your card is not charged yet", secure SSL).
-- Contact: email marked optional, but e-ticket delivery needs it. Soft-require + warning if blank.
-- No "Save & continue later" → write progress to localStorage by email, restore on revisit.
-- No traveler card collapse when complete; long forms scroll forever.
-- A11y: form fields lack `aria-describedby` for the helper text, focus order skips between left form and right rail.
-
-Confirmation step (4) is not in this audit but I will check it in the implementation pass.
+- **Fare Summary still single-line** — no base / taxes / fees / add-on breakdown. Use `PricingBreakdownCard` (already exists) with: Base fare, Taxes & fees, Seat/baggage add-ons, Total, plus "Includes 7kg carry-on" microcopy.
+- **Hold Booking** button has no tooltip — add a hover/tap explanation ("Free 24-hour PNR hold. We will email you to confirm before charging.").
+- No **"Free cancellation until …"** badge and no **fare-rules summary** (refundable y/n, change fee) next to the CTA.
+- **Stepper not sticky** on mobile when the form scrolls.
+- Long form has no **collapse-when-complete** for the Adult card (once required fields are valid, collapse to a summary row).
+- **A11y** — form inputs missing `aria-describedby` linking to the helper microcopy ("Name must match exactly as shown on your passport").
+- Steps 2 / 3 / 4 (Review, Payment, Confirmation) not re-audited yet; will check during the implementation pass.
 
 ---
 
 ### Suggested execution batches (revised)
 
-Pick which to run next. Each ≈ one build cycle.
-
 ```text
-Batch 1b  Home fixes that didn't land   (trust bar numbers, price overlay, restore 4 rails, vary Umrah cards, country metrics)
-Batch 2   Flight results UX             (mock fallback, date-strip fix, sort dropdown, skeletons, filter chips, swap icon, sticky filters)
-Batch 3   Booking integrity             (currency convert, stop count, fare breakdown, remove redundant toggle, sticky stepper, trust strip, save-and-resume)
-Batch 4   Trust & social proof          (reviews carousel, partner logos, urgency badges, recently viewed, recent searches)
-Batch 5   Detail pages polish           (gallery lightbox, sticky booking rail, breadcrumbs, JSON-LD schemas)
-Batch 6   Account & bookings            (tabs, .ics export, wishlist badge, save-and-resume on booking)
-Batch 7   i18n + currency real          (apply conversion site-wide, RTL, translated strings)
-Batch 8   A11y + perf sweep             (focus rings, skip link, srcset, preconnect, heading order)
+Batch A  Booking polish        Fare breakdown card · Hold tooltip · Free-cancel badge · sticky stepper · collapse-completed adult · aria-describedby
+Batch B  Flights polish        Currency conversion on cards + date strip · skeleton cards · applied-filter chips + Clear all · sticky filters
+Batch C  Home polish           Vary Umrah cards · wire Recent Searches · reviews carousel + partner logos strip
+Batch D  Flights advanced      Baggage / refundable / CO2 filters · compare drawer · price-alert · mobile bottom-sheet · JSON-LD + slugged URL
+Batch E  Booking steps 2-4     Audit Review + Payment + Confirmation, then close gaps
+Batch F  Trust & social proof  Site-wide reviews, recently-viewed rail, urgency badges
+Batch G  Account & bookings    .ics export · wishlist badge · saved-progress restore
+Batch H  i18n + a11y + perf    Apply locale across remaining strings · RTL pass · focus rings / skip link / srcset / preconnect
 ```
 
-Tell me which batch to start with, or say "go in order from 1b" and I'll implement 1b → 2 → 3 sequentially.
+Tell me which batch to start with, or reply "go in order from A".
