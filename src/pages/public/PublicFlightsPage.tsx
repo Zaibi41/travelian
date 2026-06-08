@@ -972,8 +972,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   <p className="font-semibold text-foreground">Layovers</p>
                   <div className="mt-3 space-y-2">
                     {detailsFlight.layovers.map((layover, index) => (
-                      <p key={`${layover.airport}-${index}`} className="text-sm text-muted-foreground">
-                        {layover.airport}: arrives {layover.arrivalTime || "TBA"}, flies again {layover.departureTime || "TBA"} · Layover {layover.duration || "TBA"}
+                      <p key={`${layover.location || "layover"}-${index}`} className="text-sm text-muted-foreground">
+                        {layover.location || "Connection"}: arrives {layover.arrivalTime || "TBA"}, flies again {layover.departureTime || "TBA"} · Layover {layover.duration || "TBA"}
                       </p>
                     ))}
                   </div>
