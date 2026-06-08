@@ -121,10 +121,13 @@ export const adminNavigation: AdminNavSection[] = [
       item("My Bookings", "/admin/bookings", CalendarCheck, agencyStaffRoles),
       item("My Bookings", "/admin/customer/bookings", CalendarCheck, customerRoles),
       item("Ticketing & Invoices", "/admin/tickets", Ticket, [...internalAdminRoles, ...agencyRoles]),
+      item("Issue Ticket", "/admin/tickets", Ticket, [...internalAdminRoles, ...agencyRoles]),
       item("Invoices", "/admin/tickets", Receipt, customerRoles),
       item("Refunds & Cancellations", "/admin/bookings", RefreshCw, [...internalAdminRoles, ...agencyRoles, ...customerRoles]),
+      item("Refund PNR", "/admin/bookings", RefreshCw, [...internalAdminRoles, ...agencyRoles]),
       item("Booking Requests", "/admin/booking-requests", ClipboardCheck, [...internalAdminRoles, ...agencyOwnerRoles]),
       item("Pending Requests", "/admin/booking-requests", ListChecks, ["staff"]),
+      item("Manage Quotations", "/admin/bookings", FileText, [...internalAdminRoles, ...agencyRoles]),
     ],
   },
   {
@@ -140,6 +143,7 @@ export const adminNavigation: AdminNavSection[] = [
     category: "Pricing & Revenue",
     items: [
       item("Flight Pricing & Rules", "/admin/flights", Plane, internalAdminRoles),
+      item("Fare Management", "/admin/flights", Receipt, internalAdminRoles),
       item("Hotel Markup Rules", "/admin/hotels", Hotel, platformOwnerRoles),
       item("Package Markup Rules", "/admin/packages", BadgePercent, platformOwnerRoles),
       item("Agency Pricing Rules", "/admin/agencies", Building2, platformOwnerRoles),

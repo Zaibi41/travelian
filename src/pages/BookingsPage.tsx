@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarCheck, RefreshCw, Search } from "lucide-react";
+import { CalendarCheck, Download, RefreshCw, RotateCcw, Search, Ticket, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +18,10 @@ function statusClass(status: string) {
 function customerName(booking: BookingRecord) {
   const firstTraveler = booking.travelers?.[0];
   return [firstTraveler?.title, firstTraveler?.firstName, firstTraveler?.lastName].filter(Boolean).join(" ") || "Customer";
+}
+
+function canIssue(booking: BookingRecord) {
+  return booking.status === "held" || booking.status === "confirmed" || booking.status === "pending_payment" || booking.status === "payment_received";
 }
 
 export default function BookingsPage() {
@@ -40,7 +44,7 @@ export default function BookingsPage() {
   };
 
   useEffect(() => {
-    loadBookings();
+    void loadBookings();
   }, []);
 
   const filtered = useMemo(() => {
@@ -51,6 +55,8 @@ export default function BookingsPage() {
       booking.pnr,
       booking.status,
       booking.type,
+      booking.paymentStatus,
+      booking.ticketStatus,
       booking.flight?.airline,
       booking.flight?.flightNumber,
       booking.flight?.from,
@@ -61,12 +67,19 @@ export default function BookingsPage() {
     ].filter(Boolean).some((value) => String(value).toLowerCase().includes(term)));
   }, [bookings, search]);
 
+  const totals = useMemo(() => ({
+    all: bookings.length,
+    held: bookings.filter(booking => booking.status === "held" || booking.status === "pending_payment").length,
+    issued: bookings.filter(booking => booking.status === "ticket_issued" || booking.ticketStatus === "issued").length,
+    failed: bookings.filter(booking => booking.status === "cancelled" || booking.status === "expired").length,
+  }), [bookings]);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display">Bookings</h1>
-          <p className="text-sm text-muted-foreground">Flight holds, payment requests, and completed checkout bookings from Travelian DB.</p>
+          <p className="text-sm text-muted-foreground">Track flight holds, PNRs, payment state, ticketing, refunds, and cancellation actions.</p>
         </div>
         <Button variant="outline" className="gap-2 rounded-xl" onClick={loadBookings} disabled={loading}>
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
@@ -74,10 +87,16 @@ export default function BookingsPage() {
       </div>
 
       <Card className="shadow-card">
-        <CardContent className="p-4">
-          <div className="relative max-w-sm">
+        <CardContent className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative max-w-md flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search booking, customer, route or PNR" className="pl-9" />
+            <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search booking ID, PNR, email, status, route or customer" className="pl-9" />
+          </div>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <Badge variant="secondary">All {totals.all}</Badge>
+            <Badge className="bg-warning/10 text-warning border-0">Hold / Pending {totals.held}</Badge>
+            <Badge className="bg-success/10 text-success border-0">Issued {totals.issued}</Badge>
+            <Badge className="bg-destructive/10 text-destructive border-0">Expired / Cancelled {totals.failed}</Badge>
           </div>
         </CardContent>
       </Card>
@@ -97,7 +116,7 @@ export default function BookingsPage() {
       ) : (
         <Card className="shadow-card">
           <CardContent className="overflow-x-auto p-0">
-            <table className="w-full min-w-[920px] text-sm">
+            <table className="w-full min-w-[1080px] text-sm">
               <thead className="border-b bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="p-4 text-left">Booking</th>
@@ -106,6 +125,7 @@ export default function BookingsPage() {
                   <th className="p-4 text-left">Payment</th>
                   <th className="p-4 text-left">Amount</th>
                   <th className="p-4 text-left">Created</th>
+                  <th className="p-4 text-left">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -125,7 +145,7 @@ export default function BookingsPage() {
                       <p className="font-medium capitalize text-foreground">{booking.type}</p>
                       {booking.flight ? (
                         <p className="text-xs text-muted-foreground">
-                          {booking.flight.airline} {booking.flight.flightNumber} · {booking.flight.from} to {booking.flight.to} · {booking.flight.date}
+                          {booking.flight.airline} {booking.flight.flightNumber} - {booking.flight.from} to {booking.flight.to} - {booking.flight.date}
                         </p>
                       ) : (
                         <p className="text-xs text-muted-foreground">Service request</p>
@@ -133,13 +153,33 @@ export default function BookingsPage() {
                     </td>
                     <td className="p-4">
                       <p className="font-medium capitalize text-foreground">{booking.paymentMethod}</p>
-                      <p className="text-xs capitalize text-muted-foreground">{booking.paymentStatus || "unpaid"} · {booking.ticketStatus || "not issued"}</p>
+                      <p className="text-xs capitalize text-muted-foreground">{booking.paymentStatus || "unpaid"} - {booking.ticketStatus || "not issued"}</p>
                     </td>
                     <td className="p-4 font-semibold text-foreground">
                       {booking.pricing?.currency || "PKR"} {Math.round(booking.pricing?.total || 0).toLocaleString()}
                     </td>
                     <td className="p-4 text-muted-foreground">
                       {booking.createdAt ? new Date(booking.createdAt).toLocaleString() : "-"}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-wrap gap-2">
+                        {canIssue(booking) && (
+                          <Button size="sm" variant="outline" className="gap-1 rounded-lg">
+                            <Ticket className="h-3.5 w-3.5" /> Issue
+                          </Button>
+                        )}
+                        {booking.ticketStatus === "issued" && (
+                          <Button size="sm" variant="outline" className="gap-1 rounded-lg">
+                            <Download className="h-3.5 w-3.5" /> Download
+                          </Button>
+                        )}
+                        <Button size="sm" variant="outline" className="gap-1 rounded-lg">
+                          <RotateCcw className="h-3.5 w-3.5" /> Refund
+                        </Button>
+                        <Button size="sm" variant="outline" className="gap-1 rounded-lg text-destructive">
+                          <XCircle className="h-3.5 w-3.5" /> Cancel
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

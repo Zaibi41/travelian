@@ -7,7 +7,7 @@ import { Slider } from "@/components/ui/slider";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil } from "lucide-react";
+import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -91,6 +91,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [apiFlights, setApiFlights] = useState<TravelianFlight[]>([]);
   const [apiStatus, setApiStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [apiMessage, setApiMessage] = useState("");
+  const [expirySeconds, setExpirySeconds] = useState(0);
+  const [fareCalculatorOpen, setFareCalculatorOpen] = useState(false);
+  const [addToQuotations, setAddToQuotations] = useState(false);
+  const [detailsFlight, setDetailsFlight] = useState<TravelianFlight | null>(null);
+  const [calculatorBase, setCalculatorBase] = useState("");
+  const [calculatorTaxes, setCalculatorTaxes] = useState("");
+  const [calculatorServiceFee, setCalculatorServiceFee] = useState("");
+  const [searchRefreshKey, setSearchRefreshKey] = useState(0);
 
   // Modal-local edit state
   const [editFrom, setEditFrom] = useState(from);
@@ -201,6 +209,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         setPriceRange([0, Math.ceil(liveMaxPrice / 1000) * 1000]);
         setApiStatus("success");
         setApiMessage(result.flights.length ? "" : "No live bookable fares returned for this search.");
+        setExpirySeconds(result.flights.length ? 900 : 0);
       })
       .catch(error => {
         if (controller.signal.aborted) return;
@@ -208,10 +217,17 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         setPriceRange([0, 700]);
         setApiStatus("error");
         setApiMessage(error instanceof Error ? error.message : "Live flight search is unavailable. Please modify your search and try again.");
+        setExpirySeconds(0);
       });
 
     return () => controller.abort();
-  }, [from, to, departDate, returnDate, tripType, segments, travelers, currency]);
+  }, [from, to, departDate, returnDate, tripType, segments, travelers, currency, searchRefreshKey]);
+
+  useEffect(() => {
+    if (expirySeconds <= 0 || apiStatus !== "success") return;
+    const interval = window.setInterval(() => setExpirySeconds((seconds) => Math.max(0, seconds - 1)), 1000);
+    return () => window.clearInterval(interval);
+  }, [apiStatus, expirySeconds]);
 
   const flights = apiFlights;
   const maxPrice = Math.max(700, ...flights.map(f => f.price));
@@ -243,6 +259,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const formatFare = (price: number, currency = "PKR") => {
     return `${currency || "PKR"} ${Math.round(price).toLocaleString()}`;
   };
+
+  const expiryLabel = `${Math.floor(expirySeconds / 60)}:${String(expirySeconds % 60).padStart(2, "0")}`;
+  const searchExpired = apiStatus === "success" && flights.length > 0 && expirySeconds === 0;
+  const calculatorTotal = (Number(calculatorBase) || 0) + (Number(calculatorTaxes) || 0) + (Number(calculatorServiceFee) || 0);
 
   const flightWhatsAppHref = (flight: TravelianFlight) => {
     const message = [
@@ -324,6 +344,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     const next = new URLSearchParams(params);
     next.set("depart", formatDateOnly(safeDate));
     setParams(next, { replace: true });
+  };
+  const revalidateSearch = () => {
+    setSelectedFlight(null);
+    setSearchRefreshKey((value) => value + 1);
   };
 
   return (
@@ -427,20 +451,50 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             </p>
             <p className="text-xs text-muted-foreground">{from} to {to} · {format(departDate, "dd MMM yyyy")}</p>
           </div>
-          <label className="flex items-center gap-2 text-xs text-muted-foreground">
-            Sort
-            <select
-              value={sort}
-              onChange={(event) => setSort(event.target.value)}
-              className="h-9 rounded-xl border border-input bg-background px-3 text-sm text-foreground"
-            >
-              <option value="best">Recommended</option>
-              <option value="price-asc">Cheapest first</option>
-              <option value="fastest">Fastest first</option>
-              <option value="price-desc">Highest price</option>
-            </select>
-          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            {apiStatus === "success" && flights.length > 0 && (
+              <Badge className={cn("gap-1 rounded-full border-0", searchExpired ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success")}>
+                <Clock className="h-3 w-3" />
+                {searchExpired ? "Search expired" : `Expires in ${expiryLabel}`}
+              </Badge>
+            )}
+            <Button variant="outline" size="sm" className="gap-2 rounded-xl" onClick={() => setFareCalculatorOpen(true)}>
+              <Calculator className="h-4 w-4" /> Fare Calculator
+            </Button>
+            <label className="flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium text-muted-foreground">
+              <Checkbox checked={addToQuotations} onCheckedChange={(checked) => setAddToQuotations(Boolean(checked))} />
+              Add to quotations
+            </label>
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              Sort
+              <select
+                value={sort}
+                onChange={(event) => setSort(event.target.value)}
+                className="h-9 rounded-xl border border-input bg-background px-3 text-sm text-foreground"
+              >
+                <option value="best">Recommended</option>
+                <option value="price-asc">Cheapest first</option>
+                <option value="fastest">Fastest first</option>
+                <option value="price-desc">Highest price</option>
+              </select>
+            </label>
+          </div>
         </div>
+
+        {searchExpired && (
+          <Card className="mb-4 border-amber-200 bg-amber-50 shadow-sm">
+            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex gap-3">
+                <TimerReset className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                <div>
+                  <p className="font-semibold text-amber-950">These fares need revalidation</p>
+                  <p className="text-sm text-amber-800">Airline prices and seats can change quickly. Search again before booking or issuing a ticket.</p>
+                </div>
+              </div>
+              <Button className="rounded-xl" onClick={revalidateSearch}>Search Again</Button>
+            </CardContent>
+          </Card>
+        )}
 
         {(activeFilterLabels.length > 0 || hasFilterChanges) && (
           <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -616,9 +670,26 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           </div>
                         </div>
                         <div className="flex flex-col gap-2">
-                          <Link to={bookingHref(flight)}>
-                            <Button className="gradient-primary text-primary-foreground rounded-xl h-11 px-5">Continue Booking</Button>
-                          </Link>
+                          {searchExpired ? (
+                            <Button className="rounded-xl h-11 px-5" onClick={revalidateSearch}>Revalidate Fare</Button>
+                          ) : (
+                            <Link to={bookingHref(flight)}>
+                              <Button className="gradient-primary text-primary-foreground rounded-xl h-11 px-5">{hasFareOptions ? "Book Fare" : "Continue Booking"}</Button>
+                            </Link>
+                          )}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full rounded-xl gap-2"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setDetailsFlight(flight);
+                            }}
+                          >
+                            <FileText className="h-4 w-4" /> View Details
+                          </Button>
                           {hasFareOptions && (
                             <Button
                               type="button"
@@ -661,9 +732,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               <span className="text-muted-foreground">{fare.refund || "Refund rule on request"}</span>
                               <div className="flex items-center justify-between gap-3 md:justify-end">
                                 <span className="whitespace-nowrap text-base font-black text-foreground">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</span>
-                                <Link to={bookingHref(flight, fare)}>
-                                  <Button size="sm" className="rounded-lg">Book Fare</Button>
-                                </Link>
+                                {searchExpired ? (
+                                  <Button size="sm" className="rounded-lg" onClick={revalidateSearch}>Revalidate</Button>
+                                ) : (
+                                  <Link to={bookingHref(flight, fare)}>
+                                    <Button size="sm" className="rounded-lg">Book Fare</Button>
+                                  </Link>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -823,6 +898,117 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={fareCalculatorOpen} onOpenChange={setFareCalculatorOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Fare Calculator</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Use this for quick agent calculations. It does not alter supplier fare, booking price, or wallet balance.
+            </p>
+            <div className="grid gap-3">
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Base fare ({currency})</span>
+                <input value={calculatorBase} onChange={(event) => setCalculatorBase(event.target.value)} className="h-11 w-full rounded-xl border bg-background px-3 text-sm" inputMode="decimal" />
+              </label>
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Taxes ({currency})</span>
+                <input value={calculatorTaxes} onChange={(event) => setCalculatorTaxes(event.target.value)} className="h-11 w-full rounded-xl border bg-background px-3 text-sm" inputMode="decimal" />
+              </label>
+              <label className="space-y-1.5">
+                <span className="text-xs font-medium text-muted-foreground">Service fee / markup ({currency})</span>
+                <input value={calculatorServiceFee} onChange={(event) => setCalculatorServiceFee(event.target.value)} className="h-11 w-full rounded-xl border bg-background px-3 text-sm" inputMode="decimal" />
+              </label>
+            </div>
+            <div className="rounded-2xl border bg-muted/40 p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Estimated total</p>
+              <p className="mt-1 text-2xl font-black text-primary">{formatFare(calculatorTotal, currency)}</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCalculatorBase(""); setCalculatorTaxes(""); setCalculatorServiceFee(""); }}>Clear</Button>
+            <Button onClick={() => setFareCalculatorOpen(false)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!detailsFlight} onOpenChange={(open) => !open && setDetailsFlight(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Flight Details & Fare Rules</DialogTitle>
+          </DialogHeader>
+          {detailsFlight && (
+            <div className="space-y-5 py-2">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-muted/40 p-4">
+                <div>
+                  <p className="text-lg font-bold text-foreground">{detailsFlight.airline}</p>
+                  <p className="text-sm text-muted-foreground">{detailsFlight.flightNumber} · {detailsFlight.origin} to {detailsFlight.destination}</p>
+                </div>
+                <Badge className="rounded-full">{detailsFlight.stops ? `${detailsFlight.stops} stop${detailsFlight.stops === 1 ? "" : "s"}` : "Non-stop"}</Badge>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {(detailsFlight.segments?.length ? detailsFlight.segments : [{
+                  carrier: detailsFlight.airline,
+                  flightNumber: detailsFlight.flightNumber,
+                  origin: detailsFlight.origin,
+                  destination: detailsFlight.destination,
+                  departureTime: detailsFlight.departureTime,
+                  arrivalTime: detailsFlight.arrivalTime,
+                  duration: detailsFlight.duration,
+                }]).map((segment, index) => (
+                  <div key={`${segment.flightNumber}-${index}`} className="rounded-2xl border p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-primary">Segment {index + 1}</p>
+                    <p className="mt-2 font-semibold text-foreground">{segment.flightNumber || detailsFlight.flightNumber}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{segment.origin} to {segment.destination}</p>
+                    <p className="mt-3 text-sm">{segment.departureTime || "Departure TBA"} to {segment.arrivalTime || "Arrival TBA"}</p>
+                    {segment.duration && <p className="mt-1 text-xs text-muted-foreground">Duration: {segment.duration}</p>}
+                  </div>
+                ))}
+              </div>
+              {detailsFlight.layovers?.length ? (
+                <div className="rounded-2xl border p-4">
+                  <p className="font-semibold text-foreground">Layovers</p>
+                  <div className="mt-3 space-y-2">
+                    {detailsFlight.layovers.map((layover, index) => (
+                      <p key={`${layover.airport}-${index}`} className="text-sm text-muted-foreground">
+                        {layover.airport}: arrives {layover.arrivalTime || "TBA"}, flies again {layover.departureTime || "TBA"} · Layover {layover.duration || "TBA"}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              <div className="grid gap-3 md:grid-cols-3">
+                <InfoBox title="Baggage" value={detailsFlight.baggage || "Baggage info not available"} />
+                <InfoBox title="Meal" value={detailsFlight.meal || "Meal info not available"} />
+                <InfoBox title="Fare" value={formatFare(detailsFlight.price, detailsFlight.currency)} />
+              </div>
+              <div className="rounded-2xl border p-4">
+                <p className="font-semibold text-foreground">Rules and conditions</p>
+                <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+                  {(detailsFlight.fareOptions || []).length ? detailsFlight.fareOptions?.map((fare) => (
+                    <p key={fare.tier}>
+                      <span className="font-semibold text-foreground">{fare.tier}:</span> Refund: {fare.refund || "On request"} · Change: {fare.change || "On request"} · Bags: {fare.bags || detailsFlight.baggage || "TBA"}
+                    </p>
+                  )) : (
+                    <p>Fare rules, cancellation, date change, and supplier remarks are shown when returned by the live API.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function InfoBox({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-2xl border bg-card p-4">
+      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{title}</p>
+      <p className="mt-2 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }
