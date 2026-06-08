@@ -812,11 +812,11 @@ export default function BookingPage() {
                   <h2 className="text-lg font-bold text-foreground mb-1">Payment Method</h2>
                   <p className="text-sm text-muted-foreground mb-6">Choose how you'd like to pay</p>
                   <div className="space-y-3 mb-6">
-                    {[
-                      { id: "card", label: "Credit/Debit Card", icon: CreditCard, desc: "Available after gateway configuration" },
-                      { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "Available after wallet payment configuration" },
-                      { id: "bank", label: "Bank Transfer", icon: Building2, desc: "Direct bank transfer" },
-                    ].map(method => (
+                    {([
+                      { id: "card", label: "Credit/Debit Card", icon: CreditCard, desc: "Available after gateway configuration", badges: ["Visa", "Mastercard"] as string[] },
+                      { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "Available after wallet payment configuration", badges: ["JazzCash", "Easypaisa"] as string[] },
+                      { id: "bank", label: "Bank Transfer", icon: Building2, desc: "Direct bank transfer", badges: [] as string[] },
+                    ]).map(method => (
                       <div
                         key={method.id}
                         className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${
