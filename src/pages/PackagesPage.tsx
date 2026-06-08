@@ -73,8 +73,8 @@ function buildPackage(form: UmrahForm): Omit<UmrahPackage, "packageId"> {
     const [outbound, inbound] = line.split("|").map((part) => part.trim());
     return { outboundDate: outbound, outboundRoute: "", returnDate: inbound || undefined, returnRoute: undefined };
   });
-  const hotelOptions = form.hotelOptions.split(/\r?\n/).map((line, index) => line.trim()).filter(Boolean).map((line) => ({
-    label: line.split(":")[0] || `Option ${index + 1}`,
+  const hotelOptions = form.hotelOptions.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line, idx) => ({
+    label: line.split(":")[0] || `Option ${idx + 1}`,
     makkahHotel: line,
     madinahHotel: "",
     prices: {},
