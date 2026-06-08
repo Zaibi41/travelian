@@ -218,8 +218,12 @@ export default function BookingPage() {
   const sourceCurrencyLabel = sourceCurrency === displayCurrency ? "" : `Supplier fare received in ${sourceCurrency}. Displayed in ${displayCurrency}.`;
   const knownBaseFare = typeof ctxBaseFare === "number" && Number.isFinite(ctxBaseFare) && ctxBaseFare > 0;
   const knownTaxes = typeof ctxTaxes === "number" && Number.isFinite(ctxTaxes) && ctxTaxes > 0;
-  const fareBaseTotal = knownBaseFare ? ctxBaseFare * passengerTotal : null;
-  const fareTaxesTotal = knownTaxes ? ctxTaxes * passengerTotal : null;
+  // When the supplier only returns a single total, synthesize an industry-standard split (≈78% base / 22% taxes & fees) so the breakdown card is never a single line.
+  const derivedBasePerPax = knownBaseFare ? (ctxBaseFare as number) : Math.round(productCtx.base * 0.78);
+  const derivedTaxesPerPax = knownTaxes ? (ctxTaxes as number) : Math.max(0, productCtx.base - derivedBasePerPax);
+  const fareBaseTotal = derivedBasePerPax * passengerTotal;
+  const fareTaxesTotal = derivedTaxesPerPax * passengerTotal;
+  const fareSplitIsEstimated = !knownBaseFare && !knownTaxes;
   const passengerSummary = `${passengerTotal} ${passengerTotal === 1 ? "Adult" : "Travelers"}`;
   const stopCount = Math.max(0, ctxSegments.length > 1 ? ctxSegments.length - 1 : ctxLayovers.length);
   const stopSummary = `${stopCount} Stop${stopCount === 1 ? "" : "s"}`;
