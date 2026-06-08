@@ -1088,29 +1088,24 @@ export default function BookingPage() {
                       {infantCount > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Infant fare x {infantCount}</span><span className="text-foreground font-medium">{formatMoney(productCtx.base * infantCount)}</span></div>}
                     </>
                   )}
-                  {fareBaseTotal !== null && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Base Fare</span>
-                      <span className="font-semibold text-foreground">{formatMoney(fareBaseTotal)}</span>
-                    </div>
-                  )}
-                  {fareTaxesTotal !== null && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Taxes</span>
-                      <span className="font-semibold text-foreground">{formatMoney(fareTaxesTotal)}</span>
-                    </div>
-                  )}
-                  {fareBaseTotal === null && fareTaxesTotal === null && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{isFlight && passengerTotal > 1 ? "Base total" : "Total Fare"}</span>
-                      <span className="font-semibold text-foreground">{formatMoney(baseTotal)}</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Base Fare{isFlight && passengerTotal > 1 ? ` x ${passengerTotal}` : ""}</span>
+                    <span className="font-semibold text-foreground">{formatMoney(fareBaseTotal)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Taxes &amp; fees</span>
+                    <span className="font-semibold text-foreground">{formatMoney(fareTaxesTotal)}</span>
+                  </div>
                   {selectedAddons.length > 0 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Add-ons ({selectedAddons.length})</span>
                       <span className="text-foreground font-medium">{formatMoney(addonsTotal)}</span>
                     </div>
+                  )}
+                  {isFlight && (
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      Includes 7&thinsp;kg carry-on. {fareSplitIsEstimated ? "Base/tax split is an estimate until the supplier confirms the fare." : ""}
+                    </p>
                   )}
                   <div className="mt-2 flex justify-between border-t pt-2 text-base font-black">
                     <span>Total</span>
