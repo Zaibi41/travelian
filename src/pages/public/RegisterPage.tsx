@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plane, UserPlus, Loader2, Mail, User, KeyRound, Phone, Briefcase, CheckSquare } from "lucide-react";
+import { Plane, UserPlus, Loader2, Mail, User, KeyRound, Phone, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import { confirmSignUp, signUpWithPassword } from "@/lib/cognito-auth";
 import { PasswordInput } from "@/components/PasswordInput";
@@ -147,10 +147,9 @@ export default function RegisterPage() {
                   <Label htmlFor="confirmPassword">Confirm password</Label>
                   <PasswordInput id="confirmPassword" name="confirmPassword" autoComplete="new-password" placeholder="Repeat password" />
                 </div>
-                <label className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-border/70 bg-muted/30 p-3 text-xs text-muted-foreground">
-                  <input name="terms" type="checkbox" className="mt-0.5 h-4 w-4 rounded border-border" />
-                  <CheckSquare className="h-4 w-4 shrink-0 text-primary" />
-                  <span>I agree to the <Link to="/terms" className="text-primary hover:underline">Terms</Link> and <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.</span>
+                <label className="sm:col-span-2 flex items-start gap-3 rounded-lg border border-border/70 bg-muted/30 p-3 text-xs text-muted-foreground">
+                  <input name="terms" type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary" />
+                  <span className="leading-5">I agree to the <Link to="/terms" className="text-primary hover:underline">Terms</Link> and <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.</span>
                 </label>
               </>
             )}
