@@ -256,8 +256,17 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return `${Math.floor(ms / 3600000)}h ${Math.round((ms % 3600000) / 60000)}m`;
   };
 
-  const formatFare = (price: number, currency = "PKR") => {
-    return `${currency || "PKR"} ${Math.round(price).toLocaleString()}`;
+  const RATE_PER_USD: Record<string, number> = {
+    ...Object.fromEntries(CURRENCIES.map((c) => [c.code, c.rate])),
+    INR: 83,
+  };
+  const formatFare = (price: number, srcCurrency = "PKR") => {
+    const src = String(srcCurrency || "PKR").toUpperCase();
+    const dst = (selectedCurrency || "PKR").toUpperCase();
+    const fromRate = RATE_PER_USD[src] ?? RATE_PER_USD[dst] ?? 1;
+    const toRate = RATE_PER_USD[dst] ?? fromRate;
+    const converted = src === dst ? price : (price / fromRate) * toRate;
+    return `${dst} ${Math.round(converted).toLocaleString()}`;
   };
 
   const expiryLabel = `${Math.floor(expirySeconds / 60)}:${String(expirySeconds % 60).padStart(2, "0")}`;
