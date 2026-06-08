@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Loader2, Plane } from "lucide-react";
 import { toast } from "sonner";
 import { completeCognitoRedirect } from "@/lib/cognito-auth";
-import { roleForSession } from "@/lib/role-mapping";
+import { isAdminPortalRole, roleForSession } from "@/lib/role-mapping";
 import { useRole } from "@/contexts/RoleContext";
 
 export default function AuthCallbackPage() {
@@ -20,7 +20,7 @@ export default function AuthCallbackPage() {
         const role = roleForSession(session);
         if (role) setCurrentRole(role);
         toast.success("Welcome to Travelian");
-        navigate(role ? "/admin" : "/account", { replace: true });
+        navigate(isAdminPortalRole(role) ? "/admin" : "/admin/customer", { replace: true });
       })
       .catch((error) => {
         if (cancelled) return;

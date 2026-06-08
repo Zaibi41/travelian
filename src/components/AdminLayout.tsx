@@ -3,6 +3,7 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
 import { clearSession, getSession } from "@/lib/auth-session";
 import { cognitoLogoutUrl } from "@/lib/cognito-auth";
@@ -18,10 +19,22 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentRole } = useRole();
-  const allowed = canAccessAdminPath(currentRole, location.pathname);
+  const session = getSession();
+  const isAuthenticated = !!session;
+  const allowed = isAuthenticated && canAccessAdminPath(currentRole, location.pathname);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      const redirect = encodeURIComponent(`${location.pathname}${location.search}`);
+      navigate(`/signin?redirect=${redirect}`, { replace: true });
+      return;
+    }
+    if (currentRole === "customer" && location.pathname === "/admin") {
+      navigate("/admin/customer", { replace: true });
+    }
+  }, [currentRole, isAuthenticated, location.pathname, location.search, navigate]);
 
   const handleLogout = () => {
-    const session = getSession();
     clearSession();
     toast.success("Signed out");
     if (session?.provider === "Cognito") {
@@ -62,7 +75,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </div>
           </header>
           <main className="flex-1 bg-muted/20 p-4 md:p-6">
-            {allowed ? children : <AccessDeniedPage />}
+            {!isAuthenticated ? null : allowed ? children : <AccessDeniedPage />}
           </main>
           <MoveToTopButton className="bottom-6" />
         </div>

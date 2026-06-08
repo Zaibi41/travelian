@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Plane, Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { signInWithPassword } from "@/lib/cognito-auth";
-import { roleForSession } from "@/lib/role-mapping";
+import { isAdminPortalRole, roleForSession } from "@/lib/role-mapping";
 import { useRole } from "@/contexts/RoleContext";
 import { PasswordInput } from "@/components/PasswordInput";
 
@@ -33,7 +33,8 @@ export default function SignInPage() {
       if (role) setCurrentRole(role);
       toast.success("Welcome back");
       const redirect = searchParams.get("redirect");
-      navigate(redirect && redirect.startsWith("/") ? redirect : role ? "/admin" : "/account");
+      const fallback = isAdminPortalRole(role) ? "/admin" : "/admin/customer";
+      navigate(redirect && redirect.startsWith("/") ? redirect : fallback);
     } catch (error) {
       setLoading(false);
       toast.error(error instanceof Error ? error.message : "Sign in failed. Please try again.");
