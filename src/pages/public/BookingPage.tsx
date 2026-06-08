@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AdvancedDatePicker } from "@/components/ui/advanced-date-picker";
 import { CountryCodePicker } from "@/components/ui/country-code-picker";
 import { CountryPicker } from "@/components/ui/country-picker";
-import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Search } from "lucide-react";
+import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Search, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 // SeatMap is intentionally paused in the UI for now. Keep the component available for the future seat-selection phase.
 // import { SeatMap } from "@/components/booking/SeatMap";
@@ -23,6 +23,7 @@ import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { format, addDays } from "date-fns";
 import { useAdmin } from "@/contexts/AdminStore";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 const steps = [
   { id: 1, label: "Traveler Details" },
@@ -259,6 +260,7 @@ export default function BookingPage() {
   const [passengerForms, setPassengerForms] = useState<PassengerForm[]>(() =>
     passengerLabels.map((passenger) => createPassengerForm(passenger.type, passenger.label)),
   );
+  const [expandedPassengers, setExpandedPassengers] = useState<Set<number>>(() => new Set(passengerLabels.map((_, index) => index)));
 
   // Contact
   const [email, setEmail] = useState("");
@@ -291,6 +293,35 @@ export default function BookingPage() {
     if (requiresPassport) return /^[A-Z0-9]{6,12}$/i.test(passenger.docNumber);
     return /^\d{13}$/.test(passenger.docNumber.replace(/-/g, ""));
   };
+
+  const passengerComplete = (passenger: PassengerForm) => Boolean(
+    passenger.firstName.trim() &&
+    passenger.lastName.trim() &&
+    passenger.dob &&
+    passenger.docNumber.trim() &&
+    passengerDocValid(passenger) &&
+    (!requiresPassport || passenger.expiryDate),
+  );
+
+  const togglePassengerExpanded = (index: number) => {
+    setExpandedPassengers((current) => {
+      const next = new Set(current);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    setExpandedPassengers((current) => {
+      const next = new Set(current);
+      passengerForms.forEach((passenger, index) => {
+        if (passengerComplete(passenger)) next.delete(index);
+        else next.add(index);
+      });
+      return next;
+    });
+  }, [passengerForms]);
 
   const toggleAddon = (id: string) => {
     setSelectedAddons(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -534,7 +565,7 @@ export default function BookingPage() {
       <SEO title="Secure Checkout - Travelian" description={`Complete your ${productCtx.type} booking securely with Travelian.`} />
       <h1 className="sr-only">Secure Checkout</h1>
       {/* Progress Header */}
-      <div className="bg-card border-b sticky top-0 z-40">
+      <div className="sticky top-0 z-50 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/85">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <Link to={backLink} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -580,7 +611,13 @@ export default function BookingPage() {
                   </CardContent>
                 </Card>
 
-                {passengerForms.map((passenger, index) => (
+                {passengerForms.map((passenger, index) => {
+                  const isComplete = passengerComplete(passenger);
+                  const isExpanded = expandedPassengers.has(index);
+                  const passengerName = [passenger.title, passenger.firstName, passenger.lastName].filter(Boolean).join(" ");
+                  const nameHelperId = `passenger-${index}-name-helper`;
+                  const docHelperId = `passenger-${index}-document-helper`;
+                  return (
                   <Card key={`${passenger.passengerType}-${index}`} className="shadow-card border-0">
                     <CardContent className="p-6">
                       <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
@@ -590,10 +627,17 @@ export default function BookingPage() {
                             {passenger.passengerType === "adult" ? "12+ years" : passenger.passengerType === "child" ? "2-11 years" : "Under 2 years"}
                           </p>
                         </div>
-                        <Badge variant="outline" className="capitalize">{passenger.passengerType}</Badge>
+                        <div className="flex items-center gap-2">
+                          {isComplete && <Badge className="rounded-full bg-success/10 text-success hover:bg-success/10">Complete</Badge>}
+                          <Badge variant="outline" className="capitalize">{passenger.passengerType}</Badge>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => togglePassengerExpanded(index)} className="h-8 gap-1 rounded-lg">
+                            {isExpanded ? "Collapse" : "Edit"}
+                            {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                          </Button>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className={isExpanded ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "hidden"}>
                         <div>
                           <Label className="text-sm font-medium">Title *</Label>
                           <Select value={passenger.title} onValueChange={(value) => updatePassenger(index, { title: value })}>
@@ -628,6 +672,7 @@ export default function BookingPage() {
                             className="mt-1.5 h-11 rounded-xl"
                             value={passenger.firstName}
                             onChange={e => updatePassenger(index, { firstName: e.target.value })}
+                            aria-describedby={nameHelperId}
                           />
                           {touched && errors[`passenger-${index}-firstName`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-firstName`]}</p>}
                         </div>
@@ -638,9 +683,13 @@ export default function BookingPage() {
                             className="mt-1.5 h-11 rounded-xl"
                             value={passenger.lastName}
                             onChange={e => updatePassenger(index, { lastName: e.target.value })}
+                            aria-describedby={nameHelperId}
                           />
                           {touched && errors[`passenger-${index}-lastName`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-lastName`]}</p>}
                         </div>
+                        <p id={nameHelperId} className="md:col-span-2 -mt-2 text-xs text-muted-foreground">
+                          Name must match exactly as shown on your {requiresPassport ? "passport" : "CNIC"}.
+                        </p>
 
                         <div>
                           <Label className="text-sm font-medium">Date of Birth *</Label>
@@ -666,7 +715,11 @@ export default function BookingPage() {
                             value={passenger.docNumber}
                             onChange={e => updatePassenger(index, { docNumber: requiresPassport ? e.target.value.toUpperCase() : e.target.value.replace(/[^\d]/g, "") })}
                             maxLength={requiresPassport ? 12 : 13}
+                            aria-describedby={docHelperId}
                           />
+                          <p id={docHelperId} className="mt-1 text-xs text-muted-foreground">
+                            {requiresPassport ? "Use the passport number without spaces." : "Use 13 digits without dashes."}
+                          </p>
                           {touched && errors[`passenger-${index}-docNumber`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-docNumber`]}</p>}
                         </div>
                         <div>
@@ -700,9 +753,25 @@ export default function BookingPage() {
                           </>
                         )}
                       </div>
+                      {!isExpanded && (
+                        <div className="rounded-2xl border bg-muted/30 p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-bold text-foreground">{passengerName || passenger.label}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {[passenger.docNumber || "Document pending", passenger.dob ? format(passenger.dob, "dd MMM yyyy") : "DOB pending"].join(" - ")}
+                              </p>
+                            </div>
+                            <Button type="button" variant="outline" size="sm" onClick={() => togglePassengerExpanded(index)} className="rounded-lg">
+                              Edit Details
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
 
                 {/* Contact Information */}
                 <Card className="shadow-card border-0">
@@ -725,17 +794,20 @@ export default function BookingPage() {
                         {!email.trim() && <p id="contact-email-hint" className="text-xs text-muted-foreground mt-1">Optional, but recommended for e-ticket delivery.</p>}
                       </div>
                       <div className="md:col-span-2">
-                        <Label className="text-sm font-medium">Mobile Number *</Label>
+                        <Label htmlFor="contact-phone" className="text-sm font-medium">Mobile Number *</Label>
                         <div className="flex gap-2 mt-1.5">
                           <CountryCodePicker value={phoneCode} onChange={setPhoneCode} />
                           <Input
+                            id="contact-phone"
                             inputMode="numeric"
                             placeholder="3001234567"
                             className="h-11 rounded-xl flex-1"
                             value={phone}
                             onChange={onPhoneChange(setPhone)}
+                            aria-describedby="contact-phone-hint"
                           />
                         </div>
+                        <p id="contact-phone-hint" className="text-xs text-muted-foreground mt-1">Travelian will use this number for ticketing updates and support.</p>
                         {touched && errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
                       </div>
                       <div className="md:col-span-2">
@@ -776,9 +848,16 @@ export default function BookingPage() {
                     <Button variant="ghost" onClick={saveProgress} disabled={processing} className="rounded-xl h-11 px-5">
                       Save & Continue Later
                     </Button>
-                    <Button variant="outline" onClick={handleHoldBooking} disabled={processing} title="Free 24-hour PNR hold. Travelian will email you to confirm before charging your card." className="rounded-xl h-11 px-5">
-                      Hold Booking
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
+                          Hold Booking
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        Free 24-hour PNR hold. We will contact you to confirm before charging.
+                      </TooltipContent>
+                    </Tooltip>
                     <Button onClick={handleContinue} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
                       Continue <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
@@ -803,9 +882,16 @@ export default function BookingPage() {
                     <div className="flex justify-between mt-6 gap-3">
                       <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl">Back</Button>
                       <div className="flex flex-wrap justify-end gap-2">
-                        <Button variant="outline" onClick={handleHoldBooking} disabled={processing} title="Hold this booking with payment pending so Travelian can verify and process it manually." className="rounded-xl h-11 px-5">
-                          Hold Booking
-                        </Button>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
+                              Hold Booking
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            Free 24-hour PNR hold. Travelian can verify fare rules and confirm before payment.
+                          </TooltipContent>
+                        </Tooltip>
                         <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
                           Continue <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
@@ -915,9 +1001,16 @@ export default function BookingPage() {
                   <div className="flex justify-between mt-6">
                     <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl" disabled={processing}>Back</Button>
                     <div className="flex flex-wrap justify-end gap-2">
-                      <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
-                        {isFlight ? "Book Only" : "Request Without Payment"}
-                      </Button>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
+                            {isFlight ? "Book Only" : "Request Without Payment"}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          Creates a saved booking with payment pending. Ticketing starts only after payment or admin approval.
+                        </TooltipContent>
+                      </Tooltip>
                       <Button onClick={handlePay} disabled={processing} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
                         {processing ? "Processing..." : `Pay ${formatMoney(grandTotal)}`} <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
@@ -1089,16 +1182,21 @@ export default function BookingPage() {
                     <span className="text-muted-foreground">Taxes &amp; fees</span>
                     <span className="font-semibold text-foreground">{formatMoney(fareTaxesTotal)}</span>
                   </div>
-                  {selectedAddons.length > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Add-ons ({selectedAddons.length})</span>
-                      <span className="text-foreground font-medium">{formatMoney(addonsTotal)}</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Seat/baggage add-ons{selectedAddons.length > 0 ? ` (${selectedAddons.length})` : ""}</span>
+                    <span className="text-foreground font-medium">{formatMoney(addonsTotal)}</span>
+                  </div>
                   {isFlight && (
-                    <p className="mt-2 text-[11px] text-muted-foreground">
-                      Includes 7&thinsp;kg carry-on. {fareSplitIsEstimated ? "Base/tax split is an estimate until the supplier confirms the fare." : ""}
-                    </p>
+                    <div className="mt-3 rounded-xl border border-primary/10 bg-accent/40 p-3 text-[11px] text-muted-foreground">
+                      <p className="flex items-start gap-1.5 font-semibold text-foreground">
+                        <Info className="mt-0.5 h-3.5 w-3.5 text-primary" />
+                        Fare rules summary
+                      </p>
+                      <p className="mt-1">Includes 7kg carry-on.</p>
+                      <p className="mt-1">Free cancellation until {format(addDays(new Date(), 1), "MMM d, HH:mm")}.</p>
+                      <p className="mt-1">Refundability and change fees follow supplier fare rules and are verified before ticketing.</p>
+                      {fareSplitIsEstimated && <p className="mt-1">Base/tax split is estimated until the supplier confirms the fare.</p>}
+                    </div>
                   )}
                   <div className="mt-2 flex justify-between border-t pt-2 text-base font-black">
                     <span>Total</span>
