@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Flame, Clock, Percent, Zap, Tag, MapPin, Heart, ArrowRight, Check, Copy, Hotel } from "lucide-react";
+import { Flame, Clock, Percent, Zap, Tag, MapPin, Heart, ArrowRight, Check, Copy, Hotel as HotelIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "sonner";
