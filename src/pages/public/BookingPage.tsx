@@ -711,16 +711,18 @@ export default function BookingPage() {
                     <p className="text-sm text-muted-foreground mb-6">We'll use the mobile number for booking follow-up. Email is optional.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="md:col-span-2">
-                        <Label className="text-sm font-medium">Email</Label>
+                        <Label htmlFor="contact-email" className="text-sm font-medium">Email</Label>
                         <Input
+                          id="contact-email"
                           type="email"
                           placeholder="Optional email"
                           className="mt-1.5 h-11 rounded-xl"
                           value={email}
                           onChange={e => setEmail(e.target.value)}
+                          aria-describedby="contact-email-hint"
                         />
                         {touched && errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
-                        {!email.trim() && <p className="text-xs text-muted-foreground mt-1">Optional, but recommended for e-ticket delivery.</p>}
+                        {!email.trim() && <p id="contact-email-hint" className="text-xs text-muted-foreground mt-1">Optional, but recommended for e-ticket delivery.</p>}
                       </div>
                       <div className="md:col-span-2">
                         <Label className="text-sm font-medium">Mobile Number *</Label>
