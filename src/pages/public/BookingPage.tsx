@@ -1079,14 +1079,7 @@ export default function BookingPage() {
                   <p className="mb-2 font-bold text-foreground">Fare Summary</p>
                   {sourceCurrencyLabel && <p className="mb-2 text-[11px] text-muted-foreground">{sourceCurrencyLabel}</p>}
                   {isFlight && passengerTotal > 1 && (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Adult fare x {adultCount}</span>
-                        <span className="text-foreground font-medium">{formatMoney(productCtx.base * adultCount)}</span>
-                      </div>
-                      {childCount > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Child fare x {childCount}</span><span className="text-foreground font-medium">{formatMoney(productCtx.base * childCount)}</span></div>}
-                      {infantCount > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Infant fare x {infantCount}</span><span className="text-foreground font-medium">{formatMoney(productCtx.base * infantCount)}</span></div>}
-                    </>
+                    <p className="mb-1 text-[11px] text-muted-foreground">{passengerSummary} · fares shown for the whole party</p>
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Base Fare{isFlight && passengerTotal > 1 ? ` x ${passengerTotal}` : ""}</span>
