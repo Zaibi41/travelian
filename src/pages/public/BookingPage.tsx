@@ -756,23 +756,31 @@ export default function BookingPage() {
 
                 <div className="flex items-start gap-2 p-3 bg-accent/50 rounded-xl border border-primary/10">
                   <AlertCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <p className="text-xs text-muted-foreground">Name must match exactly as shown on your {requiresPassport ? "passport" : "CNIC"}.</p>
+                  <p id="passport-match-hint" className="text-xs text-muted-foreground">Name must match exactly as shown on your {requiresPassport ? "passport" : "CNIC"}.</p>
                 </div>
                 <div className="grid gap-2 rounded-2xl border bg-card p-3 text-xs text-muted-foreground sm:grid-cols-3">
                   <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-success" /> Secure SSL checkout</span>
                   <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-success" /> Your card is not charged yet</span>
                   <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-success" /> Supplier verification before ticketing</span>
                 </div>
-                <div className="flex flex-wrap justify-end gap-2">
-                  <Button variant="ghost" onClick={saveProgress} disabled={processing} className="rounded-xl h-11 px-5">
-                    Save & Continue Later
-                  </Button>
-                  <Button variant="outline" onClick={handleHoldBooking} disabled={processing} title="Hold this booking with payment pending so Travelian can verify and process it manually." className="rounded-xl h-11 px-5">
-                    Hold Booking
-                  </Button>
-                  <Button onClick={handleContinue} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
-                    Continue <ChevronRight className="h-4 w-4 ml-1" />
-                  </Button>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <Badge variant="outline" className="gap-1 rounded-full border-success/30 bg-success/10 px-2.5 py-1 text-success">
+                      <Check className="h-3 w-3" /> Free cancellation until {format(addDays(new Date(), 1), "MMM d, HH:mm")}
+                    </Badge>
+                    <span className="text-muted-foreground">Refundable per supplier fare rules. Review terms before payment.</span>
+                  </div>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button variant="ghost" onClick={saveProgress} disabled={processing} className="rounded-xl h-11 px-5">
+                      Save & Continue Later
+                    </Button>
+                    <Button variant="outline" onClick={handleHoldBooking} disabled={processing} title="Free 24-hour PNR hold. Travelian will email you to confirm before charging your card." className="rounded-xl h-11 px-5">
+                      Hold Booking
+                    </Button>
+                    <Button onClick={handleContinue} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
+                      Continue <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
