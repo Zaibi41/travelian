@@ -608,7 +608,32 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
           {/* Results */}
           <div className="flex-1 space-y-4">
-            {apiStatus === "loading" && <FlightSearchLoader from={from} to={to} />}
+            {apiStatus === "loading" && (
+              <>
+                <FlightSearchLoader from={from} to={to} />
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Card key={`skel-${i}`} className="border-0 shadow-card animate-pulse">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between gap-6">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-10 w-10 rounded-xl" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-3 w-24" />
+                            <Skeleton className="h-3 w-16" />
+                          </div>
+                        </div>
+                        <div className="hidden flex-1 items-center gap-4 md:flex">
+                          <div className="space-y-2 text-right"><Skeleton className="ml-auto h-4 w-16" /><Skeleton className="ml-auto h-3 w-10" /></div>
+                          <Skeleton className="h-px flex-1" />
+                          <div className="space-y-2"><Skeleton className="h-4 w-16" /><Skeleton className="h-3 w-10" /></div>
+                        </div>
+                        <div className="space-y-2 text-right"><Skeleton className="ml-auto h-5 w-24" /><Skeleton className="ml-auto h-9 w-28 rounded-lg" /></div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            )}
 
             {apiStatus !== "loading" && filtered.map((flight, idx) => {
               const isBest = bestFlight?.flightId === flight.flightId;
