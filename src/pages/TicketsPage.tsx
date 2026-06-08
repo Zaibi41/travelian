@@ -154,7 +154,7 @@ function invoiceReadinessIssues(ticket: TravelTicket) {
     ["arrival time", ticket.arrivalTime],
     ["duration", ticket.duration],
   ] as const;
-  const missing = requiredText.filter(([, value]) => !String(value || "").trim()).map(([label]) => label);
+  const missing: string[] = requiredText.filter(([, value]) => !String(value || "").trim()).map(([label]) => label);
   if (!(Number(ticket.price) > 0)) missing.push("fare amount");
   return missing;
 }
