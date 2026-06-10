@@ -4,7 +4,7 @@ import { Bell, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { RoleSwitcher } from "@/components/RoleSwitcher";
+
 import { clearSession, getSession } from "@/lib/auth-session";
 import { cognitoLogoutUrl } from "@/lib/cognito-auth";
 import { toast } from "sonner";
@@ -55,7 +55,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <span className="text-sm text-muted-foreground hidden sm:block">Travel Management System</span>
             </div>
             <div className="flex items-center gap-3">
-              <RoleSwitcher />
+              
               <Button variant="outline" size="sm" onClick={handleLogout} className="hidden sm:inline-flex gap-2 rounded-lg">
                 <LogOut className="h-4 w-4" /> Sign out
               </Button>
