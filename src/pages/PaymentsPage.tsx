@@ -27,7 +27,7 @@ export default function PaymentsPage() {
 
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkForm, setLinkForm] = useState({ bookingId: "", customerName: "", customerEmail: "", amount: 0 });
-  const [tab, setTab] = useState<"links" | "config">("links");
+  const [tab, setTab] = useState<"all" | "card" | "1link" | "bank" | "failed" | "config">("all");
 
   const canEdit = currentRole === "super_admin" || currentRole === "admin";
 
