@@ -32,6 +32,8 @@ function getInitialRole(): UserRole {
   } catch {
     // localStorage can be unavailable in non-browser rendering.
   }
+  // No session: still return customer as a safe public-facing default.
+  // AdminLayout enforces auth and redirects unauthenticated users to /signin.
   return "customer";
 }
 
