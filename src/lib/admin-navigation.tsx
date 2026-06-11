@@ -114,6 +114,7 @@ export const adminNavigation: AdminNavSection[] = [
       item("My Assigned Bookings", "/admin/bookings", CalendarCheck, ["staff"]),
       item("My Agency Bookings", "/admin/bookings", CalendarCheck, agencyOwnerRoles),
       item("My Bookings", "/admin/bookings", CalendarCheck, agencyStaffRoles),
+      item("Hold Bookings", "/admin/bookings/holds", Hourglass, [...internalAdminRoles, ...agencyRoles, "staff"]),
       item("Ticketing & Invoices", "/admin/tickets", Ticket, [...internalAdminRoles, ...agencyRoles]),
       item("Refunds & Cancellations", "/admin/bookings", RefreshCw, [...internalAdminRoles, ...agencyRoles]),
       item("Booking Requests", "/admin/booking-requests", ClipboardCheck, [...internalAdminRoles, ...agencyOwnerRoles, "staff"]),
@@ -140,7 +141,6 @@ export const adminNavigation: AdminNavSection[] = [
     category: "Pricing & Revenue",
     items: [
       item("Flight Pricing & Rules", "/admin/flights", Plane, platformOwnerRoles),
-      item("Fare Management", "/admin/flights", Receipt, platformOwnerRoles),
       item("Deals & Promotions", "/admin/coupons", Tag, internalAdminRoles),
     ],
   },
@@ -217,7 +217,6 @@ export const adminNavigation: AdminNavSection[] = [
     category: "Management",
     items: [
       item("Agencies", "/admin/agencies", Building2, internalAdminRoles),
-      item("Customers", "/admin/customers", Users, internalAdminRoles),
       item("Users & Staff", "/admin/users", UserCog, internalAdminRoles),
       item("Suppliers / API Providers", "/admin/provider-systems", CloudCog, platformOwnerRoles),
     ],
@@ -225,7 +224,7 @@ export const adminNavigation: AdminNavSection[] = [
   {
     category: "Reports",
     items: [
-      item("Reports", "/admin", BarChart3, [...internalAdminRoles, ...agencyOwnerRoles, "staff"]),
+      item("Reports", "/admin/reports", BarChart3, [...internalAdminRoles, ...agencyOwnerRoles, "staff"]),
     ],
   },
   {
@@ -239,7 +238,6 @@ export const adminNavigation: AdminNavSection[] = [
     items: [
       item("Help Center", "/admin/customer/support", LifeBuoy, customerRoles),
       item("WhatsApp Support", "/admin/customer/support", MessageCircle, [...agencyRoles, ...customerRoles]),
-      item("Notifications", "/admin/customer/support", Bell, [...agencyRoles, ...customerRoles]),
     ],
   },
   {
@@ -268,6 +266,10 @@ export const adminNavigation: AdminNavSection[] = [
       item("Roles & Permissions", "/admin/rbac", Shield, platformOwnerRoles),
       item("Secret Manager", "/admin/secrets", KeyRound, platformOwnerRoles),
       item("General Settings", "/admin/settings", Settings, internalAdminRoles),
+      item("Audit Logs", "/admin/roadmap/audit-logs", FileText, platformOwnerRoles),
+      item("Webhook Logs", "/admin/roadmap/webhook-logs", CloudCog, platformOwnerRoles),
+      item("Reconciliation", "/admin/roadmap/reconciliation", Receipt, platformOwnerRoles),
+      item("Payment Gateways", "/admin/roadmap/payment-gateways", CreditCard, platformOwnerRoles),
       item("View Public Site", "/", Globe, []),
     ],
   },
