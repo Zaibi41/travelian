@@ -7,9 +7,9 @@ import { PageHeader } from "@/components/public/PageHeader";
 import { PackageImage } from "@/components/public/PackageImage";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { useAdmin } from "@/contexts/AdminStore";
+import { whatsappUrl } from "@/lib/site-config";
 
 const categories = ["Domestic tours", "International tours", "Group tours", "Custom tours"];
-const whatsappBase = "https://wa.me/923244440014";
 const siteBase = "https://www.travelian.pk";
 
 export default function PublicToursPage() {
@@ -40,7 +40,7 @@ export default function PublicToursPage() {
             <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
               Travelian only displays active tour packages from admin inventory. Our team can still prepare a custom itinerary with hotels, transport, meals and availability dates.
             </p>
-            <a href={`${whatsappBase}?text=${encodeURIComponent("Hello Travelian, please help me with a custom tour package.")}`} target="_blank" rel="noreferrer">
+            <a href={whatsappUrl("Hello Travelian, please help me with a custom tour package.")} target="_blank" rel="noreferrer">
               <Button className="mt-5 rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> Request a Tour
               </Button>
@@ -64,7 +64,7 @@ export default function PublicToursPage() {
                   {tour.agentDiscount && <Badge variant="secondary">{tour.agentDiscount}</Badge>}
                   <div className="grid grid-cols-2 gap-2">
                     <Button asChild className="gradient-primary text-primary-foreground"><Link to={`/tour/${tour.packageId}`}>View Details</Link></Button>
-                    <a href={`${whatsappBase}?text=${encodeURIComponent(`Hello Travelian,\n\nI want to inquire about this tour:\n${tour.name}\nDates: ${tour.travelDates || "Please confirm"}\nPrice from: PKR ${tour.basePrice.toLocaleString()}\nPackage URL: ${siteBase}/tour/${tour.packageId}`)}`} target="_blank" rel="noreferrer">
+                    <a href={whatsappUrl(`Hello Travelian,\n\nI want to inquire about this tour:\n${tour.name}\nDates: ${tour.travelDates || "Please confirm"}\nPrice from: PKR ${tour.basePrice.toLocaleString()}\nPackage URL: ${siteBase}/tour/${tour.packageId}`)} target="_blank" rel="noreferrer">
                       <Button variant="outline" className="w-full"><WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp</Button>
                     </a>
                   </div>

@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { UmrahPackage } from "@/data/models";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { whatsappUrl } from "@/lib/site-config";
 
-const whatsappBase = "https://wa.me/923244440014";
 const siteBase = "https://www.travelian.pk";
 
 function formatPrice(value?: number) {
@@ -146,7 +146,7 @@ export function UmrahPackageShowcase({ item, detailMode = false }: UmrahPackageS
           <Button asChild size="lg" className="h-14 rounded-xl bg-primary text-base font-bold text-primary-foreground hover:bg-primary/90">
             <Link to={detailMode ? bookingPath : `/umrah/${item.packageId}`}>{detailMode ? "Book Now" : "View Details"}</Link>
           </Button>
-          <a href={`${whatsappBase}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer">
+          <a href={whatsappUrl(whatsappMessage)} target="_blank" rel="noreferrer">
             <Button size="lg" className="h-14 w-full rounded-xl bg-[#16a34a] text-base font-bold text-white hover:bg-[#15803d]">
               <WhatsAppIcon className="mr-2 h-5 w-5" /> Book on WhatsApp
             </Button>

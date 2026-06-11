@@ -379,6 +379,7 @@ _End of report. No files changed except this report at `.lovable/audit-report.md
 - ✅ Task A — Sidebar IA cleanup finished: removed `Fare Management`, duplicate `Customers`, redundant customer `Notifications`. Reports now routes to `/admin/reports` (placeholder page). Added Audit Logs / Webhook Logs / Reconciliation / Payment Gateways as visible roadmap pages.
 - ✅ Task A — Added `Hold Bookings` queue at `/admin/bookings/holds` with live countdown.
 - ✅ Task B — Booking Requests inbox upgraded: type filter chips with counts, sortable Created column, age badge, WhatsApp action, table on desktop / cards on mobile, staff Select.
-- ✅ Task C — Fare-recheck interstitial (deterministic 15% mock), Payment-confirmation dialog with wallet precheck, role-based CTAs (customer hides Hold Booking, Pay button label switches to "Pay & Book").
+- ✅ Task C — Fare-recheck interstitial (deterministic 15% mock), Payment-confirmation dialog with wallet precheck, role-based CTAs (customer gets Reserve / Request Booking + WhatsApp Help, Pay button label switches to "Pay & Book").
 - ✅ Task D — Study Visa + Group Ticketing added to public navbar; WhatsApp number centralised in `src/lib/site-config.ts`; floating WhatsApp button mounted once in `PublicLayout`.
 - Booking stepper was already sticky (`sticky top-0`) on the public BookingPage — no change required.
+- ✅ Sprint 2 follow-up — Centralized remaining public/detail WhatsApp CTAs, expanded Booking Request type chips for Group / Manual Flight / WhatsApp Inquiry, removed redundant sidebar WhatsApp Support item, and made automatic hold expiry use the `expired` status instead of manual cancellation.

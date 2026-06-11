@@ -1,10 +1,8 @@
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin, Facebook, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
 
-const SUPPORT_PHONE = "+92 324 4440014";
-const SUPPORT_PHONE_TEL = "+923244440014";
-const SUPPORT_EMAIL = "travelian.pk@gmail.com";
 const SUPPORT_ADDRESS = "Johar Town, Lahore";
 
 export function PublicFooter() {
@@ -21,7 +19,7 @@ export function PublicFooter() {
             <p className="text-sm text-sidebar-muted mt-1">Talk to the Travelian team for current fares, packages and travel support.</p>
           </div>
           <Button asChild className="gradient-gold text-gold-foreground shrink-0 rounded-xl font-semibold">
-            <a href="https://wa.me/923244440014" target="_blank" rel="noreferrer">WhatsApp Support</a>
+            <a href={whatsappUrl("Hi, I need help with a Travelian booking.")} target="_blank" rel="noreferrer">WhatsApp Support</a>
           </Button>
         </div>
       </div>
@@ -76,7 +74,7 @@ export function PublicFooter() {
             <h4 className="font-semibold text-sidebar-accent-foreground mb-4 text-sm">Contact</h4>
             <ul className="space-y-3 text-sm text-sidebar-muted">
               <li className="flex items-start gap-2"><MapPin className="h-4 w-4 shrink-0 mt-0.5" /> {SUPPORT_ADDRESS}</li>
-              <li className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" /> <a href={`tel:${SUPPORT_PHONE_TEL}`} className="hover:text-sidebar-primary">{SUPPORT_PHONE}</a></li>
+              <li className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0" /> <a href={`tel:${SUPPORT_PHONE_TEL}`} className="hover:text-sidebar-primary">{SUPPORT_PHONE_DISPLAY}</a></li>
               <li className="flex items-center gap-2"><Mail className="h-4 w-4 shrink-0" /> <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-sidebar-primary">{SUPPORT_EMAIL}</a></li>
             </ul>
           </div>

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { listBookings, cancelBooking, type BookingRecord } from "@/lib/booking-store";
+import { listBookings, cancelBooking, expireBooking, type BookingRecord } from "@/lib/booking-store";
 import { Link } from "react-router-dom";
 
 const HOLD_DEFAULT_HOURS = 24;
@@ -53,7 +53,7 @@ export default function HoldBookingsPage() {
   useEffect(() => {
     rows.forEach(({ record, remaining }) => {
       if (remaining <= 0 && record.status === "held") {
-        cancelBooking(record.id);
+        expireBooking(record.id);
         toast.warning(`Hold expired for ${record.pnr}`);
       }
     });
@@ -94,14 +94,14 @@ export default function HoldBookingsPage() {
             <TableBody>
               {rows.map(({ record, remaining }) => {
                 const lead = record.travelers[0];
-                const route = record.flight ? `${record.flight.from} → ${record.flight.to}` : record.type;
+                const route = record.flight ? `${record.flight.from} -> ${record.flight.to}` : record.type;
                 const urgent = remaining > 0 && remaining < 60 * 60 * 1000;
                 return (
                   <TableRow key={record.id}>
                     <TableCell className="font-mono font-semibold">{record.pnr}</TableCell>
                     <TableCell><Badge variant="secondary" className="capitalize gap-1"><Plane className="h-3 w-3" /> {record.type}</Badge></TableCell>
                     <TableCell className="text-sm">{route}</TableCell>
-                    <TableCell className="text-sm">{lead ? `${lead.firstName} ${lead.lastName}` : "—"}</TableCell>
+                    <TableCell className="text-sm">{lead ? `${lead.firstName} ${lead.lastName}` : "-"}</TableCell>
                     <TableCell className="text-sm font-semibold">{record.pricing.currency} {record.pricing.total.toLocaleString()}</TableCell>
                     <TableCell>
                       <Badge variant={remaining <= 0 ? "destructive" : urgent ? "destructive" : "outline"} className="font-mono">

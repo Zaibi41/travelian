@@ -3,8 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/public/PageHeader";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
-
-const whatsappBase = "https://wa.me/923244440014";
+import { whatsappUrl } from "@/lib/site-config";
 
 const countries = [
   { name: "United Kingdom", tag: "UK", focus: "Universities, CAS guidance, visa file preparation" },
@@ -94,7 +93,7 @@ export default function StudyAbroadPage() {
               <p className="flex items-center gap-2 text-sm text-sidebar-muted"><MapPin className="h-4 w-4" /> Pakistan-based consultancy coordination</p>
               <h2 className="mt-2 text-2xl font-black text-sidebar-accent-foreground">Ready to discuss your study plan?</h2>
             </div>
-            <a href={`${whatsappBase}?text=${encodeURIComponent(message)}`} target="_blank" rel="noreferrer">
+            <a href={whatsappUrl(message)} target="_blank" rel="noreferrer">
               <Button className="rounded-xl bg-[#25D366] px-5 font-bold text-white hover:bg-[#20bd5a]">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp Inquiry
               </Button>

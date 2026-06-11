@@ -26,6 +26,7 @@ import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleConte
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useRole } from "@/contexts/RoleContext";
+import { whatsappUrl } from "@/lib/site-config";
 import { Loader2 } from "lucide-react";
 
 const steps = [
@@ -584,6 +585,17 @@ export default function BookingPage() {
       toastDescription: "Payment is not required yet. Travelian can process this booking from the booking queue.",
     });
   };
+
+  const bookingWhatsAppUrl = whatsappUrl([
+    "Hello Travelian,",
+    "",
+    "I need help with this booking:",
+    `Service: ${productCtx.type}`,
+    `Item: ${productCtx.title}`,
+    `Route/Details: ${productCtx.subtitle}`,
+    `Date: ${productCtx.meta}`,
+    `Total: ${formatMoney(grandTotal)}`,
+  ].join("\n"));
   const formatCardNumber = (v: string) => v.replace(/\D/g, "").slice(0, 19).replace(/(.{4})/g, "$1 ").trim();
   const formatExpiry = (v: string) => {
     const d = v.replace(/\D/g, "").slice(0, 4);
@@ -885,18 +897,21 @@ export default function BookingPage() {
                     <Button variant="ghost" onClick={saveProgress} disabled={processing} className="rounded-xl h-11 px-5">
                       Save & Continue Later
                     </Button>
-                    {!isCustomer && (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
-                          Hold Booking
+                          {isCustomer ? "Reserve / Request Booking" : "Hold Booking"}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
-                        Free 24-hour PNR hold. We will contact you to confirm before charging.
+                        {isCustomer
+                          ? "Save this request without payment. Travelian will contact you to confirm availability."
+                          : "Free 24-hour PNR hold. We will contact you to confirm before charging."}
                       </TooltipContent>
                     </Tooltip>
-                    )}
+                    <Button asChild variant="outline" className="rounded-xl h-11 px-5">
+                      <a href={bookingWhatsAppUrl} target="_blank" rel="noreferrer">WhatsApp Help</a>
+                    </Button>
                     <Button onClick={handleContinue} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
                       Continue <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
@@ -1042,18 +1057,21 @@ export default function BookingPage() {
                   <div className="flex justify-between mt-6">
                     <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl" disabled={processing}>Back</Button>
                     <div className="flex flex-wrap justify-end gap-2">
-                      {!isCustomer && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
-                            {isFlight ? "Book Only" : "Request Without Payment"}
+                            {isCustomer ? "Reserve / Request Booking" : isFlight ? "Book Only" : "Request Without Payment"}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
-                          Creates a saved booking with payment pending. Ticketing starts only after payment or admin approval.
+                          {isCustomer
+                            ? "Reserve now and let Travelian confirm the itinerary before payment."
+                            : "Creates a saved booking with payment pending. Ticketing starts only after payment or admin approval."}
                         </TooltipContent>
                       </Tooltip>
-                      )}
+                      <Button asChild variant="outline" className="rounded-xl h-11 px-5">
+                        <a href={bookingWhatsAppUrl} target="_blank" rel="noreferrer">WhatsApp Help</a>
+                      </Button>
                       <Button onClick={requestPay} disabled={processing} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
                         {processing ? "Processing..." : `${isCustomer ? "Pay & Book" : "Pay & Issue"} ${formatMoney(grandTotal)}`} <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>

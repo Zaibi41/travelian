@@ -12,6 +12,7 @@ import { listBookingRequests } from "@/lib/booking-request-api";
 import type { BookingRecord } from "@/lib/booking-store";
 import type { BookingRequest } from "@/data/models";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { whatsappUrl } from "@/lib/site-config";
 
 function formatPkr(amount: number) {
   return `PKR ${Math.max(0, Math.round(amount)).toLocaleString()}`;
@@ -162,7 +163,7 @@ export default function DashboardPage() {
             <h2 className="font-bold text-foreground">Quick support</h2>
             <p className="mt-1 text-sm text-muted-foreground">Use support channels for ticketing, payments, refunds, hotels, and urgent billing matters.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <a href="https://wa.me/923244440014" target="_blank" rel="noreferrer">
+              <a href={whatsappUrl("Hello Travelian, I need help with an admin or agency request.")} target="_blank" rel="noreferrer">
                 <Button className="gap-2 rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
                   <WhatsAppIcon className="h-4 w-4" /> WhatsApp
                 </Button>

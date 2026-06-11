@@ -6,8 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { PackageImage } from "@/components/public/PackageImage";
 import { useAdmin } from "@/contexts/AdminStore";
+import { whatsappUrl } from "@/lib/site-config";
 
-const whatsappBase = "https://wa.me/923244440014";
 const siteBase = "https://www.travelian.pk";
 
 function lines(value?: string) {
@@ -28,7 +28,7 @@ export default function TourDetailPage() {
           <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
             This tour package is not available from Travelian admin inventory right now. Please contact Travelian for destination, itinerary, hotel, meals, availability and pricing.
           </p>
-          <a href={`${whatsappBase}?text=${encodeURIComponent("Hello Travelian, please help me with tour package details.")}`} target="_blank" rel="noreferrer">
+          <a href={whatsappUrl("Hello Travelian, please help me with tour package details.")} target="_blank" rel="noreferrer">
             <Button className="mt-5 rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
               <WhatsAppIcon className="mr-2 h-4 w-4" /> Ask on WhatsApp
             </Button>
@@ -72,7 +72,7 @@ export default function TourDetailPage() {
               <p className="text-sm text-muted-foreground">Starting from</p>
               <p className="mt-1 text-4xl font-black text-primary">PKR {tour.basePrice.toLocaleString()}</p>
               {tour.agentDiscount && <p className="mt-2 font-semibold text-amber-600">{tour.agentDiscount}</p>}
-              <a href={`${whatsappBase}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer">
+              <a href={whatsappUrl(whatsappMessage)} target="_blank" rel="noreferrer">
                 <Button className="mt-5 w-full bg-[#25D366] text-white hover:bg-[#20bd5a]"><WhatsAppIcon className="mr-2 h-4 w-4" /> Contact for Booking</Button>
               </a>
               <Button asChild variant="outline" className="mt-2 w-full"><Link to={`/request-booking?type=tour&id=${encodeURIComponent(tour.packageId)}`}>Enquire Now</Link></Button>

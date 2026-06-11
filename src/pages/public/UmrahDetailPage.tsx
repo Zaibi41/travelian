@@ -7,8 +7,8 @@ import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { UmrahPackageShowcase } from "@/components/public/UmrahPackageShowcase";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
+import { whatsappUrl } from "@/lib/site-config";
 
-const whatsappBase = "https://wa.me/923244440014";
 const siteBase = "https://www.travelian.pk";
 
 function formatPrice(value?: number) {
@@ -29,7 +29,7 @@ export default function UmrahDetailPage() {
           <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
             This Umrah package is not available from Travelian admin inventory right now. Please contact Travelian for current package details, price, hotel, visa, transport and ticket options.
           </p>
-          <a href={`${whatsappBase}?text=${encodeURIComponent("Hello Travelian, please share current Umrah package details.")}`} target="_blank" rel="noreferrer">
+          <a href={whatsappUrl("Hello Travelian, please share current Umrah package details.")} target="_blank" rel="noreferrer">
             <Button className="mt-5 rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
               <WhatsAppIcon className="mr-2 h-4 w-4" /> Ask on WhatsApp
             </Button>
@@ -141,7 +141,7 @@ export default function UmrahDetailPage() {
                 <CalendarDays className="h-5 w-5 text-primary" />
                 <h2 className="mt-2 font-bold">Need confirmation?</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Ask Travelian to confirm seat availability, hotel finalization, visa documents and payment schedule.</p>
-                <a href={`${whatsappBase}?text=${encodeURIComponent(whatsappMessage)}`} target="_blank" rel="noreferrer">
+                <a href={whatsappUrl(whatsappMessage)} target="_blank" rel="noreferrer">
                   <Button className="mt-4 w-full bg-[#25D366] text-white hover:bg-[#20bd5a]"><WhatsAppIcon className="mr-2 h-4 w-4" /> Ask on WhatsApp</Button>
                 </a>
               </CardContent>

@@ -115,6 +115,11 @@ export function cancelBooking(id: string) {
   write(list);
 }
 
+export function expireBooking(id: string) {
+  const list = read().map(b => (b.id === id ? { ...b, status: "expired" as const } : b));
+  write(list);
+}
+
 export function deleteBooking(id: string) {
   write(read().filter(b => b.id !== id));
 }

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/public/PageHeader";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { GroupTicketingCategories } from "@/components/public/GroupTicketingCategories";
+import { whatsappUrl } from "@/lib/site-config";
 import {
   fetchGroupTicketDetail,
   fetchGroupTickets,
@@ -15,7 +16,7 @@ import {
 } from "@/lib/group-ticketing";
 
 function whatsappHref(message: string) {
-  return `https://wa.me/923244440014?text=${encodeURIComponent(message)}`;
+  return whatsappUrl(message);
 }
 
 function SkeletonCards() {

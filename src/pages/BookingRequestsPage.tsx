@@ -31,6 +31,9 @@ const typeOptions: { value: BookingRequestType | "all"; label: string }[] = [
   { value: "study_visa", label: "Study Visa" },
   { value: "visit_visa", label: "Visit Visa" },
   { value: "tour", label: "Tour" },
+  { value: "group", label: "Group" },
+  { value: "manual_flight", label: "Manual Flight" },
+  { value: "whatsapp_inquiry", label: "WhatsApp Inquiry" },
   { value: "package", label: "Package" },
   { value: "service", label: "Service" },
 ];

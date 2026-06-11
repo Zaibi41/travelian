@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/public/PageHeader";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { whatsappUrl } from "@/lib/site-config";
 
 const services = [
   { icon: Plane, title: "Flight Booking", desc: "Search available domestic and international flight fares.", to: "/flights-search" },
@@ -116,7 +117,7 @@ export default function AboutPage() {
           <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
             <Link to="/contact"><Button variant="outline" className="rounded-lg">Contact Us</Button></Link>
             <Link to="/flights-search"><Button className="rounded-lg gradient-primary text-primary-foreground">Search Flights</Button></Link>
-            <a href="https://wa.me/923244440014" target="_blank" rel="noreferrer">
+            <a href={whatsappUrl("Hello Travelian, I need help planning my next trip.")} target="_blank" rel="noreferrer">
               <Button variant="outline" className="rounded-lg gap-2"><WhatsAppIcon className="h-4 w-4" /> WhatsApp Support</Button>
             </a>
           </div>

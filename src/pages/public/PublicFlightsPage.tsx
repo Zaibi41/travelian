@@ -21,6 +21,7 @@ import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleConte
 import { AirlineLogo } from "@/components/public/AirlineLogo";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
+import { whatsappUrl } from "@/lib/site-config";
 
 type FlightTripType = "oneway" | "roundtrip" | "multicity";
 type FlightSegment = { from: string; to: string; date: Date | undefined };
@@ -300,7 +301,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       "",
       "Please guide me with booking details.",
     ].join("\n");
-    return `https://wa.me/923244440014?text=${encodeURIComponent(message)}`;
+    return whatsappUrl(message);
   };
 
   const bookingHref = (flight: TravelianFlight, fare?: { tier: string; price: { base?: number | null; taxes?: number | null; total: number; currency?: string }; amenities?: string[] }) => {
@@ -814,7 +815,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   <Button variant="outline" className="rounded-lg" onClick={() => { setSelectedAirlines([]); setPriceRange([0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)]); setSearch(""); }}>
                     Clear All Filters
                   </Button>
-                  <a href={`https://wa.me/923244440014?text=${encodeURIComponent(`Hello Travelian,\n\nPlease check live fares for ${from} to ${to} on ${format(departDate, "MMM dd, yyyy")}.\n\nTravelers: ${formatTravelers(travelers)}\nCurrency: ${currency}`)}`} target="_blank" rel="noreferrer">
+                  <a href={whatsappUrl(`Hello Travelian,\n\nPlease check live fares for ${from} to ${to} on ${format(departDate, "MMM dd, yyyy")}.\n\nTravelers: ${formatTravelers(travelers)}\nCurrency: ${currency}`)} target="_blank" rel="noreferrer">
                     <Button className="rounded-lg gap-2"><WhatsAppIcon className="h-4 w-4" /> Ask Travelian</Button>
                   </a>
                 </div>

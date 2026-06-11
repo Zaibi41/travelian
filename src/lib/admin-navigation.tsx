@@ -20,7 +20,6 @@ import {
   LayoutDashboard,
   LifeBuoy,
   Map,
-  MessageCircle,
   Package,
   PenTool,
   Plane,
@@ -238,7 +237,6 @@ export const adminNavigation: AdminNavSection[] = [
     category: "Support",
     items: [
       item("Help Center", "/admin/customer/support", LifeBuoy, customerRoles),
-      item("WhatsApp Support", "/admin/customer/support", MessageCircle, [...agencyRoles, ...customerRoles]),
     ],
   },
   {

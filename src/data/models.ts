@@ -345,7 +345,7 @@ export interface CustomerProfile {
   updatedAt?: string;
 }
 
-export type BookingRequestType = 'umrah' | 'tour' | 'visa' | 'study_visa' | 'visit_visa' | 'service' | 'package';
+export type BookingRequestType = 'umrah' | 'tour' | 'visa' | 'study_visa' | 'visit_visa' | 'service' | 'package' | 'group' | 'manual_flight' | 'whatsapp_inquiry';
 export type BookingRequestStatus = 'new' | 'contacted' | 'in_progress' | 'waiting_for_documents' | 'payment_pending' | 'confirmed' | 'cancelled_lost';
 
 export interface BookingRequest {

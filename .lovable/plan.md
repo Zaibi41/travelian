@@ -42,7 +42,7 @@ File: `src/pages/BookingRequestsPage.tsx`.
 Files: `src/pages/public/BookingPage.tsx`, `src/lib/booking-store.ts`, new `src/pages/HoldBookingsPage.tsx`.
 
 1. **Fare recheck interstitial (E3).** Between Step 1 "Continue" and Step 2 show a 1.2 s loader card "Verifying fare with airline…" then either continue or surface a `Dialog` "Price changed from PKR X → PKR Y. Accept new price?" with Accept/Decline. Logic is mocked: 15 % chance of a +2 % price bump, deterministic via `requestId` hash so it is testable.
-2. **Hold queue (E5).** New route `/admin/bookings/holds` shown in the Bookings & Ticketing category for internal + agency roles. Lists bookings with `status === "on_hold"` from `booking-store`, shows expiry countdown (`HH:MM:SS`) until `holdExpiresAt`, and an "Issue now" / "Cancel hold" action pair. If expiry is reached client-side, status auto-flips to `expired` and a toast fires.
+2. **Hold queue (E5).** New route `/admin/bookings/holds` shown in the Bookings & Ticketing category for internal + agency roles. Lists bookings with `status === "held"` from `booking-store`, shows expiry countdown (`HH:MM:SS`) until `holdExpiresAt`, and an "Issue now" / "Cancel hold" action pair. If expiry is reached client-side, status auto-flips to `expired` and a toast fires.
 3. **Pay-modal (E6).** On Step 3 "Pay & Issue" open a `Dialog` summarising payable amount, wallet balance, and resulting balance, with a final confirm button. Disable confirm when wallet < payable for the "Issue from Wallet" method (E7 precheck).
 4. **Role-based CTAs.** In `BookingPage.tsx` drive the visible action buttons from `useRole().currentRole`:
    - `customer` → `Pay & Book`, `Reserve / Request Booking`, `WhatsApp Help`.

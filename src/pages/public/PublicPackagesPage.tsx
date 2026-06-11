@@ -6,6 +6,7 @@ import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { UmrahPackageShowcase } from "@/components/public/UmrahPackageShowcase";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
+import { whatsappUrl } from "@/lib/site-config";
 
 const timeline = [
   { step: "Choose Package", desc: "Select an active Travelian Umrah package once inventory is published." },
@@ -13,8 +14,6 @@ const timeline = [
   { step: "Visa Processing", desc: "Processing timeline is confirmed per package." },
   { step: "Travel", desc: "Travel with Travelian support." },
 ];
-
-const whatsappBase = "https://wa.me/923244440014";
 
 export default function PublicPackagesPage() {
   const { packages } = useAdmin();
@@ -33,7 +32,7 @@ export default function PublicPackagesPage() {
               Travelian only shows active packages from admin inventory. Contact our team for the latest Umrah availability and custom package options.
             </p>
             <a
-              href={`${whatsappBase}?text=${encodeURIComponent("Hello Travelian, please share the latest Umrah package availability.")}`}
+              href={whatsappUrl("Hello Travelian, please share the latest Umrah package availability.")}
               target="_blank"
               rel="noreferrer"
             >
