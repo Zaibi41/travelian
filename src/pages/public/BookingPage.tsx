@@ -24,6 +24,9 @@ import { format, addDays } from "date-fns";
 import { useAdmin } from "@/contexts/AdminStore";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useRole } from "@/contexts/RoleContext";
+import { Loader2 } from "lucide-react";
 
 const steps = [
   { id: 1, label: "Traveler Details" },
@@ -254,6 +257,16 @@ export default function BookingPage() {
   const [paymentTouched, setPaymentTouched] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [savedBooking, setSavedBooking] = useState<BookingRecord | null>(null);
+  const [recheckOpen, setRecheckOpen] = useState(false);
+  const [recheckLoading, setRecheckLoading] = useState(false);
+  const [recheckResult, setRecheckResult] = useState<{ oldPrice: number; newPrice: number } | null>(null);
+  const [recheckAccepted, setRecheckAccepted] = useState(false);
+  const [payConfirmOpen, setPayConfirmOpen] = useState(false);
+  const { currentRole } = useRole();
+  const isCustomer = currentRole === "customer";
+  const isAgency = currentRole === "agency_owner" || currentRole === "agency_staff";
+  // Mock wallet balance for B2B precheck (real value will come from Cloud later).
+  const walletBalance = isAgency ? 250000 : 1000000;
 
   const docType: "passport" = "passport";
 
