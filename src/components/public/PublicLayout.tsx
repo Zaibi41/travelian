@@ -2,6 +2,7 @@ import { PublicNavbar } from "./PublicNavbar";
 import { PublicFooter } from "./PublicFooter";
 import { WhatsAppIcon } from "./WhatsAppIcon";
 import { MoveToTopButton } from "@/components/MoveToTopButton";
+import { whatsappUrl } from "@/lib/site-config";
 
 export function PublicLayout({ children, showFooter = true }: { children: React.ReactNode; showFooter?: boolean }) {
   return (
@@ -12,7 +13,7 @@ export function PublicLayout({ children, showFooter = true }: { children: React.
         <>
         <MoveToTopButton />
         <a
-          href="https://wa.me/923244440014?text=Hi%2C%20I%20need%20help%20with%20a%20Travelian%20booking."
+          href={whatsappUrl("Hi, I need help with a Travelian booking.")}
           target="_blank"
           rel="noreferrer"
           aria-label="Chat with Travelian on WhatsApp"
@@ -26,3 +27,4 @@ export function PublicLayout({ children, showFooter = true }: { children: React.
     </div>
   );
 }
+

@@ -24,6 +24,9 @@ import { format, addDays } from "date-fns";
 import { useAdmin } from "@/contexts/AdminStore";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useRole } from "@/contexts/RoleContext";
+import { Loader2 } from "lucide-react";
 
 const steps = [
   { id: 1, label: "Traveler Details" },
@@ -254,6 +257,16 @@ export default function BookingPage() {
   const [paymentTouched, setPaymentTouched] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [savedBooking, setSavedBooking] = useState<BookingRecord | null>(null);
+  const [recheckOpen, setRecheckOpen] = useState(false);
+  const [recheckLoading, setRecheckLoading] = useState(false);
+  const [recheckResult, setRecheckResult] = useState<{ oldPrice: number; newPrice: number } | null>(null);
+  const [recheckAccepted, setRecheckAccepted] = useState(false);
+  const [payConfirmOpen, setPayConfirmOpen] = useState(false);
+  const { currentRole } = useRole();
+  const isCustomer = currentRole === "customer";
+  const isAgency = currentRole === "agency_owner" || currentRole === "agency_staff";
+  // Mock wallet balance for B2B precheck (real value will come from Cloud later).
+  const walletBalance = isAgency ? 250000 : 1000000;
 
   const docType: "passport" = "passport";
 
@@ -362,7 +375,26 @@ export default function BookingPage() {
 
   const handleContinue = () => {
     setTouched(true);
-    if (isStep1Valid) setStep(2);
+    if (!isStep1Valid) return;
+    if (recheckAccepted) { setStep(2); return; }
+    // Fare recheck interstitial: deterministic mock based on flight + total so behaviour is testable.
+    setRecheckLoading(true);
+    setRecheckOpen(true);
+    const seed = `${ctxFlightNo}-${grandTotal}-${passengerTotal}`;
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+    const willChange = (hash % 100) < 15; // 15% mocked recheck change
+    window.setTimeout(() => {
+      setRecheckLoading(false);
+      if (willChange) {
+        setRecheckResult({ oldPrice: grandTotal, newPrice: Math.round(grandTotal * 1.02) });
+      } else {
+        setRecheckResult(null);
+        setRecheckAccepted(true);
+        setRecheckOpen(false);
+        setStep(2);
+      }
+    }, 1200);
   };
 
   const draftKey = useMemo(() => `travelian.bookingDraft.${params.toString()}`, [params]);
@@ -436,9 +468,14 @@ export default function BookingPage() {
   const cardNameValid = cardName.trim().length >= 3;
   const paymentValid = paymentMethod !== "card" || (cardNumberValid && cardExpiryValid && cardCvvValid && cardNameValid);
 
-  const handlePay = async () => {
+  const requestPay = () => {
     setPaymentTouched(true);
     if (!paymentValid) return;
+    setPayConfirmOpen(true);
+  };
+
+  const handlePay = async () => {
+    setPayConfirmOpen(false);
     await persistBooking({
       status: "pending_payment",
       paymentMethod,
@@ -848,6 +885,7 @@ export default function BookingPage() {
                     <Button variant="ghost" onClick={saveProgress} disabled={processing} className="rounded-xl h-11 px-5">
                       Save & Continue Later
                     </Button>
+                    {!isCustomer && (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
@@ -858,6 +896,7 @@ export default function BookingPage() {
                         Free 24-hour PNR hold. We will contact you to confirm before charging.
                       </TooltipContent>
                     </Tooltip>
+                    )}
                     <Button onClick={handleContinue} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
                       Continue <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
@@ -882,6 +921,7 @@ export default function BookingPage() {
                     <div className="flex justify-between mt-6 gap-3">
                       <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl">Back</Button>
                       <div className="flex flex-wrap justify-end gap-2">
+                        {!isCustomer && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
@@ -892,6 +932,7 @@ export default function BookingPage() {
                             Free 24-hour PNR hold. Travelian can verify fare rules and confirm before payment.
                           </TooltipContent>
                         </Tooltip>
+                        )}
                         <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
                           Continue <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
@@ -1001,6 +1042,7 @@ export default function BookingPage() {
                   <div className="flex justify-between mt-6">
                     <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl" disabled={processing}>Back</Button>
                     <div className="flex flex-wrap justify-end gap-2">
+                      {!isCustomer && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
@@ -1011,8 +1053,9 @@ export default function BookingPage() {
                           Creates a saved booking with payment pending. Ticketing starts only after payment or admin approval.
                         </TooltipContent>
                       </Tooltip>
-                      <Button onClick={handlePay} disabled={processing} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
-                        {processing ? "Processing..." : `Pay ${formatMoney(grandTotal)}`} <ChevronRight className="h-4 w-4 ml-1" />
+                      )}
+                      <Button onClick={requestPay} disabled={processing} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
+                        {processing ? "Processing..." : `${isCustomer ? "Pay & Book" : "Pay & Issue"} ${formatMoney(grandTotal)}`} <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                     </div>
                   </div>
@@ -1217,6 +1260,68 @@ export default function BookingPage() {
           </div>
         </div>
       </div>
+
+      {/* Fare recheck interstitial */}
+      <Dialog open={recheckOpen} onOpenChange={(open) => { if (!open) { setRecheckOpen(false); setRecheckResult(null); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{recheckLoading ? "Verifying fare with airline…" : recheckResult ? "Fare has changed" : "Fare confirmed"}</DialogTitle>
+            <DialogDescription>
+              {recheckLoading
+                ? "We are re-pricing this itinerary with the supplier to make sure the fare is still available."
+                : recheckResult
+                  ? `The airline returned a new price. Previous total ${formatMoney(recheckResult.oldPrice)} → New total ${formatMoney(recheckResult.newPrice)}.`
+                  : "Your fare is confirmed at the displayed total."}
+            </DialogDescription>
+          </DialogHeader>
+          {recheckLoading && (
+            <div className="flex items-center justify-center py-6"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+          )}
+          {!recheckLoading && recheckResult && (
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => { setRecheckOpen(false); setRecheckResult(null); }}>Decline</Button>
+              <Button onClick={() => { setRecheckOpen(false); setRecheckResult(null); setRecheckAccepted(true); setStep(2); toast({ title: "New price accepted" }); }}>
+                Accept new price
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment confirmation modal */}
+      <Dialog open={payConfirmOpen} onOpenChange={setPayConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm payment</DialogTitle>
+            <DialogDescription>
+              Review the amount before {isCustomer ? "completing your booking" : "issuing the ticket"}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">Method</span><span className="font-semibold capitalize">{paymentMethod === "1link" ? "1Link" : paymentMethod}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Payable</span><span className="font-bold text-foreground">{formatMoney(grandTotal)}</span></div>
+            {paymentMethod === "wallet" && (
+              <>
+                <div className="flex justify-between"><span className="text-muted-foreground">Wallet balance</span><span>{displayCurrency} {walletBalance.toLocaleString()}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">After payment</span><span>{displayCurrency} {(walletBalance - Math.round(displayAmount(grandTotal))).toLocaleString()}</span></div>
+                {walletBalance < Math.round(displayAmount(grandTotal)) && (
+                  <p className="text-xs text-destructive">Insufficient wallet balance. Top up before proceeding.</p>
+                )}
+              </>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPayConfirmOpen(false)} disabled={processing}>Cancel</Button>
+            <Button
+              onClick={handlePay}
+              disabled={processing || (paymentMethod === "wallet" && walletBalance < Math.round(displayAmount(grandTotal)))}
+              className="gradient-primary text-primary-foreground"
+            >
+              {processing ? "Processing..." : `Confirm ${formatMoney(grandTotal)}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

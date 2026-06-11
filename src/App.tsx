@@ -70,6 +70,9 @@ import NotificationsPage from "./pages/NotificationsPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 import BookingRequestsPage from "./pages/BookingRequestsPage";
+import HoldBookingsPage from "./pages/HoldBookingsPage";
+import ReportsPage from "./pages/ReportsPage";
+import RoadmapPlaceholderPage from "./pages/RoadmapPlaceholderPage";
 
 const queryClient = new QueryClient();
 
@@ -126,7 +129,13 @@ const App = () => (
             <Route path="/admin/tours" element={<AdminLayout><TourPackagesPage /></AdminLayout>} />
             <Route path="/admin/visa" element={<AdminLayout><VisaPackagesPage /></AdminLayout>} />
             <Route path="/admin/bookings" element={<AdminLayout><BookingsPage /></AdminLayout>} />
+            <Route path="/admin/bookings/holds" element={<AdminLayout><HoldBookingsPage /></AdminLayout>} />
             <Route path="/admin/booking-requests" element={<AdminLayout><BookingRequestsPage /></AdminLayout>} />
+            <Route path="/admin/reports" element={<AdminLayout><ReportsPage /></AdminLayout>} />
+            <Route path="/admin/roadmap/audit-logs" element={<AdminLayout><RoadmapPlaceholderPage title="Audit Logs" description="A searchable trail of every admin action (user, module, before/after) with filters by user, module and date." eta="Sprint 4" /></AdminLayout>} />
+            <Route path="/admin/roadmap/webhook-logs" element={<AdminLayout><RoadmapPlaceholderPage title="Webhook Logs" description="Inbound and outbound webhook delivery logs for payment gateways and supplier APIs, with retry controls." eta="Sprint 3" /></AdminLayout>} />
+            <Route path="/admin/roadmap/reconciliation" element={<AdminLayout><RoadmapPlaceholderPage title="Reconciliation" description="Match supplier statements, gateway settlements and Travelian ledger lines; flag mismatches for review." eta="Sprint 4" /></AdminLayout>} />
+            <Route path="/admin/roadmap/payment-gateways" element={<AdminLayout><RoadmapPlaceholderPage title="Payment Gateways" description="Toggle gateways live/sandbox, configure per-gateway fees and routing rules." eta="Sprint 3" /></AdminLayout>} />
             <Route path="/admin/tickets" element={<AdminLayout><TicketsPage /></AdminLayout>} />
             <Route path="/admin/hotels" element={<AdminLayout><HotelsPage /></AdminLayout>} />
             <Route path="/admin/flights" element={<AdminLayout><FlightsPage /></AdminLayout>} />
