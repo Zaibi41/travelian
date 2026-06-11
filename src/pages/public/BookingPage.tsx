@@ -1260,6 +1260,68 @@ export default function BookingPage() {
           </div>
         </div>
       </div>
+
+      {/* Fare recheck interstitial */}
+      <Dialog open={recheckOpen} onOpenChange={(open) => { if (!open) { setRecheckOpen(false); setRecheckResult(null); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{recheckLoading ? "Verifying fare with airline…" : recheckResult ? "Fare has changed" : "Fare confirmed"}</DialogTitle>
+            <DialogDescription>
+              {recheckLoading
+                ? "We are re-pricing this itinerary with the supplier to make sure the fare is still available."
+                : recheckResult
+                  ? `The airline returned a new price. Previous total ${formatMoney(recheckResult.oldPrice)} → New total ${formatMoney(recheckResult.newPrice)}.`
+                  : "Your fare is confirmed at the displayed total."}
+            </DialogDescription>
+          </DialogHeader>
+          {recheckLoading && (
+            <div className="flex items-center justify-center py-6"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+          )}
+          {!recheckLoading && recheckResult && (
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => { setRecheckOpen(false); setRecheckResult(null); }}>Decline</Button>
+              <Button onClick={() => { setRecheckOpen(false); setRecheckResult(null); setRecheckAccepted(true); setStep(2); toast({ title: "New price accepted" }); }}>
+                Accept new price
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment confirmation modal */}
+      <Dialog open={payConfirmOpen} onOpenChange={setPayConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm payment</DialogTitle>
+            <DialogDescription>
+              Review the amount before {isCustomer ? "completing your booking" : "issuing the ticket"}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between"><span className="text-muted-foreground">Method</span><span className="font-semibold capitalize">{paymentMethod === "1link" ? "1Link" : paymentMethod}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Payable</span><span className="font-bold text-foreground">{formatMoney(grandTotal)}</span></div>
+            {paymentMethod === "wallet" && (
+              <>
+                <div className="flex justify-between"><span className="text-muted-foreground">Wallet balance</span><span>{displayCurrency} {walletBalance.toLocaleString()}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">After payment</span><span>{displayCurrency} {(walletBalance - Math.round(displayAmount(grandTotal))).toLocaleString()}</span></div>
+                {walletBalance < Math.round(displayAmount(grandTotal)) && (
+                  <p className="text-xs text-destructive">Insufficient wallet balance. Top up before proceeding.</p>
+                )}
+              </>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPayConfirmOpen(false)} disabled={processing}>Cancel</Button>
+            <Button
+              onClick={handlePay}
+              disabled={processing || (paymentMethod === "wallet" && walletBalance < Math.round(displayAmount(grandTotal)))}
+              className="gradient-primary text-primary-foreground"
+            >
+              {processing ? "Processing..." : `Confirm ${formatMoney(grandTotal)}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
