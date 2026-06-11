@@ -49,7 +49,7 @@ function ageDays(createdAt: string) {
 function AgingBadge({ createdAt }: { createdAt: string }) {
   const days = ageDays(createdAt);
   if (days >= 5) return <Badge variant="destructive">{days}d old</Badge>;
-  if (days >= 2) return <Badge className="bg-warning text-warning-foreground hover:bg-warning/90">{days}d old</Badge>;
+  if (days >= 2) return <Badge className="bg-amber-500 text-white hover:bg-amber-500/90">{days}d old</Badge>;
   return <Badge variant="secondary">{days}d</Badge>;
 }
 
