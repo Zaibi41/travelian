@@ -15,6 +15,7 @@ import {
   Globe,
   Heart,
   Hotel,
+  Hourglass,
   KeyRound,
   LayoutDashboard,
   LifeBuoy,
