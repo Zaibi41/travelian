@@ -885,6 +885,7 @@ export default function BookingPage() {
                     <Button variant="ghost" onClick={saveProgress} disabled={processing} className="rounded-xl h-11 px-5">
                       Save & Continue Later
                     </Button>
+                    {!isCustomer && (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
@@ -895,6 +896,7 @@ export default function BookingPage() {
                         Free 24-hour PNR hold. We will contact you to confirm before charging.
                       </TooltipContent>
                     </Tooltip>
+                    )}
                     <Button onClick={handleContinue} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
                       Continue <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
@@ -919,6 +921,7 @@ export default function BookingPage() {
                     <div className="flex justify-between mt-6 gap-3">
                       <Button variant="outline" onClick={() => setStep(1)} className="rounded-xl">Back</Button>
                       <div className="flex flex-wrap justify-end gap-2">
+                        {!isCustomer && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
@@ -929,6 +932,7 @@ export default function BookingPage() {
                             Free 24-hour PNR hold. Travelian can verify fare rules and confirm before payment.
                           </TooltipContent>
                         </Tooltip>
+                        )}
                         <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
                           Continue <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
