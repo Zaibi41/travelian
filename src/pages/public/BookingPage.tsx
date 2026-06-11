@@ -468,9 +468,14 @@ export default function BookingPage() {
   const cardNameValid = cardName.trim().length >= 3;
   const paymentValid = paymentMethod !== "card" || (cardNumberValid && cardExpiryValid && cardCvvValid && cardNameValid);
 
-  const handlePay = async () => {
+  const requestPay = () => {
     setPaymentTouched(true);
     if (!paymentValid) return;
+    setPayConfirmOpen(true);
+  };
+
+  const handlePay = async () => {
+    setPayConfirmOpen(false);
     await persistBooking({
       status: "pending_payment",
       paymentMethod,
