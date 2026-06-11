@@ -1042,6 +1042,7 @@ export default function BookingPage() {
                   <div className="flex justify-between mt-6">
                     <Button variant="outline" onClick={() => setStep(2)} className="rounded-xl" disabled={processing}>Back</Button>
                     <div className="flex flex-wrap justify-end gap-2">
+                      {!isCustomer && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
@@ -1052,8 +1053,9 @@ export default function BookingPage() {
                           Creates a saved booking with payment pending. Ticketing starts only after payment or admin approval.
                         </TooltipContent>
                       </Tooltip>
-                      <Button onClick={handlePay} disabled={processing} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
-                        {processing ? "Processing..." : `Pay ${formatMoney(grandTotal)}`} <ChevronRight className="h-4 w-4 ml-1" />
+                      )}
+                      <Button onClick={requestPay} disabled={processing} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
+                        {processing ? "Processing..." : `${isCustomer ? "Pay & Book" : "Pay & Issue"} ${formatMoney(grandTotal)}`} <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                     </div>
                   </div>
