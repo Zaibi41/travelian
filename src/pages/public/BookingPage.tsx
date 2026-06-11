@@ -375,7 +375,26 @@ export default function BookingPage() {
 
   const handleContinue = () => {
     setTouched(true);
-    if (isStep1Valid) setStep(2);
+    if (!isStep1Valid) return;
+    if (recheckAccepted) { setStep(2); return; }
+    // Fare recheck interstitial: deterministic mock based on flight + total so behaviour is testable.
+    setRecheckLoading(true);
+    setRecheckOpen(true);
+    const seed = `${ctxFlightNo}-${grandTotal}-${passengerTotal}`;
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+    const willChange = (hash % 100) < 15; // 15% mocked recheck change
+    window.setTimeout(() => {
+      setRecheckLoading(false);
+      if (willChange) {
+        setRecheckResult({ oldPrice: grandTotal, newPrice: Math.round(grandTotal * 1.02) });
+      } else {
+        setRecheckResult(null);
+        setRecheckAccepted(true);
+        setRecheckOpen(false);
+        setStep(2);
+      }
+    }, 1200);
   };
 
   const draftKey = useMemo(() => `travelian.bookingDraft.${params.toString()}`, [params]);
