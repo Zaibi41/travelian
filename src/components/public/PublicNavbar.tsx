@@ -17,18 +17,21 @@ import {
 import { CURRENCIES, LANGUAGES, useLocale } from "@/contexts/LocaleContext";
 import { WhatsAppIcon } from "./WhatsAppIcon";
 
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
+
 const navLinks = [
   { label: "Flights", href: "/" },
   { label: "Hotels", href: "/hotels-search" },
   { label: "Umrah", href: "/umrah-packages" },
   { label: "Visas", href: "/visa-services" },
+  { label: "Study Visa", href: "/study-abroad" },
+  { label: "Group Ticketing", href: "/group-ticketing" },
   { label: "Deals", href: "/deals" },
   { label: "About", href: "/about" },
 ];
 
-const SUPPORT_PHONE = "+92 324 4440014";
-const SUPPORT_PHONE_TEL = "+923244440014";
-const WHATSAPP_URL = `https://wa.me/${SUPPORT_PHONE_TEL.replace("+", "")}`;
+const SUPPORT_PHONE = SUPPORT_PHONE_DISPLAY;
+const WHATSAPP_URL = whatsappUrl("Hi, I need help with a Travelian booking.");
 
 export function PublicNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
