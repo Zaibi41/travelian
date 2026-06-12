@@ -38,8 +38,9 @@ import type { UserRole } from "@/data/models";
 
 export type AdminNavCategory =
   | "Dashboard"
-  | "Search & Book"
-  | "Bookings & Ticketing"
+  | "Search"
+  | "Flight Bookings"
+  | "Requests"
   | "My Trips"
   | "Inventory & Services"
   | "Pricing & Revenue"
@@ -95,29 +96,21 @@ export const adminNavigation: AdminNavSection[] = [
     ],
   },
   {
-    category: "Search & Book",
+    category: "Search",
     items: [
-      item("Flights", "/admin/flight-search", Plane, allSearchRoles),
-      item("Hotels", "/admin/customer/hotels", Hotel, allSearchRoles),
-      item("Umrah Packages", "/admin/packages", Package, [...internalAdminRoles, ...agencyRoles]),
-      item("Umrah Packages", "/admin/customer/umrah", Package, customerRoles),
-      item("Tour Packages", "/admin/tours", Map, [...internalAdminRoles, ...agencyRoles]),
-      item("Visa Services", "/admin/visa", FileCheck, [...internalAdminRoles, ...agencyRoles]),
-      item("Visa Services", "/admin/customer/visa", FileCheck, customerRoles),
-      item("Group Ticketing", "/group-ticketing", Users, allSearchRoles),
+      item("Search", "/admin/search", Plane, allSearchRoles),
     ],
   },
   {
-    category: "Bookings & Ticketing",
+    category: "Flight Bookings",
     items: [
-      item("All Bookings", "/admin/bookings", CalendarCheck, internalAdminRoles),
-      item("My Assigned Bookings", "/admin/bookings", CalendarCheck, ["staff"]),
-      item("My Agency Bookings", "/admin/bookings", CalendarCheck, agencyOwnerRoles),
-      item("My Bookings", "/admin/bookings", CalendarCheck, agencyStaffRoles),
-      item("Hold Bookings", "/admin/bookings/holds", Hourglass, [...internalAdminRoles, ...agencyRoles, "staff"]),
-      item("Ticketing & Invoices", "/admin/tickets", Ticket, [...internalAdminRoles, ...agencyRoles]),
-      item("Refunds & Cancellations", "/admin/bookings", RefreshCw, [...internalAdminRoles, ...agencyRoles]),
-      item("Booking Requests", "/admin/booking-requests", ClipboardCheck, [...internalAdminRoles, ...agencyOwnerRoles, "staff"]),
+      item("Flight Bookings", "/admin/flight-bookings", CalendarCheck, allSearchRoles),
+    ],
+  },
+  {
+    category: "Requests",
+    items: [
+      item("Requests", "/admin/requests", ClipboardCheck, allSearchRoles),
     ],
   },
   {
@@ -150,7 +143,7 @@ export const adminNavigation: AdminNavSection[] = [
       item("Wallets", "/admin/wallet", Wallet, internalAdminRoles),
       item("Payments", "/admin/payments", CreditCard, internalAdminRoles),
       item("Transactions Ledger", "/admin/wallet", Receipt, internalAdminRoles),
-      item("Refunds", "/admin/bookings", RefreshCw, internalAdminRoles),
+      item("Refunds", "/admin/flight-bookings?tab=refund", RefreshCw, internalAdminRoles),
     ],
   },
   {
@@ -159,8 +152,8 @@ export const adminNavigation: AdminNavSection[] = [
       item("Wallet", "/admin/wallet", Wallet, agencyOwnerRoles),
       item("Payments", "/admin/payments", CreditCard, agencyOwnerRoles),
       item("Transactions", "/admin/wallet", Receipt, agencyOwnerRoles),
-      item("Invoices", "/admin/tickets", Receipt, agencyOwnerRoles),
-      item("Refunds", "/admin/bookings", RefreshCw, agencyOwnerRoles),
+      item("Invoices", "/admin/flight-bookings?tab=issued", Receipt, agencyOwnerRoles),
+      item("Refunds", "/admin/flight-bookings?tab=refund", RefreshCw, agencyOwnerRoles),
     ],
   },
   {
@@ -168,7 +161,7 @@ export const adminNavigation: AdminNavSection[] = [
     items: [
       item("Wallet", "/admin/wallet", Wallet, agencyStaffRoles),
       item("Transactions", "/admin/wallet", Receipt, agencyStaffRoles),
-      item("Invoices", "/admin/tickets", Receipt, agencyStaffRoles),
+      item("Invoices", "/admin/flight-bookings?tab=issued", Receipt, agencyStaffRoles),
     ],
   },
   {
@@ -286,6 +279,10 @@ export function getNavigationForRole(role: UserRole): AdminNavSection[] {
 export function canAccessAdminPath(role: UserRole, pathname: string) {
   const normalized = pathname.replace(/\/+$/, "") || "/admin";
   if (normalized === "/admin/booking") return allSearchRoles.includes(role);
+  if (normalized === "/admin/flights-search") return allSearchRoles.includes(role);
+  if (normalized === "/admin/flight-search") return allSearchRoles.includes(role);
+  if (["/admin/bookings", "/admin/bookings/holds", "/admin/tickets"].includes(normalized)) return allSearchRoles.includes(role);
+  if (normalized === "/admin/booking-requests") return allSearchRoles.includes(role);
   if (role === "customer" && normalized === "/admin") return true;
   return adminNavigation.some((section) =>
     section.items.some((navItem) => {

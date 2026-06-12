@@ -89,10 +89,10 @@ export default function DashboardPage() {
   const openRequests = visibleRequests.filter(request => !["confirmed", "cancelled_lost"].includes(request.status)).length;
 
   const cards = [
-    { title: "Bookings", value: visibleBookings.length, caption: loading ? "Loading records" : "Live DB records", icon: CalendarCheck, href: "/admin/bookings" },
+    { title: "Bookings", value: visibleBookings.length, caption: loading ? "Loading records" : "Live DB records", icon: CalendarCheck, href: "/admin/flight-bookings?tab=all" },
     { title: "Wallet Balance", value: formatPkr(walletSummary.available), caption: walletSummary.pending ? `${formatPkr(walletSummary.pending)} pending` : "Approved ledger balance", icon: Wallet, href: "/admin/wallet" },
     { title: "Payments", value: formatPkr(collected), caption: `${pendingPayments} pending payment${pendingPayments === 1 ? "" : "s"}`, icon: CreditCard, href: "/admin/payments" },
-    { title: "Booking Requests", value: openRequests, caption: "Assisted service queue", icon: Receipt, href: "/admin/booking-requests" },
+    { title: "Requests", value: openRequests, caption: "Assisted service queue", icon: Receipt, href: "/admin/requests?tab=all" },
   ];
 
   return (
@@ -109,7 +109,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild className="gradient-primary text-primary-foreground">
-            <Link to="/admin/flight-search">{isAgency ? "Search Flights" : "Flight Booking"}</Link>
+            <Link to="/admin/search?tab=flights">{isAgency ? "Search Flights" : "Flight Booking"}</Link>
           </Button>
           <Button variant="outline" className="gap-2" onClick={() => void refresh()} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
@@ -152,7 +152,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <Button asChild variant="outline" className="rounded-xl">
-                <Link to="/admin/flight-search">Search Fresh Fares</Link>
+                <Link to="/admin/search?tab=flights">Search Fresh Fares</Link>
               </Button>
             </div>
           </CardContent>
@@ -178,9 +178,9 @@ export default function DashboardPage() {
 
       {canManageTicketInvoices && (
         <div className="grid gap-4 lg:grid-cols-3">
-          <WorkflowCard icon={Plane} title="Flight Search" description="Search one-way, round-trip, or multi-city live fares and compare fare families." href="/admin/flight-search" action="Open Search" />
-          <WorkflowCard icon={Receipt} title="Issue Ticket" description="Use PNR/ticketing records to issue, hold, download, invoice, refund, or reissue tickets." href="/admin/tickets" action="Open Ticketing" />
-          <WorkflowCard icon={FileText} title="Booking Requests" description="Process Umrah, tour, visa, study visa, and assisted service requests." href="/admin/booking-requests" action="Open Requests" />
+          <WorkflowCard icon={Plane} title="Search" description="Search one-way, round-trip, multi-city, hotels, packages, visas, tours, and group ticketing." href="/admin/search?tab=flights" action="Open Search" />
+          <WorkflowCard icon={Receipt} title="Flight Bookings" description="Use PNR/ticketing records to issue, hold, download, invoice, refund, or reissue tickets." href="/admin/flight-bookings?tab=all" action="Open Bookings" />
+          <WorkflowCard icon={FileText} title="Requests" description="Process Umrah, tour, visa, study visa, hotel, and assisted service requests." href="/admin/requests?tab=all" action="Open Requests" />
         </div>
       )}
 

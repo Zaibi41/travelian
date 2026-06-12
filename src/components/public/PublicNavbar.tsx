@@ -155,7 +155,7 @@ export function PublicNavbar() {
                   {isSuperAdmin && <DropdownMenuItem onClick={() => navigate("/admin/settings")}>Account Settings</DropdownMenuItem>}
                   {isSuperAdmin && <DropdownMenuItem onClick={() => navigate("/")}>View Public Site</DropdownMenuItem>}
                   {isAgency && <DropdownMenuItem onClick={() => navigate("/admin")}>Agency Dashboard</DropdownMenuItem>}
-                  {isAgency && <DropdownMenuItem onClick={() => navigate("/admin/bookings")}>My Bookings</DropdownMenuItem>}
+                  {isAgency && <DropdownMenuItem onClick={() => navigate("/admin/flight-bookings?tab=all")}>My Bookings</DropdownMenuItem>}
                   {isAgency && <DropdownMenuItem onClick={() => navigate("/admin/wallet")}>Wallet</DropdownMenuItem>}
                   {isAgency && <DropdownMenuItem onClick={() => navigate("/admin")}>Reports</DropdownMenuItem>}
                   {!showAdminPortal && <DropdownMenuItem onClick={() => navigate("/admin/customer")}>My Account</DropdownMenuItem>}

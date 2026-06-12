@@ -37,6 +37,7 @@ export function AdminSidebar() {
     [activeItemKey, sections],
   );
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const directCategories = new Set(["Dashboard", "Search", "Flight Bookings", "Requests"]);
   const isAgency = currentRole === "agency_owner" || currentRole === "agency_staff";
   const isCustomer = currentRole === "customer";
 
@@ -93,6 +94,25 @@ export function AdminSidebar() {
         ) : (
           <div className="space-y-1">
             {sections.map((section) => {
+              if (section.items.length === 1 && directCategories.has(section.category)) {
+                const item = section.items[0];
+                return (
+                  <SidebarMenu key={section.category} className="gap-0.5">
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive(section.category, item.url, item.title)}
+                        className="h-10 rounded-xl px-2.5 text-[14px] font-bold data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                      >
+                        <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground font-bold">
+                          <item.icon className="h-5 w-5 shrink-0" />
+                          <span>{item.title}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                );
+              }
               const open = !!openGroups[section.category];
               return (
                 <Collapsible

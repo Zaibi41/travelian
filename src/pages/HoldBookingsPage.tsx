@@ -110,7 +110,7 @@ export default function HoldBookingsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Link to={`/admin/bookings`}>
+                        <Link to={`/admin/flight-bookings?tab=all`}>
                           <Button size="sm" variant="default" className="gap-1"><Ticket className="h-3.5 w-3.5" /> Issue now</Button>
                         </Link>
                         <Button size="sm" variant="outline" className="gap-1" onClick={() => { cancelBooking(record.id); toast.success(`Hold cancelled (${record.pnr})`); }}>

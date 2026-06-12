@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ClipboardCheck, Loader2, RefreshCw, Search, ArrowUpDown, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import type { BookingRequest, BookingRequestStatus, BookingRequestType } from "@/data/models";
+import type { BookingRequest, BookingRequestStatus } from "@/data/models";
 import { listBookingRequests, updateBookingRequest } from "@/lib/booking-request-api";
 import { whatsappUrlFor } from "@/lib/site-config";
 
@@ -24,19 +25,16 @@ const statusOptions: { value: BookingRequestStatus; label: string }[] = [
   { value: "cancelled_lost", label: "Cancelled / Lost" },
 ];
 
-const typeOptions: { value: BookingRequestType | "all"; label: string }[] = [
+const requestTabs = [
   { value: "all", label: "All" },
   { value: "umrah", label: "Umrah" },
-  { value: "visa", label: "Visa" },
-  { value: "study_visa", label: "Study Visa" },
-  { value: "visit_visa", label: "Visit Visa" },
-  { value: "tour", label: "Tour" },
-  { value: "group", label: "Group" },
-  { value: "manual_flight", label: "Manual Flight" },
-  { value: "whatsapp_inquiry", label: "WhatsApp Inquiry" },
-  { value: "package", label: "Package" },
-  { value: "service", label: "Service" },
-];
+  { value: "visas", label: "Visas" },
+  { value: "tours", label: "Tours" },
+  { value: "hotels", label: "Hotels" },
+  { value: "manual", label: "Manual" },
+] as const;
+
+type RequestTab = typeof requestTabs[number]["value"];
 
 const STAFF_PICKER = ["Asad", "Maira", "Fahad", "Bilal"];
 
@@ -57,10 +55,12 @@ function AgingBadge({ createdAt }: { createdAt: string }) {
 }
 
 export default function BookingRequestsPage() {
+  const [params, setParams] = useSearchParams();
+  const tabParam = params.get("tab") as RequestTab | null;
+  const activeTab: RequestTab = requestTabs.some(tab => tab.value === tabParam) ? tabParam! : "all";
   const [items, setItems] = useState<BookingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<BookingRequestType | "all">("all");
   const [sortDesc, setSortDesc] = useState(true);
   const [savingId, setSavingId] = useState("");
   const [editing, setEditing] = useState<BookingRequest | null>(null);
@@ -78,24 +78,45 @@ export default function BookingRequestsPage() {
   };
 
   useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    if (!tabParam || !requestTabs.some(tab => tab.value === tabParam)) {
+      setParams({ tab: "all" }, { replace: true });
+    }
+  }, [setParams, tabParam]);
+
+  const visibleItems = useMemo(() => items.filter(item => item.type !== "group"), [items]);
+
+  const matchesRequestTab = (item: BookingRequest, tab: RequestTab) => {
+    if (tab === "all") return true;
+    if (tab === "umrah") return item.type === "umrah" || item.type === "package";
+    if (tab === "visas") return item.type === "visa" || item.type === "study_visa" || item.type === "visit_visa";
+    if (tab === "tours") return item.type === "tour";
+    if (tab === "hotels") return item.type === "hotel";
+    if (tab === "manual") return item.type === "manual_flight" || item.type === "whatsapp_inquiry" || item.type === "service";
+    return true;
+  };
 
   const typeCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: items.length };
-    items.forEach(item => { counts[item.type] = (counts[item.type] || 0) + 1; });
+    const counts: Record<RequestTab, number> = { all: visibleItems.length, umrah: 0, visas: 0, tours: 0, hotels: 0, manual: 0 };
+    visibleItems.forEach(item => {
+      requestTabs.forEach(tab => {
+        if (tab.value !== "all" && matchesRequestTab(item, tab.value)) counts[tab.value] += 1;
+      });
+    });
     return counts;
-  }, [items]);
+  }, [visibleItems]);
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return items
-      .filter(item => typeFilter === "all" || item.type === typeFilter)
+    return visibleItems
+      .filter(item => matchesRequestTab(item, activeTab))
       .filter(item => !term || [
         item.requestId, item.type, item.customerName, item.phone, item.email, item.packageName, item.status,
       ].filter(Boolean).join(" ").toLowerCase().includes(term))
       .sort((a, b) => sortDesc
         ? b.createdAt.localeCompare(a.createdAt)
         : a.createdAt.localeCompare(b.createdAt));
-  }, [items, search, typeFilter, sortDesc]);
+  }, [activeTab, search, sortDesc, visibleItems]);
 
   const change = (requestId: string, changes: Partial<BookingRequest>) => {
     setItems(current => current.map(item => item.requestId === requestId ? { ...item, ...changes } : item));
@@ -126,22 +147,22 @@ export default function BookingRequestsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display">Booking Requests</h1>
-          <p className="text-sm text-muted-foreground">Assisted Umrah, tour, visa, study visa and service requests from the public site.</p>
+          <h1 className="text-2xl font-bold font-display">Requests</h1>
+          <p className="text-sm text-muted-foreground">Non-flight service requests for Umrah, visas, tours, hotels, and assisted manual inquiries.</p>
         </div>
         <Button variant="outline" onClick={() => void load()} disabled={loading}><RefreshCw className="mr-2 h-4 w-4" /> Refresh</Button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        {typeOptions.map(opt => {
-          const active = typeFilter === opt.value;
+        {requestTabs.map(opt => {
+          const active = activeTab === opt.value;
           const count = typeCounts[opt.value] || 0;
           return (
             <button
               key={opt.value}
               type="button"
-              onClick={() => setTypeFilter(opt.value)}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+              onClick={() => setParams({ tab: opt.value })}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-bold transition-colors ${
                 active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"
               }`}
             >
@@ -168,36 +189,37 @@ export default function BookingRequestsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Customer / Agency</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Assigned To</TableHead>
                   <TableHead>
                     <button type="button" onClick={() => setSortDesc(s => !s)} className="inline-flex items-center gap-1 font-semibold hover:text-foreground">
-                      Created <ArrowUpDown className="h-3 w-3" />
+                      Created Date <ArrowUpDown className="h-3 w-3" />
                     </button>
                   </TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Assigned</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map(item => (
                   <TableRow key={item.requestId}>
+                    <TableCell className="text-sm">
+                      <div className="font-semibold">{item.customerName}</div>
+                      <div className="max-w-[220px] truncate text-xs text-muted-foreground" title={item.packageName || ""}>{item.packageName || "Assisted request"}</div>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      <div>{item.phone}</div>
+                      {item.email && <div className="text-xs text-muted-foreground">{item.email}</div>}
+                    </TableCell>
+                    <TableCell><Badge variant="secondary" className="capitalize">{item.type.replace(/_/g, " ")}</Badge></TableCell>
+                    <TableCell><Badge variant="outline">{statusLabel(item.status)}</Badge></TableCell>
+                    <TableCell className="text-sm">{item.assignedStaff || <span className="text-muted-foreground">Unassigned</span>}</TableCell>
                     <TableCell className="text-xs">
                       <div>{new Date(item.createdAt).toLocaleString()}</div>
                       <div className="mt-1"><AgingBadge createdAt={item.createdAt} /></div>
                     </TableCell>
-                    <TableCell><Badge variant="secondary" className="capitalize">{item.type.replace(/_/g, " ")}</Badge></TableCell>
-                    <TableCell className="text-sm">
-                      <div className="font-semibold">{item.customerName}</div>
-                      {item.email && <div className="text-xs text-muted-foreground">{item.email}</div>}
-                    </TableCell>
-                    <TableCell className="text-sm">{item.phone}</TableCell>
-                    <TableCell className="text-sm max-w-[200px] truncate" title={item.packageName || ""}>{item.packageName || "—"}</TableCell>
-                    <TableCell><Badge variant="outline">{statusLabel(item.status)}</Badge></TableCell>
-                    <TableCell className="text-sm">{item.assignedStaff || <span className="text-muted-foreground">Unassigned</span>}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <a href={whatsappUrlFor(item.phone, `Hello ${item.customerName}, regarding your request ${item.requestId}`)} target="_blank" rel="noreferrer">

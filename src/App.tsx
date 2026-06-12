@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -50,15 +50,14 @@ import AgenciesPage from "./pages/AgenciesPage";
 import PackagesPage from "./pages/PackagesPage";
 import TourPackagesPage from "./pages/TourPackagesPage";
 import VisaPackagesPage from "./pages/VisaPackagesPage";
-import BookingsPage from "./pages/BookingsPage";
-import TicketsPage from "./pages/TicketsPage";
 import HotelsPage from "./pages/HotelsPage";
 import FlightsPage from "./pages/FlightsPage";
 import WalletPage from "./pages/WalletPage";
 import PaymentsPage from "./pages/PaymentsPage";
 import SecretManagerPage from "./pages/SecretManagerPage";
 import ProviderSystemsPage from "./pages/ProviderSystemsPage";
-import AgencyFlightSearchPage from "./pages/AgencyFlightSearchPage";
+import AdminSearchPage from "./pages/AdminSearchPage";
+import FlightBookingsPage from "./pages/FlightBookingsPage";
 import CustomerPortalPage from "./pages/CustomerPortalPage";
 import UsersPage from "./pages/UsersPage";
 import CustomersPage from "./pages/CustomersPage";
@@ -70,7 +69,6 @@ import NotificationsPage from "./pages/NotificationsPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 import BookingRequestsPage from "./pages/BookingRequestsPage";
-import HoldBookingsPage from "./pages/HoldBookingsPage";
 import ReportsPage from "./pages/ReportsPage";
 import RoadmapPlaceholderPage from "./pages/RoadmapPlaceholderPage";
 
@@ -128,19 +126,22 @@ const App = () => (
             <Route path="/admin/packages" element={<AdminLayout><PackagesPage /></AdminLayout>} />
             <Route path="/admin/tours" element={<AdminLayout><TourPackagesPage /></AdminLayout>} />
             <Route path="/admin/visa" element={<AdminLayout><VisaPackagesPage /></AdminLayout>} />
-            <Route path="/admin/bookings" element={<AdminLayout><BookingsPage /></AdminLayout>} />
-            <Route path="/admin/bookings/holds" element={<AdminLayout><HoldBookingsPage /></AdminLayout>} />
-            <Route path="/admin/booking-requests" element={<AdminLayout><BookingRequestsPage /></AdminLayout>} />
+            <Route path="/admin/bookings" element={<AdminLayout><Navigate to="/admin/flight-bookings?tab=all" replace /></AdminLayout>} />
+            <Route path="/admin/bookings/holds" element={<AdminLayout><Navigate to="/admin/flight-bookings?tab=held" replace /></AdminLayout>} />
+            <Route path="/admin/booking-requests" element={<AdminLayout><Navigate to="/admin/requests?tab=all" replace /></AdminLayout>} />
             <Route path="/admin/reports" element={<AdminLayout><ReportsPage /></AdminLayout>} />
             <Route path="/admin/roadmap/audit-logs" element={<AdminLayout><RoadmapPlaceholderPage title="Audit Logs" description="A searchable trail of every admin action (user, module, before/after) with filters by user, module and date." eta="Sprint 4" /></AdminLayout>} />
             <Route path="/admin/roadmap/webhook-logs" element={<AdminLayout><RoadmapPlaceholderPage title="Webhook Logs" description="Inbound and outbound webhook delivery logs for payment gateways and supplier APIs, with retry controls." eta="Sprint 3" /></AdminLayout>} />
             <Route path="/admin/roadmap/reconciliation" element={<AdminLayout><RoadmapPlaceholderPage title="Reconciliation" description="Match supplier statements, gateway settlements and Travelian ledger lines; flag mismatches for review." eta="Sprint 4" /></AdminLayout>} />
             <Route path="/admin/roadmap/payment-gateways" element={<AdminLayout><RoadmapPlaceholderPage title="Payment Gateways" description="Toggle gateways live/sandbox, configure per-gateway fees and routing rules." eta="Sprint 3" /></AdminLayout>} />
-            <Route path="/admin/tickets" element={<AdminLayout><TicketsPage /></AdminLayout>} />
+            <Route path="/admin/tickets" element={<AdminLayout><Navigate to="/admin/flight-bookings?tab=issued" replace /></AdminLayout>} />
             <Route path="/admin/hotels" element={<AdminLayout><HotelsPage /></AdminLayout>} />
             <Route path="/admin/flights" element={<AdminLayout><FlightsPage /></AdminLayout>} />
             <Route path="/admin/flights-search" element={<AdminLayout><PublicFlightsPage bookingPath="/admin/booking" adminMode /></AdminLayout>} />
-            <Route path="/admin/flight-search" element={<AdminLayout><AgencyFlightSearchPage /></AdminLayout>} />
+            <Route path="/admin/flight-search" element={<AdminLayout><Navigate to="/admin/search?tab=flights" replace /></AdminLayout>} />
+            <Route path="/admin/search" element={<AdminLayout><AdminSearchPage /></AdminLayout>} />
+            <Route path="/admin/flight-bookings" element={<AdminLayout><FlightBookingsPage /></AdminLayout>} />
+            <Route path="/admin/requests" element={<AdminLayout><BookingRequestsPage /></AdminLayout>} />
             <Route path="/admin/booking" element={<AdminLayout><BookingPage /></AdminLayout>} />
             <Route path="/admin/wallet" element={<AdminLayout><WalletPage /></AdminLayout>} />
             <Route path="/admin/payments" element={<AdminLayout><PaymentsPage /></AdminLayout>} />
