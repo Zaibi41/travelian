@@ -7,16 +7,33 @@ import {
   type CognitoUserSession,
 } from "amazon-cognito-identity-js";
 
-const COGNITO_REGION = "us-east-1";
-const COGNITO_USER_POOL_ID = "us-east-1_wH7XSjisU";
-const COGNITO_CLIENT_ID = "1h9q50o6q8112en493onho8lqg";
-const COGNITO_DOMAIN = "https://travelian-auth-106237071463.auth.us-east-1.amazoncognito.com";
 const PKCE_VERIFIER_KEY = "travelian.cognito.pkce.verifier";
 const PKCE_STATE_KEY = "travelian.cognito.pkce.state";
-const userPool = new CognitoUserPool({
-  UserPoolId: COGNITO_USER_POOL_ID,
-  ClientId: COGNITO_CLIENT_ID,
-});
+
+const cognitoEnv = {
+  region: import.meta.env.VITE_COGNITO_REGION || "",
+  userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID || "",
+  clientId: import.meta.env.VITE_COGNITO_CLIENT_ID || "",
+  domain: (import.meta.env.VITE_COGNITO_DOMAIN || "").replace(/\/$/, ""),
+};
+
+function getCognitoConfig() {
+  const missing = Object.entries(cognitoEnv)
+    .filter(([, value]) => !value)
+    .map(([key]) => `VITE_COGNITO_${key.replace(/[A-Z]/g, (letter) => `_${letter}`).toUpperCase()}`);
+  if (missing.length) {
+    throw new Error(`Cognito is not configured. Missing ${missing.join(", ")}.`);
+  }
+  return cognitoEnv;
+}
+
+function getUserPool() {
+  const config = getCognitoConfig();
+  return new CognitoUserPool({
+    UserPoolId: config.userPoolId,
+    ClientId: config.clientId,
+  });
+}
 
 type TokenResponse = {
   id_token: string;
@@ -61,14 +78,15 @@ function redirectUri() {
 }
 
 function authUrl(path: "oauth2/authorize" | "signup", extra: Record<string, string> = {}) {
+  const config = getCognitoConfig();
   const params = new URLSearchParams({
-    client_id: COGNITO_CLIENT_ID,
+    client_id: config.clientId,
     response_type: "code",
     scope: "openid email profile",
     redirect_uri: redirectUri(),
     ...extra,
   });
-  return `${COGNITO_DOMAIN}/${path}?${params.toString()}`;
+  return `${config.domain}/${path}?${params.toString()}`;
 }
 
 async function startHostedUi(path: "oauth2/authorize" | "signup") {
@@ -95,7 +113,8 @@ export function startCognitoSignUp() {
 }
 
 async function cognitoRequest<T>(target: string, body: Record<string, unknown>): Promise<T> {
-  const response = await fetch(`https://cognito-idp.${COGNITO_REGION}.amazonaws.com/`, {
+  const { region } = getCognitoConfig();
+  const response = await fetch(`https://cognito-idp.${region}.amazonaws.com/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-amz-json-1.1",
@@ -146,7 +165,7 @@ function sessionFromTokens(tokens: TokenResponse): AuthSession {
 
 export async function signInWithPassword(email: string, password: string): Promise<AuthSession> {
   const username = email.trim().toLowerCase();
-  const cognitoUser = new CognitoUser({ Username: username, Pool: userPool });
+  const cognitoUser = new CognitoUser({ Username: username, Pool: getUserPool() });
   const authenticationDetails = new AuthenticationDetails({
     Username: username,
     Password: password,
@@ -189,7 +208,7 @@ export async function signUpWithPassword(email: string, password: string, name: 
   ];
 
   return new Promise<{ UserSub: string; UserConfirmed: boolean }>((resolve, reject) => {
-    userPool.signUp(username, password, attributes, [], (error, result) => {
+    getUserPool().signUp(username, password, attributes, [], (error, result) => {
       if (error || !result) {
         reject(new Error(error?.message || "Signup failed. Please try again."));
         return;
@@ -205,7 +224,7 @@ export async function signUpWithPassword(email: string, password: string, name: 
 export async function confirmSignUp(email: string, code: string) {
   const cognitoUser = new CognitoUser({
     Username: email.trim().toLowerCase(),
-    Pool: userPool,
+    Pool: getUserPool(),
   });
 
   return new Promise<Record<string, never>>((resolve, reject) => {
@@ -220,18 +239,19 @@ export async function confirmSignUp(email: string, code: string) {
 }
 
 async function exchangeCode(code: string): Promise<TokenResponse> {
+  const config = getCognitoConfig();
   const verifier = sessionStorage.getItem(PKCE_VERIFIER_KEY);
   if (!verifier) throw new Error("The sign-in session expired. Please try again.");
 
   const body = new URLSearchParams({
     grant_type: "authorization_code",
-    client_id: COGNITO_CLIENT_ID,
+    client_id: config.clientId,
     code,
     redirect_uri: redirectUri(),
     code_verifier: verifier,
   });
 
-  const response = await fetch(`${COGNITO_DOMAIN}/oauth2/token`, {
+  const response = await fetch(`${config.domain}/oauth2/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
@@ -263,17 +283,13 @@ export async function completeCognitoRedirect(urlSearch: string): Promise<AuthSe
 }
 
 export function cognitoLogoutUrl() {
+  const config = getCognitoConfig();
   const logoutUri = `${window.location.origin}/`;
   const params = new URLSearchParams({
-    client_id: COGNITO_CLIENT_ID,
+    client_id: config.clientId,
     logout_uri: logoutUri,
   });
-  return `${COGNITO_DOMAIN}/logout?${params.toString()}`;
+  return `${config.domain}/logout?${params.toString()}`;
 }
 
-export const cognitoConfig = {
-  region: COGNITO_REGION,
-  userPoolId: COGNITO_USER_POOL_ID,
-  clientId: COGNITO_CLIENT_ID,
-  domain: COGNITO_DOMAIN,
-};
+export const cognitoConfig = cognitoEnv;

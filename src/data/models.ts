@@ -216,7 +216,7 @@ export interface Flight {
   arrivalTime: string;
   price: number;
   currency?: string;
-  seats: number;
+  seats?: number;
   status: 'scheduled' | 'delayed' | 'cancelled';
   class: 'economy' | 'business' | 'first';
   duration?: string;

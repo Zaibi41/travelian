@@ -1,8 +1,20 @@
 const cache = new Map();
+const cacheTtlMs = Number(process.env.SECRET_CACHE_TTL_MS || 0);
+
+function readCached(secretId) {
+  const cached = cache.get(secretId);
+  if (!cached) return undefined;
+  if (cacheTtlMs > 0 && Date.now() - cached.cachedAt > cacheTtlMs) {
+    cache.delete(secretId);
+    return undefined;
+  }
+  return cached.value;
+}
 
 export async function getSecretJson(secretId) {
   if (!secretId) return null;
-  if (cache.has(secretId)) return cache.get(secretId);
+  const cached = readCached(secretId);
+  if (cached !== undefined) return cached;
 
   try {
     const { SecretsManagerClient, GetSecretValueCommand } = await import("@aws-sdk/client-secrets-manager");
@@ -18,7 +30,7 @@ export async function getSecretJson(secretId) {
         break;
       }
     }
-    cache.set(secretId, value);
+    cache.set(secretId, { value, cachedAt: Date.now() });
     return value;
   } catch (error) {
     if (process.env.ALLOW_MISSING_SECRETS === "true") return null;

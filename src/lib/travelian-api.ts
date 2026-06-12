@@ -37,6 +37,7 @@ interface FlightOffer {
   stops?: number | null;
   baggage?: string | null;
   meal?: string | null;
+  seats?: number | string | null;
   segments?: Flight["segments"];
   layovers?: Flight["layovers"];
   returnDepartureTime?: string | null;
@@ -260,7 +261,7 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
     arrivalTime: formatFlightDateTime(offer.arrivalTime),
     price: offer.price?.total || 0,
     currency: offer.price?.currency || "PKR",
-    seats: 9,
+    seats: normalizeSeats(offer.seats),
     status: "scheduled",
     class: normalizeCabin(cabin),
     fareOptions: offer.fareOptions || [],
@@ -307,4 +308,9 @@ function safeText(value: unknown, fallback = "") {
   if (value === null || value === undefined) return fallback;
   const text = String(value).trim();
   return text || fallback;
+}
+
+function normalizeSeats(value: unknown) {
+  const seats = Number(value);
+  return Number.isFinite(seats) && seats > 0 ? seats : undefined;
 }
