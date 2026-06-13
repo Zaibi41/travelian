@@ -1,18 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { BedDouble, Building2, CalendarIcon, FileCheck, Hotel, Landmark, Map, Minus, Package, Plane, Plus, Search, Users } from "lucide-react";
+import { Building2, CalendarIcon, CheckCircle2, ChevronDown, FileCheck, Hotel, Landmark, Loader2, Map, Minus, Plane, Plus, Search, Users } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/EmptyState";
 import { SearchTabs } from "@/components/public/SearchTabs";
 import { useAdmin } from "@/contexts/AdminStore";
 import { useLocale } from "@/contexts/LocaleContext";
 import type { Hotel as HotelModel, UmrahPackage } from "@/data/models";
 import { isPublishedPackage, isPublishedUmrahPackage } from "@/lib/package-availability";
+import { createBookingRequest } from "@/lib/booking-request-api";
+import { cn } from "@/lib/utils";
 
 const searchTabs = [
   { id: "flights", label: "Flights", icon: Plane },
@@ -45,15 +49,72 @@ function DateInput({ label, value, min, onChange }: { label: string; value: stri
   );
 }
 
-function Counter({ label, value, onChange, min = 0 }: { label: string; value: number; onChange: (value: number) => void; min?: number }) {
+function Counter({ label, sub, value, onChange, min = 0 }: { label: string; sub?: string; value: number; onChange: (value: number) => void; min?: number }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border px-3 py-2">
-      <span className="text-sm font-semibold">{label}</span>
+    <div className="flex items-center justify-between">
+      <div>
+        <p className="text-sm font-semibold text-foreground">{label}</p>
+        {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
+      </div>
       <div className="flex items-center gap-3">
-        <Button type="button" size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => onChange(Math.max(min, value - 1))}><Minus className="h-3.5 w-3.5" /></Button>
+        <Button type="button" size="icon" variant="outline" className="h-8 w-8 rounded-full" disabled={value <= min} onClick={() => onChange(Math.max(min, value - 1))}><Minus className="h-3.5 w-3.5" /></Button>
         <span className="w-6 text-center text-sm font-bold">{value}</span>
         <Button type="button" size="icon" variant="outline" className="h-8 w-8 rounded-full" onClick={() => onChange(value + 1)}><Plus className="h-3.5 w-3.5" /></Button>
       </div>
+    </div>
+  );
+}
+
+function HotelGuestsPicker({
+  rooms,
+  adults,
+  children,
+  setRooms,
+  setAdults,
+  setChildren,
+}: {
+  rooms: number;
+  adults: number;
+  children: number;
+  setRooms: (value: number) => void;
+  setAdults: (value: number) => void;
+  setChildren: (value: number) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen(value => !value)}
+        className="flex h-12 w-full items-center gap-2 rounded-xl border border-input bg-background px-3 text-left text-sm transition-colors hover:border-primary/30"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+      >
+        <Users className="h-4 w-4 text-muted-foreground" />
+        <span className="min-w-0 flex-1 truncate">{rooms} Room{rooms > 1 ? "s" : ""}, {adults + children} Guest{adults + children > 1 ? "s" : ""}</span>
+        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-[200] mt-2 w-80 rounded-xl border bg-card p-4 shadow-elevated" role="dialog">
+          <div className="space-y-4">
+            <Counter label="Rooms" value={rooms} min={1} onChange={setRooms} />
+            <Counter label="Adults" sub="12+ years" value={adults} min={1} onChange={setAdults} />
+            <Counter label="Children" sub="2-11 years" value={children} onChange={setChildren} />
+          </div>
+          <Button size="sm" className="mt-4 w-full gradient-primary text-primary-foreground" onClick={() => setOpen(false)}>Done</Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -89,11 +150,7 @@ function HotelSearchPanel({ hotels }: { hotels: HotelModel[] }) {
             <DateInput label="Check-out" value={checkOut} min={checkIn || todayKey()} onChange={setCheckOut} />
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-muted-foreground">Guests / Rooms</Label>
-              <div className="rounded-xl border bg-background p-2">
-                <Counter label="Rooms" value={rooms} min={1} onChange={setRooms} />
-                <Counter label="Adults" value={adults} min={1} onChange={setAdults} />
-                <Counter label="Children" value={children} onChange={setChildren} />
-              </div>
+              <HotelGuestsPicker rooms={rooms} adults={adults} children={children} setRooms={setRooms} setAdults={setAdults} setChildren={setChildren} />
             </div>
             <Button className="h-12 self-end rounded-xl px-6" onClick={() => setSubmitted(true)}>Search Hotels</Button>
           </div>
@@ -128,6 +185,87 @@ function HotelSearchPanel({ hotels }: { hotels: HotelModel[] }) {
   );
 }
 
+function RequestDialog({
+  item,
+  category,
+  onClose,
+}: {
+  item: UmrahPackage | null;
+  category: PackageCategory;
+  onClose: () => void;
+}) {
+  const [form, setForm] = useState({ customerName: "", phone: "", email: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const label = category === "umrah" ? "package" : category === "visa" ? "visa service" : "tour";
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!item) return;
+    if (!form.customerName.trim() || !form.phone.trim()) {
+      toast.error("Name and phone number are required");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await createBookingRequest({
+        type: category,
+        packageId: item.packageId,
+        packageName: item.name,
+        customerName: form.customerName.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+      });
+      setSubmitted(true);
+      toast.success("Request saved in Booking Requests");
+    } catch (error) {
+      console.error(error);
+      toast.error("Request could not be saved");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={!!item} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{submitted ? "Request saved" : `Request ${label}`}</DialogTitle>
+        </DialogHeader>
+        {submitted ? (
+          <div className="space-y-4 py-4 text-center">
+            <CheckCircle2 className="mx-auto h-12 w-12 text-success" />
+            <p className="text-sm text-muted-foreground">The request for <strong>{item?.name}</strong> is saved in the Requests module. Admin notification email will be handled by the configured backend notification settings.</p>
+            <Button className="w-full" onClick={onClose}>Done</Button>
+          </div>
+        ) : (
+          <form className="space-y-4" onSubmit={submit}>
+            <div className="rounded-xl border bg-muted/30 p-3">
+              <p className="text-xs font-bold uppercase text-muted-foreground">Selected {label}</p>
+              <p className="font-semibold">{item?.name}</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin-request-name">Name *</Label>
+              <Input id="admin-request-name" value={form.customerName} onChange={event => setForm(current => ({ ...current, customerName: event.target.value }))} autoComplete="name" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin-request-phone">Phone number *</Label>
+              <Input id="admin-request-phone" value={form.phone} onChange={event => setForm(current => ({ ...current, phone: event.target.value }))} autoComplete="tel" placeholder="+92 300 1234567" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin-request-email">Email (optional)</Label>
+              <Input id="admin-request-email" type="email" value={form.email} onChange={event => setForm(current => ({ ...current, email: event.target.value }))} autoComplete="email" />
+            </div>
+            <Button type="submit" className="w-full gradient-primary text-primary-foreground" disabled={submitting}>
+              {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : "Save Request"}
+            </Button>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ServiceSearchPanel({
   title,
   description,
@@ -144,9 +282,11 @@ function ServiceSearchPanel({
   const [primary, setPrimary] = useState("all");
   const [secondary, setSecondary] = useState("all");
   const [duration, setDuration] = useState("all");
+  const [requestItem, setRequestItem] = useState<UmrahPackage | null>(null);
   const published = items.filter(item => category === "umrah" ? isPublishedUmrahPackage(item) : isPublishedPackage(item, category));
   const primaryOptions = unique(published.map(item => category === "visa" ? item.city || item.name.split(" ")[0] : category === "tour" ? item.city : item.departureCity || item.city));
-  const secondaryOptions = unique(published.map(item => category === "visa" ? item.packageType : category === "tour" ? item.packageType : item.packageType || item.hotel || item.roomSharing));
+  const baseSecondaryOptions = unique(published.map(item => category === "visa" ? item.packageType : category === "tour" ? item.packageType : item.packageType || item.hotel || item.roomSharing));
+  const secondaryOptions = category === "visa" ? unique([...baseSecondaryOptions, "Visit", "Study", "Work", "Business", "Tourist"]) : baseSecondaryOptions;
   const durationOptions = unique(published.map(item => item.duration || item.processingTime));
   const filtered = published.filter(item => {
     const haystack = [
@@ -175,24 +315,38 @@ function ServiceSearchPanel({
             <h2 className="text-xl font-bold font-display">{title}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           </div>
-          <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
-            <div className="relative">
+          <div className={cn("grid gap-3", category === "visa" ? "lg:grid-cols-[1.5fr_1fr_1fr_auto]" : "lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]")}>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-muted-foreground">Search</Label>
+              <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input value={query} onChange={event => setQuery(event.target.value)} className="h-12 rounded-xl pl-9" placeholder={placeholder} />
+              </div>
             </div>
-            <Select value={primary} onValueChange={setPrimary}>
-              <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder={category === "visa" ? "Country" : category === "tour" ? "Destination" : "Departure city"} /></SelectTrigger>
-              <SelectContent><SelectItem value="all">All</SelectItem>{primaryOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
-            </Select>
-            <Select value={secondary} onValueChange={setSecondary}>
-              <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder={category === "visa" ? "Visa type" : category === "tour" ? "Tour type" : "Hotel category"} /></SelectTrigger>
-              <SelectContent><SelectItem value="all">All</SelectItem>{secondaryOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
-            </Select>
-            <Select value={duration} onValueChange={setDuration}>
-              <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Duration" /></SelectTrigger>
-              <SelectContent><SelectItem value="all">All</SelectItem>{durationOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
-            </Select>
-            <Button className="h-12 rounded-xl px-6">{buttonLabel}</Button>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-muted-foreground">{category === "visa" ? "Country" : category === "tour" ? "Destination" : "Departure city"}</Label>
+              <Select value={primary} onValueChange={setPrimary}>
+                <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder={category === "visa" ? "Country" : category === "tour" ? "Destination" : "Departure city"} /></SelectTrigger>
+                <SelectContent><SelectItem value="all">All</SelectItem>{primaryOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold text-muted-foreground">{category === "visa" ? "Visa type" : category === "tour" ? "Tour type" : "Hotel category"}</Label>
+              <Select value={secondary} onValueChange={setSecondary}>
+                <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder={category === "visa" ? "Visa type" : category === "tour" ? "Tour type" : "Hotel category"} /></SelectTrigger>
+                <SelectContent><SelectItem value="all">All</SelectItem>{secondaryOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            {category !== "visa" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-muted-foreground">Duration</Label>
+                <Select value={duration} onValueChange={setDuration}>
+                  <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Duration" /></SelectTrigger>
+                  <SelectContent><SelectItem value="all">All</SelectItem>{durationOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
+            <Button className="h-12 self-end rounded-xl px-6">{buttonLabel}</Button>
           </div>
         </CardContent>
       </Card>
@@ -232,7 +386,7 @@ function ServiceSearchPanel({
                   <p className="text-xl font-black text-primary">{formatPrice(item.basePrice || 0)}</p>
                   <div className="flex gap-2">
                     <Button asChild variant="outline" className="rounded-xl"><Link to={`/${detailBase}/${item.packageId}`}>{category === "visa" ? "View Visa" : category === "tour" ? "View Tour" : "View Package"}</Link></Button>
-                    <Button asChild className="rounded-xl"><Link to={`/request-booking?category=${category}&id=${item.packageId}`}>{category === "visa" ? "Request Visa" : category === "tour" ? "Request Tour" : "Request Package"}</Link></Button>
+                    <Button className="rounded-xl" onClick={() => setRequestItem(item)}>{category === "visa" ? "Request Visa" : category === "tour" ? "Request Tour" : "Request Package"}</Button>
                   </div>
                 </div>
               </CardContent>
@@ -240,6 +394,7 @@ function ServiceSearchPanel({
           ))}
         </div>
       )}
+      <RequestDialog item={requestItem} category={category} onClose={() => setRequestItem(null)} />
     </div>
   );
 }

@@ -16,7 +16,7 @@ const supportedCategories = new Set(["umrah", "tour", "visa"]);
 
 export default function BookingRequestPage() {
   const [searchParams] = useSearchParams();
-  const category = searchParams.get("type") || "package";
+  const category = searchParams.get("type") || searchParams.get("category") || "package";
   const packageId = searchParams.get("id") || "";
   const [item, setItem] = useState<UmrahPackage | null>(null);
   const [loading, setLoading] = useState(true);
