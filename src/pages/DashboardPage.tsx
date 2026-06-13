@@ -178,7 +178,7 @@ export default function DashboardPage() {
 
       {canManageTicketInvoices && (
         <div className="grid gap-4 lg:grid-cols-3">
-          <WorkflowCard icon={Plane} title="Search" description="Search one-way, round-trip, multi-city, hotels, packages, visas, tours, and group ticketing." href="/admin/search?tab=flights" action="Open Search" />
+          <WorkflowCard icon={Plane} title="Search" description="Search one-way, round-trip, multi-city, hotels, packages, visas, and tours." href="/admin/search?tab=flights" action="Open Search" />
           <WorkflowCard icon={Receipt} title="Flight Bookings" description="Use PNR/ticketing records to issue, hold, download, invoice, refund, or reissue tickets." href="/admin/flight-bookings?tab=all" action="Open Bookings" />
           <WorkflowCard icon={FileText} title="Requests" description="Process Umrah, tour, visa, study visa, hotel, and assisted service requests." href="/admin/requests?tab=all" action="Open Requests" />
         </div>

@@ -41,7 +41,6 @@ import TourDetailPage from "./pages/public/TourDetailPage";
 import VisaDetailPage from "./pages/public/VisaDetailPage";
 import BlogDetailPage from "./pages/public/BlogDetailPage";
 import DestinationPage from "./pages/public/DestinationPage";
-import GroupTicketingPage from "./pages/public/GroupTicketingPage";
 import BookingRequestPage from "./pages/public/BookingRequestPage";
 
 // Admin pages
@@ -106,8 +105,8 @@ const App = () => (
             <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
             <Route path="/deals" element={<PublicLayout><DealsPage /></PublicLayout>} />
             <Route path="/destination/:slug" element={<PublicLayout><DestinationPage /></PublicLayout>} />
-            <Route path="/group-ticketing" element={<PublicLayout><GroupTicketingPage /></PublicLayout>} />
-            <Route path="/group-ticketing/:category" element={<PublicLayout><GroupTicketingPage /></PublicLayout>} />
+            <Route path="/group-ticketing" element={<Navigate to="/" replace />} />
+            <Route path="/group-ticketing/:category" element={<Navigate to="/" replace />} />
             <Route path="/booking" element={<PublicLayout><BookingPage /></PublicLayout>} />
             <Route path="/request-booking" element={<PublicLayout><BookingRequestPage /></PublicLayout>} />
             <Route path="/account" element={<PublicLayout><AccountPage /></PublicLayout>} />

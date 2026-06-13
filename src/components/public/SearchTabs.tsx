@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Hotel, Plane, UsersRound, Car, Package, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
+import { Hotel, Plane, Car, Package, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -10,14 +10,12 @@ import { cn } from "@/lib/utils";
 import { TravelersClassPicker, type TravelersValue } from "@/components/public/TravelersClassPicker";
 import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { useLocale } from "@/contexts/LocaleContext";
-import { GroupTicketingCategories } from "@/components/public/GroupTicketingCategories";
 import { formatDateOnly } from "@/lib/date-only";
 
 const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
   { id: "hotels", label: "Hotels", icon: Hotel },
   { id: "packages", label: "Packages", icon: Package },
-  { id: "groupbooking", label: "Group Ticketing", icon: UsersRound },
   { id: "transfers", label: "Transfers", icon: Car },
 ];
 
@@ -183,9 +181,6 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
       navigate(`/hotels-search?${params.toString()}`);
     }
     else if (activeTab === "packages") navigate("/umrah-packages");
-    else if (activeTab === "groupbooking") {
-      navigate("/group-ticketing");
-    }
     else if (activeTab === "transfers") {
       const params = new URLSearchParams({
         pickup: transferPickup || "Dubai International Airport",
@@ -417,21 +412,6 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
             <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
               <Search className="h-4 w-4 mr-2" /> Search
             </Button>
-          </div>
-        )}
-
-        {activeTab === "groupbooking" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-bold text-foreground">Group Ticketing</h3>
-                <p className="text-sm text-muted-foreground">Choose a live group ticket category.</p>
-              </div>
-              <Button onClick={handleSearch} variant="outline" className="hidden sm:inline-flex rounded-xl">
-                View All
-              </Button>
-            </div>
-            <GroupTicketingCategories compact />
           </div>
         )}
 

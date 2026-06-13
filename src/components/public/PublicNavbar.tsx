@@ -25,7 +25,6 @@ const navLinks = [
   { label: "Umrah", href: "/umrah-packages" },
   { label: "Visas", href: "/visa-services" },
   { label: "Study Visa", href: "/study-abroad" },
-  { label: "Group Ticketing", href: "/group-ticketing" },
   { label: "Deals", href: "/deals" },
   { label: "About", href: "/about" },
 ];

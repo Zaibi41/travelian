@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Plane, Hotel, Package, FileCheck, Map, GraduationCap, UsersRound, Shield, Headphones, Zap, Search, MousePointerClick, Compass } from "lucide-react";
+import { Plane, Hotel, Package, FileCheck, Map, GraduationCap, Shield, Headphones, Zap, Search, MousePointerClick, Compass } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/public/PageHeader";
@@ -13,7 +13,6 @@ const services = [
   { icon: FileCheck, title: "Visit Visas", desc: "Travel visa assistance for available destinations.", to: "/visa-services" },
   { icon: GraduationCap, title: "Study Visas", desc: "Guidance for supported study visa applications.", to: "/visa-services" },
   { icon: Map, title: "Tours", desc: "Browse published domestic and international tours.", to: "/tour-packages" },
-  { icon: UsersRound, title: "Group Ticketing", desc: "Live group ticket availability for regional sectors.", to: "/group-ticketing" },
 ];
 
 const why = [

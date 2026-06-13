@@ -20,3 +20,14 @@ export async function saveServerBooking(booking: BookingRecord): Promise<Booking
   const payload = await response.json();
   return payload.item;
 }
+
+export async function updateServerBooking(bookingId: string, changes: Partial<BookingRecord>): Promise<BookingRecord> {
+  const response = await fetch(`${API_BASE_URL}/content/bookings/${encodeURIComponent(bookingId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(changes),
+  });
+  if (!response.ok) throw new Error("Unable to update booking");
+  const payload = await response.json();
+  return payload.item;
+}

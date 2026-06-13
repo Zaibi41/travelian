@@ -14,6 +14,7 @@ import {
   saveTicket as saveRemoteTicket,
   softDeleteTicket as softDeleteRemoteTicket,
 } from "@/lib/ticket-api";
+import { listContentHotels } from "@/lib/hotel-content-api";
 
 // Flight Search Log
 export interface FlightSearchLog {
@@ -243,6 +244,18 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         if (!cancelled) setTickets(items);
       })
       .catch(error => console.error("Unable to load tickets from AWS", error));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    listContentHotels()
+      .then(items => {
+        if (!cancelled) setHotels(items);
+      })
+      .catch(error => console.error("Unable to load hotel content from AWS", error));
     return () => {
       cancelled = true;
     };

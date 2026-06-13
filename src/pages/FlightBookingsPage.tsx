@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { CalendarCheck, Clock3, Download, Eye, Plane, RefreshCw, RotateCcw, Ticket, XCircle } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/EmptyState";
 import { Input } from "@/components/ui/input";
-import { listServerBookings } from "@/lib/booking-api";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { listServerBookings, updateServerBooking } from "@/lib/booking-api";
 import type { BookingRecord } from "@/lib/booking-store";
 
 const tabs = [
@@ -71,6 +74,8 @@ export default function FlightBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<BookingRecord | null>(null);
+  const [remarks, setRemarks] = useState("");
+  const [savingAction, setSavingAction] = useState("");
 
   const loadBookings = async () => {
     setLoading(true);
@@ -127,6 +132,42 @@ export default function FlightBookingsPage() {
 
   const selectedFlight = selected?.flight;
 
+  const openBooking = (booking: BookingRecord) => {
+    setSelected(booking);
+    setRemarks((booking as BookingRecord & { remarks?: string }).remarks || "");
+  };
+
+  const updateBooking = async (changes: Partial<BookingRecord> & { remarks?: string }, successMessage: string) => {
+    if (!selected) return;
+    const next = { ...selected, ...changes } as BookingRecord & { remarks?: string };
+    setSelected(next);
+    setBookings(current => current.map(item => item.id === selected.id ? next : item));
+    setSavingAction(successMessage);
+    try {
+      const updated = await updateServerBooking(selected.id, changes);
+      setSelected({ ...updated, remarks: changes.remarks ?? (updated as BookingRecord & { remarks?: string }).remarks } as BookingRecord);
+      setBookings(current => current.map(item => item.id === selected.id ? updated : item));
+      toast.success(successMessage);
+    } catch (actionError) {
+      console.error(actionError);
+      toast.error("Saved locally, but the server update is not available yet");
+    } finally {
+      setSavingAction("");
+    }
+  };
+
+  const markPaymentReceived = () => updateBooking({ status: "payment_received", paymentStatus: "paid", remarks }, "Payment marked as received");
+  const issueTicket = () => {
+    if (!selected) return;
+    if (selected.paymentStatus !== "paid" && selected.status !== "payment_received" && selected.status !== "confirmed") {
+      toast.error("Payment or wallet balance is required before ticket issue.");
+      return;
+    }
+    void updateBooking({ status: "ticket_issued", ticketStatus: "issued", remarks }, "Ticket marked as issued");
+  };
+  const refundBooking = () => updateBooking({ status: "cancelled", remarks }, "Refund / cancellation status updated");
+  const cancelBooking = () => updateBooking({ status: "cancelled", remarks }, "Booking cancelled");
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -180,7 +221,7 @@ export default function FlightBookingsPage() {
                   <th className="p-4 text-left">PNR</th>
                   <th className="p-4 text-left">Route</th>
                   <th className="p-4 text-left">Status</th>
-                  <th className="p-4 text-left">Amount / Time Limit</th>
+                  <th className="p-4 text-left">{activeTab === "held" ? "Expiry" : "Amount / Expiry"}</th>
                   <th className="p-4 text-right">Action</th>
                 </tr>
               </thead>
@@ -196,7 +237,7 @@ export default function FlightBookingsPage() {
                       <p className="text-xs text-muted-foreground">{booking.id}</p>
                     </td>
                     <td className="p-4">
-                      <p className="font-semibold">{booking.flight?.from || "-"} to {booking.flight?.to || "-"}</p>
+                      <p className="font-semibold">{booking.flight?.from || "-"} → {booking.flight?.to || "-"}</p>
                       <p className="text-xs text-muted-foreground">{booking.flight?.airline || ""} {booking.flight?.flightNumber || ""} {booking.flight?.date ? `- ${booking.flight.date}` : ""}</p>
                     </td>
                     <td className="p-4">
@@ -208,8 +249,8 @@ export default function FlightBookingsPage() {
                       {booking.holdExpiresAt && <p className="mt-1 text-xs text-muted-foreground">Hold until {new Date(booking.holdExpiresAt).toLocaleString()}</p>}
                     </td>
                     <td className="p-4 text-right">
-                      <Button size="sm" className="gap-1 rounded-lg" onClick={() => setSelected(booking)}>
-                        <Eye className="h-3.5 w-3.5" /> View / Manage
+                      <Button size="sm" className="gap-1 rounded-lg" onClick={() => openBooking(booking)}>
+                        <Eye className="h-3.5 w-3.5" /> Manage
                       </Button>
                     </td>
                   </tr>
@@ -242,9 +283,9 @@ export default function FlightBookingsPage() {
               </div>
               <div className="rounded-2xl border p-4">
                 <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Flight</p>
-                <p className="mt-1 text-lg font-bold">{selectedFlight?.from || "-"} to {selectedFlight?.to || "-"}</p>
+                <p className="mt-1 text-lg font-bold">{selectedFlight?.from || "-"} → {selectedFlight?.to || "-"}</p>
                 <p className="text-sm text-muted-foreground">{selectedFlight?.airline || ""} {selectedFlight?.flightNumber || ""} {selectedFlight?.date ? `- ${selectedFlight.date}` : ""}</p>
-                <p className="text-sm text-muted-foreground">{selectedFlight?.departTime || "-"} to {selectedFlight?.arriveTime || "-"} {selectedFlight?.duration ? `- ${selectedFlight.duration}` : ""}</p>
+                <p className="text-sm text-muted-foreground">{selectedFlight?.departTime || "-"} → {selectedFlight?.arriveTime || "-"} {selectedFlight?.duration ? `- ${selectedFlight.duration}` : ""}</p>
               </div>
               <div className="rounded-2xl border p-4">
                 <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Payment</p>
@@ -253,9 +294,14 @@ export default function FlightBookingsPage() {
                   <span className="text-xl font-bold text-primary">{amountLabel(selected)}</span>
                 </div>
               </div>
+              <div className="space-y-2 rounded-2xl border p-4">
+                <Label htmlFor="booking-remarks" className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Remarks</Label>
+                <Textarea id="booking-remarks" value={remarks} onChange={event => setRemarks(event.target.value)} rows={3} placeholder="Internal remarks for ticketing, refund, payment, or customer follow-up" />
+                <Button variant="outline" size="sm" className="rounded-xl" disabled={!!savingAction} onClick={() => void updateBooking({ remarks }, "Remarks saved")}>Save Remarks</Button>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {(selected.status === "held" || selected.status === "pending_payment" || selected.status === "payment_received") && (
-                  <Button className="gap-1 rounded-xl"><Ticket className="h-4 w-4" /> Issue Ticket</Button>
+                  <Button className="gap-1 rounded-xl" disabled={!!savingAction} onClick={issueTicket}><Ticket className="h-4 w-4" /> Issue Ticket</Button>
                 )}
                 {(selected.ticketStatus === "issued" || selected.status === "ticket_issued") && (
                   <>
@@ -263,9 +309,9 @@ export default function FlightBookingsPage() {
                     <Button variant="outline" className="gap-1 rounded-xl"><Download className="h-4 w-4" /> Invoice</Button>
                   </>
                 )}
-                <Button variant="outline" className="gap-1 rounded-xl"><Clock3 className="h-4 w-4" /> Mark Pending Payment</Button>
-                <Button variant="outline" className="gap-1 rounded-xl"><RotateCcw className="h-4 w-4" /> Refund</Button>
-                <Button variant="outline" className="gap-1 rounded-xl text-destructive"><XCircle className="h-4 w-4" /> Cancel</Button>
+                <Button variant="outline" className="gap-1 rounded-xl" disabled={!!savingAction} onClick={() => void markPaymentReceived()}><Clock3 className="h-4 w-4" /> Mark Payment Received</Button>
+                <Button variant="outline" className="gap-1 rounded-xl" disabled={!!savingAction} onClick={() => void refundBooking()}><RotateCcw className="h-4 w-4" /> Refund</Button>
+                <Button variant="outline" className="gap-1 rounded-xl text-destructive" disabled={!!savingAction} onClick={() => void cancelBooking()}><XCircle className="h-4 w-4" /> Cancel</Button>
               </div>
             </div>
           )}
