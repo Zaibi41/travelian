@@ -91,7 +91,7 @@ export default function SettingsPage() {
       <Card className="border-primary/20 bg-primary/5 shadow-card">
         <CardContent className="flex gap-3 p-4 text-sm text-muted-foreground">
           <ShieldCheck className="h-5 w-5 shrink-0 text-primary" />
-          <p>Provider credentials are not stored in this page. Twilio values belong in AWS Secrets Manager under the Lambda notification provider secret. Email sender configuration belongs in the Lambda environment.</p>
+          <p>Provider credentials are not stored in this page. Email is delivered through AWS SES using the Lambda sender configuration. Twilio values belong in AWS Secrets Manager under the Lambda notification provider secret.</p>
         </CardContent>
       </Card>
 
