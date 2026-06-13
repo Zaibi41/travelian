@@ -7,6 +7,7 @@ import {
   getRandomPackageImage,
   getBlogPost,
   listBookings,
+  getBookingRecord,
   getPackage,
   getNotificationSettings,
   listTickets,
@@ -65,6 +66,7 @@ const routes = {
   "POST /content/tickets": saveTicketContent,
   "GET /content/bookings": listBookingContent,
   "POST /content/bookings": saveBookingContent,
+  "PATCH /content/bookings/{bookingId}": updateBookingContent,
   "DELETE /content/tickets/{ticketId}": removeTicketContent,
   "GET /content/customers": listCustomerContent,
   "POST /content/customers": saveCustomerContent,
@@ -287,6 +289,18 @@ async function saveBookingContent(event) {
   return { item: await upsertBookingRecord(body) };
 }
 
+async function updateBookingContent(event, path) {
+  const body = await readJson(event);
+  const bookingId = decodeURIComponent(path.split("/")[3]);
+  const existing = await getBookingRecord(bookingId);
+  if (!existing) {
+    const error = new Error("Booking not found");
+    error.statusCode = 404;
+    throw error;
+  }
+  return { item: await upsertBookingRecord({ ...existing, ...body, id: bookingId }) };
+}
+
 async function removeTicketContent(event, path) {
   return { item: await softDeleteTicket(decodeURIComponent(path.split("/")[3])) };
 }
@@ -366,6 +380,7 @@ function routePattern(path) {
   if (/^\/content\/blog-posts\/[^/]+$/.test(path)) return "/content/blog-posts/{slug}";
   if (/^\/content\/packages\/[^/]+\/[^/]+$/.test(path)) return "/content/packages/{category}/{packageId}";
   if (/^\/content\/tickets\/[^/]+$/.test(path)) return "/content/tickets/{ticketId}";
+  if (/^\/content\/bookings\/[^/]+$/.test(path)) return "/content/bookings/{bookingId}";
   if (/^\/content\/booking-requests\/[^/]+$/.test(path)) return "/content/booking-requests/{requestId}";
   if (/^\/content\/pricing-rules\/[^/]+\/[^/]+$/.test(path)) return "/content/pricing-rules/{service}/{ruleId}";
   return path;

@@ -767,7 +767,7 @@ function normalizePassportNumber(value = "") {
 
 function bookingRequestType(value) {
   const normalized = String(value || "").toLowerCase().trim().replace(/\s+/g, "_");
-  if (!["umrah", "tour", "visa", "study_visa", "visit_visa", "service", "package"].includes(normalized)) {
+  if (!["umrah", "tour", "visa", "study_visa", "visit_visa", "hotel", "service", "package", "group", "manual_flight", "whatsapp_inquiry"].includes(normalized)) {
     const error = new Error("Invalid booking request type");
     error.statusCode = 400;
     throw error;

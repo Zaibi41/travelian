@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/EmptyState";
 import { SearchTabs } from "@/components/public/SearchTabs";
 import { useAdmin } from "@/contexts/AdminStore";
@@ -31,6 +31,16 @@ type PackageCategory = Extract<UmrahPackage["category"], "umrah" | "tour" | "vis
 
 function unique(values: Array<string | undefined>) {
   return Array.from(new Set(values.map(value => value?.trim()).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b));
+}
+
+function normalizeVisaType(value?: string) {
+  const raw = String(value || "").trim();
+  const lower = raw.toLowerCase();
+  if (!lower) return "";
+  if (lower.includes("visit") || lower.includes("tourist")) return "Visit";
+  if (lower.includes("study") || lower.includes("student")) return "Study";
+  if (lower.includes("work") || lower.includes("business")) return "Work Visa";
+  return raw;
 }
 
 function todayKey() {
@@ -231,6 +241,9 @@ function RequestDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{submitted ? "Request saved" : `Request ${label}`}</DialogTitle>
+          <DialogDescription>
+            Submit the customer name and phone number so this {label} can be handled from Booking Requests.
+          </DialogDescription>
         </DialogHeader>
         {submitted ? (
           <div className="space-y-4 py-4 text-center">
@@ -285,8 +298,8 @@ function ServiceSearchPanel({
   const [requestItem, setRequestItem] = useState<UmrahPackage | null>(null);
   const published = items.filter(item => category === "umrah" ? isPublishedUmrahPackage(item) : isPublishedPackage(item, category));
   const primaryOptions = unique(published.map(item => category === "visa" ? item.city || item.name.split(" ")[0] : category === "tour" ? item.city : item.departureCity || item.city));
-  const baseSecondaryOptions = unique(published.map(item => category === "visa" ? item.packageType : category === "tour" ? item.packageType : item.packageType || item.hotel || item.roomSharing));
-  const secondaryOptions = category === "visa" ? unique([...baseSecondaryOptions, "Visit", "Study", "Work", "Business", "Tourist"]) : baseSecondaryOptions;
+  const baseSecondaryOptions = unique(published.map(item => category === "visa" ? normalizeVisaType(item.packageType) : category === "tour" ? item.packageType : item.packageType || item.hotel || item.roomSharing));
+  const secondaryOptions = category === "visa" ? unique([...baseSecondaryOptions, "Visit", "Study", "Work Visa"]) : baseSecondaryOptions;
   const durationOptions = unique(published.map(item => item.duration || item.processingTime));
   const filtered = published.filter(item => {
     const haystack = [
@@ -295,7 +308,8 @@ function ServiceSearchPanel({
     ].filter(Boolean).join(" ").toLowerCase();
     if (query && !haystack.includes(query.toLowerCase())) return false;
     if (primary !== "all" && !haystack.includes(primary.toLowerCase())) return false;
-    if (secondary !== "all" && !haystack.includes(secondary.toLowerCase())) return false;
+    if (secondary !== "all" && category === "visa" && normalizeVisaType(item.packageType).toLowerCase() !== secondary.toLowerCase()) return false;
+    if (secondary !== "all" && category !== "visa" && category !== "tour" && !haystack.includes(secondary.toLowerCase())) return false;
     if (duration !== "all" && !haystack.includes(duration.toLowerCase())) return false;
     return true;
   });
@@ -315,7 +329,7 @@ function ServiceSearchPanel({
             <h2 className="text-xl font-bold font-display">{title}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           </div>
-          <div className={cn("grid gap-3", category === "visa" ? "lg:grid-cols-[1.5fr_1fr_1fr_auto]" : "lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]")}>
+          <div className={cn("grid gap-3", category === "visa" ? "lg:grid-cols-[1.5fr_1fr_1fr_auto]" : category === "tour" ? "lg:grid-cols-[1.5fr_1fr_1fr_auto]" : "lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]")}>
             <div className="space-y-1.5">
               <Label className="text-xs font-bold text-muted-foreground">Search</Label>
               <div className="relative">
@@ -330,13 +344,15 @@ function ServiceSearchPanel({
                 <SelectContent><SelectItem value="all">All</SelectItem>{primaryOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-muted-foreground">{category === "visa" ? "Visa type" : category === "tour" ? "Tour type" : "Hotel category"}</Label>
-              <Select value={secondary} onValueChange={setSecondary}>
-                <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder={category === "visa" ? "Visa type" : category === "tour" ? "Tour type" : "Hotel category"} /></SelectTrigger>
-                <SelectContent><SelectItem value="all">All</SelectItem>{secondaryOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
+            {category !== "tour" && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-muted-foreground">{category === "visa" ? "Visa type" : "Hotel category"}</Label>
+                <Select value={secondary} onValueChange={setSecondary}>
+                  <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder={category === "visa" ? "Visa type" : "Hotel category"} /></SelectTrigger>
+                  <SelectContent><SelectItem value="all">All</SelectItem>{secondaryOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            )}
             {category !== "visa" && (
               <div className="space-y-1.5">
                 <Label className="text-xs font-bold text-muted-foreground">Duration</Label>

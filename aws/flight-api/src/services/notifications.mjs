@@ -1,4 +1,3 @@
-import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
 import { getSecretJson } from "../secrets.mjs";
 import {
   getNotificationSettings,
@@ -9,8 +8,6 @@ import {
   upsertBookingRequest,
   upsertJourneyReminder
 } from "./content.mjs";
-
-const ses = new SESClient({});
 
 export async function notifyAdminOfBookingRequest(request) {
   const settings = await getNotificationSettings();
@@ -114,6 +111,8 @@ async function sendEmail({ purpose, relatedId, recipient, subject, message }) {
   const from = process.env.NOTIFICATION_FROM_EMAIL;
   if (!from) return logFailure({ purpose, relatedId, channel: "email", recipient, error: "NOTIFICATION_FROM_EMAIL is not configured" });
   try {
+    const { SESClient, SendEmailCommand } = await import("@aws-sdk/client-ses");
+    const ses = new SESClient({});
     await ses.send(new SendEmailCommand({
       Source: from,
       Destination: { ToAddresses: [recipient] },
