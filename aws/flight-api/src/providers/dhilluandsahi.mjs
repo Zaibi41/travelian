@@ -2,6 +2,7 @@ import { ProviderAdapter } from "./provider-base.mjs";
 import { getSecretJson } from "../secrets.mjs";
 
 let cachedSession;
+const DHILLU_AND_SAHI_SECTOR_ID = "9";
 
 export class DhilluAndSahiAdapter extends ProviderAdapter {
   constructor() {
@@ -75,7 +76,7 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
 
   async fetchGroups(request) {
     const session = await this.session();
-    const queryValues = queryValuesForRequest(session, request);
+    const queryValues = await this.queryValuesForRequest(session, request);
     if (!queryValues.length) throw this.error("Dhillu & Sahi search requires a departure date or configured mySectorIds");
 
     const payloads = await Promise.all(
@@ -89,6 +90,10 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
       }
       return [];
     });
+  }
+
+  async queryValuesForRequest(session, request) {
+    return [DHILLU_AND_SAHI_SECTOR_ID];
   }
 
   ticketRecords(group) {
@@ -179,8 +184,7 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
         baseUrl,
         token: configuredToken,
         agentId: secret?.agentId || secret?.agent_id,
-        mySectorIds: parseSectorIds(secret),
-        mySectorQueryMode: secret?.mySectorQueryMode || secret?.my_sector_query_mode || "departureDate",
+        mySectorQueryMode: secret?.mySectorQueryMode || secret?.my_sector_query_mode || "sectorIds",
       };
       return cachedSession;
     }
@@ -201,8 +205,7 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
       baseUrl,
       token: String(payload.success.token).replace(/^Bearer\s+/i, ""),
       agentId: payload.success.agent_id || secret?.agentId || secret?.agent_id,
-      mySectorIds: parseSectorIds(secret),
-      mySectorQueryMode: secret?.mySectorQueryMode || secret?.my_sector_query_mode || "departureDate",
+      mySectorQueryMode: secret?.mySectorQueryMode || secret?.my_sector_query_mode || "sectorIds",
     };
     return cachedSession;
   }
@@ -211,7 +214,7 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
     return (await this.session()).token;
   }
 
-  async post(path, body, token) {
+  async post(path, body, token, options = {}) {
     const session = await this.session();
     const response = await fetch(`${session.baseUrl}${path}`, {
       method: "POST",
@@ -221,7 +224,7 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
         authorization: `Bearer ${token || session.token}`,
       },
       body: JSON.stringify(body || {}),
-      signal: AbortSignal.timeout(Number(process.env.PROVIDER_TIMEOUT_MS || 9000)),
+      signal: AbortSignal.timeout(Number(options.timeoutMs || process.env.PROVIDER_TIMEOUT_MS || 9000)),
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw this.error(payload?.message || payload?.error || `Dhillu & Sahi ${path} failed with ${response.status}`);
@@ -381,20 +384,4 @@ function extractPnr(offerId) {
 
 function unique(values) {
   return Array.from(new Set(values));
-}
-
-function parseSectorIds(secret) {
-  const value = secret?.mySectorIds || secret?.my_sector_ids || secret?.mySectorId || secret?.my_sector_id;
-  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
-  if (value === undefined || value === null || value === "") return [];
-  return String(value).split(",").map((item) => item.trim()).filter(Boolean);
-}
-
-function queryValuesForRequest(session, request) {
-  const values = [];
-  if ((session.mySectorQueryMode || "sectorIds") === "departureDate" && request?.departureDate) {
-    values.push(request.departureDate);
-  }
-  values.push(...(session.mySectorIds || []));
-  return unique(values.map((item) => String(item).trim()).filter(Boolean));
 }
