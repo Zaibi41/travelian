@@ -127,17 +127,26 @@ export function groupTicketCategoryLabel(slug?: string, fallback?: string) {
   return "Group Collection";
 }
 
+/** Public collection name only — never includes supplier name in parentheses. */
+export function groupTicketPublicCollectionLabel(slug?: string, fallback?: string) {
+  const label = (slug && collectionLabelBySlug[slug])
+    || (fallback && collectionLabelBySlug[fallback])
+    || (fallback && !collectionLabelBySlug[fallback] ? fallback : "")
+    || groupTicketCategoryLabel(slug, fallback);
+  return String(label).replace(/\s*\([^)]*\)\s*$/, "").trim() || "Group Collection";
+}
+
 export function maskCategoryForDisplay(category: GroupTicketCategory): GroupTicketCategory {
   return {
     ...category,
-    label: groupTicketCategoryLabel(category.slug),
+    label: groupTicketPublicCollectionLabel(category.slug, category.label),
   };
 }
 
 export function maskGroupTicketForDisplay(group: GroupTicket, index?: number): GroupTicket {
   return {
     ...group,
-    categoryLabel: groupTicketCategoryLabel(group.categorySlug),
+    categoryLabel: groupTicketPublicCollectionLabel(group.categorySlug, group.categoryLabel),
     provider: undefined,
     flightNumber: undefined,
     supplierRemarks: undefined,

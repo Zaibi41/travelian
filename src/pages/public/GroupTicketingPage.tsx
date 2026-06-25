@@ -18,7 +18,7 @@ import {
   ensureGroupTicketCollectionsLoaded,
   groupTicketCategoryLabel,
   groupTicketDisplayTitle,
-  groupTicketSupplierInternalLabel,
+  groupTicketPublicCollectionLabel,
   groupTicketWhatsAppMessage,
   maskGroupTicketForDisplay,
   parseGroupTicketSearchParams,
@@ -64,8 +64,7 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
   const active = detail || group;
   const display = maskGroupTicketForDisplay(active, index);
   const categorySlug = active.categorySlug || group.categorySlug;
-  const collectionLabel = groupTicketCategoryLabel(categorySlug, active.categoryLabel);
-  const supplierHint = groupTicketSupplierInternalLabel(categorySlug);
+  const collectionLabel = groupTicketPublicCollectionLabel(categorySlug, active.categoryLabel);
   const message = groupTicketWhatsAppMessage(category, active);
 
   return (
@@ -84,7 +83,6 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
                 <Badge
                   variant="secondary"
                   className="border border-border/60 bg-muted/50 text-[11px] font-medium text-muted-foreground"
-                  title={supplierHint ? `Supplier: ${supplierHint}` : collectionLabel}
                 >
                   {collectionLabel}
                 </Badge>
