@@ -122,9 +122,9 @@ export function groupTicketCollectionLabel(group: GroupTicket) {
 
 export function groupTicketDisplayTitle(group: GroupTicket, index?: number) {
   const route = group.sector?.trim();
-  if (route) return `${route} Group`;
-  if (index !== undefined) return `Group Ticket ${index + 1}`;
-  return "Group Ticket";
+  if (route) return route;
+  if (index !== undefined) return `Ticket ${index + 1}`;
+  return "Group ticket";
 }
 
 export function groupTicketCategoryLabel(slug?: string, fallback?: string) {
