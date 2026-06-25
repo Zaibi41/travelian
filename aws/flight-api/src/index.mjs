@@ -17,15 +17,19 @@ import {
   listNotificationLogs,
   listPricingRules,
   listFlightSearchLogs,
+  listGroupTicketingCollections,
+  listGroupTicketingCollectionsPublic,
   listPackageImages,
   listPackages,
   softDeletePricingRule,
   softDeletePackage,
+  softDeleteGroupTicketingCollection,
   softDeleteTicket,
   upsertBlogPost,
   upsertBookingRequest,
   upsertBookingRecord,
   upsertCustomer,
+  upsertGroupTicketingCollection,
   upsertNotificationSettings,
   upsertPricingRule,
   upsertPackage,
@@ -80,7 +84,11 @@ const routes = {
   "GET /content/pricing-rules": listPricingRuleContent,
   "GET /content/flight-search-logs": listFlightSearchLogContent,
   "POST /content/pricing-rules": savePricingRuleContent,
-  "DELETE /content/pricing-rules/{service}/{ruleId}": removePricingRuleContent
+  "DELETE /content/pricing-rules/{service}/{ruleId}": removePricingRuleContent,
+  "GET /content/group-ticketing-collections": listGroupTicketingCollectionContent,
+  "GET /content/group-ticketing-collections/public": listGroupTicketingCollectionPublicContent,
+  "POST /content/group-ticketing-collections": saveGroupTicketingCollectionContent,
+  "DELETE /content/group-ticketing-collections/{slug}": removeGroupTicketingCollectionContent
 };
 
 export async function handler(event) {
@@ -369,6 +377,25 @@ async function removePricingRuleContent(event, path) {
   return { item: await softDeletePricingRule(decodeURIComponent(service), decodeURIComponent(ruleId)) };
 }
 
+async function listGroupTicketingCollectionContent() {
+  return { items: await listGroupTicketingCollections() };
+}
+
+async function listGroupTicketingCollectionPublicContent() {
+  return { items: await listGroupTicketingCollectionsPublic() };
+}
+
+async function saveGroupTicketingCollectionContent(event) {
+  const body = await readJson(event);
+  requireFields(body, ["slug", "publicLabel", "supplierName", "providerId", "secretId"]);
+  return { item: await upsertGroupTicketingCollection(body) };
+}
+
+async function removeGroupTicketingCollectionContent(event, path) {
+  const slug = decodeURIComponent(path.split("/")[3]);
+  return { item: await softDeleteGroupTicketingCollection(slug) };
+}
+
 function routePattern(path) {
   if (/^\/bookings\/[^/]+$/.test(path)) return "/bookings/{bookingId}";
   if (/^\/bookings\/[^/]+\/ticket$/.test(path)) return "/bookings/{bookingId}/ticket";
@@ -383,6 +410,8 @@ function routePattern(path) {
   if (/^\/content\/bookings\/[^/]+$/.test(path)) return "/content/bookings/{bookingId}";
   if (/^\/content\/booking-requests\/[^/]+$/.test(path)) return "/content/booking-requests/{requestId}";
   if (/^\/content\/pricing-rules\/[^/]+\/[^/]+$/.test(path)) return "/content/pricing-rules/{service}/{ruleId}";
+  if (/^\/content\/group-ticketing-collections\/public$/.test(path)) return "/content/group-ticketing-collections/public";
+  if (/^\/content\/group-ticketing-collections\/[^/]+$/.test(path)) return "/content/group-ticketing-collections/{slug}";
   return path;
 }
 

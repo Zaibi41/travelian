@@ -1,3 +1,5 @@
+import { listPublicGroupTicketingCollections } from "@/lib/group-ticketing-collections-api";
+
 export interface GroupTicketLeg {
   id?: string;
   sequence?: number;
@@ -16,15 +18,19 @@ export interface GroupTicketCollection {
   supplierName: string;
   providerId: string;
   secretId: string;
+  sortOrder?: number;
+  enabled?: boolean;
 }
 
-export const GROUP_TICKET_COLLECTIONS: GroupTicketCollection[] = [
+const FALLBACK_GROUP_TICKET_COLLECTIONS: GroupTicketCollection[] = [
   {
     slug: "collection-1",
     publicLabel: "Group Collection 1",
     supplierName: "Al Haider",
     providerId: "alhaider",
     secretId: "travelian/providers/alhaider",
+    sortOrder: 1,
+    enabled: true,
   },
   {
     slug: "collection-2",
@@ -32,6 +38,8 @@ export const GROUP_TICKET_COLLECTIONS: GroupTicketCollection[] = [
     supplierName: "Dhillon & Sahi",
     providerId: "dhilluandsahi",
     secretId: "travelian/providers/dhilluandsahi",
+    sortOrder: 2,
+    enabled: true,
   },
   {
     slug: "collection-3",
@@ -39,21 +47,61 @@ export const GROUP_TICKET_COLLECTIONS: GroupTicketCollection[] = [
     supplierName: "Sahi Skypass",
     providerId: "skypass",
     secretId: "travelian/providers/skypass",
+    sortOrder: 3,
+    enabled: true,
   },
 ];
 
-export const GROUP_TICKET_SUPPLIER_LABELS: Record<string, string> = Object.fromEntries(
-  GROUP_TICKET_COLLECTIONS.map((entry) => [entry.slug, entry.publicLabel]),
+let collectionLabelBySlug: Record<string, string> = Object.fromEntries(
+  FALLBACK_GROUP_TICKET_COLLECTIONS.map((entry) => [entry.slug, entry.publicLabel]),
 );
+let collectionInternalBySlug: Record<string, string> = Object.fromEntries(
+  FALLBACK_GROUP_TICKET_COLLECTIONS.map((entry) => [entry.slug, entry.supplierName]),
+);
+let collectionsLoaded = false;
+let collectionsLoadPromise: Promise<void> | null = null;
 
-/** Real supplier names — shown in admin and via card tooltip / detail for staff identification. */
-export const GROUP_TICKET_SUPPLIER_INTERNAL_LABELS: Record<string, string> = Object.fromEntries(
-  GROUP_TICKET_COLLECTIONS.map((entry) => [entry.slug, entry.supplierName]),
-);
+function applyCollectionMaps(collections: Array<Pick<GroupTicketCollection, "slug" | "publicLabel" | "supplierName">>) {
+  collectionLabelBySlug = Object.fromEntries(collections.map((entry) => [entry.slug, entry.publicLabel]));
+  collectionInternalBySlug = Object.fromEntries(collections.map((entry) => [entry.slug, entry.supplierName]));
+}
+
+export async function ensureGroupTicketCollectionsLoaded(signal?: AbortSignal): Promise<void> {
+  if (collectionsLoaded) return;
+  if (!collectionsLoadPromise) {
+    collectionsLoadPromise = (async () => {
+      try {
+        const publicCollections = await listPublicGroupTicketingCollections();
+        if (publicCollections.length) {
+          applyCollectionMaps(publicCollections.map((entry) => ({
+            slug: entry.slug,
+            publicLabel: entry.publicLabel,
+            supplierName: collectionInternalBySlug[entry.slug] || "",
+          })));
+        }
+      } catch {
+        applyCollectionMaps(FALLBACK_GROUP_TICKET_COLLECTIONS);
+      } finally {
+        collectionsLoaded = true;
+        collectionsLoadPromise = null;
+      }
+    })();
+  }
+  await collectionsLoadPromise;
+  if (signal?.aborted) return;
+}
+
+/** @deprecated Loaded from database — use ensureGroupTicketCollectionsLoaded */
+export const GROUP_TICKET_COLLECTIONS = FALLBACK_GROUP_TICKET_COLLECTIONS;
+
+export function setGroupTicketCollectionMaps(collections: GroupTicketCollection[]) {
+  applyCollectionMaps(collections);
+  collectionsLoaded = true;
+}
 
 export function groupTicketSupplierInternalLabel(slug?: string) {
-  if (slug && GROUP_TICKET_SUPPLIER_INTERNAL_LABELS[slug]) {
-    return GROUP_TICKET_SUPPLIER_INTERNAL_LABELS[slug];
+  if (slug && collectionInternalBySlug[slug]) {
+    return collectionInternalBySlug[slug];
   }
   return undefined;
 }
@@ -70,8 +118,8 @@ export function groupTicketDisplayTitle(group: GroupTicket, index?: number) {
 }
 
 export function groupTicketCategoryLabel(slug?: string, fallback?: string) {
-  if (slug && GROUP_TICKET_SUPPLIER_LABELS[slug]) return GROUP_TICKET_SUPPLIER_LABELS[slug];
-  if (fallback && GROUP_TICKET_SUPPLIER_LABELS[fallback]) return GROUP_TICKET_SUPPLIER_LABELS[fallback];
+  if (slug && collectionLabelBySlug[slug]) return collectionLabelBySlug[slug];
+  if (fallback && collectionLabelBySlug[fallback]) return collectionLabelBySlug[fallback];
   return "Group Collection";
 }
 

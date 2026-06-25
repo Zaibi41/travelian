@@ -4,7 +4,8 @@ import { timingSafeEqual } from "node:crypto";
 const PUBLIC_ROUTES = new Set([
   "GET /health",
   "GET /content/blog-posts",
-  "GET /content/blog-posts/{slug}"
+  "GET /content/blog-posts/{slug}",
+  "GET /content/group-ticketing-collections/public",
 ]);
 
 let apiKeyCache;

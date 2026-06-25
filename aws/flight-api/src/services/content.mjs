@@ -540,6 +540,143 @@ export async function recordNotificationLog(input) {
   return item;
 }
 
+const GROUP_TICKET_COLLECTION_PK = "GROUP_TICKET_COLLECTION";
+
+const DEFAULT_GROUP_TICKET_COLLECTIONS = [
+  { slug: "collection-1", publicLabel: "Group Collection 1", supplierName: "Al Haider", providerId: "alhaider", secretId: "travelian/providers/alhaider", sortOrder: 1, enabled: true },
+  { slug: "collection-2", publicLabel: "Group Collection 2", supplierName: "Dhillon & Sahi", providerId: "dhilluandsahi", secretId: "travelian/providers/dhilluandsahi", sortOrder: 2, enabled: true },
+  { slug: "collection-3", publicLabel: "Group Collection 3", supplierName: "Sahi Skypass", providerId: "skypass", secretId: "travelian/providers/skypass", sortOrder: 3, enabled: true },
+];
+
+function groupTicketCollectionSk(slug) {
+  return `SLUG#${slug}`;
+}
+
+function normalizeGroupTicketCollectionSlug(value = "") {
+  return String(value)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export async function getGroupTicketingCollection(slug) {
+  ensureTable();
+  const normalized = normalizeGroupTicketCollectionSlug(slug);
+  if (!normalized) return null;
+  const result = await db.send(new GetCommand({
+    TableName: tableName,
+    Key: { pk: GROUP_TICKET_COLLECTION_PK, sk: groupTicketCollectionSk(normalized) },
+  }));
+  return result.Item ? fromItem(result.Item) : null;
+}
+
+async function seedDefaultGroupTicketingCollections() {
+  const now = new Date().toISOString();
+  await Promise.all(DEFAULT_GROUP_TICKET_COLLECTIONS.map((entry) => db.send(new PutCommand({
+    TableName: tableName,
+    Item: {
+      pk: GROUP_TICKET_COLLECTION_PK,
+      sk: groupTicketCollectionSk(entry.slug),
+      ...entry,
+      createdAt: now,
+      updatedAt: now,
+    },
+    ConditionExpression: "attribute_not_exists(pk)",
+  })).catch(() => undefined)));
+}
+
+export async function listGroupTicketingCollections({ includeDeleted = false } = {}) {
+  ensureTable();
+  const result = await db.send(new QueryCommand({
+    TableName: tableName,
+    KeyConditionExpression: "pk = :pk",
+    ExpressionAttributeValues: { ":pk": GROUP_TICKET_COLLECTION_PK },
+  }));
+  let items = (result.Items || [])
+    .map(fromItem)
+    .filter((item) => includeDeleted || !item.deletedAt);
+  if (!items.length) {
+    await seedDefaultGroupTicketingCollections();
+    return listGroupTicketingCollections({ includeDeleted });
+  }
+  return items.sort((a, b) => (Number(a.sortOrder) || 999) - (Number(b.sortOrder) || 999) || String(a.slug).localeCompare(String(b.slug)));
+}
+
+export async function listGroupTicketingCollectionsPublic() {
+  const items = await listGroupTicketingCollections();
+  return items
+    .filter((item) => item.enabled !== false)
+    .map(({ slug, publicLabel, sortOrder }) => ({ slug, publicLabel, sortOrder: Number(sortOrder) || 0 }));
+}
+
+export async function upsertGroupTicketingCollection(input) {
+  ensureTable();
+  const now = new Date().toISOString();
+  const slug = normalizeGroupTicketCollectionSlug(input.slug);
+  const originalSlug = normalizeGroupTicketCollectionSlug(input.originalSlug || input.slug);
+  if (!slug) {
+    const error = new Error("Category slug is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  for (const field of ["publicLabel", "supplierName", "providerId", "secretId"]) {
+    if (!String(input[field] ?? "").trim()) {
+      const error = new Error(`${field} is required`);
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  const existing = (await getGroupTicketingCollection(originalSlug)) || (await getGroupTicketingCollection(slug));
+  if (originalSlug && originalSlug !== slug) {
+    await db.send(new DeleteCommand({
+      TableName: tableName,
+      Key: { pk: GROUP_TICKET_COLLECTION_PK, sk: groupTicketCollectionSk(originalSlug) },
+    }));
+  }
+
+  const item = {
+    slug,
+    publicLabel: String(input.publicLabel).trim(),
+    supplierName: String(input.supplierName).trim(),
+    providerId: String(input.providerId).trim().toLowerCase(),
+    secretId: String(input.secretId).trim(),
+    sortOrder: Number(input.sortOrder ?? existing?.sortOrder ?? 0),
+    enabled: input.enabled === undefined ? existing?.enabled !== false : Boolean(input.enabled),
+    createdAt: existing?.createdAt || now,
+    updatedAt: now,
+    deletedAt: undefined,
+  };
+
+  await db.send(new PutCommand({
+    TableName: tableName,
+    Item: { pk: GROUP_TICKET_COLLECTION_PK, sk: groupTicketCollectionSk(slug), ...item },
+  }));
+  return item;
+}
+
+export async function softDeleteGroupTicketingCollection(slug) {
+  const existing = await getGroupTicketingCollection(slug);
+  if (!existing) {
+    const error = new Error("Group ticketing collection was not found");
+    error.statusCode = 404;
+    throw error;
+  }
+  const now = new Date().toISOString();
+  const item = {
+    ...existing,
+    enabled: false,
+    deletedAt: now,
+    updatedAt: now,
+  };
+  await db.send(new PutCommand({
+    TableName: tableName,
+    Item: { pk: GROUP_TICKET_COLLECTION_PK, sk: groupTicketCollectionSk(existing.slug), ...item },
+  }));
+  return item;
+}
+
 export async function getJourneyReminder(ticketId, departureDate) {
   ensureTable();
   const result = await db.send(new GetCommand({

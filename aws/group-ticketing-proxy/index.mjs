@@ -1,6 +1,11 @@
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 
 const secrets = new SecretsManagerClient({});
+const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({
+  region: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "us-east-1",
+}));
 
 const ALHAIDER_SECRET_ID = process.env.ALHAIDER_SECRET_ID || "travelian/providers/alhaider";
 const DHILLUANDSAHI_SECRET_ID = process.env.DHILLUANDSAHI_SECRET_ID || "travelian/providers/dhilluandsahi";
@@ -9,14 +14,54 @@ const SKYPASS_TOKEN_REFRESH_BUFFER_SECONDS = Number(process.env.SKYPASS_TOKEN_RE
 const DHILLU_AND_SAHI_SECTOR_ID = process.env.DHILLU_AND_SAHI_SECTOR_ID || "9";
 const PROVIDER_TIMEOUT_MS = Number(process.env.PROVIDER_TIMEOUT_MS || 9000);
 
-const SUPPLIERS = [
-  { slug: "collection-1", label: "Group Collection 1", provider: "alhaider" },
-  { slug: "collection-2", label: "Group Collection 2", provider: "dhilluandsahi" },
-  { slug: "collection-3", label: "Group Collection 3", provider: "skypass" },
+const DEFAULT_SUPPLIERS = [
+  { slug: "collection-1", label: "Group Collection 1", provider: "alhaider", enabled: true },
+  { slug: "collection-2", label: "Group Collection 2", provider: "dhilluandsahi", enabled: true },
+  { slug: "collection-3", label: "Group Collection 3", provider: "skypass", enabled: true },
 ];
 
-const supplierBySlug = new Map(SUPPLIERS.map((entry) => [entry.slug, entry]));
-const supplierByProvider = new Map(SUPPLIERS.map((entry) => [entry.provider, entry]));
+let activeSuppliers = DEFAULT_SUPPLIERS;
+let supplierBySlug = new Map(activeSuppliers.map((entry) => [entry.slug, entry]));
+let supplierByProvider = new Map(activeSuppliers.map((entry) => [entry.provider, entry]));
+let suppliersLoadedAt = 0;
+const SUPPLIERS_CACHE_MS = 60_000;
+
+function rebuildSupplierMaps(suppliers) {
+  activeSuppliers = suppliers;
+  supplierBySlug = new Map(suppliers.map((entry) => [entry.slug, entry]));
+  supplierByProvider = new Map(suppliers.map((entry) => [entry.provider, entry]));
+}
+
+async function loadSuppliersFromDatabase() {
+  const tableName = process.env.CONTENT_TABLE;
+  if (!tableName) return null;
+  const result = await dynamo.send(new QueryCommand({
+    TableName: tableName,
+    KeyConditionExpression: "pk = :pk",
+    ExpressionAttributeValues: { ":pk": "GROUP_TICKET_COLLECTION" },
+  }));
+  const items = (result.Items || [])
+    .filter((item) => !item.deletedAt && item.enabled !== false)
+    .sort((a, b) => (Number(a.sortOrder) || 999) - (Number(b.sortOrder) || 999));
+  if (!items.length) return null;
+  return items.map((item) => ({
+    slug: String(item.slug || ""),
+    label: String(item.publicLabel || item.label || "Group Collection"),
+    provider: String(item.providerId || item.provider || "").toLowerCase(),
+    enabled: item.enabled !== false,
+  })).filter((item) => item.slug && item.provider);
+}
+
+async function ensureSuppliers() {
+  if (Date.now() - suppliersLoadedAt < SUPPLIERS_CACHE_MS) return;
+  try {
+    const loaded = await loadSuppliersFromDatabase();
+    if (loaded?.length) rebuildSupplierMaps(loaded);
+  } catch (error) {
+    console.error("group-ticketing-suppliers-load-error", error);
+  }
+  suppliersLoadedAt = Date.now();
+}
 
 const secretCache = new Map();
 let cachedDhilluSession;
@@ -371,13 +416,13 @@ function normalizeSkypassTicket(record, supplier) {
 }
 
 function supplierCategories(groups) {
-  const counts = new Map(SUPPLIERS.map((entry) => [entry.slug, 0]));
+  const counts = new Map(activeSuppliers.map((entry) => [entry.slug, 0]));
   for (const group of groups) {
     if (group.categorySlug && counts.has(group.categorySlug)) {
       counts.set(group.categorySlug, counts.get(group.categorySlug) + 1);
     }
   }
-  return SUPPLIERS.map((entry) => ({
+  return activeSuppliers.map((entry) => ({
     slug: entry.slug,
     label: entry.label,
     count: counts.get(entry.slug) || 0,
@@ -613,19 +658,22 @@ async function fetchSkypassDetail(groupId) {
 }
 
 async function fetchAllGroups() {
-  const providerStatus = {
-    alhaider: "error",
-    dhilluandsahi: "error",
-    skypass: "error",
+  await ensureSuppliers();
+  const providerFetchers = {
+    alhaider: fetchAlhaiderGroups,
+    dhilluandsahi: fetchDhilluandsahiGroups,
+    skypass: fetchSkypassGroups,
   };
-  const settled = await Promise.allSettled([
-    fetchAlhaiderGroups(),
-    fetchDhilluandsahiGroups(),
-    fetchSkypassGroups(),
-  ]);
+  const providers = [...new Set(
+    activeSuppliers
+      .filter((entry) => entry.enabled !== false)
+      .map((entry) => entry.provider)
+      .filter((provider) => providerFetchers[provider]),
+  )];
+  const providerStatus = Object.fromEntries(providers.map((provider) => [provider, "error"]));
+  const settled = await Promise.allSettled(providers.map((provider) => providerFetchers[provider]()));
 
   const groups = [];
-  const providers = ["alhaider", "dhilluandsahi", "skypass"];
   settled.forEach((result, index) => {
     const provider = providers[index];
     if (result.status === "fulfilled") {
@@ -650,11 +698,12 @@ async function fetchGroupDetail(compositeId) {
 
 export async function handler(event) {
   if (event.requestContext?.http?.method === "OPTIONS") return json(204, {});
+  await ensureSuppliers();
   const path = event.rawPath || "/";
 
   try {
     if (path.endsWith("/health")) {
-      return json(200, { ok: true, collections: SUPPLIERS.length });
+      return json(200, { ok: true, collections: activeSuppliers.length });
     }
 
     if (path.endsWith("/group-ticketing/categories")) {

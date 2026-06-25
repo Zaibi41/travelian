@@ -14,6 +14,7 @@ import {
   fetchGroupTicketDetail,
   fetchGroupTickets,
   filterGroupTickets,
+  ensureGroupTicketCollectionsLoaded,
   groupTicketCategoryLabel,
   groupTicketCollectionLabel,
   groupTicketDisplayTitle,
@@ -194,6 +195,12 @@ export default function GroupTicketingPage() {
   };
 
   useEffect(load, [selectedCategory]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    ensureGroupTicketCollectionsLoaded(controller.signal).catch(() => undefined);
+    return () => controller.abort();
+  }, []);
 
   const filteredGroups = useMemo(
     () => filterGroupTickets(groups, searchFilters),
