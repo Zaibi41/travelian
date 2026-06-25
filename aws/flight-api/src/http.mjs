@@ -36,10 +36,11 @@ export function requestId(event) {
 }
 
 export function normalizePath(event) {
-  const rawPath = event.rawPath || event.path || "/";
+  let rawPath = event.rawPath || event.path || "/";
   const stage = event.requestContext?.stage;
-  if (stage && rawPath === `/${stage}`) return "/";
-  if (stage && rawPath.startsWith(`/${stage}/`)) return rawPath.slice(stage.length + 1);
+  if (stage && rawPath === `/${stage}`) rawPath = "/";
+  else if (stage && rawPath.startsWith(`/${stage}/`)) rawPath = rawPath.slice(stage.length + 1);
+  if (rawPath.length > 1 && rawPath.endsWith("/")) rawPath = rawPath.slice(0, -1);
   return rawPath;
 }
 
