@@ -44,7 +44,11 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
   const [detail, setDetail] = useState<GroupTicket | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  const loadDetail = async () => {
+  const toggleDetail = async () => {
+    if (detailOpen) {
+      setDetailOpen(false);
+      return;
+    }
     setDetailOpen(true);
     if (detail) return;
     if (group.itinerary?.length) {
@@ -103,7 +107,9 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
               <p className="text-xs text-muted-foreground">Fare</p>
               <p className="text-2xl font-bold text-primary">{group.fare ? `${group.currency || "PKR"} ${group.fare}` : "On request"}</p>
             </div>
-            <Button variant="outline" className="rounded-xl" onClick={loadDetail}>View Details</Button>
+            <Button variant="outline" className="rounded-xl" onClick={toggleDetail}>
+              {detailOpen ? "Hide Details" : "View Details"}
+            </Button>
             <a href={whatsappHref(message)} target="_blank" rel="noreferrer">
               <Button className="rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> Inquiry

@@ -61,9 +61,15 @@ let collectionInternalBySlug: Record<string, string> = Object.fromEntries(
 let collectionsLoaded = false;
 let collectionsLoadPromise: Promise<void> | null = null;
 
+function normalizeCollectionSupplierName(name: string) {
+  const trimmed = String(name || "").trim();
+  if (/^sahi\s*skypass$/i.test(trimmed)) return "skypass";
+  return trimmed;
+}
+
 function applyCollectionMaps(collections: Array<Pick<GroupTicketCollection, "slug" | "publicLabel" | "supplierName">>) {
   collectionLabelBySlug = Object.fromEntries(collections.map((entry) => [entry.slug, entry.publicLabel]));
-  collectionInternalBySlug = Object.fromEntries(collections.map((entry) => [entry.slug, entry.supplierName]));
+  collectionInternalBySlug = Object.fromEntries(collections.map((entry) => [entry.slug, normalizeCollectionSupplierName(entry.supplierName)]));
 }
 
 export async function ensureGroupTicketCollectionsLoaded(signal?: AbortSignal, force = false): Promise<void> {
@@ -133,7 +139,10 @@ export function groupTicketPublicCollectionLabel(slug?: string, fallback?: strin
     || (fallback && collectionLabelBySlug[fallback])
     || (fallback && !collectionLabelBySlug[fallback] ? fallback : "")
     || groupTicketCategoryLabel(slug, fallback);
-  return String(label).replace(/\s*\([^)]*\)\s*$/, "").trim() || "Group Collection";
+  return String(label)
+    .replace(/\s*\(\s*sahi\s*skypass\s*\)/gi, "")
+    .replace(/\s*\([^)]*\)\s*$/, "")
+    .trim() || "Group Collection";
 }
 
 export function maskCategoryForDisplay(category: GroupTicketCategory): GroupTicketCategory {

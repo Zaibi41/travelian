@@ -604,6 +604,19 @@ async function seedDefaultGroupTicketingCollections() {
   })).catch(() => undefined)));
 }
 
+function normalizeGroupTicketCollectionDisplay(item) {
+  const supplierName = String(item.supplierName || "").trim();
+  const normalizedSupplier = /^sahi\s*skypass$/i.test(supplierName) ? "skypass" : supplierName;
+  const publicLabel = String(item.publicLabel || "")
+    .replace(/\s*\(\s*sahi\s*skypass\s*\)/gi, "")
+    .trim();
+  return {
+    ...item,
+    supplierName: normalizedSupplier,
+    publicLabel: publicLabel || item.publicLabel,
+  };
+}
+
 export async function listGroupTicketingCollections({ includeDeleted = false } = {}) {
   ensureTable();
   const result = await db.send(new QueryCommand({
@@ -613,6 +626,7 @@ export async function listGroupTicketingCollections({ includeDeleted = false } =
   }));
   let items = (result.Items || [])
     .map(fromItem)
+    .map(normalizeGroupTicketCollectionDisplay)
     .filter((item) => includeDeleted || !item.deletedAt);
   if (!items.length) {
     await seedDefaultGroupTicketingCollections();
@@ -663,7 +677,10 @@ export async function upsertGroupTicketingCollection(input) {
   const item = {
     slug,
     publicLabel: String(input.publicLabel).trim(),
-    supplierName: String(input.supplierName).trim(),
+    supplierName: normalizeGroupTicketCollectionDisplay({
+      supplierName: String(input.supplierName).trim(),
+      publicLabel: String(input.publicLabel).trim(),
+    }).supplierName,
     providerId: String(input.providerId ?? existing?.providerId ?? "").trim().toLowerCase(),
     integrationProvider: resolveGroupTicketIntegrationProvider(slug, input, existing),
     secretId: String(input.secretId).trim(),
