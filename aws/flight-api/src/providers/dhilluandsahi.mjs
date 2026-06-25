@@ -11,7 +11,7 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
 
   async searchFlights(request) {
     if (request.tripType === "multicity") return [];
-    const groups = await this.fetchGroups();
+    const groups = await this.fetchGroups(request);
     return groups
       .flatMap((group) => this.ticketRecords(group))
       .filter((record) => this.matchesRequest(record, request))
@@ -73,13 +73,13 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
     return this.post("/api/agent-booking-detail", { booking_id: Number(bookingId) }, token);
   }
 
-  async fetchGroups() {
+  async fetchGroups(request) {
     const session = await this.session();
-    const sectorIds = session.mySectorIds.length ? session.mySectorIds : [];
-    if (!sectorIds.length) throw this.error("Dhillu & Sahi secret must include mySectorIds because the supplier requires my_sector_id");
+    const queryValues = queryValuesForRequest(session, request);
+    if (!queryValues.length) throw this.error("Dhillu & Sahi search requires a departure date or configured mySectorIds");
 
     const payloads = await Promise.all(
-      sectorIds.map((sectorId) => this.post("/api/pnr-respect-to-mysector-user", { my_sector_id: String(sectorId) }, session.token))
+      queryValues.map((value) => this.post(`/api/pnr-respect-to-mysector-user?my_sector_id=${encodeURIComponent(value)}`, {}, session.token))
     );
 
     return payloads.flatMap((payload) => {
@@ -180,6 +180,7 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
         token: configuredToken,
         agentId: secret?.agentId || secret?.agent_id,
         mySectorIds: parseSectorIds(secret),
+        mySectorQueryMode: secret?.mySectorQueryMode || secret?.my_sector_query_mode || "departureDate",
       };
       return cachedSession;
     }
@@ -201,6 +202,7 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
       token: String(payload.success.token).replace(/^Bearer\s+/i, ""),
       agentId: payload.success.agent_id || secret?.agentId || secret?.agent_id,
       mySectorIds: parseSectorIds(secret),
+      mySectorQueryMode: secret?.mySectorQueryMode || secret?.my_sector_query_mode || "departureDate",
     };
     return cachedSession;
   }
@@ -386,4 +388,13 @@ function parseSectorIds(secret) {
   if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
   if (value === undefined || value === null || value === "") return [];
   return String(value).split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function queryValuesForRequest(session, request) {
+  const values = [];
+  if ((session.mySectorQueryMode || "departureDate") === "departureDate" && request?.departureDate) {
+    values.push(request.departureDate);
+  }
+  values.push(...(session.mySectorIds || []));
+  return unique(values.map((item) => String(item).trim()).filter(Boolean));
 }
