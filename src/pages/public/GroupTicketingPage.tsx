@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Calendar, Info, Luggage, Plane, RefreshCw, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,26 +44,35 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
   const [detail, setDetail] = useState<GroupTicket | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
-  const toggleDetail = async () => {
-    if (detailOpen) {
-      setDetailOpen(false);
-      return;
-    }
-    setDetailOpen(true);
-    if (detail) return;
+  const toggleDetail = useCallback(() => {
+    setDetailOpen((open) => !open);
+  }, []);
+
+  useEffect(() => {
+    if (!detailOpen || detail) return;
+
     if (group.itinerary?.length) {
       setDetail(group);
       return;
     }
-    try {
-      setLoadingDetail(true);
-      setDetail(await fetchGroupTicketDetail(group.id));
-    } catch {
-      setDetail(group);
-    } finally {
-      setLoadingDetail(false);
-    }
-  };
+
+    let cancelled = false;
+    setLoadingDetail(true);
+    fetchGroupTicketDetail(group.id)
+      .then((loaded) => {
+        if (!cancelled) setDetail(loaded);
+      })
+      .catch(() => {
+        if (!cancelled) setDetail(group);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDetail(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [detailOpen, detail, group]);
 
   const active = detail || group;
   const display = maskGroupTicketForDisplay(active, index);
@@ -107,7 +116,13 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
               <p className="text-xs text-muted-foreground">Fare</p>
               <p className="text-2xl font-bold text-primary">{group.fare ? `${group.currency || "PKR"} ${group.fare}` : "On request"}</p>
             </div>
-            <Button variant="outline" className="rounded-xl" onClick={toggleDetail}>
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-xl"
+              onClick={toggleDetail}
+              aria-expanded={detailOpen}
+            >
               {detailOpen ? "Hide Details" : "View Details"}
             </Button>
             <a href={whatsappHref(message)} target="_blank" rel="noreferrer">
