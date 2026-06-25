@@ -111,7 +111,7 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
               </div>
             </div>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             <div className="sm:text-right">
               <p className="text-xs text-muted-foreground">Fare</p>
               <p className="text-2xl font-bold text-primary">{group.fare ? `${group.currency || "PKR"} ${group.fare}` : "On request"}</p>
@@ -119,14 +119,14 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
             <Button
               type="button"
               variant="outline"
-              className="rounded-xl"
+              className="w-full rounded-xl sm:w-auto"
               onClick={toggleDetail}
               aria-expanded={detailOpen}
             >
               {detailOpen ? "Hide Details" : "View Details"}
             </Button>
-            <a href={whatsappHref(message)} target="_blank" rel="noreferrer">
-              <Button className="rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
+            <a href={whatsappHref(message)} target="_blank" rel="noreferrer" className="block w-full sm:w-auto">
+              <Button className="w-full rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> Inquiry
               </Button>
             </a>
