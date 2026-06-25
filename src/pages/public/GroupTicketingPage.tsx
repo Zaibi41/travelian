@@ -127,7 +127,7 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
             </Button>
             <a href={whatsappHref(message)} target="_blank" rel="noreferrer" className="block w-full sm:w-auto">
               <Button className="w-full rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
-                <WhatsAppIcon className="mr-2 h-4 w-4" /> Inquiry
+                <WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp
               </Button>
             </a>
           </div>
