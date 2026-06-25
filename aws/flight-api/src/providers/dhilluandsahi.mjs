@@ -74,13 +74,21 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
   }
 
   async fetchGroups() {
-    const token = await this.token();
-    const payload = await this.post("/api/pnr-respect-to-mysector-user", {}, token);
-    if (Array.isArray(payload)) return payload;
-    for (const key of ["data", "groups", "results", "result"]) {
-      if (Array.isArray(payload?.[key])) return payload[key];
-    }
-    return [];
+    const session = await this.session();
+    const sectorIds = session.mySectorIds.length ? session.mySectorIds : [];
+    if (!sectorIds.length) throw this.error("Dhillu & Sahi secret must include mySectorIds because the supplier requires my_sector_id");
+
+    const payloads = await Promise.all(
+      sectorIds.map((sectorId) => this.post("/api/pnr-respect-to-mysector-user", { my_sector_id: String(sectorId) }, session.token))
+    );
+
+    return payloads.flatMap((payload) => {
+      if (Array.isArray(payload)) return payload;
+      for (const key of ["data", "groups", "results", "result"]) {
+        if (Array.isArray(payload?.[key])) return payload[key];
+      }
+      return [];
+    });
   }
 
   ticketRecords(group) {
@@ -164,13 +172,14 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
   async session() {
     if (cachedSession?.token) return cachedSession;
     const secret = await getSecretJson(this.secretId);
-    const baseUrl = String(secret?.baseUrl || secret?.base_url || "https://api.dhilluandsahi.com").replace(/\/$/, "");
+    const baseUrl = String(secret?.baseUrl || secret?.base_url || "https://api.dhilluandsahi.com").trim().replace(/\/$/, "");
     const configuredToken = String(secret?.token || secret?.access_token || "").replace(/^Bearer\s+/i, "");
     if (configuredToken) {
       cachedSession = {
         baseUrl,
         token: configuredToken,
         agentId: secret?.agentId || secret?.agent_id,
+        mySectorIds: parseSectorIds(secret),
       };
       return cachedSession;
     }
@@ -191,6 +200,7 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
       baseUrl,
       token: String(payload.success.token).replace(/^Bearer\s+/i, ""),
       agentId: payload.success.agent_id || secret?.agentId || secret?.agent_id,
+      mySectorIds: parseSectorIds(secret),
     };
     return cachedSession;
   }
@@ -227,27 +237,37 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
 function normalizeSegments(ticket) {
   const subparts = Array.isArray(ticket?.subpart) ? ticket.subpart : [];
   if (subparts.length) {
-    return subparts.map((segment) => ({
-      flightNumber: normalizeFlightNumber(segment.departure_flight_number),
-      origin: firstCode(segment.departure_sector_name) || codeFromAirportName(segment.departure_airport_name),
-      destination: lastCode(segment.departure_sector_name) || codeFromAirportName(segment.arivval_airport_name || segment.arrival_airport_name),
-      departureAirport: segment.departure_airport_name || firstCode(segment.departure_sector_name),
-      arrivalAirport: segment.arivval_airport_name || segment.arrival_airport_name || lastCode(segment.departure_sector_name),
-      departureTime: dateTime(segment.departure_date, segment.departure_time),
-      arrivalTime: dateTime(segment.arrival_date || segment.departure_date, segment.arivval_time || segment.arrival_time),
-      baggage: segment.departure_baggage || ticket.baggage || null,
-    })).filter((segment) => segment.origin && segment.destination);
+    return subparts.map((segment) => {
+      const departureDate = segment.departure_date || null;
+      const arrivalDate = segment.arrival_date || inferredArrivalDate(departureDate, segment.departure_time, segment.arivval_time || segment.arrival_time);
+      return {
+        flightNumber: normalizeFlightNumber(segment.departure_flight_number),
+        origin: firstCode(segment.departure_sector_name) || codeFromAirportName(segment.departure_airport_name),
+        destination: lastCode(segment.departure_sector_name) || codeFromAirportName(segment.arivval_airport_name || segment.arrival_airport_name),
+        departureDate,
+        arrivalDate,
+        departureAirport: segment.departure_airport_name || firstCode(segment.departure_sector_name),
+        arrivalAirport: segment.arivval_airport_name || segment.arrival_airport_name || lastCode(segment.departure_sector_name),
+        departureTime: dateTime(departureDate, segment.departure_time),
+        arrivalTime: dateTime(arrivalDate, segment.arivval_time || segment.arrival_time),
+        baggage: segment.departure_baggage || ticket.baggage || null,
+      };
+    }).filter((segment) => segment.origin && segment.destination);
   }
 
   const [origin, destination] = String(ticket?.sector || "").toUpperCase().split("-").map((part) => part.trim());
+  const departureDate = ticket?.date || ticket?.departure_date || null;
+  const arrivalDate = ticket?.arrival_date || inferredArrivalDate(departureDate, ticket?.departure_time, ticket?.arrival_time);
   return [{
     flightNumber: normalizeFlightNumber(ticket?.flight_number || ticket?.flight_no),
     origin,
     destination,
+    departureDate,
+    arrivalDate,
     departureAirport: origin,
     arrivalAirport: destination,
-    departureTime: dateTime(ticket?.date || ticket?.departure_date, ticket?.departure_time),
-    arrivalTime: dateTime(ticket?.arrival_date || ticket?.date || ticket?.departure_date, ticket?.arrival_time),
+    departureTime: dateTime(departureDate, ticket?.departure_time),
+    arrivalTime: dateTime(arrivalDate, ticket?.arrival_time),
     baggage: ticket?.baggage || null,
   }].filter((segment) => segment.origin && segment.destination);
 }
@@ -255,6 +275,21 @@ function normalizeSegments(ticket) {
 function dateTime(date, time) {
   if (!date) return null;
   return `${date}T${String(time || "00:00").slice(0, 8)}`;
+}
+
+function inferredArrivalDate(departureDate, departureTime, arrivalTime) {
+  if (!departureDate) return null;
+  if (!departureTime || !arrivalTime) return departureDate;
+  const dep = String(departureTime).slice(0, 5);
+  const arr = String(arrivalTime).slice(0, 5);
+  if (arr && dep && arr < dep) {
+    const date = new Date(`${departureDate}T00:00:00`);
+    if (!Number.isNaN(date.getTime())) {
+      date.setDate(date.getDate() + 1);
+      return date.toISOString().slice(0, 10);
+    }
+  }
+  return departureDate;
 }
 
 function durationBetween(startValue, endValue) {
@@ -344,4 +379,11 @@ function extractPnr(offerId) {
 
 function unique(values) {
   return Array.from(new Set(values));
+}
+
+function parseSectorIds(secret) {
+  const value = secret?.mySectorIds || secret?.my_sector_ids || secret?.mySectorId || secret?.my_sector_id;
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+  if (value === undefined || value === null || value === "") return [];
+  return String(value).split(",").map((item) => item.trim()).filter(Boolean);
 }

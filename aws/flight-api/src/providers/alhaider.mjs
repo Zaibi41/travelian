@@ -36,7 +36,7 @@ export class AlhaiderAdapter extends ProviderAdapter {
 
   async config() {
     const secret = await getSecretJson(this.secretId);
-    const baseUrl = String(secret?.baseUrl || secret?.base_url || "https://alhaidertravel.pk").replace(/\/$/, "");
+    const baseUrl = String(secret?.baseUrl || secret?.base_url || "https://alhaidertravel.pk").trim().replace(/\/$/, "");
     const token = String(secret?.token || secret?.access_token || "").replace(/^Bearer\s+/i, "");
     if (!token) throw this.error("Alhaider token is not configured");
     return { baseUrl, token };
