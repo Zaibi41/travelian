@@ -417,12 +417,16 @@ function ServiceSearchPanel({
 
 export default function AdminSearchPage() {
   const [params, setParams] = useSearchParams();
-  const { hotels, packages, tourPackages, visaPackages } = useAdmin();
+  const { hotels, packages, tourPackages, visaPackages, loadHotelContent } = useAdmin();
   const tabParam = params.get("tab") as SearchTabId | null;
   const activeTab = useMemo(
     () => searchTabs.some((tab) => tab.id === tabParam) ? tabParam! : "flights",
     [tabParam],
   );
+
+  useEffect(() => {
+    if (activeTab === "hotels") loadHotelContent();
+  }, [activeTab, loadHotelContent]);
 
   useEffect(() => {
     if (!tabParam || !searchTabs.some((tab) => tab.id === tabParam)) {

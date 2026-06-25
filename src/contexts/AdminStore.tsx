@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import {
   Booking, Flight, Hotel, Agency, WalletTransaction, Notification,
   TravelTicket, User, UmrahPackage, Coupon, BlogPost, BookingStatus,
@@ -85,6 +85,9 @@ interface AdminState {
   walletLedger: WalletLedgerEntry[];
   walletDeposits: WalletDepositRequest[];
   paymentWebhookEvents: PaymentWebhookEvent[];
+
+  /** Load CMS hotel inventory when a page needs it (avoids /content/hotels on every route). */
+  loadHotelContent: () => void;
 
   // Booking actions
   updateBookingStatus: (id: string, status: BookingStatus) => void;
@@ -221,6 +224,15 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [walletLedger, setWalletLedger] = useState<WalletLedgerEntry[]>(() => loadStoredArray<WalletLedgerEntry>(WALLET_LEDGER_STORAGE_KEY));
   const [walletDeposits, setWalletDeposits] = useState<WalletDepositRequest[]>(() => loadStoredArray<WalletDepositRequest>(WALLET_DEPOSITS_STORAGE_KEY));
   const [paymentWebhookEvents, setPaymentWebhookEvents] = useState<PaymentWebhookEvent[]>(() => loadStoredArray<PaymentWebhookEvent>(PAYMENT_WEBHOOK_STORAGE_KEY));
+  const hotelContentRequestedRef = useRef(false);
+
+  const loadHotelContent = useCallback(() => {
+    if (hotelContentRequestedRef.current) return;
+    hotelContentRequestedRef.current = true;
+    listContentHotels()
+      .then((items) => setHotels(items))
+      .catch((error) => console.error("Unable to load hotel content from AWS", error));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -249,18 +261,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    listContentHotels()
-      .then(items => {
-        if (!cancelled) setHotels(items);
-      })
-      .catch(error => console.error("Unable to load hotel content from AWS", error));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
+  // Hotel content is loaded on demand via loadHotelContent (Home, admin hotel search).
   useEffect(() => {
     window.localStorage.setItem(WALLET_LEDGER_STORAGE_KEY, JSON.stringify(walletLedger));
   }, [walletLedger]);
@@ -581,6 +582,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       bookings, flights, hotels, agencies, transactions, notifications, tickets, users,
       packages, tourPackages, visaPackages, coupons, blogPosts, flightSearchLogs, paymentLinks,
       paymentConfig, secretKeys, walletLedger, walletDeposits, paymentWebhookEvents,
+      loadHotelContent,
       updateBookingStatus, addBooking, deleteBooking,
       addFlight, updateFlight, deleteFlight,
       addHotel, updateHotel, deleteHotel,
