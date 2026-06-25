@@ -186,82 +186,84 @@ export default function GroupTicketingCollectionsPage() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="flex max-h-[min(90vh,100dvh)] max-w-lg flex-col gap-0 overflow-hidden p-0">
+          <DialogHeader className="shrink-0 border-b px-6 py-4 pr-12">
             <DialogTitle>{originalSlug ? "Edit collection" : "Add collection"}</DialogTitle>
             <DialogDescription>
               The public label is shown on the website. The category slug is used in URLs like `/group-ticketing/collection-1`.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="publicLabel">Public label (frontend text)</Label>
-              <Input
-                id="publicLabel"
-                value={form.publicLabel}
-                onChange={(event) => setForm((current) => ({ ...current, publicLabel: event.target.value }))}
-                placeholder="Group Collection 1"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="slug">Category slug</Label>
-              <Input
-                id="slug"
-                value={form.slug}
-                onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}
-                placeholder="collection-1"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="supplierName">Supplier name (admin only)</Label>
-              <Input
-                id="supplierName"
-                value={form.supplierName}
-                onChange={(event) => setForm((current) => ({ ...current, supplierName: event.target.value }))}
-                placeholder="Al Haider"
-              />
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+            <div className="grid gap-4">
               <div className="space-y-2">
-                <Label htmlFor="providerId">Provider ID</Label>
+                <Label htmlFor="publicLabel">Public label (frontend text)</Label>
                 <Input
-                  id="providerId"
-                  value={form.providerId}
-                  onChange={(event) => setForm((current) => ({ ...current, providerId: event.target.value }))}
-                  placeholder="alhaider"
+                  id="publicLabel"
+                  value={form.publicLabel}
+                  onChange={(event) => setForm((current) => ({ ...current, publicLabel: event.target.value }))}
+                  placeholder="Group Collection 1"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sortOrder">Sort order</Label>
+                <Label htmlFor="slug">Category slug</Label>
                 <Input
-                  id="sortOrder"
-                  type="number"
-                  value={form.sortOrder ?? 0}
-                  onChange={(event) => setForm((current) => ({ ...current, sortOrder: Number(event.target.value) }))}
+                  id="slug"
+                  value={form.slug}
+                  onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}
+                  placeholder="collection-1"
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="secretId">Secrets Manager path</Label>
-              <Input
-                id="secretId"
-                value={form.secretId}
-                onChange={(event) => setForm((current) => ({ ...current, secretId: event.target.value }))}
-                placeholder="travelian/providers/alhaider"
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-xl border p-3">
-              <div>
-                <p className="text-sm font-medium">Active on website</p>
-                <p className="text-xs text-muted-foreground">Disabled collections are hidden from public listings.</p>
+              <div className="space-y-2">
+                <Label htmlFor="supplierName">Supplier name (admin only)</Label>
+                <Input
+                  id="supplierName"
+                  value={form.supplierName}
+                  onChange={(event) => setForm((current) => ({ ...current, supplierName: event.target.value }))}
+                  placeholder="Al Haider"
+                />
               </div>
-              <Switch
-                checked={form.enabled !== false}
-                onCheckedChange={(checked) => setForm((current) => ({ ...current, enabled: checked }))}
-              />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="providerId">Provider ID</Label>
+                  <Input
+                    id="providerId"
+                    value={form.providerId}
+                    onChange={(event) => setForm((current) => ({ ...current, providerId: event.target.value }))}
+                    placeholder="alhaider"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="sortOrder">Sort order</Label>
+                  <Input
+                    id="sortOrder"
+                    type="number"
+                    value={form.sortOrder ?? 0}
+                    onChange={(event) => setForm((current) => ({ ...current, sortOrder: Number(event.target.value) }))}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="secretId">Secrets Manager path</Label>
+                <Input
+                  id="secretId"
+                  value={form.secretId}
+                  onChange={(event) => setForm((current) => ({ ...current, secretId: event.target.value }))}
+                  placeholder="travelian/providers/alhaider"
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-xl border p-3">
+                <div>
+                  <p className="text-sm font-medium">Active on website</p>
+                  <p className="text-xs text-muted-foreground">Disabled collections are hidden from public listings.</p>
+                </div>
+                <Switch
+                  checked={form.enabled !== false}
+                  onCheckedChange={(checked) => setForm((current) => ({ ...current, enabled: checked }))}
+                />
+              </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0 border-t bg-background px-6 py-4">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button className="gradient-primary text-primary-foreground" onClick={save} disabled={saving}>
               {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
