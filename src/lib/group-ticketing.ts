@@ -44,7 +44,7 @@ const FALLBACK_GROUP_TICKET_COLLECTIONS: GroupTicketCollection[] = [
   {
     slug: "collection-3",
     publicLabel: "Group Collection 3",
-    supplierName: "Sahi Skypass",
+    supplierName: "skypass",
     providerId: "skypass",
     secretId: "travelian/providers/skypass",
     sortOrder: 3,
@@ -66,7 +66,11 @@ function applyCollectionMaps(collections: Array<Pick<GroupTicketCollection, "slu
   collectionInternalBySlug = Object.fromEntries(collections.map((entry) => [entry.slug, entry.supplierName]));
 }
 
-export async function ensureGroupTicketCollectionsLoaded(signal?: AbortSignal): Promise<void> {
+export async function ensureGroupTicketCollectionsLoaded(signal?: AbortSignal, force = false): Promise<void> {
+  if (force) {
+    collectionsLoaded = false;
+    collectionsLoadPromise = null;
+  }
   if (collectionsLoaded) return;
   if (!collectionsLoadPromise) {
     collectionsLoadPromise = (async () => {
@@ -76,7 +80,7 @@ export async function ensureGroupTicketCollectionsLoaded(signal?: AbortSignal): 
           applyCollectionMaps(publicCollections.map((entry) => ({
             slug: entry.slug,
             publicLabel: entry.publicLabel,
-            supplierName: collectionInternalBySlug[entry.slug] || "",
+            supplierName: entry.supplierName || "",
           })));
         }
       } catch {
@@ -135,9 +139,6 @@ export function maskGroupTicketForDisplay(group: GroupTicket, index?: number): G
     ...group,
     categoryLabel: groupTicketCategoryLabel(group.categorySlug),
     provider: undefined,
-    airlineName: undefined,
-    airlineCode: undefined,
-    airlineLogo: undefined,
     flightNumber: undefined,
     supplierRemarks: undefined,
     itinerary: group.itinerary?.map((leg) => ({ ...leg, flightNumber: undefined })),

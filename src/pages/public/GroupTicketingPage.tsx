@@ -4,6 +4,7 @@ import { ArrowLeft, Calendar, Info, Luggage, Plane, RefreshCw, Users } from "luc
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AirlineLogo } from "@/components/public/AirlineLogo";
 import { PageHeader } from "@/components/public/PageHeader";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { GroupTicketingCategories } from "@/components/public/GroupTicketingCategories";
@@ -16,7 +17,6 @@ import {
   filterGroupTickets,
   ensureGroupTicketCollectionsLoaded,
   groupTicketCategoryLabel,
-  groupTicketCollectionLabel,
   groupTicketDisplayTitle,
   groupTicketSupplierInternalLabel,
   groupTicketWhatsAppMessage,
@@ -47,6 +47,10 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
   const loadDetail = async () => {
     setDetailOpen(true);
     if (detail) return;
+    if (group.itinerary?.length) {
+      setDetail(group);
+      return;
+    }
     try {
       setLoadingDetail(true);
       setDetail(await fetchGroupTicketDetail(group.id));
@@ -59,8 +63,9 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
 
   const active = detail || group;
   const display = maskGroupTicketForDisplay(active, index);
-  const collectionLabel = groupTicketCollectionLabel(active);
-  const supplierHint = groupTicketSupplierInternalLabel(active.categorySlug);
+  const categorySlug = active.categorySlug || group.categorySlug;
+  const collectionLabel = groupTicketCategoryLabel(categorySlug, active.categoryLabel);
+  const supplierHint = groupTicketSupplierInternalLabel(categorySlug);
   const message = groupTicketWhatsAppMessage(category, active);
 
   return (
@@ -68,9 +73,11 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
       <CardContent className="p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10">
-              <Plane className="h-6 w-6 text-primary" />
-            </div>
+            <AirlineLogo
+              airline={active.airlineName || active.airlineCode || "Airline"}
+              flightNumber={group.flightNumber}
+              imageUrl={active.airlineLogo}
+            />
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-foreground">{display.displayTitle || groupTicketDisplayTitle(group, index)}</h2>
@@ -116,13 +123,7 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
                 <div>
                   <h3 className="font-semibold text-foreground">Flight details</h3>
                   <dl className="mt-2 grid gap-1 text-sm text-muted-foreground">
-                    <div>
-                      Collection:{" "}
-                      <span title={supplierHint ? `Supplier: ${supplierHint}` : undefined}>{collectionLabel}</span>
-                      {supplierHint && (
-                        <span className="ml-1 text-xs text-muted-foreground/70">({supplierHint})</span>
-                      )}
-                    </div>
+                    <div>Collection: {collectionLabel}</div>
                     <div>Route: {display.sector || "Please confirm"}</div>
                     <div>Departure: {display.departureDate || "Please confirm"}</div>
                     <div>Return: {display.returnDate || "Not listed"}</div>
@@ -198,7 +199,7 @@ export default function GroupTicketingPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    ensureGroupTicketCollectionsLoaded(controller.signal).catch(() => undefined);
+    ensureGroupTicketCollectionsLoaded(controller.signal, true).catch(() => undefined);
     return () => controller.abort();
   }, []);
 

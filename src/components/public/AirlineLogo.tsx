@@ -113,14 +113,37 @@ function resolveCode(airline: string, flightNumber?: string) {
   return airlineCodes[String(airline || "").toLowerCase()] || "";
 }
 
-export function AirlineLogo({ airline, flightNumber }: { airline: string; flightNumber?: string; imageUrl?: string | null }) {
+export function AirlineLogo({
+  airline,
+  flightNumber,
+  imageUrl,
+}: {
+  airline: string;
+  flightNumber?: string;
+  imageUrl?: string | null;
+}) {
   const [failed, setFailed] = useState(false);
   const airlineName = String(airline || "Airline");
   const normalizedAirline = airlineName.toLowerCase().trim();
   const code = resolveCode(airline, flightNumber);
   const localLogo = localAirlineLogos[normalizedAirline] || localAirlineLogos[code.toLowerCase()];
+  const remoteLogo = String(imageUrl || "").trim();
   const logoShell = "flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-white to-slate-50 shadow-[0_6px_18px_rgba(15,23,42,0.08)] ring-1 ring-slate-900/5";
   const logoImage = "max-h-10 w-[86%] object-contain drop-shadow-[0_1px_1px_rgba(15,23,42,0.16)] [filter:saturate(1.12)_contrast(1.08)]";
+
+  if (remoteLogo && !failed) {
+    return (
+      <div className={logoShell}>
+        <img
+          src={remoteLogo}
+          alt={`${airlineName} logo`}
+          className={logoImage}
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      </div>
+    );
+  }
 
   if (localLogo && !failed) {
     return (

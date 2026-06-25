@@ -542,10 +542,28 @@ export async function recordNotificationLog(input) {
 
 const GROUP_TICKET_COLLECTION_PK = "GROUP_TICKET_COLLECTION";
 
+const GROUP_TICKET_INTEGRATION_BY_SLUG = {
+  "collection-1": "alhaider",
+  "collection-2": "dhilluandsahi",
+  "collection-3": "skypass",
+};
+
+const KNOWN_GROUP_TICKET_INTEGRATIONS = new Set(Object.values(GROUP_TICKET_INTEGRATION_BY_SLUG));
+
+function resolveGroupTicketIntegrationProvider(slug, input = {}, existing) {
+  const candidate = String(input.integrationProvider ?? existing?.integrationProvider ?? "").trim().toLowerCase();
+  if (KNOWN_GROUP_TICKET_INTEGRATIONS.has(candidate)) return candidate;
+  const fromSlug = GROUP_TICKET_INTEGRATION_BY_SLUG[normalizeGroupTicketCollectionSlug(slug)];
+  if (fromSlug) return fromSlug;
+  const legacyProvider = String(input.providerId ?? existing?.providerId ?? "").trim().toLowerCase();
+  if (KNOWN_GROUP_TICKET_INTEGRATIONS.has(legacyProvider)) return legacyProvider;
+  return fromSlug || legacyProvider;
+}
+
 const DEFAULT_GROUP_TICKET_COLLECTIONS = [
-  { slug: "collection-1", publicLabel: "Group Collection 1", supplierName: "Al Haider", providerId: "alhaider", secretId: "travelian/providers/alhaider", sortOrder: 1, enabled: true },
-  { slug: "collection-2", publicLabel: "Group Collection 2", supplierName: "Dhillon & Sahi", providerId: "dhilluandsahi", secretId: "travelian/providers/dhilluandsahi", sortOrder: 2, enabled: true },
-  { slug: "collection-3", publicLabel: "Group Collection 3", supplierName: "Sahi Skypass", providerId: "skypass", secretId: "travelian/providers/skypass", sortOrder: 3, enabled: true },
+  { slug: "collection-1", publicLabel: "Group Collection 1", supplierName: "Al Haider", providerId: "alhaider", integrationProvider: "alhaider", secretId: "travelian/providers/alhaider", sortOrder: 1, enabled: true },
+  { slug: "collection-2", publicLabel: "Group Collection 2", supplierName: "Dhillon & Sahi", providerId: "dhilluandsahi", integrationProvider: "dhilluandsahi", secretId: "travelian/providers/dhilluandsahi", sortOrder: 2, enabled: true },
+  { slug: "collection-3", publicLabel: "Group Collection 3", supplierName: "skypass", providerId: "skypass", integrationProvider: "skypass", secretId: "travelian/providers/skypass", sortOrder: 3, enabled: true },
 ];
 
 function groupTicketCollectionSk(slug) {
@@ -607,7 +625,12 @@ export async function listGroupTicketingCollectionsPublic() {
   const items = await listGroupTicketingCollections();
   return items
     .filter((item) => item.enabled !== false)
-    .map(({ slug, publicLabel, sortOrder }) => ({ slug, publicLabel, sortOrder: Number(sortOrder) || 0 }));
+    .map(({ slug, publicLabel, supplierName, sortOrder }) => ({
+      slug,
+      publicLabel,
+      supplierName,
+      sortOrder: Number(sortOrder) || 0,
+    }));
 }
 
 export async function upsertGroupTicketingCollection(input) {
@@ -620,15 +643,16 @@ export async function upsertGroupTicketingCollection(input) {
     error.statusCode = 400;
     throw error;
   }
-  for (const field of ["publicLabel", "supplierName", "providerId", "secretId"]) {
-    if (!String(input[field] ?? "").trim()) {
+
+  const existing = (await getGroupTicketingCollection(originalSlug)) || (await getGroupTicketingCollection(slug));
+
+  for (const field of ["publicLabel", "supplierName", "secretId"]) {
+    if (!String(input[field] ?? existing?.[field] ?? "").trim()) {
       const error = new Error(`${field} is required`);
       error.statusCode = 400;
       throw error;
     }
   }
-
-  const existing = (await getGroupTicketingCollection(originalSlug)) || (await getGroupTicketingCollection(slug));
   if (originalSlug && originalSlug !== slug) {
     await db.send(new DeleteCommand({
       TableName: tableName,
@@ -640,7 +664,8 @@ export async function upsertGroupTicketingCollection(input) {
     slug,
     publicLabel: String(input.publicLabel).trim(),
     supplierName: String(input.supplierName).trim(),
-    providerId: String(input.providerId).trim().toLowerCase(),
+    providerId: String(input.providerId ?? existing?.providerId ?? "").trim().toLowerCase(),
+    integrationProvider: resolveGroupTicketIntegrationProvider(slug, input, existing),
     secretId: String(input.secretId).trim(),
     sortOrder: Number(input.sortOrder ?? existing?.sortOrder ?? 0),
     enabled: input.enabled === undefined ? existing?.enabled !== false : Boolean(input.enabled),

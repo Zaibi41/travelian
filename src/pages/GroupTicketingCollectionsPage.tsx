@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -19,11 +20,18 @@ import {
 } from "@/lib/group-ticketing-collections-api";
 import { setGroupTicketCollectionMaps } from "@/lib/group-ticketing";
 
+const INTEGRATION_PROVIDERS = [
+  { value: "alhaider", label: "Al Haider API" },
+  { value: "dhilluandsahi", label: "Dhillon & Sahi API" },
+  { value: "skypass", label: "Skypass API" },
+] as const;
+
 const emptyForm: GroupTicketingCollectionInput = {
   slug: "",
   publicLabel: "",
   supplierName: "",
   providerId: "",
+  integrationProvider: "alhaider",
   secretId: "",
   sortOrder: 0,
   enabled: true,
@@ -63,6 +71,7 @@ export default function GroupTicketingCollectionsPage() {
       publicLabel: collection.publicLabel,
       supplierName: collection.supplierName,
       providerId: collection.providerId,
+      integrationProvider: collection.integrationProvider || "alhaider",
       secretId: collection.secretId,
       sortOrder: collection.sortOrder ?? 0,
       enabled: collection.enabled !== false,
@@ -137,7 +146,8 @@ export default function GroupTicketingCollectionsPage() {
                 <TableRow>
                   <TableHead>Public label</TableHead>
                   <TableHead>Supplier</TableHead>
-                  <TableHead>Provider ID</TableHead>
+                  <TableHead>Integration</TableHead>
+                  <TableHead>Supplier code</TableHead>
                   <TableHead>Category slug</TableHead>
                   <TableHead>Secret</TableHead>
                   <TableHead>Status</TableHead>
@@ -151,7 +161,8 @@ export default function GroupTicketingCollectionsPage() {
                     <TableCell>
                       <Badge variant="secondary">{collection.supplierName}</Badge>
                     </TableCell>
-                    <TableCell className="font-mono text-xs">{collection.providerId}</TableCell>
+                    <TableCell className="font-mono text-xs">{collection.integrationProvider || "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">{collection.providerId || "—"}</TableCell>
                     <TableCell className="font-mono text-xs">{collection.slug}</TableCell>
                     <TableCell>
                       <Link
@@ -214,22 +225,40 @@ export default function GroupTicketingCollectionsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="supplierName">Supplier name (admin only)</Label>
+                <Label htmlFor="supplierName">Supplier name</Label>
                 <Input
                   id="supplierName"
                   value={form.supplierName}
                   onChange={(event) => setForm((current) => ({ ...current, supplierName: event.target.value }))}
-                  placeholder="Al Haider"
+                  placeholder="AH"
                 />
+                <p className="text-xs text-muted-foreground">Shown in View Details, resolved by category slug.</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="integrationProvider">API integration</Label>
+                <Select
+                  value={form.integrationProvider || "alhaider"}
+                  onValueChange={(value) => setForm((current) => ({ ...current, integrationProvider: value }))}
+                >
+                  <SelectTrigger id="integrationProvider">
+                    <SelectValue placeholder="Select integration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {INTEGRATION_PROVIDERS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">Controls which supplier API fetches tickets. Safe to rename supplier code separately.</p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="providerId">Provider ID</Label>
+                  <Label htmlFor="providerId">Supplier code (optional)</Label>
                   <Input
                     id="providerId"
                     value={form.providerId}
                     onChange={(event) => setForm((current) => ({ ...current, providerId: event.target.value }))}
-                    placeholder="alhaider"
+                    placeholder="ah"
                   />
                 </div>
                 <div className="space-y-2">

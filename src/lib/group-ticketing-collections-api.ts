@@ -5,6 +5,7 @@ export interface GroupTicketingCollection {
   publicLabel: string;
   supplierName: string;
   providerId: string;
+  integrationProvider?: string;
   secretId: string;
   sortOrder?: number;
   enabled?: boolean;
@@ -28,6 +29,7 @@ function normalizeCollection(record: Record<string, unknown>): GroupTicketingCol
     publicLabel: String(record.publicLabel || ""),
     supplierName: String(record.supplierName || ""),
     providerId: String(record.providerId || ""),
+    integrationProvider: record.integrationProvider ? String(record.integrationProvider) : undefined,
     secretId: String(record.secretId || ""),
     sortOrder: Number(record.sortOrder || 0),
     enabled: record.enabled !== false,
@@ -48,7 +50,7 @@ export async function listGroupTicketingCollections(): Promise<GroupTicketingCol
   return Array.isArray(payload.items) ? payload.items.map(normalizeCollection) : [];
 }
 
-export async function listPublicGroupTicketingCollections(): Promise<Pick<GroupTicketingCollectionRecord, "slug" | "publicLabel" | "sortOrder">[]> {
+export async function listPublicGroupTicketingCollections(): Promise<Pick<GroupTicketingCollectionRecord, "slug" | "publicLabel" | "supplierName" | "sortOrder">[]> {
   const response = await fetch(apiUrl("/content/group-ticketing-collections/public"));
   if (!response.ok) throw new Error(`Unable to load group ticketing collections (${response.status})`);
   const payload = await response.json();

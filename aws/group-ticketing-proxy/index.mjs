@@ -32,6 +32,23 @@ function rebuildSupplierMaps(suppliers) {
   supplierByProvider = new Map(suppliers.map((entry) => [entry.provider, entry]));
 }
 
+const INTEGRATION_BY_SLUG = {
+  "collection-1": "alhaider",
+  "collection-2": "dhilluandsahi",
+  "collection-3": "skypass",
+};
+const KNOWN_INTEGRATIONS = new Set(Object.values(INTEGRATION_BY_SLUG));
+
+function resolveIntegrationProvider(item) {
+  const fromField = String(item.integrationProvider || "").trim().toLowerCase();
+  if (KNOWN_INTEGRATIONS.has(fromField)) return fromField;
+  const fromSlug = INTEGRATION_BY_SLUG[String(item.slug || "")];
+  if (fromSlug) return fromSlug;
+  const legacy = String(item.providerId || item.provider || "").trim().toLowerCase();
+  if (KNOWN_INTEGRATIONS.has(legacy)) return legacy;
+  return fromSlug || null;
+}
+
 async function loadSuppliersFromDatabase() {
   const tableName = process.env.CONTENT_TABLE;
   if (!tableName) return null;
@@ -47,7 +64,7 @@ async function loadSuppliersFromDatabase() {
   return items.map((item) => ({
     slug: String(item.slug || ""),
     label: String(item.publicLabel || item.label || "Group Collection"),
-    provider: String(item.providerId || item.provider || "").toLowerCase(),
+    provider: resolveIntegrationProvider(item),
     enabled: item.enabled !== false,
   })).filter((item) => item.slug && item.provider);
 }
@@ -202,6 +219,9 @@ function sanitizeGroupForPublic(group) {
     id: toPublicGroupId(group.id),
     categorySlug: group.categorySlug,
     categoryLabel: group.categoryLabel,
+    airlineName: group.airlineName,
+    airlineCode: group.airlineCode,
+    airlineLogo: group.airlineLogo,
     sector: group.sector,
     tripType: group.tripType,
     itinerary: Array.isArray(group.itinerary)
@@ -650,11 +670,28 @@ async function fetchSkypassGroups() {
 }
 
 async function fetchSkypassDetail(groupId) {
-  const payload = await skypassAuthedFetch(`/ticket/${encodeURIComponent(groupId)}`);
-  const record = payload?.ticket && typeof payload.ticket === "object" ? payload.ticket : payload;
-  const group = normalizeSkypassTicket(record, supplierByProvider.get("skypass"));
-  if (!group) throw new Error("Skypass ticket was not found");
-  return group;
+  try {
+    const payload = await skypassAuthedFetch(`/ticket/${encodeURIComponent(groupId)}`);
+    const record = payload?.ticket && typeof payload.ticket === "object"
+      ? payload.ticket
+      : payload?.data && typeof payload.data === "object"
+        ? payload.data
+        : payload?.result && typeof payload.result === "object"
+          ? payload.result
+          : payload;
+    const normalizedRecord = record && typeof record === "object"
+      ? { ...record, id: record.id || groupId }
+      : { id: groupId };
+    const group = normalizeSkypassTicket(normalizedRecord, supplierByProvider.get("skypass"));
+    if (group) return group;
+  } catch (error) {
+    console.error("skypass-detail-fetch-error", error);
+  }
+
+  const groups = await fetchSkypassGroups();
+  const match = groups.find((group) => group.id === `skypass:${groupId}` || group.id.endsWith(`:${groupId}`));
+  if (!match) throw new Error("Skypass ticket was not found");
+  return match;
 }
 
 async function fetchAllGroups() {
