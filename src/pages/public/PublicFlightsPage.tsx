@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -101,6 +101,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [calculatorTaxes, setCalculatorTaxes] = useState("");
   const [calculatorServiceFee, setCalculatorServiceFee] = useState("");
   const [searchRefreshKey, setSearchRefreshKey] = useState(0);
+  const autoRefreshStartedRef = useRef(false);
 
   // Modal-local edit state
   const [editFrom, setEditFrom] = useState(from);
@@ -217,6 +218,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       },
     }, controller.signal)
       .then(result => {
+        autoRefreshStartedRef.current = false;
         setApiFlights(result.flights);
         const liveMaxPrice = Math.max(700, ...result.flights.map(f => f.price));
         setPriceRange([0, Math.ceil(liveMaxPrice / 1000) * 1000]);
@@ -241,6 +243,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     const interval = window.setInterval(() => setExpirySeconds((seconds) => Math.max(0, seconds - 1)), 1000);
     return () => window.clearInterval(interval);
   }, [apiStatus, expirySeconds]);
+
+  useEffect(() => {
+    if (apiStatus !== "success" || apiFlights.length === 0 || expirySeconds !== 0) return;
+    if (autoRefreshStartedRef.current) return;
+    autoRefreshStartedRef.current = true;
+    setApiMessage("Refreshing live fares...");
+    setSearchRefreshKey((value) => value + 1);
+  }, [apiFlights.length, apiStatus, expirySeconds]);
 
   const flights = apiFlights;
   const maxPrice = Math.max(700, ...flights.map(f => f.price));
