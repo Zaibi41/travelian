@@ -79,7 +79,7 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
     if (!queryValues.length) throw this.error("Dhillu & Sahi search requires a departure date or configured mySectorIds");
 
     const payloads = await Promise.all(
-      queryValues.map((value) => this.post(`/api/pnr-respect-to-mysector-user?my_sector_id=${encodeURIComponent(value)}`, {}, session.token))
+      queryValues.map((value) => this.post("/api/pnr-respect-to-mysector-user", { my_sector_id: String(value) }, session.token))
     );
 
     return payloads.flatMap((payload) => {
@@ -392,7 +392,7 @@ function parseSectorIds(secret) {
 
 function queryValuesForRequest(session, request) {
   const values = [];
-  if ((session.mySectorQueryMode || "departureDate") === "departureDate" && request?.departureDate) {
+  if ((session.mySectorQueryMode || "sectorIds") === "departureDate" && request?.departureDate) {
     values.push(request.departureDate);
   }
   values.push(...(session.mySectorIds || []));
