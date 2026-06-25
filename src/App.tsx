@@ -56,6 +56,7 @@ import WalletPage from "./pages/WalletPage";
 import PaymentsPage from "./pages/PaymentsPage";
 import SecretManagerPage from "./pages/SecretManagerPage";
 import ProviderSystemsPage from "./pages/ProviderSystemsPage";
+import GroupTicketingCollectionsPage from "./pages/GroupTicketingCollectionsPage";
 import AdminSearchPage from "./pages/AdminSearchPage";
 import FlightBookingsPage from "./pages/FlightBookingsPage";
 import CustomerPortalPage from "./pages/CustomerPortalPage";
@@ -149,6 +150,7 @@ const App = () => (
             <Route path="/admin/customers" element={<AdminLayout><CustomersPage /></AdminLayout>} />
             <Route path="/admin/rbac" element={<AdminLayout><RBACPage /></AdminLayout>} />
             <Route path="/admin/provider-systems" element={<AdminLayout><ProviderSystemsPage /></AdminLayout>} />
+            <Route path="/admin/group-ticketing" element={<AdminLayout><GroupTicketingCollectionsPage /></AdminLayout>} />
             <Route path="/admin/secrets" element={<AdminLayout><SecretManagerPage /></AdminLayout>} />
             <Route path="/admin/coupons" element={<AdminLayout><CouponsPage /></AdminLayout>} />
             <Route path="/admin/blog" element={<AdminLayout><BlogPage /></AdminLayout>} />

@@ -18,7 +18,7 @@ export class AlhaiderAdapter extends ProviderAdapter {
 
   async fetchGroups() {
     const config = await this.config();
-    const response = await fetch(`${config.baseUrl}/api/available/groups?type=null&airline_id=null&sector=&dept_date=null`, {
+    const response = await fetch(`${config.baseUrl}/api/available/groups`, {
       headers: {
         accept: "application/json",
         authorization: `Bearer ${config.token}`,

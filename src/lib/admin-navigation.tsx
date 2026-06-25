@@ -212,6 +212,7 @@ export const adminNavigation: AdminNavSection[] = [
       item("Agencies", "/admin/agencies", Building2, internalAdminRoles),
       item("Users & Staff", "/admin/users", UserCog, internalAdminRoles),
       item("Suppliers / API Providers", "/admin/provider-systems", CloudCog, platformOwnerRoles),
+      item("Group Ticketing Collections", "/admin/group-ticketing", Ticket, internalAdminRoles),
     ],
   },
   {

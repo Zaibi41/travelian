@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { groupTicketWhatsAppMessage, normalizeGroupTicket } from "./group-ticketing";
+import {
+  filterGroupTickets,
+  filterGroupTicketsByDateRange,
+  groupTicketDestinationCode,
+  groupTicketOriginCode,
+  groupTicketWhatsAppMessage,
+  normalizeGroupTicket,
+  type GroupTicket,
+} from "./group-ticketing";
 
 describe("normalizeGroupTicket", () => {
   it("keeps connected one-way legs without inventing a return date", () => {
@@ -35,6 +43,60 @@ describe("normalizeGroupTicket", () => {
     expect(group.tripType).toBe("round-trip");
     expect(group.returnDate).toBe("2026-07-02");
     expect(group.itinerary?.map((leg) => leg.flightNumber)).toEqual(["PK-747", "PK-760"]);
-    expect(groupTicketWhatsAppMessage("Umrah", group)).toContain("2026-07-02 PK-760: JED to LHE");
+    expect(groupTicketWhatsAppMessage("Group Collection 1", group)).toContain("2026-07-02: JED to LHE");
+  });
+});
+
+describe("group ticket route helpers", () => {
+  const sample: GroupTicket = {
+    id: "1",
+    sector: "ISB-MCT-JED",
+    departureDate: "2026-07-04",
+    itinerary: [
+      { origin: "ISLAMABAD", destination: "MUSCAT", flightDate: "2026-07-04" },
+      { origin: "MUSCAT", destination: "JEDDAH", flightDate: "2026-07-04" },
+    ],
+  };
+
+  it("resolves city names and sector codes", () => {
+    expect(groupTicketOriginCode(sample)).toBe("ISB");
+    expect(groupTicketDestinationCode(sample)).toBe("JED");
+  });
+});
+
+describe("filterGroupTickets", () => {
+  const sample: GroupTicket[] = [
+    { id: "1", departureDate: "2026-06-10", sector: "ISB-JED", itinerary: [{ origin: "ISLAMABAD", destination: "JEDDAH" }] },
+    { id: "2", departureDate: "2026-06-20", sector: "LHE-DXB", itinerary: [{ origin: "LHE", destination: "DXB" }] },
+    { id: "3", itinerary: [{ flightDate: "2026-07-01", origin: "ISB", destination: "MED" }], sector: "ISB-MED" },
+  ];
+
+  it("returns all tickets when no filters are provided", () => {
+    expect(filterGroupTickets(sample)).toHaveLength(3);
+  });
+
+  it("filters tickets by route and exact departure date", () => {
+    expect(filterGroupTickets(sample, { from: "ISB", to: "JED", dateFrom: "2026-06-10" })).toEqual([sample[0]]);
+    expect(filterGroupTickets(sample, { from: "LHE", to: "DXB" })).toEqual([sample[1]]);
+    expect(filterGroupTickets(sample, { dateFrom: "2026-07-01" })).toEqual([sample[2]]);
+  });
+});
+
+describe("filterGroupTicketsByDateRange", () => {
+  const sample: GroupTicket[] = [
+    { id: "1", departureDate: "2026-06-10", sector: "ISB-JED" },
+    { id: "2", departureDate: "2026-06-20", sector: "LHE-DXB" },
+    { id: "3", itinerary: [{ flightDate: "2026-07-01", origin: "ISB", destination: "MED" }], sector: "ISB-MED" },
+  ];
+
+  it("returns all tickets when no dates are provided", () => {
+    expect(filterGroupTicketsByDateRange(sample)).toHaveLength(3);
+  });
+
+  it("filters tickets by date from and date to", () => {
+    expect(filterGroupTicketsByDateRange(sample, "2026-06-15", "2026-07-01")).toEqual([
+      sample[1],
+      sample[2],
+    ]);
   });
 });

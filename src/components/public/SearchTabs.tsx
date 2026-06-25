@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Hotel, Plane, Car, Package, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
+import { Hotel, Plane, Car, Package, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -11,9 +11,12 @@ import { TravelersClassPicker, type TravelersValue } from "@/components/public/T
 import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { useLocale } from "@/contexts/LocaleContext";
 import { formatDateOnly } from "@/lib/date-only";
+import { buildGroupTicketSearchParams } from "@/lib/group-ticketing";
+import { GroupTicketingSearchBar } from "@/components/public/GroupTicketingSearchBar";
 
 const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
+  { id: "group-ticketing", label: "Group Ticketing", icon: Tickets },
   { id: "hotels", label: "Hotels", icon: Hotel },
   { id: "packages", label: "Packages", icon: Package },
   { id: "transfers", label: "Transfers", icon: Car },
@@ -216,12 +219,18 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
     <div className="relative z-10 bg-card rounded-2xl shadow-elevated max-w-6xl mx-auto animate-scale-in">
       {/* Tabs */}
       {visibleTabs.length > 1 && (
-      <div className="flex bg-muted/60 rounded-t-2xl overflow-hidden">
+      <div className="flex bg-muted/60 rounded-t-2xl overflow-x-auto overflow-y-hidden">
         {visibleTabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-semibold transition-all duration-200 ${
+            onClick={() => {
+              if (tab.id === "group-ticketing") {
+                navigate("/group-ticketing");
+                return;
+              }
+              setActiveTab(tab.id);
+            }}
+            className={`flex-1 min-w-[4.5rem] shrink-0 flex items-center justify-center gap-1.5 px-3 sm:px-4 py-3.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${
               activeTab === tab.id
                 ? "bg-card text-primary border-b-2 border-primary shadow-sm"
                 : "text-muted-foreground hover:text-foreground hover:bg-card/60"
@@ -413,6 +422,16 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
               <Search className="h-4 w-4 mr-2" /> Search
             </Button>
           </div>
+        )}
+
+        {activeTab === "group-ticketing" && (
+          <GroupTicketingSearchBar
+            onSearch={(values) => {
+              const params = buildGroupTicketSearchParams(values);
+              const query = params.toString();
+              navigate(query ? `/group-ticketing?${query}` : "/group-ticketing");
+            }}
+          />
         )}
 
         {activeTab === "transfers" && (
