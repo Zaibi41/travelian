@@ -10,6 +10,7 @@ const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({
 const ALHAIDER_SECRET_ID = process.env.ALHAIDER_SECRET_ID || "travelian/providers/alhaider";
 const DHILLUANDSAHI_SECRET_ID = process.env.DHILLUANDSAHI_SECRET_ID || "travelian/providers/dhilluandsahi";
 const SKYPASS_SECRET_ID = process.env.SKYPASS_SECRET_ID || "travelian/providers/skypass";
+const TRAVELNTOURS_SECRET_ID = process.env.TRAVELNTOURS_SECRET_ID || "travelian/providers/travelntours";
 const SKYPASS_TOKEN_REFRESH_BUFFER_SECONDS = Number(process.env.SKYPASS_TOKEN_REFRESH_BUFFER_SECONDS || 300);
 const DHILLU_AND_SAHI_SECTOR_ID = process.env.DHILLU_AND_SAHI_SECTOR_ID || "9";
 const PROVIDER_TIMEOUT_MS = Number(process.env.PROVIDER_TIMEOUT_MS || 9000);
@@ -18,6 +19,7 @@ const DEFAULT_SUPPLIERS = [
   { slug: "collection-1", label: "Group Collection 1", provider: "alhaider", enabled: true },
   { slug: "collection-2", label: "Group Collection 2", provider: "dhilluandsahi", enabled: true },
   { slug: "collection-3", label: "Group Collection 3", provider: "skypass", enabled: true },
+  { slug: "collection-4", label: "Group Collection 4", provider: "travelntours", enabled: true },
 ];
 
 let activeSuppliers = DEFAULT_SUPPLIERS;
@@ -36,6 +38,7 @@ const INTEGRATION_BY_SLUG = {
   "collection-1": "alhaider",
   "collection-2": "dhilluandsahi",
   "collection-3": "skypass",
+  "collection-4": "travelntours",
 };
 const KNOWN_INTEGRATIONS = new Set(Object.values(INTEGRATION_BY_SLUG));
 
@@ -85,6 +88,8 @@ let cachedDhilluSession;
 let cachedSkypassConfig;
 let cachedSkypassToken;
 let cachedSkypassTokenExpiresAt = 0;
+let cachedTravelNToursSession;
+let cachedTravelNToursAirlines;
 
 const corsHeaders = {
   "access-control-allow-origin": process.env.CORS_ORIGIN || "*",
@@ -105,7 +110,7 @@ function parseSecret(secretString) {
     return JSON.parse(secretString);
   } catch {
     const parsed = {};
-    for (const key of ["baseUrl", "base_url", "token", "access_token", "apiKey", "api_key", "apiSecret", "api_secret", "key", "email", "password"]) {
+    for (const key of ["baseUrl", "base_url", "token", "access_token", "apiKey", "api_key", "apiSecret", "api_secret", "key", "email", "username", "password"]) {
       const quoted = secretString.match(new RegExp(`${key}\\s*:\\s*['"]([^'"]+)['"]`, "i"));
       if (quoted) {
         parsed[key] = quoted[1];
@@ -694,12 +699,160 @@ async function fetchSkypassDetail(groupId) {
   return match;
 }
 
+function travelNToursTokenFromPayload(payload) {
+  return payload?.token
+    || payload?.access_token
+    || payload?.data?.token
+    || payload?.data?.access_token
+    || payload?.success?.token
+    || "";
+}
+
+async function travelNToursSession() {
+  if (cachedTravelNToursSession?.token) return cachedTravelNToursSession;
+  const secret = await getSecretJson(TRAVELNTOURS_SECRET_ID);
+  const baseUrl = String(secret.baseUrl || secret.base_url || "https://travelnetwork.pk").replace(/\/$/, "");
+  const configuredToken = String(secret.token || secret.access_token || "").replace(/^Bearer\s+/i, "");
+  if (configuredToken) {
+    cachedTravelNToursSession = { baseUrl, token: configuredToken };
+    return cachedTravelNToursSession;
+  }
+
+  const email = secret.email || secret.username;
+  const password = secret.password;
+  if (!email || !password) throw new Error("Travel n Tours secret must include token or email/password");
+
+  const body = new FormData();
+  body.append("email", String(email));
+  body.append("password", String(password));
+  const response = await fetch(`${baseUrl}/api/login`, {
+    method: "POST",
+    headers: { accept: "application/json" },
+    body,
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+  });
+  const payload = await response.json().catch(() => ({}));
+  const token = travelNToursTokenFromPayload(payload);
+  if (!response.ok || !token) throw new Error(payload?.message || payload?.error || "Travel n Tours login failed");
+  cachedTravelNToursSession = { baseUrl, token: String(token).replace(/^Bearer\s+/i, "") };
+  return cachedTravelNToursSession;
+}
+
+async function travelNToursFetch(path, init = {}, { retryAuth = true } = {}) {
+  const session = await travelNToursSession();
+  const response = await fetch(`${session.baseUrl}${path}`, {
+    ...init,
+    headers: {
+      accept: "application/json",
+      Authorization: `Bearer ${session.token}`,
+      ...(init.headers || {}),
+    },
+    signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
+  });
+  const text = await response.text();
+  let payload = null;
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      throw new Error("Travel n Tours returned a non-JSON response");
+    }
+  }
+  if ((response.status === 401 || response.status === 403) && retryAuth) {
+    cachedTravelNToursSession = undefined;
+    return travelNToursFetch(path, init, { retryAuth: false });
+  }
+  if (!response.ok) throw new Error(payload?.message || payload?.error || `Travel n Tours ${path} failed`);
+  return payload;
+}
+
+async function travelNToursAirlineMap() {
+  if (cachedTravelNToursAirlines) return cachedTravelNToursAirlines;
+  const payload = await travelNToursFetch("/api/available/airlines").catch(() => ({}));
+  const airlines = Array.isArray(payload?.airlines) ? payload.airlines : unwrapArray(payload);
+  cachedTravelNToursAirlines = new Map(airlines.map((airline) => [
+    String(airline.id ?? airline.airline_id ?? ""),
+    airline,
+  ]).filter(([id]) => id));
+  return cachedTravelNToursAirlines;
+}
+
+function normalizeTravelNToursGroup(input, supplier, airlineMap) {
+  const record = input && typeof input === "object" ? input : {};
+  const airlineRecord = (record.airline && typeof record.airline === "object")
+    ? record.airline
+    : airlineMap?.get(String(record.airline_id || ""));
+  const itinerary = (Array.isArray(record.details) ? record.details : []).map((detail) => {
+    const leg = normalizeLeg(detail);
+    return {
+      ...leg,
+      baggage: leg.baggage || value(record, ["baggage", "bagage", "bags"]),
+    };
+  });
+  const firstDetail = itinerary[0] || {};
+  const lastDetail = itinerary[itinerary.length - 1] || {};
+  const originalId = String(value(record, ["id", "group_id", "groupId"]) || "");
+  if (!originalId) return null;
+  const sector = value(record, ["sector", "route", "routing"]) || routeFromLegs(itinerary);
+  const roundTrip = isRoundTrip(itinerary, sector);
+  const airlineName = value(record, ["airline_name", "airlineName", "carrier_name"])
+    || value(airlineRecord, ["airline_name", "name", "short_name"]);
+
+  return withSupplier({
+    ...record,
+    id: originalId,
+    airlineName: airlineName ? String(airlineName).replace(/^\d+\.\s*/, "").trim() : supplier.label,
+    airlineCode: value(airlineRecord, ["short_name", "iata", "code"]),
+    airlineLogo: value(record, ["airline_logo", "logo", "airlineLogo"]) || value(airlineRecord, ["logo_url", "logo", "logo_path"]),
+    sector,
+    tripType: roundTrip ? "round-trip" : "one-way",
+    itinerary,
+    departureDate: value(record, ["dept_date", "departure_date", "departureDate"]) || firstDetail.flightDate,
+    returnDate: roundTrip ? value(record, ["arv_date", "return_date", "returnDate"]) || lastDetail.flightDate : undefined,
+    flightNumber: value(record, ["flight_no", "flight_number", "flightNumber"]) || firstDetail.flightNumber,
+    baggage: value(record, ["baggage", "bagage", "bags"]) || firstDetail.baggage,
+    seatsAvailable: value(record, ["seats", "available_seats", "available_no_of_pax", "seatsAvailable"]) || firstDetail.seats,
+    fare: value(record, ["fare", "price", "amount", "selling_price"]),
+    currency: value(record, ["currency"]) || "PKR",
+    status: value(record, ["status", "availability"]) || "available",
+    terms: value(record, ["terms", "terms_conditions", "termsAndConditions"]),
+    cancellationRules: value(record, ["cancellation", "refund_policy", "cancellationRules"]),
+    supplierRemarks: value(record, ["remarks", "supplier_remarks", "supplierRemarks"]),
+  }, supplier);
+}
+
+async function fetchTravelNToursGroups() {
+  const supplier = supplierByProvider.get("travelntours");
+  const [payload, airlineMap] = await Promise.all([
+    travelNToursFetch("/api/available/groups?type=&airline_id=&dept_date="),
+    travelNToursAirlineMap(),
+  ]);
+  return unwrapArray(payload).map((group) => normalizeTravelNToursGroup(group, supplier, airlineMap)).filter(Boolean);
+}
+
+async function fetchTravelNToursDetail(groupId) {
+  const supplier = supplierByProvider.get("travelntours");
+  const [payload, airlineMap] = await Promise.all([
+    travelNToursFetch(`/api/group/detail/${encodeURIComponent(groupId)}`),
+    travelNToursAirlineMap(),
+  ]);
+  const data = payload?.group && typeof payload.group === "object"
+    ? payload.group
+    : payload?.data && typeof payload.data === "object"
+      ? payload.data
+      : payload;
+  const group = normalizeTravelNToursGroup(data, supplier, airlineMap);
+  if (!group) throw new Error("Travel n Tours group ticket was not found");
+  return group;
+}
+
 async function fetchAllGroups() {
   await ensureSuppliers();
   const providerFetchers = {
     alhaider: fetchAlhaiderGroups,
     dhilluandsahi: fetchDhilluandsahiGroups,
     skypass: fetchSkypassGroups,
+    travelntours: fetchTravelNToursGroups,
   };
   const providers = [...new Set(
     activeSuppliers
@@ -730,6 +883,7 @@ async function fetchGroupDetail(compositeId) {
   if (provider === "alhaider") return fetchAlhaiderDetail(id);
   if (provider === "dhilluandsahi") return fetchDhilluandsahiDetail(id);
   if (provider === "skypass") return fetchSkypassDetail(id);
+  if (provider === "travelntours") return fetchTravelNToursDetail(id);
   throw new Error(`Unknown group ticketing provider: ${provider}`);
 }
 

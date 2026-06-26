@@ -546,6 +546,7 @@ const GROUP_TICKET_INTEGRATION_BY_SLUG = {
   "collection-1": "alhaider",
   "collection-2": "dhilluandsahi",
   "collection-3": "skypass",
+  "collection-4": "travelntours",
 };
 
 const KNOWN_GROUP_TICKET_INTEGRATIONS = new Set(Object.values(GROUP_TICKET_INTEGRATION_BY_SLUG));
@@ -564,6 +565,7 @@ const DEFAULT_GROUP_TICKET_COLLECTIONS = [
   { slug: "collection-1", publicLabel: "Group Collection 1", supplierName: "Al Haider", providerId: "alhaider", integrationProvider: "alhaider", secretId: "travelian/providers/alhaider", sortOrder: 1, enabled: true },
   { slug: "collection-2", publicLabel: "Group Collection 2", supplierName: "Dhillon & Sahi", providerId: "dhilluandsahi", integrationProvider: "dhilluandsahi", secretId: "travelian/providers/dhilluandsahi", sortOrder: 2, enabled: true },
   { slug: "collection-3", publicLabel: "Group Collection 3", supplierName: "skypass", providerId: "skypass", integrationProvider: "skypass", secretId: "travelian/providers/skypass", sortOrder: 3, enabled: true },
+  { slug: "collection-4", publicLabel: "Group Collection 4", supplierName: "Travel n Tours", providerId: "travelntours", integrationProvider: "travelntours", secretId: "travelian/providers/travelntours", sortOrder: 4, enabled: true },
 ];
 
 function groupTicketCollectionSk(slug) {

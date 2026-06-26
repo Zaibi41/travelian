@@ -50,6 +50,15 @@ const FALLBACK_GROUP_TICKET_COLLECTIONS: GroupTicketCollection[] = [
     sortOrder: 3,
     enabled: true,
   },
+  {
+    slug: "collection-4",
+    publicLabel: "Group Collection 4",
+    supplierName: "Travel n Tours",
+    providerId: "travelntours",
+    secretId: "travelian/providers/travelntours",
+    sortOrder: 4,
+    enabled: true,
+  },
 ];
 
 let collectionLabelBySlug: Record<string, string> = Object.fromEntries(

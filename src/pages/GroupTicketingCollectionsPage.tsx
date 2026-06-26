@@ -24,6 +24,7 @@ const INTEGRATION_PROVIDERS = [
   { value: "alhaider", label: "Al Haider API" },
   { value: "dhilluandsahi", label: "Dhillon & Sahi API" },
   { value: "skypass", label: "Skypass API" },
+  { value: "travelntours", label: "Travel n Tours API" },
 ] as const;
 
 const emptyForm: GroupTicketingCollectionInput = {
