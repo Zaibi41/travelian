@@ -50,10 +50,11 @@ export default function SignInPage() {
       <Card className="relative w-full max-w-md shadow-hover border border-primary-foreground/10">
         <CardContent className="p-6 sm:p-8">
           <Link to="/" className="flex items-center justify-center gap-2 mb-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary">
-              <Plane className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-extrabold font-display">Travelian</span>
+            <img src="/travelian-brand-logo.png" alt="Travelian" className="h-16 w-60 object-contain" />
+            {/* <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary"> */}
+              {/* <Plane className="h-5 w-5 text-primary-foreground" /> */}
+            {/* </div> */}
+            {/* <span className="text-xl font-extrabold font-display">Travelian</span> */}
           </Link>
           <h1 className="text-2xl font-bold text-center text-foreground">Welcome back</h1>
           <p className="text-sm text-muted-foreground text-center mt-1">Access your trips, bookings, and agency workspace</p>
