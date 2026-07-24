@@ -5,6 +5,7 @@ const PUBLIC_ROUTES = new Set([
   "GET /health",
   "GET /content/blog-posts",
   "GET /content/blog-posts/{slug}",
+  "GET /content/hotels",
   "GET /content/group-ticketing-collections/public",
 ]);
 

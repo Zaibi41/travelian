@@ -65,6 +65,19 @@ export async function deleteBlogPost(slug) {
   return { deleted: true, slug };
 }
 
+export async function listHotels({ includeDeleted = false } = {}) {
+  ensureTable();
+  const result = await db.send(new QueryCommand({
+    TableName: tableName,
+    KeyConditionExpression: "pk = :pk",
+    ExpressionAttributeValues: { ":pk": "HOTEL" }
+  }));
+  return (result.Items || [])
+    .map(fromItem)
+    .filter(item => includeDeleted || !item.deletedAt)
+    .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")));
+}
+
 export async function listPackages({ category, includeDeleted = false } = {}) {
   ensureTable();
   const result = await db.send(new QueryCommand({

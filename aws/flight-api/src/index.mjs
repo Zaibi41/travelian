@@ -10,6 +10,7 @@ import {
   getBookingRecord,
   getPackage,
   getNotificationSettings,
+  listHotels,
   listTickets,
   listBlogPosts,
   listBookingRequests,
@@ -59,6 +60,7 @@ const routes = {
   "POST /content/blog-posts": saveBlog,
   "GET /content/blog-posts/{slug}": getBlog,
   "DELETE /content/blog-posts/{slug}": removeBlog,
+  "GET /content/hotels": listHotelContent,
   "GET /content/packages": listPackageContent,
   "POST /content/packages": savePackageContent,
   "GET /content/package-images": listPackageImageContent,
@@ -206,6 +208,11 @@ async function documents(event, path) {
 async function listBlog(event) {
   const status = event.queryStringParameters?.status;
   return { items: await listBlogPosts({ status }) };
+}
+
+async function listHotelContent(event) {
+  const includeDeleted = event.queryStringParameters?.includeDeleted === "true";
+  return { items: await listHotels({ includeDeleted }) };
 }
 
 async function getBlog(event, path) {
