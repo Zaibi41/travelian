@@ -10,7 +10,7 @@ import { PackageImage } from "@/components/public/PackageImage";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { cn } from "@/lib/utils";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 const destinations = [
   { name: "Makkah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=400&h=500&fit=crop&q=80", badge: "Popular", priceFrom: 165000 },
@@ -98,30 +98,6 @@ const mobileAppFeatures = [
   { icon: Bell, label: "Real-time", detail: "Updates" },
 ];
 
-function getRecentFlightSearches() {
-  if (typeof window === "undefined") return [];
-  const candidates: Array<{ from: string; to: string; depart?: string; travelers?: string }> = [];
-  try {
-    const raw = localStorage.getItem("travelian.recentFlightSearches") || localStorage.getItem("travelian_recent_searches");
-    const parsed = raw ? JSON.parse(raw) : null;
-    if (Array.isArray(parsed)) {
-      parsed.slice(0, 4).forEach((item) => {
-        if (item?.from && item?.to) {
-          candidates.push({
-            from: String(item.from).slice(0, 3).toUpperCase(),
-            to: String(item.to).slice(0, 3).toUpperCase(),
-            depart: item.depart || item.date,
-            travelers: item.travelers,
-          });
-        }
-      });
-    }
-  } catch {
-    return [];
-  }
-  return candidates;
-}
-
 export default function HomePage() {
   const { hotels, packages, tourPackages, blogPosts, loadHotelContent } = useAdmin();
 
@@ -140,7 +116,6 @@ export default function HomePage() {
   const distinctImageCount = new Set(publishedUmrahPackages.map(p => p.image || "")).size;
   const liveUmrahLooksDuplicated = publishedUmrahPackages.length > 1 && distinctImageCount <= 1;
   const displayUmrah = (publishedUmrahPackages.length && !liveUmrahLooksDuplicated) ? publishedUmrahPackages : fallbackUmrah;
-  const recentSearches = useMemo(() => getRecentFlightSearches(), []);
 
   return (
     <div>
@@ -764,43 +739,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Recent searches */}
-      <section className="py-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Recent Searches</h2>
-              <p className="text-sm text-muted-foreground">Continue from your latest flight searches on this device.</p>
-            </div>
-          </div>
-          {recentSearches.length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {recentSearches.map((item, index) => (
-                <Link
-                  key={`${item.from}-${item.to}-${index}`}
-                  to={`/flights-search?from=${item.from}&to=${item.to}${item.depart ? `&depart=${encodeURIComponent(item.depart)}` : ""}`}
-                  className="rounded-2xl border bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-card"
-                >
-                  <p className="text-sm font-bold text-foreground">{item.from} to {item.to}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{item.depart || "Choose travel date"} - {item.travelers || "Travelers"}</p>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <Card className="border-dashed shadow-none">
-              <CardContent className="flex flex-col items-start gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-semibold text-foreground">No recent searches yet</p>
-                  <p className="text-sm text-muted-foreground">Search a route and Travelian will keep it here for quick access.</p>
-                </div>
-                <Button asChild className="rounded-xl">
-                  <Link to="/">Start a search</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </section>
     </div>
   );
 }

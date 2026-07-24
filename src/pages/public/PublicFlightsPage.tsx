@@ -187,7 +187,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     setApiStatus("loading");
     setApiMessage("Searching live providers...");
 
-    // Persist this search so the Home page Recent Searches rail can show it.
+    // Persist recent searches for future quick-access surfaces.
     try {
       const key = "travelian.recentFlightSearches";
       const raw = localStorage.getItem(key);
