@@ -63,17 +63,17 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="relative flex min-h-full items-start justify-center overflow-y-auto gradient-hero px-4 py-3 lg:items-center">
+    <div className="relative flex min-h-full items-start justify-center overflow-y-auto gradient-hero px-4 py-4 lg:py-4">
       <div className="absolute inset-0 opacity-10 pointer-events-none" aria-hidden="true">
         <div className="absolute left-10 top-10 h-72 w-72 rounded-full bg-primary/40 blur-3xl" />
         <div className="absolute bottom-0 right-12 h-80 w-80 rounded-full bg-gold/25 blur-3xl" />
       </div>
       <Card className="relative w-full max-w-5xl overflow-hidden border border-primary-foreground/10 shadow-hover">
         <CardContent className="grid p-0 md:grid-cols-[0.88fr_1.12fr]">
-          <div className="hidden min-h-[470px] flex-col justify-between bg-primary p-7 text-primary-foreground md:flex">
+          <div className="hidden min-h-[440px] flex-col justify-between bg-primary p-6 text-primary-foreground md:flex">
             <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-                <Plane className="h-6 w-6" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15">
+                <Plane className="h-5 w-5" />
               </div>
               <h2 className="mt-5 text-3xl font-extrabold font-display">Join Travelian</h2>
               <p className="mt-3 text-sm leading-relaxed text-primary-foreground/75">
@@ -86,14 +86,14 @@ export default function RegisterPage() {
               <span>Partner onboarding ready</span>
             </div>
           </div>
-          <div className="p-5 sm:p-6">
-          <Link to="/" className="mb-3 flex items-center justify-center">
-            <img src="/travelian-brand-logo.png" alt="Travelian" className="h-12 w-40 object-contain" />
+          <div className="p-5 sm:p-5">
+          <Link to="/" className="mb-2 flex items-center justify-center">
+            <img src="/travelian-brand-logo.png" alt="Travelian" className="h-11 w-36 object-contain" />
           </Link>
           <h1 className="text-2xl font-bold text-center text-foreground">Create your account</h1>
           <p className="text-sm text-muted-foreground text-center mt-1">Create a Travelian account for faster bookings</p>
 
-          <form onSubmit={register} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <form onSubmit={register} className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {pendingEmail ? (
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="code">Verification code</Label>
