@@ -55,7 +55,7 @@ export function AdvancedDatePicker({
           {date ? format(date, "MMM dd, yyyy") : placeholder}
         </button>
       </PopoverTrigger>
-      <PopoverContent className={cn("w-auto p-0 z-[200]", className)} align="start" side="bottom" sideOffset={8} avoidCollisions={false}>
+      <PopoverContent className={cn("w-auto p-0 z-[200]", className)} align="start" side="top" sideOffset={10} collisionPadding={16}>
         <DayPicker
           mode="single"
           selected={date}

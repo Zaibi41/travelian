@@ -916,7 +916,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     {editDate ? format(editDate, "MMM dd, yyyy") : "Select date"}
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-[300]" align="start" side="bottom" sideOffset={8} avoidCollisions={false}>
+                <PopoverContent className="w-auto p-0 z-[300]" align="start" side="top" sideOffset={10} collisionPadding={16}>
                   <Calendar mode="single" selected={editDate} onSelect={setEditDate} initialFocus className="p-3 pointer-events-auto" />
                 </PopoverContent>
               </Popover>
@@ -931,7 +931,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       {editReturnDate ? format(editReturnDate, "MMM dd, yyyy") : "Select return date"}
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-[300]" align="start" side="bottom" sideOffset={8} avoidCollisions={false}>
+                  <PopoverContent className="w-auto p-0 z-[300]" align="start" side="top" sideOffset={10} collisionPadding={16}>
                     <Calendar mode="single" selected={editReturnDate} onSelect={setEditReturnDate} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
