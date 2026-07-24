@@ -837,7 +837,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
       {/* Modify Search Dialog */}
       <Dialog open={modifyOpen} onOpenChange={setModifyOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Modify Search</DialogTitle>
           </DialogHeader>
@@ -864,7 +864,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             {editTripType === "multicity" ? (
               <div className="space-y-3">
                 {editSegments.map((segment, index) => (
-                  <div key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
+                  <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
                     <AirportCombobox value={segment.from} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, from: value } : item))} placeholder="From airport" />
                     <AirportCombobox value={segment.to} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, to: value } : item))} placeholder="To airport" />
                     <Popover>
@@ -878,14 +878,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         <Calendar mode="single" selected={segment.date} onSelect={(date) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, date } : item))} initialFocus />
                       </PopoverContent>
                     </Popover>
-                    <Button type="button" variant="outline" size="sm" disabled={editSegments.length <= 2} onClick={() => setEditSegments((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Remove</Button>
+                    <Button type="button" variant="outline" size="sm" className="shrink-0" disabled={editSegments.length <= 2} onClick={() => setEditSegments((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Remove</Button>
                   </div>
                 ))}
                 <Button type="button" variant="outline" size="sm" onClick={() => setEditSegments((current) => [...current, { from: "", to: "", date: undefined }])}>Add flight</Button>
               </div>
             ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_1fr] gap-3 items-end">
-              <div>
+            <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+              <div className="min-w-0">
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">From</label>
                 <AirportCombobox value={editFrom} onChange={setEditFrom} className="h-11" placeholder="From airport" />
               </div>
@@ -894,7 +894,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   <ArrowLeftRight className="h-4 w-4" />
                 </button>
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">To</label>
                 <AirportCombobox value={editTo} onChange={setEditTo} className="h-11" placeholder="To airport" />
               </div>

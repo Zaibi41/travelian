@@ -108,13 +108,13 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "h-12 w-full justify-between rounded-xl border-muted bg-muted/30 px-3 text-left text-sm font-normal",
+            "h-12 min-w-0 w-full justify-between overflow-hidden rounded-xl border-muted bg-muted/30 px-3 text-left text-sm font-normal",
             !selected && !value && "text-muted-foreground",
             invalid && "border-destructive",
             className,
           )}
         >
-          <span className="flex min-w-0 items-center gap-2">
+          <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
             <Plane className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="truncate">{label}</span>
           </span>
