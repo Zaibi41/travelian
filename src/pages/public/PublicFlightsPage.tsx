@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { whatsappUrl } from "@/lib/site-config";
 
 type FlightTripType = "oneway" | "roundtrip" | "multicity";
 type FlightSegment = { from: string; to: string; date: Date | undefined };
+const SEARCH_RESULT_TTL_SECONDS = 900;
 
 function tripTypeFromParam(value: string | null): FlightTripType {
   return value === "roundtrip" || value === "multicity" ? value : "oneway";
@@ -101,7 +102,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [calculatorTaxes, setCalculatorTaxes] = useState("");
   const [calculatorServiceFee, setCalculatorServiceFee] = useState("");
   const [searchRefreshKey, setSearchRefreshKey] = useState(0);
-  const autoRefreshStartedRef = useRef(false);
 
   // Modal-local edit state
   const [editFrom, setEditFrom] = useState(from);
@@ -218,13 +218,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       },
     }, controller.signal)
       .then(result => {
-        autoRefreshStartedRef.current = false;
         setApiFlights(result.flights);
         const liveMaxPrice = Math.max(700, ...result.flights.map(f => f.price));
         setPriceRange([0, Math.ceil(liveMaxPrice / 1000) * 1000]);
         setApiStatus("success");
         setApiMessage(result.flights.length ? "" : "No live bookable fares returned for this search.");
-        setExpirySeconds(result.flights.length ? 900 : 0);
+        setExpirySeconds(result.flights.length ? SEARCH_RESULT_TTL_SECONDS : 0);
       })
       .catch(error => {
         if (controller.signal.aborted) return;
@@ -244,13 +243,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return () => window.clearInterval(interval);
   }, [apiStatus, expirySeconds]);
 
-  useEffect(() => {
-    if (apiStatus !== "success" || apiFlights.length === 0 || expirySeconds !== 0) return;
-    if (autoRefreshStartedRef.current) return;
-    autoRefreshStartedRef.current = true;
-    setApiMessage("Refreshing live fares...");
-    setSearchRefreshKey((value) => value + 1);
-  }, [apiFlights.length, apiStatus, expirySeconds]);
 
   const flights = apiFlights;
   const maxPrice = Math.max(700, ...flights.map(f => f.price));
@@ -479,7 +471,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm">
           <div>
             <p className="text-sm font-semibold text-foreground">
-              {apiStatus === "loading" ? "Searching live fares" : `${filtered.length} live ${filtered.length === 1 ? "fare" : "fares"}`}
+              {apiStatus === "loading"
+                ? "Searching live fares"
+                : searchExpired
+                  ? "Search results expired"
+                  : `${filtered.length} live ${filtered.length === 1 ? "fare" : "fares"}`}
             </p>
             <p className="text-xs text-muted-foreground">{from} to {to} · {format(departDate, "dd MMM yyyy")}</p>
           </div>
@@ -513,22 +509,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           </div>
         </div>
 
-        {searchExpired && (
-          <Card className="mb-4 border-amber-200 bg-amber-50 shadow-sm">
-            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex gap-3">
-                <TimerReset className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
-                <div>
-                  <p className="font-semibold text-amber-950">These fares need revalidation</p>
-                  <p className="text-sm text-amber-800">Airline prices and seats can change quickly. Search again before booking or issuing a ticket.</p>
-                </div>
-              </div>
-              <Button className="rounded-xl" onClick={revalidateSearch}>Search Again</Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {(activeFilterLabels.length > 0 || hasFilterChanges) && (
+        {!searchExpired && (activeFilterLabels.length > 0 || hasFilterChanges) && (
           <div className="mb-4 flex flex-wrap items-center gap-2">
             {activeFilterLabels.map(filter => (
               <button key={filter.key} type="button" onClick={filter.onRemove} className="rounded-full border bg-card px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground">
@@ -547,7 +528,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         )}
 
         {/* Sort Tags */}
-        <div className="flex items-center gap-3 mb-6 overflow-x-auto scrollbar-hide">
+        {!searchExpired && <div className="flex items-center gap-3 mb-6 overflow-x-auto scrollbar-hide">
           {[
             { id: "best", label: "Best", sub: bestFlight ? formatFare(bestFlight.price, bestFlight.currency) : "" },
             { id: "price-asc", label: "Cheapest", sub: bestFlight ? formatFare(bestFlight.price, bestFlight.currency) : "" },
@@ -566,7 +547,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               {s.sub && <span className="text-xs opacity-70">{s.sub}</span>}
             </button>
           ))}
-        </div>
+        </div>}
 
         {apiStatus === "error" && (
           <div className="mb-5 rounded-xl border border-warning/20 bg-warning/5 px-4 py-3 text-sm text-warning">
@@ -574,6 +555,31 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           </div>
         )}
 
+        {searchExpired ? (
+          <Card className="mx-auto max-w-3xl rounded-[28px] border-0 shadow-[0_24px_80px_rgba(15,23,42,0.14)]">
+            <CardContent className="p-8 text-center sm:p-10">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-4 border-sky-500 text-sky-500">
+                <TimerReset className="h-8 w-8" />
+              </div>
+              <h2 className="mt-7 text-3xl font-black text-slate-800">Search Results Expired</h2>
+              <p className="mx-auto mt-5 max-w-2xl text-lg leading-8 text-slate-600">
+                To ensure you have access to the most up-to-date flight information, please start a new search.
+              </p>
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <Button
+                  size="lg"
+                  className="rounded-full bg-red-500 px-9 text-white hover:bg-red-600"
+                  onClick={revalidateSearch}
+                >
+                  Search Again
+                </Button>
+                <Button size="lg" variant="outline" className="rounded-full px-8" onClick={openModify}>
+                  Modify Search
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
         <div className="flex gap-6">
           {/* Sidebar Filters */}
           <aside className="hidden md:block w-56 xl:w-64 shrink-0 space-y-5 sticky top-24 self-start">
@@ -833,6 +839,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             )}
           </div>
         </div>
+        )}
       </div>
 
       {/* Modify Search Dialog */}
