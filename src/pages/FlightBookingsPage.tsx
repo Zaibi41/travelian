@@ -11,7 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { listServerBookings, updateServerBooking } from "@/lib/booking-api";
+import { downloadETicket } from "@/lib/eticket-pdf";
+import { downloadTicketInvoice } from "@/lib/ticket-invoice-pdf";
 import type { BookingRecord } from "@/lib/booking-store";
+import type { TravelTicket } from "@/data/models";
 
 const tabs = [
   { id: "all", label: "All" },
@@ -44,6 +47,75 @@ function amountLabel(booking: BookingRecord) {
   const currency = booking.pricing?.currency || "PKR";
   const total = Number(booking.pricing?.total || 0);
   return `${currency} ${Math.round(total).toLocaleString()}`;
+}
+
+function dateFromDateTime(value?: string) {
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
+  return "";
+}
+
+function timeFromDateTime(value?: string) {
+  if (!value) return "";
+  const match = value.match(/\b(\d{2}:\d{2})/);
+  return match?.[1] || value;
+}
+
+function firstTraveler(booking: BookingRecord) {
+  return booking.travelers?.[0];
+}
+
+function bookingToTravelTicket(booking: BookingRecord): TravelTicket {
+  const traveler = firstTraveler(booking);
+  const flight = booking.flight;
+  const departureDate = flight?.date || dateFromDateTime(flight?.departTime) || dateFromDateTime(booking.createdAt);
+  const arrivalDate = dateFromDateTime(flight?.arriveTime) || departureDate;
+  const total = Number(booking.pricing?.total || 0);
+  const base = Number(booking.pricing?.base || total || 0);
+  const taxes = Number(booking.pricing?.taxes || 0);
+  const ticketId = booking.id || booking.pnr || `TRV-${Date.now()}`;
+
+  return {
+    ticketId,
+    bookingId: booking.id,
+    passengerName: [traveler?.title, traveler?.firstName, traveler?.lastName].filter(Boolean).join(" ") || customerName(booking),
+    type: "flight",
+    origin: flight?.fromCode || flight?.from || "-",
+    destination: flight?.toCode || flight?.to || "-",
+    departureDate,
+    arrivalDate,
+    departureTime: timeFromDateTime(flight?.departTime),
+    arrivalTime: timeFromDateTime(flight?.arriveTime),
+    seatNumber: booking.seat || "",
+    status: booking.ticketStatus === "issued" || booking.status === "ticket_issued" ? "issued" : "pending",
+    price: total,
+    ticketNumber: booking.pnr || booking.id,
+    pnr: booking.pnr || booking.id,
+    airline: flight?.airline || "",
+    flightNumber: flight?.flightNumber || "",
+    title: traveler?.title,
+    firstName: traveler?.firstName,
+    lastName: traveler?.lastName,
+    passengerType: traveler?.passengerType === "child" ? "Child" : traveler?.passengerType === "infant" ? "Infant" : "Adult",
+    dateOfBirth: traveler?.dob,
+    passportNumber: traveler?.docNumber,
+    passportExpiry: traveler?.expiryDate,
+    originAirport: flight?.from || flight?.fromCode || "",
+    destinationAirport: flight?.to || flight?.toCode || "",
+    originCity: flight?.from || flight?.fromCode || "",
+    destinationCity: flight?.to || flight?.toCode || "",
+    duration: flight?.duration,
+    cabinClass: flight?.cabin,
+    baseFare: base,
+    tax: taxes,
+    checkinBaggageKg: undefined,
+    cabinBaggageKg: undefined,
+    invoiceNumber: `INV-${ticketId.replace(/[^a-z0-9]/gi, "").slice(-8).toUpperCase()}`,
+    customerEmail: booking.contact?.email,
+    customerPhone: booking.contact?.phone,
+    source: "checkout",
+    createdAt: booking.createdAt,
+  };
 }
 
 function timeLimitLabel(booking: BookingRecord) {
@@ -167,6 +239,26 @@ export default function FlightBookingsPage() {
   };
   const refundBooking = () => updateBooking({ status: "cancelled", remarks }, "Refund / cancellation status updated");
   const cancelBooking = () => updateBooking({ status: "cancelled", remarks }, "Booking cancelled");
+  const downloadSelectedTicket = () => {
+    if (!selected) return;
+    try {
+      downloadETicket(selected);
+      toast.success("Ticket download started");
+    } catch (downloadError) {
+      console.error(downloadError);
+      toast.error("Ticket could not be downloaded");
+    }
+  };
+  const downloadSelectedInvoice = async () => {
+    if (!selected) return;
+    try {
+      await downloadTicketInvoice(bookingToTravelTicket(selected));
+      toast.success("Invoice download started");
+    } catch (downloadError) {
+      console.error(downloadError);
+      toast.error(downloadError instanceof Error ? downloadError.message : "Invoice could not be downloaded");
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -308,8 +400,8 @@ export default function FlightBookingsPage() {
                 )}
                 {(selected.ticketStatus === "issued" || selected.status === "ticket_issued") && (
                   <>
-                    <Button variant="outline" className="gap-1 rounded-xl"><Download className="h-4 w-4" /> Download Ticket</Button>
-                    <Button variant="outline" className="gap-1 rounded-xl"><Download className="h-4 w-4" /> Invoice</Button>
+                    <Button variant="outline" className="gap-1 rounded-xl" onClick={downloadSelectedTicket}><Download className="h-4 w-4" /> Download Ticket</Button>
+                    <Button variant="outline" className="gap-1 rounded-xl" onClick={() => void downloadSelectedInvoice()}><Download className="h-4 w-4" /> Invoice</Button>
                   </>
                 )}
                 <Button variant="outline" className="gap-1 rounded-xl" disabled={!!savingAction} onClick={() => void markPaymentReceived()}><Clock3 className="h-4 w-4" /> Mark Payment Received</Button>
