@@ -25,6 +25,7 @@ aws s3 sync dist "s3://$Bucket" `
   --exclude "index.html" `
   --exclude "sitemap.xml" `
   --exclude "robots.txt" `
+  --exclude "travelian-brand-logo_old.png" `
   --exclude "package-images/*"
 
 aws s3 cp dist/index.html "s3://$Bucket/index.html" `

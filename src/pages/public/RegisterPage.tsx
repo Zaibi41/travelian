@@ -63,37 +63,37 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="relative flex min-h-full items-start justify-center overflow-y-auto gradient-hero px-4 py-5 lg:items-center lg:py-6">
+    <div className="relative flex min-h-full items-start justify-center overflow-y-auto gradient-hero px-4 py-3 lg:items-center">
       <div className="absolute inset-0 opacity-10 pointer-events-none" aria-hidden="true">
         <div className="absolute left-10 top-10 h-72 w-72 rounded-full bg-primary/40 blur-3xl" />
         <div className="absolute bottom-0 right-12 h-80 w-80 rounded-full bg-gold/25 blur-3xl" />
       </div>
       <Card className="relative w-full max-w-5xl overflow-hidden border border-primary-foreground/10 shadow-hover">
         <CardContent className="grid p-0 md:grid-cols-[0.88fr_1.12fr]">
-          <div className="hidden min-h-[520px] flex-col justify-between bg-primary p-8 text-primary-foreground md:flex">
+          <div className="hidden min-h-[470px] flex-col justify-between bg-primary p-7 text-primary-foreground md:flex">
             <div>
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
                 <Plane className="h-6 w-6" />
               </div>
-              <h2 className="mt-6 text-3xl font-extrabold font-display">Join Travelian</h2>
+              <h2 className="mt-5 text-3xl font-extrabold font-display">Join Travelian</h2>
               <p className="mt-3 text-sm leading-relaxed text-primary-foreground/75">
                 Create a customer account for faster bookings, or choose Travel Partner to start the agency onboarding review.
               </p>
             </div>
-            <div className="grid gap-3 text-sm text-primary-foreground/80">
+            <div className="grid gap-2 text-sm text-primary-foreground/80">
               <span>Verified travel support</span>
               <span>Secure account access</span>
               <span>Partner onboarding ready</span>
             </div>
           </div>
-          <div className="p-5 sm:p-6 lg:p-7">
-          <Link to="/" className="mb-4 flex items-center justify-center">
-            <img src="/travelian-brand-logo.png" alt="Travelian" className="h-14 w-48 object-contain" />
+          <div className="p-5 sm:p-6">
+          <Link to="/" className="mb-3 flex items-center justify-center">
+            <img src="/travelian-brand-logo.png" alt="Travelian" className="h-12 w-40 object-contain" />
           </Link>
           <h1 className="text-2xl font-bold text-center text-foreground">Create your account</h1>
           <p className="text-sm text-muted-foreground text-center mt-1">Create a Travelian account for faster bookings</p>
 
-          <form onSubmit={register} className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <form onSubmit={register} className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {pendingEmail ? (
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="code">Verification code</Label>
@@ -156,11 +156,11 @@ export default function RegisterPage() {
             </Button>
           </form>
 
-          <p className="mt-3 text-xs text-muted-foreground text-center">
+          <p className="mt-2 text-xs text-muted-foreground text-center">
             Travel partners are reviewed by the Travelian team before agency access is enabled.
           </p>
 
-          <p className="text-center text-sm text-muted-foreground mt-3">
+          <p className="text-center text-sm text-muted-foreground mt-2">
             Already a member? <Link to="/signin" className="text-primary font-semibold hover:underline">Sign in</Link>
           </p>
           </div>
