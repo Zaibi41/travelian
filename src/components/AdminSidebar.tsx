@@ -51,13 +51,14 @@ export function AdminSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/70">
       <SidebarHeader className="px-3 py-3">
-        <div className={collapsed ? "flex items-center justify-center rounded-2xl border border-sidebar-border/60 bg-sidebar-accent/35 px-1.5 py-2" : "flex items-center gap-2.5 rounded-2xl border border-sidebar-border/60 bg-sidebar-accent/35 px-2.5 py-2"}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl gradient-primary shadow-sm">
-            <img src="/travelian-brand-logo.png" alt="" className="h-7 w-7 object-contain" />
-          </div>
+        <div className={collapsed ? "flex items-center justify-center border border-sidebar-border/60 bg-sidebar-accent/35 px-1 py-2" : "flex items-center gap-2.5 border border-sidebar-border/60 bg-sidebar-accent/35 px-2.5 py-2"}>
+          <img
+            src="/travelian-brand-logo.png"
+            alt=""
+            className={collapsed ? "h-10 w-12 shrink-0 object-contain" : "h-10 w-32 shrink-0 object-contain"}
+          />
           {!collapsed && (
             <div className="min-w-0">
-              <h1 className="text-sm font-bold font-display text-sidebar-accent-foreground leading-tight">Travelian</h1>
               <p className="text-[10px] text-sidebar-muted">
                 {isCustomer ? "Customer Portal" : isAgency ? "Agency Portal" : "Enterprise Console"}
               </p>

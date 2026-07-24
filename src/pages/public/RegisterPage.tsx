@@ -88,7 +88,7 @@ export default function RegisterPage() {
           </div>
           <div className="p-5 sm:p-5">
           <Link to="/" className="mb-2 flex items-center justify-center">
-            <img src="/travelian-brand-logo.png" alt="Travelian" className="h-11 w-36 object-contain" />
+            <img src="/travelian-brand-logo.png" alt="Travelian" className="h-12 w-44 object-contain" />
           </Link>
           <h1 className="text-2xl font-bold text-center text-foreground">Create your account</h1>
           <p className="text-sm text-muted-foreground text-center mt-1">Create a Travelian account for faster bookings</p>
