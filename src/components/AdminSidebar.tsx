@@ -53,7 +53,7 @@ export function AdminSidebar() {
       <SidebarHeader className="px-3 py-3">
         <div className={collapsed ? "flex items-center justify-center border border-sidebar-border/60 bg-sidebar-accent/35 px-1 py-2" : "flex items-center gap-2.5 border border-sidebar-border/60 bg-sidebar-accent/35 px-2.5 py-2"}>
           <img
-            src="/travelian-brand-logo.png"
+            src="/travelian-logo-wordmark.png"
             alt=""
             className={collapsed ? "h-10 w-12 shrink-0 object-contain" : "h-10 w-32 shrink-0 object-contain"}
           />

@@ -10,7 +10,7 @@ interface SEOProps {
 }
 
 const SITE_NAME = "Travelian";
-const DEFAULT_IMAGE = "/travelian-brand-logo.png";
+const DEFAULT_IMAGE = "/travelian-logo-wordmark.png";
 
 export function SEO({ title, description, canonical, image = DEFAULT_IMAGE, type = "website", jsonLd }: SEOProps) {
   const fullTitle = title.length > 60 ? title.slice(0, 57) + "..." : title;

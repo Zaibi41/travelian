@@ -1,4 +1,4 @@
-﻿import { SearchTabs } from "@/components/public/SearchTabs";
+import { SearchTabs } from "@/components/public/SearchTabs";
 import { SEO } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -64,9 +64,9 @@ const fallbackDeals = [
 ];
 
 const fallbackUmrah = [
-  { packageId: "fu1", name: "15-Night Premium Umrah", description: "5★ Makkah Clock Tower + Pullman Madinah, direct Saudia flights.", basePrice: 298000, duration: "15 days", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=800&h=520&fit=crop&q=80", includes: ["Visa", "Air ticket", "5★ hotels", "Ziyarat", "Transport"] },
-  { packageId: "fu2", name: "10-Night Economy Umrah", description: "Budget 3★ stays near Haram, weekend departures from Lahore.", basePrice: 178000, duration: "10 days", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=800&h=520&fit=crop&q=80", includes: ["Visa", "Air ticket", "3★ hotels", "Ziyarat"] },
-  { packageId: "fu3", name: "21-Night Family Umrah", description: "Family suites in Makkah + Madinah, includes meals.", basePrice: 365000, duration: "21 days", image: "https://images.unsplash.com/photo-1519817650390-64a93db51149?w=800&h=520&fit=crop&q=80", includes: ["Visa", "Air ticket", "4★ hotels", "Meals", "Ziyarat"] },
+  { packageId: "fu1", name: "15-Night Premium Umrah", description: "5? Makkah Clock Tower + Pullman Madinah, direct Saudia flights.", basePrice: 298000, duration: "15 days", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=800&h=520&fit=crop&q=80", includes: ["Visa", "Air ticket", "5? hotels", "Ziyarat", "Transport"] },
+  { packageId: "fu2", name: "10-Night Economy Umrah", description: "Budget 3? stays near Haram, weekend departures from Lahore.", basePrice: 178000, duration: "10 days", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=800&h=520&fit=crop&q=80", includes: ["Visa", "Air ticket", "3? hotels", "Ziyarat"] },
+  { packageId: "fu3", name: "21-Night Family Umrah", description: "Family suites in Makkah + Madinah, includes meals.", basePrice: 365000, duration: "21 days", image: "https://images.unsplash.com/photo-1519817650390-64a93db51149?w=800&h=520&fit=crop&q=80", includes: ["Visa", "Air ticket", "4? hotels", "Meals", "Ziyarat"] },
   { packageId: "fu4", name: "7-Night Express Umrah", description: "Short itinerary for working professionals - quick turnaround.", basePrice: 145000, duration: "7 days", image: "https://images.unsplash.com/photo-1591129841117-3adfd313a592?w=800&h=520&fit=crop&q=80", includes: ["Visa", "Air ticket", "3-star hotels"] },
 ];
 
@@ -133,7 +133,7 @@ export default function HomePage() {
             "@type": "Organization",
             name: "Travelian",
             url: "https://travelian.pk",
-            logo: "https://travelian.pk/travelian-brand-logo.png",
+            logo: "https://travelian.pk/travelian-logo-wordmark.png",
             sameAs: [
               "https://www.facebook.com/Travelian.pk/",
               "https://www.instagram.com/travelian.pk/",

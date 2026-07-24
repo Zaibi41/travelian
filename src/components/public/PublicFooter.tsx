@@ -28,7 +28,7 @@ export function PublicFooter() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           <div className="col-span-2 md:col-span-1">
             <Link to="/" onClick={scrollToTop} className="mb-4 flex items-center">
-              <img src="/travelian-brand-logo.png" alt="Travelian" className="h-12 w-40 object-contain" />
+              <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-12 w-40 object-contain" />
             </Link>
             <p className="text-sm text-sidebar-muted leading-relaxed mb-4">Travel support for flights, hotels, Umrah packages, tours and visa services.</p>
             <div className="flex gap-2">
