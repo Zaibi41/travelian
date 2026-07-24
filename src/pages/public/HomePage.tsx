@@ -656,11 +656,11 @@ export default function HomePage() {
 
                 <div className="mt-8 grid max-w-md grid-cols-3 gap-3">
                   {mobileAppFeatures.map((feature) => (
-                    <div key={feature.label} className="flex items-center gap-2 rounded-2xl bg-white/80 p-3 shadow-sm">
+                    <div key={feature.label} className="flex min-w-0 flex-col items-start gap-2 rounded-2xl bg-white/80 p-3 shadow-sm sm:min-h-[88px]">
                       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-primary">
                         <feature.icon className="h-4 w-4" />
                       </span>
-                      <span className="min-w-0 text-xs font-bold leading-tight text-slate-700">
+                      <span className="min-w-0 max-w-full break-words text-xs font-bold leading-tight text-slate-700">
                         {feature.label}<br />{feature.detail}
                       </span>
                     </div>
