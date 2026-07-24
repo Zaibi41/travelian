@@ -8,6 +8,12 @@ import { Plane, UserPlus, Loader2, Mail, User, KeyRound, Phone, Briefcase } from
 import { toast } from "sonner";
 import { confirmSignUp, signUpWithPassword } from "@/lib/cognito-auth";
 import { PasswordInput } from "@/components/PasswordInput";
+import { rememberAccountRole } from "@/lib/role-mapping";
+import type { UserRole } from "@/data/models";
+
+function roleForAccountType(accountType: string): UserRole {
+  return accountType === "partner" ? "agency_owner" : "customer";
+}
 
 export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
@@ -49,6 +55,7 @@ export default function RegisterPage() {
         return;
       }
       const result = await signUpWithPassword(email, password, fullName);
+      rememberAccountRole(email, roleForAccountType(accountType));
       if (result.UserConfirmed) {
         toast.success(accountType === "partner" ? "Partner account created. Travelian will review agency access." : "Account created. You can sign in now.");
       } else {
