@@ -113,8 +113,8 @@ export function PublicNavbar() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center">
-            <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-16 w-60 object-contain" />
+          <Link to="/" className="flex h-16 items-center">
+            <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-11 w-48 object-contain sm:h-12 sm:w-52" />
             {/* <span className="ml-2 text-xl font-black tracking-tight text-foreground">Travelian</span> */}
           </Link>
 
