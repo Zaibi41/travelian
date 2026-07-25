@@ -3,13 +3,12 @@ import { SEO } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, MapPin, ArrowRight, Shield, Headphones, TrendingUp, Heart, ChevronRight, Percent, Globe, Award, Hotel, Plane, Apple, Bot, Bell, CalendarCheck, BriefcaseBusiness, ShieldCheck } from "lucide-react";
+import { Star, MapPin, ArrowRight, Shield, Headphones, TrendingUp, Heart, ChevronRight, Percent, Globe, Award, Hotel } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getBlogImage } from "@/lib/blog-images";
 import { PackageImage } from "@/components/public/PackageImage";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
-import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 
 const destinations = [
@@ -77,26 +76,7 @@ const reviewCards = [
   { name: "Sana Malik", trip: "Family Turkey tour", quote: "Hotels, transfers and support were exactly what we expected.", rating: "5.0" },
 ];
 
-const supplierCards = [
-  { name: "Amadeus", mark: "a", tone: "text-blue-600" },
-  { name: "Sabre", mark: "S", tone: "text-red-600" },
-  { name: "Travelport", mark: "T", tone: "text-teal-700" },
-  { name: "NDC", mark: "NDC", tone: "text-blue-600" },
-  { name: "LCCs", mark: "A", tone: "text-emerald-600" },
-  { name: "Duffel", mark: "D", tone: "text-slate-900" },
-  { name: "Mystifly", mark: "m", tone: "text-pink-600" },
-  { name: "Multiple Airlines", mark: "A", tone: "text-primary" },
-  { name: "Fly Jinnah", mark: "fj", tone: "text-red-600" },
-  { name: "AirSial", mark: "*", tone: "text-amber-600" },
-  { name: "AirBlue", mark: "airblue", tone: "text-blue-700" },
-  { name: "PIA", mark: "PIA", tone: "text-teal-700" },
-];
-
-const mobileAppFeatures = [
-  { icon: BriefcaseBusiness, label: "Easy", detail: "Booking" },
-  { icon: CalendarCheck, label: "Trip", detail: "Management" },
-  { icon: Bell, label: "Real-time", detail: "Updates" },
-];
+const partnerNames = ["Travelport", "PIA", "AirSial", "flydubai", "Etihad", "Qatar Airways", "Fly Jinnah"];
 
 export default function HomePage() {
   const { hotels, packages, tourPackages, blogPosts, loadHotelContent } = useAdmin();
@@ -537,204 +517,60 @@ export default function HomePage() {
       </section>
 
       {/* Reviews and partner proof */}
-      <section className="py-12 bg-muted/30">
+      <section className="py-10 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="overflow-hidden rounded-[28px] border border-blue-100 bg-gradient-to-br from-sky-50 via-white to-blue-50 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-            <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
-              <div className="relative overflow-hidden p-6 sm:p-8 lg:p-10">
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_20%_10%,rgba(37,99,235,0.12),transparent_38%)]" />
-                <div className="pointer-events-none absolute left-8 top-8 h-28 w-44 rounded-full border border-dashed border-blue-200/80" />
-                <Plane className="pointer-events-none absolute left-36 top-6 h-5 w-5 rotate-45 text-blue-400" />
-
-                <div className="relative grid gap-5 md:grid-cols-[1fr_auto] md:items-center">
-                  <div>
-                    <div className="mb-3 text-5xl font-black leading-none text-teal-600/80">"</div>
-                    <h2 className="max-w-sm text-3xl font-black leading-tight text-slate-950 md:text-4xl">
-                      Trusted by Travelers and Agencies
-                    </h2>
-                    <p className="mt-4 max-w-sm text-sm leading-6 text-slate-600">
-                      Real support, transparent fares and managed service from search to ticketing.
-                    </p>
-                  </div>
-                  <div className="w-full rounded-2xl border border-blue-100 bg-white/95 p-5 text-center shadow-[0_18px_45px_rgba(15,23,42,0.12)] md:w-40">
-                    <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-                      <Star className="h-5 w-5 fill-current" />
-                    </div>
-                    <p className="text-4xl font-black text-slate-950">4.8</p>
-                    <p className="text-[11px] text-muted-foreground">from 12k reviews</p>
-                    <div className="mt-3 flex justify-center gap-0.5 text-amber-400">
-                      {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-4 w-4 fill-current" />)}
-                    </div>
-                  </div>
+          <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+            <div>
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Trusted by travelers and agencies</h2>
+                  <p className="text-sm text-muted-foreground">Real support, transparent fares and managed service from search to ticketing.</p>
                 </div>
-
-                <div className="relative mt-8 grid gap-4 md:grid-cols-3">
-                  {reviewCards.map((review) => (
-                    <Card key={review.name} className="border border-blue-100 bg-white/95 shadow-[0_14px_35px_rgba(15,23,42,0.08)]">
-                      <CardContent className="p-5">
-                        <div className="mb-4 flex items-center justify-between">
-                          <div className="flex items-center gap-0.5 text-amber-400">
-                            {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" />)}
-                          </div>
-                          <span className="text-xs font-bold text-slate-700">{review.rating}</span>
-                        </div>
-                        <div className="mb-3 text-2xl font-black leading-none text-teal-600/90">"</div>
-                        <p className="min-h-20 text-xs leading-5 text-slate-700">{review.quote}</p>
-                        <div className="mt-5 flex items-center gap-3 border-t border-slate-100 pt-4">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-700 text-white">
-                            {review.name.split(" ").map(part => part[0]).join("").slice(0, 2)}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-bold text-slate-950">{review.name}</p>
-                            <p className="truncate text-xs text-muted-foreground">{review.trip}</p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <Badge variant="secondary" className="hidden sm:inline-flex rounded-full">4.8 from 12k reviews</Badge>
               </div>
-
-              <div className="bg-white p-6 shadow-[inset_1px_0_0_rgba(148,163,184,0.22)] sm:p-8 lg:p-10">
-                <div className="mb-6 flex items-start gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-teal-50 text-teal-700">
-                    <Globe className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-black text-slate-950">Connected Supplier Network</h3>
-                    <p className="mt-1 text-sm text-slate-500">Integrated GDS, airline, NDC and LCC connectivity.</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {supplierCards.map((supplier) => (
-                    <div
-                      key={supplier.name}
-                      className="flex min-h-[72px] items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_10px_22px_rgba(15,23,42,0.04)] transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_16px_32px_rgba(15,23,42,0.08)]"
-                    >
-                      <span className={cn("flex h-9 min-w-9 items-center justify-center text-2xl font-black leading-none", supplier.tone)}>
-                        {supplier.mark}
-                      </span>
-                      <span className="text-sm font-bold text-slate-800">{supplier.name}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-6 rounded-2xl bg-slate-50 p-4">
-                  <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
-                    {["GDS", "NDC", "Airline APIs", "LCCs"].map((item) => (
-                      <div key={item} className="rounded-xl bg-white px-3 py-3 text-xs font-bold text-slate-700 shadow-sm">
-                        {item}
+              <div className="grid gap-4 md:grid-cols-3">
+                {reviewCards.map((review) => (
+                  <Card key={review.name} className="border-0 shadow-card">
+                    <CardContent className="p-5">
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-1 text-gold">
+                          {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" />)}
+                        </div>
+                        <span className="text-xs font-bold text-primary">{review.rating}</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                      <p className="text-sm text-foreground">"{review.quote}"</p>
+                      <div className="mt-4 border-t pt-3">
+                        <p className="text-sm font-semibold text-foreground">{review.name}</p>
+                        <p className="text-xs text-muted-foreground">{review.trip}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Mobile apps */}
-      <section className="bg-muted/30 pb-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-[28px] border border-blue-100 bg-gradient-to-br from-white via-sky-50 to-white shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-[radial-gradient(ellipse_at_bottom_left,rgba(14,165,233,0.14),transparent_48%)]" />
-            <div className="pointer-events-none absolute bottom-0 left-0 h-20 w-full opacity-60 [background:repeating-linear-gradient(170deg,transparent_0,transparent_13px,rgba(59,130,246,0.08)_14px,transparent_15px)]" />
-
-            <div className="relative grid gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_0.95fr_0.95fr] lg:items-center lg:p-10">
-              <div className="min-w-0">
-                <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-slate-950 shadow-[0_16px_38px_rgba(15,23,42,0.22)]">
-                  <span className="text-2xl font-black text-sky-300">T</span>
-                </div>
-                <h2 className="max-w-sm text-4xl font-black leading-tight text-slate-950 md:text-5xl">
-                  Travelian Mobile Apps
-                </h2>
-                <p className="mt-5 max-w-sm text-lg leading-7 text-slate-600">
-                  Book, manage and track your travel on the go.
-                </p>
-
-                <div className="mt-8 grid max-w-md grid-cols-3 gap-3">
-                  {mobileAppFeatures.map((feature) => (
-                    <div key={feature.label} className="flex min-w-0 flex-col items-start gap-2 rounded-2xl bg-white/80 p-3 shadow-sm sm:min-h-[88px]">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-primary">
-                        <feature.icon className="h-4 w-4" />
-                      </span>
-                      <span className="min-w-0 max-w-full break-words text-xs font-bold leading-tight text-slate-700">
-                        {feature.label}<br />{feature.detail}
-                      </span>
+            <Card className="border-0 shadow-card">
+              <CardContent className="p-5">
+                <h3 className="font-bold text-foreground">Connected supplier network</h3>
+                <p className="mt-1 text-xs text-muted-foreground">Availability depends on live supplier health and contract configuration.</p>
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  {partnerNames.map((name) => (
+                    <div key={name} className="rounded-xl border bg-background px-3 py-2 text-center text-xs font-semibold text-muted-foreground">
+                      {name}
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div className="relative mx-auto flex min-h-[350px] w-full max-w-sm items-center justify-center">
-                <div className="pointer-events-none absolute left-8 top-8 h-28 w-36 rounded-full border border-dashed border-blue-200" />
-                <Plane className="pointer-events-none absolute left-32 top-5 h-5 w-5 rotate-45 text-blue-400" />
-                <div className="relative h-[330px] w-[178px] rotate-[8deg] rounded-[34px] border-[8px] border-slate-950 bg-slate-950 shadow-[0_30px_55px_rgba(15,23,42,0.28)]">
-                  <div className="absolute left-1/2 top-2 z-10 h-5 w-20 -translate-x-1/2 rounded-full bg-slate-950" />
-                  <div className="h-full overflow-hidden rounded-[25px] bg-white">
-                    <div className="bg-gradient-to-br from-slate-950 to-primary px-4 pb-4 pt-8 text-white">
-                      <p className="text-xs font-semibold">Hello, Ayesha</p>
-                      <p className="mt-1 text-[10px] text-white/70">Where to next?</p>
-                    </div>
-                    <div className="-mt-3 mx-3 grid grid-cols-4 gap-1 rounded-xl bg-white p-2 shadow-lg">
-                      {["Flights", "Hotels", "Trips", "Support"].map((item) => (
-                        <div key={item} className="rounded-lg bg-sky-50 px-1.5 py-2 text-center">
-                          <Plane className="mx-auto h-3.5 w-3.5 text-primary" />
-                          <p className="mt-1 text-[7px] font-bold text-slate-700">{item}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mx-4 mt-4 rounded-2xl border border-slate-100 bg-slate-50 p-3">
-                      <p className="text-[9px] font-bold text-slate-500">Upcoming Trip</p>
-                      <div className="mt-2 flex items-center justify-between text-sm font-black text-slate-950">
-                        <span>LHR</span>
-                        <span className="text-primary">→</span>
-                        <span>DXB</span>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between text-[8px] text-slate-500">
-                        <span>London</span>
-                        <span>Dubai</span>
-                        <span>20 May</span>
-                      </div>
-                      <div className="mt-3 rounded-xl bg-white p-2 text-[9px] font-bold text-primary shadow-sm">
-                        Check-in opens in<br /><span className="text-lg text-slate-950">23h 45m</span>
-                      </div>
-                    </div>
-                    <div className="absolute inset-x-5 bottom-3 grid grid-cols-4 gap-2 rounded-2xl bg-white/95 p-2 shadow-[0_-8px_25px_rgba(15,23,42,0.08)]">
-                      {["Home", "Bookings", "Trips", "Profile"].map((item) => (
-                        <div key={item} className="text-center text-[7px] font-bold text-slate-500">
-                          <div className="mx-auto mb-1 h-2 w-2 rounded-full bg-primary/40" />
-                          {item}
-                        </div>
-                      ))}
-                    </div>
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-primary px-4 py-3 text-primary-foreground">
+                    <p className="text-[10px] uppercase tracking-wide opacity-75">Coming soon</p>
+                    <p className="text-sm font-bold">iOS App</p>
+                  </div>
+                  <div className="rounded-xl bg-foreground px-4 py-3 text-background">
+                    <p className="text-[10px] uppercase tracking-wide opacity-75">Coming soon</p>
+                    <p className="text-sm font-bold">Android App</p>
                   </div>
                 </div>
-              </div>
-
-              <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2">
-                <div className="rounded-2xl border border-blue-100 bg-white p-8 text-center shadow-[0_18px_42px_rgba(15,23,42,0.08)]">
-                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-50 text-slate-950">
-                    <Apple className="h-10 w-10 fill-current" />
-                  </div>
-                  <h3 className="mt-6 text-2xl font-black text-slate-950">iOS App</h3>
-                  <Badge className="mt-5 rounded-full bg-blue-100 px-4 py-1.5 text-primary hover:bg-blue-100">Coming Soon</Badge>
-                </div>
-                <div className="rounded-2xl border border-blue-100 bg-white p-8 text-center shadow-[0_18px_42px_rgba(15,23,42,0.08)]">
-                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-teal-50 text-teal-700">
-                    <Bot className="h-10 w-10" />
-                  </div>
-                  <h3 className="mt-6 text-2xl font-black text-slate-950">Android App</h3>
-                  <Badge className="mt-5 rounded-full bg-teal-100 px-4 py-1.5 text-teal-700 hover:bg-teal-100">Coming Soon</Badge>
-                </div>
-                <div className="sm:col-span-2 flex items-center justify-center gap-2 pt-2 text-center text-sm font-semibold text-slate-600">
-                  <ShieldCheck className="h-5 w-5 shrink-0 text-teal-600" />
-                  <span>Enterprise-grade security. Your data is always protected.</span>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

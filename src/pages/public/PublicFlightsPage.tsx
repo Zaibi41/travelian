@@ -284,6 +284,37 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return `${dst} ${Math.round(converted).toLocaleString()}`;
   };
 
+  const providerNames: Record<string, string> = {
+    travelport: "Travelport",
+    skypass: "Skypass",
+    alhaider: "Alhaider",
+    dhilluandsahi: "Dhillu & Sahi",
+    flyadeal: "flyadeal",
+    airsial: "AirSial",
+    pia: "PIA",
+  };
+
+  const providerGroups: Record<string, string> = {
+    travelport: "GDS",
+    skypass: "Direct API",
+    alhaider: "Group API",
+    dhilluandsahi: "Group API",
+    flyadeal: "Airline API",
+    airsial: "Airline API",
+    pia: "Airline API",
+  };
+
+  const formatProviderName = (provider?: string) => {
+    const key = String(provider || "").trim().toLowerCase();
+    if (!key) return "";
+    return providerNames[key] || key.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  };
+
+  const formatProviderGroup = (provider?: string) => {
+    const key = String(provider || "").trim().toLowerCase();
+    return providerGroups[key] || "Live API";
+  };
+
   const expiryLabel = `${Math.floor(expirySeconds / 60)}:${String(expirySeconds % 60).padStart(2, "0")}`;
   const searchExpired = apiStatus === "success" && flights.length > 0 && expirySeconds === 0;
   const calculatorTotal = (Number(calculatorBase) || 0) + (Number(calculatorTaxes) || 0) + (Number(calculatorServiceFee) || 0);
@@ -692,6 +723,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             {isCheapest && <Badge className="bg-success/10 text-success border-0 text-[10px] rounded-md">Cheapest</Badge>}
                             {isFastest && <Badge className="bg-info/10 text-info border-0 text-[10px] rounded-md">Fastest</Badge>}
                             {flight.status === 'delayed' && <Badge className="bg-warning/10 text-warning border-0 text-[10px] rounded-md">Delayed</Badge>}
+                            {adminMode && flight.provider && (
+                              <Badge variant="outline" className="rounded-md border-sky-200 bg-sky-50 text-[10px] font-semibold text-sky-700">
+                                Supplier: {formatProviderGroup(flight.provider)} · {formatProviderName(flight.provider)}
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex items-center gap-3 mt-3">
                             <div className="text-center">
