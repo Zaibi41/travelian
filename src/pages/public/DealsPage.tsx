@@ -118,7 +118,7 @@ export default function DealsPage() {
             {discountedHotels.map(hotel => (
               <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
                 <Card className="overflow-hidden hover:shadow-elevated transition-all group">
-                  <div className="h-40 bg-gradient-to-br from-warning/10 to-accent flex items-center justify-center relative">
+                  <div className="h-40 bg-gradient-to-br from-primary/5 to-accent flex items-center justify-center relative">
                     <HotelIcon className="h-12 w-12 text-primary/40 transition-transform group-hover:scale-110" />
                     <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground">
                       <Heart className="h-3.5 w-3.5" />
@@ -129,7 +129,7 @@ export default function DealsPage() {
                     <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5"><MapPin className="h-3 w-3" /> {hotel.city}</p>
                     <div className="flex items-end justify-between mt-3">
                       <div>
-                        <p className="text-lg font-bold text-foreground">PKR {hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
+                        <p className="price-lg">PKR {hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
                       </div>
                     </div>
                   </CardContent>

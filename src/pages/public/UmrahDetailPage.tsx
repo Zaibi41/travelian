@@ -30,7 +30,7 @@ export default function UmrahDetailPage() {
             This Umrah package is not available from Travelian admin inventory right now. Please contact Travelian for current package details, price, hotel, visa, transport and ticket options.
           </p>
           <a href={whatsappUrl("Hello Travelian, please share current Umrah package details.")} target="_blank" rel="noreferrer">
-            <Button className="mt-5 rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
+            <Button className="mt-5 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover">
               <WhatsAppIcon className="mr-2 h-4 w-4" /> Ask on WhatsApp
             </Button>
           </a>
@@ -142,7 +142,7 @@ export default function UmrahDetailPage() {
                 <h2 className="mt-2 font-bold">Need confirmation?</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Ask Travelian to confirm seat availability, hotel finalization, visa documents and payment schedule.</p>
                 <a href={whatsappUrl(whatsappMessage)} target="_blank" rel="noreferrer">
-                  <Button className="mt-4 w-full bg-[#25D366] text-white hover:bg-[#20bd5a]"><WhatsAppIcon className="mr-2 h-4 w-4" /> Ask on WhatsApp</Button>
+                  <Button className="mt-4 w-full bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover"><WhatsAppIcon className="mr-2 h-4 w-4" /> Ask on WhatsApp</Button>
                 </a>
               </CardContent>
             </Card>
@@ -152,3 +152,4 @@ export default function UmrahDetailPage() {
     </div>
   );
 }
+

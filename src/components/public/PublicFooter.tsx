@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin, Facebook, Instagram } from "lucide-react";
+import { BriefcaseBusiness, Building2, CircleHelp, Mail, MapPin, Phone, Facebook, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
 
@@ -18,7 +18,7 @@ export function PublicFooter() {
             <h3 className="text-lg font-bold font-display text-sidebar-accent-foreground">Need help planning your journey?</h3>
             <p className="text-sm text-sidebar-muted mt-1">Talk to the Travelian team for current fares, packages and travel support.</p>
           </div>
-          <Button asChild className="gradient-gold text-gold-foreground shrink-0 rounded-xl font-semibold">
+          <Button asChild className="bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover shrink-0 rounded-xl font-semibold">
             <a href={whatsappUrl("Hi, I need help with a Travelian booking.")} target="_blank" rel="noreferrer">WhatsApp Support</a>
           </Button>
         </div>
@@ -35,13 +35,13 @@ export function PublicFooter() {
             </Link>
             <p className="text-sm text-sidebar-muted leading-relaxed mb-4">Travel support for flights, hotels, Umrah packages, tours and visa services.</p>
             <div className="flex gap-2">
-              <a href="https://www.facebook.com/Travelian.pk/" target="_blank" rel="noreferrer" aria-label="Travelian on Facebook" className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-muted hover:text-sidebar-primary"><Facebook className="h-4 w-4" /></a>
-              <a href="https://www.instagram.com/travelian.pk/" target="_blank" rel="noreferrer" aria-label="Travelian on Instagram" className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-muted hover:text-sidebar-primary"><Instagram className="h-4 w-4" /></a>
+              <a href="https://www.facebook.com/Travelian.pk/" target="_blank" rel="noreferrer" aria-label="Travelian on Facebook" className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-muted transition-all hover:-translate-y-0.5 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"><Facebook className="h-4 w-4" /></a>
+              <a href="https://www.instagram.com/travelian.pk/" target="_blank" rel="noreferrer" aria-label="Travelian on Instagram" className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-muted transition-all hover:-translate-y-0.5 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"><Instagram className="h-4 w-4" /></a>
             </div>
           </div>
 
           <div>
-            <h4 className="font-semibold text-sidebar-accent-foreground mb-4 text-sm">Products</h4>
+            <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-sidebar-accent-foreground"><BriefcaseBusiness className="h-4 w-4 text-sidebar-primary" /> Products</h4>
             <ul className="space-y-2.5 text-sm text-sidebar-muted">
               <li><Link to="/" onClick={scrollToTop} className="hover:text-sidebar-primary">Flights</Link></li>
               <li><Link to="/hotels-search" className="hover:text-sidebar-primary">Hotels</Link></li>
@@ -52,7 +52,7 @@ export function PublicFooter() {
           </div>
 
           <div>
-            <h4 className="font-semibold text-sidebar-accent-foreground mb-4 text-sm">Company</h4>
+            <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-sidebar-accent-foreground"><Building2 className="h-4 w-4 text-sidebar-primary" /> Company</h4>
             <ul className="space-y-2.5 text-sm text-sidebar-muted">
               <li><Link to="/about" className="hover:text-sidebar-primary">About</Link></li>
               <li><Link to="/blog-public" className="hover:text-sidebar-primary">Travel Guide Blog</Link></li>
@@ -62,7 +62,7 @@ export function PublicFooter() {
           </div>
 
           <div>
-            <h4 className="font-semibold text-sidebar-accent-foreground mb-4 text-sm">Support</h4>
+            <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-sidebar-accent-foreground"><CircleHelp className="h-4 w-4 text-sidebar-primary" /> Support</h4>
             <ul className="space-y-2.5 text-sm text-sidebar-muted">
               <li><Link to="/faq" className="hover:text-sidebar-primary">Help Center / FAQ</Link></li>
               <li><Link to="/terms" className="hover:text-sidebar-primary">Terms & Conditions</Link></li>
@@ -82,7 +82,7 @@ export function PublicFooter() {
 
         <div className="border-t border-sidebar-border mt-10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs text-sidebar-muted">&copy; {new Date().getFullYear()} Travelian. All rights reserved.</p>
-          <p className="text-xs text-sidebar-muted">{SUPPORT_ADDRESS}</p>
+          <p className="text-xs text-sidebar-muted">Your trusted travel partner</p>
         </div>
       </div>
     </footer>

@@ -65,7 +65,7 @@ export default function DestinationPage() {
       <SEO title={`${destination.name}, ${destination.country} | Travelian`} description={destination.summary} />
       <section className="relative min-h-[420px] overflow-hidden">
         <img src={destination.image} alt={destination.name} className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/85 via-foreground/30 to-transparent" />
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[420px] flex items-end pb-12">
           <div className="max-w-2xl text-white">
             <Badge className="mb-4 bg-white/20 text-white border-white/20">Travelian Destination</Badge>

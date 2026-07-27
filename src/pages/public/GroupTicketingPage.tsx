@@ -126,7 +126,7 @@ function GroupCard({ group, category, index }: { group: GroupTicket; category: s
               {detailOpen ? "Hide Details" : "View Details"}
             </Button>
             <a href={whatsappHref(message)} target="_blank" rel="noreferrer" className="block w-full sm:w-auto">
-              <Button className="w-full rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
+              <Button className="w-full rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp
               </Button>
             </a>
@@ -285,7 +285,7 @@ export default function GroupTicketingPage() {
                 : "Please contact Travelian on WhatsApp for the latest group ticket availability."}
             </p>
             <a href={whatsappHref("Hello Travelian, please share the latest group ticket availability.")} target="_blank" rel="noreferrer">
-              <Button className="mt-5 rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
+              <Button className="mt-5 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp Travelian
               </Button>
             </a>
@@ -300,3 +300,4 @@ export default function GroupTicketingPage() {
     </div>
   );
 }
+

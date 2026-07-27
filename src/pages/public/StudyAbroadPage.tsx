@@ -94,7 +94,7 @@ export default function StudyAbroadPage() {
               <h2 className="mt-2 text-2xl font-black text-sidebar-accent-foreground">Ready to discuss your study plan?</h2>
             </div>
             <a href={whatsappUrl(message)} target="_blank" rel="noreferrer">
-              <Button className="rounded-xl bg-[#25D366] px-5 font-bold text-white hover:bg-[#20bd5a]">
+              <Button className="rounded-xl bg-whatsapp px-5 font-bold text-whatsapp-foreground hover:bg-whatsapp-hover">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp Inquiry
               </Button>
             </a>
@@ -104,3 +104,4 @@ export default function StudyAbroadPage() {
     </div>
   );
 }
+

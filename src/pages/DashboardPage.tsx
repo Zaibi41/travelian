@@ -164,7 +164,7 @@ export default function DashboardPage() {
             <p className="mt-1 text-sm text-muted-foreground">Use support channels for ticketing, payments, refunds, hotels, and urgent billing matters.</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <a href={whatsappUrl("Hello Travelian, I need help with an admin or agency request.")} target="_blank" rel="noreferrer">
-                <Button className="gap-2 rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
+                <Button className="gap-2 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover">
                   <WhatsAppIcon className="h-4 w-4" /> WhatsApp
                 </Button>
               </a>
@@ -221,3 +221,4 @@ function WorkflowCard({ icon: Icon, title, description, href, action }: { icon: 
     </Card>
   );
 }
+

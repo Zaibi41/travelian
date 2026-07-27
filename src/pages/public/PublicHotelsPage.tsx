@@ -203,7 +203,7 @@ export default function PublicHotelsPage() {
                       />
                       <div className="flex items-center gap-0.5">
                         {Array.from({ length: s }).map((_, i) => (
-                          <Star key={i} className="h-3.5 w-3.5 fill-warning text-warning" />
+                          <Star key={i} className="h-3.5 w-3.5 fill-gold text-gold" />
                         ))}
                       </div>
                       <span className="text-xs text-muted-foreground group-hover:text-foreground">{s} Star</span>
@@ -305,11 +305,11 @@ export default function PublicHotelsPage() {
                 {filtered.map(hotel => (
                   <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
                     <Card className="overflow-hidden group hover:shadow-elevated transition-all h-full">
-                      <div className="h-44 bg-gradient-to-br from-warning/10 to-accent relative flex items-center justify-center">
+                      <div className="h-44 bg-gradient-to-br from-primary/5 to-accent relative flex items-center justify-center">
                         <Hotel className="h-12 w-12 text-primary/40 transition-transform group-hover:scale-110" />
                         <div className="absolute top-3 left-3 flex items-center gap-0.5">
                           {Array.from({ length: hotel.starRating }).map((_, i) => (
-                            <Star key={i} className="h-3 w-3 fill-warning text-warning" />
+                            <Star key={i} className="h-3 w-3 fill-gold text-gold" />
                           ))}
                         </div>
                         <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-foreground/40 transition-colors">
@@ -333,7 +333,7 @@ export default function PublicHotelsPage() {
                         </div>
                         <div className="flex items-end justify-between mt-3 pt-3 border-t">
                           <div>
-                            <p className="text-lg font-bold text-foreground">{hotel.currency} {hotel.pricePerNight}<span className="text-[10px] font-normal text-muted-foreground">/night</span></p>
+                            <p className="price-lg">{hotel.currency} {hotel.pricePerNight}<span className="text-[10px] font-normal text-muted-foreground">/night</span></p>
                           </div>
                           <span className="text-[10px] text-muted-foreground">{hotel.rooms} room option{hotel.rooms === 1 ? "" : "s"}</span>
                         </div>
@@ -348,7 +348,7 @@ export default function PublicHotelsPage() {
                   <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
                     <Card className="overflow-hidden hover:shadow-elevated transition-all">
                       <div className="flex flex-col md:flex-row">
-                        <div className="w-full md:w-72 h-48 md:h-auto bg-gradient-to-br from-warning/10 to-accent flex items-center justify-center shrink-0 relative">
+                        <div className="w-full md:w-72 h-48 md:h-auto bg-gradient-to-br from-primary/5 to-accent flex items-center justify-center shrink-0 relative">
                           <Hotel className="h-12 w-12 text-primary/40" />
                           <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground">
                             <Heart className="h-3.5 w-3.5" />
@@ -360,7 +360,7 @@ export default function PublicHotelsPage() {
                               <div>
                                 <div className="flex items-center gap-1 mb-1">
                                   {Array.from({ length: hotel.starRating }).map((_, i) => (
-                                    <Star key={i} className="h-3 w-3 fill-warning text-warning" />
+                                    <Star key={i} className="h-3 w-3 fill-gold text-gold" />
                                   ))}
                                 </div>
                                 <h3 className="font-semibold text-foreground text-lg">{hotel.name}</h3>
@@ -379,7 +379,7 @@ export default function PublicHotelsPage() {
                           <div className="flex items-end justify-between mt-4 pt-3 border-t">
                             <div>
                               <span className="text-xs text-muted-foreground">Per night</span>
-                              <p className="text-2xl font-bold text-foreground">{hotel.currency} {hotel.pricePerNight}</p>
+                              <p className="price-xl">{hotel.currency} {hotel.pricePerNight}</p>
                             </div>
                             <Button className="gradient-primary text-primary-foreground">Select Room</Button>
                           </div>

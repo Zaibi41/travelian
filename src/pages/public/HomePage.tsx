@@ -305,7 +305,7 @@ export default function HomePage() {
                     </div>
                     <div className="flex items-end justify-between mt-4 pt-3 border-t">
                       <div>
-                        <p className="text-xl font-bold text-foreground">PKR {hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
+                        <p className="price-lg">PKR {hotel.pricePerNight}<span className="text-xs font-normal text-muted-foreground">/night</span></p>
                       </div>
                     </div>
                   </CardContent>
@@ -333,7 +333,7 @@ export default function HomePage() {
               <Card key={pkg.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 border-0 shadow-card">
                 <div className="h-40 bg-muted relative overflow-hidden">
                   <PackageImage src={pkg.image} alt={pkg.name} className="absolute inset-0" imageClassName="transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" aria-hidden="true" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/85 via-foreground/30 to-transparent" aria-hidden="true" />
                   <Badge className="absolute top-3 left-3 bg-gold text-gold-foreground border-0 text-xs">
                     <Percent className="h-3 w-3 mr-1" /> Best Value
                   </Badge>
@@ -352,7 +352,7 @@ export default function HomePage() {
                   <div className="flex items-center justify-between mt-3 pt-3 border-t">
                     <div>
                       <span className="text-[10px] text-muted-foreground">{pkg.duration}</span>
-                      <p className="text-lg font-bold text-primary">PKR {pkg.basePrice}</p>
+                      <p className="price-lg">PKR {pkg.basePrice}</p>
                     </div>
                     <Link to={publishedUmrahPackages.length ? `/umrah/${pkg.packageId}` : "/umrah-packages"}>
                       <Button size="sm" className="gradient-primary text-primary-foreground text-xs h-8 rounded-lg">Book Now</Button>
@@ -390,7 +390,7 @@ export default function HomePage() {
                       alt=""
                       className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25" aria-hidden="true" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-foreground/85 via-foreground/30 to-transparent" aria-hidden="true" />
                     <div className="relative z-10 flex h-full min-h-[220px] md:min-h-[260px] lg:min-h-[280px] flex-col justify-end p-5 md:p-6">
                       <div className="flex items-center gap-3 mb-3">
                         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-primary shadow-sm" aria-hidden="true">
@@ -448,9 +448,9 @@ export default function HomePage() {
               <Card key={tour.packageId} className="overflow-hidden group hover:shadow-hover transition-all duration-300 cursor-pointer border-0 shadow-card">
                 <div className="relative h-44 overflow-hidden bg-muted">
                   <PackageImage src={tour.image} alt={tour.name} className="absolute inset-0" imageClassName="transition-transform duration-500 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" aria-hidden="true" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/85 via-foreground/30 to-transparent pointer-events-none" aria-hidden="true" />
                   <Badge className="absolute top-3 left-3 z-10 bg-primary text-primary-foreground border-0 text-xs rounded-lg shadow-sm">{tour.duration}</Badge>
-                  <button type="button" className="absolute top-3 right-3 z-10 h-8 w-8 rounded-full bg-black/35 backdrop-blur-sm flex items-center justify-center text-white hover:bg-black/50 transition-colors">
+                  <button type="button" className="absolute top-3 right-3 z-10 h-8 w-8 rounded-full bg-foreground/35 backdrop-blur-sm flex items-center justify-center text-white hover:bg-foreground/50 transition-colors">
                     <Heart className="h-4 w-4" />
                   </button>
                 </div>
@@ -463,7 +463,7 @@ export default function HomePage() {
                   <div className="flex items-end justify-between mt-4 pt-3 border-t">
                     <div>
                       <span className="text-xs text-muted-foreground">From</span>
-                      <p className="text-xl font-bold text-foreground">PKR {tour.basePrice}</p>
+                      <p className="price-lg">PKR {tour.basePrice}</p>
                     </div>
                     <Button asChild size="sm" variant="outline" className="text-xs h-8 rounded-lg">
                       <Link to="/tour-packages" aria-label={`View details for ${tour.name}`}>View Details</Link>

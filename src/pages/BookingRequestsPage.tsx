@@ -223,7 +223,7 @@ export default function BookingRequestsPage() {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <a href={whatsappUrlFor(item.phone, `Hello ${item.customerName}, regarding your request ${item.requestId}`)} target="_blank" rel="noreferrer">
-                          <Button size="sm" variant="outline" className="gap-1 bg-[#25D366]/10 border-[#25D366]/30 text-[#128C7E] hover:bg-[#25D366]/20">
+                          <Button size="sm" variant="outline" className="gap-1 bg-whatsapp/10 border-whatsapp/30 text-whatsapp hover:bg-whatsapp/20">
                             <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                           </Button>
                         </a>
@@ -255,7 +255,7 @@ export default function BookingRequestsPage() {
                 </div>
                 <div className="flex gap-2 pt-2">
                   <a href={whatsappUrlFor(item.phone, `Hello ${item.customerName}, regarding your request ${item.requestId}`)} target="_blank" rel="noreferrer" className="flex-1">
-                    <Button size="sm" variant="outline" className="w-full gap-1 bg-[#25D366]/10 border-[#25D366]/30 text-[#128C7E]"><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</Button>
+                    <Button size="sm" variant="outline" className="w-full gap-1 bg-whatsapp/10 border-whatsapp/30 text-whatsapp"><MessageCircle className="h-3.5 w-3.5" /> WhatsApp</Button>
                   </a>
                   <Button size="sm" className="flex-1" onClick={() => setEditing(item)}>Manage</Button>
                 </div>
@@ -307,3 +307,4 @@ export default function BookingRequestsPage() {
     </div>
   );
 }
+

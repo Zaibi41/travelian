@@ -44,6 +44,10 @@
     --gold-foreground: 42 78% 15%;
     --gold-light: 42 60% 92%;
 
+    --whatsapp: 142 70% 49%;
+    --whatsapp-foreground: 0 0% 100%;
+    --whatsapp-hover: 142 71% 43%;
+
     --deal: 0 72% 51%;
     --deal-foreground: 0 0% 100%;
 
@@ -124,6 +128,12 @@
   }
   .bg-gold-light {
     background-color: hsl(var(--gold-light));
+  }
+  .price-lg {
+    @apply text-xl font-black tracking-tight text-primary;
+  }
+  .price-xl {
+    @apply text-2xl font-black tracking-tight text-primary;
   }
   .line-clamp-1 {
     display: -webkit-box;

@@ -41,7 +41,7 @@ export default function PublicToursPage() {
               Travelian only displays active tour packages from admin inventory. Our team can still prepare a custom itinerary with hotels, transport, meals and availability dates.
             </p>
             <a href={whatsappUrl("Hello Travelian, please help me with a custom tour package.")} target="_blank" rel="noreferrer">
-              <Button className="mt-5 rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
+              <Button className="mt-5 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> Request a Tour
               </Button>
             </a>
@@ -87,3 +87,4 @@ export default function PublicToursPage() {
     </div>
   );
 }
+

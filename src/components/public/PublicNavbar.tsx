@@ -67,7 +67,7 @@ export function PublicNavbar() {
               href={WHATSAPP_URL}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366] text-white hover:bg-[#20BD5A] font-semibold shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover font-semibold shadow-sm transition-colors"
             >
               <WhatsAppIcon className="h-4 w-4" /> WhatsApp
             </a>
@@ -114,8 +114,7 @@ export function PublicNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex h-16 items-center">
-            <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-11 w-48 object-contain sm:h-12 sm:w-52" />
-            {/* <span className="ml-2 text-xl font-black tracking-tight text-foreground">Travelian</span> */}
+            <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-12 w-auto max-w-[13rem] object-contain sm:h-14 sm:max-w-[15rem]" />
           </Link>
 
           <div className="hidden lg:flex items-center gap-1">
@@ -134,7 +133,7 @@ export function PublicNavbar() {
             ))}
           </div>
 
-          <div className="hidden lg:flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-3">
             {session && (
               <Link to="/my-bookings">
                 <Button variant="ghost" size="sm" className="rounded-lg text-sm">My Bookings</Button>

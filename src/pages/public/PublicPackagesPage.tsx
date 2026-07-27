@@ -36,7 +36,7 @@ export default function PublicPackagesPage() {
               target="_blank"
               rel="noreferrer"
             >
-              <Button className="mt-5 rounded-xl bg-[#25D366] text-white hover:bg-[#20bd5a]">
+              <Button className="mt-5 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> Ask on WhatsApp
               </Button>
             </a>
@@ -91,3 +91,4 @@ export default function PublicPackagesPage() {
     </div>
   );
 }
+
