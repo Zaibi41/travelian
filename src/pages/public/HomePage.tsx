@@ -527,56 +527,135 @@ export default function HomePage() {
       </section>
 
       {/* Reviews and partner proof */}
-      <section className="py-10 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+      <section className="relative py-14 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-muted/40 via-background to-muted/30" />
+        <div className="pointer-events-none absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            {/* Reviews */}
             <div>
-              <div className="mb-5 flex items-center justify-between gap-3">
+              <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Trusted by travelers and agencies</h2>
-                  <p className="text-sm text-muted-foreground">Real support, transparent fares and managed service from search to ticketing.</p>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-light px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-gold-foreground">
+                    <Sparkles className="h-3 w-3" /> Customer love
+                  </span>
+                  <h2 className="mt-3 text-2xl md:text-3xl font-bold font-display text-foreground tracking-tight">Trusted by travelers and agencies</h2>
+                  <p className="mt-1 text-sm text-muted-foreground max-w-xl">Real support, transparent fares and managed service from search to ticketing.</p>
                 </div>
-                <Badge variant="secondary" className="hidden sm:inline-flex rounded-full">4.8 from 12k reviews</Badge>
+                <div className="flex items-center gap-2 rounded-2xl border bg-card px-4 py-2.5 shadow-card">
+                  <div className="flex items-center gap-0.5 text-gold">
+                    {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" />)}
+                  </div>
+                  <div className="leading-tight">
+                    <p className="text-sm font-bold text-foreground">4.8 / 5</p>
+                    <p className="text-[10px] text-muted-foreground">12,400+ reviews</p>
+                  </div>
+                </div>
               </div>
+
               <div className="grid gap-4 md:grid-cols-3">
                 {reviewCards.map((review) => (
-                  <Card key={review.name} className="border-0 shadow-card">
-                    <CardContent className="p-5">
-                      <div className="mb-3 flex items-center justify-between">
-                        <div className="flex items-center gap-1 text-gold">
-                          {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" />)}
-                        </div>
-                        <span className="text-xs font-bold text-primary">{review.rating}</span>
+                  <Card key={review.name} className="group relative overflow-hidden border-0 shadow-card transition-all hover:-translate-y-1 hover:shadow-hover">
+                    <div className="absolute inset-x-0 top-0 h-1 gradient-gold" />
+                    <CardContent className="p-6">
+                      <Quote className="h-6 w-6 text-primary/20" />
+                      <p className="mt-3 text-sm leading-relaxed text-foreground">"{review.quote}"</p>
+                      <div className="mt-1 flex items-center gap-1 text-gold">
+                        {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-3 w-3 fill-current" />)}
+                        <span className="ml-1 text-[11px] font-bold text-foreground">{review.rating}</span>
                       </div>
-                      <p className="text-sm text-foreground">"{review.quote}"</p>
-                      <div className="mt-4 border-t pt-3">
-                        <p className="text-sm font-semibold text-foreground">{review.name}</p>
-                        <p className="text-xs text-muted-foreground">{review.trip}</p>
+                      <div className="mt-4 flex items-center gap-3 border-t pt-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-primary-foreground text-xs font-bold shadow-premium">
+                          {review.initials}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-foreground truncate">{review.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{review.trip}</p>
+                        </div>
+                        <BadgeCheck className="h-4 w-4 text-primary" aria-label={review.verified} />
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
+
+              <div className="mt-6 flex flex-wrap items-center gap-2">
+                {trustHighlights.map((item) => (
+                  <span key={item.label} className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-card">
+                    <item.icon className="h-3.5 w-3.5 text-primary" />
+                    {item.label}
+                  </span>
+                ))}
+              </div>
             </div>
-            <Card className="border-0 shadow-card">
-              <CardContent className="p-5">
-                <h3 className="font-bold text-foreground">Connected supplier network</h3>
-                <p className="mt-1 text-xs text-muted-foreground">Availability depends on live supplier health and contract configuration.</p>
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  {partnerNames.map((name) => (
-                    <div key={name} className="rounded-xl border bg-background px-3 py-2 text-center text-xs font-semibold text-muted-foreground">
-                      {name}
+
+            {/* Supplier network */}
+            <Card className="relative overflow-hidden border-0 shadow-elevated bg-gradient-to-br from-card via-card to-accent/40">
+              <div className="absolute inset-x-0 top-0 h-1 gradient-primary" />
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-accent-foreground">
+                      <Network className="h-3 w-3" /> Live network
+                    </span>
+                    <h3 className="mt-3 text-xl font-bold font-display text-foreground tracking-tight">Connected supplier network</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">Availability depends on live supplier health and contract configuration.</p>
+                  </div>
+                  <div className="hidden sm:flex h-11 w-11 items-center justify-center rounded-xl gradient-primary text-primary-foreground shadow-premium">
+                    <Plane className="h-5 w-5" />
+                  </div>
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  {supplierGroups.map((group) => (
+                    <div key={group.label}>
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{group.label}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {group.items.map((name) => (
+                          <span
+                            key={name}
+                            className="inline-flex items-center gap-1 rounded-lg border bg-background px-2.5 py-1.5 text-[11px] font-semibold text-foreground/80 shadow-card transition-colors hover:border-primary/40 hover:text-primary"
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                            {name}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
-                <div className="mt-5 grid grid-cols-2 gap-2">
-                  <div className="rounded-xl bg-primary px-4 py-3 text-primary-foreground">
-                    <p className="text-[10px] uppercase tracking-wide opacity-75">Coming soon</p>
-                    <p className="text-sm font-bold">iOS App</p>
+
+                <div className="mt-5 grid grid-cols-3 gap-2 rounded-xl border bg-background/60 p-3 text-center">
+                  <div>
+                    <p className="text-lg font-bold font-display text-foreground">15+</p>
+                    <p className="text-[10px] text-muted-foreground">Suppliers</p>
                   </div>
-                  <div className="rounded-xl bg-foreground px-4 py-3 text-background">
-                    <p className="text-[10px] uppercase tracking-wide opacity-75">Coming soon</p>
-                    <p className="text-sm font-bold">Android App</p>
+                  <div className="border-x">
+                    <p className="text-lg font-bold font-display text-foreground">900+</p>
+                    <p className="text-[10px] text-muted-foreground">Airlines via GDS</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold font-display text-foreground">2M+</p>
+                    <p className="text-[10px] text-muted-foreground">Hotels worldwide</p>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2 rounded-xl bg-foreground px-3 py-2.5 text-background">
+                    <Apple className="h-5 w-5 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[9px] uppercase tracking-wide opacity-70">Coming soon</p>
+                      <p className="text-xs font-bold truncate">iOS App</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-xl gradient-primary px-3 py-2.5 text-primary-foreground">
+                    <Smartphone className="h-5 w-5 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[9px] uppercase tracking-wide opacity-80">Coming soon</p>
+                      <p className="text-xs font-bold truncate">Android App</p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
