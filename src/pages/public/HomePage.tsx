@@ -3,7 +3,7 @@ import { SEO } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, MapPin, ArrowRight, Shield, Headphones, TrendingUp, Heart, ChevronRight, Percent, Globe, Award, Hotel } from "lucide-react";
+import { Star, MapPin, ArrowRight, Shield, Headphones, TrendingUp, Heart, ChevronRight, Percent, Globe, Award, Hotel, Quote, BadgeCheck, Plane, Network, Sparkles, Apple, Smartphone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getBlogImage } from "@/lib/blog-images";
 import { PackageImage } from "@/components/public/PackageImage";
