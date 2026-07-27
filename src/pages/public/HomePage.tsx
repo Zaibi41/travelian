@@ -71,12 +71,22 @@ const fallbackUmrah = [
 ];
 
 const reviewCards = [
-  { name: "Ayesha Khan", trip: "Lahore to Dubai", quote: "Travelian found the right fare quickly and kept the whole booking calm.", rating: "4.9" },
-  { name: "Bilal Travels", trip: "Agency Umrah group", quote: "The team handled changes, invoices and passenger follow-up without delays.", rating: "4.8" },
-  { name: "Sana Malik", trip: "Family Turkey tour", quote: "Hotels, transfers and support were exactly what we expected.", rating: "5.0" },
+  { name: "Ayesha Khan", trip: "Lahore to Dubai", quote: "Travelian found the right fare quickly and kept the whole booking calm.", rating: "4.9", initials: "AK", verified: "Verified traveler" },
+  { name: "Bilal Travels", trip: "Agency Umrah group", quote: "The team handled changes, invoices and passenger follow-up without delays.", rating: "4.8", initials: "BT", verified: "B2B partner" },
+  { name: "Sana Malik", trip: "Family Turkey tour", quote: "Hotels, transfers and support were exactly what we expected.", rating: "5.0", initials: "SM", verified: "Verified traveler" },
 ];
 
-const partnerNames = ["Travelport", "PIA", "AirSial", "flydubai", "Etihad", "Qatar Airways", "Fly Jinnah"];
+const supplierGroups = [
+  { label: "GDS & Aggregators", items: ["Travelport", "Sabre", "Amadeus"] },
+  { label: "Airlines", items: ["PIA", "AirSial", "flydubai", "Etihad", "Qatar Airways", "Fly Jinnah", "Saudia", "Turkish Airlines"] },
+  { label: "Hotel & Content", items: ["Hotelbeds", "Expedia TAAP"] },
+];
+
+const trustHighlights = [
+  { icon: Shield, label: "PCI-DSS secured payments" },
+  { icon: BadgeCheck, label: "IATA-affiliated agency" },
+  { icon: Headphones, label: "24/7 WhatsApp & phone" },
+];
 
 export default function HomePage() {
   const { hotels, packages, tourPackages, blogPosts, loadHotelContent } = useAdmin();
