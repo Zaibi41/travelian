@@ -102,7 +102,7 @@ export default function ContactPage() {
 
           <div className="space-y-4">
             {[
-              { icon: MapPin, title: "Address", detail: "Johar Town, Lahore" },
+              { icon: MapPin, title: "Address", detail: "589-J2, Johar Town Lahore" },
               { icon: Phone, title: "Phone", detail: "+92 324 4440014" },
               { icon: Mail, title: "Email", detail: "travelian.pk@gmail.com" },
               { icon: Clock, title: "Working Hours", detail: "Mon-Sat: 9AM - 6PM" },

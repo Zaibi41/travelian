@@ -3,7 +3,7 @@ import { BriefcaseBusiness, Building2, CircleHelp, Mail, MapPin, Phone, Facebook
 import { Button } from "@/components/ui/button";
 import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
 
-const SUPPORT_ADDRESS = "Johar Town, Lahore";
+const SUPPORT_ADDRESS = "589-J2, Johar Town Lahore";
 
 export function PublicFooter() {
   const scrollToTop = () => {
