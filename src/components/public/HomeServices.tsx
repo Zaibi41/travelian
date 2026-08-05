@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Plane, Hotel, KaabaIcon, MapPinned } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const services = [
