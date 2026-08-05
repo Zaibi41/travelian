@@ -44,6 +44,10 @@
     --gold-foreground: 42 78% 15%;
     --gold-light: 42 60% 92%;
 
+    --teal: 184 70% 34%;
+    --teal-foreground: 0 0% 100%;
+    --teal-soft: 184 55% 94%;
+
     --whatsapp: 142 70% 49%;
     --whatsapp-foreground: 0 0% 100%;
     --whatsapp-hover: 142 71% 43%;
