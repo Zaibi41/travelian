@@ -10,6 +10,12 @@ import { PackageImage } from "@/components/public/PackageImage";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { useEffect } from "react";
+import { HomeWhyBook } from "@/components/public/HomeWhyBook";
+import { HomeServices } from "@/components/public/HomeServices";
+import { HomeSupplierNetwork } from "@/components/public/HomeSupplierNetwork";
+import { HomeHowItWorks } from "@/components/public/HomeHowItWorks";
+import { HomeB2B } from "@/components/public/HomeB2B";
+import { HomeSupportCta } from "@/components/public/HomeSupportCta";
 
 const destinations = [
   { name: "Makkah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=400&h=500&fit=crop&q=80", badge: "Popular", priceFrom: 165000 },
