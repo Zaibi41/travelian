@@ -97,9 +97,9 @@ const supplierGroups = [
 ];
 
 const trustHighlights = [
-  { icon: Shield, label: "PCI-DSS secured payments" },
-  { icon: BadgeCheck, label: "IATA-affiliated agency" },
-  { icon: Headphones, label: "24/7 WhatsApp & phone" },
+  { icon: Shield, label: "Secure payment options" },
+  { icon: BadgeCheck, label: "Registered travel company" },
+  { icon: Headphones, label: "WhatsApp & office support" },
 ];
 
 export default function HomePage() {
