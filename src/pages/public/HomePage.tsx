@@ -198,7 +198,7 @@ export default function HomePage() {
             {heroBadges.map((b) => (
               <span
                 key={b.label}
-                className="inline-flex items-center gap-2 rounded-full bg-white/8 px-3.5 py-2 text-xs font-semibold text-primary-foreground/85 ring-1 ring-white/12 backdrop-blur"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/8 px-3 py-1.5 text-[11px] md:px-3.5 md:py-2 md:text-xs font-semibold text-primary-foreground/85 ring-1 ring-white/12 backdrop-blur"
               >
                 <b.icon className="h-3.5 w-3.5 text-gold" />
                 {b.label}
@@ -211,7 +211,8 @@ export default function HomePage() {
       {/* Trust Bar */}
       <section className="py-6 bg-card border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+
             {features.map((f) => (
               <div key={f.title} className="flex items-center gap-3 p-3 rounded-xl transition-colors hover:bg-muted/40">
                 <div className="h-10 w-10 shrink-0 rounded-xl bg-gold-light flex items-center justify-center">
