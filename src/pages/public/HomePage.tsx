@@ -26,12 +26,20 @@ const destinations = [
   { name: "Madinah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?w=400&h=500&fit=crop&q=80", badge: "Holy City", priceFrom: 158000 },
 ];
 
-const features = [
-  { icon: TrendingUp, title: "1M+ trips booked", desc: "Trusted by travelers across Pakistan" },
-  { icon: Star, title: "4.8 / 5 rating", desc: "From 12,400+ verified reviews" },
-  { icon: Shield, title: "PCI-DSS secure", desc: "Bank-grade encryption on every payment" },
-  { icon: Headphones, title: "24/7 human support", desc: "WhatsApp, phone and email support" },
+const heroBadges = [
+  { icon: Shield, label: "Secure payments" },
+  { icon: Headphones, label: "WhatsApp booking support" },
+  { icon: Globe, label: "B2B & B2C travel platform" },
+  { icon: BadgeCheck, label: "Transparent fare guidance" },
 ];
+
+const features = [
+  { icon: BadgeCheck, title: "Registered travel company", desc: "Operating from Johar Town, Lahore" },
+  { icon: Shield, title: "Secure payment options", desc: "Confirmed bookings with written details" },
+  { icon: Headphones, title: "WhatsApp & office support", desc: "Talk to a real travel consultant" },
+  { icon: Globe, title: "B2B agent solutions", desc: "Tools and support for partner agencies" },
+];
+
 
 const topCountries = [
   { country: "Saudi Arabia", popular: ["Makkah", "Madinah", "Riyadh", "Jeddah"], image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=900&h=620&fit=crop&q=80", priceFrom: 158000, properties: 320 },
