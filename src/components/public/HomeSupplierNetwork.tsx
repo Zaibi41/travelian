@@ -22,13 +22,9 @@ const suppliers: Supplier[] = [
 const badges = ["GDS", "NDC", "Airline APIs", "LCCs", "Aggregator"];
 
 function initials(name: string) {
-  return name
-    .split(/[\s/]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase();
+  const words = name.split(/[\s/]+/).filter(Boolean);
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return words.slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 }
 
 export function HomeSupplierNetwork() {
