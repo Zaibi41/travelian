@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, Phone, Globe, ChevronDown, LogOut, Plane, Hotel, Kaaba, FileCheck2, Palmtree, Percent, Users, Building2 } from "lucide-react";
+import { Menu, X, User, Phone, Globe, ChevronDown, LogOut, Plane, Hotel, FileCheck2, Palmtree, Percent, Users, Building2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { clearSession, getSession, useSessionEvent, type AuthSession } from "@/lib/auth-session";
