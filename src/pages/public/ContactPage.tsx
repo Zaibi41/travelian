@@ -151,24 +151,33 @@ export default function ContactPage() {
 
           <div className="space-y-4">
             {[
-              { icon: MapPin, title: "Address", detail: "589-J2, Johar Town Lahore" },
-              { icon: Phone, title: "Phone", detail: "+92 324 4440014" },
-              { icon: Mail, title: "Email", detail: "travelian.pk@gmail.com" },
-              { icon: Clock, title: "Working Hours", detail: "Mon-Sat: 9AM - 6PM" },
+              { icon: MapPin, title: "Office", detail: "589-J2, Johar Town Lahore" },
+              { icon: Phone, title: "Phone", detail: SUPPORT_PHONE_DISPLAY },
+              { icon: Mail, title: "Email", detail: SUPPORT_EMAIL },
+              { icon: Clock, title: "Working Hours", detail: "Mon-Sat: 9AM - 6PM (PKT)" },
             ].map((item) => (
-              <Card key={item.title}>
+              <Card key={item.title} className="border-0 shadow-card">
                 <CardContent className="p-4 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-accent flex items-center justify-center shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
                     <item.icon className="h-5 w-5 text-primary" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-line">{item.detail}</p>
+                    <p className="text-sm text-muted-foreground break-words whitespace-pre-line">{item.detail}</p>
                   </div>
                 </CardContent>
               </Card>
             ))}
+            <div className="rounded-2xl border bg-muted/40 p-4">
+              <p className="text-sm font-semibold text-foreground">Why travellers contact us first</p>
+              <ul className="mt-2 space-y-1.5 text-xs leading-6 text-muted-foreground">
+                <li>Transparent fare guidance before you pay</li>
+                <li>Secure online payments and instant booking reference</li>
+                <li>Human support on WhatsApp and phone</li>
+              </ul>
+            </div>
           </div>
+
         </div>
       </div>
     </div>
