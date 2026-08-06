@@ -22,7 +22,7 @@ export function PageHeader({ title, tagline, eyebrow, icon, breadcrumb }: Props)
         )}
         {eyebrow && <p className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-gold">{eyebrow}</p>}
         <h1 className="text-3xl md:text-4xl font-black font-display text-primary-foreground tracking-tight">{title}</h1>
-        <p className="mx-auto mt-3 max-w-2xl text-primary-foreground/78 text-sm md:text-base leading-7">{tagline}</p>
+        <p className="mx-auto mt-3 max-w-2xl text-primary-foreground/80 text-sm md:text-base leading-7">{tagline}</p>
       </div>
     </section>
   );
