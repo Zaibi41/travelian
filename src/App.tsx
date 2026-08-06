@@ -21,7 +21,7 @@ import FlightDetailPage from "./pages/public/FlightDetailPage";
 import PublicPackagesPage from "./pages/public/PublicPackagesPage";
 import PublicToursPage from "./pages/public/PublicToursPage";
 import PublicVisaPage from "./pages/public/PublicVisaPage";
-import StudyAbroadPage from "./pages/public/StudyAbroadPage";
+
 import PublicBlogPage from "./pages/public/PublicBlogPage";
 import ContactPage from "./pages/public/ContactPage";
 import AboutPage from "./pages/public/AboutPage";
@@ -97,7 +97,7 @@ const App = () => (
             <Route path="/umrah-packages" element={<PublicLayout><PublicPackagesPage /></PublicLayout>} />
             <Route path="/umrah/:id" element={<PublicLayout><UmrahDetailPage /></PublicLayout>} />
             <Route path="/tour-packages" element={<PublicLayout><PublicToursPage /></PublicLayout>} />
-            <Route path="/study-abroad" element={<PublicLayout><StudyAbroadPage /></PublicLayout>} />
+            <Route path="/study-abroad" element={<Navigate to="/visa-services?type=study" replace />} />
             <Route path="/visa-services" element={<PublicLayout><PublicVisaPage /></PublicLayout>} />
             <Route path="/blog-public" element={<PublicLayout><PublicBlogPage /></PublicLayout>} />
             <Route path="/blog/:slug" element={<PublicLayout><BlogDetailPage /></PublicLayout>} />

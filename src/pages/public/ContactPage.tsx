@@ -5,8 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Mail, Phone, MapPin, Clock, CheckCircle2 } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, CheckCircle2, Headphones } from "lucide-react";
 import { toast } from "sonner";
+import { SEO } from "@/components/SEO";
+import { PageHeader } from "@/components/public/PageHeader";
+import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
@@ -47,14 +51,59 @@ export default function ContactPage() {
 
   return (
     <div>
-      <section className="bg-gradient-to-br from-sidebar to-sidebar-accent py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold font-display text-sidebar-accent-foreground mb-2">Contact Us</h1>
-          <p className="text-sidebar-muted">We're here to help with your travel needs</p>
-        </div>
-      </section>
+      <SEO
+        title="Contact Travelian | Flights, Umrah, Visa & Hotel Support"
+        description="Talk to the Travelian team about flights, Umrah packages, visas, hotels and tours. Call, WhatsApp or send us a message and we reply within 24 hours."
+      />
+      <PageHeader
+        eyebrow="We're here to help"
+        title="Contact Travelian"
+        tagline="Speak to a real travel consultant about fares, Umrah packages, visa documents or a booking you have already made."
+        icon={<Headphones className="h-6 w-6" />}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="mb-8 grid gap-3 sm:grid-cols-3">
+          <a
+            href={whatsappUrl("Hi Travelian, I need help with my travel plans.")}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-3 rounded-2xl border bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-hover"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-whatsapp text-whatsapp-foreground">
+              <WhatsAppIcon className="h-5 w-5" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-foreground">Chat on WhatsApp</span>
+              <span className="block text-xs text-muted-foreground">Fastest reply during working hours</span>
+            </span>
+          </a>
+          <a
+            href={`tel:${SUPPORT_PHONE_TEL}`}
+            className="flex items-center gap-3 rounded-2xl border bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-hover"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+              <Phone className="h-5 w-5" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold text-foreground">{SUPPORT_PHONE_DISPLAY}</span>
+              <span className="block text-xs text-muted-foreground">Call our travel desk</span>
+            </span>
+          </a>
+          <a
+            href={`mailto:${SUPPORT_EMAIL}`}
+            className="flex items-center gap-3 rounded-2xl border bg-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:shadow-hover"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gold-light text-gold-foreground">
+              <Mail className="h-5 w-5" />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-foreground">{SUPPORT_EMAIL}</span>
+              <span className="block text-xs text-muted-foreground">Email our support team</span>
+            </span>
+          </a>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <Card>
@@ -102,24 +151,33 @@ export default function ContactPage() {
 
           <div className="space-y-4">
             {[
-              { icon: MapPin, title: "Address", detail: "589-J2, Johar Town Lahore" },
-              { icon: Phone, title: "Phone", detail: "+92 324 4440014" },
-              { icon: Mail, title: "Email", detail: "travelian.pk@gmail.com" },
-              { icon: Clock, title: "Working Hours", detail: "Mon-Sat: 9AM - 6PM" },
+              { icon: MapPin, title: "Office", detail: "589-J2, Johar Town Lahore" },
+              { icon: Phone, title: "Phone", detail: SUPPORT_PHONE_DISPLAY },
+              { icon: Mail, title: "Email", detail: SUPPORT_EMAIL },
+              { icon: Clock, title: "Working Hours", detail: "Mon-Sat: 9AM - 6PM (PKT)" },
             ].map((item) => (
-              <Card key={item.title}>
+              <Card key={item.title} className="border-0 shadow-card">
                 <CardContent className="p-4 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-accent flex items-center justify-center shrink-0">
+                  <div className="h-10 w-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
                     <item.icon className="h-5 w-5 text-primary" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                    <p className="text-sm text-muted-foreground whitespace-pre-line">{item.detail}</p>
+                    <p className="text-sm text-muted-foreground break-words whitespace-pre-line">{item.detail}</p>
                   </div>
                 </CardContent>
               </Card>
             ))}
+            <div className="rounded-2xl border bg-muted/40 p-4">
+              <p className="text-sm font-semibold text-foreground">Why travellers contact us first</p>
+              <ul className="mt-2 space-y-1.5 text-xs leading-6 text-muted-foreground">
+                <li>Transparent fare guidance before you pay</li>
+                <li>Secure online payments and instant booking reference</li>
+                <li>Human support on WhatsApp and phone</li>
+              </ul>
+            </div>
           </div>
+
         </div>
       </div>
     </div>

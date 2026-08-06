@@ -80,9 +80,9 @@ export function PublicFooter() {
           </div>
         </div>
 
-        <div className="border-t border-sidebar-border mt-10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="border-t border-sidebar-border mt-10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 pb-16 md:pb-0 md:pr-20">
           <p className="text-xs text-sidebar-muted">&copy; {new Date().getFullYear()} Travelian. All rights reserved.</p>
-          <p className="text-xs text-sidebar-muted">Your trusted travel partner</p>
+          <p className="text-xs text-sidebar-muted">Registered travel company · Secure online payments · 24/7 human support</p>
         </div>
       </div>
     </footer>

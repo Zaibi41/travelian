@@ -77,19 +77,20 @@ export function HomeSupplierNetwork() {
                 key={s.name}
                 className="group rounded-2xl bg-white/[0.07] p-4 ring-1 ring-white/10 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.12] hover:ring-white/25"
               >
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center justify-between gap-2">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-[11px] font-black tracking-tight text-gold ring-1 ring-white/10">
                     {initials(s.name)}
                   </span>
                   <Plane className="h-3.5 w-3.5 shrink-0 text-primary-foreground/25 transition-colors group-hover:text-teal" />
                 </div>
                 <p className="mt-3 truncate text-sm font-bold text-primary-foreground">{s.name}</p>
-                <p className="mt-0.5 truncate text-[11px] uppercase tracking-wide text-primary-foreground/55">
-                  {s.kind}
-                </p>
+                <span className="mt-2 inline-flex max-w-full items-center gap-1 rounded-md bg-teal/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-teal ring-1 ring-teal/25">
+                  <span className="truncate">{s.kind}</span>
+                </span>
               </div>
             ))}
           </div>
+
         </div>
       </div>
     </section>

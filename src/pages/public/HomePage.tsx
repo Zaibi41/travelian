@@ -16,6 +16,7 @@ import { HomeSupplierNetwork } from "@/components/public/HomeSupplierNetwork";
 import { HomeHowItWorks } from "@/components/public/HomeHowItWorks";
 import { HomeB2B } from "@/components/public/HomeB2B";
 import { HomeSupportCta } from "@/components/public/HomeSupportCta";
+import { HomeFaq } from "@/components/public/HomeFaq";
 
 const destinations = [
   { name: "Makkah", country: "Saudi Arabia", image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=400&h=500&fit=crop&q=80", badge: "Popular", priceFrom: 165000 },
@@ -637,6 +638,7 @@ export default function HomePage() {
       </section>
 
       <HomeB2B />
+      <HomeFaq />
       <HomeSupportCta />
     </div>
   );
