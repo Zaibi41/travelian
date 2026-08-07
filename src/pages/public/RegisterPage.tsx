@@ -98,7 +98,7 @@ export default function RegisterPage() {
               <div className="space-y-1.5 sm:col-span-2">
                 <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="code">Verification code</Label>
                 <div className="relative">
-                  <KeyRound className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                  <KeyRound className="absolute left-3 top-4 h-4 w-4 text-muted-foreground" />
                   <Input id="code" name="code" inputMode="numeric" placeholder="Enter email code" className="h-12 rounded-xl bg-muted/30 pl-9" />
                 </div>
                 <p className="text-xs text-muted-foreground">We sent a code to {pendingEmail}.</p>
@@ -108,28 +108,28 @@ export default function RegisterPage() {
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="fullName">Full name</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <User className="absolute left-3 top-4 h-4 w-4 text-muted-foreground" />
                   <Input id="fullName" name="fullName" autoComplete="name" placeholder="Your name" className="h-12 rounded-xl bg-muted/30 pl-9" />
                 </div>
               </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="email">Email</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-4 h-4 w-4 text-muted-foreground" />
                   <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" className="h-12 rounded-xl bg-muted/30 pl-9" />
                 </div>
               </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="mobile">Mobile number</Label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <Phone className="absolute left-3 top-4 h-4 w-4 text-muted-foreground" />
                     <Input id="mobile" name="mobile" type="tel" autoComplete="tel" placeholder="+92 300 0000000" className="h-12 rounded-xl bg-muted/30 pl-9" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="accountType">Account type</Label>
                   <div className="relative">
-                    <Briefcase className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                    <Briefcase className="absolute left-3 top-4 h-4 w-4 text-muted-foreground" />
                     <select id="accountType" name="accountType" defaultValue="customer" className="h-12 w-full rounded-xl border border-input bg-muted/30 pl-9 pr-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                       <option value="customer">Customer</option>
                       <option value="partner">Travel Partner</option>

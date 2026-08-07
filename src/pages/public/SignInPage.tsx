@@ -74,7 +74,7 @@ export default function SignInPage() {
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-4 h-4 w-4 text-muted-foreground" />
                   <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" className="h-12 rounded-xl bg-muted/30 pl-9" />
                 </div>
               </div>
