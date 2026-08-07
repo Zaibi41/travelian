@@ -19,12 +19,13 @@ export default function PublicBlogPage() {
 
   return (
     <div>
-      <section className="bg-gradient-to-br from-sidebar to-sidebar-accent py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold font-display text-sidebar-accent-foreground mb-2">Travel Blog</h1>
-          <p className="text-sidebar-muted">Tips, guides, and inspiration for your next adventure</p>
-        </div>
-      </section>
+      <PageHeader
+        eyebrow="Travel guide"
+        icon={<BookOpen className="h-5 w-5" />}
+        title="Travelian Travel Blog"
+        tagline="Practical guides on flights, Umrah, visas and destinations — written for Pakistani travellers."
+      />
+
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -29,17 +29,17 @@ export default function DealsPage() {
 
   return (
     <div>
-      {/* Hero */}
-      <section className="gradient-deal py-12 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 right-20 w-64 h-64 bg-primary-foreground/20 rounded-full blur-3xl" />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 mb-4"><Flame className="h-3 w-3 mr-1" /> Limited Time Offers</Badge>
-          <h1 className="text-3xl md:text-4xl font-extrabold font-display text-primary-foreground mb-3">Deals & Promotions</h1>
-          <p className="text-primary-foreground/70 max-w-xl mx-auto">Exclusive discounts on hotels, flights, and packages. Don't miss out!</p>
-        </div>
-      </section>
+      <SEO
+        title="Travel Deals & Promo Codes | Travelian"
+        description="Current Travelian promo codes and travel offers on flights, hotels, Umrah packages and tours. Verified deals only, no expired listings."
+      />
+      <PageHeader
+        eyebrow="Limited time"
+        icon={<Flame className="h-5 w-5" />}
+        title="Deals & Promotions"
+        tagline="Active discounts on flights, hotels, Umrah packages and tours — published straight from Travelian inventory, never expired."
+      />
+
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Flash Deals */}
