@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plane, Loader2, Mail } from "lucide-react";
+import { Plane, Loader2, Mail, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { signInWithPassword } from "@/lib/cognito-auth";
 import { isAdminPortalRole, roleForSession } from "@/lib/role-mapping";
@@ -42,24 +42,39 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="relative h-full min-h-0 overflow-hidden flex items-center justify-center gradient-hero px-4 py-3">
+    <div className="relative flex h-full min-h-0 items-center justify-center overflow-y-auto gradient-hero px-4 py-4">
       <div className="absolute inset-0 opacity-10 pointer-events-none" aria-hidden="true">
         <div className="absolute left-10 top-10 h-72 w-72 rounded-full bg-primary/40 blur-3xl" />
         <div className="absolute bottom-0 right-12 h-80 w-80 rounded-full bg-gold/25 blur-3xl" />
       </div>
-      <Card className="relative w-full max-w-md shadow-hover border border-primary-foreground/10">
-        <CardContent className="p-6 sm:p-8">
-          <Link to="/" className="flex items-center justify-center gap-2 mb-5">
-            <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-16 w-60 object-contain" />
-            {/* <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary"> */}
-              {/* <Plane className="h-5 w-5 text-primary-foreground" /> */}
-            {/* </div> */}
-            {/* <span className="text-xl font-extrabold font-display">Travelian</span> */}
+      <Card className="relative w-full max-w-4xl overflow-hidden border border-primary-foreground/10 shadow-hover">
+        <CardContent className="grid p-0 md:grid-cols-[0.9fr_1.1fr]">
+          <div className="hidden min-h-[420px] flex-col justify-between bg-primary p-6 text-primary-foreground md:flex">
+            <div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15">
+                <Plane className="h-5 w-5" />
+              </div>
+              <h2 className="mt-5 text-3xl font-extrabold font-display">Welcome back to Travelian</h2>
+              <p className="mt-3 text-sm leading-relaxed text-primary-foreground/75">
+                Sign in to manage bookings, e-tickets and requests — customers and travel partners use the same login.
+              </p>
+            </div>
+            <ul className="grid gap-2.5 text-sm text-primary-foreground/85">
+              {["Secure account access", "All trips and e-tickets in one place", "WhatsApp & office support"].map(item => (
+                <li key={item} className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-gold" /> {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="p-6 sm:p-8">
+          <Link to="/" className="flex items-center justify-center gap-2 mb-4">
+            <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-14 w-52 object-contain" />
           </Link>
-          <h1 className="text-2xl font-bold text-center text-foreground">Welcome back</h1>
+          <h1 className="text-2xl font-bold text-center text-foreground">Sign in to your account</h1>
           <p className="text-sm text-muted-foreground text-center mt-1">Access your trips, bookings, and agency workspace</p>
 
-          <form onSubmit={signIn} className="mt-7 space-y-4">
+          <form onSubmit={signIn} className="mt-6 space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
@@ -89,8 +104,10 @@ export default function SignInPage() {
           <p className="text-center text-sm text-muted-foreground mt-5">
             New to Travelian? <Link to="/register" className="text-primary font-semibold hover:underline">Create an account</Link>
           </p>
+          </div>
         </CardContent>
       </Card>
+
     </div>
   );
 }
