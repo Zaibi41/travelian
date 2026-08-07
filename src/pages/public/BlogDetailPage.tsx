@@ -27,7 +27,7 @@ export default function BlogDetailPage() {
     return (
       <div className="max-w-3xl mx-auto px-4 py-20 text-center">
         <h1 className="text-2xl font-bold">Article not found</h1>
-        <Link to="/blog-public"><Button className="mt-6">Back to blog</Button></Link>
+        <Link to="/blog"><Button className="mt-6">Back to blog</Button></Link>
       </div>
     );
   }
@@ -35,7 +35,7 @@ export default function BlogDetailPage() {
   return (
     <article className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <SEO title={`${post.title} | Travelian Blog`} description={post.excerpt} />
-      <Link to="/blog-public" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+      <Link to="/blog" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4 mr-1" /> All articles
       </Link>
       <div className="mt-6 flex flex-wrap items-center gap-3">

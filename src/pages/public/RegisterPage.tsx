@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plane, UserPlus, Loader2, Mail, User, KeyRound, Phone, Briefcase } from "lucide-react";
+import { Plane, UserPlus, Loader2, Mail, User, KeyRound, Phone, Briefcase, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { confirmSignUp, signUpWithPassword } from "@/lib/cognito-auth";
 import { PasswordInput } from "@/components/PasswordInput";
@@ -87,11 +87,14 @@ export default function RegisterPage() {
                 Create a customer account for faster bookings, or choose Travel Partner to start the agency onboarding review.
               </p>
             </div>
-            <div className="grid gap-2 text-sm text-primary-foreground/80">
-              <span>Verified travel support</span>
-              <span>Secure account access</span>
-              <span>Partner onboarding ready</span>
-            </div>
+            <ul className="grid gap-2.5 text-sm text-primary-foreground/85">
+              {["Verified travel support", "Secure account access", "Partner onboarding ready"].map(item => (
+                <li key={item} className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-gold" /> {item}
+                </li>
+              ))}
+            </ul>
+
           </div>
           <div className="p-5 sm:p-5">
           <Link to="/" className="mb-2 flex items-center justify-center">

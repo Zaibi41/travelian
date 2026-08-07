@@ -549,7 +549,7 @@ export default function HomePage() {
               <p className="text-sm text-muted-foreground">Tips, guides, and inspiration</p>
             </div>
             <Button variant="outline" size="sm" asChild className="rounded-lg">
-              <Link to="/blog-public">View all <ArrowRight className="h-4 w-4 ml-1" /></Link>
+              <Link to="/blog">View all <ArrowRight className="h-4 w-4 ml-1" /></Link>
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
