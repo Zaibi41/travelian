@@ -7,6 +7,7 @@ import { listBlogPosts } from "@/lib/content-api";
 import { getBlogImage } from "@/lib/blog-images";
 import { PageHeader } from "@/components/public/PageHeader";
 import { BookOpen } from "lucide-react";
+import { SEO } from "@/components/SEO";
 
 export default function PublicBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -21,6 +22,10 @@ export default function PublicBlogPage() {
 
   return (
     <div>
+      <SEO
+        title="Travel Guides & Blog | Travelian"
+        description="Travel guides for Pakistani travellers: Umrah planning, flight booking tips, visa requirements and hotel recommendations from the Travelian team."
+      />
       <PageHeader
         eyebrow="Travel guide"
         icon={<BookOpen className="h-5 w-5" />}
