@@ -96,71 +96,71 @@ export default function RegisterPage() {
 
             {pendingEmail ? (
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="code">Verification code</Label>
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="code">Verification code</Label>
                 <div className="relative">
                   <KeyRound className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                  <Input id="code" name="code" inputMode="numeric" placeholder="Enter email code" className="h-11 pl-9" />
+                  <Input id="code" name="code" inputMode="numeric" placeholder="Enter email code" className="h-12 rounded-xl bg-muted/30 pl-9" />
                 </div>
                 <p className="text-xs text-muted-foreground">We sent a code to {pendingEmail}.</p>
               </div>
             ) : (
               <>
                 <div className="space-y-1.5">
-                  <Label htmlFor="fullName">Full name</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="fullName">Full name</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                  <Input id="fullName" name="fullName" autoComplete="name" placeholder="Your name" className="h-11 pl-9" />
+                  <Input id="fullName" name="fullName" autoComplete="name" placeholder="Your name" className="h-12 rounded-xl bg-muted/30 pl-9" />
                 </div>
               </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="email">Email</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="email">Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                  <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" className="h-11 pl-9" />
+                  <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" className="h-12 rounded-xl bg-muted/30 pl-9" />
                 </div>
               </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="mobile">Mobile number</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="mobile">Mobile number</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                    <Input id="mobile" name="mobile" type="tel" autoComplete="tel" placeholder="+92 300 0000000" className="h-11 pl-9" />
+                    <Input id="mobile" name="mobile" type="tel" autoComplete="tel" placeholder="+92 300 0000000" className="h-12 rounded-xl bg-muted/30 pl-9" />
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="accountType">Account type</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="accountType">Account type</Label>
                   <div className="relative">
                     <Briefcase className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                    <select id="accountType" name="accountType" defaultValue="customer" className="h-11 w-full rounded-md border border-input bg-background pl-9 pr-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                    <select id="accountType" name="accountType" defaultValue="customer" className="h-12 w-full rounded-xl border border-input bg-muted/30 pl-9 pr-3 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                       <option value="customer">Customer</option>
                       <option value="partner">Travel Partner</option>
                     </select>
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="password">Password</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="password">Password</Label>
                   <PasswordInput id="password" name="password" autoComplete="new-password" placeholder="At least 8 characters" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="confirmPassword">Confirm password</Label>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground" htmlFor="confirmPassword">Confirm password</Label>
                   <PasswordInput id="confirmPassword" name="confirmPassword" autoComplete="new-password" placeholder="Repeat password" />
                 </div>
-                <label className="sm:col-span-2 flex items-start gap-3 rounded-lg border border-border/70 bg-muted/30 p-3 text-xs text-muted-foreground">
+                <label className="sm:col-span-2 flex items-start gap-3 rounded-xl border border-border/70 bg-muted/30 p-3 text-xs text-muted-foreground">
                   <input name="terms" type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-primary" />
                   <span className="leading-5">I agree to the <Link to="/terms" className="text-primary hover:underline">Terms</Link> and <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.</span>
                 </label>
               </>
             )}
-            <Button type="submit" disabled={loading} className="w-full h-11 gradient-primary text-primary-foreground font-semibold sm:col-span-2">
+            <Button type="submit" disabled={loading} className="h-12 w-full rounded-xl gradient-primary text-base font-semibold text-primary-foreground shadow-elegant transition-transform hover:-translate-y-0.5 sm:col-span-2">
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
               {pendingEmail ? "Verify Account" : "Create Account"}
             </Button>
           </form>
 
-          <p className="mt-2 text-xs text-muted-foreground text-center">
+          <p className="mt-4 text-xs text-muted-foreground text-center">
             Travel partners are reviewed by the Travelian team before agency access is enabled.
           </p>
 
-          <p className="text-center text-sm text-muted-foreground mt-2">
+          <p className="text-center text-sm text-muted-foreground mt-3">
             Already a member? <Link to="/signin" className="text-primary font-semibold hover:underline">Sign in</Link>
           </p>
           </div>
