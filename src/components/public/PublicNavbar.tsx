@@ -30,7 +30,7 @@ const productLinks = [
 
 const moreLinks = [
   { label: "Group Ticketing", href: "/group-ticketing" },
-  { label: "Travel Guide Blog", href: "/blog-public" },
+  { label: "Travel Guide Blog", href: "/blog" },
   { label: "About Travelian", href: "/about" },
   { label: "Contact Us", href: "/contact" },
   { label: "Help Center / FAQ", href: "/faq" },

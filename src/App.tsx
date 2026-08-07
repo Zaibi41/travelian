@@ -99,7 +99,8 @@ const App = () => (
             <Route path="/tour-packages" element={<PublicLayout><PublicToursPage /></PublicLayout>} />
             <Route path="/study-abroad" element={<Navigate to="/visa-services?type=study" replace />} />
             <Route path="/visa-services" element={<PublicLayout><PublicVisaPage /></PublicLayout>} />
-            <Route path="/blog-public" element={<PublicLayout><PublicBlogPage /></PublicLayout>} />
+            <Route path="/blog" element={<PublicLayout><PublicBlogPage /></PublicLayout>} />
+            <Route path="/blog-public" element={<Navigate to="/blog" replace />} />
             <Route path="/blog/:slug" element={<PublicLayout><BlogDetailPage /></PublicLayout>} />
             <Route path="/tour/:id" element={<PublicLayout><TourDetailPage /></PublicLayout>} />
             <Route path="/visa/:id" element={<PublicLayout><VisaDetailPage /></PublicLayout>} />
