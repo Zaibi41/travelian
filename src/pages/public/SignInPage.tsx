@@ -10,6 +10,8 @@ import { signInWithPassword } from "@/lib/cognito-auth";
 import { isAdminPortalRole, roleForSession } from "@/lib/role-mapping";
 import { useRole } from "@/contexts/RoleContext";
 import { PasswordInput } from "@/components/PasswordInput";
+import { AuthAside } from "@/components/public/AuthAside";
+
 
 export default function SignInPage() {
   const navigate = useNavigate();
