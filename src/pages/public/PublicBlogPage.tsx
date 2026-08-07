@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import type { BlogPost } from "@/data/models";
 import { listBlogPosts } from "@/lib/content-api";
 import { getBlogImage } from "@/lib/blog-images";
+import { PageHeader } from "@/components/public/PageHeader";
+import { BookOpen } from "lucide-react";
 
 export default function PublicBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);

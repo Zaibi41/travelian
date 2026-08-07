@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
+import { PageHeader } from "@/components/public/PageHeader";
 import { useAdmin } from "@/contexts/AdminStore";
 import type { Hotel } from "@/data/models";
 
