@@ -8,6 +8,8 @@ import { Plane, UserPlus, Loader2, Mail, User, KeyRound, Phone, Briefcase, Shiel
 import { toast } from "sonner";
 import { confirmSignUp, signUpWithPassword } from "@/lib/cognito-auth";
 import { PasswordInput } from "@/components/PasswordInput";
+import { AuthAside } from "@/components/public/AuthAside";
+
 import { rememberAccountRole } from "@/lib/role-mapping";
 import type { UserRole } from "@/data/models";
 
