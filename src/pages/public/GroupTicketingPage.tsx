@@ -240,13 +240,10 @@ export default function GroupTicketingPage() {
 
   return (
     <div>
-      <PageHeader title="Group Ticketing" tagline="Live group ticket availability from Travelian" />
+      <PageHeader title="Group Ticketing" tagline="Live group ticket availability from Travelian">
+        <SearchTabs initialTab="group-ticketing" groupInitialValues={searchFilters} onGroupSearch={handleSearch} />
+      </PageHeader>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        <GroupTicketingSearchBar
-          initialValues={searchFilters}
-          onSearch={handleSearch}
-          showLabels
-        />
         <GroupTicketingCategories compact />
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -255,7 +252,7 @@ export default function GroupTicketingPage() {
                 <ArrowLeft className="h-4 w-4" /> All group tickets
               </Link>
             )}
-            <h1 className="text-2xl font-bold text-foreground">{label}</h1>
+            <h2 className="text-2xl font-bold text-foreground">{label}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               {filterSummary(searchFilters)}
               {status === "success" ? ` · ${filteredGroups.length} ticket${filteredGroups.length === 1 ? "" : "s"}` : ""}
