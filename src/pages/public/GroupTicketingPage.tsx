@@ -8,7 +8,7 @@ import { AirlineLogo } from "@/components/public/AirlineLogo";
 import { PageHeader } from "@/components/public/PageHeader";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { GroupTicketingCategories } from "@/components/public/GroupTicketingCategories";
-import { GroupTicketingSearchBar } from "@/components/public/GroupTicketingSearchBar";
+import { SearchTabs } from "@/components/public/SearchTabs";
 import { whatsappUrl } from "@/lib/site-config";
 import {
   buildGroupTicketSearchParams,
