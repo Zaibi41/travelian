@@ -55,7 +55,7 @@ export function PublicFooter() {
             <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-sidebar-accent-foreground"><Building2 className="h-4 w-4 text-sidebar-primary" /> Company</h4>
             <ul className="space-y-2.5 text-sm text-sidebar-muted">
               <li><Link to="/about" className="hover:text-sidebar-primary">About</Link></li>
-              <li><Link to="/blog" className="hover:text-sidebar-primary">Travel Guide Blog</Link></li>
+              
               <li><Link to="/contact" className="hover:text-sidebar-primary">Contact Us</Link></li>
               <li><Link to="/careers" className="hover:text-sidebar-primary">Careers</Link></li>
             </ul>

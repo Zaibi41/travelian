@@ -177,18 +177,12 @@ export default function HomePage() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-gold ring-1 ring-white/15 backdrop-blur animate-fade-in">
-              <Sparkles className="h-3 w-3" /> B2B &amp; B2C travel platform
-            </span>
-            <h1 className="mt-4 text-2xl md:text-4xl font-black font-display leading-tight tracking-tight text-primary-foreground animate-fade-in-up">
+            <h1 className="text-2xl md:text-4xl font-black font-display leading-tight tracking-tight text-primary-foreground animate-fade-in-up">
               Book Flights, Umrah, Visas, Hotels &amp; Tours with Travelian
             </h1>
-            <p className="mx-auto mt-3 max-w-2xl text-sm md:text-base leading-7 text-primary-foreground/75 animate-fade-in">
-              A modern travel platform for Pakistani travellers, families, businesses and B2B travel agents.
-            </p>
           </div>
 
-          <div className="relative mt-6 md:mt-8">
+          <div className="relative mt-5 md:mt-7">
             <div className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-white/5 blur-2xl" aria-hidden="true" />
             <div className="relative">
               <SearchTabs />

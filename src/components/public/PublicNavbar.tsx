@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, Phone, Globe, ChevronDown, LogOut, Plane, Hotel, FileCheck2, Palmtree, Percent, Users, Building2 } from "lucide-react";
+import { Menu, X, User, Phone, Globe, ChevronDown, LogOut, Plane, Hotel, FileCheck2, Palmtree, Building2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { clearSession, getSession, useSessionEvent, type AuthSession } from "@/lib/auth-session";
@@ -25,12 +25,10 @@ const productLinks = [
   { label: "Umrah", href: "/umrah-packages", icon: Building2 },
   { label: "Visas", href: "/visa-services", icon: FileCheck2 },
   { label: "Tours", href: "/tour-packages", icon: Palmtree },
-  { label: "Deals", href: "/deals", icon: Percent },
 ];
 
 const moreLinks = [
   { label: "Group Ticketing", href: "/group-ticketing" },
-  { label: "Travel Guide Blog", href: "/blog" },
   { label: "About Travelian", href: "/about" },
   { label: "Contact Us", href: "/contact" },
   { label: "Help Center / FAQ", href: "/faq" },
@@ -169,12 +167,6 @@ export function PublicNavbar() {
           </div>
 
           <div className="hidden lg:flex shrink-0 items-center gap-2">
-            <Link
-              to="/about#agents"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-teal hover:bg-teal-soft transition-colors"
-            >
-              <Users className="h-4 w-4" /> For Agents
-            </Link>
             {session ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -280,14 +272,8 @@ export function PublicNavbar() {
                     {l.label}
                   </Link>
                 ))}
-                <Link
-                  to="/about#agents"
-                  onClick={() => setMobileOpen(false)}
-                  className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-teal hover:bg-teal-soft"
-                >
-                  For Travel Agents (B2B)
-                </Link>
               </div>
+
             </div>
 
             <div className="grid grid-cols-2 gap-2">

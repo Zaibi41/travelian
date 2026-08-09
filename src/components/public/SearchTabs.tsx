@@ -73,9 +73,11 @@ type SearchTabsProps = {
   initialTab?: string;
   visibleTabIds?: string[];
   flightResultsPath?: string;
+  groupInitialValues?: Parameters<typeof GroupTicketingSearchBar>[0]["initialValues"];
+  onGroupSearch?: Parameters<typeof GroupTicketingSearchBar>[0]["onSearch"];
 };
 
-export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResultsPath = "/flights-search" }: SearchTabsProps = {}) {
+export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResultsPath = "/flights-search", groupInitialValues, onGroupSearch }: SearchTabsProps = {}) {
   const { currency } = useLocale();
   const visibleTabs = visibleTabIds?.length ? tabs.filter((tab) => visibleTabIds.includes(tab.id)) : tabs;
   const [activeTab, setActiveTab] = useState(visibleTabs.some((tab) => tab.id === initialTab) ? initialTab : visibleTabs[0]?.id || "flights");
@@ -224,7 +226,7 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
           <button
             key={tab.id}
             onClick={() => {
-              if (tab.id === "group-ticketing") {
+              if (tab.id === "group-ticketing" && initialTab !== "group-ticketing") {
                 navigate("/group-ticketing");
                 return;
               }
@@ -426,7 +428,13 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
 
         {activeTab === "group-ticketing" && (
           <GroupTicketingSearchBar
+            initialValues={groupInitialValues}
+            showLabels
             onSearch={(values) => {
+              if (onGroupSearch) {
+                onGroupSearch(values);
+                return;
+              }
               const params = buildGroupTicketSearchParams(values);
               const query = params.toString();
               navigate(query ? `/group-ticketing?${query}` : "/group-ticketing");
