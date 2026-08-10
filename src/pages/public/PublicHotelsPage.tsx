@@ -100,16 +100,30 @@ export default function PublicHotelsPage() {
   return (
     <div>
       {/* Search Header */}
-      <section className="gradient-hero py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-2xl md:text-3xl font-bold font-display text-primary-foreground mb-4">Hotels & Accommodation</h1>
-          <div className="flex gap-2 max-w-3xl">
+      <section className="relative isolate overflow-hidden gradient-hero py-8 md:py-10">
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div
+            className="absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage: "radial-gradient(circle at 1px 1px, hsl(0 0% 100%) 1px, transparent 0)",
+              backgroundSize: "22px 22px",
+            }}
+          />
+          <div className="absolute -top-24 left-1/2 h-80 w-[34rem] -translate-x-1/2 rounded-full bg-primary/35 blur-3xl" />
+          <div className="absolute -bottom-16 right-8 h-64 w-64 rounded-full bg-teal/20 blur-3xl" />
+          <div className="absolute -bottom-24 left-0 h-56 w-56 rounded-full bg-gold/15 blur-3xl" />
+        </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-gold">Stay with Travelian</p>
+          <h1 className="text-2xl md:text-3xl font-black font-display tracking-tight text-primary-foreground">Hotels &amp; Accommodation</h1>
+          <p className="mt-2 max-w-xl text-sm text-primary-foreground/80">Compare verified properties with transparent rates and human booking support.</p>
+          <div className="mt-5 flex flex-col gap-2 rounded-2xl bg-card p-3 shadow-elevated sm:flex-row sm:items-center max-w-3xl">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search hotel, city, or destination..." className="pl-9 h-11 bg-card" value={search} onChange={e => setSearch(e.target.value)} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search hotel, city, or destination..." className="pl-9 h-12 rounded-xl bg-muted/30 border-muted" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
             <Button
-              className="gradient-primary text-primary-foreground h-11"
+              className="gradient-primary text-primary-foreground h-12 rounded-xl px-6 font-semibold"
               onClick={() => setParams(new URLSearchParams({
                 location: search || "Dubai",
                 checkIn: params.get("checkIn") || new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 10),
@@ -117,7 +131,7 @@ export default function PublicHotelsPage() {
                 adults: params.get("adults") || "2",
                 currency,
               }))}
-            ><Search className="h-4 w-4" /></Button>
+            ><Search className="h-4 w-4 mr-2" /> Search hotels</Button>
           </div>
         </div>
       </section>

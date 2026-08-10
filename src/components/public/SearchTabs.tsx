@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Hotel, Plane, Car, Package, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets } from "lucide-react";
+import { Hotel, Plane, Car, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +18,6 @@ const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
   { id: "group-ticketing", label: "Group Ticketing", icon: Tickets },
   { id: "hotels", label: "Hotels", icon: Hotel },
-  { id: "packages", label: "Packages", icon: Package },
   { id: "transfers", label: "Transfers", icon: Car },
 ];
 
@@ -185,7 +184,6 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
       });
       navigate(`/hotels-search?${params.toString()}`);
     }
-    else if (activeTab === "packages") navigate("/umrah-packages");
     else if (activeTab === "transfers") {
       const params = new URLSearchParams({
         pickup: transferPickup || "Dubai International Airport",
