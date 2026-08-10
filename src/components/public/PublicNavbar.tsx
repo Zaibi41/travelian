@@ -74,7 +74,7 @@ export function PublicNavbar() {
             <span className="hidden xl:inline text-xs text-muted-foreground">Registered travel company · Transparent fare guidance</span>
           </div>
           <div className="flex items-center gap-1">
-            <Link to="/request-booking" className="hidden xl:inline-flex px-2 py-1 rounded-md text-xs font-semibold text-muted-foreground hover:text-foreground">
+            <Link to="/request-booking" className="inline-flex px-2.5 py-1 rounded-md text-xs font-semibold text-primary hover:bg-accent transition-colors">
               Request a booking
             </Link>
             <a
@@ -146,12 +146,6 @@ export function PublicNavbar() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              to="/request-booking"
-              className="ml-1 px-3 py-2 rounded-lg text-sm font-semibold text-primary hover:bg-accent transition-colors"
-            >
-              Request a booking
-            </Link>
 
           </div>
 
