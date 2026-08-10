@@ -88,7 +88,6 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
   const [hotelCheckOut, setHotelCheckOut] = useState<Date>();
   const [hotelLocation, setHotelLocation] = useState("");
   const [hotelGuests, setHotelGuests] = useState("2");
-  const [pkgDate, setPkgDate] = useState<Date>();
   const [transDate, setTransDate] = useState<Date>();
   const [transferPickup, setTransferPickup] = useState("");
   const [transferDropoff, setTransferDropoff] = useState("");

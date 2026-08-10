@@ -25,14 +25,10 @@ const productLinks = [
   { label: "Umrah", href: "/umrah-packages", icon: Building2 },
   { label: "Visas", href: "/visa-services", icon: FileCheck2 },
   { label: "Tours", href: "/tour-packages", icon: Palmtree },
+  { label: "About", href: "/about", icon: Info },
+  { label: "Contact", href: "/contact", icon: MessageSquare },
 ];
 
-const moreLinks = [
-  { label: "Group Ticketing", href: "/group-ticketing" },
-  { label: "About Travelian", href: "/about" },
-  { label: "Contact Us", href: "/contact" },
-  { label: "Help Center / FAQ", href: "/faq" },
-];
 
 const SUPPORT_PHONE = SUPPORT_PHONE_DISPLAY;
 const WHATSAPP_URL = whatsappUrl("Hi, I need help with a Travelian booking.");
