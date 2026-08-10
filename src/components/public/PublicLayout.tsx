@@ -13,14 +13,22 @@ export function PublicLayout({ children, showFooter = true }: { children: React.
         <>
         <MoveToTopButton />
         <a
-          href={whatsappUrl("Hi, I need help with a Travelian booking.")}
+          href={whatsappUrl("Assalam o Alaikum Travelian, I need help with a booking.")}
           target="_blank"
           rel="noreferrer"
           aria-label="Chat with Travelian on WhatsApp"
-          className="fixed bottom-5 right-5 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-xl shadow-emerald-900/20 transition-transform hover:scale-105"
+          className="group fixed bottom-5 right-5 z-50 flex items-center gap-3 rounded-full bg-primary/95 p-1.5 pr-1.5 sm:pr-5 text-primary-foreground shadow-xl ring-1 ring-white/15 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-primary hover:shadow-2xl"
         >
-          <WhatsAppIcon className="h-7 w-7" />
+          <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-md transition-transform duration-300 group-hover:scale-105">
+            <span className="absolute inset-0 rounded-full bg-whatsapp/50 animate-ping opacity-40" aria-hidden="true" />
+            <WhatsAppIcon className="relative h-6 w-6" />
+          </span>
+          <span className="hidden sm:flex flex-col leading-tight">
+            <span className="text-sm font-bold">Chat with Travelian</span>
+            <span className="text-[11px] font-medium text-gold">Online support</span>
+          </span>
         </a>
+
         </>
       )}
       {showFooter && <PublicFooter />}

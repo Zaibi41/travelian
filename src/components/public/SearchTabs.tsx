@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Hotel, Plane, Car, Package, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets } from "lucide-react";
+import { Hotel, Plane, Car, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +18,6 @@ const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
   { id: "group-ticketing", label: "Group Ticketing", icon: Tickets },
   { id: "hotels", label: "Hotels", icon: Hotel },
-  { id: "packages", label: "Packages", icon: Package },
   { id: "transfers", label: "Transfers", icon: Car },
 ];
 
@@ -89,7 +88,6 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
   const [hotelCheckOut, setHotelCheckOut] = useState<Date>();
   const [hotelLocation, setHotelLocation] = useState("");
   const [hotelGuests, setHotelGuests] = useState("2");
-  const [pkgDate, setPkgDate] = useState<Date>();
   const [transDate, setTransDate] = useState<Date>();
   const [transferPickup, setTransferPickup] = useState("");
   const [transferDropoff, setTransferDropoff] = useState("");
@@ -185,7 +183,6 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
       });
       navigate(`/hotels-search?${params.toString()}`);
     }
-    else if (activeTab === "packages") navigate("/umrah-packages");
     else if (activeTab === "transfers") {
       const params = new URLSearchParams({
         pickup: transferPickup || "Dubai International Airport",
@@ -409,22 +406,8 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
           </div>
         )}
 
-        {activeTab === "packages" && (
-          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-3 items-center">
-            <div className="relative">
-              <Package className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Umrah, Hajj, or custom package..." className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <DatePickerField date={pkgDate} onSelect={setPkgDate} placeholder="Travel date" />
-            <div className="relative">
-              <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Travelers" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
-              <Search className="h-4 w-4 mr-2" /> Search
-            </Button>
-          </div>
-        )}
+
+
 
         {activeTab === "group-ticketing" && (
           <GroupTicketingSearchBar

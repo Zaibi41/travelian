@@ -11,7 +11,6 @@ import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { useEffect } from "react";
 import { HomeWhyBook } from "@/components/public/HomeWhyBook";
-import { HomeServices } from "@/components/public/HomeServices";
 import { HomeSupplierNetwork } from "@/components/public/HomeSupplierNetwork";
 import { HomeHowItWorks } from "@/components/public/HomeHowItWorks";
 import { HomeB2B } from "@/components/public/HomeB2B";
@@ -224,7 +223,6 @@ export default function HomePage() {
       </section>
 
       <HomeWhyBook />
-      <HomeServices />
       <HomeSupplierNetwork />
 
 

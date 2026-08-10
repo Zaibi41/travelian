@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, Phone, Globe, ChevronDown, LogOut, Plane, Hotel, FileCheck2, Palmtree, Building2 } from "lucide-react";
+import { Menu, X, User, Phone, Globe, ChevronDown, LogOut, Plane, Hotel, FileCheck2, Palmtree, Building2, Info, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { clearSession, getSession, useSessionEvent, type AuthSession } from "@/lib/auth-session";
@@ -25,14 +25,10 @@ const productLinks = [
   { label: "Umrah", href: "/umrah-packages", icon: Building2 },
   { label: "Visas", href: "/visa-services", icon: FileCheck2 },
   { label: "Tours", href: "/tour-packages", icon: Palmtree },
+  { label: "About", href: "/about", icon: Info },
+  { label: "Contact", href: "/contact", icon: MessageSquare },
 ];
 
-const moreLinks = [
-  { label: "Group Ticketing", href: "/group-ticketing" },
-  { label: "About Travelian", href: "/about" },
-  { label: "Contact Us", href: "/contact" },
-  { label: "Help Center / FAQ", href: "/faq" },
-];
 
 const SUPPORT_PHONE = SUPPORT_PHONE_DISPLAY;
 const WHATSAPP_URL = whatsappUrl("Hi, I need help with a Travelian booking.");
@@ -78,7 +74,7 @@ export function PublicNavbar() {
             <span className="hidden xl:inline text-xs text-muted-foreground">Registered travel company · Transparent fare guidance</span>
           </div>
           <div className="flex items-center gap-1">
-            <Link to="/request-booking" className="hidden xl:inline-flex px-2 py-1 rounded-md text-xs font-semibold text-muted-foreground hover:text-foreground">
+            <Link to="/request-booking" className="inline-flex px-2.5 py-1 rounded-md text-xs font-semibold text-primary hover:bg-accent transition-colors">
               Request a booking
             </Link>
             <a
@@ -150,20 +146,7 @@ export function PublicNavbar() {
                 {link.label}
               </Link>
             ))}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors">
-                  More <ChevronDown className="h-3.5 w-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="z-[60] w-56 bg-popover">
-                {moreLinks.map((l) => (
-                  <DropdownMenuItem key={l.href} onClick={() => navigate(l.href)} className="text-sm">
-                    {l.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+
           </div>
 
           <div className="hidden lg:flex shrink-0 items-center gap-2">
@@ -260,21 +243,16 @@ export function PublicNavbar() {
             </div>
 
             <div>
-              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Company & support</p>
-              <div className="space-y-0.5">
-                {moreLinks.map((l) => (
-                  <Link
-                    key={l.href}
-                    to={l.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="block rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50"
-                  >
-                    {l.label}
-                  </Link>
-                ))}
-              </div>
-
+              <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Support</p>
+              <Link
+                to="/request-booking"
+                onClick={() => setMobileOpen(false)}
+                className="block rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50"
+              >
+                Request a booking
+              </Link>
             </div>
+
 
             <div className="grid grid-cols-2 gap-2">
               <a
