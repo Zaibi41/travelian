@@ -18,7 +18,9 @@ function formatPrice(value?: number) {
 export default function UmrahDetailPage() {
   const { id } = useParams();
   const { packages } = useAdmin();
-  const item = packages.find((entry) => entry.packageId === id && isPublishedUmrahPackage(entry));
+  const adminItem = packages.find((entry) => entry.packageId === id && isPublishedUmrahPackage(entry));
+  const seedOffer = findSeedUmrahOffer(id);
+  const item = adminItem ?? (seedOffer ? umrahOfferToPackage(seedOffer) : undefined);
 
   if (!item) {
     return (
