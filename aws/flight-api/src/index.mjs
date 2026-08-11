@@ -37,6 +37,7 @@ import {
   upsertTicket
 } from "./services/content.mjs";
 import { notifyAdminOfBookingRequest, runJourneyReminders } from "./services/notifications.mjs";
+import { createPayFastSession, updatePayFastPayment } from "./services/payfast.mjs";
 import { requireFields, validateHotelSearchRequest, validateSearchRequest, validateTransferSearchRequest } from "./validation.mjs";
 import { requireApiAuth } from "./auth.mjs";
 
@@ -73,6 +74,8 @@ const routes = {
   "GET /content/bookings": listBookingContent,
   "POST /content/bookings": saveBookingContent,
   "PATCH /content/bookings/{bookingId}": updateBookingContent,
+  "POST /payments/payfast/session": createPayFastPaymentSession,
+  "POST /payments/payfast/callback": payFastPaymentCallback,
   "DELETE /content/tickets/{ticketId}": removeTicketContent,
   "GET /content/customers": listCustomerContent,
   "POST /content/customers": saveCustomerContent,
@@ -314,6 +317,25 @@ async function updateBookingContent(event, path) {
     throw error;
   }
   return { item: await upsertBookingRecord({ ...existing, ...body, id: bookingId }) };
+}
+
+async function createPayFastPaymentSession(event) {
+  return { item: await createPayFastSession(await readJson(event)) };
+}
+
+async function payFastPaymentCallback(event) {
+  return { item: await updatePayFastPayment(await readPaymentPayload(event)) };
+}
+
+async function readPaymentPayload(event) {
+  const contentType = event.headers?.["content-type"] || event.headers?.["Content-Type"] || "";
+  if (contentType.toLowerCase().includes("application/json")) return readJson(event);
+
+  const raw = event.isBase64Encoded
+    ? Buffer.from(event.body || "", "base64").toString("utf8")
+    : event.body || "";
+  if (!raw) return {};
+  return Object.fromEntries(new URLSearchParams(raw));
 }
 
 async function removeTicketContent(event, path) {

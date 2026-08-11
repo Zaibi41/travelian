@@ -13,9 +13,12 @@ Travelian is a B2B and B2C travel platform for Pakistan-based travel operations.
 
 1. Pull latest from `origin/main` before code changes.
 2. Read the exact files before editing them.
-3. Do not hardcode credentials, provider tokens, API keys, Cognito IDs, bucket names, or production URLs in business logic.
-4. Prefer environment variables and AWS Secrets Manager for configuration.
-5. Do not break confirmed flows:
+3. Do not make UI, layout, styling, branding, copy, spacing, or visual-design changes unless the user explicitly asks for that UI change.
+4. Before making any UI-facing change, first tell the user exactly what will change in this format: "I am going to change `<current behavior/design>` to `<new behavior/design>`." Wait for the user's direction if the UI change was not explicitly requested.
+5. Do not make speculative "premium polish" or redesign changes while working on backend, API, data, deployment, or bug-fix tasks unless the user explicitly includes UI work in the request.
+6. Do not hardcode credentials, provider tokens, API keys, Cognito IDs, bucket names, or production URLs in business logic.
+7. Prefer environment variables and AWS Secrets Manager for configuration.
+8. Do not break confirmed flows:
    - Multi-provider flight search.
    - Content CRUD for packages, tickets, bookings, blogs, customers.
    - Booking requests and admin notifications.
@@ -23,8 +26,8 @@ Travelian is a B2B and B2C travel platform for Pakistan-based travel operations.
    - Package image upload to S3.
    - Skypass proxy routes.
    - Group ticketing categories, list, and detail.
-6. Test before pushing. For frontend changes run `npm run build` and `npm test -- --run`.
-7. Push the completed branch after successful verification.
+9. Test before pushing. For frontend changes run `npm run build` and `npm test -- --run`.
+10. Push the completed branch after successful verification.
 
 ## Architecture
 
@@ -61,6 +64,9 @@ All backend values should be environment-driven.
 | `SKYPASS_CLIENT_SECRET_ID` | Secrets Manager ID for Skypass client key. |
 | `NOTIFICATION_FROM_EMAIL` | SES sender address. |
 | `NOTIFICATION_PROVIDER_SECRET_ID` | Secrets Manager ID for notification provider credentials. |
+| `PAYFAST_SECRET_ID` | Secrets Manager ID for PayFast merchant configuration. Defaults to `travelian/payments/payfast`. |
+| `PAYFAST_SUCCESS_URL` | Optional default hosted-payment success URL. Can also come from the PayFast secret. |
+| `PAYFAST_FAILURE_URL` | Optional default hosted-payment failure URL. Can also come from the PayFast secret. |
 | `TRAVELIAN_TIME_ZONE` | Time zone for reminders, default `Asia/Karachi`. |
 | `SECRET_CACHE_TTL_MS` | Optional Secrets Manager cache TTL. |
 | `ALLOW_MISSING_SECRETS` | Development escape hatch only. Do not enable in production. |

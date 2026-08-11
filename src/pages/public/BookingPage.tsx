@@ -14,6 +14,7 @@ import { Link, useSearchParams } from "react-router-dom";
 // import { SeatMap } from "@/components/booking/SeatMap";
 import { saveServerBooking } from "@/lib/booking-api";
 import { saveBooking, type BookingRecord, type BookingTraveler } from "@/lib/booking-store";
+import { createPayFastSession, submitHostedPayment } from "@/lib/payment-api";
 import { downloadETicket } from "@/lib/eticket-pdf";
 import { toast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
@@ -462,12 +463,12 @@ export default function BookingPage() {
     return <ServiceBookingRequest productCtx={productCtx} />;
   }
 
-  // Payment validation (card only)
+  // Hosted online payments are collected on PayFast, not inside Travelian.
   const cardNumberValid = cardNumber.replace(/\s/g, "").length >= 13 && /^\d+$/.test(cardNumber.replace(/\s/g, ""));
   const cardExpiryValid = /^(0[1-9]|1[0-2])\/\d{2}$/.test(cardExpiry);
   const cardCvvValid = /^\d{3,4}$/.test(cardCvv);
   const cardNameValid = cardName.trim().length >= 3;
-  const paymentValid = paymentMethod !== "card" || (cardNumberValid && cardExpiryValid && cardCvvValid && cardNameValid);
+  const paymentValid = true;
 
   const requestPay = () => {
     setPaymentTouched(true);
@@ -477,13 +478,40 @@ export default function BookingPage() {
 
   const handlePay = async () => {
     setPayConfirmOpen(false);
-    await persistBooking({
+    const saved = await persistBooking({
       status: "pending_payment",
       paymentMethod,
       paymentStatus: "pending",
-      toastTitle: "Payment request saved",
-      toastDescription: "Travelian has saved this booking and will complete payment processing from the admin panel.",
+      toastTitle: "Redirecting to payment",
+      toastDescription: "Travelian has saved this booking and is opening the secure PayFast checkout.",
     });
+    if (!saved || !["card", "1link"].includes(paymentMethod)) return;
+
+    try {
+      setProcessing(true);
+      const session = await createPayFastSession({
+        bookingId: saved.id,
+        amount: saved.pricing.total,
+        currency: saved.pricing.currency,
+        customerName: `${saved.travelers[0]?.firstName || ""} ${saved.travelers[0]?.lastName || ""}`.trim() || "Travelian Customer",
+        customerEmail: saved.contact.email,
+        customerPhone: saved.contact.phone,
+        description: `${productCtx.title} ${productCtx.subtitle}`.trim(),
+        method: paymentMethod === "1link" ? "1link" : "card",
+        successUrl: `${window.location.origin}/my-bookings?payment=success&bookingId=${encodeURIComponent(saved.id)}`,
+        failureUrl: `${window.location.origin}/booking?payment=failed&bookingId=${encodeURIComponent(saved.id)}`,
+      });
+      submitHostedPayment(session);
+    } catch (error) {
+      console.error("Unable to start PayFast checkout", error);
+      toast({
+        title: "Online payment unavailable",
+        description: error instanceof Error ? error.message : "Please try again or hold the booking for manual payment.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const buildTravelers = (): BookingTraveler[] => {
@@ -514,11 +542,11 @@ export default function BookingPage() {
     paymentStatus: BookingRecord["paymentStatus"];
     toastTitle: string;
     toastDescription: string;
-  }) => {
+  }): Promise<BookingRecord | null> => {
     setTouched(true);
     if (!isStep1Valid) {
       setStep(1);
-      return;
+      return null;
     }
     setProcessing(true);
     try {
@@ -571,6 +599,7 @@ export default function BookingPage() {
         title: toastTitle,
         description: toastDescription,
       });
+      return saved;
     } finally {
       setProcessing(false);
     }
@@ -965,7 +994,8 @@ export default function BookingPage() {
                   <p className="text-sm text-muted-foreground mb-6">Choose how you'd like to pay</p>
                   <div className="space-y-3 mb-6">
                     {([
-                      { id: "card", label: "Credit/Debit Card", icon: CreditCard, desc: "Available after gateway configuration", badges: ["Visa", "Mastercard"] as string[] },
+                      { id: "card", label: "Credit/Debit Card", icon: CreditCard, desc: "Pay online through secure PayFast checkout", badges: ["Visa", "Mastercard"] as string[] },
+                      { id: "1link", label: "1Link", icon: Wallet, desc: "Pay through PayFast 1Link checkout", badges: ["1Link"] as string[] },
                       { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "Available after wallet payment configuration", badges: ["JazzCash", "Easypaisa"] as string[] },
                       { id: "bank", label: "Bank Transfer", icon: Building2, desc: "Direct bank transfer", badges: [] as string[] },
                     ]).map(method => (
@@ -999,59 +1029,20 @@ export default function BookingPage() {
                   </div>
 
                   {paymentMethod === "card" && (
-                    <div className="space-y-4 border-t pt-5">
-                      <div>
-                        <Label className="text-sm font-medium">Card Number *</Label>
-                        <Input
-                          inputMode="numeric"
-                          placeholder="1234 5678 9012 3456"
-                          className="mt-1.5 h-11 rounded-xl"
-                          value={cardNumber}
-                          onChange={e => setCardNumber(formatCardNumber(e.target.value))}
-                        />
-                        {paymentTouched && !cardNumberValid && <p className="text-xs text-destructive mt-1">Enter a valid card number</p>}
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label className="text-sm font-medium">Expiry *</Label>
-                          <Input
-                            placeholder="MM/YY"
-                            className="mt-1.5 h-11 rounded-xl"
-                            value={cardExpiry}
-                            onChange={e => setCardExpiry(formatExpiry(e.target.value))}
-                          />
-                          {paymentTouched && !cardExpiryValid && <p className="text-xs text-destructive mt-1">MM/YY required</p>}
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">CVV *</Label>
-                          <Input
-                            inputMode="numeric"
-                            placeholder="123"
-                            maxLength={4}
-                            className="mt-1.5 h-11 rounded-xl"
-                            value={cardCvv}
-                            onChange={e => setCardCvv(e.target.value.replace(/\D/g, ""))}
-                          />
-                          {paymentTouched && !cardCvvValid && <p className="text-xs text-destructive mt-1">3-4 digits</p>}
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-sm font-medium">Cardholder Name *</Label>
-                        <Input
-                          placeholder="Name on card"
-                          className="mt-1.5 h-11 rounded-xl"
-                          value={cardName}
-                          onChange={e => setCardName(e.target.value)}
-                        />
-                        {paymentTouched && !cardNameValid && <p className="text-xs text-destructive mt-1">Cardholder name required</p>}
-                      </div>
-                      <p className="text-xs text-muted-foreground">Online card payment will be enabled after the payment gateway is connected.</p>
+                    <div className="rounded-xl border border-primary/10 bg-accent/30 p-4 text-sm text-muted-foreground">
+                      You will be redirected to PayFast to enter card details securely. Travelian does not collect or store card numbers.
+                    </div>
+                  )}
+
+                  {paymentMethod === "1link" && (
+                    <div className="rounded-xl border border-primary/10 bg-accent/30 p-4 text-sm text-muted-foreground">
+                      You will be redirected to PayFast 1Link checkout. Your booking will stay pending until payment is confirmed.
                     </div>
                   )}
 
                   <div className="flex items-start gap-2 mt-5 p-3 bg-success/5 rounded-xl border border-success/20">
                     <Lock className="h-4 w-4 text-success shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground">Online payment remains unavailable until the payment gateway configuration is complete.</p>
+                    <p className="text-xs text-muted-foreground">Online payments are processed by PayFast. Booking details are saved before redirecting to payment.</p>
                   </div>
 
                   <div className="flex justify-between mt-6">

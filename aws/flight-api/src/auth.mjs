@@ -7,6 +7,8 @@ const PUBLIC_ROUTES = new Set([
   "GET /content/blog-posts/{slug}",
   "GET /content/hotels",
   "GET /content/group-ticketing-collections/public",
+  "POST /payments/payfast/session",
+  "POST /payments/payfast/callback",
 ]);
 
 let apiKeyCache;
