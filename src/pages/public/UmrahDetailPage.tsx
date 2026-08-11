@@ -8,6 +8,7 @@ import { UmrahPackageShowcase } from "@/components/public/UmrahPackageShowcase";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { whatsappUrl } from "@/lib/site-config";
+import { findSeedUmrahOffer, umrahOfferToPackage } from "@/data/services/umrah-adapter";
 
 const siteBase = "https://www.travelian.pk";
 
@@ -18,7 +19,9 @@ function formatPrice(value?: number) {
 export default function UmrahDetailPage() {
   const { id } = useParams();
   const { packages } = useAdmin();
-  const item = packages.find((entry) => entry.packageId === id && isPublishedUmrahPackage(entry));
+  const adminItem = packages.find((entry) => entry.packageId === id && isPublishedUmrahPackage(entry));
+  const seedOffer = findSeedUmrahOffer(id);
+  const item = adminItem ?? (seedOffer ? umrahOfferToPackage(seedOffer) : undefined);
 
   if (!item) {
     return (

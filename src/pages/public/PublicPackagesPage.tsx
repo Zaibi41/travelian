@@ -1,94 +1,89 @@
-import { Check, Clock, Package } from "lucide-react";
+import { useMemo } from "react";
+import { ArrowRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/public/PageHeader";
+import { SEO } from "@/components/SEO";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
-import { UmrahPackageShowcase } from "@/components/public/UmrahPackageShowcase";
+import { UmrahPackages } from "@/components/public/umrah/UmrahPackages";
+import { UmrahRequestForm } from "@/components/public/umrah/UmrahRequestForm";
+import { UmrahHotels } from "@/components/public/umrah/UmrahHotels";
+import { UmrahTransport } from "@/components/public/umrah/UmrahTransport";
+import {
+  UmrahCityPackages,
+  UmrahFaqs,
+  UmrahFinalCta,
+  UmrahNotes,
+  UmrahTierComparison,
+  UmrahVisaRates,
+} from "@/components/public/umrah/UmrahSections";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { whatsappUrl } from "@/lib/site-config";
-
-const timeline = [
-  { step: "Choose Package", desc: "Select an active Travelian Umrah package once inventory is published." },
-  { step: "Submit Documents", desc: "Passport, photo, CNIC and required visa documents." },
-  { step: "Visa Processing", desc: "Processing timeline is confirmed per package." },
-  { step: "Travel", desc: "Travel with Travelian support." },
-];
+import { makkahHotels, madinahHotels, umrahOffers } from "@/data/services/umrah";
+import { packageToUmrahOffer } from "@/data/services/umrah-adapter";
 
 export default function PublicPackagesPage() {
   const { packages } = useAdmin();
-  const activePackages = packages.filter(isPublishedUmrahPackage);
+
+  const offers = useMemo(() => {
+    const adminOffers = packages.filter(isPublishedUmrahPackage).map(packageToUmrahOffer);
+    const seen = new Set(adminOffers.map((offer) => offer.id));
+    return [...adminOffers, ...umrahOffers.filter((offer) => !seen.has(offer.id))];
+  }, [packages]);
 
   return (
     <div>
-      <PageHeader title="Umrah Packages" tagline="Carefully managed Umrah packages from Travelian inventory" />
+      <SEO
+        title="Umrah Packages from Pakistan | Travelian"
+        description="Umrah packages from Lahore, Islamabad, Karachi, Multan and Sialkot with Makkah and Madinah hotels, visa, transport and ziarat. Starting-from rates, custom packages on WhatsApp."
+      />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
-        {activePackages.length === 0 ? (
-          <div className="rounded-2xl border bg-card p-8 text-center shadow-card">
-            <Package className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h2 className="mt-4 text-xl font-bold text-foreground">No Umrah packages are published right now</h2>
-            <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">
-              Travelian only shows active packages from admin inventory. Contact our team for the latest Umrah availability and custom package options.
-            </p>
-            <a
-              href={whatsappUrl("Hello Travelian, please share the latest Umrah package availability.")}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Button className="mt-5 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover">
-                <WhatsAppIcon className="mr-2 h-4 w-4" /> Ask on WhatsApp
-              </Button>
-            </a>
-          </div>
-        ) : (
-          <section className="grid gap-8">
-            {activePackages.map((item) => (
-              <UmrahPackageShowcase key={item.packageId} item={item} />
-            ))}
-          </section>
-        )}
+      <PageHeader
+        eyebrow="Umrah with Travelian"
+        title="Umrah Packages, Hotels, Visa & Transport"
+        tagline="Plan your Umrah in one place: ready-made packages, contracted Makkah and Madinah hotels, Umrah visa rates and Saudi transport. Every price is a starting-from rate and confirmed before booking."
+        icon={<Building2 className="h-6 w-6" />}
+      >
+        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Button asChild size="lg" className="h-12 w-full rounded-xl gradient-primary px-6 text-base font-bold text-primary-foreground sm:w-auto">
+            <a href="#umrah-packages">View Umrah Packages <ArrowRight className="ml-2 h-4 w-4" /></a>
+          </Button>
+          <Button asChild size="lg" variant="outline" className="h-12 w-full rounded-xl border-white/25 bg-white/10 px-6 text-base font-bold text-primary-foreground hover:bg-white/20 hover:text-primary-foreground sm:w-auto">
+            <a href="#custom-umrah">Request Custom Umrah</a>
+          </Button>
+          <a className="w-full sm:w-auto" href={whatsappUrl("Assalam o Alaikum Travelian, I need help with an Umrah package.")} target="_blank" rel="noreferrer">
+            <Button size="lg" className="h-12 w-full rounded-xl bg-whatsapp px-6 text-base font-bold text-whatsapp-foreground hover:bg-whatsapp-hover sm:w-auto">
+              <WhatsAppIcon className="mr-2 h-5 w-5" /> Chat on WhatsApp
+            </Button>
+          </a>
+        </div>
+      </PageHeader>
 
-        <section className="bg-muted/40 rounded-2xl p-6 md:p-10">
-          <div className="grid md:grid-cols-2 gap-6 items-center">
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold text-foreground">Umrah Visa Assistance</h2>
-              <p className="text-sm text-muted-foreground mt-2">We handle the full visa process from document collection to issuance after your package is confirmed.</p>
-            </div>
-            <ul className="space-y-2">
-              {["Passport with 6+ months validity", "Recent passport-size photo", "Vaccination certificate", "CNIC copy"].map((item) => (
-                <li key={item} className="flex items-center gap-2 text-sm text-muted-foreground"><Check className="h-4 w-4 text-success" /> {item}</li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section>
-          <h2 className="text-xl md:text-2xl font-bold text-foreground text-center">Your Journey</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-            {timeline.map((step, index) => (
-              <Card key={step.step} className="border-0 shadow-card">
-                <CardContent className="p-5 text-center">
-                  <div className="h-10 w-10 rounded-full gradient-primary text-primary-foreground flex items-center justify-center mx-auto font-bold">{index + 1}</div>
-                  <p className="font-semibold text-foreground mt-3 text-sm">{step.step}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{step.desc}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-2xl border bg-card p-6 shadow-card">
-          <div className="flex items-start gap-3">
-            <Clock className="mt-1 h-5 w-5 text-primary" />
-            <div>
-              <h2 className="font-bold text-foreground">Need a custom Umrah package?</h2>
-              <p className="mt-1 text-sm text-muted-foreground">Share departure city, duration, hotel preference, room sharing, visa, transport, ticket and meal requirements.</p>
-            </div>
-          </div>
-        </section>
+      <div className="mx-auto max-w-7xl space-y-14 px-4 py-12 sm:px-6 lg:px-8">
+        <UmrahPackages offers={offers} />
+        <UmrahTierComparison />
+        <UmrahRequestForm />
+        <UmrahCityPackages />
+        <UmrahVisaRates />
+        <UmrahHotels
+          id="makkah-hotels"
+          eyebrow="Makkah stay"
+          title="Makkah Hotels"
+          description="Contracted Makkah hotels with distance from Haram, meal plan, shuttle service and starting-from room rates."
+          hotels={makkahHotels}
+        />
+        <UmrahHotels
+          id="madinah-hotels"
+          eyebrow="Madinah stay"
+          title="Madinah Hotels"
+          description="Contracted Madinah hotels with distance from Masjid Nabawi, meal plan and starting-from room rates."
+          hotels={madinahHotels}
+        />
+        <UmrahTransport />
+        <UmrahNotes />
+        <UmrahFaqs />
+        <UmrahFinalCta />
       </div>
     </div>
   );
 }
-
