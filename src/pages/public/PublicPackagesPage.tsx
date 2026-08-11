@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { ArrowRight, Building2, KaabaIcon, Sparkles } from "lucide-react";
+import { ArrowRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/public/PageHeader";
 import { SEO } from "@/components/SEO";
