@@ -8,6 +8,7 @@ import { UmrahPackageShowcase } from "@/components/public/UmrahPackageShowcase";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { whatsappUrl } from "@/lib/site-config";
+import { findSeedUmrahOffer, umrahOfferToPackage } from "@/data/services/umrah-adapter";
 
 const siteBase = "https://www.travelian.pk";
 
