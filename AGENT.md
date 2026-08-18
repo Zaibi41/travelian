@@ -28,6 +28,7 @@ Travelian is a B2B and B2C travel platform for Pakistan-based travel operations.
    - Group ticketing categories, list, and detail.
 9. Test before pushing. For frontend changes run `npm run build` and `npm test -- --run`.
 10. Push the completed branch after successful verification.
+11. Do not recreate AWS NAT Gateway for provider IP whitelisting unless the user explicitly approves the higher monthly cost. Use the low-cost Lightsail static egress proxy instead.
 
 ## Architecture
 
@@ -67,9 +68,19 @@ All backend values should be environment-driven.
 | `PAYFAST_SECRET_ID` | Secrets Manager ID for PayFast merchant configuration. Defaults to `travelian/payments/payfast`. |
 | `PAYFAST_SUCCESS_URL` | Optional default hosted-payment success URL. Can also come from the PayFast secret. |
 | `PAYFAST_FAILURE_URL` | Optional default hosted-payment failure URL. Can also come from the PayFast secret. |
+| `EGRESS_PROXY_URL` | Optional HTTPS proxy endpoint for provider calls that need a static outbound IP. Current value: `https://provider-egress.travelian.pk/proxy`. |
+| `EGRESS_PROXY_SECRET_ID` | Secrets Manager ID containing the egress proxy token. Current value: `travelian/egress/proxy`. |
 | `TRAVELIAN_TIME_ZONE` | Time zone for reminders, default `Asia/Karachi`. |
 | `SECRET_CACHE_TTL_MS` | Optional Secrets Manager cache TTL. |
 | `ALLOW_MISSING_SECRETS` | Development escape hatch only. Do not enable in production. |
+
+## AWS Cost Guardrail
+
+- Current low-cost provider whitelist IP is `13.223.105.174` from Lightsail static IP `travelian-egress-ip`.
+- Static egress proxy instance is `travelian-egress-proxy` in `us-east-1`.
+- Monthly target is around `USD 5` for the Lightsail Nano IPv4 bundle, plus existing usage-based AWS services.
+- AWS Budget `TravelianMonthly7USD` is set to `USD 7` alerts.
+- Avoid NAT Gateway because it adds roughly `USD 36+` monthly before traffic.
 
 ## Frontend Configuration
 

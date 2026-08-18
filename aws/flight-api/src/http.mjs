@@ -1,3 +1,5 @@
+import { getSecretJson } from "./secrets.mjs";
+
 export function json(statusCode, body, headers = {}) {
   return {
     statusCode,
@@ -46,4 +48,47 @@ export function normalizePath(event) {
 
 export function method(event) {
   return event.requestContext?.http?.method || event.httpMethod || "GET";
+}
+
+export async function outboundFetch(url, options = {}) {
+  const proxyUrl = process.env.EGRESS_PROXY_URL;
+  if (!proxyUrl) return fetch(url, options);
+
+  const token = await egressProxyToken();
+  const headers = options.headers instanceof Headers
+    ? Object.fromEntries(options.headers.entries())
+    : { ...(options.headers || {}) };
+
+  const body = options.body === undefined || options.body === null
+    ? undefined
+    : typeof options.body === "string"
+      ? options.body
+      : options.body instanceof URLSearchParams
+        ? options.body.toString()
+        : JSON.stringify(options.body);
+
+  return fetch(proxyUrl, {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      "x-travelian-egress-token": token,
+    },
+    body: JSON.stringify({
+      url: String(url),
+      method: options.method || "GET",
+      headers,
+      body,
+    }),
+    signal: options.signal,
+  });
+}
+
+async function egressProxyToken() {
+  if (process.env.EGRESS_PROXY_TOKEN) return process.env.EGRESS_PROXY_TOKEN;
+  const secretId = process.env.EGRESS_PROXY_SECRET_ID;
+  const secret = secretId ? await getSecretJson(secretId) : null;
+  const token = typeof secret === "string" ? secret : secret?.token;
+  if (!token) throw new Error("Egress proxy token is not configured");
+  return String(token);
 }

@@ -1,5 +1,6 @@
 import { ProviderAdapter } from "./provider-base.mjs";
 import { getSecretJson } from "../secrets.mjs";
+import { outboundFetch } from "../http.mjs";
 
 export class SkypassAdapter extends ProviderAdapter {
   constructor() {
@@ -26,7 +27,7 @@ export class SkypassAdapter extends ProviderAdapter {
 
   async fetchTicketsPage(clientKey, page) {
     const query = new URLSearchParams({ limit: "100", page: String(page) });
-    const response = await fetch(`${this.baseUrl}/tickets?${query}`, {
+    const response = await outboundFetch(`${this.baseUrl}/tickets?${query}`, {
       headers: {
         accept: "application/json",
         "x-travelian-api-key": clientKey,

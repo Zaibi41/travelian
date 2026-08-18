@@ -1,5 +1,6 @@
 import { ProviderAdapter } from "./provider-base.mjs";
 import { getSecretJson } from "../secrets.mjs";
+import { outboundFetch } from "../http.mjs";
 
 export class TravelportAdapter extends ProviderAdapter {
   constructor() {
@@ -72,7 +73,7 @@ export class TravelportAdapter extends ProviderAdapter {
     body.set("client_id", clientId);
     body.set("client_secret", clientSecret);
 
-    const response = await fetch(tokenUrl, {
+    const response = await outboundFetch(tokenUrl, {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded" },
       body
@@ -85,7 +86,7 @@ export class TravelportAdapter extends ProviderAdapter {
   async post(path, payload, token) {
     const secret = await getSecretJson(this.secretId);
     const accessGroup = secret?.accessGroup || secret?.access_group || secret?.xauthTravelportAccessGroup;
-    const response = await fetch(`${this.baseUrl}${path}`, {
+    const response = await outboundFetch(`${this.baseUrl}${path}`, {
       method: "POST",
       headers: {
         authorization: `Bearer ${token}`,

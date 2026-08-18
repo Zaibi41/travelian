@@ -1,5 +1,6 @@
 import { ProviderAdapter } from "./provider-base.mjs";
 import { getSecretJson } from "../secrets.mjs";
+import { outboundFetch } from "../http.mjs";
 
 let cachedSession;
 const DHILLU_AND_SAHI_SECTOR_ID = "9";
@@ -193,7 +194,7 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
     const password = secret?.password;
     if (!email || !password) throw this.error("Dhillu & Sahi secret must include token or email/password");
 
-    const response = await fetch(`${baseUrl}/api/login`, {
+    const response = await outboundFetch(`${baseUrl}/api/login`, {
       method: "POST",
       headers: { accept: "application/json", "content-type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -216,7 +217,7 @@ export class DhilluAndSahiAdapter extends ProviderAdapter {
 
   async post(path, body, token, options = {}) {
     const session = await this.session();
-    const response = await fetch(`${session.baseUrl}${path}`, {
+    const response = await outboundFetch(`${session.baseUrl}${path}`, {
       method: "POST",
       headers: {
         accept: "application/json",
