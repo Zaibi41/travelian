@@ -242,7 +242,17 @@ export class SooperFareAdapter extends ProviderAdapter {
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw this.error(payload?.message || payload?.error || `SooperFare login failed with ${response.status}`);
-    const token = pick(payload, ["token", "access_token", "data.token", "data.access_token", "result.token"]);
+    const token = pick(payload, [
+      "token",
+      "access_token.token",
+      "access_token",
+      "data.token",
+      "data.access_token.token",
+      "data.access_token",
+      "result.token",
+      "result.access_token.token",
+      "result.access_token",
+    ]);
     cachedSession = token ? { token: String(token) } : payload;
     return cachedSession;
   }
