@@ -36,7 +36,7 @@ Travelian is a B2B and B2C travel platform for Pakistan-based travel operations.
 React/Vite frontend
   -> API Gateway
     -> aws/flight-api
-      -> provider adapters: Travelport, Skypass, PIA, flyadeal, AirSial
+      -> provider adapters: Travelport, Skypass, Alhaider, Dhillu & Sahi, SooperFare, PIA, flyadeal, AirSial
     -> aws/skypass-proxy
     -> aws/group-ticketing-proxy
 ```
@@ -63,6 +63,7 @@ All backend values should be environment-driven.
 | `TRAVELPORT_OFFERS_PER_PAGE` | Travelport offer page size. |
 | `SKYPASS_PROXY_BASE_URL` | Skypass proxy URL used by flight-api. |
 | `SKYPASS_CLIENT_SECRET_ID` | Secrets Manager ID for Skypass client key. |
+| `SOOPERFARE_SECRET_ID` | Secrets Manager ID for SooperFare credentials. Defaults to `travelian/providers/sooperfare`. |
 | `NOTIFICATION_FROM_EMAIL` | SES sender address. |
 | `NOTIFICATION_PROVIDER_SECRET_ID` | Secrets Manager ID for notification provider credentials. |
 | `PAYFAST_SECRET_ID` | Secrets Manager ID for PayFast merchant configuration. Defaults to `travelian/payments/payfast`. |
@@ -118,6 +119,7 @@ Single-table keys use `pk` and `sk`.
 - Add pagination with `ExclusiveStartKey` and `LastEvaluatedKey` when changing list endpoints, and update frontend clients at the same time.
 - Provider credentials must be loaded through `getSecretJson()`.
 - New providers should extend the existing provider adapter pattern and be registered once in the provider registry.
+- SooperFare is implemented in `aws/flight-api/src/providers/sooperfare.mjs`; do not enable it in production `ENABLED_PROVIDERS` until `travelian/providers/sooperfare` contains valid `X-SF` credentials or username/password.
 - Notification attempts should be recorded with `recordNotificationLog()`.
 - Keep localStorage-only finance and agency flows clearly treated as temporary until backend endpoints exist.
 

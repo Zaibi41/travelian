@@ -3,19 +3,21 @@ import { createAirSialAdapter, createFlyadealAdapter, createPiaAdapter } from ".
 import { SkypassAdapter } from "./skypass.mjs";
 import { AlhaiderAdapter } from "./alhaider.mjs";
 import { DhilluAndSahiAdapter } from "./dhilluandsahi.mjs";
+import { SooperFareAdapter } from "./sooperfare.mjs";
 
 const allProviders = {
   travelport: new TravelportAdapter(),
   skypass: new SkypassAdapter(),
   alhaider: new AlhaiderAdapter(),
   dhilluandsahi: new DhilluAndSahiAdapter(),
+  sooperfare: new SooperFareAdapter(),
   flyadeal: createFlyadealAdapter(),
   airsial: createAirSialAdapter(),
   pia: createPiaAdapter()
 };
 
 export function enabledProviders(requested) {
-  const configured = (process.env.ENABLED_PROVIDERS || "travelport,skypass,alhaider,dhilluandsahi,flyadeal,airsial,pia")
+  const configured = (process.env.ENABLED_PROVIDERS || "travelport,skypass,alhaider,dhilluandsahi,sooperfare,flyadeal,airsial,pia")
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);

@@ -22,6 +22,7 @@ AWS NAT Gateway is reliable but too expensive for the current budget. This proxy
 - Requests require `x-travelian-egress-token`.
 - Target hosts must exist in `ALLOWED_EGRESS_HOSTS`.
 - The shared token is stored in AWS Secrets Manager at `travelian/egress/proxy`.
+- Current allowed provider hosts include Travelport, Skypass, Alhaider, Dhillu & Sahi, PayFast, and SooperFare (`api.sooperfare.com`).
 
 ## Lambda Configuration
 
@@ -50,4 +51,39 @@ Public ISP/cloud provider:
 
 ```text
 Amazon Web Services, us-east-1
+```
+
+## SooperFare Provider Config
+
+The SooperFare adapter is deployed in the flight API code but should only be added to `ENABLED_PROVIDERS` after credentials are configured.
+
+Expected secret name:
+
+```text
+travelian/providers/sooperfare
+```
+
+Expected JSON shape:
+
+```json
+{
+  "baseUrl": "https://api.sooperfare.com",
+  "authorization": "Basic ...",
+  "sfAuthorization": "...",
+  "sfToken": "...",
+  "provider": "SABRE",
+  "providers": ["SABRE"]
+}
+```
+
+If SooperFare supplies username/password login credentials instead of static headers, use:
+
+```json
+{
+  "baseUrl": "https://api.sooperfare.com",
+  "username": "YOUR_USERNAME",
+  "password": "YOUR_PASSWORD",
+  "authorization": "Basic ...",
+  "provider": "SABRE"
+}
 ```
