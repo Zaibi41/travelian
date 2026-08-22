@@ -226,7 +226,7 @@ export class SooperFareAdapter extends ProviderAdapter {
   }
 
   async session(secret, baseUrl) {
-    if (cachedSession) return cachedSession;
+    if (isSessionValid(cachedSession)) return cachedSession;
     const username = secret?.username || secret?.email;
     const password = secret?.password;
     if (!username || !password) return null;
@@ -253,7 +253,17 @@ export class SooperFareAdapter extends ProviderAdapter {
       "result.access_token.token",
       "result.access_token",
     ]);
-    cachedSession = token ? { token: String(token) } : payload;
+    cachedSession = token ? {
+      token: String(token),
+      expiresAt: pick(payload, [
+        "expires_at",
+        "access_token.expires_at",
+        "data.expires_at",
+        "data.access_token.expires_at",
+        "result.expires_at",
+        "result.access_token.expires_at",
+      ]),
+    } : payload;
     return cachedSession;
   }
 
@@ -507,4 +517,12 @@ function compact(value) {
 
 function unique(values) {
   return Array.from(new Set(values));
+}
+
+function isSessionValid(session) {
+  if (!session) return false;
+  if (!session.expiresAt) return true;
+  const expiresAt = new Date(session.expiresAt).getTime();
+  if (!Number.isFinite(expiresAt)) return false;
+  return expiresAt - Date.now() > 60 * 1000;
 }
