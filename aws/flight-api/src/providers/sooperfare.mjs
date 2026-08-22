@@ -12,16 +12,31 @@ export class SooperFareAdapter extends ProviderAdapter {
 
   async searchFlights(request) {
     const config = await this.config();
-    const providerNames = Array.isArray(config.providers) && config.providers.length
-      ? config.providers
-      : [config.provider || "SABRE"];
-    const payloads = await Promise.all(
+    const providerNames = await this.availableProviders(request, config);
+    const attempts = await Promise.allSettled(
       providerNames.map((provider) => this.post("/v1/airline/search", this.searchPayload(request, provider), config))
     );
+    const payloads = attempts
+      .filter((attempt) => attempt.status === "fulfilled")
+      .map((attempt) => attempt.value);
+    if (!payloads.length) {
+      const firstError = attempts.find((attempt) => attempt.status === "rejected")?.reason;
+      throw this.error(firstError?.message || "SooperFare search returned no provider results");
+    }
     return payloads
       .flatMap((payload) => extractOffers(payload))
       .map((offer, index) => this.normalizeOffer(offer, request, index))
       .filter(Boolean);
+  }
+
+  async availableProviders(request, config) {
+    const fallbackProviders = Array.isArray(config.providers) && config.providers.length
+      ? config.providers
+      : [config.provider || "SABRE"];
+    const payload = this.availabilityPayload(request);
+    const availability = await this.request("GET", "/v1/airline/availability", payload, config);
+    const providers = extractAvailabilityProviders(availability);
+    return providers.length ? providers : fallbackProviders;
   }
 
   async priceOffer(payload) {
@@ -132,6 +147,14 @@ export class SooperFareAdapter extends ProviderAdapter {
   }
 
   searchPayload(request, provider) {
+    return {
+      ...this.availabilityPayload(request),
+      redirect: true,
+      provider,
+    };
+  }
+
+  availabilityPayload(request) {
     const tripType = request.tripType === "roundtrip" ? "round_trip" : request.tripType === "multicity" ? "multi_city" : "one_way";
     const legs = request.tripType === "multicity" && Array.isArray(request.segments)
       ? request.segments.map((segment) => ({
@@ -157,8 +180,6 @@ export class SooperFareAdapter extends ProviderAdapter {
         { type: "child", qty: Number(request.children || 0) },
         { type: "infant", qty: Number(request.infants || 0) },
       ],
-      redirect: true,
-      provider,
     };
   }
 
@@ -170,18 +191,18 @@ export class SooperFareAdapter extends ProviderAdapter {
     const last = segments[segments.length - 1];
     const price = extractPrice(offer);
     if (!first || !last || !price.total) return null;
-    const airline = pick(offer, ["airline.name", "airline_name", "carrier.name", "provider", "supplier"]) || first.airline || "SooperFare";
-    const airlineCode = pick(offer, ["airline.code", "carrier.code"]) || first.carrier || "";
+    const airline = pick(offer, ["marketing_carrier.name", "airline.name", "airline_name", "carrier.name", "provider", "supplier"]) || first.airline || "SooperFare";
+    const airlineCode = pick(offer, ["marketing_carrier.iata", "airline.code", "carrier.code"]) || first.carrier || "";
     const fareOptions = extractFareOptions(offer, price);
-    const baggage = pick(offer, ["baggage", "baggage_info", "included_baggage"]) || unique(segments.map((segment) => segment.baggage).filter(Boolean)).join(", ") || null;
-    const meal = pick(offer, ["meal", "meal_info", "meals"]) || unique(segments.map((segment) => segment.meal).filter(Boolean)).join(", ") || null;
+    const baggage = pick(offer, ["baggage", "baggage_info", "included_baggage", "fares.0.baggage_policies.0.description"]) || unique(segments.map((segment) => segment.baggage).filter(Boolean)).join(", ") || null;
+    const meal = pick(offer, ["meal", "meal_info", "meals", "ancillaries.meals.0.name", "ancillaries.meals.0.description"]) || unique(segments.map((segment) => segment.meal).filter(Boolean)).join(", ") || null;
 
     return {
       provider: this.name,
       offerId: `sooperfare-${refId}`,
       airline,
       airlineCode,
-      airlineImage: pick(offer, ["airline.logo", "airline.logo_url", "logo", "image_url", "image"]),
+      airlineImage: pick(offer, ["marketing_carrier.logo", "airline.logo", "airline.logo_url", "logo", "image_url", "image"]),
       flightNumber: segments.map((segment) => segment.flightNumber).filter(Boolean).join(" / ") || pick(offer, ["flight_number", "flightNo"]) || `SF-${index + 1}`,
       origin: request.origin,
       destination: request.destination,
@@ -197,7 +218,7 @@ export class SooperFareAdapter extends ProviderAdapter {
       fareBrand: pick(offer, ["fare_brand", "brand", "fare.name"]) || request.cabin,
       baggage,
       meal: mealLabel(meal),
-      seats: pick(offer, ["seats", "availability", "available_seats"]),
+      seats: pick(offer, ["seats", "availability", "available_seats", "fares.0.available_seats"]),
       refundable: pick(offer, ["refundable", "is_refundable"]),
       fareOptions,
       requiresReprice: true,
@@ -268,13 +289,18 @@ export class SooperFareAdapter extends ProviderAdapter {
   }
 
   async post(path, body, config) {
+    return this.request("POST", path, body, config);
+  }
+
+  async request(method, path, body, config) {
     const response = await outboundFetch(`${config.baseUrl}${path}`, {
-      method: "POST",
+      method,
       headers: this.headers(config),
       body: JSON.stringify(body || {}),
       signal: AbortSignal.timeout(Number(process.env.PROVIDER_TIMEOUT_MS || 9000)),
     });
-    const payload = await response.json().catch(async () => ({ raw: await response.text().catch(() => "") }));
+    const raw = await response.text().catch(() => "");
+    const payload = parseJson(raw);
     if (!response.ok) throw this.error(payload?.message || payload?.error || `SooperFare ${path} failed with ${response.status}`, response.status);
     return payload;
   }
@@ -300,6 +326,20 @@ export class SooperFareAdapter extends ProviderAdapter {
 
 function extractOffers(payload) {
   if (Array.isArray(payload)) return payload;
+  const sooperFareFlights = [];
+  const providers = extractArray(payload, ["data.providers", "providers"]);
+  for (const provider of providers) {
+    for (const leg of extractArray(provider, ["legs"])) {
+      for (const flight of extractArray(leg, ["flights"])) {
+        sooperFareFlights.push({
+          ...flight,
+          __provider: provider.provider || provider,
+          __leg: leg,
+        });
+      }
+    }
+  }
+  if (sooperFareFlights.length) return sooperFareFlights;
   const direct = extractArray(payload, ["data.offers", "data.results", "data.flights", "data.itineraries", "offers", "results", "flights", "itineraries", "data"]);
   if (direct.length) return direct;
   const found = [];
@@ -311,6 +351,49 @@ function extractOffers(payload) {
     }
   });
   return found;
+}
+
+function extractAvailabilityProviders(payload) {
+  const providers = new Set();
+  const direct = extractArray(payload, ["data.providers", "providers", "data", "results", "items"]);
+  for (const item of direct) addProviderCandidate(providers, item, true);
+  walk(payload, (value) => addProviderCandidate(providers, value));
+  return Array.from(providers);
+}
+
+function addProviderCandidate(providers, value, allowString = false) {
+  if (!value) return;
+  if (typeof value === "string") {
+    if (!allowString) return;
+    const normalized = normalizeProvider(value);
+    if (normalized) providers.add(normalized);
+    return;
+  }
+  if (typeof value !== "object" || Array.isArray(value)) return;
+  const candidate = pick(value, [
+    "identifier",
+    "provider",
+    "provider_code",
+    "providerCode",
+    "provider_name",
+    "providerName",
+    "supplier",
+    "supplier_code",
+    "supplierCode",
+    "source",
+    "source_code",
+    "sourceCode",
+    "code",
+  ]);
+  const normalized = normalizeProvider(candidate);
+  if (normalized) providers.add(normalized);
+}
+
+function normalizeProvider(value) {
+  const text = String(value || "").trim();
+  if (!text || text.length > 40) return null;
+  if (/^[A-Z0-9_ -]{2,40}$/i.test(text)) return text.toUpperCase().replace(/\s+/g, "_");
+  return null;
 }
 
 function extractArray(payload, paths = ["data", "results", "items", "bookings"]) {
@@ -337,8 +420,8 @@ function extractSegments(leg) {
 }
 
 function segmentFrom(segment) {
-  const origin = pick(segment, ["from", "origin", "departure.airport", "departure.iata", "departure.location", "departure_airport"]);
-  const destination = pick(segment, ["to", "destination", "arrival.airport", "arrival.iata", "arrival.location", "arrival_airport"]);
+  const origin = pick(segment, ["from.iata", "from.code", "from", "origin", "departure.airport", "departure.iata", "departure.location", "departure_airport"]);
+  const destination = pick(segment, ["to.iata", "to.code", "to", "destination", "arrival.airport", "arrival.iata", "arrival.location", "arrival_airport"]);
   const departureTime = dateTime(
     pick(segment, ["departure.date", "departure_date", "date"]),
     pick(segment, ["departure.time", "departure_time", "time"]),
@@ -351,26 +434,26 @@ function segmentFrom(segment) {
   );
   if (!origin || !destination || !departureTime) return null;
   return {
-    flightNumber: normalizeFlightNumber(pick(segment, ["flight_number", "flightNo", "number"]) || [pick(segment, ["carrier", "airline.code"]), pick(segment, ["flight.number"])].filter(Boolean).join("-")),
-    carrier: pick(segment, ["carrier", "airline.code"]),
-    airline: pick(segment, ["airline.name", "airline_name"]),
+    flightNumber: normalizeFlightNumber(pick(segment, ["flight_number", "flightNo", "number"]) || [pick(segment, ["carrier", "airline.code", "operating_carrier.iata", "marketing_carrier.iata"]), pick(segment, ["flight.number"])].filter(Boolean).join("-")),
+    carrier: pick(segment, ["carrier", "airline.code", "operating_carrier.iata", "marketing_carrier.iata"]),
+    airline: pick(segment, ["airline.name", "airline_name", "operating_carrier.name", "marketing_carrier.name"]),
     origin: String(origin).toUpperCase(),
     destination: String(destination).toUpperCase(),
-    departureAirport: pick(segment, ["departure.name", "departure_airport_name"]) || origin,
-    arrivalAirport: pick(segment, ["arrival.name", "arrival_airport_name"]) || destination,
+    departureAirport: pick(segment, ["from.name", "departure.name", "departure_airport_name"]) || origin,
+    arrivalAirport: pick(segment, ["to.name", "arrival.name", "arrival_airport_name"]) || destination,
     departureTime,
     arrivalTime,
-    baggage: pick(segment, ["baggage", "baggage_info", "included_baggage"]),
+    baggage: pick(segment, ["baggage", "baggage_info", "included_baggage", "fares.0.baggage_policies.0.description"]),
     meal: pick(segment, ["meal", "meal_info"]),
   };
 }
 
 function extractPrice(offer) {
-  const total = number(pick(offer, ["price.total", "fare.total", "total", "amount", "fares.0.total", "fares.0.amount", "pricing.total"]));
-  const base = number(pick(offer, ["price.base", "fare.base", "base", "base_fare", "fares.0.base", "pricing.base"])) || total;
+  const total = number(pick(offer, ["price.total", "fare.total", "total_price", "billable_price", "total", "amount", "fares.0.total_price", "fares.0.billable_price", "fares.0.total", "fares.0.amount", "pricing.total"]));
+  const base = number(pick(offer, ["price.base", "fare.base", "base_price", "base", "base_fare", "fares.0.base_price", "fares.0.base", "pricing.base"])) || total;
   const taxes = number(pick(offer, ["price.taxes", "fare.taxes", "taxes", "tax", "fares.0.taxes", "pricing.taxes"]));
   return {
-    currency: pick(offer, ["price.currency", "fare.currency", "currency", "fares.0.currency", "pricing.currency"]) || "PKR",
+    currency: pick(offer, ["price.currency", "fare.currency", "currency.code", "currency", "fares.0.currency.code", "fares.0.currency", "pricing.currency"]) || "PKR",
     base,
     taxes,
     total,
@@ -404,6 +487,18 @@ function extractFareOptions(offer, fallbackPrice) {
 }
 
 function buildQuotePayload(offer, refId) {
+  if (offer.__leg?.ref_id || offer.ref_id || offer.fares?.[0]?.ref_id) {
+    return compact({
+      ref_id: refId,
+      legs: [{
+        ref_id: offer.__leg?.ref_id,
+        flight: {
+          ref_id: offer.ref_id,
+          fare: { ref_id: offer.fares?.[0]?.ref_id },
+        },
+      }],
+    });
+  }
   const legs = extractLegs(offer).map((leg) => ({
     ref_id: pick(leg, ["ref_id", "id"]),
     flight: {
@@ -415,6 +510,7 @@ function buildQuotePayload(offer, refId) {
 }
 
 function buildFaresPayload(offer, refId) {
+  if (offer.__leg?.ref_id) return compact({ ref_id: refId, legs: [{ ref_id: offer.__leg.ref_id }] });
   const legs = extractLegs(offer).map((leg) => ({ ref_id: pick(leg, ["ref_id", "id"]) })).filter((leg) => leg.ref_id);
   return compact({ ref_id: refId, legs });
 }
@@ -517,6 +613,15 @@ function compact(value) {
 
 function unique(values) {
   return Array.from(new Set(values));
+}
+
+function parseJson(raw) {
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { raw };
+  }
 }
 
 function isSessionValid(session) {

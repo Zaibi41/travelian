@@ -1,4 +1,5 @@
 import http from "node:http";
+import https from "node:https";
 
 const port = Number(process.env.PORT || 8787);
 const token = process.env.EGRESS_PROXY_TOKEN || "";
@@ -52,18 +53,17 @@ const server = http.createServer(async (request, response) => {
       if (!hopByHopHeaders.has(normalizedKey)) headers[key] = value;
     }
 
-    const upstream = await fetch(targetUrl, {
+    const upstream = await sendUpstream(targetUrl, {
       method: payload.method || "GET",
       headers,
       body: payload.body ?? undefined,
     });
 
-    const upstreamBody = await upstream.text();
-    response.writeHead(upstream.status, {
-      "content-type": upstream.headers.get("content-type") || "application/json; charset=utf-8",
+    response.writeHead(upstream.statusCode, {
+      "content-type": upstream.headers["content-type"] || "application/json; charset=utf-8",
       "cache-control": "no-store",
     });
-    response.end(upstreamBody);
+    response.end(upstream.body);
   } catch (error) {
     send(response, 502, { error: "Provider egress request failed" });
   }
@@ -95,4 +95,42 @@ function send(response, statusCode, body) {
     "cache-control": "no-store",
   });
   response.end(JSON.stringify(body));
+}
+
+function sendUpstream(targetUrl, options) {
+  return new Promise((resolve, reject) => {
+    const body = options.body;
+    const transport = targetUrl.protocol === "https:" ? https : http;
+    const request = transport.request(
+      targetUrl,
+      {
+        method: options.method,
+        headers: {
+          ...options.headers,
+          ...(body !== undefined ? { "content-length": Buffer.byteLength(String(body)) } : {}),
+        },
+      },
+      (upstream) => {
+        let responseBody = "";
+        upstream.setEncoding("utf8");
+        upstream.on("data", (chunk) => {
+          responseBody += chunk;
+        });
+        upstream.on("end", () => {
+          resolve({
+            statusCode: upstream.statusCode || 502,
+            headers: upstream.headers,
+            body: responseBody,
+          });
+        });
+      }
+    );
+
+    request.on("error", reject);
+    request.setTimeout(Number(process.env.UPSTREAM_TIMEOUT_MS || 30000), () => {
+      request.destroy(new Error("Upstream request timed out"));
+    });
+    if (body !== undefined) request.write(String(body));
+    request.end();
+  });
 }
