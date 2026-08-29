@@ -923,12 +923,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 >
                   <CardContent className="p-5">
                     <div className="flex flex-col gap-4">
-                      <div className="flex items-start gap-4">
-                        <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={flight.airlineImage} />
-                        <div className="min-w-0 flex-1">
-                          <div className="mb-1 flex min-w-0 flex-wrap items-center gap-2">
-                            <p className="max-w-[14rem] truncate text-sm font-semibold text-foreground" title={flight.airline}>{flight.airline}</p>
-                            <Badge variant="secondary" className="text-[10px] rounded-md">{flight.flightNumber}</Badge>
+                      <div className="flex flex-col gap-3 md:flex-row md:items-center">
+                        <div className="flex min-w-0 items-center gap-3 md:w-[18rem] md:shrink-0">
+                          <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={flight.airlineImage} className="h-12 w-12 rounded-xl" />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-foreground" title={flight.airline}>{flight.airline}</p>
                             {flight.status === 'delayed' && <Badge className="bg-warning/10 text-warning border-0 text-[10px] rounded-md">Delayed</Badge>}
                             {false && adminMode && flight.provider && (
                               <Badge variant="outline" className="rounded-md border-sky-200 bg-sky-50 text-[10px] font-semibold text-sky-700">
@@ -936,26 +935,28 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               </Badge>
                             )}
                           </div>
-                          <div className="mt-3 flex items-center gap-3">
-                            <div className="min-w-0 text-center">
-                              <p className="text-2xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
-                              <p className="mt-1 text-xs text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
-                              <p className="max-w-32 truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
-                            </div>
-                            <div className="flex-1 flex flex-col items-center px-2">
-                              <span className="text-[10px] text-muted-foreground font-medium">{flight.duration || getDuration(flight.departureTime, flight.arrivalTime)}</span>
-                              <div className="w-full h-px bg-border my-1.5 relative">
-                                <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-2 border-primary bg-card" />
-                                <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-primary" />
-                              </div>
-                              {stopLabel(flight) && <span className="max-w-full truncate text-[10px] text-success font-medium" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
-                            </div>
-                            <div className="min-w-0 text-center">
-                              <p className="text-2xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
-                              <p className="mt-1 text-xs text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
-                              <p className="max-w-32 truncate text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
-                            </div>
+                        </div>
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                          <div className="min-w-0 shrink-0 basis-[7.5rem] text-left">
+                            <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
+                            <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
+                            <p className="truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
                           </div>
+                          <div className="flex min-w-[5rem] flex-1 flex-col items-center px-1">
+                            <span className="max-w-full truncate text-[10px] font-medium text-muted-foreground">{flight.duration || getDuration(flight.departureTime, flight.arrivalTime)}</span>
+                            <div className="relative my-1.5 h-px w-full bg-border">
+                              <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
+                              <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-primary" />
+                              </div>
+                            {stopLabel(flight) && <span className="max-w-full truncate text-[10px] font-medium text-success" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
+                          </div>
+                          <div className="min-w-0 shrink-0 basis-[7.5rem] text-left">
+                            <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
+                            <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
+                            <p className="truncate text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
+                          </div>
+                        </div>
+                        <div className="min-w-0 flex-1 md:hidden">
                           {tripType === "roundtrip" && flight.returnDepartureTime && flight.returnArrivalTime && (
                             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-[11px] text-muted-foreground">
                               <Badge variant="outline" className="rounded-md text-[10px]">Return</Badge>
