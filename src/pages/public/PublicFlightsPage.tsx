@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, Info, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -903,6 +903,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             {apiStatus !== "loading" && filtered.map((flight) => {
               const hasFareOptions = (flight.fareOptions || []).length > 0;
               const fareOptionsOpen = selectedFlight === flight.flightId;
+              const displayFares = fareRows(flight);
+              const primaryFare = displayFares[0];
 
               return (
                 <Card
@@ -955,6 +957,25 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               <span>{flight.returnArrivalTime}</span>
                             </div>
                           )}
+                          {primaryFare && (
+                            <div className="mt-4 flex flex-wrap items-center gap-3 border-t pt-3">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 rounded-lg px-0 text-sm font-semibold text-foreground hover:bg-transparent hover:text-primary"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  setFareDetailsTab("flight");
+                                  setExpandedFareRule(primaryFare.tier);
+                                  setFareDetails({ flight, fare: primaryFare });
+                                }}
+                              >
+                                Flight Details
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="overflow-hidden rounded-2xl border">
@@ -966,7 +987,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           <span className="sr-only">Actions</span>
                         </div>
                         <div className="divide-y">
-                          {fareRows(flight).map((fare) => (
+                          {displayFares.map((fare) => (
                             <div key={`${flight.flightId}-${fare.tier}-${fare.price.total}`} className="grid gap-3 bg-card px-4 py-3 text-sm md:grid-cols-[minmax(7rem,1fr)_minmax(8rem,1.1fr)_minmax(10rem,1.3fr)_minmax(7rem,.8fr)_auto] md:items-center">
                               <div className="min-w-0">
                                 <p className="truncate font-bold text-foreground" title={fare.tier}>{fare.tier}</p>
@@ -983,22 +1004,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               </p>
                               <p className="whitespace-nowrap text-left text-base font-black text-foreground md:text-right">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</p>
                               <div className="flex items-center gap-2 md:justify-end">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-9 w-9 shrink-0 rounded-full"
-                                  aria-label={`View ${fare.tier} fare details`}
-                                  onClick={(event) => {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    setFareDetailsTab("flight");
-                                    setExpandedFareRule(fare.tier);
-                                    setFareDetails({ flight, fare });
-                                  }}
-                                >
-                                  <Info className="h-4 w-4" />
-                                </Button>
                                 <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer">
                                   <Button variant="outline" size="sm" className="whitespace-nowrap rounded-xl gap-2">
                                     <WhatsAppIcon className="h-4 w-4" /> WhatsApp Help
