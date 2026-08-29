@@ -386,6 +386,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return via.length ? `${stopText} (${via.join(", ")})` : stopText;
   };
 
+  const limitText = (value: string | null | undefined, maxLength: number) => {
+    const text = String(value || "").trim();
+    return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+  };
+
   const formatFlightTime = (value?: string | null) => String(value || "").split(" ")[1] || "TBA";
   const formatFlightDate = (value?: string | null) => {
     const text = String(value || "");
@@ -804,11 +809,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             </CardContent>
           </Card>
         ) : (
-        <div className="flex gap-6">
+        <div className="flex gap-4 xl:gap-5">
           {/* Sidebar Filters */}
-          <aside className="hidden md:block w-56 xl:w-64 shrink-0 space-y-5 sticky top-24 self-start">
+          <aside className="hidden w-48 shrink-0 space-y-4 self-start md:sticky md:top-24 md:block xl:w-52">
             <Card className="shadow-card border-0">
-              <CardContent className="p-5">
+              <CardContent className="p-4">
                 <h3 className="mb-3 text-sm font-semibold text-foreground">Sort By</h3>
                 <div className="space-y-2">
                   {sortOptions.map((option) => (
@@ -828,7 +833,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               </CardContent>
             </Card>
             <Card className="shadow-card border-0">
-              <CardContent className="p-5">
+              <CardContent className="p-4">
                 <h3 className="font-semibold text-foreground text-sm mb-4">Price Range</h3>
                 <Slider value={priceRange} onValueChange={setPriceRange} min={0} max={Math.max(700, Math.ceil(maxPrice / 1000) * 1000)} step={100} className="mb-3" />
                 <div className="grid grid-cols-2 gap-2 text-xs">
@@ -838,23 +843,23 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               </CardContent>
             </Card>
             <Card className="shadow-card border-0">
-              <CardContent className="p-5">
+              <CardContent className="p-4">
                 <h3 className="font-semibold text-foreground text-sm mb-3">Airlines</h3>
                 <div className="space-y-2.5">
                   {airlineOptions.length === 0 && (
                     <p className="text-xs text-muted-foreground">Airlines appear here after live fares are returned.</p>
                   )}
                   {airlineOptions.map(a => (
-                    <label key={a} className="flex items-center gap-2 cursor-pointer group">
+                    <label key={a} className="flex min-w-0 cursor-pointer items-center gap-2 group" title={a}>
                       <Checkbox checked={selectedAirlines.includes(a)} onCheckedChange={() => toggleAirline(a)} />
-                      <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">{a}</span>
+                      <span className="min-w-0 truncate text-xs text-muted-foreground transition-colors group-hover:text-foreground">{limitText(a, 15)}</span>
                     </label>
                   ))}
                 </div>
               </CardContent>
             </Card>
             <Card className="shadow-card border-0">
-              <CardContent className="p-5">
+              <CardContent className="p-4">
                 <h3 className="font-semibold text-foreground text-sm mb-3">Stops</h3>
                 <div className="space-y-2.5">
                   {["Non-stop", "1 Stop", "2+ Stops"].map(s => (
@@ -866,12 +871,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               </CardContent>
             </Card>
             <Card className="shadow-card border-0">
-              <CardContent className="p-5">
+              <CardContent className="p-4">
                 <h3 className="font-semibold text-foreground text-sm mb-3">Departure Time</h3>
                 <div className="space-y-2.5">
                   {["Early Morning (00-06)", "Morning (06-12)", "Afternoon (12-18)", "Evening (18-24)"].map(s => (
-                    <label key={s} className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox /><span className="text-xs text-muted-foreground">{s}</span>
+                    <label key={s} className="flex min-w-0 cursor-pointer items-center gap-2" title={s}>
+                      <Checkbox /><span className="min-w-0 truncate text-xs text-muted-foreground">{limitText(s, 15)}</span>
                     </label>
                   ))}
                 </div>
@@ -924,10 +929,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   <CardContent className="p-5">
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                        <div className="flex min-w-0 items-center gap-3 md:w-[13rem] md:shrink-0">
+                        <div className="flex min-w-0 items-center gap-3 md:w-[11rem] md:shrink-0">
                           <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={flight.airlineImage} className="h-12 w-12 rounded-xl" />
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-foreground" title={flight.airline}>{flight.airline}</p>
+                            <p className="truncate text-sm font-semibold text-foreground" title={flight.airline}>{limitText(flight.airline, 12)}</p>
                             {flight.status === 'delayed' && <Badge className="bg-warning/10 text-warning border-0 text-[10px] rounded-md">Delayed</Badge>}
                             {false && adminMode && flight.provider && (
                               <Badge variant="outline" className="rounded-md border-sky-200 bg-sky-50 text-[10px] font-semibold text-sky-700">
