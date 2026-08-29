@@ -929,7 +929,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           <div className="mb-1 flex min-w-0 flex-wrap items-center gap-2">
                             <p className="max-w-[14rem] truncate text-sm font-semibold text-foreground" title={flight.airline}>{flight.airline}</p>
                             <Badge variant="secondary" className="text-[10px] rounded-md">{flight.flightNumber}</Badge>
-                            <Badge variant="outline" className="text-[10px] capitalize rounded-md">{flight.class}</Badge>
                             {flight.status === 'delayed' && <Badge className="bg-warning/10 text-warning border-0 text-[10px] rounded-md">Delayed</Badge>}
                             {false && adminMode && flight.provider && (
                               <Badge variant="outline" className="rounded-md border-sky-200 bg-sky-50 text-[10px] font-semibold text-sky-700">
@@ -937,10 +936,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground">{format(departDate, "EEE, MMM dd, yyyy")}</p>
                           <div className="mt-3 flex items-center gap-3">
                             <div className="min-w-0 text-center">
-                              <p className="text-3xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
+                              <p className="text-2xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
                               <p className="mt-1 text-xs text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
                               <p className="max-w-32 truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
                             </div>
@@ -953,7 +951,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               {stopLabel(flight) && <span className="max-w-full truncate text-[10px] text-success font-medium" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
                             </div>
                             <div className="min-w-0 text-center">
-                              <p className="text-3xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
+                              <p className="text-2xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
                               <p className="mt-1 text-xs text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
                               <p className="max-w-32 truncate text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
                             </div>
