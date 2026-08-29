@@ -14,6 +14,7 @@ export interface FlightSearchInput {
     date: string;
   }[];
   cabin: string;
+  fareBrand?: string | null;
   currency: string;
   passengers: {
     adults: number;
@@ -64,6 +65,8 @@ export interface FareOption {
   tier: string;
   price: {
     currency: string;
+    base?: number | null;
+    taxes?: number | null;
     total: number;
   };
   bags: string;
@@ -77,6 +80,7 @@ export type TravelianFlight = Flight & {
   provider?: string;
   offerId?: string;
   airlineImage?: string;
+  fareBrand?: string;
   fareOptions?: FareOption[];
 };
 
@@ -275,6 +279,7 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
     seats: normalizeSeats(offer.seats),
     status: "scheduled",
     class: normalizeCabin(cabin),
+    fareBrand: safeText(offer.fareBrand),
     fareOptions: offer.fareOptions || [],
     duration: offer.duration || undefined,
     stops: offer.stops ?? undefined,

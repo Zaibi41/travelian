@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset } from "lucide-react";
+import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, Info, TimerReset } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,15 @@ import { whatsappUrl } from "@/lib/site-config";
 
 type FlightTripType = "oneway" | "roundtrip" | "multicity";
 type FlightSegment = { from: string; to: string; date: Date | undefined };
+type DisplayFare = {
+  tier: string;
+  price: { currency?: string; total: number; base?: number | null; taxes?: number | null };
+  bags?: string | null;
+  meal?: string | null;
+  refund?: string | null;
+  change?: string | null;
+  amenities?: string[];
+};
 const SEARCH_RESULT_TTL_SECONDS = 900;
 
 const sortOptions = [
@@ -106,6 +115,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [fareCalculatorOpen, setFareCalculatorOpen] = useState(false);
   const [addToQuotations, setAddToQuotations] = useState(false);
   const [detailsFlight, setDetailsFlight] = useState<TravelianFlight | null>(null);
+  const [fareDetails, setFareDetails] = useState<{ flight: TravelianFlight; fare: DisplayFare } | null>(null);
   const [calculatorBase, setCalculatorBase] = useState("");
   const [calculatorTaxes, setCalculatorTaxes] = useState("");
   const [calculatorServiceFee, setCalculatorServiceFee] = useState("");
@@ -308,6 +318,47 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return `${dst} ${Math.round(converted).toLocaleString()}`;
   };
 
+  const cleanFareText = (value: unknown, fallback: string) => {
+    const text = String(value || "").trim();
+    if (!text || /^(null|undefined|n\/a|na|-|see supplier details)$/i.test(text)) return fallback;
+    return text;
+  };
+
+  const mealLabel = (fare: DisplayFare, flight: TravelianFlight) => cleanFareText(fare.meal || flight.meal, "Meal info not available");
+
+  const baggageLabel = (fare: DisplayFare, flight: TravelianFlight) => {
+    if (/nil baggage|no baggage/i.test(fare.tier)) return "No Baggage";
+    return cleanFareText(fare.bags || flight.baggage, "Baggage info not available");
+  };
+
+  const fareRows = (flight: TravelianFlight): DisplayFare[] => {
+    if (flight.fareOptions?.length) {
+      return flight.fareOptions.map((fare) => ({
+        tier: cleanFareText(fare.tier, flight.fareBrand || "Fare option"),
+        price: fare.price,
+        bags: fare.bags,
+        meal: flight.meal,
+        refund: fare.refund,
+        change: fare.change,
+        amenities: fare.amenities,
+      }));
+    }
+    return [{
+      tier: cleanFareText(flight.fareBrand, "Fare option"),
+      price: { currency: flight.currency, total: flight.price },
+      bags: flight.baggage,
+      meal: flight.meal,
+      refund: flight.baggage ? "Subject to fare rules" : "",
+      change: "",
+      amenities: [],
+    }];
+  };
+
+  const stopLabel = (stops?: number) => {
+    if (!stops) return "Non Stop";
+    return `${stops} Stop${stops === 1 ? "" : "s"}`;
+  };
+
   const formatProviderName = (provider?: string) => {
     const key = String(provider || "").trim().toLowerCase();
     if (!key) return "";
@@ -332,6 +383,27 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       `Date: ${format(departDate, "MMM dd, yyyy")}`,
       `Cabin: ${flight.class}`,
       `Fare: ${formatFare(flight.price, flight.currency)}`,
+      "",
+      "Please guide me with booking details.",
+    ].join("\n");
+    return whatsappUrl(message);
+  };
+
+  const fareWhatsAppHref = (flight: TravelianFlight, fare: DisplayFare) => {
+    const message = [
+      "Hello Travelian,",
+      "",
+      "I need help with this fare option:",
+      "",
+      `Airline: ${flight.airline}`,
+      `Flight: ${flight.flightNumber}`,
+      `Route: ${flight.origin} to ${flight.destination}`,
+      `Date: ${format(departDate, "MMM dd, yyyy")}`,
+      `Cabin: ${flight.class}`,
+      `Fare option: ${fare.tier}`,
+      `Baggage: ${baggageLabel(fare, flight)}`,
+      `Meal: ${mealLabel(fare, flight)}`,
+      `Fare: ${formatFare(fare.price.total, fare.price.currency || flight.currency)}`,
       "",
       "Please guide me with booking details.",
     ].join("\n");
@@ -804,12 +876,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   }`}
                 >
                   <CardContent className="p-5">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                      <div className="flex items-center gap-4 flex-1">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-start gap-4">
                         <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={flight.airlineImage} />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <p className="text-sm font-semibold text-foreground">{flight.airline}</p>
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1 flex min-w-0 flex-wrap items-center gap-2">
+                            <p className="max-w-[14rem] truncate text-sm font-semibold text-foreground" title={flight.airline}>{flight.airline}</p>
                             <Badge variant="secondary" className="text-[10px] rounded-md">{flight.flightNumber}</Badge>
                             <Badge variant="outline" className="text-[10px] capitalize rounded-md">{flight.class}</Badge>
                             {flight.status === 'delayed' && <Badge className="bg-warning/10 text-warning border-0 text-[10px] rounded-md">Delayed</Badge>}
@@ -819,8 +891,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               </Badge>
                             )}
                           </div>
-                          <div className="flex items-center gap-3 mt-3">
-                            <div className="text-center">
+                          <p className="text-xs text-muted-foreground">{format(departDate, "EEE, MMM dd, yyyy")}</p>
+                          <div className="mt-3 flex items-center gap-3">
+                            <div className="min-w-0 text-center">
                               <p className="text-xl font-bold text-foreground">{flight.departureTime.split(' ')[1] || "TBA"}</p>
                               <p className="max-w-32 truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
                             </div>
@@ -830,9 +903,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-2 border-primary bg-card" />
                                 <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-primary" />
                               </div>
-                              <span className="text-[10px] text-success font-medium">{flight.stops ? `${flight.stops} stop${flight.stops === 1 ? "" : "s"}` : "Non-stop"}</span>
+                              <span className="text-[10px] text-success font-medium">{stopLabel(flight.stops)}</span>
                             </div>
-                            <div className="text-center">
+                            <div className="min-w-0 text-center">
                               <p className="text-xl font-bold text-foreground">{flight.arrivalTime.split(' ')[1] || "TBA"}</p>
                               <p className="max-w-32 truncate text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
                             </div>
@@ -848,16 +921,55 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 md:border-l md:pl-5">
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-foreground">{formatFare(flight.price, flight.currency)}</p>
-                          <p className="text-[10px] text-muted-foreground">per person, incl. tax</p>
-                          <div className="mt-2 space-y-1 text-[10px] text-muted-foreground">
-                            <p className="flex items-center justify-end gap-1"><Luggage className="h-3 w-3" /> {flight.baggage || "Baggage info not available"}</p>
-                            <p className="flex items-center justify-end gap-1"><Coffee className="h-3 w-3" /> {flight.meal || "Meal info not available"}</p>
-                            <p className="flex items-center justify-end gap-1"><Wifi className="h-3 w-3" /> Amenities subject to airline</p>
-                          </div>
+                      <div className="overflow-hidden rounded-2xl border">
+                        <div className="hidden grid-cols-[minmax(7rem,1fr)_minmax(8rem,1.1fr)_minmax(10rem,1.3fr)_minmax(7rem,.8fr)_auto] gap-3 border-b bg-muted/40 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground md:grid">
+                          <span>Fare</span>
+                          <span>Meal</span>
+                          <span>Baggage</span>
+                          <span className="text-right">Price</span>
+                          <span className="sr-only">Actions</span>
                         </div>
+                        <div className="divide-y">
+                          {fareRows(flight).map((fare) => (
+                            <div key={`${flight.flightId}-${fare.tier}-${fare.price.total}`} className="grid gap-3 bg-card px-4 py-3 text-sm md:grid-cols-[minmax(7rem,1fr)_minmax(8rem,1.1fr)_minmax(10rem,1.3fr)_minmax(7rem,.8fr)_auto] md:items-center">
+                              <div className="min-w-0">
+                                <p className="truncate font-bold text-foreground" title={fare.tier}>{fare.tier}</p>
+                              </div>
+                              <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={mealLabel(fare, flight)}>
+                                <Coffee className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                <span className="truncate">{mealLabel(fare, flight)}</span>
+                              </p>
+                              <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={baggageLabel(fare, flight)}>
+                                <Luggage className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                <span className="truncate">{baggageLabel(fare, flight)}</span>
+                              </p>
+                              <p className="whitespace-nowrap text-left text-base font-black text-foreground md:text-right">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</p>
+                              <div className="flex items-center gap-2 md:justify-end">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 shrink-0 rounded-full"
+                                  aria-label={`View ${fare.tier} fare details`}
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    setFareDetails({ flight, fare });
+                                  }}
+                                >
+                                  <Info className="h-4 w-4" />
+                                </Button>
+                                <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer">
+                                  <Button variant="outline" size="sm" className="whitespace-nowrap rounded-xl gap-2">
+                                    <WhatsAppIcon className="h-4 w-4" /> WhatsApp Help
+                                  </Button>
+                                </a>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="hidden">
                         <div className="flex flex-col gap-2">
                           {false && (
                             <>
@@ -1125,6 +1237,44 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             <Button variant="outline" onClick={() => { setCalculatorBase(""); setCalculatorTaxes(""); setCalculatorServiceFee(""); }}>Clear</Button>
             <Button onClick={() => setFareCalculatorOpen(false)}>Done</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!fareDetails} onOpenChange={(open) => !open && setFareDetails(null)}>
+        <DialogContent className="flex max-h-[90vh] w-[calc(100vw-2rem)] flex-col overflow-hidden sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Fare Option Details</DialogTitle>
+          </DialogHeader>
+          {fareDetails && (
+            <div className="min-h-0 space-y-4 overflow-y-auto py-2 pr-1">
+              <div className="rounded-2xl border bg-muted/40 p-4">
+                <p className="truncate text-lg font-bold text-foreground" title={fareDetails.flight.airline}>{fareDetails.flight.airline}</p>
+                <p className="mt-1 truncate text-sm text-muted-foreground" title={`${fareDetails.flight.flightNumber} - ${flightOriginLabel(fareDetails.flight)} to ${flightDestinationLabel(fareDetails.flight)}`}>
+                  {fareDetails.flight.flightNumber} - {flightOriginLabel(fareDetails.flight)} to {flightDestinationLabel(fareDetails.flight)}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{format(departDate, "EEE, MMM dd, yyyy")} - {fareDetails.flight.class}</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <InfoBox title="Fare Option" value={fareDetails.fare.tier} />
+                <InfoBox title="Price" value={formatFare(fareDetails.fare.price.total, fareDetails.fare.price.currency || fareDetails.flight.currency)} />
+                <InfoBox title="Baggage" value={baggageLabel(fareDetails.fare, fareDetails.flight)} />
+                <InfoBox title="Meal" value={mealLabel(fareDetails.fare, fareDetails.flight)} />
+                <InfoBox title="Refund Rules" value={cleanFareText(fareDetails.fare.refund, "Refund rule not available")} />
+                <InfoBox title="Change Rules" value={cleanFareText(fareDetails.fare.change, "Change rule not available")} />
+              </div>
+              <div className="rounded-2xl border p-4">
+                <p className="font-semibold text-foreground">Fare conditions</p>
+                <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                  <p>No-show rules: {cleanFareText((fareDetails.fare as DisplayFare & { noShow?: string }).noShow, "No-show rule not available")}</p>
+                  <p>Cancellation rules: {cleanFareText((fareDetails.fare as DisplayFare & { cancellation?: string }).cancellation, "Cancellation rule not available")}</p>
+                  <p>Conditions: {cleanFareText((fareDetails.fare as DisplayFare & { conditions?: string }).conditions, "Fare conditions not available")}</p>
+                  {fareDetails.fare.amenities?.length ? (
+                    <p className="break-words">Amenities: {fareDetails.fare.amenities.join(", ")}</p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
