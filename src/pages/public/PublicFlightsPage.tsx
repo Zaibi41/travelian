@@ -924,7 +924,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   <CardContent className="p-5">
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                        <div className="flex min-w-0 items-center gap-3 md:w-[18rem] md:shrink-0">
+                        <div className="flex min-w-0 items-center gap-3 md:w-[13rem] md:shrink-0">
                           <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={flight.airlineImage} className="h-12 w-12 rounded-xl" />
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-foreground" title={flight.airline}>{flight.airline}</p>
@@ -937,7 +937,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           </div>
                         </div>
                         <div className="flex min-w-0 flex-1 items-center gap-3">
-                          <div className="min-w-0 shrink-0 basis-[7.5rem] text-left">
+                          <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
                             <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
                             <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
                             <p className="truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
@@ -950,7 +950,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               </div>
                             {stopLabel(flight) && <span className="max-w-full truncate text-[10px] font-medium text-success" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
                           </div>
-                          <div className="min-w-0 shrink-0 basis-[7.5rem] text-left">
+                          <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
                             <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
                             <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
                             <p className="truncate text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
@@ -988,11 +988,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       <div className="overflow-hidden rounded-2xl border">
                         <table className="hidden w-full table-fixed border-collapse md:table">
                           <colgroup>
-                            <col className="w-[21%]" />
                             <col className="w-[20%]" />
-                            <col className="w-[23%]" />
-                            <col className="w-[18%]" />
-                            <col className="w-[18%]" />
+                            <col className="w-[19%]" />
+                            <col className="w-[22%]" />
+                            <col className="w-[19%]" />
+                            <col className="w-[20%]" />
                           </colgroup>
                           <thead className="bg-muted/40 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                             <tr className="border-b">
@@ -1009,7 +1009,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                   <span>Baggage</span>
                                 </span>
                               </th>
-                              <th className="px-3 py-2 text-right">Price</th>
+                              <th className="px-3 py-2 text-center">Price</th>
                               <th className="px-3 py-2 text-right">
                                 <span className="sr-only">Actions</span>
                               </th>
@@ -1035,7 +1035,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                     <span className="truncate">{baggageLabel(fare, flight)}</span>
                                   </p>
                                 </td>
-                                <td className="overflow-hidden px-3 py-3 text-right align-middle">
+                                <td className="overflow-hidden px-3 py-3 text-center align-middle">
                                   <span className="block truncate whitespace-nowrap text-base font-black text-foreground" title={formatFare(fare.price.total, fare.price.currency || flight.currency)}>{formatFare(fare.price.total, fare.price.currency || flight.currency)}</span>
                                 </td>
                                 <td className="overflow-hidden px-3 py-3 text-right align-middle">
