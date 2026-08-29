@@ -381,12 +381,20 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const stopLabel = (flight: TravelianFlight) => {
     const stops = flight.stops || 0;
     const via = (flight.layovers || []).map((layover) => String(layover.location || "").trim()).filter(Boolean);
-    if (!stops) return "Non Stop";
+    if (!stops) return "";
     const stopText = `${stops} Stop${stops === 1 ? "" : "s"}`;
-    return via.length ? `${stopText} via ${via.join(", ")}` : stopText;
+    return via.length ? `${stopText} (${via.join(", ")})` : stopText;
   };
 
   const formatFlightTime = (value?: string | null) => String(value || "").split(" ")[1] || "TBA";
+  const formatFlightDate = (value?: string | null) => {
+    const text = String(value || "");
+    const date = new Date(text);
+    if (!Number.isNaN(date.getTime())) return format(date, "dd MMM yyyy");
+    const [datePart] = text.split(" ");
+    const parsed = parseDateOnly(datePart);
+    return parsed ? format(parsed, "dd MMM yyyy") : format(departDate, "dd MMM yyyy");
+  };
 
   const formatFlightDateTimeLabel = (value?: string | null) => {
     const text = String(value || "");
@@ -932,7 +940,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           <p className="text-xs text-muted-foreground">{format(departDate, "EEE, MMM dd, yyyy")}</p>
                           <div className="mt-3 flex items-center gap-3">
                             <div className="min-w-0 text-center">
-                              <p className="text-xl font-bold text-foreground">{flight.departureTime.split(' ')[1] || "TBA"}</p>
+                              <p className="text-3xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
                               <p className="max-w-32 truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
                             </div>
                             <div className="flex-1 flex flex-col items-center px-2">
@@ -941,10 +950,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-2 border-primary bg-card" />
                                 <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-primary" />
                               </div>
-                              <span className="max-w-full truncate text-[10px] text-success font-medium" title={stopLabel(flight)}>{stopLabel(flight)}</span>
+                              {stopLabel(flight) && <span className="max-w-full truncate text-[10px] text-success font-medium" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
                             </div>
                             <div className="min-w-0 text-center">
-                              <p className="text-xl font-bold text-foreground">{flight.arrivalTime.split(' ')[1] || "TBA"}</p>
+                              <p className="text-3xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
+                              <p className="mt-1 text-xs text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
                               <p className="max-w-32 truncate text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
                             </div>
                           </div>
@@ -957,26 +967,24 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               <span>{flight.returnArrivalTime}</span>
                             </div>
                           )}
-                          {primaryFare && (
-                            <div className="mt-4 flex flex-wrap items-center gap-3 border-t pt-3">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-9 rounded-lg px-0 text-sm font-semibold text-foreground hover:bg-transparent hover:text-primary"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  setFareDetailsTab("flight");
-                                  setExpandedFareRule(primaryFare.tier);
-                                  setFareDetails({ flight, fare: primaryFare });
-                                }}
-                              >
-                                Flight Details
-                              </Button>
-                            </div>
-                          )}
                         </div>
+                        {primaryFare && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="ml-auto h-8 shrink-0 rounded-lg px-3 text-xs font-semibold"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              setFareDetailsTab("flight");
+                              setExpandedFareRule(primaryFare.tier);
+                              setFareDetails({ flight, fare: primaryFare });
+                            }}
+                          >
+                            Flight Details
+                          </Button>
+                        )}
                       </div>
                       <div className="overflow-hidden rounded-2xl border">
                         <div className="hidden grid-cols-[minmax(7rem,1fr)_minmax(8rem,1.1fr)_minmax(10rem,1.3fr)_minmax(7rem,.8fr)_auto] gap-3 border-b bg-muted/40 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground md:grid">
