@@ -988,11 +988,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       <div className="overflow-hidden rounded-2xl border">
                         <table className="hidden w-full table-fixed border-collapse md:table">
                           <colgroup>
-                            <col className="w-[22%]" />
-                            <col className="w-[22%]" />
-                            <col className="w-[30%]" />
-                            <col className="w-[14%]" />
-                            <col className="w-[12%]" />
+                            <col className="w-[21%]" />
+                            <col className="w-[20%]" />
+                            <col className="w-[23%]" />
+                            <col className="w-[18%]" />
+                            <col className="w-[18%]" />
                           </colgroup>
                           <thead className="bg-muted/40 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                             <tr className="border-b">
@@ -1009,8 +1009,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                   <span>Baggage</span>
                                 </span>
                               </th>
-                              <th className="px-4 py-2 text-right">Price</th>
-                              <th className="px-4 py-2 text-right">
+                              <th className="px-3 py-2 text-right">Price</th>
+                              <th className="px-3 py-2 text-right">
                                 <span className="sr-only">Actions</span>
                               </th>
                             </tr>
@@ -1035,12 +1035,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                     <span className="truncate">{baggageLabel(fare, flight)}</span>
                                   </p>
                                 </td>
-                                <td className="px-4 py-3 text-right align-middle">
-                                  <span className="whitespace-nowrap text-base font-black text-foreground">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</span>
+                                <td className="overflow-hidden px-3 py-3 text-right align-middle">
+                                  <span className="block truncate whitespace-nowrap text-base font-black text-foreground" title={formatFare(fare.price.total, fare.price.currency || flight.currency)}>{formatFare(fare.price.total, fare.price.currency || flight.currency)}</span>
                                 </td>
-                                <td className="px-4 py-3 text-right align-middle">
+                                <td className="overflow-hidden px-3 py-3 text-right align-middle">
                                   <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer">
-                                    <Button variant="outline" size="sm" className="whitespace-nowrap rounded-xl gap-2">
+                                    <Button variant="outline" size="sm" className="w-full min-w-0 justify-center gap-2 rounded-xl px-3">
                                       <WhatsAppIcon className="h-4 w-4" /> WhatsApp Help
                                     </Button>
                                   </a>
