@@ -1349,26 +1349,31 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       </Dialog>
 
       <Dialog open={!!fareDetails} onOpenChange={(open) => !open && setFareDetails(null)}>
-        <DialogContent className="flex max-h-[90vh] w-[calc(100vw-1.5rem)] flex-col overflow-hidden p-0 sm:max-w-2xl">
+        <DialogContent className="flex max-h-[90vh] w-[calc(100vw-1.5rem)] flex-col overflow-hidden border border-primary/10 bg-gradient-to-br from-white via-sky-50/70 to-white p-0 shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:max-w-2xl">
           {fareDetails && (
             <>
-              <DialogHeader className="shrink-0 px-5 pt-5 sm:px-6">
-                <DialogTitle className="text-2xl font-bold">Flight Details</DialogTitle>
-                <div className="space-y-2 pt-3 text-left">
-                  <p className="truncate text-base font-bold text-foreground" title={`(${fareDetails.flight.origin} - ${fareDetails.flight.destination}) - ${formatFlightTime(fareDetails.flight.departureTime)} - ${formatFlightTime(fareDetails.flight.arrivalTime)} (${fareDetails.flight.duration || getDuration(fareDetails.flight.departureTime, fareDetails.flight.arrivalTime)})`}>
+              <DialogHeader className="shrink-0 border-b border-primary/10 bg-white/85 px-5 py-5 text-left backdrop-blur sm:px-6">
+                <div className="flex items-start gap-3 pr-8">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                    <Plane className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <DialogTitle className="text-2xl font-black text-slate-950">Flight Details</DialogTitle>
+                    <p className="mt-1 truncate text-sm font-bold text-primary" title={`(${fareDetails.flight.origin} - ${fareDetails.flight.destination}) - ${formatFlightTime(fareDetails.flight.departureTime)} - ${formatFlightTime(fareDetails.flight.arrivalTime)} (${fareDetails.flight.duration || getDuration(fareDetails.flight.departureTime, fareDetails.flight.arrivalTime)})`}>
                     ({fareDetails.flight.origin} - {fareDetails.flight.destination}) - {formatFlightTime(fareDetails.flight.departureTime)} - {formatFlightTime(fareDetails.flight.arrivalTime)} ({fareDetails.flight.duration || getDuration(fareDetails.flight.departureTime, fareDetails.flight.arrivalTime)})
-                  </p>
-                  <div className="flex min-w-0 items-center gap-2">
-                    <AirlineLogo airline={fareDetails.flight.airline} flightNumber={fareDetails.flight.flightNumber} imageUrl={fareDetails.flight.airlineImage} className="h-5 w-5 rounded-none border-0" />
-                    <p className="truncate text-sm text-foreground" title={`${fareDetails.flight.airline} - ${fareDetails.flight.flightNumber}`}>
-                      {fareDetails.flight.airline} - {fareDetails.flight.flightNumber}
                     </p>
+                    <div className="mt-3 flex min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                      <AirlineLogo airline={fareDetails.flight.airline} flightNumber={fareDetails.flight.flightNumber} imageUrl={fareDetails.flight.airlineImage} className="h-7 w-7 rounded-md border-0 shadow-none ring-0" />
+                      <p className="truncate text-sm font-semibold text-slate-800" title={`${fareDetails.flight.airline} - ${fareDetails.flight.flightNumber}`}>
+                        {fareDetails.flight.airline} - {fareDetails.flight.flightNumber}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </DialogHeader>
 
-              <div className="shrink-0 px-5 pt-4 sm:px-6">
-                <div className="grid overflow-hidden rounded-full border border-emerald-500 text-sm font-semibold text-emerald-600 sm:grid-cols-4">
+              <div className="shrink-0 bg-white/60 px-5 pt-4 sm:px-6">
+                <div className="grid overflow-hidden rounded-2xl border border-primary/15 bg-white p-1 text-sm font-semibold text-slate-600 shadow-sm sm:grid-cols-4">
                   {([
                     ["flight", "Flight Info"],
                     ["cancellation", "Cancellation"],
@@ -1380,8 +1385,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       type="button"
                       onClick={() => setFareDetailsTab(tab)}
                       className={cn(
-                        "flex items-center justify-center gap-2 border-emerald-500 px-3 py-3 transition-colors sm:border-r sm:last:border-r-0",
-                        fareDetailsTab === tab ? "bg-emerald-100 text-emerald-700" : "bg-card hover:bg-emerald-50",
+                        "flex items-center justify-center gap-2 rounded-xl px-3 py-3 transition-colors",
+                        fareDetailsTab === tab ? "bg-primary text-primary-foreground shadow-sm" : "bg-transparent hover:bg-primary/5 hover:text-primary",
                       )}
                     >
                       {fareDetailsTab === tab && <Check className="h-4 w-4" />}
@@ -1405,24 +1410,24 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       arrivalTime: fareDetails.flight.arrivalTime,
                       duration: fareDetails.flight.duration,
                     }]).map((segment, index, allSegments) => (
-                      <div key={`${segment.flightNumber || fareDetails.flight.flightNumber}-${index}`} className="space-y-4">
+                      <div key={`${segment.flightNumber || fareDetails.flight.flightNumber}-${index}`} className="space-y-4 rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
                         <div className="grid grid-cols-[1rem_minmax(0,1fr)_auto] gap-3">
                           <div className="relative flex justify-center">
-                            <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                            <span className="absolute top-5 h-[calc(100%-1.5rem)] w-px bg-emerald-500" />
+                            <span className="mt-1 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-primary/10" />
+                            <span className="absolute top-5 h-[calc(100%-1.5rem)] w-px bg-gradient-to-b from-primary to-emerald-400" />
                           </div>
                           <div className="min-w-0 space-y-4">
                             <div className="min-w-0">
-                              <p className="truncate text-base font-semibold text-foreground" title={`${formatFlightTime(segment.departureTime)} - ${routeLabel(segment.origin || "", segment.departureAirport)}`}>
+                              <p className="truncate text-base font-bold text-slate-950" title={`${formatFlightTime(segment.departureTime)} - ${routeLabel(segment.origin || "", segment.departureAirport)}`}>
                                 {formatFlightTime(segment.departureTime)} - {routeLabel(segment.origin || "", segment.departureAirport)}
                               </p>
                               <p className="truncate text-xs text-muted-foreground" title={`(${segment.origin || ""}) ${segment.departureAirport || ""}`}>
                                 ({segment.origin || ""}) {segment.departureAirport || ""}
                               </p>
-                              <p className="mt-4 text-sm font-semibold text-foreground">({segment.duration || getDuration(segment.departureTime || "", segment.arrivalTime || "")})</p>
+                              <p className="mt-4 inline-flex rounded-full bg-primary/5 px-3 py-1 text-sm font-semibold text-primary">({segment.duration || getDuration(segment.departureTime || "", segment.arrivalTime || "")})</p>
                             </div>
                             <div className="min-w-0">
-                              <p className="truncate text-base font-semibold text-foreground" title={`${formatFlightTime(segment.arrivalTime)} - ${routeLabel(segment.destination || "", segment.arrivalAirport)}`}>
+                              <p className="truncate text-base font-bold text-slate-950" title={`${formatFlightTime(segment.arrivalTime)} - ${routeLabel(segment.destination || "", segment.arrivalAirport)}`}>
                                 {formatFlightTime(segment.arrivalTime)} - {routeLabel(segment.destination || "", segment.arrivalAirport)}
                               </p>
                               <p className="truncate text-xs text-muted-foreground" title={`(${segment.destination || ""}) ${segment.arrivalAirport || ""}`}>
@@ -1430,15 +1435,15 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 self-center whitespace-nowrap text-sm font-medium text-foreground">
-                            <AirlineLogo airline={fareDetails.flight.airline} flightNumber={segment.flightNumber || fareDetails.flight.flightNumber} imageUrl={fareDetails.flight.airlineImage} className="h-5 w-5 rounded-none border-0" />
+                          <div className="flex items-center gap-2 self-center whitespace-nowrap rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">
+                            <AirlineLogo airline={fareDetails.flight.airline} flightNumber={segment.flightNumber || fareDetails.flight.flightNumber} imageUrl={fareDetails.flight.airlineImage} className="h-6 w-6 rounded-md border-0 shadow-none ring-0" />
                             <span>{segment.flightNumber || fareDetails.flight.flightNumber}</span>
                           </div>
                         </div>
                         {fareDetails.flight.layovers?.[index] && index < allSegments.length - 1 && (
-                          <div className="ml-7 rounded-xl border border-dashed bg-muted/30 px-4 py-3 text-sm text-foreground">
-                            <Clock className="mr-2 inline h-4 w-4 text-emerald-600" />
-                            Stop at ({fareDetails.flight.layovers[index].location}){fareDetails.flight.layovers[index].duration ? ` - ${fareDetails.flight.layovers[index].duration}` : ""}
+                          <div className="ml-7 rounded-xl border border-dashed border-primary/20 bg-primary/5 px-4 py-3 text-sm font-medium text-slate-800">
+                            <Clock className="mr-2 inline h-4 w-4 text-primary" />
+                            Stop at ({fareDetails.flight.layovers[index].location || segment.destination || allSegments[index + 1]?.origin || "Transit"}){fareDetails.flight.layovers[index].duration ? ` - ${fareDetails.flight.layovers[index].duration}` : ""}
                           </div>
                         )}
                       </div>
@@ -1447,7 +1452,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 )}
 
                 {(fareDetailsTab === "cancellation" || fareDetailsTab === "date-change") && (
-                  <div className="rounded-2xl border p-3">
+                  <div className="rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-sm">
                     <div className="space-y-2">
                       {fareRows(fareDetails.flight).map((fare) => {
                         const isOpen = expandedFareRule === fare.tier;
@@ -1458,10 +1463,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           <div key={`${fare.tier}-${fareDetailsTab}`} className="border-b border-dashed pb-2 last:border-b-0 last:pb-0">
                             <button
                               type="button"
-                              className="flex w-full items-center justify-between gap-3 rounded-xl bg-muted/20 px-4 py-3 text-left"
+                              className="flex w-full items-center justify-between gap-3 rounded-xl bg-sky-50/70 px-4 py-3 text-left transition-colors hover:bg-primary/5"
                               onClick={() => setExpandedFareRule(isOpen ? null : fare.tier)}
                             >
-                              <span className="truncate font-bold text-emerald-600" title={fare.tier}>{fare.tier}</span>
+                              <span className="truncate font-bold text-primary" title={fare.tier}>{fare.tier}</span>
                               <span className="flex shrink-0 items-center gap-3">
                                 <span className="rounded-lg bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-600">
                                   {/non[- ]?refundable|not refundable|no refund/i.test(value) ? "Non-Refundable" : cleanFareText(fare.refund, "Rules unavailable")}
