@@ -985,16 +985,72 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         )}
                       </div>
                       <div className="overflow-hidden rounded-2xl border">
-                        <div className="hidden grid-cols-[minmax(7rem,1fr)_minmax(8rem,1.1fr)_minmax(10rem,1.3fr)_minmax(7rem,.8fr)_auto] gap-3 border-b bg-muted/40 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground md:grid">
-                          <span>Fare</span>
-                          <span>Meal</span>
-                          <span>Baggage</span>
-                          <span className="text-right">Price</span>
-                          <span className="sr-only">Actions</span>
-                        </div>
-                        <div className="divide-y">
+                        <table className="hidden w-full table-fixed border-collapse md:table">
+                          <colgroup>
+                            <col className="w-[22%]" />
+                            <col className="w-[22%]" />
+                            <col className="w-[30%]" />
+                            <col className="w-[14%]" />
+                            <col className="w-[12%]" />
+                          </colgroup>
+                          <thead className="bg-muted/40 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            <tr className="border-b">
+                              <th className="px-4 py-2 text-left">Fare</th>
+                              <th className="px-4 py-2 text-left">
+                                <span className="inline-flex min-w-0 items-center gap-1.5">
+                                  <span className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                  <span>Meal</span>
+                                </span>
+                              </th>
+                              <th className="px-4 py-2 text-left">
+                                <span className="inline-flex min-w-0 items-center gap-1.5">
+                                  <span className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                                  <span>Baggage</span>
+                                </span>
+                              </th>
+                              <th className="px-4 py-2 text-right">Price</th>
+                              <th className="px-4 py-2 text-right">
+                                <span className="sr-only">Actions</span>
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {displayFares.map((fare) => (
+                              <tr key={`${flight.flightId}-${fare.tier}-${fare.price.total}`} className="bg-card text-sm">
+                                <td className="min-w-0 px-4 py-3 align-middle">
+                                  <p className="truncate font-bold text-foreground" title={fare.tier}>{fare.tier}</p>
+                                </td>
+                                <td className="px-4 py-3 align-middle">
+                                  <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={mealLabel(fare, flight)}>
+                                    {hasMeal(fare, flight)
+                                      ? <Utensils className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                                      : <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+                                    <span className="truncate">{mealLabel(fare, flight)}</span>
+                                  </p>
+                                </td>
+                                <td className="px-4 py-3 align-middle">
+                                  <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={baggageLabel(fare, flight)}>
+                                    <Luggage className={cn("h-3.5 w-3.5 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
+                                    <span className="truncate">{baggageLabel(fare, flight)}</span>
+                                  </p>
+                                </td>
+                                <td className="px-4 py-3 text-right align-middle">
+                                  <span className="whitespace-nowrap text-base font-black text-foreground">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</span>
+                                </td>
+                                <td className="px-4 py-3 text-right align-middle">
+                                  <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer">
+                                    <Button variant="outline" size="sm" className="whitespace-nowrap rounded-xl gap-2">
+                                      <WhatsAppIcon className="h-4 w-4" /> WhatsApp Help
+                                    </Button>
+                                  </a>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        <div className="divide-y md:hidden">
                           {displayFares.map((fare) => (
-                            <div key={`${flight.flightId}-${fare.tier}-${fare.price.total}`} className="grid gap-3 bg-card px-4 py-3 text-sm md:grid-cols-[minmax(7rem,1fr)_minmax(8rem,1.1fr)_minmax(10rem,1.3fr)_minmax(7rem,.8fr)_auto] md:items-center">
+                            <div key={`${flight.flightId}-${fare.tier}-${fare.price.total}`} className="grid gap-3 bg-card px-4 py-3 text-sm">
                               <div className="min-w-0">
                                 <p className="truncate font-bold text-foreground" title={fare.tier}>{fare.tier}</p>
                               </div>
@@ -1008,8 +1064,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 <Luggage className={cn("h-3.5 w-3.5 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
                                 <span className="truncate">{baggageLabel(fare, flight)}</span>
                               </p>
-                              <p className="whitespace-nowrap text-left text-base font-black text-foreground md:text-right">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</p>
-                              <div className="flex items-center gap-2 md:justify-end">
+                              <p className="whitespace-nowrap text-left text-base font-black text-foreground">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</p>
+                              <div className="flex items-center gap-2">
                                 <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer">
                                   <Button variant="outline" size="sm" className="whitespace-nowrap rounded-xl gap-2">
                                     <WhatsAppIcon className="h-4 w-4" /> WhatsApp Help
