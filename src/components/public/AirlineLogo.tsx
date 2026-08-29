@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plane } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const airlineCodes: Record<string, string> = {
   "9p": "9P",
@@ -117,10 +118,12 @@ export function AirlineLogo({
   airline,
   flightNumber,
   imageUrl,
+  className,
 }: {
   airline: string;
   flightNumber?: string;
   imageUrl?: string | null;
+  className?: string;
 }) {
   const [failed, setFailed] = useState(false);
   const airlineName = String(airline || "Airline");
@@ -133,7 +136,7 @@ export function AirlineLogo({
 
   if (remoteLogo && !failed) {
     return (
-      <div className={logoShell}>
+      <div className={cn(logoShell, className)}>
         <img
           src={remoteLogo}
           alt={`${airlineName} logo`}
@@ -147,7 +150,7 @@ export function AirlineLogo({
 
   if (localLogo && !failed) {
     return (
-      <div className={logoShell}>
+      <div className={cn(logoShell, className)}>
         <img
           src={localLogo}
           alt={`${airlineName} logo`}
@@ -161,14 +164,14 @@ export function AirlineLogo({
 
   if (!code || failed) {
     return (
-      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/15">
+      <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/15", className)}>
         <Plane className="h-6 w-6" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/15">
+    <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/15", className)}>
       <Plane className="h-6 w-6" />
     </div>
   );

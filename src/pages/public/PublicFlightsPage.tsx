@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, Info, TimerReset } from "lucide-react";
+import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, Info, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -32,8 +32,12 @@ type DisplayFare = {
   meal?: string | null;
   refund?: string | null;
   change?: string | null;
+  noShow?: string | null;
+  cancellation?: string | null;
+  conditions?: string | null;
   amenities?: string[];
 };
+type FareDetailsTab = "flight" | "cancellation" | "date-change" | "baggage";
 const SEARCH_RESULT_TTL_SECONDS = 900;
 
 const sortOptions = [
@@ -116,6 +120,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [addToQuotations, setAddToQuotations] = useState(false);
   const [detailsFlight, setDetailsFlight] = useState<TravelianFlight | null>(null);
   const [fareDetails, setFareDetails] = useState<{ flight: TravelianFlight; fare: DisplayFare } | null>(null);
+  const [fareDetailsTab, setFareDetailsTab] = useState<FareDetailsTab>("flight");
+  const [expandedFareRule, setExpandedFareRule] = useState<string | null>(null);
   const [calculatorBase, setCalculatorBase] = useState("");
   const [calculatorTaxes, setCalculatorTaxes] = useState("");
   const [calculatorServiceFee, setCalculatorServiceFee] = useState("");
@@ -318,18 +324,30 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return `${dst} ${Math.round(converted).toLocaleString()}`;
   };
 
+  const isUnclearDisplayValue = (value: unknown) => {
+    const text = String(value || "").trim();
+    return !text || /^(null|undefined|n\/a|na|-|none|not available|see supplier details|subject to supplier rules|meal info not available|baggage info not available)$/i.test(text);
+  };
+
   const cleanFareText = (value: unknown, fallback: string) => {
     const text = String(value || "").trim();
-    if (!text || /^(null|undefined|n\/a|na|-|see supplier details)$/i.test(text)) return fallback;
+    if (isUnclearDisplayValue(text)) return fallback;
     return text;
   };
 
-  const mealLabel = (fare: DisplayFare, flight: TravelianFlight) => cleanFareText(fare.meal || flight.meal, "Meal info not available");
+  const mealLabel = (fare: DisplayFare, flight: TravelianFlight) => {
+    const meal = cleanFareText(fare.meal || flight.meal, "No Meal");
+    if (/included|available|yes/i.test(meal)) return "Meal";
+    return meal === "No Meal" ? "No Meal" : "Meal";
+  };
 
   const baggageLabel = (fare: DisplayFare, flight: TravelianFlight) => {
     if (/nil baggage|no baggage/i.test(fare.tier)) return "No Baggage";
-    return cleanFareText(fare.bags || flight.baggage, "Baggage info not available");
+    return cleanFareText(fare.bags || flight.baggage, "No Baggage");
   };
+
+  const hasMeal = (fare: DisplayFare, flight: TravelianFlight) => mealLabel(fare, flight) !== "No Meal";
+  const hasBaggage = (fare: DisplayFare, flight: TravelianFlight) => baggageLabel(fare, flight) !== "No Baggage";
 
   const fareRows = (flight: TravelianFlight): DisplayFare[] => {
     if (flight.fareOptions?.length) {
@@ -340,6 +358,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         meal: flight.meal,
         refund: fare.refund,
         change: fare.change,
+        noShow: (fare as DisplayFare).noShow,
+        cancellation: (fare as DisplayFare).cancellation,
+        conditions: (fare as DisplayFare).conditions,
         amenities: fare.amenities,
       }));
     }
@@ -350,13 +371,28 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       meal: flight.meal,
       refund: flight.baggage ? "Subject to fare rules" : "",
       change: "",
+      noShow: "",
+      cancellation: "",
+      conditions: "",
       amenities: [],
     }];
   };
 
-  const stopLabel = (stops?: number) => {
+  const stopLabel = (flight: TravelianFlight) => {
+    const stops = flight.stops || 0;
+    const via = (flight.layovers || []).map((layover) => String(layover.location || "").trim()).filter(Boolean);
     if (!stops) return "Non Stop";
-    return `${stops} Stop${stops === 1 ? "" : "s"}`;
+    const stopText = `${stops} Stop${stops === 1 ? "" : "s"}`;
+    return via.length ? `${stopText} via ${via.join(", ")}` : stopText;
+  };
+
+  const formatFlightTime = (value?: string | null) => String(value || "").split(" ")[1] || "TBA";
+
+  const formatFlightDateTimeLabel = (value?: string | null) => {
+    const text = String(value || "");
+    const date = new Date(text);
+    if (!Number.isNaN(date.getTime())) return format(date, "dd MMM, yyyy hh:mm a");
+    return text || "TBA";
   };
 
   const formatProviderName = (provider?: string) => {
@@ -903,7 +939,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full border-2 border-primary bg-card" />
                                 <div className="absolute right-0 top-1/2 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-primary" />
                               </div>
-                              <span className="text-[10px] text-success font-medium">{stopLabel(flight.stops)}</span>
+                              <span className="max-w-full truncate text-[10px] text-success font-medium" title={stopLabel(flight)}>{stopLabel(flight)}</span>
                             </div>
                             <div className="min-w-0 text-center">
                               <p className="text-xl font-bold text-foreground">{flight.arrivalTime.split(' ')[1] || "TBA"}</p>
@@ -936,11 +972,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 <p className="truncate font-bold text-foreground" title={fare.tier}>{fare.tier}</p>
                               </div>
                               <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={mealLabel(fare, flight)}>
-                                <Coffee className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                {hasMeal(fare, flight)
+                                  ? <Utensils className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                                  : <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
                                 <span className="truncate">{mealLabel(fare, flight)}</span>
                               </p>
                               <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={baggageLabel(fare, flight)}>
-                                <Luggage className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                <Luggage className={cn("h-3.5 w-3.5 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
                                 <span className="truncate">{baggageLabel(fare, flight)}</span>
                               </p>
                               <p className="whitespace-nowrap text-left text-base font-black text-foreground md:text-right">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</p>
@@ -954,6 +992,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                   onClick={(event) => {
                                     event.preventDefault();
                                     event.stopPropagation();
+                                    setFareDetailsTab("flight");
+                                    setExpandedFareRule(fare.tier);
                                     setFareDetails({ flight, fare });
                                   }}
                                 >
@@ -1241,39 +1281,146 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       </Dialog>
 
       <Dialog open={!!fareDetails} onOpenChange={(open) => !open && setFareDetails(null)}>
-        <DialogContent className="flex max-h-[90vh] w-[calc(100vw-2rem)] flex-col overflow-hidden sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Fare Option Details</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="flex max-h-[90vh] w-[calc(100vw-1.5rem)] flex-col overflow-hidden p-0 sm:max-w-2xl">
           {fareDetails && (
-            <div className="min-h-0 space-y-4 overflow-y-auto py-2 pr-1">
-              <div className="rounded-2xl border bg-muted/40 p-4">
-                <p className="truncate text-lg font-bold text-foreground" title={fareDetails.flight.airline}>{fareDetails.flight.airline}</p>
-                <p className="mt-1 truncate text-sm text-muted-foreground" title={`${fareDetails.flight.flightNumber} - ${flightOriginLabel(fareDetails.flight)} to ${flightDestinationLabel(fareDetails.flight)}`}>
-                  {fareDetails.flight.flightNumber} - {flightOriginLabel(fareDetails.flight)} to {flightDestinationLabel(fareDetails.flight)}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">{format(departDate, "EEE, MMM dd, yyyy")} - {fareDetails.flight.class}</p>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <InfoBox title="Fare Option" value={fareDetails.fare.tier} />
-                <InfoBox title="Price" value={formatFare(fareDetails.fare.price.total, fareDetails.fare.price.currency || fareDetails.flight.currency)} />
-                <InfoBox title="Baggage" value={baggageLabel(fareDetails.fare, fareDetails.flight)} />
-                <InfoBox title="Meal" value={mealLabel(fareDetails.fare, fareDetails.flight)} />
-                <InfoBox title="Refund Rules" value={cleanFareText(fareDetails.fare.refund, "Refund rule not available")} />
-                <InfoBox title="Change Rules" value={cleanFareText(fareDetails.fare.change, "Change rule not available")} />
-              </div>
-              <div className="rounded-2xl border p-4">
-                <p className="font-semibold text-foreground">Fare conditions</p>
-                <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-                  <p>No-show rules: {cleanFareText((fareDetails.fare as DisplayFare & { noShow?: string }).noShow, "No-show rule not available")}</p>
-                  <p>Cancellation rules: {cleanFareText((fareDetails.fare as DisplayFare & { cancellation?: string }).cancellation, "Cancellation rule not available")}</p>
-                  <p>Conditions: {cleanFareText((fareDetails.fare as DisplayFare & { conditions?: string }).conditions, "Fare conditions not available")}</p>
-                  {fareDetails.fare.amenities?.length ? (
-                    <p className="break-words">Amenities: {fareDetails.fare.amenities.join(", ")}</p>
-                  ) : null}
+            <>
+              <DialogHeader className="shrink-0 px-5 pt-5 sm:px-6">
+                <DialogTitle className="text-2xl font-bold">Flight Details</DialogTitle>
+                <div className="space-y-2 pt-3 text-left">
+                  <p className="truncate text-base font-bold text-foreground" title={`(${fareDetails.flight.origin} - ${fareDetails.flight.destination}) - ${formatFlightTime(fareDetails.flight.departureTime)} - ${formatFlightTime(fareDetails.flight.arrivalTime)} (${fareDetails.flight.duration || getDuration(fareDetails.flight.departureTime, fareDetails.flight.arrivalTime)})`}>
+                    ({fareDetails.flight.origin} - {fareDetails.flight.destination}) - {formatFlightTime(fareDetails.flight.departureTime)} - {formatFlightTime(fareDetails.flight.arrivalTime)} ({fareDetails.flight.duration || getDuration(fareDetails.flight.departureTime, fareDetails.flight.arrivalTime)})
+                  </p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <AirlineLogo airline={fareDetails.flight.airline} flightNumber={fareDetails.flight.flightNumber} imageUrl={fareDetails.flight.airlineImage} className="h-5 w-5 rounded-none border-0" />
+                    <p className="truncate text-sm text-foreground" title={`${fareDetails.flight.airline} - ${fareDetails.flight.flightNumber}`}>
+                      {fareDetails.flight.airline} - {fareDetails.flight.flightNumber}
+                    </p>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="shrink-0 px-5 pt-4 sm:px-6">
+                <div className="grid overflow-hidden rounded-full border border-emerald-500 text-sm font-semibold text-emerald-600 sm:grid-cols-4">
+                  {([
+                    ["flight", "Flight Info"],
+                    ["cancellation", "Cancellation"],
+                    ["date-change", "Date Change"],
+                    ["baggage", "Baggage"],
+                  ] as const).map(([tab, label]) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setFareDetailsTab(tab)}
+                      className={cn(
+                        "flex items-center justify-center gap-2 border-emerald-500 px-3 py-3 transition-colors sm:border-r sm:last:border-r-0",
+                        fareDetailsTab === tab ? "bg-emerald-100 text-emerald-700" : "bg-card hover:bg-emerald-50",
+                      )}
+                    >
+                      {fareDetailsTab === tab && <Check className="h-4 w-4" />}
+                      <span className="truncate">{label}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
-            </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+                {fareDetailsTab === "flight" && (
+                  <div className="space-y-4">
+                    {(fareDetails.flight.segments?.length ? fareDetails.flight.segments : [{
+                      flightNumber: fareDetails.flight.flightNumber,
+                      carrier: fareDetails.flight.flightNumber.split("-")[0],
+                      origin: fareDetails.flight.origin,
+                      destination: fareDetails.flight.destination,
+                      departureAirport: fareDetails.flight.originAirport,
+                      arrivalAirport: fareDetails.flight.destinationAirport,
+                      departureTime: fareDetails.flight.departureTime,
+                      arrivalTime: fareDetails.flight.arrivalTime,
+                      duration: fareDetails.flight.duration,
+                    }]).map((segment, index, allSegments) => (
+                      <div key={`${segment.flightNumber || fareDetails.flight.flightNumber}-${index}`} className="space-y-4">
+                        <div className="grid grid-cols-[1rem_minmax(0,1fr)_auto] gap-3">
+                          <div className="relative flex justify-center">
+                            <span className="mt-1 h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                            <span className="absolute top-5 h-[calc(100%-1.5rem)] w-px bg-emerald-500" />
+                          </div>
+                          <div className="min-w-0 space-y-4">
+                            <div className="min-w-0">
+                              <p className="truncate text-base font-semibold text-foreground" title={`${formatFlightTime(segment.departureTime)} - ${routeLabel(segment.origin || "", segment.departureAirport)}`}>
+                                {formatFlightTime(segment.departureTime)} - {routeLabel(segment.origin || "", segment.departureAirport)}
+                              </p>
+                              <p className="truncate text-xs text-muted-foreground" title={`(${segment.origin || ""}) ${segment.departureAirport || ""}`}>
+                                ({segment.origin || ""}) {segment.departureAirport || ""}
+                              </p>
+                              <p className="mt-4 text-sm font-semibold text-foreground">({segment.duration || getDuration(segment.departureTime || "", segment.arrivalTime || "")})</p>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-base font-semibold text-foreground" title={`${formatFlightTime(segment.arrivalTime)} - ${routeLabel(segment.destination || "", segment.arrivalAirport)}`}>
+                                {formatFlightTime(segment.arrivalTime)} - {routeLabel(segment.destination || "", segment.arrivalAirport)}
+                              </p>
+                              <p className="truncate text-xs text-muted-foreground" title={`(${segment.destination || ""}) ${segment.arrivalAirport || ""}`}>
+                                ({segment.destination || ""}) {segment.arrivalAirport || ""}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 self-center whitespace-nowrap text-sm font-medium text-foreground">
+                            <AirlineLogo airline={fareDetails.flight.airline} flightNumber={segment.flightNumber || fareDetails.flight.flightNumber} imageUrl={fareDetails.flight.airlineImage} className="h-5 w-5 rounded-none border-0" />
+                            <span>{segment.flightNumber || fareDetails.flight.flightNumber}</span>
+                          </div>
+                        </div>
+                        {fareDetails.flight.layovers?.[index] && index < allSegments.length - 1 && (
+                          <div className="ml-7 rounded-xl border border-dashed bg-muted/30 px-4 py-3 text-sm text-foreground">
+                            <Clock className="mr-2 inline h-4 w-4 text-emerald-600" />
+                            Stop at ({fareDetails.flight.layovers[index].location}){fareDetails.flight.layovers[index].duration ? ` - ${fareDetails.flight.layovers[index].duration}` : ""}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {(fareDetailsTab === "cancellation" || fareDetailsTab === "date-change") && (
+                  <div className="rounded-2xl border p-3">
+                    <div className="space-y-2">
+                      {fareRows(fareDetails.flight).map((fare) => {
+                        const isOpen = expandedFareRule === fare.tier;
+                        const value = fareDetailsTab === "cancellation"
+                          ? cleanFareText(fare.cancellation || fare.refund, "Could not load fare rules.")
+                          : cleanFareText(fare.change, "Could not load fare rules.");
+                        return (
+                          <div key={`${fare.tier}-${fareDetailsTab}`} className="border-b border-dashed pb-2 last:border-b-0 last:pb-0">
+                            <button
+                              type="button"
+                              className="flex w-full items-center justify-between gap-3 rounded-xl bg-muted/20 px-4 py-3 text-left"
+                              onClick={() => setExpandedFareRule(isOpen ? null : fare.tier)}
+                            >
+                              <span className="truncate font-bold text-emerald-600" title={fare.tier}>{fare.tier}</span>
+                              <span className="flex shrink-0 items-center gap-3">
+                                <span className="rounded-lg bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-600">
+                                  {/non[- ]?refundable|not refundable|no refund/i.test(value) ? "Non-Refundable" : cleanFareText(fare.refund, "Rules unavailable")}
+                                </span>
+                                {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              </span>
+                            </button>
+                            {isOpen && (
+                              <p className="mx-4 my-3 border-l-2 border-red-200 pl-3 text-sm text-muted-foreground">{value}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {fareDetailsTab === "baggage" && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <InfoBox title="Fare" value={fareDetails.fare.tier} />
+                    <InfoBox title="Cabin baggage" value={hasBaggage(fareDetails.fare, fareDetails.flight) ? baggageLabel(fareDetails.fare, fareDetails.flight) : "No Baggage"} />
+                    <InfoBox title="Checked baggage" value={hasBaggage(fareDetails.fare, fareDetails.flight) ? baggageLabel(fareDetails.fare, fareDetails.flight) : "No Baggage"} />
+                    <InfoBox title="Pieces / weight" value={hasBaggage(fareDetails.fare, fareDetails.flight) ? baggageLabel(fareDetails.fare, fareDetails.flight) : "Baggage details are not available."} />
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </DialogContent>
       </Dialog>
