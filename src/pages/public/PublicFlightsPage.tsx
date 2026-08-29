@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { SEO } from "@/components/SEO";
 import { TravelersClassPicker, formatTravelers, type TravelersValue } from "@/components/public/TravelersClassPicker";
 import { searchFlights, type TravelianFlight } from "@/lib/travelian-api";
-import { AirportCombobox, getAirportDisplay } from "@/components/public/AirportCombobox";
+import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { FlightSearchLoader } from "@/components/public/FlightSearchLoader";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
 import { AirlineLogo } from "@/components/public/AirlineLogo";
@@ -26,18 +26,6 @@ import { whatsappUrl } from "@/lib/site-config";
 type FlightTripType = "oneway" | "roundtrip" | "multicity";
 type FlightSegment = { from: string; to: string; date: Date | undefined };
 const SEARCH_RESULT_TTL_SECONDS = 900;
-
-const airportCityFallback: Record<string, string> = {
-  AUH: "Abu Dhabi",
-  CDG: "Paris",
-  DXB: "Dubai",
-  ISB: "Islamabad",
-  JED: "Jeddah",
-  KHI: "Karachi",
-  LHE: "Lahore",
-  RUH: "Riyadh",
-  XNB: "Dubai Bus Station",
-};
 
 const sortOptions = [
   { value: "price-asc", label: "Price - Low to High" },
@@ -465,12 +453,15 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     next.set("depart", formatDateOnly(safeDate));
     setParams(next, { replace: true });
   };
-  const routeLabel = (code: string) => {
+  const routeLabel = (code: string, airportName?: string | null) => {
     const cleanCode = String(code || "").trim().toUpperCase();
-    const display = getAirportDisplay(cleanCode);
-    if (display !== cleanCode) return display;
-    return airportCityFallback[cleanCode] ? `${cleanCode} - ${airportCityFallback[cleanCode]}` : cleanCode;
+    const cleanAirportName = String(airportName || "").trim();
+    return cleanAirportName ? `${cleanCode} - ${cleanAirportName}` : cleanCode;
   };
+  const firstSegment = (flight: TravelianFlight) => flight.segments?.[0];
+  const lastSegment = (flight: TravelianFlight) => flight.segments?.[flight.segments.length - 1];
+  const flightOriginLabel = (flight: TravelianFlight) => routeLabel(flight.origin, flight.originAirport || firstSegment(flight)?.departureAirport);
+  const flightDestinationLabel = (flight: TravelianFlight) => routeLabel(flight.destination, flight.destinationAirport || lastSegment(flight)?.arrivalAirport);
   const dateFareLabel = (date: Date) => {
     const dateKey = formatDateOnly(date);
     if (dateKey === formatDateOnly(departDate) && bestFlight) return formatFare(bestFlight.price, bestFlight.currency);
@@ -839,7 +830,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           <div className="flex items-center gap-3 mt-3">
                             <div className="text-center">
                               <p className="text-xl font-bold text-foreground">{flight.departureTime.split(' ')[1] || "TBA"}</p>
-                              <p className="max-w-28 truncate text-xs text-muted-foreground" title={routeLabel(flight.origin)}>{routeLabel(flight.origin)}</p>
+                              <p className="max-w-32 truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
                             </div>
                             <div className="flex-1 flex flex-col items-center px-2">
                               <span className="text-[10px] text-muted-foreground font-medium">{flight.duration || getDuration(flight.departureTime, flight.arrivalTime)}</span>
@@ -851,13 +842,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             </div>
                             <div className="text-center">
                               <p className="text-xl font-bold text-foreground">{flight.arrivalTime.split(' ')[1] || "TBA"}</p>
-                              <p className="max-w-28 truncate text-xs text-muted-foreground" title={routeLabel(flight.destination)}>{routeLabel(flight.destination)}</p>
+                              <p className="max-w-32 truncate text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
                             </div>
                           </div>
                           {tripType === "roundtrip" && flight.returnDepartureTime && flight.returnArrivalTime && (
                             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-[11px] text-muted-foreground">
                               <Badge variant="outline" className="rounded-md text-[10px]">Return</Badge>
-                              <span className="font-medium text-foreground">{routeLabel(flight.destination)} to {routeLabel(flight.origin)}</span>
+                              <span className="font-medium text-foreground">{flightDestinationLabel(flight)} to {flightOriginLabel(flight)}</span>
                               <span>{flight.returnDepartureTime}</span>
                               <span>to</span>
                               <span>{flight.returnArrivalTime}</span>
@@ -1172,7 +1163,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   <div key={`${segment.flightNumber}-${index}`} className="rounded-2xl border p-4">
                     <p className="text-xs font-bold uppercase tracking-wide text-primary">Segment {index + 1}</p>
                     <p className="mt-2 font-semibold text-foreground">{segment.flightNumber || detailsFlight.flightNumber}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{segment.origin} to {segment.destination}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {routeLabel(segment.origin || "", segment.departureAirport)} to {routeLabel(segment.destination || "", segment.arrivalAirport)}
+                    </p>
                     <p className="mt-3 text-sm">{segment.departureTime || "Departure TBA"} to {segment.arrivalTime || "Arrival TBA"}</p>
                     {segment.duration && <p className="mt-1 text-xs text-muted-foreground">Duration: {segment.duration}</p>}
                   </div>

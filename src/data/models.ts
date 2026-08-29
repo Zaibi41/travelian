@@ -212,6 +212,8 @@ export interface Flight {
   flightNumber: string;
   origin: string;
   destination: string;
+  originAirport?: string;
+  destinationAirport?: string;
   departureTime: string;
   arrivalTime: string;
   price: number;
@@ -235,6 +237,8 @@ export interface FlightItinerarySegment {
   flightNumber?: string | null;
   origin?: string | null;
   destination?: string | null;
+  departureAirport?: string | null;
+  arrivalAirport?: string | null;
   departureTime?: string | null;
   arrivalTime?: string | null;
   departureTerminal?: string | null;

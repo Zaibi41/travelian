@@ -30,6 +30,8 @@ interface FlightOffer {
   flightNumber: string;
   origin: string;
   destination: string;
+  originAirport?: string | null;
+  destinationAirport?: string | null;
   departureTime: string;
   arrivalTime: string;
   cabin: string;
@@ -247,6 +249,13 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
   const origin = safeText(offer.origin);
   const destination = safeText(offer.destination);
   const cabin = safeText(offer.cabin, "Economy");
+  const segments = (offer.segments || []).map((segment) => ({
+    ...segment,
+    departureTime: formatFlightDateTime(segment.departureTime),
+    arrivalTime: formatFlightDateTime(segment.arrivalTime),
+  }));
+  const firstSegment = segments[0];
+  const lastSegment = segments[segments.length - 1];
 
   return {
     flightId: safeText(offer.offerId, `${safeText(offer.provider, "provider")}-${flightNumber}`),
@@ -257,6 +266,8 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
     flightNumber,
     origin,
     destination,
+    originAirport: safeText(offer.originAirport || firstSegment?.departureAirport),
+    destinationAirport: safeText(offer.destinationAirport || lastSegment?.arrivalAirport),
     departureTime: formatFlightDateTime(offer.departureTime),
     arrivalTime: formatFlightDateTime(offer.arrivalTime),
     price: offer.price?.total || 0,
@@ -269,11 +280,7 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
     stops: offer.stops ?? undefined,
     baggage: offer.baggage || undefined,
     meal: offer.meal || undefined,
-    segments: (offer.segments || []).map((segment) => ({
-      ...segment,
-      departureTime: formatFlightDateTime(segment.departureTime),
-      arrivalTime: formatFlightDateTime(segment.arrivalTime),
-    })),
+    segments,
     layovers: (offer.layovers || []).map((layover) => ({
       ...layover,
       arrivalTime: formatFlightDateTime(layover.arrivalTime),
