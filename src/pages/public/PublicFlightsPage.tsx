@@ -510,38 +510,38 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
     setDateFareMap(Object.fromEntries(candidateDates.map((dateKey) => [dateKey, null])));
 
-    Promise.allSettled(candidateDates.map(async (dateKey) => {
-      const result = await searchFlights({
-        from,
-        to,
-        tripType,
-        departureDate: dateKey,
-        returnDate: returnDate ? formatDateOnly(returnDate) : undefined,
-        segments: [],
-        cabin: travelers.cabin,
-        currency,
-        passengers: {
-          adults: travelers.adults,
-          children: travelers.children,
-          infants: travelers.infants,
-        },
-      }, controller.signal);
-      const best = result.flights.reduce<TravelianFlight | null>((currentBest, flight) => (
-        !currentBest || flight.price < currentBest.price ? flight : currentBest
-      ), null);
-      return { dateKey, fare: best ? { price: best.price, currency: best.currency || currency } : null };
-    })).then((results) => {
-      if (controller.signal.aborted) return;
-      setDateFareMap((current) => {
-        const next = { ...current };
-        results.forEach((result) => {
-          if (result.status === "fulfilled") next[result.value.dateKey] = result.value.fare;
-        });
-        return next;
-      });
-    }).catch(() => {
-      // Individual failures are ignored so the main flight search remains stable.
-    });
+    (async () => {
+      for (const dateKey of candidateDates) {
+        if (controller.signal.aborted) return;
+        try {
+          const result = await searchFlights({
+            from,
+            to,
+            tripType,
+            departureDate: dateKey,
+            returnDate: returnDate ? formatDateOnly(returnDate) : undefined,
+            segments: [],
+            cabin: travelers.cabin,
+            currency,
+            passengers: {
+              adults: travelers.adults,
+              children: travelers.children,
+              infants: travelers.infants,
+            },
+          }, controller.signal);
+          const best = result.flights.reduce<TravelianFlight | null>((currentBest, flight) => (
+            !currentBest || flight.price < currentBest.price ? flight : currentBest
+          ), null);
+          if (controller.signal.aborted) return;
+          setDateFareMap((current) => ({
+            ...current,
+            [dateKey]: best ? { price: best.price, currency: best.currency || currency } : null,
+          }));
+        } catch {
+          if (controller.signal.aborted) return;
+        }
+      }
+    })();
 
     return () => controller.abort();
   }, [dateFlexDays, departDate, from, to, tripType, returnDate, travelers, currency]);
