@@ -68,7 +68,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
       {open && (
         <div
           className={cn(
-            "absolute top-full mt-2 bg-card border rounded-xl shadow-elevated p-4 z-[200] w-80",
+            "absolute top-full mt-2 w-full min-w-[20rem] max-w-[calc(100vw-2rem)] bg-card border rounded-xl shadow-elevated p-4 z-[200]",
             align === "right" ? "right-0" : "left-0",
           )}
           role="dialog"

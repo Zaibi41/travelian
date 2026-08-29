@@ -122,11 +122,11 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[min(420px,calc(100vw-2rem))] p-0"
+        className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] p-0"
         align="start"
         side="bottom"
         sideOffset={8}
-        avoidCollisions={false}
+        collisionPadding={16}
       >
         <Command shouldFilter={false}>
           <CommandInput
@@ -148,12 +148,12 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
                     onChange(airport.code);
                     setOpen(false);
                   }}
-                  className="gap-2"
+                  className="min-w-0 gap-2"
                 >
                   <Check className={cn("h-4 w-4", value === airport.code ? "opacity-100" : "opacity-0")} />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{airport.code}</span>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="shrink-0 font-semibold">{airport.code}</span>
                       <span className="truncate">{airport.city}</span>
                     </div>
                     <p className="truncate text-xs text-muted-foreground">{airport.name} - {airport.country}</p>
@@ -179,5 +179,5 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
 
 export function getAirportDisplay(code: string) {
   const airport = airportCache?.find(item => item.code === code) || popularAirportByCode.get(code);
-  return airport ? `${airport.city} (${airport.code})` : code;
+  return airport ? `${airport.code} - ${airport.city}` : code;
 }

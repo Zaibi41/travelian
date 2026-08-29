@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { SEO } from "@/components/SEO";
 import { TravelersClassPicker, formatTravelers, type TravelersValue } from "@/components/public/TravelersClassPicker";
 import { searchFlights, type TravelianFlight } from "@/lib/travelian-api";
-import { AirportCombobox } from "@/components/public/AirportCombobox";
+import { AirportCombobox, getAirportDisplay } from "@/components/public/AirportCombobox";
 import { FlightSearchLoader } from "@/components/public/FlightSearchLoader";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
 import { AirlineLogo } from "@/components/public/AirlineLogo";
@@ -26,6 +26,26 @@ import { whatsappUrl } from "@/lib/site-config";
 type FlightTripType = "oneway" | "roundtrip" | "multicity";
 type FlightSegment = { from: string; to: string; date: Date | undefined };
 const SEARCH_RESULT_TTL_SECONDS = 900;
+
+const airportCityFallback: Record<string, string> = {
+  AUH: "Abu Dhabi",
+  CDG: "Paris",
+  DXB: "Dubai",
+  ISB: "Islamabad",
+  JED: "Jeddah",
+  KHI: "Karachi",
+  LHE: "Lahore",
+  RUH: "Riyadh",
+  XNB: "Dubai Bus Station",
+};
+
+const sortOptions = [
+  { value: "price-asc", label: "Price - Low to High" },
+  { value: "price-desc", label: "Price - High to Low" },
+  { value: "duration-asc", label: "Shortest Duration" },
+  { value: "duration-desc", label: "Longest Duration" },
+  { value: "departure-asc", label: "Departure - Early to Late" },
+];
 
 function tripTypeFromParam(value: string | null): FlightTripType {
   return value === "roundtrip" || value === "multicity" ? value : "oneway";
@@ -84,7 +104,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   });
   const [priceRange, setPriceRange] = useState([0, 700]);
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
-  const [sort, setSort] = useState("best");
+  const [sort, setSort] = useState("price-asc");
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
   const [departDate, setDepartDate] = useState<Date>(initDate);
   const [returnDate, setReturnDate] = useState<Date | undefined>(initReturnDate);
@@ -102,6 +122,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [calculatorTaxes, setCalculatorTaxes] = useState("");
   const [calculatorServiceFee, setCalculatorServiceFee] = useState("");
   const [searchRefreshKey, setSearchRefreshKey] = useState(0);
+  const [dateFareMap, setDateFareMap] = useState<Record<string, { price: number; currency: string } | null>>({});
 
   // Modal-local edit state
   const [editFrom, setEditFrom] = useState(from);
@@ -255,14 +276,29 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   });
 
   const durationMs = (flight: TravelianFlight) => new Date(flight.arrivalTime).getTime() - new Date(flight.departureTime).getTime();
+  const departureMs = (flight: TravelianFlight) => new Date(flight.departureTime).getTime();
   if (sort === "price-asc") filtered.sort((a, b) => a.price - b.price);
   else if (sort === "price-desc") filtered.sort((a, b) => b.price - a.price);
-  else if (sort === "fastest") filtered.sort((a, b) => {
+  else if (sort === "duration-asc") filtered.sort((a, b) => {
     const aDuration = durationMs(a);
     const bDuration = durationMs(b);
     if (!Number.isFinite(aDuration)) return 1;
     if (!Number.isFinite(bDuration)) return -1;
     return aDuration - bDuration;
+  });
+  else if (sort === "duration-desc") filtered.sort((a, b) => {
+    const aDuration = durationMs(a);
+    const bDuration = durationMs(b);
+    if (!Number.isFinite(aDuration)) return 1;
+    if (!Number.isFinite(bDuration)) return -1;
+    return bDuration - aDuration;
+  });
+  else if (sort === "departure-asc") filtered.sort((a, b) => {
+    const aDeparture = departureMs(a);
+    const bDeparture = departureMs(b);
+    if (!Number.isFinite(aDeparture)) return 1;
+    if (!Number.isFinite(bDeparture)) return -1;
+    return aDeparture - bDeparture;
   });
 
   const getDuration = (dep: string, arr: string) => {
@@ -284,36 +320,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return `${dst} ${Math.round(converted).toLocaleString()}`;
   };
 
-  const providerNames: Record<string, string> = {
-    travelport: "Travelport",
-    skypass: "Skypass",
-    alhaider: "Alhaider",
-    dhilluandsahi: "Dhillu & Sahi",
-    flyadeal: "flyadeal",
-    airsial: "AirSial",
-    pia: "PIA",
-  };
-
-  const providerGroups: Record<string, string> = {
-    travelport: "GDS",
-    skypass: "Direct API",
-    alhaider: "Group API",
-    dhilluandsahi: "Group API",
-    flyadeal: "Airline API",
-    airsial: "Airline API",
-    pia: "Airline API",
-  };
-
   const formatProviderName = (provider?: string) => {
     const key = String(provider || "").trim().toLowerCase();
     if (!key) return "";
-    return providerNames[key] || key.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+    return key.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
   };
 
-  const formatProviderGroup = (provider?: string) => {
-    const key = String(provider || "").trim().toLowerCase();
-    return providerGroups[key] || "Live API";
-  };
+  const formatProviderGroup = (_provider?: string) => "Live API";
 
   const expiryLabel = `${Math.floor(expirySeconds / 60)}:${String(expirySeconds % 60).padStart(2, "0")}`;
   const searchExpired = apiStatus === "success" && flights.length > 0 && expirySeconds === 0;
@@ -385,6 +398,58 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     });
   }, [departDate]);
 
+  useEffect(() => {
+    if (tripType === "multicity") {
+      setDateFareMap({});
+      return;
+    }
+
+    const controller = new AbortController();
+    const selectedKey = formatDateOnly(departDate);
+    const candidateDates = dateFlexDays
+      .map((day) => formatDateOnly(day.date))
+      .filter((dateKey) => dateKey !== selectedKey);
+
+    if (!candidateDates.length) return () => controller.abort();
+
+    setDateFareMap(Object.fromEntries(candidateDates.map((dateKey) => [dateKey, null])));
+
+    Promise.allSettled(candidateDates.map(async (dateKey) => {
+      const result = await searchFlights({
+        from,
+        to,
+        tripType,
+        departureDate: dateKey,
+        returnDate: returnDate ? formatDateOnly(returnDate) : undefined,
+        segments: [],
+        cabin: travelers.cabin,
+        currency,
+        passengers: {
+          adults: travelers.adults,
+          children: travelers.children,
+          infants: travelers.infants,
+        },
+      }, controller.signal);
+      const best = result.flights.reduce<TravelianFlight | null>((currentBest, flight) => (
+        !currentBest || flight.price < currentBest.price ? flight : currentBest
+      ), null);
+      return { dateKey, fare: best ? { price: best.price, currency: best.currency || currency } : null };
+    })).then((results) => {
+      if (controller.signal.aborted) return;
+      setDateFareMap((current) => {
+        const next = { ...current };
+        results.forEach((result) => {
+          if (result.status === "fulfilled") next[result.value.dateKey] = result.value.fare;
+        });
+        return next;
+      });
+    }).catch(() => {
+      // Individual failures are ignored so the main flight search remains stable.
+    });
+
+    return () => controller.abort();
+  }, [dateFlexDays, departDate, from, to, tripType, returnDate, travelers, currency]);
+
   const airlineOptions = useMemo(() => Array.from(new Set(flights.map(f => f.airline).filter(Boolean))).sort(), [flights]);
   const activeFilterLabels = [
     ...selectedAirlines.map((airline) => ({ key: `airline-${airline}`, label: airline, onRemove: () => toggleAirline(airline) })),
@@ -399,6 +464,18 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     const next = new URLSearchParams(params);
     next.set("depart", formatDateOnly(safeDate));
     setParams(next, { replace: true });
+  };
+  const routeLabel = (code: string) => {
+    const cleanCode = String(code || "").trim().toUpperCase();
+    const display = getAirportDisplay(cleanCode);
+    if (display !== cleanCode) return display;
+    return airportCityFallback[cleanCode] ? `${cleanCode} - ${airportCityFallback[cleanCode]}` : cleanCode;
+  };
+  const dateFareLabel = (date: Date) => {
+    const dateKey = formatDateOnly(date);
+    if (dateKey === formatDateOnly(departDate) && bestFlight) return formatFare(bestFlight.price, bestFlight.currency);
+    const fare = dateFareMap[dateKey];
+    return fare ? formatFare(fare.price, fare.currency) : "-";
   };
   const revalidateSearch = () => {
     setSelectedFlight(null);
@@ -421,7 +498,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div className="flex items-center gap-2 text-primary-foreground text-sm flex-wrap min-w-0">
                 <Plane className="h-4 w-4 shrink-0" />
-                <span className="font-semibold truncate">{from}</span>
+                <span className="min-w-0 max-w-[14rem] truncate font-semibold">{routeLabel(from)}</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -440,7 +517,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 >
                   <ArrowLeftRight className="h-3.5 w-3.5" />
                 </button>
-                <span className="font-semibold truncate">{to}</span>
+                <span className="min-w-0 max-w-[14rem] truncate font-semibold">{routeLabel(to)}</span>
                 <span className="text-primary-foreground/60 text-xs">-</span>
                 <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{format(departDate, "EEE, MMM d")}</span>
                 {tripType === "roundtrip" && returnDate && <span className="text-primary-foreground/80 text-xs whitespace-nowrap">to {format(returnDate, "EEE, MMM d")}</span>}
@@ -449,6 +526,23 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{formatTravelers(travelers)}</span>
                 <span className="text-primary-foreground/60 text-xs">-</span>
                 <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{currency}</span>
+                {apiStatus === "loading" ? (
+                  <>
+                    <span className="text-primary-foreground/60 text-xs">-</span>
+                    <span className="text-primary-foreground/80 text-xs whitespace-nowrap">Searching live fares</span>
+                  </>
+                ) : !searchExpired ? (
+                  <>
+                    <span className="text-primary-foreground/60 text-xs">-</span>
+                    <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{filtered.length} live {filtered.length === 1 ? "fare" : "fares"}</span>
+                  </>
+                ) : null}
+                {apiStatus === "success" && flights.length > 0 && (
+                  <Badge className={cn("gap-1 rounded-full border-0", searchExpired ? "bg-destructive/20 text-primary-foreground" : "bg-primary-foreground/15 text-primary-foreground")}>
+                    <Clock className="h-3 w-3" />
+                    {searchExpired ? "Search expired" : `Expires in ${expiryLabel}`}
+                  </Badge>
+                )}
               </div>
               <Button
                 size="sm"
@@ -482,7 +576,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               >
                 <span>{format(day.date, "EEE, MMM d")}</span>
                 <span className={cn("text-[10px] mt-0.5", formatDateOnly(day.date) === formatDateOnly(departDate) ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                  {formatDateOnly(day.date) === formatDateOnly(departDate) && bestFlight ? formatFare(bestFlight.price, bestFlight.currency) : "-"}
+                  {dateFareLabel(day.date)}
                 </span>
               </button>
             ))}
@@ -496,10 +590,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           <span>/</span>
           <span>Flights</span>
           <span>/</span>
-          <span className="text-foreground">{from} to {to}</span>
+          <span className="text-foreground">{routeLabel(from)} to {routeLabel(to)}</span>
         </nav>
 
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm">
+        {false && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm">
           <div>
             <p className="text-sm font-semibold text-foreground">
               {apiStatus === "loading"
@@ -538,7 +632,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               </select>
             </label>
           </div>
-        </div>
+        </div>}
 
         {!searchExpired && (activeFilterLabels.length > 0 || hasFilterChanges) && (
           <div className="mb-4 flex flex-wrap items-center gap-2">
@@ -559,7 +653,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         )}
 
         {/* Sort Tags */}
-        {!searchExpired && <div className="flex items-center gap-3 mb-6 overflow-x-auto scrollbar-hide">
+        {false && !searchExpired && <div className="flex items-center gap-3 mb-6 overflow-x-auto scrollbar-hide">
           {[
             { id: "best", label: "Best", sub: bestFlight ? formatFare(bestFlight.price, bestFlight.currency) : "" },
             { id: "price-asc", label: "Cheapest", sub: bestFlight ? formatFare(bestFlight.price, bestFlight.currency) : "" },
@@ -614,6 +708,26 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         <div className="flex gap-6">
           {/* Sidebar Filters */}
           <aside className="hidden md:block w-56 xl:w-64 shrink-0 space-y-5 sticky top-24 self-start">
+            <Card className="shadow-card border-0">
+              <CardContent className="p-5">
+                <h3 className="mb-3 text-sm font-semibold text-foreground">Sort By</h3>
+                <div className="space-y-2">
+                  {sortOptions.map((option) => (
+                    <label key={option.value} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground">
+                      <input
+                        type="radio"
+                        name="flight-sort"
+                        value={option.value}
+                        checked={sort === option.value}
+                        onChange={() => setSort(option.value)}
+                        className="h-3.5 w-3.5 accent-primary"
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
             <Card className="shadow-card border-0">
               <CardContent className="p-5">
                 <h3 className="font-semibold text-foreground text-sm mb-4">Price Range</h3>
@@ -695,20 +809,16 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               </>
             )}
 
-            {apiStatus !== "loading" && filtered.map((flight, idx) => {
-              const isBest = bestFlight?.flightId === flight.flightId;
-              const isCheapest = sort === "price-asc" && idx === 0;
-              const isFastest = fastestFlight?.flightId === flight.flightId;
+            {apiStatus !== "loading" && filtered.map((flight) => {
               const hasFareOptions = (flight.fareOptions || []).length > 0;
               const fareOptionsOpen = selectedFlight === flight.flightId;
 
               return (
                 <Card
                   key={flight.flightId}
-                  className={`overflow-hidden transition-all duration-300 border-0 shadow-card hover:shadow-hover ${hasFareOptions ? "cursor-pointer" : ""} ${
+                  className={`overflow-hidden transition-all duration-300 border-0 shadow-card hover:shadow-hover ${
                     fareOptionsOpen ? "ring-2 ring-primary" : ""
                   }`}
-                  onClick={() => hasFareOptions && setSelectedFlight((current) => current === flight.flightId ? null : flight.flightId)}
                 >
                   <CardContent className="p-5">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -719,11 +829,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             <p className="text-sm font-semibold text-foreground">{flight.airline}</p>
                             <Badge variant="secondary" className="text-[10px] rounded-md">{flight.flightNumber}</Badge>
                             <Badge variant="outline" className="text-[10px] capitalize rounded-md">{flight.class}</Badge>
-                            {isBest && <Badge className="bg-gold text-gold-foreground border-0 text-[10px] rounded-md">Best</Badge>}
-                            {isCheapest && <Badge className="bg-success/10 text-success border-0 text-[10px] rounded-md">Cheapest</Badge>}
-                            {isFastest && <Badge className="bg-info/10 text-info border-0 text-[10px] rounded-md">Fastest</Badge>}
                             {flight.status === 'delayed' && <Badge className="bg-warning/10 text-warning border-0 text-[10px] rounded-md">Delayed</Badge>}
-                            {adminMode && flight.provider && (
+                            {false && adminMode && flight.provider && (
                               <Badge variant="outline" className="rounded-md border-sky-200 bg-sky-50 text-[10px] font-semibold text-sky-700">
                                 Supplier: {formatProviderGroup(flight.provider)} · {formatProviderName(flight.provider)}
                               </Badge>
@@ -732,7 +839,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           <div className="flex items-center gap-3 mt-3">
                             <div className="text-center">
                               <p className="text-xl font-bold text-foreground">{flight.departureTime.split(' ')[1] || "TBA"}</p>
-                              <p className="text-xs text-muted-foreground">{flight.origin}</p>
+                              <p className="max-w-28 truncate text-xs text-muted-foreground" title={routeLabel(flight.origin)}>{routeLabel(flight.origin)}</p>
                             </div>
                             <div className="flex-1 flex flex-col items-center px-2">
                               <span className="text-[10px] text-muted-foreground font-medium">{flight.duration || getDuration(flight.departureTime, flight.arrivalTime)}</span>
@@ -744,13 +851,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             </div>
                             <div className="text-center">
                               <p className="text-xl font-bold text-foreground">{flight.arrivalTime.split(' ')[1] || "TBA"}</p>
-                              <p className="text-xs text-muted-foreground">{flight.destination}</p>
+                              <p className="max-w-28 truncate text-xs text-muted-foreground" title={routeLabel(flight.destination)}>{routeLabel(flight.destination)}</p>
                             </div>
                           </div>
                           {tripType === "roundtrip" && flight.returnDepartureTime && flight.returnArrivalTime && (
                             <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-[11px] text-muted-foreground">
                               <Badge variant="outline" className="rounded-md text-[10px]">Return</Badge>
-                              <span className="font-medium text-foreground">{flight.destination} to {flight.origin}</span>
+                              <span className="font-medium text-foreground">{routeLabel(flight.destination)} to {routeLabel(flight.origin)}</span>
                               <span>{flight.returnDepartureTime}</span>
                               <span>to</span>
                               <span>{flight.returnArrivalTime}</span>
@@ -769,40 +876,44 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           </div>
                         </div>
                         <div className="flex flex-col gap-2">
-                          {searchExpired ? (
-                            <Button className="rounded-xl h-11 px-5" onClick={revalidateSearch}>Revalidate Fare</Button>
-                          ) : (
-                            <Link to={bookingHref(flight)}>
-                              <Button className="gradient-primary text-primary-foreground rounded-xl h-11 px-5">{hasFareOptions ? "Book Fare" : "Continue Booking"}</Button>
-                            </Link>
-                          )}
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="w-full rounded-xl gap-2"
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              setDetailsFlight(flight);
-                            }}
-                          >
-                            <FileText className="h-4 w-4" /> View Details
-                          </Button>
-                          {hasFareOptions && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="w-full rounded-xl"
-                              onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                setSelectedFlight((current) => current === flight.flightId ? null : flight.flightId);
-                              }}
-                            >
-                              {fareOptionsOpen ? "Hide Fare Options" : "View Fare Options"}
-                            </Button>
+                          {false && (
+                            <>
+                              {searchExpired ? (
+                                <Button className="rounded-xl h-11 px-5" onClick={revalidateSearch}>Revalidate Fare</Button>
+                              ) : (
+                                <Link to={bookingHref(flight)}>
+                                  <Button className="gradient-primary text-primary-foreground rounded-xl h-11 px-5">{hasFareOptions ? "Book Fare" : "Continue Booking"}</Button>
+                                </Link>
+                              )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="w-full rounded-xl gap-2"
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  setDetailsFlight(flight);
+                                }}
+                              >
+                                <FileText className="h-4 w-4" /> View Details
+                              </Button>
+                              {hasFareOptions && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full rounded-xl"
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    setSelectedFlight((current) => current === flight.flightId ? null : flight.flightId);
+                                  }}
+                                >
+                                  {fareOptionsOpen ? "Hide Fare Options" : "View Fare Options"}
+                                </Button>
+                              )}
+                            </>
                           )}
                           <a href={flightWhatsAppHref(flight)} target="_blank" rel="noreferrer">
                             <Button variant="outline" size="sm" className="w-full rounded-xl gap-2">
@@ -813,7 +924,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       </div>
                     </div>
 
-                    {hasFareOptions && fareOptionsOpen && (
+                    {false && hasFareOptions && fareOptionsOpen && (
                       <div className="mt-5 border-t pt-4 animate-fade-in">
                         <div className="mb-2 flex items-center justify-between gap-3">
                           <p className="text-sm font-semibold text-foreground">Fare options</p>
@@ -917,7 +1028,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           {segment.date ? format(segment.date, "MMM dd, yyyy") : "Select date"}
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-[300]" align="start">
+                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[20rem] max-w-[calc(100vw-2rem)] p-0 z-[300]" align="start" collisionPadding={16}>
                         <Calendar mode="single" selected={segment.date} onSelect={(date) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, date } : item))} initialFocus />
                       </PopoverContent>
                     </Popover>
@@ -952,7 +1063,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     {editDate ? format(editDate, "MMM dd, yyyy") : "Select date"}
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-[300]" align="start" side="top" sideOffset={10} collisionPadding={16}>
+                <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[20rem] max-w-[calc(100vw-2rem)] p-0 z-[300]" align="start" side="top" sideOffset={10} collisionPadding={16}>
                   <Calendar mode="single" selected={editDate} onSelect={setEditDate} initialFocus className="p-3 pointer-events-auto" />
                 </PopoverContent>
               </Popover>
@@ -967,7 +1078,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       {editReturnDate ? format(editReturnDate, "MMM dd, yyyy") : "Select return date"}
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-[300]" align="start" side="top" sideOffset={10} collisionPadding={16}>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[20rem] max-w-[calc(100vw-2rem)] p-0 z-[300]" align="start" side="top" sideOffset={10} collisionPadding={16}>
                     <Calendar mode="single" selected={editReturnDate} onSelect={setEditReturnDate} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
@@ -1035,12 +1146,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       </Dialog>
 
       <Dialog open={!!detailsFlight} onOpenChange={(open) => !open && setDetailsFlight(null)}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="flex max-h-[90vh] w-[calc(100vw-2rem)] flex-col overflow-hidden sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Flight Details & Fare Rules</DialogTitle>
           </DialogHeader>
           {detailsFlight && (
-            <div className="space-y-5 py-2">
+            <div className="min-h-0 space-y-5 overflow-y-auto py-2 pr-1">
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-muted/40 p-4">
                 <div>
                   <p className="text-lg font-bold text-foreground">{detailsFlight.airline}</p>
