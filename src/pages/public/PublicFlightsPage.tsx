@@ -576,14 +576,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       </div>
 
       <div className={cn(adminMode ? "px-4 md:px-6 py-5" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6")}>
-        <nav className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">
-          <Link to="/" className="hover:text-foreground">Home</Link>
-          <span>/</span>
-          <span>Flights</span>
-          <span>/</span>
-          <span className="text-foreground">{routeLabel(from)} to {routeLabel(to)}</span>
-        </nav>
-
         {false && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm">
           <div>
             <p className="text-sm font-semibold text-foreground">
