@@ -81,7 +81,11 @@ export default function HomePage() {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
             <h1 className="text-[1.75rem] font-black font-display leading-tight tracking-tight text-primary-foreground animate-fade-in-up">
-              Book Flights, Umrah, Visas, Hotels &amp; Tours with Travelian
+              Book Flights, Umrah, Visas, Hotels &amp; Tours with{" "}
+              <span className="relative inline-block whitespace-nowrap font-black text-primary-foreground drop-shadow-[0_0_18px_hsl(var(--teal)/0.35)]">
+                Travelian
+                <span className="absolute -bottom-1 left-0 h-0.5 w-full rounded-full bg-gradient-to-r from-teal via-gold to-teal opacity-90 shadow-[0_0_14px_hsl(var(--gold)/0.45)]" aria-hidden="true" />
+              </span>
             </h1>
           </div>
 
