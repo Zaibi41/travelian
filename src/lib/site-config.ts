@@ -1,10 +1,10 @@
 // Centralised customer-facing contact info for Travelian.
 // Edit here once; consumed by the public navbar, footer, floating WhatsApp button and inline CTAs.
 
-export const SUPPORT_PHONE_DISPLAY = "+92 324 4440014";
-export const SUPPORT_PHONE_TEL = "+923244440014";
-export const SUPPORT_WHATSAPP_DIGITS = "923244440014";
-export const SUPPORT_EMAIL = "support@travelian.pk";
+export const SUPPORT_PHONE_DISPLAY = "+92 300 4440014";
+export const SUPPORT_PHONE_TEL = "+923004440014";
+export const SUPPORT_WHATSAPP_DIGITS = "923004440014";
+export const SUPPORT_EMAIL = "info@travelian.pk";
 
 export function whatsappUrl(message?: string) {
   const base = `https://wa.me/${SUPPORT_WHATSAPP_DIGITS}`;

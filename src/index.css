@@ -194,6 +194,13 @@
     0% { transform: translateX(-120%); }
     100% { transform: translateX(320%); }
   }
+  @keyframes routeMarquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .animate-route-marquee {
+    animation: routeMarquee 55s linear infinite;
+  }
   .skeleton-loader {
     background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--muted-foreground) / 0.08) 50%, hsl(var(--muted)) 75%);
     background-size: 200% 100%;

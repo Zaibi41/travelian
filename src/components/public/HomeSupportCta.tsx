@@ -7,7 +7,7 @@ export function HomeSupportCta() {
   return (
     <section className="py-12 md:py-14">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative isolate overflow-hidden rounded-3xl gradient-hero p-8 md:p-12 shadow-elevated">
+        <div className="relative isolate overflow-hidden rounded-3xl gradient-hero p-6 shadow-elevated md:p-8">
           <div className="absolute inset-x-0 top-0 h-1 gradient-gold" aria-hidden="true" />
           <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-teal/20 blur-3xl" aria-hidden="true" />
           <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
@@ -16,17 +16,17 @@ export function HomeSupportCta() {
                 <MessageCircle className="h-3 w-3" /> Travel support
               </span>
               <h2 className="mt-4 text-xl md:text-2xl font-bold font-display tracking-tight text-primary-foreground">
-                Need help choosing the right flight, Umrah package or visa service?
+                Need help planning your journey?
               </h2>
               <p className="mt-2 text-sm md:text-base leading-7 text-primary-foreground/75">
-                Message our team on WhatsApp and get a clear recommendation with pricing.
+                Talk to our travel team for flights, Umrah, visas, hotels and tours.
               </p>
               <p className="mt-3 text-sm font-semibold text-gold">WhatsApp: {SUPPORT_PHONE_DISPLAY}</p>
             </div>
             <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row">
               <Button asChild size="lg" className="rounded-xl bg-whatsapp font-semibold text-whatsapp-foreground hover:bg-whatsapp-hover">
                 <a href={whatsappUrl("Hi, I need help choosing a Travelian service.")} target="_blank" rel="noreferrer">
-                  <WhatsAppIcon className="mr-2 h-5 w-5" /> Talk to Travelian Support
+                  <WhatsAppIcon className="mr-2 h-5 w-5" /> WhatsApp Us
                 </a>
               </Button>
               <Button
@@ -36,7 +36,7 @@ export function HomeSupportCta() {
                 className="rounded-xl border-white/25 bg-white/5 font-semibold text-primary-foreground hover:bg-white/10 hover:text-primary-foreground"
               >
                 <a href={`tel:${SUPPORT_PHONE_TEL}`}>
-                  <Phone className="mr-2 h-4 w-4" /> Call us
+                  <Phone className="mr-2 h-4 w-4" /> Call Travelian
                 </a>
               </Button>
             </div>

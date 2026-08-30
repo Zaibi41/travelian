@@ -10,11 +10,16 @@ export interface TravelersValue {
   cabin: string;
 }
 
-export const CABIN_CLASSES = ["Economy", "Premium Economy", "Business Class", "First Class"];
+export const CABIN_CLASSES = ["Economy", "Premium Economy", "Business", "First"];
 
 export function formatTravelers(v: TravelersValue): string {
   const total = v.adults + v.children + v.infants;
   return `${total} Traveler${total > 1 ? "s" : ""}, ${v.cabin}`;
+}
+
+export function formatTravelerCount(v: TravelersValue): string {
+  const total = v.adults + v.children + v.infants;
+  return `${total} Traveler${total > 1 ? "s" : ""}`;
 }
 
 interface Props {
@@ -22,13 +27,14 @@ interface Props {
   onChange: (v: TravelersValue) => void;
   className?: string;
   variant?: "compact" | "field";
+  mode?: "combined" | "travelers" | "cabin";
   /** Where to anchor the dropdown. Defaults to left. */
   align?: "left" | "right";
   /** Which side of the trigger to open on. Defaults to bottom. */
   side?: "top" | "bottom";
 }
 
-export function TravelersClassPicker({ value, onChange, className, variant = "field", align = "left", side = "bottom" }: Props) {
+export function TravelersClassPicker({ value, onChange, className, variant = "field", mode = "combined", align = "left", side = "bottom" }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -64,18 +70,21 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
         aria-expanded={open}
       >
         <Users className={variant === "compact" ? "h-3.5 w-3.5" : "h-4 w-4 text-muted-foreground"} />
-        <span className="whitespace-nowrap flex-1 truncate">{formatTravelers(value)}</span>
+        <span className="whitespace-nowrap flex-1 truncate">
+          {mode === "travelers" ? formatTravelerCount(value) : mode === "cabin" ? value.cabin : formatTravelers(value)}
+        </span>
         <ChevronDown className="h-3 w-3 opacity-60" />
       </button>
       {open && (
         <div
           className={cn(
-            "absolute z-[200] max-h-[calc(100vh-7rem)] w-full min-w-[20rem] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border bg-card p-4 shadow-elevated",
+            "absolute z-[200] max-h-[calc(100vh-7rem)] w-full max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border bg-card p-4 shadow-elevated",
             side === "top" ? "bottom-full mb-2" : "top-full mt-2",
             align === "right" ? "right-0" : "left-0",
           )}
           role="dialog"
         >
+          {mode !== "cabin" && (
           <div className="space-y-3">
             {rows.map(p => (
               <div key={p.key} className="flex items-center justify-between">
@@ -102,21 +111,27 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
               </div>
             ))}
           </div>
-          <div className="mt-3 pt-3 border-t">
+          )}
+          {mode !== "travelers" && (
+          <div className={cn(mode === "combined" && "mt-3 border-t pt-3")}>
             <p className="text-xs font-medium text-muted-foreground mb-2">Cabin Class</p>
             <div className="grid grid-cols-2 gap-1.5">
               {CABIN_CLASSES.map(c => (
                 <button
                   key={c}
                   type="button"
-                  onClick={() => update({ cabin: c })}
                   className={`text-xs px-2 py-2 rounded-md transition-all text-center ${
                     value.cabin === c ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground hover:bg-muted"
                   }`}
-                >{c}</button>
+                  onClick={() => {
+                    update({ cabin: c });
+                    if (mode === "cabin") setOpen(false);
+                  }}
+                  >{c}</button>
               ))}
             </div>
           </div>
+          )}
           <Button size="sm" className="w-full mt-3 gradient-primary text-primary-foreground" onClick={() => setOpen(false)}>
             Done
           </Button>

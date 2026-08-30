@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Hotel, Plane, Car, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets } from "lucide-react";
+import { Hotel, Plane, Car, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets, FileCheck2, Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -18,6 +18,9 @@ const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
   { id: "group-ticketing", label: "Group Ticketing", icon: Tickets },
   { id: "hotels", label: "Hotels", icon: Hotel },
+  { id: "umrah", label: "Umrah", icon: MapPin },
+  { id: "visas", label: "Visas", icon: FileCheck2 },
+  { id: "tours", label: "Tours", icon: Map },
   { id: "transfers", label: "Transfers", icon: Car },
 ];
 
@@ -193,6 +196,8 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
       });
       navigate(`/transfers-search?${params.toString()}`);
     }
+    else if (activeTab === "visas") navigate("/visa-services");
+    else if (activeTab === "umrah") navigate("/umrah-packages");
     else navigate("/tour-packages");
   };
 
@@ -225,6 +230,18 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
             onClick={() => {
               if (tab.id === "group-ticketing" && initialTab !== "group-ticketing") {
                 navigate("/group-ticketing");
+                return;
+              }
+              if (tab.id === "umrah") {
+                navigate("/umrah-packages");
+                return;
+              }
+              if (tab.id === "visas") {
+                navigate("/visa-services");
+                return;
+              }
+              if (tab.id === "tours") {
+                navigate("/tour-packages");
                 return;
               }
               setActiveTab(tab.id);
@@ -262,7 +279,10 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
                   </button>
                 ))}
               </div>
-              <TravelersClassPicker value={travelers} onChange={setTravelers} variant="compact" />
+              <div className="flex flex-wrap gap-2">
+                <TravelersClassPicker value={travelers} onChange={setTravelers} variant="compact" mode="travelers" className="w-40" />
+                <TravelersClassPicker value={travelers} onChange={setTravelers} variant="compact" mode="cabin" className="w-44" />
+              </div>
             </div>
 
             {/* Multi-city layout */}

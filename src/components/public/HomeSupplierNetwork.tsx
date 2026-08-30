@@ -1,12 +1,19 @@
-import { ArrowRight, BadgeCheck, Network, ShieldCheck } from "lucide-react";
+import { ArrowRight, BadgeCheck, CreditCard, Hotel, Network, Plane, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
-const capabilities = ["Live Ticketing", "Airline APIs", "NDC", "LCCs", "Aggregators", "Group Ticketing"];
+const capabilities = ["GDS", "NDC", "Airline APIs", "LCCs", "Hotel Suppliers", "Payment Gateways"];
+
+const categories = [
+  { icon: Network, title: "GDS", text: "Global distribution and ticketing connectivity." },
+  { icon: Plane, title: "Airline APIs", text: "Airline and low-cost carrier fare access." },
+  { icon: Hotel, title: "Hotel Suppliers", text: "Hotel source support for packaged trips." },
+  { icon: CreditCard, title: "Secure Payment Network", text: "Payment gateway and online payment support for customer bookings." },
+];
 
 export function HomeSupplierNetwork() {
   return (
-    <section className="relative isolate overflow-hidden gradient-hero py-12 md:py-16">
+    <section className="relative isolate overflow-hidden gradient-hero py-12 md:py-14">
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <div
           className="absolute inset-0 opacity-[0.06]"
@@ -30,8 +37,8 @@ export function HomeSupplierNetwork() {
                 Connected Supplier Network
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base md:leading-7">
-                Travelian connects live ticketing, airline APIs, NDC, LCCs, aggregators, and group
-                ticketing sources to provide wider fare options and reliable booking support.
+                Travelian connects flight, hotel and payment capabilities to support wider fare options,
+                secure payments and reliable booking support.
               </p>
             </div>
 
@@ -48,7 +55,23 @@ export function HomeSupplierNetwork() {
             </div>
           </div>
 
-          <div className="mt-7 flex flex-col gap-4 border-t border-white/10 pt-5 sm:flex-row sm:items-center">
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {categories.map((category) => (
+              <div key={category.title} className="rounded-2xl border border-white/10 bg-white/[0.065] p-4">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal/15 text-teal ring-1 ring-teal/20">
+                    <category.icon className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="truncate text-sm font-bold text-white">{category.title}</h3>
+                    <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-white/65">{category.text}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 flex flex-col gap-4 border-t border-white/10 pt-5 sm:flex-row sm:items-center">
             <Button asChild size="sm" className="w-full rounded-xl bg-gold font-semibold text-gold-foreground hover:bg-gold/90 sm:w-auto">
               <Link to="/contact">
                 Talk to our team <ArrowRight className="ml-1 h-4 w-4" />
