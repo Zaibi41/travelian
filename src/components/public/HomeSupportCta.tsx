@@ -32,7 +32,7 @@ export function HomeSupportCta() {
                 asChild
                 size="lg"
                 variant="outline"
-                className="rounded-xl border-white/25 bg-white/5 font-semibold text-primary-foreground hover:bg-white/10 hover:text-primary-foreground"
+                className="rounded-xl border-primary bg-primary font-semibold text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/95 sm:border-white/25 sm:bg-white/5 sm:hover:bg-white/10"
               >
                 <a href={`tel:${SUPPORT_PHONE_TEL}`}>
                   <Phone className="mr-2 h-4 w-4" /> Call Travelian
