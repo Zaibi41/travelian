@@ -112,7 +112,7 @@ export function GroupTicketingSearchBar({
         </div>
         <div>
           {label("To")}
-          <AirportCombobox value={toValue} onChange={setToValue} placeholder="To where?" />
+          <AirportCombobox value={toValue} onChange={setToValue} placeholder="To where?" iconVariant="arrival" />
         </div>
         <div>
           {label("Date from")}

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, ChevronsUpDown, Loader2, Plane } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, Plane, PlaneLanding } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -19,6 +19,7 @@ interface Props {
   placeholder?: string;
   className?: string;
   invalid?: boolean;
+  iconVariant?: "departure" | "arrival";
 }
 
 const popularAirports: Airport[] = [
@@ -74,7 +75,7 @@ function airportMatchScore(airport: Airport, search: string) {
   return Number.POSITIVE_INFINITY;
 }
 
-export function AirportCombobox({ value, onChange, placeholder = "Select airport", className, invalid }: Props) {
+export function AirportCombobox({ value, onChange, placeholder = "Select airport", className, invalid, iconVariant = "departure" }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [allAirports, setAllAirports] = useState<Airport[] | null>(airportCache);
@@ -82,6 +83,7 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
   const [loadError, setLoadError] = useState("");
   const selected = allAirports?.find(airport => airport.code === value) || popularAirportByCode.get(value);
   const label = selected ? `${selected.code} - ${selected.city}` : value || placeholder;
+  const FieldIcon = iconVariant === "arrival" ? PlaneLanding : Plane;
 
   const loadFullAirports = () => {
     if (allAirports || isLoadingAirports) return;
@@ -131,7 +133,7 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
           )}
         >
           <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-            <Plane className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <FieldIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="truncate">{label}</span>
           </span>
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />

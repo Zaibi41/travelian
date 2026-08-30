@@ -1264,7 +1264,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 {editSegments.map((segment, index) => (
                   <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
                     <AirportCombobox value={segment.from} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, from: value } : item))} placeholder="From airport" />
-                    <AirportCombobox value={segment.to} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, to: value } : item))} placeholder="To airport" />
+                    <AirportCombobox value={segment.to} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, to: value } : item))} placeholder="To airport" iconVariant="arrival" />
                     <Popover open={editSegmentDateOpen === index} onOpenChange={(open) => setEditSegmentDateOpen(open ? index : null)}>
                       <PopoverTrigger asChild>
                         <button type="button" className="flex h-11 items-center gap-2 rounded-xl border border-input bg-background px-3 text-left text-sm">
@@ -1302,7 +1302,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               </div>
               <div className="min-w-0">
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">To</label>
-                <AirportCombobox value={editTo} onChange={setEditTo} className="h-11" placeholder="To airport" />
+                <AirportCombobox value={editTo} onChange={setEditTo} className="h-11" placeholder="To airport" iconVariant="arrival" />
               </div>
             </div>
             )}

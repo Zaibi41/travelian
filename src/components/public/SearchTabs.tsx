@@ -295,7 +295,7 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
                     <div className="relative">
                       {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>}
                       <div className="relative">
-                        <AirportCombobox value={String(seg.to || "")} onChange={code => updateSegment(idx, "to", code)} placeholder="To airport" />
+                        <AirportCombobox value={String(seg.to || "")} onChange={code => updateSegment(idx, "to", code)} placeholder="To airport" iconVariant="arrival" />
                       </div>
                     </div>
                     <div>
@@ -346,7 +346,7 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
                     </button>
                   </div>
                   <div className="relative">
-                    <AirportCombobox value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To where?" invalid={!!errors.to} />
+                    <AirportCombobox value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To where?" invalid={!!errors.to} iconVariant="arrival" />
                   </div>
                   <DatePickerField date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
                   <Button
@@ -381,7 +381,7 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
                     </button>
                   </div>
                   <div className="relative">
-                    <AirportCombobox value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To where?" invalid={!!errors.to} />
+                    <AirportCombobox value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To where?" invalid={!!errors.to} iconVariant="arrival" />
                   </div>
                   <DatePickerField date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
                   <DatePickerField date={returnDate} onSelect={(d) => { setReturnDate(d); if (errors.return) setErrors(p => ({ ...p, return: undefined })); }} placeholder="Return date" />
