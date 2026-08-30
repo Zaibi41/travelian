@@ -130,7 +130,7 @@ export function PublicNavbar() {
           </div>
 
           <div className="mt-4 border-t pt-4">
-            <a href={`tel:${SUPPORT_PHONE_TEL}`} className="flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold text-foreground">
+            <a href={`tel:${SUPPORT_PHONE_TEL}`} className="flex items-center justify-center gap-2 rounded-xl border border-primary bg-primary px-3 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:bg-primary/95">
               <Phone className="h-4 w-4" /> Call
             </a>
           </div>

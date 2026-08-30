@@ -80,7 +80,7 @@ function clampToToday(date: Date | undefined) {
 }
 
 export default function PublicFlightsPage({ bookingPath = "/booking", adminMode = false }: { bookingPath?: string; adminMode?: boolean } = {}) {
-  const { currency: selectedCurrency, setCurrency } = useLocale();
+  const { currency: selectedCurrency } = useLocale();
   const [params, setParams] = useSearchParams();
   const initFrom = params.get("from") || "LHE";
   const initTo = params.get("to") || "JED";
@@ -139,7 +139,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [editTripType, setEditTripType] = useState<FlightTripType>(tripType);
   const [editSegments, setEditSegments] = useState<FlightSegment[]>(segments);
   const [editTravelers, setEditTravelers] = useState<TravelersValue>(travelers);
-  const [editCurrency, setEditCurrency] = useState<CurrencyCode>(currency);
   const [editDateOpen, setEditDateOpen] = useState(false);
   const [editReturnDateOpen, setEditReturnDateOpen] = useState(false);
   const [editSegmentDateOpen, setEditSegmentDateOpen] = useState<number | null>(null);
@@ -155,7 +154,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       { from: to, to: "", date: returnDate },
     ]);
     setEditTravelers(travelers);
-    setEditCurrency(currency);
     setModifyOpen(true);
   };
 
@@ -180,8 +178,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     setTripType(editTripType);
     setSegments(effectiveSegments);
     setTravelers(editTravelers);
-    setSearchCurrency(editCurrency);
-    setCurrency(editCurrency);
+    setSearchCurrency(currency);
     setSelectedAirlines([]);
     setSelectedStops([]);
     setSelectedDepartureTimes([]);
@@ -203,7 +200,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       children: String(editTravelers.children),
       infants: String(editTravelers.infants),
       cabin: editTravelers.cabin,
-      currency: editCurrency,
+      currency,
     }), { replace: true });
     setModifyOpen(false);
   };
@@ -1335,11 +1332,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
       {/* Modify Search Dialog */}
       <Dialog open={modifyOpen} onOpenChange={setModifyOpen}>
-        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="top-[calc(50%+1.75rem)] flex max-h-[calc(100dvh-7rem)] w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden p-0 sm:max-h-[calc(100dvh-8rem)] sm:max-w-2xl">
+          <DialogHeader className="shrink-0 border-b bg-background px-5 py-4 pr-14">
             <DialogTitle>Modify Search</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
             <div className="flex flex-wrap gap-2">
               {([
                 ["oneway", "One-way"],
@@ -1372,7 +1369,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           {segment.date ? format(segment.date, "MMM dd, yyyy") : "Select date"}
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="z-[300] max-h-[calc(100vh-2rem)] w-auto max-w-[calc(100vw-2rem)] overflow-y-auto p-0" align="start" collisionPadding={16}>
+                      <PopoverContent className="z-[1120] max-h-[min(var(--radix-popover-content-available-height),22rem)] w-auto max-w-[calc(100vw-2rem)] overflow-y-auto p-0" align="start" side="bottom" sideOffset={8} avoidCollisions={false} collisionPadding={16}>
                         <Calendar
                           mode="single"
                           selected={segment.date}
@@ -1415,7 +1412,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     {editDate ? format(editDate, "MMM dd, yyyy") : "Select date"}
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="z-[300] max-h-[calc(100vh-2rem)] w-auto max-w-[calc(100vw-2rem)] overflow-y-auto p-0" align="start" side="top" sideOffset={10} collisionPadding={16}>
+                <PopoverContent className="z-[1120] max-h-[min(var(--radix-popover-content-available-height),22rem)] w-auto max-w-[calc(100vw-2rem)] overflow-y-auto p-0" align="start" side="bottom" sideOffset={8} avoidCollisions={false} collisionPadding={16}>
                   <Calendar
                     mode="single"
                     selected={editDate}
@@ -1439,7 +1436,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       {editReturnDate ? format(editReturnDate, "MMM dd, yyyy") : "Select return date"}
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="z-[300] max-h-[calc(100vh-2rem)] w-auto max-w-[calc(100vw-2rem)] overflow-y-auto p-0" align="start" side="top" sideOffset={10} collisionPadding={16}>
+                  <PopoverContent className="z-[1120] max-h-[min(var(--radix-popover-content-available-height),22rem)] w-auto max-w-[calc(100vw-2rem)] overflow-y-auto p-0" align="start" side="bottom" sideOffset={8} avoidCollisions={false} collisionPadding={16}>
                     <Calendar
                       mode="single"
                       selected={editReturnDate}
@@ -1456,22 +1453,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             )}
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Travelers & Class</label>
-              <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} side="top" />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Currency</label>
-              <select
-                value={editCurrency}
-                onChange={(event) => setEditCurrency(event.target.value as CurrencyCode)}
-                className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
-              >
-                {CURRENCIES.map(option => (
-                  <option key={option.code} value={option.code}>{option.code} - {option.label}</option>
-                ))}
-              </select>
+              <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0 border-t bg-background px-5 py-4">
             <Button variant="outline" onClick={() => setModifyOpen(false)} className="rounded-xl">Cancel</Button>
             <Button onClick={applyModify} className="gradient-primary text-primary-foreground rounded-xl">
               <Search className="h-4 w-4 mr-2" /> Search Flights
