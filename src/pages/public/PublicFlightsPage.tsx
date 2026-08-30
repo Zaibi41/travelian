@@ -1356,7 +1356,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             )}
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Travelers & Class</label>
-              <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} />
+              <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} side="top" />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Currency</label>

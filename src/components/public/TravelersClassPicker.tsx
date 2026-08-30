@@ -24,9 +24,11 @@ interface Props {
   variant?: "compact" | "field";
   /** Where to anchor the dropdown. Defaults to left. */
   align?: "left" | "right";
+  /** Which side of the trigger to open on. Defaults to bottom. */
+  side?: "top" | "bottom";
 }
 
-export function TravelersClassPicker({ value, onChange, className, variant = "field", align = "left" }: Props) {
+export function TravelersClassPicker({ value, onChange, className, variant = "field", align = "left", side = "bottom" }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -68,7 +70,8 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
       {open && (
         <div
           className={cn(
-            "absolute top-full mt-2 w-full min-w-[20rem] max-w-[calc(100vw-2rem)] bg-card border rounded-xl shadow-elevated p-4 z-[200]",
+            "absolute z-[200] max-h-[calc(100vh-7rem)] w-full min-w-[20rem] max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border bg-card p-4 shadow-elevated",
+            side === "top" ? "bottom-full mb-2" : "top-full mt-2",
             align === "right" ? "right-0" : "left-0",
           )}
           role="dialog"
