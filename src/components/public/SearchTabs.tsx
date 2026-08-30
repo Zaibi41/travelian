@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Hotel, Plane, Car, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets, FileCheck2, Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,34 +41,72 @@ interface MultiCitySegment {
 
 function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string }) {
   const [open, setOpen] = useState(false);
+  const [isMobileCalendar, setIsMobileCalendar] = useState(false);
   const today = startOfDay(new Date());
   const selectDate = (nextDate: Date | undefined) => {
     onSelect(nextDate);
     if (nextDate) setOpen(false);
   };
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(max-width: 639px)");
+    const sync = () => setIsMobileCalendar(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+
+  const calendar = (
+    <Calendar
+      mode="single"
+      selected={date}
+      onSelect={selectDate}
+      disabled={(day) => startOfDay(day) < today}
+      initialFocus
+      className="p-3 pointer-events-auto"
+    />
+  );
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button type="button" className={cn(
-          "flex items-center gap-2 w-full h-12 bg-muted/30 border border-muted rounded-xl px-3 text-sm text-left transition-colors hover:border-primary/30",
-          !date && "text-muted-foreground"
-        )}>
-          <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-          {date ? format(date, "MMM dd, yyyy") : placeholder}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start" side="top" sideOffset={10} collisionPadding={16}>
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={selectDate}
-          disabled={(day) => startOfDay(day) < today}
-          initialFocus
-          className="p-3 pointer-events-auto"
-        />
-      </PopoverContent>
-    </Popover>
+    <>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button type="button" className={cn(
+            "flex items-center gap-2 w-full h-12 bg-muted/30 border border-muted rounded-xl px-3 text-sm text-left transition-colors hover:border-primary/30",
+            !date && "text-muted-foreground"
+          )}>
+            <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+            {date ? format(date, "MMM dd, yyyy") : placeholder}
+          </button>
+        </PopoverTrigger>
+        {!isMobileCalendar && (
+          <PopoverContent
+            className="z-[1100] w-[var(--radix-popover-trigger-width)] min-w-[18rem] max-w-[calc(100vw-2rem)] p-0"
+            align="start"
+            side="bottom"
+            sideOffset={8}
+            collisionPadding={16}
+          >
+            {calendar}
+          </PopoverContent>
+        )}
+      </Popover>
+      {open && isMobileCalendar && typeof document !== "undefined" && createPortal(
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-[1090] bg-slate-950/35"
+            aria-label="Close date picker"
+            onClick={() => setOpen(false)}
+          />
+          <div className="fixed inset-x-3 bottom-3 z-[1100] max-h-[85vh] overflow-y-auto rounded-2xl border bg-popover p-0 text-popover-foreground shadow-elevated">
+            {calendar}
+          </div>
+        </>,
+        document.body,
+      )}
+    </>
   );
 }
 
