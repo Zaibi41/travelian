@@ -1,7 +1,7 @@
 import { Phone, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
-import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
+import { SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
 
 export function HomeSupportCta() {
   return (
@@ -21,7 +21,6 @@ export function HomeSupportCta() {
               <p className="mt-2 text-sm md:text-base leading-7 text-primary-foreground/75">
                 Talk to our travel team for flights, Umrah, visas, hotels and tours.
               </p>
-              <p className="mt-3 text-sm font-semibold text-gold">WhatsApp: {SUPPORT_PHONE_DISPLAY}</p>
             </div>
             <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row">
               <Button asChild size="lg" className="rounded-xl bg-whatsapp font-semibold text-whatsapp-foreground hover:bg-whatsapp-hover">
