@@ -30,7 +30,7 @@ export function PublicFooter() {
           </div>
 
           <div>
-            <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-sidebar-accent-foreground"><BriefcaseBusiness className="h-4 w-4 text-sidebar-primary" /> Products</h4>
+            <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-sidebar-accent-foreground"><BriefcaseBusiness className="h-4 w-4 text-sidebar-primary" /> Services</h4>
             <ul className="space-y-2.5 text-sm text-sidebar-muted">
               <li><Link to="/" onClick={scrollToTop} className="hover:text-sidebar-primary">Flights</Link></li>
               <li><Link to="/hotels-search" className="hover:text-sidebar-primary">Hotels</Link></li>
@@ -61,7 +61,7 @@ export function PublicFooter() {
           </div>
 
           <div>
-            <h4 className="font-semibold text-sidebar-accent-foreground mb-4 text-sm">Contact</h4>
+            <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-sidebar-accent-foreground"><Phone className="h-4 w-4 text-sidebar-primary" /> Contact</h4>
             <ul className="space-y-3 text-sm text-sidebar-muted">
               <li className="flex items-start gap-2"><MapPin className="h-4 w-4 shrink-0 mt-0.5 text-sidebar-primary" /> {SUPPORT_ADDRESS}</li>
               <li className="flex items-center gap-2"><Phone className="h-4 w-4 shrink-0 text-sidebar-primary" /> <a href={`tel:${SUPPORT_PHONE_TEL}`} className="hover:text-sidebar-primary">{SUPPORT_PHONE_DISPLAY}</a></li>
