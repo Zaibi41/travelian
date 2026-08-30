@@ -57,7 +57,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
 
   const triggerClass =
     variant === "compact"
-      ? "flex items-center gap-2 text-xs font-medium text-foreground bg-muted/40 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+      ? "flex h-8 items-center gap-1.5 rounded-lg bg-muted/40 px-[0.65rem] py-[0.3rem] text-[11px] font-medium text-foreground transition-colors hover:bg-muted"
       : "flex items-center gap-2 w-full h-11 bg-background border border-input rounded-xl px-3 text-sm text-left hover:border-primary/30 transition-colors";
 
   return (
@@ -83,6 +83,8 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
         <div
           className={cn(
             "absolute z-[200] max-h-[calc(100vh-7rem)] w-full max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border bg-card p-4 shadow-elevated",
+            mode === "travelers" && "min-w-[20rem]",
+            mode === "cabin" && "min-w-[12rem]",
             side === "top" ? "bottom-full mb-2" : "top-full mt-2",
             align === "right" ? "right-0" : "left-0",
           )}
@@ -96,19 +98,19 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
                   <p className="text-sm font-medium text-foreground">{p.label}</p>
                   <p className="text-[10px] text-muted-foreground">{p.sub}</p>
                 </div>
-                <div className="grid grid-cols-[2rem_1.5rem_2rem] items-center gap-2">
+                <div className="grid grid-cols-[1.75rem_1.25rem_1.75rem] items-center gap-2">
                   <button
                     type="button"
                     onClick={() => update({ [p.key]: Math.max(p.min, value[p.key] - 1) } as any)}
-                    className="h-8 w-8 rounded-full border flex items-center justify-center text-sm hover:bg-muted disabled:opacity-40"
+                    className="flex h-7 w-7 items-center justify-center rounded-full border text-xs hover:bg-muted disabled:opacity-40"
                     disabled={value[p.key] <= p.min}
                     aria-label={`Decrease ${p.label}`}
                   >−</button>
-                  <span className="text-center text-sm font-semibold tabular-nums">{value[p.key]}</span>
+                  <span className="text-center text-xs font-semibold tabular-nums">{value[p.key]}</span>
                   <button
                     type="button"
                     onClick={() => update({ [p.key]: value[p.key] + 1 } as any)}
-                    className="h-8 w-8 rounded-full border flex items-center justify-center text-sm hover:bg-muted"
+                    className="flex h-7 w-7 items-center justify-center rounded-full border text-xs hover:bg-muted"
                     aria-label={`Increase ${p.label}`}
                   >+</button>
                 </div>
@@ -124,7 +126,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
                 <button
                   key={c}
                   type="button"
-                  className={`text-xs px-2 py-2 rounded-md transition-all text-center ${
+                  className={`rounded-md px-[0.3rem] py-[0.3rem] text-[11px] transition-all text-center ${
                     value.cabin === c ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground hover:bg-muted"
                   }`}
                   onClick={() => {
@@ -136,7 +138,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
             </div>
           </div>
           )}
-          <Button size="sm" className="w-full mt-3 gradient-primary text-primary-foreground" onClick={() => setOpen(false)}>
+          <Button size="sm" className="mt-3 h-8 w-full rounded-lg gradient-primary text-xs text-primary-foreground" onClick={() => setOpen(false)}>
             Done
           </Button>
         </div>

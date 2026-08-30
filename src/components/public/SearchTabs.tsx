@@ -280,8 +280,8 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
                 ))}
               </div>
               <div className="flex flex-wrap gap-2">
-                <TravelersClassPicker value={travelers} onChange={setTravelers} variant="compact" mode="travelers" className="w-56" />
-                <TravelersClassPicker value={travelers} onChange={setTravelers} variant="compact" mode="cabin" className="w-44" />
+                <TravelersClassPicker value={travelers} onChange={setTravelers} variant="compact" mode="travelers" className="w-40" />
+                <TravelersClassPicker value={travelers} onChange={setTravelers} variant="compact" mode="cabin" className="w-32" />
               </div>
             </div>
 
