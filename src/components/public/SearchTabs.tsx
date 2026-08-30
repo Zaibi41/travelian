@@ -82,7 +82,7 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
         </PopoverTrigger>
         {!isMobileCalendar && (
           <PopoverContent
-            className="z-[1100] w-[var(--radix-popover-trigger-width)] min-w-[18rem] max-w-[calc(100vw-2rem)] p-0"
+            className="z-[1120] w-[var(--radix-popover-trigger-width)] min-w-[18rem] max-w-[calc(100vw-2rem)] p-0"
             align="start"
             side="bottom"
             sideOffset={8}
@@ -96,11 +96,11 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
         <>
           <button
             type="button"
-            className="fixed inset-0 z-[1090] bg-slate-950/35"
+            className="fixed inset-0 z-[1110] bg-slate-950/35"
             aria-label="Close date picker"
             onClick={() => setOpen(false)}
           />
-          <div className="fixed inset-x-3 bottom-3 z-[1100] max-h-[85vh] overflow-y-auto rounded-2xl border bg-popover p-0 text-popover-foreground shadow-elevated">
+          <div className="fixed inset-x-3 bottom-3 z-[1120] max-h-[85vh] overflow-y-auto rounded-2xl border bg-popover p-0 text-popover-foreground shadow-elevated">
             {calendar}
           </div>
         </>,

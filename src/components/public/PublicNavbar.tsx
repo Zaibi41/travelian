@@ -68,7 +68,7 @@ export function PublicNavbar() {
                 {currency} <ChevronDown className="h-3 w-3" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-[1100] bg-popover">
+            <DropdownMenuContent align="end" className="z-[1120] bg-popover">
               <DropdownMenuLabel className="text-xs">Currency</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {CURRENCIES.map((c) => (
@@ -87,7 +87,7 @@ export function PublicNavbar() {
                 <Globe className="h-3.5 w-3.5" /> {language.toUpperCase()} <ChevronDown className="h-3 w-3" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-[1100] bg-popover">
+            <DropdownMenuContent align="end" className="z-[1120] bg-popover">
               <DropdownMenuLabel className="text-xs">Language</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {LANGUAGES.map((l) => (

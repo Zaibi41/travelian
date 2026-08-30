@@ -100,14 +100,14 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
     <>
       <button
         type="button"
-        className="fixed inset-0 z-[190] bg-slate-950/35 sm:hidden"
+        className="fixed inset-0 z-[1110] bg-slate-950/35 sm:hidden"
         aria-label="Close travelers and cabin picker"
         onClick={() => setOpen(false)}
       />
       <div
         ref={panelRef}
         className={cn(
-          "fixed inset-x-3 bottom-3 z-[200] max-h-[82vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 pb-5 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:inset-auto sm:left-[var(--picker-left)] sm:top-[var(--picker-top)] sm:max-h-[calc(100vh-2rem)] sm:w-[var(--picker-width)] sm:rounded-2xl sm:p-4",
+          "fixed inset-x-3 bottom-3 z-[1120] max-h-[82vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 pb-5 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:inset-auto sm:left-[var(--picker-left)] sm:top-[var(--picker-top)] sm:max-h-[calc(100vh-2rem)] sm:w-[var(--picker-width)] sm:rounded-2xl sm:p-4",
         )}
         style={{
           "--picker-top": `${position.top}px`,
