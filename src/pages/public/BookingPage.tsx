@@ -679,12 +679,16 @@ export default function BookingPage() {
               <div className="space-y-6 animate-fade-in">
                 <Card className="shadow-card border-0">
                   <CardContent className="p-6">
-                    <h2 className="text-lg font-bold text-foreground mb-1">Traveler Information</h2>
-                    <p className="text-sm text-muted-foreground mb-6">Enter details for each traveler exactly as shown on the identity document.</p>
-                    <div className="grid gap-2 rounded-xl border bg-muted/30 p-3 text-xs text-muted-foreground sm:grid-cols-3">
-                      <div><span className="font-semibold text-foreground">{adultCount}</span> Adult{adultCount === 1 ? "" : "s"}</div>
-                      <div><span className="font-semibold text-foreground">{childCount}</span> Child{childCount === 1 ? "" : "ren"}</div>
-                      <div><span className="font-semibold text-foreground">{infantCount}</span> Infant{infantCount === 1 ? "" : "s"}</div>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h2 className="text-lg font-bold text-foreground">Traveler Information</h2>
+                        <p className="mt-1 text-sm text-muted-foreground">Enter details exactly as shown on the identity document.</p>
+                      </div>
+                      <div className="grid w-full grid-cols-3 gap-2 rounded-xl border bg-muted/30 p-2 text-center text-xs text-muted-foreground sm:w-auto sm:min-w-[18rem]">
+                        <div className="rounded-lg bg-card px-3 py-2"><span className="block font-bold tabular-nums text-foreground">{adultCount}</span> Adult{adultCount === 1 ? "" : "s"}</div>
+                        <div className="rounded-lg bg-card px-3 py-2"><span className="block font-bold tabular-nums text-foreground">{childCount}</span> Child{childCount === 1 ? "" : "ren"}</div>
+                        <div className="rounded-lg bg-card px-3 py-2"><span className="block font-bold tabular-nums text-foreground">{infantCount}</span> Infant{infantCount === 1 ? "" : "s"}</div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

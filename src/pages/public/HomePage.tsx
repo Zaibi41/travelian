@@ -43,7 +43,7 @@ export default function HomePage() {
             ],
             contactPoint: {
               "@type": "ContactPoint",
-              telephone: "+92-300-4440014",
+              telephone: "+92-324-4440014",
               contactType: "customer support",
               areaServed: "PK",
               availableLanguage: ["English", "Urdu", "Arabic"],
@@ -80,7 +80,7 @@ export default function HomePage() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-2xl md:text-4xl font-black font-display leading-tight tracking-tight text-primary-foreground animate-fade-in-up">
+            <h1 className="text-[1.75rem] font-black font-display leading-tight tracking-tight text-primary-foreground animate-fade-in-up">
               Book Flights, Umrah, Visas, Hotels &amp; Tours with Travelian
             </h1>
           </div>

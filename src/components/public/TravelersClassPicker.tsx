@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Users, ChevronDown } from "lucide-react";
+import { Armchair, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -69,7 +69,11 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
         aria-haspopup="dialog"
         aria-expanded={open}
       >
-        <Users className={variant === "compact" ? "h-3.5 w-3.5" : "h-4 w-4 text-muted-foreground"} />
+        {mode === "cabin" ? (
+          <Armchair className={variant === "compact" ? "h-3.5 w-3.5 shrink-0" : "h-4 w-4 shrink-0 text-muted-foreground"} />
+        ) : (
+          <Users className={variant === "compact" ? "h-3.5 w-3.5 shrink-0" : "h-4 w-4 shrink-0 text-muted-foreground"} />
+        )}
         <span className="whitespace-nowrap flex-1 truncate">
           {mode === "travelers" ? formatTravelerCount(value) : mode === "cabin" ? value.cabin : formatTravelers(value)}
         </span>
@@ -87,12 +91,12 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
           {mode !== "cabin" && (
           <div className="space-y-3">
             {rows.map(p => (
-              <div key={p.key} className="flex items-center justify-between">
-                <div>
+              <div key={p.key} className="grid grid-cols-[1fr_auto] items-center gap-3">
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground">{p.label}</p>
                   <p className="text-[10px] text-muted-foreground">{p.sub}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-[2rem_1.5rem_2rem] items-center gap-2">
                   <button
                     type="button"
                     onClick={() => update({ [p.key]: Math.max(p.min, value[p.key] - 1) } as any)}
@@ -100,7 +104,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
                     disabled={value[p.key] <= p.min}
                     aria-label={`Decrease ${p.label}`}
                   >−</button>
-                  <span className="text-sm font-semibold w-5 text-center">{value[p.key]}</span>
+                  <span className="text-center text-sm font-semibold tabular-nums">{value[p.key]}</span>
                   <button
                     type="button"
                     onClick={() => update({ [p.key]: value[p.key] + 1 } as any)}
@@ -115,7 +119,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
           {mode !== "travelers" && (
           <div className={cn(mode === "combined" && "mt-3 border-t pt-3")}>
             <p className="text-xs font-medium text-muted-foreground mb-2">Cabin Class</p>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
               {CABIN_CLASSES.map(c => (
                 <button
                   key={c}
