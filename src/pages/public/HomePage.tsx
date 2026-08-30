@@ -88,7 +88,7 @@ export default function HomePage() {
           <div className="relative mt-5 md:mt-7">
             <div className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-white/5 blur-2xl" aria-hidden="true" />
             <div className="relative">
-              <SearchTabs visibleTabIds={["flights", "hotels", "umrah", "visas", "tours"]} />
+              <SearchTabs visibleTabIds={["flights", "group-ticketing", "hotels"]} />
             </div>
           </div>
 

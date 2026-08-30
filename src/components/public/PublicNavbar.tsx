@@ -19,6 +19,8 @@ const serviceLinks = [
   { label: "Umrah", href: "/umrah-packages", match: ["/umrah-packages", "/umrah"] },
   { label: "Visas", href: "/visa-services", match: ["/visa-services", "/visa"] },
   { label: "Tours", href: "/tour-packages", match: ["/tour-packages", "/tour"] },
+  { label: "About", href: "/about", match: ["/about"] },
+  { label: "Contact", href: "/contact", match: ["/contact"] },
 ];
 
 const WHATSAPP_URL = whatsappUrl("Hi, I need help with a Travelian booking.");

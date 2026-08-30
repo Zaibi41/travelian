@@ -228,10 +228,6 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
           <button
             key={tab.id}
             onClick={() => {
-              if (tab.id === "group-ticketing" && initialTab !== "group-ticketing") {
-                navigate("/group-ticketing");
-                return;
-              }
               if (tab.id === "umrah") {
                 navigate("/umrah-packages");
                 return;
