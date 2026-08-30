@@ -64,7 +64,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
 
   const triggerClass =
     variant === "compact"
-      ? "flex h-9 items-center gap-2 rounded-lg bg-muted/40 px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+      ? "flex h-9 w-full items-center gap-2 rounded-lg bg-muted/40 px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted"
       : "flex items-center gap-2 w-full h-11 bg-background border border-input rounded-xl px-3 text-sm text-left hover:border-primary/30 transition-colors";
 
   return (
@@ -96,16 +96,16 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
         />
         <div
           className={cn(
-            "fixed inset-x-3 bottom-3 z-[200] max-h-[85vh] overflow-y-auto rounded-2xl border bg-card p-4 pb-5 shadow-elevated sm:absolute sm:inset-x-auto sm:bottom-auto sm:max-h-[calc(100vh-7rem)] sm:w-full sm:max-w-[calc(100vw-2rem)] sm:rounded-xl sm:pb-4",
-            mode === "travelers" && "sm:min-w-[22rem]",
-            mode === "cabin" && "sm:min-w-[14rem]",
+            "fixed inset-x-3 bottom-3 z-[200] max-h-[85vh] overflow-y-auto rounded-2xl border bg-card p-4 pb-5 shadow-elevated sm:absolute sm:inset-x-auto sm:bottom-auto sm:max-h-[calc(100vh-7rem)] sm:w-full sm:max-w-[calc(100vw-2rem)] sm:rounded-xl sm:p-3.5 sm:pb-4",
+            mode === "travelers" && "sm:min-w-[18.5rem]",
+            mode === "cabin" && "sm:min-w-[13rem]",
             side === "top" ? "sm:bottom-full sm:mb-2" : "sm:top-full sm:mt-2",
             align === "right" ? "sm:right-0" : "sm:left-0",
           )}
           role="dialog"
         >
           {mode !== "cabin" && (
-          <div className="space-y-3.5">
+          <div className="space-y-3">
             <p className="text-sm font-semibold text-foreground">Travelers</p>
             {rows.map(p => (
               <div key={p.key} className="grid grid-cols-[1fr_auto] items-center gap-3">
@@ -113,7 +113,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
                   <p className="text-sm font-medium text-foreground">{p.label}</p>
                   <p className="text-[10px] text-muted-foreground">{p.sub}</p>
                 </div>
-                <div className="grid grid-cols-[2rem_1.5rem_2rem] items-center gap-2">
+                <div className="grid grid-cols-[2rem_1.4rem_2rem] items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => update({ [p.key]: Math.max(p.min, value[p.key] - 1) } as any)}
@@ -140,7 +140,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
           {mode !== "travelers" && (
           <div className={cn(mode === "combined" && "mt-3 border-t pt-3")}>
             <p className="mb-2 text-sm font-semibold text-foreground">Cabin Class</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-1.5">
               {CABIN_CLASSES.map(c => (
                 <button
                   key={c}
@@ -157,7 +157,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
             </div>
           </div>
           )}
-          <Button size="sm" className="mt-4 w-full gradient-primary text-primary-foreground" onClick={() => setOpen(false)}>
+          <Button size="sm" className="mt-3.5 w-full gradient-primary text-primary-foreground" onClick={() => setOpen(false)}>
             Done
           </Button>
         </div>
