@@ -1,35 +1,35 @@
-import { Network, ShieldCheck, ArrowRight, Plane, Globe2, Layers } from "lucide-react";
+import { ArrowRight, BadgeCheck, Headphones, Network, Rocket, ShieldCheck, TicketCheck, UsersRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
-type Supplier = {
-  name: string;
-  mark: string;
-  kind: string;
-  accent?: "gold" | "teal";
-  icon?: typeof Plane;
-};
+const capabilities = ["Live Ticketing", "Airline APIs", "NDC", "LCCs", "Aggregators", "Group Ticketing"];
 
-const suppliers: Supplier[] = [
-  { name: "Amadeus", mark: "amadeus", kind: "GDS", accent: "teal" },
-  { name: "Sabre", mark: "SABRE", kind: "GDS", accent: "teal" },
-  { name: "Travelport", mark: "Travelport", kind: "GDS", accent: "teal" },
-  { name: "NDC", mark: "NDC", kind: "Airline Content", accent: "gold" },
-  { name: "PIA", mark: "PIA", kind: "Airline" },
-  { name: "AirSial", mark: "AirSial", kind: "Airline" },
-  { name: "Fly Jinnah", mark: "flyjinnah", kind: "LCC", accent: "gold" },
-  { name: "AirBlue", mark: "airblue", kind: "Airline" },
-  { name: "Duffel", mark: "Duffel", kind: "NDC / API", accent: "gold" },
-  { name: "Mystifly", mark: "Mystifly", kind: "Aggregator", accent: "teal" },
-  { name: "Multiple Airlines", mark: "", kind: "Airline Network", icon: Globe2, accent: "teal" },
-  { name: "LCCs", mark: "", kind: "Low Cost Carriers", icon: Layers, accent: "gold" },
+const benefits = [
+  {
+    icon: TicketCheck,
+    title: "Wider Fare Options",
+    desc: "Search live fares, special fares, and supplier fare options in one place.",
+  },
+  {
+    icon: UsersRound,
+    title: "Group Ticketing Connectivity",
+    desc: "Access limited-seat group fares and special inventory from connected sources.",
+  },
+  {
+    icon: Headphones,
+    title: "Reliable Booking Support",
+    desc: "Availability and fare confirmation depend on live response and booking rules.",
+  },
+  {
+    icon: Rocket,
+    title: "Built for Growth",
+    desc: "Travelian can connect additional flight, hotel, and travel sources as the platform expands.",
+  },
 ];
-
-const badges = ["GDS", "NDC", "Airline APIs", "LCCs", "Aggregator"];
 
 export function HomeSupplierNetwork() {
   return (
-    <section className="relative isolate overflow-hidden gradient-hero py-12 md:py-14">
+    <section className="relative isolate overflow-hidden gradient-hero py-12 md:py-16">
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <div
           className="absolute inset-0 opacity-[0.06]"
@@ -38,74 +38,65 @@ export function HomeSupplierNetwork() {
             backgroundSize: "22px 22px",
           }}
         />
-        <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-primary/30 blur-3xl" />
-        <div className="absolute -right-24 bottom-0 h-72 w-72 rounded-full bg-teal/20 blur-3xl" />
+        <div className="absolute inset-x-0 top-0 h-px bg-white/15" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-white/10" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-          <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-gold ring-1 ring-white/15">
-              <Network className="h-3 w-3" /> Travel technology
-            </span>
-            <h2 className="mt-3 text-xl md:text-2xl font-bold font-display tracking-tight text-primary-foreground">
-              Connected Supplier Network
-            </h2>
-            <p className="mt-2 max-w-lg text-sm leading-6 text-primary-foreground/75">
-              Integrated GDS, airline, NDC and LCC connectivity for wider fare options and reliable
-              booking support.
-            </p>
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl backdrop-blur-sm sm:p-7 lg:p-8">
+          <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-end">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-gold ring-1 ring-white/15">
+                <Network className="h-3 w-3" /> Travel technology
+              </span>
+              <h2 className="mt-4 text-2xl font-bold font-display tracking-tight text-white md:text-3xl">
+                Connected Supplier Network
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base md:leading-7">
+                Travelian connects live ticketing, airline APIs, NDC, LCCs, aggregators, and group
+                ticketing sources to provide wider fare options and reliable booking support.
+              </p>
+            </div>
 
-            <div className="mt-4 flex flex-wrap gap-1.5">
-              {badges.map((b) => (
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              {capabilities.map((capability) => (
                 <span
-                  key={b}
-                  className="rounded-lg bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-primary-foreground/85 ring-1 ring-white/10"
+                  key={capability}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/90 ring-1 ring-white/12"
                 >
-                  {b}
+                  <BadgeCheck className="h-3.5 w-3.5 text-teal" />
+                  {capability}
                 </span>
               ))}
             </div>
+          </div>
 
-            <p className="mt-4 flex items-start gap-2 text-xs leading-6 text-primary-foreground/60">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-teal" />
-              Fare and availability depend on live supplier response and contracted access.
-            </p>
+          <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {benefits.map((benefit) => (
+              <div
+                key={benefit.title}
+                className="rounded-2xl border border-white/10 bg-white/[0.075] p-4 shadow-sm transition-colors hover:bg-white/[0.105]"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal/15 ring-1 ring-teal/25">
+                  <benefit.icon className="h-5 w-5 text-teal" />
+                </div>
+                <h3 className="mt-4 text-sm font-bold text-white">{benefit.title}</h3>
+                <p className="mt-2 text-xs leading-5 text-white/70">{benefit.desc}</p>
+              </div>
+            ))}
+          </div>
 
-            <Button asChild size="sm" className="mt-4 rounded-xl bg-gold font-semibold text-gold-foreground hover:bg-gold/90">
+          <div className="mt-7 flex flex-col gap-4 border-t border-white/10 pt-5 sm:flex-row sm:items-center">
+            <Button asChild size="sm" className="w-full rounded-xl bg-gold font-semibold text-gold-foreground hover:bg-gold/90 sm:w-auto">
               <Link to="/contact">
                 Talk to our team <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
-          </div>
 
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4">
-            {suppliers.map((s) => {
-              const accentText = s.accent === "gold" ? "text-gold" : "text-teal";
-              return (
-                <div
-                  key={s.name}
-                  className="group flex flex-col justify-between rounded-xl bg-white/[0.07] p-3 ring-1 ring-white/10 backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.12] hover:ring-white/25"
-                >
-                  {/* Brand-mark plate */}
-                  <div className="flex h-10 items-center justify-center rounded-lg bg-white/95 px-2 shadow-sm">
-                    {s.icon ? (
-                      <s.icon className="h-5 w-5 text-primary" />
-                    ) : (
-                      <span className="truncate text-[13px] font-black tracking-tight text-primary">
-                        {s.mark}
-                      </span>
-                    )}
-                  </div>
-                  <p className="mt-2 truncate text-xs font-bold text-primary-foreground">{s.name}</p>
-                  <span
-                    className={`mt-1 inline-flex max-w-full items-center rounded-md bg-white/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ring-1 ring-white/10 ${accentText}`}
-                  >
-                    <span className="truncate">{s.kind}</span>
-                  </span>
-                </div>
-              );
-            })}
+            <p className="flex items-start gap-2 text-xs leading-6 text-white/65">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-teal" />
+              Fare and availability depend on live supplier response and contracted access.
+            </p>
           </div>
         </div>
       </div>
