@@ -1516,7 +1516,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       </Dialog>
 
       <Dialog open={!!fareDetails} onOpenChange={(open) => !open && setFareDetails(null)}>
-        <DialogContent className="flex max-h-[88vh] w-[calc(100vw-1.5rem)] flex-col overflow-hidden border border-primary/10 bg-gradient-to-br from-white via-sky-50/50 to-white p-0 shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:max-w-2xl md:max-w-3xl">
+        <DialogContent className="top-[calc(50%+1.75rem)] flex max-h-[calc(100dvh-7rem)] w-[calc(100vw-1.5rem)] flex-col overflow-hidden border border-primary/10 bg-gradient-to-br from-white via-sky-50/50 to-white p-0 shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:max-h-[calc(100dvh-8rem)] sm:max-w-2xl md:max-w-3xl">
           {fareDetails && (
             <>
               <DialogHeader className="sticky top-0 z-10 shrink-0 border-b border-primary/10 bg-white/95 px-4 py-3 text-left backdrop-blur sm:px-5">
@@ -1618,7 +1618,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       </Dialog>
 
       <Dialog open={!!detailsFlight} onOpenChange={(open) => !open && setDetailsFlight(null)}>
-        <DialogContent className="flex max-h-[90vh] w-[calc(100vw-2rem)] flex-col overflow-hidden sm:max-w-2xl">
+        <DialogContent className="top-[calc(50%+1.75rem)] flex max-h-[calc(100dvh-7rem)] w-[calc(100vw-2rem)] flex-col overflow-hidden sm:max-h-[calc(100dvh-8rem)] sm:max-w-2xl">
           <DialogHeader className="shrink-0 pr-10">
             <DialogTitle>Flight Details & Fare Rules</DialogTitle>
           </DialogHeader>
