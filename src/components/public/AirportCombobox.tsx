@@ -59,10 +59,19 @@ function loadAirportDataset() {
   return airportCachePromise;
 }
 
-function airportMatches(airport: Airport, search: string) {
+function airportMatchScore(airport: Airport, search: string) {
   const needle = search.trim().toLowerCase();
-  if (!needle) return true;
-  return `${airport.code} ${airport.city} ${airport.name} ${airport.country}`.toLowerCase().includes(needle);
+  if (!needle) return 0;
+  const code = airport.code.toLowerCase();
+  const city = airport.city.toLowerCase();
+  const name = airport.name.toLowerCase();
+  const country = airport.country.toLowerCase();
+  if (code === needle) return 0;
+  if (code.startsWith(needle)) return 1;
+  if (city.startsWith(needle)) return 2;
+  if (name.startsWith(needle)) return 3;
+  if (country.startsWith(needle)) return 4;
+  return Number.POSITIVE_INFINITY;
 }
 
 export function AirportCombobox({ value, onChange, placeholder = "Select airport", className, invalid }: Props) {
@@ -86,8 +95,15 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
 
   const shownAirports = useMemo(() => {
     const source = allAirports || popularAirports;
-    const matches = source.filter(airport => airportMatches(airport, query));
-    const popularMatches = popularAirports.filter(airport => airportMatches(airport, query));
+    const trimmedQuery = query.trim();
+    const matches = source
+      .map(airport => ({ airport, score: airportMatchScore(airport, trimmedQuery) }))
+      .filter(({ score }) => Number.isFinite(score))
+      .sort((a, b) => a.score - b.score || a.airport.code.localeCompare(b.airport.code))
+      .map(({ airport }) => airport);
+    const popularMatches = trimmedQuery
+      ? []
+      : popularAirports;
     const seen = new Set<string>();
 
     return [...popularMatches, ...matches]
@@ -96,7 +112,7 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
         seen.add(airport.code);
         return true;
       })
-      .slice(0, query.trim() ? 80 : 24);
+      .slice(0, trimmedQuery ? 80 : 24);
   }, [allAirports, query]);
 
   return (

@@ -105,6 +105,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   });
   const [priceRange, setPriceRange] = useState([0, 700]);
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
+  const [selectedStops, setSelectedStops] = useState<string[]>([]);
+  const [selectedDepartureTimes, setSelectedDepartureTimes] = useState<string[]>([]);
   const [sort, setSort] = useState("price-asc");
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
   const [departDate, setDepartDate] = useState<Date>(initDate);
@@ -137,6 +139,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [editSegments, setEditSegments] = useState<FlightSegment[]>(segments);
   const [editTravelers, setEditTravelers] = useState<TravelersValue>(travelers);
   const [editCurrency, setEditCurrency] = useState<CurrencyCode>(currency);
+  const [editDateOpen, setEditDateOpen] = useState(false);
+  const [editReturnDateOpen, setEditReturnDateOpen] = useState(false);
+  const [editSegmentDateOpen, setEditSegmentDateOpen] = useState<number | null>(null);
 
   const openModify = () => {
     setEditFrom(from);
@@ -177,6 +182,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     setSearchCurrency(editCurrency);
     setCurrency(editCurrency);
     setSelectedAirlines([]);
+    setSelectedStops([]);
+    setSelectedDepartureTimes([]);
     setSelectedFlight(null);
     setParams(new URLSearchParams({
       from: effectiveFrom,
@@ -206,6 +213,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   };
 
   const toggleAirline = (a: string) => setSelectedAirlines(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
+  const toggleStopFilter = (value: string) => setSelectedStops(prev => prev.includes(value) ? prev.filter(x => x !== value) : [...prev, value]);
+  const toggleDepartureTimeFilter = (value: string) => setSelectedDepartureTimes(prev => prev.includes(value) ? prev.filter(x => x !== value) : [...prev, value]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -276,6 +285,18 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     if (search && !f.origin.toLowerCase().includes(search.toLowerCase()) && !f.destination.toLowerCase().includes(search.toLowerCase()) && !f.airline.toLowerCase().includes(search.toLowerCase())) return false;
     if (f.price < priceRange[0] || f.price > priceRange[1]) return false;
     if (selectedAirlines.length > 0 && !selectedAirlines.includes(f.airline)) return false;
+    if (selectedStops.length > 0) {
+      const stops = f.stops || 0;
+      const stopKey = stops === 0 ? "nonstop" : stops === 1 ? "1stop" : "2plus";
+      if (!selectedStops.includes(stopKey)) return false;
+    }
+    if (selectedDepartureTimes.length > 0) {
+      const timePart = String(f.departureTime || "").match(/\b(\d{1,2}):\d{2}\b/)?.[1];
+      const hour = Number(timePart);
+      if (!Number.isFinite(hour)) return false;
+      const departureKey = hour < 6 ? "early" : hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
+      if (!selectedDepartureTimes.includes(departureKey)) return false;
+    }
     return true;
   });
 
@@ -560,8 +581,21 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   }, [dateFlexDays, departDate, from, to, tripType, returnDate, travelers, currency]);
 
   const airlineOptions = useMemo(() => Array.from(new Set(flights.map(f => f.airline).filter(Boolean))).sort(), [flights]);
+  const stopOptions = [
+    { value: "nonstop", label: "Non-stop" },
+    { value: "1stop", label: "1 Stop" },
+    { value: "2plus", label: "2+ Stops" },
+  ];
+  const departureTimeOptions = [
+    { value: "early", label: "Early Morning (00-06)" },
+    { value: "morning", label: "Morning (06-12)" },
+    { value: "afternoon", label: "Afternoon (12-18)" },
+    { value: "evening", label: "Evening (18-24)" },
+  ];
   const activeFilterLabels = [
     ...selectedAirlines.map((airline) => ({ key: `airline-${airline}`, label: airline, onRemove: () => toggleAirline(airline) })),
+    ...selectedStops.map((value) => ({ key: `stop-${value}`, label: stopOptions.find((option) => option.value === value)?.label || value, onRemove: () => toggleStopFilter(value) })),
+    ...selectedDepartureTimes.map((value) => ({ key: `departure-${value}`, label: departureTimeOptions.find((option) => option.value === value)?.label || value, onRemove: () => toggleDepartureTimeFilter(value) })),
     ...(search ? [{ key: "search", label: `Search: ${search}`, onRemove: () => setSearch("") }] : []),
   ];
   const hasFilterChanges = activeFilterLabels.length > 0 || priceRange[0] > 0 || priceRange[1] < maxPrice;
@@ -750,7 +784,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 {formatFare(priceRange[0], currency)} - {formatFare(priceRange[1], currency)}
               </span>
             ) : null}
-            <Button variant="ghost" size="sm" className="h-7 rounded-full text-xs" onClick={() => { setSelectedAirlines([]); setPriceRange([0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)]); setSearch(""); }}>
+            <Button variant="ghost" size="sm" className="h-7 rounded-full text-xs" onClick={() => { setSelectedAirlines([]); setSelectedStops([]); setSelectedDepartureTimes([]); setPriceRange([0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)]); setSearch(""); }}>
               Clear all
             </Button>
           </div>
@@ -814,6 +848,19 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           <aside className="hidden w-48 shrink-0 space-y-4 self-start md:sticky md:top-24 md:block xl:w-52">
             <Card className="shadow-card border-0">
               <CardContent className="p-4">
+                <h3 className="font-semibold text-foreground text-sm mb-3">Stops</h3>
+                <div className="space-y-2.5">
+                  {stopOptions.map(option => (
+                    <label key={option.value} className="flex min-w-0 cursor-pointer items-center gap-2" title={option.label}>
+                      <Checkbox checked={selectedStops.includes(option.value)} onCheckedChange={() => toggleStopFilter(option.value)} />
+                      <span className="min-w-0 truncate text-xs text-muted-foreground">{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-card border-0">
+              <CardContent className="p-4">
                 <h3 className="mb-3 text-sm font-semibold text-foreground">Sort By</h3>
                 <div className="space-y-2">
                   {sortOptions.map((option) => (
@@ -844,6 +891,19 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             </Card>
             <Card className="shadow-card border-0">
               <CardContent className="p-4">
+                <h3 className="font-semibold text-foreground text-sm mb-3">Departure Time</h3>
+                <div className="space-y-2.5">
+                  {departureTimeOptions.map(option => (
+                    <label key={option.value} className="flex min-w-0 cursor-pointer items-center gap-2" title={option.label}>
+                      <Checkbox checked={selectedDepartureTimes.includes(option.value)} onCheckedChange={() => toggleDepartureTimeFilter(option.value)} />
+                      <span className="min-w-0 truncate text-xs text-muted-foreground">{limitText(option.label, 15)}</span>
+                    </label>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="shadow-card border-0">
+              <CardContent className="p-4">
                 <h3 className="font-semibold text-foreground text-sm mb-3">Airlines</h3>
                 <div className="space-y-2.5">
                   {airlineOptions.length === 0 && (
@@ -853,30 +913,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     <label key={a} className="flex min-w-0 cursor-pointer items-center gap-2 group" title={a}>
                       <Checkbox checked={selectedAirlines.includes(a)} onCheckedChange={() => toggleAirline(a)} />
                       <span className="min-w-0 truncate text-xs text-muted-foreground transition-colors group-hover:text-foreground">{limitText(a, 15)}</span>
-                    </label>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-card border-0">
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-foreground text-sm mb-3">Stops</h3>
-                <div className="space-y-2.5">
-                  {["Non-stop", "1 Stop", "2+ Stops"].map(s => (
-                    <label key={s} className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox /><span className="text-xs text-muted-foreground">{s}</span>
-                    </label>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-card border-0">
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-foreground text-sm mb-3">Departure Time</h3>
-                <div className="space-y-2.5">
-                  {["Early Morning (00-06)", "Morning (06-12)", "Afternoon (12-18)", "Evening (18-24)"].map(s => (
-                    <label key={s} className="flex min-w-0 cursor-pointer items-center gap-2" title={s}>
-                      <Checkbox /><span className="min-w-0 truncate text-xs text-muted-foreground">{limitText(s, 15)}</span>
                     </label>
                   ))}
                 </div>
@@ -1183,7 +1219,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   ))}
                 </div>
                 <div className="flex flex-wrap justify-center gap-2">
-                  <Button variant="outline" className="rounded-lg" onClick={() => { setSelectedAirlines([]); setPriceRange([0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)]); setSearch(""); }}>
+                  <Button variant="outline" className="rounded-lg" onClick={() => { setSelectedAirlines([]); setSelectedStops([]); setSelectedDepartureTimes([]); setPriceRange([0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)]); setSearch(""); }}>
                     Clear All Filters
                   </Button>
                   <a href={whatsappUrl(`Hello Travelian,\n\nPlease check live fares for ${from} to ${to} on ${format(departDate, "MMM dd, yyyy")}.\n\nTravelers: ${formatTravelers(travelers)}\nCurrency: ${currency}`)} target="_blank" rel="noreferrer">
@@ -1229,15 +1265,23 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
                     <AirportCombobox value={segment.from} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, from: value } : item))} placeholder="From airport" />
                     <AirportCombobox value={segment.to} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, to: value } : item))} placeholder="To airport" />
-                    <Popover>
+                    <Popover open={editSegmentDateOpen === index} onOpenChange={(open) => setEditSegmentDateOpen(open ? index : null)}>
                       <PopoverTrigger asChild>
                         <button type="button" className="flex h-11 items-center gap-2 rounded-xl border border-input bg-background px-3 text-left text-sm">
                           <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                           {segment.date ? format(segment.date, "MMM dd, yyyy") : "Select date"}
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[20rem] max-w-[calc(100vw-2rem)] p-0 z-[300]" align="start" collisionPadding={16}>
-                        <Calendar mode="single" selected={segment.date} onSelect={(date) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, date } : item))} initialFocus />
+                      <PopoverContent className="z-[300] w-auto max-w-[calc(100vw-2rem)] p-0" align="start" collisionPadding={16}>
+                        <Calendar
+                          mode="single"
+                          selected={segment.date}
+                          onSelect={(date) => {
+                            setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, date } : item));
+                            if (date) setEditSegmentDateOpen(null);
+                          }}
+                          initialFocus
+                        />
                       </PopoverContent>
                     </Popover>
                     <Button type="button" variant="outline" size="sm" className="shrink-0" disabled={editSegments.length <= 2} onClick={() => setEditSegments((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Remove</Button>
@@ -1264,30 +1308,48 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             )}
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Departure Date</label>
-              <Popover>
+              <Popover open={editDateOpen} onOpenChange={setEditDateOpen}>
                 <PopoverTrigger asChild>
                   <button type="button" className="flex items-center gap-2 h-11 w-full bg-background border border-input rounded-xl px-3 text-sm text-left">
                     <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                     {editDate ? format(editDate, "MMM dd, yyyy") : "Select date"}
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[20rem] max-w-[calc(100vw-2rem)] p-0 z-[300]" align="start" side="top" sideOffset={10} collisionPadding={16}>
-                  <Calendar mode="single" selected={editDate} onSelect={setEditDate} initialFocus className="p-3 pointer-events-auto" />
+                <PopoverContent className="z-[300] w-auto max-w-[calc(100vw-2rem)] p-0" align="start" side="top" sideOffset={10} collisionPadding={16}>
+                  <Calendar
+                    mode="single"
+                    selected={editDate}
+                    onSelect={(date) => {
+                      setEditDate(date);
+                      if (date) setEditDateOpen(false);
+                    }}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
                 </PopoverContent>
               </Popover>
             </div>
             {editTripType === "roundtrip" && (
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Return Date</label>
-                <Popover>
+                <Popover open={editReturnDateOpen} onOpenChange={setEditReturnDateOpen}>
                   <PopoverTrigger asChild>
                     <button type="button" className="flex items-center gap-2 h-11 w-full bg-background border border-input rounded-xl px-3 text-sm text-left">
                       <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                       {editReturnDate ? format(editReturnDate, "MMM dd, yyyy") : "Select return date"}
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[20rem] max-w-[calc(100vw-2rem)] p-0 z-[300]" align="start" side="top" sideOffset={10} collisionPadding={16}>
-                    <Calendar mode="single" selected={editReturnDate} onSelect={setEditReturnDate} initialFocus className="p-3 pointer-events-auto" />
+                  <PopoverContent className="z-[300] w-auto max-w-[calc(100vw-2rem)] p-0" align="start" side="top" sideOffset={10} collisionPadding={16}>
+                    <Calendar
+                      mode="single"
+                      selected={editReturnDate}
+                      onSelect={(date) => {
+                        setEditReturnDate(date);
+                        if (date) setEditReturnDateOpen(false);
+                      }}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
                   </PopoverContent>
                 </Popover>
               </div>

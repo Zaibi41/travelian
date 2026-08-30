@@ -40,8 +40,14 @@ export function AdvancedDatePicker({
     if (date) setMonth(date);
   }, [date]);
 
+  const [open, setOpen] = React.useState(false);
+  const selectDate = (nextDate: Date | undefined) => {
+    onSelect(nextDate);
+    if (nextDate) setOpen(false);
+  };
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -55,11 +61,11 @@ export function AdvancedDatePicker({
           {date ? format(date, "MMM dd, yyyy") : placeholder}
         </button>
       </PopoverTrigger>
-      <PopoverContent className={cn("w-auto p-0 z-[200]", className)} align="start" side="top" sideOffset={10} collisionPadding={16}>
+      <PopoverContent className={cn("w-auto max-w-[calc(100vw-2rem)] p-0 z-[200]", className)} align="start" side="top" sideOffset={10} collisionPadding={16}>
         <DayPicker
           mode="single"
           selected={date}
-          onSelect={onSelect}
+          onSelect={selectDate}
           month={month}
           onMonthChange={setMonth}
           captionLayout="dropdown-buttons"
@@ -79,13 +85,13 @@ export function AdvancedDatePicker({
             dropdown_month: "min-w-[124px]",
             dropdown_year: "min-w-[88px]",
             vhidden: "sr-only",
-            nav: "hidden",
+            nav: "flex items-center gap-1",
             nav_button: cn(
               buttonVariants({ variant: "outline" }),
               "pointer-events-auto h-9 w-9 bg-background p-0 opacity-80 hover:opacity-100",
             ),
-            nav_button_previous: "",
-            nav_button_next: "",
+            nav_button_previous: "absolute left-1 top-1",
+            nav_button_next: "absolute right-1 top-1",
             table: "w-full border-collapse space-y-1",
             head_row: "flex",
             head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.75rem]",
