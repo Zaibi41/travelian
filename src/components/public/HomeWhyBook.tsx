@@ -21,13 +21,10 @@ const reasons = [
 
 export function HomeWhyBook() {
   return (
-    <section className="py-12 md:py-14">
+    <section className="py-10 md:pt-6 md:pb-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-gold-light px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-gold-foreground">
-            Why Travelian
-          </span>
-          <h2 className="mt-3 text-2xl md:text-3xl font-bold font-display tracking-tight text-foreground">
+          <h2 className="text-2xl md:text-3xl font-bold font-display tracking-tight text-foreground">
             Why book with Travelian?
           </h2>
           <p className="mt-2 text-sm md:text-base leading-7 text-muted-foreground">
