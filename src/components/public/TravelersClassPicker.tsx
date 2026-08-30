@@ -40,11 +40,18 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
 
   useEffect(() => {
     if (!open) return;
-    const h = (e: MouseEvent) => {
+    const handlePointerDown = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [open]);
 
   const update = (patch: Partial<TravelersValue>) => onChange({ ...value, ...patch });
@@ -57,7 +64,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
 
   const triggerClass =
     variant === "compact"
-      ? "flex h-8 items-center gap-1.5 rounded-lg bg-muted/40 px-[0.65rem] py-[0.3rem] text-[11px] font-medium text-foreground transition-colors hover:bg-muted"
+      ? "flex h-9 items-center gap-2 rounded-lg bg-muted/40 px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted"
       : "flex items-center gap-2 w-full h-11 bg-background border border-input rounded-xl px-3 text-sm text-left hover:border-primary/30 transition-colors";
 
   return (
@@ -80,37 +87,45 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
         <ChevronDown className="h-3 w-3 opacity-60" />
       </button>
       {open && (
+        <>
+        <button
+          type="button"
+          className="fixed inset-0 z-[190] bg-slate-950/35 sm:hidden"
+          aria-label="Close travelers and cabin picker"
+          onClick={() => setOpen(false)}
+        />
         <div
           className={cn(
-            "absolute z-[200] max-h-[calc(100vh-7rem)] w-full max-w-[calc(100vw-2rem)] overflow-y-auto rounded-xl border bg-card p-4 shadow-elevated",
-            mode === "travelers" && "min-w-[20rem]",
-            mode === "cabin" && "min-w-[12rem]",
-            side === "top" ? "bottom-full mb-2" : "top-full mt-2",
-            align === "right" ? "right-0" : "left-0",
+            "fixed inset-x-3 bottom-3 z-[200] max-h-[85vh] overflow-y-auto rounded-2xl border bg-card p-4 pb-5 shadow-elevated sm:absolute sm:inset-x-auto sm:bottom-auto sm:max-h-[calc(100vh-7rem)] sm:w-full sm:max-w-[calc(100vw-2rem)] sm:rounded-xl sm:pb-4",
+            mode === "travelers" && "sm:min-w-[22rem]",
+            mode === "cabin" && "sm:min-w-[14rem]",
+            side === "top" ? "sm:bottom-full sm:mb-2" : "sm:top-full sm:mt-2",
+            align === "right" ? "sm:right-0" : "sm:left-0",
           )}
           role="dialog"
         >
           {mode !== "cabin" && (
-          <div className="space-y-3">
+          <div className="space-y-3.5">
+            <p className="text-sm font-semibold text-foreground">Travelers</p>
             {rows.map(p => (
               <div key={p.key} className="grid grid-cols-[1fr_auto] items-center gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground">{p.label}</p>
                   <p className="text-[10px] text-muted-foreground">{p.sub}</p>
                 </div>
-                <div className="grid grid-cols-[1.75rem_1.25rem_1.75rem] items-center gap-2">
+                <div className="grid grid-cols-[2rem_1.5rem_2rem] items-center gap-2">
                   <button
                     type="button"
                     onClick={() => update({ [p.key]: Math.max(p.min, value[p.key] - 1) } as any)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full border text-xs hover:bg-muted disabled:opacity-40"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border text-sm hover:bg-muted disabled:opacity-40"
                     disabled={value[p.key] <= p.min}
                     aria-label={`Decrease ${p.label}`}
                   >−</button>
-                  <span className="text-center text-xs font-semibold tabular-nums">{value[p.key]}</span>
+                  <span className="text-center text-sm font-semibold tabular-nums">{value[p.key]}</span>
                   <button
                     type="button"
                     onClick={() => update({ [p.key]: value[p.key] + 1 } as any)}
-                    className="flex h-7 w-7 items-center justify-center rounded-full border text-xs hover:bg-muted"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border text-sm hover:bg-muted"
                     aria-label={`Increase ${p.label}`}
                   >+</button>
                 </div>
@@ -120,14 +135,14 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
           )}
           {mode !== "travelers" && (
           <div className={cn(mode === "combined" && "mt-3 border-t pt-3")}>
-            <p className="text-xs font-medium text-muted-foreground mb-2">Cabin Class</p>
-            <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+            <p className="mb-2 text-sm font-semibold text-foreground">Cabin Class</p>
+            <div className="grid grid-cols-2 gap-2">
               {CABIN_CLASSES.map(c => (
                 <button
                   key={c}
                   type="button"
-                  className={`rounded-md px-[0.3rem] py-[0.3rem] text-[11px] transition-all text-center ${
-                    value.cabin === c ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                  className={`flex h-12 items-center justify-center rounded-lg px-2 py-2 text-center text-xs font-semibold leading-tight transition-all ${
+                    value.cabin === c ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/50 text-muted-foreground hover:bg-muted"
                   }`}
                   onClick={() => {
                     update({ cabin: c });
@@ -138,10 +153,11 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
             </div>
           </div>
           )}
-          <Button size="sm" className="mt-3 h-8 w-full rounded-lg gradient-primary text-xs text-primary-foreground" onClick={() => setOpen(false)}>
+          <Button size="sm" className="mt-4 w-full gradient-primary text-primary-foreground" onClick={() => setOpen(false)}>
             Done
           </Button>
         </div>
+        </>
       )}
     </div>
   );
