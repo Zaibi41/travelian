@@ -10,8 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CURRENCIES, LANGUAGES, useLocale } from "@/contexts/LocaleContext";
-import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
-import { WhatsAppIcon } from "./WhatsAppIcon";
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from "@/lib/site-config";
 
 const serviceLinks = [
   { label: "Flights", href: "/", match: ["/", "/flights-search"] },
@@ -23,8 +22,6 @@ const serviceLinks = [
   { label: "Contact", href: "/contact", match: ["/contact"] },
 ];
 
-const WHATSAPP_URL = whatsappUrl("Hi, I need help with a Travelian booking.");
-
 export function PublicNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { pathname } = useLocation();
@@ -34,7 +31,7 @@ export function PublicNavbar() {
     match.some((path) => (path === "/" ? pathname === "/" : pathname.startsWith(path)));
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border/50 bg-card/95 backdrop-blur-md">
+    <nav className="fixed inset-x-0 top-0 z-[1000] border-b border-border/60 bg-card shadow-sm backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <Link to="/" className="flex h-14 shrink-0 items-center" aria-label="Travelian home">
           <img
@@ -65,17 +62,13 @@ export function PublicNavbar() {
             <Phone className="h-3.5 w-3.5" />
             <span>{SUPPORT_PHONE_DISPLAY}</span>
           </a>
-          <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-lg bg-whatsapp px-3 py-1.5 text-xs font-semibold text-whatsapp-foreground hover:bg-whatsapp-hover">
-            <WhatsAppIcon className="h-4 w-4" /> WhatsApp
-          </a>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground">
                 {currency} <ChevronDown className="h-3 w-3" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-[60] bg-popover">
+            <DropdownMenuContent align="end" className="z-[1100] bg-popover">
               <DropdownMenuLabel className="text-xs">Currency</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {CURRENCIES.map((c) => (
@@ -94,7 +87,7 @@ export function PublicNavbar() {
                 <Globe className="h-3.5 w-3.5" /> {language.toUpperCase()} <ChevronDown className="h-3 w-3" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-[60] bg-popover">
+            <DropdownMenuContent align="end" className="z-[1100] bg-popover">
               <DropdownMenuLabel className="text-xs">Language</DropdownMenuLabel>
               <DropdownMenuSeparator />
               {LANGUAGES.map((l) => (
@@ -136,10 +129,7 @@ export function PublicNavbar() {
             ))}
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 border-t pt-4">
-            <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 rounded-xl bg-whatsapp px-3 py-3 text-sm font-semibold text-whatsapp-foreground">
-              <WhatsAppIcon className="h-4 w-4" /> WhatsApp
-            </a>
+          <div className="mt-4 border-t pt-4">
             <a href={`tel:${SUPPORT_PHONE_TEL}`} className="flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold text-foreground">
               <Phone className="h-4 w-4" /> Call
             </a>
