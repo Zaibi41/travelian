@@ -41,7 +41,7 @@ export function HomePopularLinks() {
           </p>
         </div>
 
-        <Accordion type="single" collapsible defaultValue="popular-0" className="space-y-3">
+        <Accordion type="single" collapsible className="space-y-3">
           {groups.map((group, index) => (
             <AccordionItem key={group.title} value={`popular-${index}`} className="rounded-2xl border bg-card px-4 shadow-card">
               <AccordionTrigger className="text-left text-base font-bold text-foreground hover:no-underline">
