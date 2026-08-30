@@ -82,10 +82,11 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
         </PopoverTrigger>
         {!isMobileCalendar && (
           <PopoverContent
-            className="z-[1120] w-[var(--radix-popover-trigger-width)] min-w-[18rem] max-w-[calc(100vw-2rem)] p-0"
+            className="z-[1120] max-h-[min(var(--radix-popover-content-available-height),24rem)] w-[var(--radix-popover-trigger-width)] min-w-[18rem] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
             align="start"
             side="bottom"
             sideOffset={8}
+            avoidCollisions={false}
             collisionPadding={16}
           >
             {calendar}

@@ -37,7 +37,7 @@ interface Props {
 
 export function TravelersClassPicker({ value, onChange, className, variant = "field", mode = "combined", align = "left", side = "bottom" }: Props) {
   const [open, setOpen] = useState(false);
-  const [position, setPosition] = useState({ top: 0, left: 0, width: 360 });
+  const [position, setPosition] = useState({ top: 0, left: 0, width: 360, maxHeight: 360 });
   const ref = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const dropdownWidth = mode === "cabin" ? 300 : mode === "travelers" ? 380 : 420;
@@ -52,15 +52,18 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
       const viewportPadding = 12;
       const width = Math.min(dropdownWidth, window.innerWidth - viewportPadding * 2);
       const panelHeight = mode === "cabin" ? 300 : mode === "travelers" ? 330 : 520;
-      const roomBelow = window.innerHeight - trigger.bottom - gap - viewportPadding;
-      const shouldOpenTop = side === "top" || (roomBelow < Math.min(panelHeight, 360) && trigger.top > roomBelow);
+      const roomBelow = Math.max(120, window.innerHeight - trigger.bottom - gap - viewportPadding);
+      const shouldOpenTop = side === "top";
       const top = shouldOpenTop
         ? Math.max(viewportPadding, trigger.top - Math.min(panelHeight, window.innerHeight - viewportPadding * 2) - gap)
         : Math.min(trigger.bottom + gap, window.innerHeight - viewportPadding - 120);
+      const maxHeight = shouldOpenTop
+        ? Math.min(panelHeight, Math.max(120, trigger.top - gap - viewportPadding))
+        : Math.min(panelHeight, roomBelow);
       const preferredLeft = align === "right" ? trigger.right - width : trigger.left;
       const left = Math.min(Math.max(viewportPadding, preferredLeft), window.innerWidth - width - viewportPadding);
 
-      setPosition({ top, left, width });
+      setPosition({ top, left, width, maxHeight });
     };
     const handlePointerDown = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -107,12 +110,13 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
       <div
         ref={panelRef}
         className={cn(
-          "fixed inset-x-3 bottom-3 z-[1120] max-h-[82vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 pb-5 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:inset-auto sm:left-[var(--picker-left)] sm:top-[var(--picker-top)] sm:max-h-[calc(100vh-2rem)] sm:w-[var(--picker-width)] sm:rounded-2xl sm:p-4",
+          "fixed inset-x-3 bottom-3 z-[1120] max-h-[82vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 pb-5 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:inset-auto sm:left-[var(--picker-left)] sm:top-[var(--picker-top)] sm:max-h-[var(--picker-max-height)] sm:w-[var(--picker-width)] sm:rounded-2xl sm:p-4",
         )}
         style={{
           "--picker-top": `${position.top}px`,
           "--picker-left": `${position.left}px`,
           "--picker-width": `${position.width}px`,
+          "--picker-max-height": `${position.maxHeight}px`,
         } as CSSProperties}
         role="dialog"
       >

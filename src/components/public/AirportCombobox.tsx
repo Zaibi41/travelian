@@ -140,10 +140,11 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] p-0"
+        className="max-h-[min(var(--radix-popover-content-available-height),24rem)] w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
         align="start"
         side="bottom"
         sideOffset={8}
+        avoidCollisions={false}
         collisionPadding={16}
       >
         <Command shouldFilter={false}>
@@ -155,7 +156,7 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
             }}
             placeholder="Search city, airport, or IATA code..."
           />
-          <CommandList>
+          <CommandList className="max-h-[min(calc(var(--radix-popover-content-available-height)-3.25rem),20rem)]">
             {!isLoadingAirports && !loadError && shownAirports.length === 0 && <CommandEmpty>No airport found.</CommandEmpty>}
             <CommandGroup heading="Airports">
               {shownAirports.map((airport) => (
