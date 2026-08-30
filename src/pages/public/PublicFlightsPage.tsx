@@ -38,6 +38,7 @@ type DisplayFare = {
   amenities?: string[];
 };
 type FareDetailsTab = "flight" | "rules" | "baggage";
+type ItinerarySegment = NonNullable<TravelianFlight["segments"]>[number];
 const SEARCH_RESULT_TTL_SECONDS = 900;
 
 const sortOptions = [
@@ -617,6 +618,105 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const lastSegment = (flight: TravelianFlight) => flight.segments?.[flight.segments.length - 1];
   const flightOriginLabel = (flight: TravelianFlight) => routeLabel(flight.origin, flight.originAirport || firstSegment(flight)?.departureAirport);
   const flightDestinationLabel = (flight: TravelianFlight) => routeLabel(flight.destination, flight.destinationAirport || lastSegment(flight)?.arrivalAirport);
+  const itinerarySegments = (flight: TravelianFlight): ItinerarySegment[] => {
+    if (flight.segments?.length) return flight.segments;
+    return [{
+      flightNumber: flight.flightNumber,
+      carrier: flight.flightNumber.split("-")[0],
+      origin: flight.origin,
+      destination: flight.destination,
+      departureAirport: flight.originAirport,
+      arrivalAirport: flight.destinationAirport,
+      departureTime: flight.departureTime,
+      arrivalTime: flight.arrivalTime,
+      duration: flight.duration,
+    }];
+  };
+  const segmentDuration = (segment: ItinerarySegment) =>
+    segment.duration || getDuration(segment.departureTime || "", segment.arrivalTime || "");
+  const JourneyTimeline = ({ flight }: { flight: TravelianFlight }) => {
+    const segmentsToShow = itinerarySegments(flight);
+
+    return (
+      <div className="space-y-3">
+        {segmentsToShow.map((segment, index) => {
+          const nextSegment = segmentsToShow[index + 1];
+          const layover = flight.layovers?.[index];
+          const hasStopAfter = index < segmentsToShow.length - 1;
+          const stopCode = String(layover?.location || segment.destination || nextSegment?.origin || "Transit").trim().toUpperCase();
+          const stopAirport = segment.arrivalAirport || nextSegment?.departureAirport || "";
+          const flightNumber = segment.flightNumber || flight.flightNumber;
+          const airlineName = segment.carrier || flight.airline;
+
+          return (
+            <div key={`${flightNumber}-${index}`} className="space-y-3">
+              <section className="rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm sm:p-4">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <span className="rounded-full bg-primary/5 px-3 py-1 text-xs font-black uppercase tracking-wide text-primary">Flight {index + 1}</span>
+                  <div className="flex min-w-0 items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-1.5 text-xs font-bold text-slate-900 ring-1 ring-slate-100">
+                    <AirlineLogo airline={flight.airline} flightNumber={flightNumber} imageUrl={flight.airlineImage} className="h-6 w-6 shrink-0 rounded-md border-0 shadow-none ring-0" />
+                    <span className="truncate">{flightNumber}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-[1rem_minmax(0,1fr)] gap-3">
+                  <div className="relative flex justify-center pt-1">
+                    <span className="h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-primary/10" />
+                    <span className="absolute bottom-4 top-4 w-px bg-gradient-to-b from-primary to-emerald-400" />
+                    <span className="absolute bottom-1 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/10" />
+                  </div>
+                  <div className="min-w-0 space-y-3">
+                    <div className="grid gap-1 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-4">
+                      <p className="text-lg font-black leading-tight text-slate-950">{formatFlightTime(segment.departureTime)}</p>
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Departure</p>
+                        <p className="truncate text-sm font-bold text-slate-950" title={routeLabel(segment.origin || "", segment.departureAirport)}>
+                          {routeLabel(segment.origin || "", segment.departureAirport)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
+                      {airlineName} · {flightNumber} · Duration {segmentDuration(segment)}
+                    </div>
+
+                    <div className="grid gap-1 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-4">
+                      <p className="text-lg font-black leading-tight text-slate-950">{formatFlightTime(segment.arrivalTime)}</p>
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Arrival</p>
+                        <p className="truncate text-sm font-bold text-slate-950" title={routeLabel(segment.destination || "", segment.arrivalAirport)}>
+                          {routeLabel(segment.destination || "", segment.arrivalAirport)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {hasStopAfter && (
+                <section className="rounded-xl border border-dashed border-primary/25 bg-primary/5 px-4 py-3 text-sm">
+                  <div className="flex gap-3">
+                    <Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <div className="min-w-0">
+                      <p className="truncate font-bold text-slate-950" title={routeLabel(stopCode, stopAirport)}>
+                        Stop at {routeLabel(stopCode, stopAirport)}
+                      </p>
+                      <p className="mt-1 text-xs font-semibold text-muted-foreground">Layover duration: {layover?.duration || "TBA"}</p>
+                      {(layover?.arrivalTime || layover?.departureTime) && (
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Arrive {formatFlightTime(layover?.arrivalTime || segment.arrivalTime)} · Depart {formatFlightTime(layover?.departureTime || nextSegment?.departureTime)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
   const dateFareLabel = (date: Date) => {
     const dateKey = formatDateOnly(date);
     if (dateKey === formatDateOnly(departDate) && bestFlight) return formatFare(bestFlight.price, bestFlight.currency);
@@ -1459,51 +1559,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
                 {fareDetailsTab === "flight" && (
-                  <div className="space-y-4">
-                    {(fareDetails.flight.segments?.length ? fareDetails.flight.segments : [{
-                      flightNumber: fareDetails.flight.flightNumber,
-                      carrier: fareDetails.flight.flightNumber.split("-")[0],
-                      origin: fareDetails.flight.origin,
-                      destination: fareDetails.flight.destination,
-                      departureAirport: fareDetails.flight.originAirport,
-                      arrivalAirport: fareDetails.flight.destinationAirport,
-                      departureTime: fareDetails.flight.departureTime,
-                      arrivalTime: fareDetails.flight.arrivalTime,
-                      duration: fareDetails.flight.duration,
-                    }]).map((segment, index, allSegments) => (
-                      <div key={`${segment.flightNumber || fareDetails.flight.flightNumber}-${index}`} className="space-y-3 rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-sm">
-                        <div className="grid grid-cols-[1rem_minmax(0,1fr)_auto] gap-3">
-                          <div className="relative flex justify-center">
-                            <span className="mt-1 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-primary/10" />
-                            <span className="absolute top-5 h-[calc(100%-1.5rem)] w-px bg-gradient-to-b from-primary to-emerald-400" />
-                          </div>
-                          <div className="min-w-0 space-y-3">
-                            <div className="min-w-0">
-                              <p className="truncate text-base font-bold text-slate-950" title={`${formatFlightTime(segment.departureTime)} - ${routeLabel(segment.origin || "", segment.departureAirport)}`}>
-                                {formatFlightTime(segment.departureTime)} - {routeLabel(segment.origin || "", segment.departureAirport)}
-                              </p>
-                              <p className="mt-2 inline-flex rounded-full bg-primary/5 px-3 py-1 text-xs font-bold text-primary">Duration: {segment.duration || getDuration(segment.departureTime || "", segment.arrivalTime || "")}</p>
-                            </div>
-                            <div className="min-w-0">
-                              <p className="truncate text-base font-bold text-slate-950" title={`${formatFlightTime(segment.arrivalTime)} - ${routeLabel(segment.destination || "", segment.arrivalAirport)}`}>
-                                {formatFlightTime(segment.arrivalTime)} - {routeLabel(segment.destination || "", segment.arrivalAirport)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2 self-center whitespace-nowrap rounded-xl bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900">
-                            <AirlineLogo airline={fareDetails.flight.airline} flightNumber={segment.flightNumber || fareDetails.flight.flightNumber} imageUrl={fareDetails.flight.airlineImage} className="h-6 w-6 rounded-md border-0 shadow-none ring-0" />
-                            <span>{segment.flightNumber || fareDetails.flight.flightNumber}</span>
-                          </div>
-                        </div>
-                        {fareDetails.flight.layovers?.[index] && index < allSegments.length - 1 && (
-                          <div className="ml-7 rounded-xl border border-dashed border-primary/20 bg-primary/5 px-4 py-3 text-sm font-medium text-slate-800">
-                            <Clock className="mr-2 inline h-4 w-4 text-primary" />
-                            Stop at ({fareDetails.flight.layovers[index].location || segment.destination || allSegments[index + 1]?.origin || "Transit"}){fareDetails.flight.layovers[index].duration ? ` - ${fareDetails.flight.layovers[index].duration}` : ""}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  <JourneyTimeline flight={fareDetails.flight} />
                 )}
 
                 {fareDetailsTab === "rules" && (
@@ -1563,7 +1619,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
       <Dialog open={!!detailsFlight} onOpenChange={(open) => !open && setDetailsFlight(null)}>
         <DialogContent className="flex max-h-[90vh] w-[calc(100vw-2rem)] flex-col overflow-hidden sm:max-w-2xl">
-          <DialogHeader>
+          <DialogHeader className="shrink-0 pr-10">
             <DialogTitle>Flight Details & Fare Rules</DialogTitle>
           </DialogHeader>
           {detailsFlight && (
@@ -1575,39 +1631,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 </div>
                 <Badge className="rounded-full">{detailsFlight.stops ? `${detailsFlight.stops} stop${detailsFlight.stops === 1 ? "" : "s"}` : "Non-stop"}</Badge>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {(detailsFlight.segments?.length ? detailsFlight.segments : [{
-                  carrier: detailsFlight.airline,
-                  flightNumber: detailsFlight.flightNumber,
-                  origin: detailsFlight.origin,
-                  destination: detailsFlight.destination,
-                  departureTime: detailsFlight.departureTime,
-                  arrivalTime: detailsFlight.arrivalTime,
-                  duration: detailsFlight.duration,
-                }]).map((segment, index) => (
-                  <div key={`${segment.flightNumber}-${index}`} className="rounded-2xl border p-4">
-                    <p className="text-xs font-bold uppercase tracking-wide text-primary">Segment {index + 1}</p>
-                    <p className="mt-2 font-semibold text-foreground">{segment.flightNumber || detailsFlight.flightNumber}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {routeLabel(segment.origin || "", segment.departureAirport)} to {routeLabel(segment.destination || "", segment.arrivalAirport)}
-                    </p>
-                    <p className="mt-3 text-sm">{segment.departureTime || "Departure TBA"} to {segment.arrivalTime || "Arrival TBA"}</p>
-                    {segment.duration && <p className="mt-1 text-xs text-muted-foreground">Duration: {segment.duration}</p>}
-                  </div>
-                ))}
-              </div>
-              {detailsFlight.layovers?.length ? (
-                <div className="rounded-2xl border p-4">
-                  <p className="font-semibold text-foreground">Layovers</p>
-                  <div className="mt-3 space-y-2">
-                    {detailsFlight.layovers.map((layover, index) => (
-                      <p key={`${layover.location || "layover"}-${index}`} className="text-sm text-muted-foreground">
-                        {layover.location || "Connection"}: arrives {layover.arrivalTime || "TBA"}, flies again {layover.departureTime || "TBA"} · Layover {layover.duration || "TBA"}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
+              <JourneyTimeline flight={detailsFlight} />
+
               <div className="grid gap-3 md:grid-cols-3">
                 <InfoBox title="Baggage" value={detailsFlight.baggage || "Baggage info not available"} />
                 <InfoBox title="Meal" value={detailsFlight.meal || "Meal info not available"} />
