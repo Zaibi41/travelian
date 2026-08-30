@@ -1272,7 +1272,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           {segment.date ? format(segment.date, "MMM dd, yyyy") : "Select date"}
                         </button>
                       </PopoverTrigger>
-                      <PopoverContent className="z-[300] w-auto max-w-[calc(100vw-2rem)] p-0" align="start" collisionPadding={16}>
+                      <PopoverContent className="z-[300] max-h-[calc(100vh-2rem)] w-auto max-w-[calc(100vw-2rem)] overflow-y-auto p-0" align="start" collisionPadding={16}>
                         <Calendar
                           mode="single"
                           selected={segment.date}
@@ -1315,7 +1315,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     {editDate ? format(editDate, "MMM dd, yyyy") : "Select date"}
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="z-[300] w-auto max-w-[calc(100vw-2rem)] p-0" align="start" side="top" sideOffset={10} collisionPadding={16}>
+                <PopoverContent className="z-[300] max-h-[calc(100vh-2rem)] w-auto max-w-[calc(100vw-2rem)] overflow-y-auto p-0" align="start" side="top" sideOffset={10} collisionPadding={16}>
                   <Calendar
                     mode="single"
                     selected={editDate}
@@ -1339,7 +1339,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       {editReturnDate ? format(editReturnDate, "MMM dd, yyyy") : "Select return date"}
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent className="z-[300] w-auto max-w-[calc(100vw-2rem)] p-0" align="start" side="top" sideOffset={10} collisionPadding={16}>
+                  <PopoverContent className="z-[300] max-h-[calc(100vh-2rem)] w-auto max-w-[calc(100vw-2rem)] overflow-y-auto p-0" align="start" side="top" sideOffset={10} collisionPadding={16}>
                     <Calendar
                       mode="single"
                       selected={editReturnDate}
