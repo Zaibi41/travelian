@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Armchair, ChevronDown, Users } from "lucide-react";
+import { Armchair, ChevronDown, Minus, Plus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -117,17 +117,21 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
                   <button
                     type="button"
                     onClick={() => update({ [p.key]: Math.max(p.min, value[p.key] - 1) } as any)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border text-sm hover:bg-muted disabled:opacity-40"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border hover:bg-muted disabled:opacity-40"
                     disabled={value[p.key] <= p.min}
                     aria-label={`Decrease ${p.label}`}
-                  >−</button>
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </button>
                   <span className="text-center text-sm font-semibold tabular-nums">{value[p.key]}</span>
                   <button
                     type="button"
                     onClick={() => update({ [p.key]: value[p.key] + 1 } as any)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border text-sm hover:bg-muted"
+                    className="flex h-8 w-8 items-center justify-center rounded-full border hover:bg-muted"
                     aria-label={`Increase ${p.label}`}
-                  >+</button>
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </button>
                 </div>
               </div>
             ))}
