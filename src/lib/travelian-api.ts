@@ -36,6 +36,8 @@ interface FlightOffer {
   departureTime: string;
   arrivalTime: string;
   cabin: string;
+  fareBrand?: string | null;
+
   duration?: string | null;
   stops?: number | null;
   baggage?: string | null;

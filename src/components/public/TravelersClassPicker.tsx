@@ -1,6 +1,6 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Armchair, ChevronDown, Minus, Plus, Users } from "lucide-react";
+import { Armchair, Baby, ChevronDown, Minus, Plus, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -89,10 +89,11 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
   const update = (patch: Partial<TravelersValue>) => onChange({ ...value, ...patch });
 
   const rows = [
-    { label: "Adults", sub: "12+ years", key: "adults" as const, min: 1 },
-    { label: "Children", sub: "2-11 years", key: "children" as const, min: 0 },
-    { label: "Infants", sub: "Under 2", key: "infants" as const, min: 0 },
+    { label: "Adults", sub: "12+ years", key: "adults" as const, min: 1, icon: User, iconWrap: "bg-accent text-primary" },
+    { label: "Children", sub: "2–11 years", key: "children" as const, min: 0, icon: Baby, iconWrap: "bg-teal-soft text-teal" },
+    { label: "Infants", sub: "Under 2", key: "infants" as const, min: 0, icon: Baby, iconWrap: "bg-gold-light text-gold" },
   ];
+
 
   const triggerClass =
     variant === "compact"
@@ -121,30 +122,39 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
         role="dialog"
       >
         {mode !== "cabin" && (
-          <div className="space-y-4">
-            <p className="text-base font-black text-foreground">Travelers</p>
-            <div className="space-y-3">
+          <div>
+            <div className="text-center">
+              <p className="text-lg font-black tracking-tight text-primary">Travelers</p>
+              <p className="mt-0.5 text-xs font-medium text-muted-foreground">Select passengers for your trip</p>
+            </div>
+            <div className="mt-4 space-y-2.5">
               {rows.map(p => (
-                <div key={p.key} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-950">{p.label}</p>
-                    <p className="mt-0.5 text-xs font-medium text-muted-foreground">{p.sub}</p>
+                <div
+                  key={p.key}
+                  className="flex items-center gap-3 rounded-xl border border-border/70 bg-muted/30 p-2.5"
+                >
+                  <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", p.iconWrap)}>
+                    <p.icon className="h-5 w-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-foreground">{p.label}</p>
+                    <p className="text-xs font-medium text-muted-foreground">{p.sub}</p>
                   </div>
-                  <div className="grid grid-cols-[2.25rem_1.75rem_2.25rem] items-center gap-2">
+                  <div className="flex items-center gap-1 rounded-full bg-accent/70 p-1">
                     <button
                       type="button"
                       onClick={() => update({ [p.key]: Math.max(p.min, value[p.key] - 1) } as any)}
-                      className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-300 disabled:shadow-none"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-primary transition-colors hover:bg-background disabled:cursor-not-allowed disabled:text-muted-foreground/40 disabled:hover:bg-transparent"
                       disabled={value[p.key] <= p.min}
                       aria-label={`Decrease ${p.label}`}
                     >
                       <Minus className="h-3.5 w-3.5" />
                     </button>
-                    <span className="text-center text-base font-black tabular-nums text-slate-950">{value[p.key]}</span>
+                    <span className="w-6 text-center text-sm font-black tabular-nums text-foreground">{value[p.key]}</span>
                     <button
                       type="button"
                       onClick={() => update({ [p.key]: value[p.key] + 1 } as any)}
-                      className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-950 shadow-sm transition-colors hover:bg-slate-50"
+                      className="flex h-8 w-8 items-center justify-center rounded-full text-primary transition-colors hover:bg-background"
                       aria-label={`Increase ${p.label}`}
                     >
                       <Plus className="h-3.5 w-3.5" />
@@ -155,6 +165,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
             </div>
           </div>
         )}
+
         {mode !== "travelers" && (
           <div className={cn(mode === "combined" && "mt-4 border-t pt-4")}>
             <p className="mb-3 text-base font-black text-foreground">Cabin Class</p>
