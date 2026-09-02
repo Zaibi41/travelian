@@ -40,7 +40,7 @@ interface Props {
   value: TravelersValue;
   onChange: (v: TravelersValue) => void;
   className?: string;
-  variant?: "compact" | "field";
+  variant?: "compact" | "field" | "segmented";
   mode?: "combined" | "travelers" | "cabin";
   /** Where to anchor the dropdown. Defaults to left. */
   align?: "left" | "right";
@@ -66,7 +66,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
       const width = Math.min(dropdownWidth, window.innerWidth - viewportPadding * 2);
       const panelHeight = mode === "cabin" ? 320 : mode === "travelers" ? 330 : 620;
       const roomBelow = Math.max(120, window.innerHeight - trigger.bottom - gap - viewportPadding);
-      const shouldOpenTop = side === "top" || (side !== "top" && roomBelow < panelHeight && trigger.top - gap - viewportPadding > roomBelow);
+      const shouldOpenTop = side === "top" || (roomBelow < panelHeight && trigger.top - gap - viewportPadding > roomBelow);
       const top = shouldOpenTop
         ? Math.max(viewportPadding, trigger.top - Math.min(panelHeight, window.innerHeight - viewportPadding * 2) - gap)
         : Math.min(trigger.bottom + gap, window.innerHeight - viewportPadding - 120);
@@ -108,9 +108,11 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
   ];
 
   const triggerClass =
-    variant === "compact"
-      ? "flex h-10 w-full items-center gap-2 rounded-xl bg-muted/40 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-      : "flex items-center gap-2 w-full h-11 bg-background border border-input rounded-xl px-3 text-sm text-left hover:border-primary/30 transition-colors";
+    variant === "segmented"
+      ? "flex h-[30px] items-center gap-1.5 px-3 text-xs font-medium rounded-md transition-all bg-primary text-primary-foreground shadow-sm"
+      : variant === "compact"
+        ? "flex h-10 w-full items-center gap-2 rounded-xl bg-muted/40 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+        : "flex items-center gap-2 w-full h-11 bg-background border border-input rounded-xl px-3 text-sm text-left hover:border-primary/30 transition-colors";
 
   const cabinSection = (
     <div className={cn("grid grid-cols-2 gap-2.5")}>
