@@ -108,9 +108,11 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
   ];
 
   const triggerClass =
-    variant === "compact"
-      ? "flex h-10 w-full items-center gap-2 rounded-xl bg-muted/40 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
-      : "flex items-center gap-2 w-full h-11 bg-background border border-input rounded-xl px-3 text-sm text-left hover:border-primary/30 transition-colors";
+    variant === "segmented"
+      ? "flex h-[30px] items-center gap-1.5 px-3 text-xs font-medium rounded-md transition-all bg-primary text-primary-foreground shadow-sm"
+      : variant === "compact"
+        ? "flex h-10 w-full items-center gap-2 rounded-xl bg-muted/40 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+        : "flex items-center gap-2 w-full h-11 bg-background border border-input rounded-xl px-3 text-sm text-left hover:border-primary/30 transition-colors";
 
   const cabinSection = (
     <div className={cn("grid grid-cols-2 gap-2.5")}>
