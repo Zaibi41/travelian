@@ -315,9 +315,9 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
                   </button>
                 ))}
               </div>
-              <div className="flex flex-wrap gap-3">
-                <TravelersClassPicker value={travelers} onChange={setTravelers} variant="compact" mode="travelers" className="w-40" />
-                <TravelersClassPicker value={travelers} onChange={setTravelers} variant="compact" mode="cabin" className="w-44" />
+              <div className="flex items-center bg-muted/40 rounded-lg p-0.5">
+                <TravelersClassPicker value={travelers} onChange={setTravelers} variant="segmented" mode="travelers" className="w-auto" />
+                <TravelersClassPicker value={travelers} onChange={setTravelers} variant="segmented" mode="cabin" className="w-auto" />
               </div>
             </div>
 
