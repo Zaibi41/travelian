@@ -127,7 +127,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
             className={cn(
               "group relative flex min-h-[84px] flex-col items-center justify-center gap-1.5 rounded-xl px-2 py-3 text-center transition-all",
               selected
-                ? "bg-gradient-to-br from-primary to-[#1e3a8a] text-primary-foreground shadow-md"
+                ? "gradient-primary text-primary-foreground shadow-md ring-1 ring-gold/40"
                 : cn("border border-transparent", meta.unselectedClass)
             )}
             onClick={() => update({ cabin: c })}
@@ -135,12 +135,12 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
             aria-label={`Select ${c} cabin`}
           >
             {selected && (
-              <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-white/20">
-                <Check className="h-3 w-3 text-white" strokeWidth={3} />
+              <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-primary">
+                <Check className="h-3 w-3" strokeWidth={3} />
               </span>
             )}
-            <Icon className={cn("h-6 w-6", selected ? "text-white" : "text-current")} />
-            <span className={cn("text-sm font-bold leading-tight", selected ? "text-white" : "text-current")}>{meta.label}</span>
+            <Icon className="h-6 w-6 text-current" />
+            <span className="text-sm font-bold leading-tight text-current">{meta.label}</span>
           </button>
         );
       })}
