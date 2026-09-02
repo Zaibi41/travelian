@@ -66,7 +66,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
       const width = Math.min(dropdownWidth, window.innerWidth - viewportPadding * 2);
       const panelHeight = mode === "cabin" ? 320 : mode === "travelers" ? 330 : 620;
       const roomBelow = Math.max(120, window.innerHeight - trigger.bottom - gap - viewportPadding);
-      const shouldOpenTop = side === "top" || (side !== "top" && roomBelow < panelHeight && trigger.top - gap - viewportPadding > roomBelow);
+      const shouldOpenTop = side === "top" || (roomBelow < panelHeight && trigger.top - gap - viewportPadding > roomBelow);
       const top = shouldOpenTop
         ? Math.max(viewportPadding, trigger.top - Math.min(panelHeight, window.innerHeight - viewportPadding * 2) - gap)
         : Math.min(trigger.bottom + gap, window.innerHeight - viewportPadding - 120);
