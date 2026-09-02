@@ -40,7 +40,7 @@ interface Props {
   value: TravelersValue;
   onChange: (v: TravelersValue) => void;
   className?: string;
-  variant?: "compact" | "field";
+  variant?: "compact" | "field" | "segmented";
   mode?: "combined" | "travelers" | "cabin";
   /** Where to anchor the dropdown. Defaults to left. */
   align?: "left" | "right";
