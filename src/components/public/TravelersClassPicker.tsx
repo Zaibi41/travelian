@@ -30,10 +30,10 @@ interface CabinMeta {
 }
 
 const cabinMeta: Record<string, CabinMeta> = {
-  Economy: { label: "Economy", icon: Armchair, unselectedClass: "bg-slate-50 text-slate-600 hover:bg-slate-100" },
-  "Premium Economy": { label: "Premium Economy", icon: Armchair, unselectedClass: "bg-accent/40 text-accent-foreground hover:bg-accent/60" },
-  Business: { label: "Business", icon: Armchair, unselectedClass: "bg-blue-50 text-blue-900 hover:bg-blue-100" },
-  First: { label: "First", icon: Armchair, unselectedClass: "bg-gold-light/60 text-gold-foreground hover:bg-gold-light/80" },
+  Economy: { label: "Economy", icon: Armchair, unselectedClass: "bg-muted/50 text-foreground hover:bg-muted" },
+  "Premium Economy": { label: "Premium Economy", icon: Armchair, unselectedClass: "bg-accent/50 text-primary hover:bg-accent/70" },
+  Business: { label: "Business", icon: Armchair, unselectedClass: "bg-teal-soft text-teal hover:bg-teal-soft/80" },
+  First: { label: "First", icon: Armchair, unselectedClass: "bg-gold-light/60 text-gold hover:bg-gold-light/80" },
 };
 
 interface Props {
