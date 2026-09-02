@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { ArrowRight, Building2 } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/public/PageHeader";
 import { SEO } from "@/components/SEO";
@@ -40,20 +40,30 @@ export default function PublicPackagesPage() {
 
       <PageHeader
         eyebrow="Umrah with Travelian"
-        title="Umrah Packages, Hotels, Visa & Transport"
-        tagline="Plan your Umrah in one place: ready-made packages, contracted Makkah and Madinah hotels, Umrah visa rates and Saudi transport. Every price is a starting-from rate and confirmed before booking."
-        icon={<Building2 className="h-6 w-6" />}
+        title="Focus on your pilgrimage. We’ll take care of the journey."
+        titleClassName="mx-auto max-w-[46rem] text-balance text-[2rem] font-black font-display leading-tight tracking-tight text-primary-foreground"
+        icon={<Building2 className="h-6 w-6" aria-hidden="true" />}
       >
-        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button asChild size="lg" className="h-12 w-full rounded-xl gradient-primary px-6 text-base font-bold text-primary-foreground sm:w-auto">
-            <a href="#umrah-packages">View Umrah Packages <ArrowRight className="ml-2 h-4 w-4" /></a>
-          </Button>
-          <Button asChild size="lg" variant="outline" className="h-12 w-full rounded-xl border-white/25 bg-white/10 px-6 text-base font-bold text-primary-foreground hover:bg-white/20 hover:text-primary-foreground sm:w-auto">
+        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+          <Button
+            asChild
+            size="lg"
+            variant="outline"
+            className="h-12 w-full rounded-xl border-white/25 bg-primary/90 px-6 text-base font-bold text-primary-foreground hover:bg-primary hover:text-primary-foreground sm:w-auto"
+          >
             <a href="#custom-umrah">Request Custom Umrah</a>
           </Button>
-          <a className="w-full sm:w-auto" href={whatsappUrl("Assalam o Alaikum Travelian, I need help with an Umrah package.")} target="_blank" rel="noreferrer">
-            <Button size="lg" className="h-12 w-full rounded-xl bg-whatsapp px-6 text-base font-bold text-whatsapp-foreground hover:bg-whatsapp-hover sm:w-auto">
-              <WhatsAppIcon className="mr-2 h-5 w-5" /> Chat on WhatsApp
+          <a
+            className="w-full sm:w-auto"
+            href={whatsappUrl("Assalam o Alaikum Travelian, I need help with an Umrah package.")}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Button
+              size="lg"
+              className="h-12 w-full rounded-xl bg-whatsapp px-6 text-base font-bold text-whatsapp-foreground hover:bg-whatsapp-hover sm:w-auto"
+            >
+              <WhatsAppIcon className="mr-2 h-5 w-5" aria-hidden="true" /> Chat on WhatsApp
             </Button>
           </a>
         </div>

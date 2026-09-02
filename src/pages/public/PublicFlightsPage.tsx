@@ -39,6 +39,18 @@ type DisplayFare = {
 };
 type FareDetailsTab = "flight" | "rules" | "baggage";
 type ItinerarySegment = NonNullable<TravelianFlight["segments"]>[number];
+type DisplayJourneyLeg = {
+  key: string;
+  label: string;
+  departureTime: string;
+  arrivalTime: string;
+  origin: string;
+  destination: string;
+  originAirport?: string | null;
+  destinationAirport?: string | null;
+  duration?: string;
+  stopText?: string;
+};
 const SEARCH_RESULT_TTL_SECONDS = 900;
 
 const sortOptions = [
@@ -374,7 +386,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         tier: cleanFareText(fare.tier, flight.fareBrand || "Fare option"),
         price: fare.price,
         bags: fare.bags,
-        meal: flight.meal,
+        meal: fare.meal || flight.meal,
         refund: fare.refund,
         change: fare.change,
         noShow: (fare as DisplayFare).noShow,
@@ -611,6 +623,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     const cleanAirportName = String(airportName || "").trim();
     return cleanAirportName ? `${cleanCode} - ${cleanAirportName}` : cleanCode;
   };
+  const airportCode = (value?: string | null) => String(value || "").trim().toUpperCase();
   const firstSegment = (flight: TravelianFlight) => flight.segments?.[0];
   const lastSegment = (flight: TravelianFlight) => flight.segments?.[flight.segments.length - 1];
   const flightOriginLabel = (flight: TravelianFlight) => routeLabel(flight.origin, flight.originAirport || firstSegment(flight)?.departureAirport);
@@ -631,6 +644,169 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   };
   const segmentDuration = (segment: ItinerarySegment) =>
     segment.duration || getDuration(segment.departureTime || "", segment.arrivalTime || "");
+  const stopTextForSegments = (group: ItinerarySegment[]) => {
+    const stops = Math.max(group.length - 1, 0);
+    if (!stops) return "Direct";
+    const via = group.slice(0, -1).map((segment) => airportCode(segment.destination)).filter(Boolean);
+    const label = `${stops} Stop${stops === 1 ? "" : "s"}`;
+    return via.length ? `${label} (${via.join(", ")})` : label;
+  };
+  const legFromSegments = (group: ItinerarySegment[], label: string, key: string): DisplayJourneyLeg | null => {
+    if (!group.length) return null;
+    const first = group[0];
+    const last = group[group.length - 1];
+    return {
+      key,
+      label,
+      departureTime: first.departureTime || "",
+      arrivalTime: last.arrivalTime || "",
+      origin: airportCode(first.origin),
+      destination: airportCode(last.destination),
+      originAirport: first.departureAirport,
+      destinationAirport: last.arrivalAirport,
+      duration: getDuration(first.departureTime || "", last.arrivalTime || ""),
+      stopText: stopTextForSegments(group),
+    };
+  };
+  const splitRoundtripSegments = (flight: TravelianFlight) => {
+    const segs = itinerarySegments(flight);
+    const destination = airportCode(flight.destination);
+    let splitAt = -1;
+    for (let index = 0; index < segs.length; index += 1) {
+      if (airportCode(segs[index].destination) === destination) {
+        splitAt = index;
+        break;
+      }
+    }
+    if (splitAt < 0 || splitAt >= segs.length - 1) {
+      return { outbound: segs, inbound: [] as ItinerarySegment[] };
+    }
+    return {
+      outbound: segs.slice(0, splitAt + 1),
+      inbound: segs.slice(splitAt + 1),
+    };
+  };
+  const splitMulticitySegments = (flight: TravelianFlight) => {
+    const segs = itinerarySegments(flight);
+    const routeLegs = segments.length >= 2
+      ? segments
+      : [{ from: flight.origin, to: flight.destination, date: departDate }];
+    const groups: ItinerarySegment[][] = [];
+    let cursor = 0;
+    for (const route of routeLegs) {
+      const from = airportCode(route.from);
+      const to = airportCode(route.to);
+      while (cursor < segs.length && airportCode(segs[cursor].origin) !== from) cursor += 1;
+      const start = cursor;
+      while (cursor < segs.length) {
+        const reached = airportCode(segs[cursor].destination) === to;
+        cursor += 1;
+        if (reached) break;
+      }
+      groups.push(segs.slice(start, cursor));
+    }
+    return groups.filter((group) => group.length);
+  };
+  const journeyLegsForCard = (flight: TravelianFlight): DisplayJourneyLeg[] => {
+    if (tripType === "roundtrip") {
+      const { outbound, inbound } = splitRoundtripSegments(flight);
+      const outboundLeg = legFromSegments(outbound, "Outbound", `${flight.flightId}-out`)
+        || {
+          key: `${flight.flightId}-out`,
+          label: "Outbound",
+          departureTime: flight.departureTime,
+          arrivalTime: flight.arrivalTime,
+          origin: flight.origin,
+          destination: flight.destination,
+          originAirport: flight.originAirport,
+          destinationAirport: flight.destinationAirport,
+          duration: flight.duration || getDuration(flight.departureTime, flight.arrivalTime),
+          stopText: stopLabel(flight) || "Direct",
+        };
+      const inboundLeg = inbound.length
+        ? legFromSegments(inbound, "Return", `${flight.flightId}-ret`)
+        : flight.returnDepartureTime && flight.returnArrivalTime
+          ? {
+            key: `${flight.flightId}-ret`,
+            label: "Return",
+            departureTime: flight.returnDepartureTime,
+            arrivalTime: flight.returnArrivalTime,
+            origin: flight.destination,
+            destination: flight.origin,
+            originAirport: flight.destinationAirport,
+            destinationAirport: flight.originAirport,
+            duration: getDuration(flight.returnDepartureTime, flight.returnArrivalTime),
+            stopText: "Direct",
+          }
+          : null;
+      return inboundLeg ? [outboundLeg, inboundLeg] : [outboundLeg];
+    }
+
+    if (tripType === "multicity") {
+      const groups = splitMulticitySegments(flight);
+      if (groups.length >= 2) {
+        return groups
+          .map((group, index) => legFromSegments(group, `Flight ${index + 1}`, `${flight.flightId}-leg-${index}`))
+          .filter((leg): leg is DisplayJourneyLeg => Boolean(leg));
+      }
+    }
+
+    return [{
+      key: `${flight.flightId}-oneway`,
+      label: "Flight",
+      departureTime: flight.departureTime,
+      arrivalTime: flight.arrivalTime,
+      origin: flight.origin,
+      destination: flight.destination,
+      originAirport: flight.originAirport || firstSegment(flight)?.departureAirport,
+      destinationAirport: flight.destinationAirport || lastSegment(flight)?.arrivalAirport,
+      duration: flight.duration || getDuration(flight.departureTime, flight.arrivalTime),
+      stopText: stopLabel(flight) || "Direct",
+    }];
+  };
+  const LegTimelineDesktop = ({ leg }: { leg: DisplayJourneyLeg }) => (
+    <div className="min-w-0 space-y-1.5">
+      <p className="text-[10px] font-bold uppercase tracking-wide text-primary">{leg.label}</p>
+      <div className="flex min-w-0 items-center gap-3">
+        <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
+          <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(leg.departureTime)}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(leg.departureTime)}</p>
+          <p className="truncate text-xs text-muted-foreground" title={routeLabel(leg.origin, leg.originAirport)}>{routeLabel(leg.origin, leg.originAirport)}</p>
+        </div>
+        <div className="flex min-w-[5rem] flex-1 flex-col items-center px-1">
+          <span className="max-w-full truncate text-[10px] font-medium text-muted-foreground">{leg.duration || getDuration(leg.departureTime, leg.arrivalTime)}</span>
+          <div className="relative my-1.5 h-px w-full bg-border">
+            <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
+            <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-primary" />
+          </div>
+          {leg.stopText && <span className="max-w-full truncate text-[10px] font-medium text-success" title={leg.stopText}>{leg.stopText}</span>}
+        </div>
+        <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
+          <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(leg.arrivalTime)}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(leg.arrivalTime)}</p>
+          <p className="truncate text-xs text-muted-foreground" title={routeLabel(leg.destination, leg.destinationAirport)}>{routeLabel(leg.destination, leg.destinationAirport)}</p>
+        </div>
+      </div>
+    </div>
+  );
+  const LegTimelineMobile = ({ leg }: { leg: DisplayJourneyLeg }) => (
+    <div className="min-w-0 rounded-xl bg-muted/40 px-3 py-2">
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-primary">{leg.label}</p>
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+        <span className="font-bold text-foreground">{formatFlightTime(leg.departureTime)}</span>
+        <span className="font-semibold text-foreground">{airportCode(leg.origin)}</span>
+        <span aria-hidden="true">──</span>
+        <span className="truncate">{leg.duration || getDuration(leg.departureTime, leg.arrivalTime)}</span>
+        <span aria-hidden="true">──</span>
+        <span className="font-bold text-foreground">{formatFlightTime(leg.arrivalTime)}</span>
+        <span className="font-semibold text-foreground">{airportCode(leg.destination)}</span>
+        <span>·</span>
+        <span className="truncate text-success">{leg.stopText || "Direct"}</span>
+        <span>·</span>
+        <span className="truncate">{formatFlightDate(leg.departureTime)}</span>
+      </div>
+    </div>
+  );
   const JourneyTimeline = ({ flight }: { flight: TravelianFlight }) => {
     const segmentsToShow = itinerarySegments(flight);
 
@@ -1051,6 +1227,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               const fareOptionsOpen = selectedFlight === flight.flightId;
               const displayFares = fareRows(flight);
               const primaryFare = displayFares[0];
+              const journeyLegs = journeyLegsForCard(flight);
+              const showStackedLegs = tripType === "roundtrip" || tripType === "multicity";
 
               return (
                 <Card
@@ -1061,8 +1239,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 >
                   <CardContent className="p-5">
                     <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                        <div className="flex min-w-0 items-center gap-3 md:w-[11rem] md:shrink-0">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start">
+                        <div className="flex min-w-0 items-center gap-3 md:w-[11rem] md:shrink-0 md:pt-1">
                           <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={flight.airlineImage} className="h-12 w-12 rounded-xl" />
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-foreground" title={flight.airline}>{limitText(flight.airline, 12)}</p>
@@ -1074,43 +1252,77 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             )}
                           </div>
                         </div>
-                        <div className="flex min-w-0 flex-1 items-center gap-3">
-                          <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
-                            <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
-                            <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
-                            <p className="truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
-                          </div>
-                          <div className="flex min-w-[5rem] flex-1 flex-col items-center px-1">
-                            <span className="max-w-full truncate text-[10px] font-medium text-muted-foreground">{flight.duration || getDuration(flight.departureTime, flight.arrivalTime)}</span>
-                            <div className="relative my-1.5 h-px w-full bg-border">
-                              <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
-                              <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-primary" />
+
+                        {/* Desktop: Option A stacked full timelines for return/multicity; one-way stays as today */}
+                        <div className="hidden min-w-0 flex-1 md:block">
+                          {showStackedLegs && journeyLegs.length > 1 ? (
+                            <div className="space-y-3">
+                              {journeyLegs.map((leg) => (
+                                <LegTimelineDesktop key={leg.key} leg={leg} />
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
+                                <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
+                                <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
+                                <p className="truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
                               </div>
-                            {stopLabel(flight) && <span className="max-w-full truncate text-[10px] font-medium text-success" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
-                          </div>
-                          <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
-                            <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
-                            <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
-                            <p className="truncate text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
-                          </div>
-                        </div>
-                        <div className="min-w-0 flex-1 md:hidden">
-                          {tripType === "roundtrip" && flight.returnDepartureTime && flight.returnArrivalTime && (
-                            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-[11px] text-muted-foreground">
-                              <Badge variant="outline" className="rounded-md text-[10px]">Return</Badge>
-                              <span className="font-medium text-foreground">{flightDestinationLabel(flight)} to {flightOriginLabel(flight)}</span>
-                              <span>{flight.returnDepartureTime}</span>
-                              <span>to</span>
-                              <span>{flight.returnArrivalTime}</span>
+                              <div className="flex min-w-[5rem] flex-1 flex-col items-center px-1">
+                                <span className="max-w-full truncate text-[10px] font-medium text-muted-foreground">{flight.duration || getDuration(flight.departureTime, flight.arrivalTime)}</span>
+                                <div className="relative my-1.5 h-px w-full bg-border">
+                                  <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
+                                  <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-primary" />
+                                </div>
+                                {stopLabel(flight) && <span className="max-w-full truncate text-[10px] font-medium text-success" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
+                              </div>
+                              <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
+                                <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
+                                <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
+                                <p className="truncate text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
+                              </div>
                             </div>
                           )}
                         </div>
+
+                        {/* Mobile: Option B compact rows for return/multicity */}
+                        <div className="min-w-0 flex-1 md:hidden">
+                          {showStackedLegs && journeyLegs.length > 1 ? (
+                            <div className="space-y-2">
+                              {journeyLegs.map((leg) => (
+                                <LegTimelineMobile key={leg.key} leg={leg} />
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
+                                <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
+                                <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
+                                <p className="truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
+                              </div>
+                              <div className="flex min-w-[5rem] flex-1 flex-col items-center px-1">
+                                <span className="max-w-full truncate text-[10px] font-medium text-muted-foreground">{flight.duration || getDuration(flight.departureTime, flight.arrivalTime)}</span>
+                                <div className="relative my-1.5 h-px w-full bg-border">
+                                  <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
+                                  <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-primary" />
+                                </div>
+                                {stopLabel(flight) && <span className="max-w-full truncate text-[10px] font-medium text-success" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
+                              </div>
+                              <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
+                                <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
+                                <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
+                                <p className="truncate text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
                         {primaryFare && (
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="ml-auto h-8 shrink-0 rounded-lg px-3 text-xs font-semibold"
+                            className="ml-auto h-8 shrink-0 rounded-lg px-3 text-xs font-semibold md:mt-1"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();

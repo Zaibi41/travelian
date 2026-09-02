@@ -3,17 +3,26 @@ const DEFAULT_CURRENCY = process.env.DEFAULT_CURRENCY || "PKR";
 
 export function validateSearchRequest(input) {
   const errors = [];
+  const rawSegments = Array.isArray(input.segments) ? input.segments : [];
+  const segments = rawSegments.map((segment) => ({
+    from: String(segment.from || segment.origin || "").trim().toUpperCase(),
+    to: String(segment.to || segment.destination || "").trim().toUpperCase(),
+    date: segment.date || segment.departureDate,
+  }));
+
+  const tripType = input.tripType || "oneway";
   const request = {
-    tripType: input.tripType || "oneway",
-    origin: String(input.origin || input.from || "").trim().toUpperCase(),
-    destination: String(input.destination || input.to || "").trim().toUpperCase(),
-    departureDate: input.departureDate || input.date,
+    tripType,
+    origin: String(input.origin || input.from || segments[0]?.from || "").trim().toUpperCase(),
+    destination: String(
+      input.destination
+      || input.to
+      || segments[0]?.to
+      || "",
+    ).trim().toUpperCase(),
+    departureDate: input.departureDate || input.date || segments[0]?.date,
     returnDate: input.returnDate || null,
-    segments: Array.isArray(input.segments) ? input.segments.map(segment => ({
-      from: String(segment.from || "").trim().toUpperCase(),
-      to: String(segment.to || "").trim().toUpperCase(),
-      date: segment.date,
-    })) : [],
+    segments,
     cabin: input.cabin || input.class || "Economy",
     passengers: {
       adults: Number(input.passengers?.adults ?? input.adults ?? input.person ?? 1),
@@ -27,13 +36,6 @@ export function validateSearchRequest(input) {
   if (!["oneway", "roundtrip", "multicity"].includes(request.tripType)) {
     errors.push("tripType must be oneway, roundtrip, or multicity");
   }
-  if (!AIRPORT_RE.test(request.origin)) errors.push("origin must be a 3-letter IATA airport code");
-  if (!AIRPORT_RE.test(request.destination)) errors.push("destination must be a 3-letter IATA airport code");
-  if (request.origin && request.origin === request.destination) errors.push("origin and destination must be different");
-  if (!isIsoDate(request.departureDate)) errors.push("departureDate must be YYYY-MM-DD");
-  if (request.tripType === "roundtrip" && !isIsoDate(request.returnDate)) {
-    errors.push("returnDate is required for roundtrip searches");
-  }
   if (request.tripType === "multicity") {
     if (request.segments.length < 2) errors.push("at least two segments are required for multicity searches");
     request.segments.forEach((segment, index) => {
@@ -41,6 +43,23 @@ export function validateSearchRequest(input) {
         errors.push(`segment ${index + 1} must include different IATA airports and a YYYY-MM-DD date`);
       }
     });
+    if (!AIRPORT_RE.test(request.origin) && request.segments[0]?.from) {
+      request.origin = request.segments[0].from;
+    }
+    if (!AIRPORT_RE.test(request.destination) && request.segments[0]?.to) {
+      request.destination = request.segments[0].to;
+    }
+    if (!isIsoDate(request.departureDate) && isIsoDate(request.segments[0]?.date)) {
+      request.departureDate = request.segments[0].date;
+    }
+  } else {
+    if (!AIRPORT_RE.test(request.origin)) errors.push("origin must be a 3-letter IATA airport code");
+    if (!AIRPORT_RE.test(request.destination)) errors.push("destination must be a 3-letter IATA airport code");
+    if (request.origin && request.origin === request.destination) errors.push("origin and destination must be different");
+    if (!isIsoDate(request.departureDate)) errors.push("departureDate must be YYYY-MM-DD");
+  }
+  if (request.tripType === "roundtrip" && !isIsoDate(request.returnDate)) {
+    errors.push("returnDate is required for roundtrip searches");
   }
   if (request.passengers.adults < 1) errors.push("at least one adult passenger is required");
   if (request.passengers.children < 0 || request.passengers.infants < 0) {

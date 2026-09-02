@@ -2,15 +2,16 @@ import type { ReactNode } from "react";
 
 interface Props {
   title: string;
-  tagline: string;
+  tagline?: string;
   eyebrow?: string;
   icon?: ReactNode;
   breadcrumb?: ReactNode;
   children?: ReactNode;
   align?: "center" | "left";
+  titleClassName?: string;
 }
 
-export function PageHeader({ title, tagline, eyebrow, icon, breadcrumb, children, align = "center" }: Props) {
+export function PageHeader({ title, tagline, eyebrow, icon, breadcrumb, children, align = "center", titleClassName }: Props) {
   const centered = align === "center";
   return (
     <section className="relative isolate overflow-hidden gradient-hero py-10 md:py-14">
@@ -28,7 +29,7 @@ export function PageHeader({ title, tagline, eyebrow, icon, breadcrumb, children
         <div className="absolute -bottom-24 left-0 h-64 w-64 rounded-full bg-gold/15 blur-3xl" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className={centered ? "text-center" : "text-left"}>
           {breadcrumb && (
             <div className={`mb-4 flex text-xs text-primary-foreground/70 ${centered ? "justify-center" : ""}`}>{breadcrumb}</div>
@@ -43,12 +44,23 @@ export function PageHeader({ title, tagline, eyebrow, icon, breadcrumb, children
             </div>
           )}
           {eyebrow && <p className="mb-2 text-xs font-bold uppercase tracking-[0.22em] text-gold">{eyebrow}</p>}
-          <h1 className="text-2xl md:text-4xl font-black font-display text-primary-foreground tracking-tight">{title}</h1>
-          <p
-            className={`mt-3 max-w-2xl text-primary-foreground/80 text-sm md:text-base leading-7 ${centered ? "mx-auto" : ""}`}
+          <h1
+            className={
+              titleClassName
+                || `text-2xl font-black font-display tracking-tight text-primary-foreground sm:text-3xl md:text-4xl ${
+                  centered ? "mx-auto max-w-[46rem] text-balance" : ""
+                }`
+            }
           >
-            {tagline}
-          </p>
+            {title}
+          </h1>
+          {tagline ? (
+            <p
+              className={`mt-3 max-w-2xl text-sm leading-7 text-primary-foreground/80 md:text-base ${centered ? "mx-auto" : ""}`}
+            >
+              {tagline}
+            </p>
+          ) : null}
         </div>
         {children && <div className="relative mt-6 md:mt-8">{children}</div>}
       </div>

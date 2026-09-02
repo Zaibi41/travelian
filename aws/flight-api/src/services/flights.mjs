@@ -63,7 +63,7 @@ function sortOffers(results) {
 }
 
 async function withTimeout(promise, providerName) {
-  const timeoutMs = Number(process.env.PROVIDER_TIMEOUT_MS || 9000);
+  const timeoutMs = providerTimeoutMs(providerName);
   let timeout;
   const timeoutPromise = new Promise((_, reject) => {
     timeout = setTimeout(() => {
@@ -78,6 +78,17 @@ async function withTimeout(promise, providerName) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function providerTimeoutMs(providerName) {
+  const normalized = String(providerName || "").trim().toLowerCase();
+  const specific = Number(process.env[`${normalized.toUpperCase()}_TIMEOUT_MS`]);
+  if (Number.isFinite(specific) && specific > 0) return specific;
+  // SooperFare returns large multi-provider payloads; give it more room than the default.
+  if (normalized === "sooperfare") {
+    return Number(process.env.SOOPERFARE_TIMEOUT_MS || process.env.PROVIDER_TIMEOUT_MS || 25000);
+  }
+  return Number(process.env.PROVIDER_TIMEOUT_MS || 9000);
 }
 
 function parseProviderFromError(error) {
