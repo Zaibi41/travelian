@@ -250,6 +250,8 @@ export async function searchTransfers(input: TransferSearchInput, signal?: Abort
 }
 
 function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
+  const preserveAirportTime = safeText(offer.provider).toLowerCase() === "sooperfare";
+  const formatTime = (value: string | null | undefined) => formatFlightDateTime(value, preserveAirportTime);
   const flightNumber = safeText(offer.flightNumber, "Not specified");
   const airline = safeText(offer.airline, "Airline");
   const origin = safeText(offer.origin);
@@ -257,10 +259,10 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
   const cabin = safeText(offer.cabin, "Economy");
   const segments = (offer.segments || []).map((segment) => ({
     ...segment,
-    departureTimestamp: segment.departureTime,
-    arrivalTimestamp: segment.arrivalTime,
-    departureTime: formatFlightDateTime(segment.departureTime),
-    arrivalTime: formatFlightDateTime(segment.arrivalTime),
+    departureTimestamp: preserveAirportTime ? segment.departureTime : undefined,
+    arrivalTimestamp: preserveAirportTime ? segment.arrivalTime : undefined,
+    departureTime: formatTime(segment.departureTime),
+    arrivalTime: formatTime(segment.arrivalTime),
   }));
   const firstSegment = segments[0];
   const lastSegment = segments[segments.length - 1];
@@ -276,10 +278,10 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
     destination,
     originAirport: safeText(offer.originAirport || firstSegment?.departureAirport),
     destinationAirport: safeText(offer.destinationAirport || lastSegment?.arrivalAirport),
-    departureTime: formatFlightDateTime(offer.departureTime),
-    arrivalTime: formatFlightDateTime(offer.arrivalTime),
-    departureTimestamp: offer.departureTime,
-    arrivalTimestamp: offer.arrivalTime,
+    departureTime: formatTime(offer.departureTime),
+    arrivalTime: formatTime(offer.arrivalTime),
+    departureTimestamp: preserveAirportTime ? offer.departureTime : undefined,
+    arrivalTimestamp: preserveAirportTime ? offer.arrivalTime : undefined,
     price: offer.price?.total || 0,
     currency: offer.price?.currency || "PKR",
     seats: normalizeSeats(offer.seats),
@@ -294,13 +296,13 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
     segments,
     layovers: (offer.layovers || []).map((layover) => ({
       ...layover,
-      arrivalTime: formatFlightDateTime(layover.arrivalTime),
-      departureTime: formatFlightDateTime(layover.departureTime),
+      arrivalTime: formatTime(layover.arrivalTime),
+      departureTime: formatTime(layover.departureTime),
     })),
-    returnDepartureTime: offer.returnDepartureTime ? formatFlightDateTime(offer.returnDepartureTime) : undefined,
-    returnArrivalTime: offer.returnArrivalTime ? formatFlightDateTime(offer.returnArrivalTime) : undefined,
-    returnDepartureTimestamp: offer.returnDepartureTime || undefined,
-    returnArrivalTimestamp: offer.returnArrivalTime || undefined,
+    returnDepartureTime: offer.returnDepartureTime ? formatTime(offer.returnDepartureTime) : undefined,
+    returnArrivalTime: offer.returnArrivalTime ? formatTime(offer.returnArrivalTime) : undefined,
+    returnDepartureTimestamp: preserveAirportTime ? offer.returnDepartureTime || undefined : undefined,
+    returnArrivalTimestamp: preserveAirportTime ? offer.returnArrivalTime || undefined : undefined,
   };
 }
 
@@ -311,12 +313,14 @@ function normalizeCabin(cabin: string): Flight["class"] {
   return "economy";
 }
 
-function formatFlightDateTime(value: string | null | undefined) {
+function formatFlightDateTime(value: string | null | undefined, preserveAirportTime = false) {
   if (!value) return "";
   const text = String(value);
-  // Provider timestamps already carry the airport's local clock time, not the visitor's.
-  const localTime = text.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
-  if (localTime) return `${localTime[1]} ${localTime[2]}`;
+  // Only SooperFare opts into airport-local display; other adapters retain their existing conversion.
+  if (preserveAirportTime) {
+    const localTime = text.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+    if (localTime) return `${localTime[1]} ${localTime[2]}`;
+  }
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return text.replace("T", " ").slice(0, 16);
   const yyyy = date.getFullYear();

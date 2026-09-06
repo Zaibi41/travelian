@@ -4,6 +4,31 @@ import { searchFlights } from "./travelian-api";
 afterEach(() => vi.unstubAllGlobals());
 
 describe("flight schedule timezone handling", () => {
+  it.each(["travelport", "skypass", "alhaider", "dhilluandsahi", "flyadeal", "airsial", "pia", ""])(
+    "retains the previous timezone conversion for provider %s", async (provider) => {
+      const timestamp = "2026-10-06T19:00:00+04:00";
+      const date = new Date(timestamp);
+      const expected = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [{
+        provider, departureTime: timestamp, arrivalTime: timestamp,
+        returnDepartureTime: timestamp, returnArrivalTime: timestamp,
+        segments: [{ departureTime: timestamp, arrivalTime: timestamp }],
+        layovers: [{ departureTime: timestamp, arrivalTime: timestamp }],
+      }] }) }));
+      const { flights: [flight] } = await searchFlights({ tripType: "oneway", from: "LHE", to: "DXB",
+        departureDate: "2026-10-06", cabin: "Economy", currency: "PKR", passengers: { adults: 1, children: 0, infants: 0 } });
+      expect(flight.departureTime).toBe(expected);
+      expect(flight.arrivalTime).toBe(expected);
+      expect(flight.returnDepartureTime).toBe(expected);
+      expect(flight.returnArrivalTime).toBe(expected);
+      expect(flight.segments?.[0].arrivalTime).toBe(expected);
+      expect(flight.segments?.[0].departureTime).toBe(expected);
+      expect(flight.layovers?.[0].arrivalTime).toBe(expected);
+      expect(flight.layovers?.[0].departureTime).toBe(expected);
+      expect(flight.arrivalTimestamp).toBeUndefined();
+      expect(flight.segments?.[0].arrivalTimestamp).toBeUndefined();
+    },
+  );
   it.each([
     ["2026-10-06T19:00:00+04:00", "2026-10-06 19:00"],
     ["2026-10-06T18:20:00+04:00", "2026-10-06 18:20"],
