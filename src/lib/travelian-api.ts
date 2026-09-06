@@ -257,6 +257,8 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
   const cabin = safeText(offer.cabin, "Economy");
   const segments = (offer.segments || []).map((segment) => ({
     ...segment,
+    departureTimestamp: segment.departureTime,
+    arrivalTimestamp: segment.arrivalTime,
     departureTime: formatFlightDateTime(segment.departureTime),
     arrivalTime: formatFlightDateTime(segment.arrivalTime),
   }));
@@ -276,6 +278,8 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
     destinationAirport: safeText(offer.destinationAirport || lastSegment?.arrivalAirport),
     departureTime: formatFlightDateTime(offer.departureTime),
     arrivalTime: formatFlightDateTime(offer.arrivalTime),
+    departureTimestamp: offer.departureTime,
+    arrivalTimestamp: offer.arrivalTime,
     price: offer.price?.total || 0,
     currency: offer.price?.currency || "PKR",
     seats: normalizeSeats(offer.seats),
@@ -295,6 +299,8 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
     })),
     returnDepartureTime: offer.returnDepartureTime ? formatFlightDateTime(offer.returnDepartureTime) : undefined,
     returnArrivalTime: offer.returnArrivalTime ? formatFlightDateTime(offer.returnArrivalTime) : undefined,
+    returnDepartureTimestamp: offer.returnDepartureTime || undefined,
+    returnArrivalTimestamp: offer.returnArrivalTime || undefined,
   };
 }
 
@@ -308,6 +314,9 @@ function normalizeCabin(cabin: string): Flight["class"] {
 function formatFlightDateTime(value: string | null | undefined) {
   if (!value) return "";
   const text = String(value);
+  // Provider timestamps already carry the airport's local clock time, not the visitor's.
+  const localTime = text.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+  if (localTime) return `${localTime[1]} ${localTime[2]}`;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return text.replace("T", " ").slice(0, 16);
   const yyyy = date.getFullYear();

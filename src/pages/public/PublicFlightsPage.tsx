@@ -310,8 +310,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return true;
   });
 
-  const durationMs = (flight: TravelianFlight) => new Date(flight.arrivalTime).getTime() - new Date(flight.departureTime).getTime();
-  const departureMs = (flight: TravelianFlight) => new Date(flight.departureTime).getTime();
+  const durationMs = (flight: TravelianFlight) => new Date(flight.arrivalTimestamp || flight.arrivalTime).getTime() - new Date(flight.departureTimestamp || flight.departureTime).getTime();
+  const departureMs = (flight: TravelianFlight) => new Date(flight.departureTimestamp || flight.departureTime).getTime();
   if (sort === "price-asc") filtered.sort((a, b) => a.price - b.price);
   else if (sort === "price-desc") filtered.sort((a, b) => b.price - a.price);
   else if (sort === "duration-asc") filtered.sort((a, b) => {
@@ -341,6 +341,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     if (!Number.isFinite(ms) || ms < 0) return "Duration TBA";
     return `${Math.floor(ms / 3600000)}h ${Math.round((ms % 3600000) / 60000)}m`;
   };
+  const getFlightDuration = (flight: TravelianFlight) => flight.duration || getDuration(
+    flight.departureTimestamp || flight.departureTime,
+    flight.arrivalTimestamp || flight.arrivalTime,
+  );
 
   const RATE_PER_USD: Record<string, number> = {
     ...Object.fromEntries(CURRENCIES.map((c) => [c.code, c.rate])),
@@ -519,8 +523,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
   const bestFlight = filtered.length > 0 ? filtered.reduce((best, f) => f.price < best.price ? f : best, filtered[0]) : null;
   const fastestFlight = filtered.length > 0 ? filtered.reduce((fast, f) => {
-    const fDur = new Date(f.arrivalTime).getTime() - new Date(f.departureTime).getTime();
-    const fastDur = new Date(fast.arrivalTime).getTime() - new Date(fast.departureTime).getTime();
+    const fDur = durationMs(f);
+    const fastDur = durationMs(fast);
     if (!Number.isFinite(fDur)) return fast;
     if (!Number.isFinite(fastDur)) return f;
     return fDur < fastDur ? f : fast;
@@ -639,11 +643,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       arrivalAirport: flight.destinationAirport,
       departureTime: flight.departureTime,
       arrivalTime: flight.arrivalTime,
+      departureTimestamp: flight.departureTimestamp,
+      arrivalTimestamp: flight.arrivalTimestamp,
       duration: flight.duration,
     }];
   };
   const segmentDuration = (segment: ItinerarySegment) =>
-    segment.duration || getDuration(segment.departureTime || "", segment.arrivalTime || "");
+    segment.duration || getDuration(segment.departureTimestamp || segment.departureTime || "", segment.arrivalTimestamp || segment.arrivalTime || "");
   const stopTextForSegments = (group: ItinerarySegment[]) => {
     const stops = Math.max(group.length - 1, 0);
     if (!stops) return "Direct";
@@ -664,7 +670,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       destination: airportCode(last.destination),
       originAirport: first.departureAirport,
       destinationAirport: last.arrivalAirport,
-      duration: getDuration(first.departureTime || "", last.arrivalTime || ""),
+      duration: getDuration(first.departureTimestamp || first.departureTime || "", last.arrivalTimestamp || last.arrivalTime || ""),
       stopText: stopTextForSegments(group),
     };
   };
@@ -720,7 +726,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           destination: flight.destination,
           originAirport: flight.originAirport,
           destinationAirport: flight.destinationAirport,
-          duration: flight.duration || getDuration(flight.departureTime, flight.arrivalTime),
+          duration: getFlightDuration(flight),
           stopText: stopLabel(flight) || "Direct",
         };
       const inboundLeg = inbound.length
@@ -735,7 +741,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             destination: flight.origin,
             originAirport: flight.destinationAirport,
             destinationAirport: flight.originAirport,
-            duration: getDuration(flight.returnDepartureTime, flight.returnArrivalTime),
+            duration: getDuration(flight.returnDepartureTimestamp || flight.returnDepartureTime, flight.returnArrivalTimestamp || flight.returnArrivalTime),
             stopText: "Direct",
           }
           : null;
@@ -760,7 +766,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       destination: flight.destination,
       originAirport: flight.originAirport || firstSegment(flight)?.departureAirport,
       destinationAirport: flight.destinationAirport || lastSegment(flight)?.arrivalAirport,
-      duration: flight.duration || getDuration(flight.departureTime, flight.arrivalTime),
+      duration: getFlightDuration(flight),
       stopText: stopLabel(flight) || "Direct",
     }];
   };
@@ -1068,7 +1074,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           {[
             { id: "best", label: "Best", sub: bestFlight ? formatFare(bestFlight.price, bestFlight.currency) : "" },
             { id: "price-asc", label: "Cheapest", sub: bestFlight ? formatFare(bestFlight.price, bestFlight.currency) : "" },
-            { id: "fastest", label: "Fastest", sub: fastestFlight ? getDuration(fastestFlight.departureTime, fastestFlight.arrivalTime) : "" },
+            { id: "fastest", label: "Fastest", sub: fastestFlight ? getFlightDuration(fastestFlight) : "" },
           ].map(s => (
             <button
               key={s.id}
@@ -1269,7 +1275,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 <p className="truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
                               </div>
                               <div className="flex min-w-[5rem] flex-1 flex-col items-center px-1">
-                                <span className="max-w-full truncate text-[10px] font-medium text-muted-foreground">{flight.duration || getDuration(flight.departureTime, flight.arrivalTime)}</span>
+                                <span className="max-w-full truncate text-[10px] font-medium text-muted-foreground">{getFlightDuration(flight)}</span>
                                 <div className="relative my-1.5 h-px w-full bg-border">
                                   <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
                                   <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-primary" />
@@ -1301,7 +1307,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 <p className="truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
                               </div>
                               <div className="flex min-w-[5rem] flex-1 flex-col items-center px-1">
-                                <span className="max-w-full truncate text-[10px] font-medium text-muted-foreground">{flight.duration || getDuration(flight.departureTime, flight.arrivalTime)}</span>
+                                <span className="max-w-full truncate text-[10px] font-medium text-muted-foreground">{getFlightDuration(flight)}</span>
                                 <div className="relative my-1.5 h-px w-full bg-border">
                                   <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
                                   <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-primary" />
@@ -1724,8 +1730,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     <p className="truncate text-base font-black text-slate-950" title={`${fareDetails.flight.airline} - ${fareDetails.flight.flightNumber}`}>
                       {fareDetails.flight.airline} <span className="text-slate-400">·</span> {fareDetails.flight.flightNumber}
                     </p>
-                    <p className="mt-1 truncate text-xs font-semibold text-primary" title={`${fareDetails.flight.origin} to ${fareDetails.flight.destination} - ${formatFlightTime(fareDetails.flight.departureTime)} - ${formatFlightTime(fareDetails.flight.arrivalTime)} - ${fareDetails.flight.duration || getDuration(fareDetails.flight.departureTime, fareDetails.flight.arrivalTime)} - ${stopLabel(fareDetails.flight) || "Non-stop"}`}>
-                      {fareDetails.flight.origin} → {fareDetails.flight.destination} <span className="text-slate-300">·</span> {formatFlightTime(fareDetails.flight.departureTime)} - {formatFlightTime(fareDetails.flight.arrivalTime)} <span className="text-slate-300">·</span> {fareDetails.flight.duration || getDuration(fareDetails.flight.departureTime, fareDetails.flight.arrivalTime)} <span className="text-slate-300">·</span> {stopLabel(fareDetails.flight) || "Non-stop"}
+                    <p className="mt-1 truncate text-xs font-semibold text-primary" title={`${fareDetails.flight.origin} to ${fareDetails.flight.destination} - ${formatFlightTime(fareDetails.flight.departureTime)} - ${formatFlightTime(fareDetails.flight.arrivalTime)} - ${getFlightDuration(fareDetails.flight)} - ${stopLabel(fareDetails.flight) || "Non-stop"}`}>
+                      {fareDetails.flight.origin} → {fareDetails.flight.destination} <span className="text-slate-300">·</span> {formatFlightTime(fareDetails.flight.departureTime)} - {formatFlightTime(fareDetails.flight.arrivalTime)} <span className="text-slate-300">·</span> {getFlightDuration(fareDetails.flight)} <span className="text-slate-300">·</span> {stopLabel(fareDetails.flight) || "Non-stop"}
                     </p>
                   </div>
                 </div>

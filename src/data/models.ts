@@ -216,6 +216,8 @@ export interface Flight {
   destinationAirport?: string;
   departureTime: string;
   arrivalTime: string;
+  departureTimestamp?: string;
+  arrivalTimestamp?: string;
   price: number;
   currency?: string;
   seats?: number;
@@ -229,6 +231,8 @@ export interface Flight {
   layovers?: FlightLayover[];
   returnDepartureTime?: string;
   returnArrivalTime?: string;
+  returnDepartureTimestamp?: string;
+  returnArrivalTimestamp?: string;
 }
 
 export interface FlightItinerarySegment {
@@ -241,6 +245,8 @@ export interface FlightItinerarySegment {
   arrivalAirport?: string | null;
   departureTime?: string | null;
   arrivalTime?: string | null;
+  departureTimestamp?: string | null;
+  arrivalTimestamp?: string | null;
   departureTerminal?: string | null;
   arrivalTerminal?: string | null;
   duration?: string | null;
