@@ -109,7 +109,7 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
 
   const triggerClass =
     variant === "segmented"
-      ? "flex h-[30px] items-center gap-1.5 px-3 text-xs font-medium rounded-md transition-all bg-primary text-primary-foreground shadow-sm"
+      ? "flex h-[30px] items-center gap-1.5 px-3 text-xs font-medium rounded-md border border-border/70 bg-card text-foreground shadow-sm transition-all hover:border-primary/25 hover:text-primary"
       : variant === "compact"
         ? "flex h-10 w-full items-center gap-2 rounded-xl bg-muted/40 px-3 text-sm font-semibold text-foreground transition-colors hover:bg-muted"
         : "flex items-center gap-2 w-full h-11 bg-background border border-input rounded-xl px-3 text-sm text-left hover:border-primary/30 transition-colors";
@@ -299,9 +299,9 @@ export function TravelersClassPicker({ value, onChange, className, variant = "fi
         aria-expanded={open}
       >
         {mode === "cabin" ? (
-          <Armchair className={variant === "compact" ? "h-3.5 w-3.5 shrink-0" : "h-4 w-4 shrink-0 text-muted-foreground"} />
+          <Armchair className={cn("shrink-0", variant === "compact" ? "h-3.5 w-3.5" : "h-4 w-4", variant === "segmented" ? "text-primary" : "text-muted-foreground")} />
         ) : (
-          <Users className={variant === "compact" ? "h-3.5 w-3.5 shrink-0" : "h-4 w-4 shrink-0 text-muted-foreground"} />
+          <Users className={cn("shrink-0", variant === "compact" ? "h-3.5 w-3.5" : "h-4 w-4", variant === "segmented" ? "text-primary" : "text-muted-foreground")} />
         )}
         <span className="whitespace-nowrap flex-1 truncate">
           {mode === "travelers" ? formatTravelerCount(value) : mode === "cabin" ? value.cabin : formatTravelers(value)}
