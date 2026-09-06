@@ -1,0 +1,74 @@
+{
+  "info": {
+    "name": "Travelian - Raw SooperFare Search",
+    "description": "Protected raw provider search via Travelian's whitelisted AWS egress. Set travelianApiKey locally before sending. Provider response body and HTTP status are returned unchanged. No bookings or ticketing operations.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.travelian.pk"
+    },
+    {
+      "key": "travelianApiKey",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "x-travelian-api-key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{travelianApiKey}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const departure = new Date();",
+          "departure.setUTCDate(departure.getUTCDate() + 30);",
+          "pm.variables.set('departureDate', departure.toISOString().slice(0, 10));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Raw one-way search - Lahore to Dubai",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"provider\": \"sooperfare\",\n  \"tripType\": \"oneway\",\n  \"origin\": \"LHE\",\n  \"destination\": \"DXB\",\n  \"departureDate\": \"{{departureDate}}\",\n  \"passengers\": {\n    \"adults\": 1,\n    \"children\": 0,\n    \"infants\": 0\n  },\n  \"cabin\": \"Economy\",\n  \"currency\": \"PKR\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": "{{baseUrl}}/debug/flights/search/raw"
+      }
+    }
+  ]
+}

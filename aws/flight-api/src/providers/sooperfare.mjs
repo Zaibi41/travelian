@@ -98,6 +98,26 @@ export class SooperFareAdapter extends ProviderAdapter {
     return offers;
   }
 
+  async rawSearchFlights(request, airlineProvider) {
+    const config = await this.config();
+    const selectedProvider = airlineProvider || (await this.availableProviders(request, config))[0];
+    const response = await outboundFetch(`${config.baseUrl}/v1/airline/search`, {
+      method: "POST",
+      headers: this.headers(config),
+      body: JSON.stringify(this.searchPayload(request, selectedProvider)),
+      signal: AbortSignal.timeout(sooperFareTimeoutMs()),
+    });
+    // Keep the provider body intact, including non-JSON error responses.
+    return {
+      statusCode: response.status,
+      headers: {
+        "content-type": response.headers.get("content-type") || "application/json",
+        "x-travelian-provider-source": selectedProvider,
+      },
+      body: await response.text(),
+    };
+  }
+
   async availableProviders(request, config) {
     const fallbackProviders = Array.isArray(config.providers) && config.providers.length
       ? config.providers

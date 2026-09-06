@@ -40,6 +40,7 @@ import { notifyAdminOfBookingRequest, runJourneyReminders } from "./services/not
 import { createPayFastSession, updatePayFastPayment } from "./services/payfast.mjs";
 import { requireFields, validateHotelSearchRequest, validateSearchRequest, validateTransferSearchRequest } from "./validation.mjs";
 import { requireApiAuth } from "./auth.mjs";
+import { rawFlightSearch } from "./services/raw-flight-search.mjs";
 
 const routes = {
   "GET /health": health,
@@ -105,6 +106,9 @@ export async function handler(event) {
 
   try {
     const path = normalizePath(event);
+    if (method(event) === "POST" && path === "/debug/flights/search/raw") {
+      return rawFlightSearch(event, reqId);
+    }
     const routeKey = `${method(event)} ${routePattern(path)}`;
     const route = routes[routeKey];
     if (!route) return json(404, { requestId: reqId, error: "Not found" });

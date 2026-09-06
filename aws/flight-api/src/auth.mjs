@@ -13,8 +13,8 @@ const PUBLIC_ROUTES = new Set([
 
 let apiKeyCache;
 
-export async function requireApiAuth(event, routeKey) {
-  const mode = (process.env.TRAVELIAN_API_AUTH_MODE || "off").toLowerCase();
+export async function requireApiAuth(event, routeKey, { forceApiKey = false } = {}) {
+  const mode = forceApiKey ? "api-key" : (process.env.TRAVELIAN_API_AUTH_MODE || "off").toLowerCase();
   if (mode === "off" || PUBLIC_ROUTES.has(routeKey)) return;
 
   if (mode === "api-key") {
