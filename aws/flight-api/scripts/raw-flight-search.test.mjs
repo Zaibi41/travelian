@@ -33,6 +33,18 @@ test("rejects invalid requests before calling provider", async () => {
   }
 });
 
+test("short provider URL authenticates and accepts an omitted provider", async (t) => {
+  const request = { ...event({ ...input, provider: undefined }), rawPath: "/sooperfare/raw" };
+  for (const key of [undefined, "wrong"]) {
+    assert.equal((await handler({ ...request, headers: key ? { "x-travelian-api-key": key } : {} })).statusCode, 401);
+  }
+  t.mock.method(globalThis, "fetch", async () => new Response('{"data":["raw"]}', { status: 200 }));
+  const result = await handler(request);
+  assert.equal(result.statusCode, 200);
+  assert.equal(result.body, '{"data":["raw"]}');
+  assert.equal((await handler({ ...request, body: JSON.stringify({ ...input, provider: "other" }) })).statusCode, 400);
+});
+
 test("preserves raw body/status through egress for all trip types", async (t) => {
   const raw = ' { "unmapped_provider_field": [1, 2], "amount": 12.00 } ';
   let sent;

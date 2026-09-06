@@ -118,6 +118,34 @@ export class SooperFareAdapter extends ProviderAdapter {
     };
   }
 
+  async rawProviderRequest(method, path, query, body, clientHeaders = {}) {
+    let config;
+    if (path === "/v1/partner/auth/login") {
+      const secret = await getSecretJson(this.secretId);
+      config = {
+        baseUrl: String(secret?.baseUrl || secret?.base_url || "https://api.sooperfare.com").trim().replace(/\/$/, ""),
+        authorization: secret?.authorization || secret?.basicAuth || secret?.basic_auth,
+      };
+      // Login uses AWS-held credentials, so the collection never needs the supplier password.
+      const username = secret?.username || secret?.email;
+      if (!username || !secret?.password) throw new Error("Provider login is not configured");
+      body = JSON.stringify({ username, password: secret.password });
+    } else {
+      config = await this.config();
+    }
+    const response = await outboundFetch(`${config.baseUrl}${path}${query ? `?${query}` : ""}`, {
+      method,
+      headers: { ...this.headers(config), ...clientHeaders },
+      ...(body === undefined ? {} : { body }),
+      signal: AbortSignal.timeout(sooperFareTimeoutMs()),
+    });
+    return {
+      statusCode: response.status,
+      headers: { "content-type": response.headers.get("content-type") || "application/json" },
+      body: await response.text(),
+    };
+  }
+
   async availableProviders(request, config) {
     const fallbackProviders = Array.isArray(config.providers) && config.providers.length
       ? config.providers

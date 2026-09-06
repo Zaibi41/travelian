@@ -41,6 +41,7 @@ import { createPayFastSession, updatePayFastPayment } from "./services/payfast.m
 import { requireFields, validateHotelSearchRequest, validateSearchRequest, validateTransferSearchRequest } from "./validation.mjs";
 import { requireApiAuth } from "./auth.mjs";
 import { rawFlightSearch } from "./services/raw-flight-search.mjs";
+import { sooperFareRaw } from "./services/sooperfare-raw.mjs";
 
 const routes = {
   "GET /health": health,
@@ -106,6 +107,12 @@ export async function handler(event) {
 
   try {
     const path = normalizePath(event);
+    if (path.startsWith("/sooperfare/raw/")) {
+      return sooperFareRaw(event, path, reqId);
+    }
+    if (method(event) === "POST" && path === "/sooperfare/raw") {
+      return rawFlightSearch(event, reqId, "sooperfare");
+    }
     if (method(event) === "POST" && path === "/debug/flights/search/raw") {
       return rawFlightSearch(event, reqId);
     }

@@ -67,7 +67,7 @@
             }
           }
         },
-        "url": "{{baseUrl}}/debug/flights/search/raw"
+        "url": "{{baseUrl}}/sooperfare/raw"
       }
     }
   ]

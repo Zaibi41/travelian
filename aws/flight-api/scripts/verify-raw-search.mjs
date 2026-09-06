@@ -1,7 +1,8 @@
 import { execFileSync } from "node:child_process";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
-const endpoint = "https://api.travelian.pk/debug/flights/search/raw";
+const endpoint = "https://api.travelian.pk/sooperfare/raw";
 const parameter = JSON.parse(execFileSync("aws", [
   "ssm", "get-parameter", "--name", "/travelian/api/clients", "--with-decryption",
   "--region", "us-east-1", "--profile", "travelian-admin", "--output", "json",
@@ -10,11 +11,17 @@ let secret = parameter.Parameter.Value;
 for (let i = 0; i < 2 && typeof secret === "string"; i++) {
   try { secret = JSON.parse(secret); } catch { break; }
 }
-const key = typeof secret === "string" ? secret : secret?.apiKey || secret?.key;
+let key = typeof secret === "string" ? secret : secret?.apiKey || secret?.key;
+if (process.argv[2]) {
+  const environment = JSON.parse(readFileSync(process.argv[2], "utf8"));
+  const importedKey = environment.values.find(value => value.key === "travelianApiKey" && value.enabled)?.value;
+  assert.ok(importedKey && importedKey === key, "Postman environment key does not match the configured key");
+  key = importedKey;
+}
 assert.ok(key, "Configured client API key is missing");
 const departure = new Date();
 departure.setUTCDate(departure.getUTCDate() + 30);
-const body = JSON.stringify({ provider: "sooperfare", tripType: "oneway",
+const body = JSON.stringify({ tripType: "oneway",
   origin: "LHE", destination: "DXB", departureDate: departure.toISOString().slice(0, 10),
   passengers: { adults: 1, children: 0, infants: 0 }, cabin: "Economy", currency: "PKR" });
 for (const [name, token] of [["missing key", ""], ["incorrect key", "invalid-test-key"], ["authenticated provider search", key]]) {
