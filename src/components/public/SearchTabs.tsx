@@ -315,7 +315,7 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
                   </button>
                 ))}
               </div>
-              <div className="flex items-center bg-muted/40 rounded-lg p-0.5">
+              <div className="flex items-center gap-0.5 bg-muted/40 rounded-lg p-0.5">
                 <TravelersClassPicker value={travelers} onChange={setTravelers} variant="segmented" mode="travelers" className="w-auto" />
                 <TravelersClassPicker value={travelers} onChange={setTravelers} variant="segmented" mode="cabin" className="w-auto" />
               </div>
