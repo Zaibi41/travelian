@@ -34,8 +34,10 @@ const popularAirports: Airport[] = [
   { code: "MED", city: "Madinah", name: "Prince Mohammad Bin Abdulaziz Airport", country: "SA" },
   { code: "RUH", city: "Riyadh", name: "King Khalid International Airport", country: "SA" },
   { code: "IST", city: "Istanbul", name: "Istanbul Airport", country: "TR" },
+  { code: "ISL", city: "Istanbul", name: "Istanbul Atatürk Airport", country: "TR" },
   { code: "DOH", city: "Doha", name: "Hamad International Airport", country: "QA" },
   { code: "AUH", city: "Abu Dhabi", name: "Zayed International Airport", country: "AE" },
+  { code: "ATH", city: "Athens", name: "Athens International Airport", country: "GR" },
   { code: "LHR", city: "London", name: "Heathrow Airport", country: "GB" },
   { code: "MAN", city: "Manchester", name: "Manchester Airport", country: "GB" },
   { code: "JFK", city: "New York", name: "John F Kennedy International Airport", country: "US" },
@@ -88,7 +90,7 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
   const [loadError, setLoadError] = useState("");
   const matchedAirport = allAirports?.find(airport => airport.code === value);
   const selected = (matchedAirport ? resolveAirport(matchedAirport) : undefined) || popularAirportByCode.get(value);
-  const label = selected ? `${selected.code} - ${selected.city}` : value || placeholder;
+  const label = selected ? `${selected.code} ${selected.city}` : value || placeholder;
   const FieldIcon = iconVariant === "arrival" ? PlaneLanding : Plane;
 
   const loadFullAirports = () => {
@@ -205,5 +207,5 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
 export function getAirportDisplay(code: string) {
   const matched = airportCache?.find(item => item.code === code);
   const airport = (matched ? resolveAirport(matched) : undefined) || popularAirportByCode.get(code);
-  return airport ? `${airport.code} - ${airport.city}` : code;
+  return airport ? `${airport.code} ${airport.city}` : code;
 }

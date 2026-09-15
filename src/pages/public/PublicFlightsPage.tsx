@@ -456,7 +456,15 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
   };
 
-  const formatFlightTime = (value?: string | null) => String(value || "").split(" ")[1] || "TBA";
+  const formatFlightTime = (value?: string | null) => {
+    const time = String(value || "").split(" ")[1] || "TBA";
+    // Remove seconds if present (HH:MM:SS -> HH:MM)
+    if (time.includes(":")) {
+      const parts = time.split(":");
+      if (parts.length === 3) return `${parts[0]}:${parts[1]}`;
+    }
+    return time;
+  };
   const formatFlightDate = (value?: string | null) => {
     const text = String(value || "");
     const date = new Date(text);

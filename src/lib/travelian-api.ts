@@ -320,10 +320,13 @@ function formatFlightDateTime(value: string | null | undefined, preserveAirportT
   // For SooperFare and any provider that sends local airport times, preserve them exactly
   if (preserveAirportTime) {
     // Match both "2026-09-20T07:20" and "2026-09-20 07:20" formats
-    const localTime = text.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}(?::\d{2})?)/);
+    const localTime = text.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})(?::\d{2})?/);
     if (localTime) return `${localTime[1]} ${localTime[2]}`;
-    // Fallback: if it's already in "YYYY-MM-DD HH:MM" format, return as-is
-    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(text)) return text.slice(0, 16);
+    // Fallback: if it's already in "YYYY-MM-DD HH:MM" format, return as-is (remove seconds if present)
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(text)) {
+      const withoutSeconds = text.slice(0, 16);
+      return withoutSeconds;
+    }
   }
   // For other providers, convert to browser local time
   const date = new Date(value);
