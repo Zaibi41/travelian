@@ -1444,24 +1444,31 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         </table>
                         <div className="divide-y md:hidden">
                           {displayFares.map((fare) => (
-                            <div key={`${flight.flightId}-${fare.tier}-${fare.price.total}`} className="grid gap-3 bg-card px-4 py-3 text-sm">
+                            <div key={`${flight.flightId}-${fare.tier}-${fare.price.total}`} className="bg-card px-4 py-4 text-sm space-y-3">
+                              {/* Fare name */}
                               <div className="min-w-0">
-                                <p className="truncate font-bold text-foreground" title={fare.tier}>{fare.tier}</p>
+                                <p className="truncate font-bold text-foreground text-base" title={fare.tier}>{fare.tier}</p>
                               </div>
-                              <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={mealLabel(fare, flight)}>
-                                {hasMeal(fare, flight)
-                                  ? <Utensils className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                                  : <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-                                <span className="truncate">{mealLabel(fare, flight)}</span>
-                              </p>
-                              <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={baggageLabel(fare, flight)}>
-                                <Luggage className={cn("h-3.5 w-3.5 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
-                                <span className="truncate">{baggageLabel(fare, flight)}</span>
-                              </p>
-                              <p className="whitespace-nowrap text-left text-base font-black text-foreground">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</p>
-                              <div className="flex items-center gap-2">
+                              
+                              {/* Meal and Baggage in 2-column grid */}
+                              <div className="grid grid-cols-2 gap-3">
+                                <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={mealLabel(fare, flight)}>
+                                  {hasMeal(fare, flight)
+                                    ? <Utensils className="h-4 w-4 shrink-0 text-emerald-600" />
+                                    : <UtensilsCrossed className="h-4 w-4 shrink-0 text-muted-foreground" />}
+                                  <span className="truncate">{mealLabel(fare, flight)}</span>
+                                </p>
+                                <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={baggageLabel(fare, flight)}>
+                                  <Luggage className={cn("h-4 w-4 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
+                                  <span className="truncate">{baggageLabel(fare, flight)}</span>
+                                </p>
+                              </div>
+                              
+                              {/* Price and WhatsApp button */}
+                              <div className="flex items-center justify-between gap-3 pt-1">
+                                <p className="whitespace-nowrap text-lg font-black text-primary">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</p>
                                 <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer">
-                                  <Button variant="outline" size="sm" className="whitespace-nowrap rounded-xl gap-2">
+                                  <Button variant="outline" size="sm" className="h-9 whitespace-nowrap rounded-xl gap-2 px-4 font-semibold">
                                     <WhatsAppIcon className="h-4 w-4" /> WhatsApp Help
                                   </Button>
                                 </a>
@@ -1528,21 +1535,38 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         </div>
                         <div className="overflow-hidden rounded-xl border">
                           {(flight.fareOptions || []).map((fare) => (
-                            <div key={fare.tier} className="grid gap-3 border-b bg-card p-3 text-sm last:border-b-0 md:grid-cols-[1.1fr_1fr_1fr_1fr_auto] md:items-center">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-foreground">{fare.tier}</span>
-                                {fare.popular && <Badge className="bg-gold text-gold-foreground border-0 text-[10px]">Popular</Badge>}
+                            <div key={fare.tier} className="border-b bg-card p-4 last:border-b-0 md:grid md:grid-cols-[1.1fr_1fr_1fr_1fr_auto] md:items-center md:gap-3 md:p-3">
+                              {/* Fare name - full width on mobile */}
+                              <div className="mb-3 flex items-center justify-between gap-2 md:mb-0 md:justify-start">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-foreground text-sm md:text-sm">{fare.tier}</span>
+                                  {fare.popular && <Badge className="bg-gold text-gold-foreground border-0 text-[10px]">Popular</Badge>}
+                                </div>
                               </div>
-                              <span className="flex items-center gap-1.5 text-muted-foreground"><Luggage className="h-3.5 w-3.5 text-primary" /> {fare.bags || flight.baggage || "Baggage TBA"}</span>
-                              <span className="flex items-center gap-1.5 text-muted-foreground"><Coffee className="h-3.5 w-3.5 text-primary" /> {flight.meal || "Meal info not available"}</span>
-                              <span className="text-muted-foreground">{fare.refund || "Refund rule on request"}</span>
+                              
+                              {/* Mobile: 2-column grid for baggage and meal */}
+                              <div className="mb-3 grid grid-cols-2 gap-3 text-xs md:mb-0 md:contents">
+                                <span className="flex items-center gap-1.5 text-muted-foreground md:text-sm">
+                                  <Luggage className="h-3.5 w-3.5 text-primary shrink-0" /> 
+                                  <span className="truncate">{fare.bags || flight.baggage || "Baggage TBA"}</span>
+                                </span>
+                                <span className="flex items-center gap-1.5 text-muted-foreground md:text-sm">
+                                  <Coffee className="h-3.5 w-3.5 text-primary shrink-0" /> 
+                                  <span className="truncate">{flight.meal || "Meal info not available"}</span>
+                                </span>
+                              </div>
+                              
+                              {/* Refund info - hidden on mobile, shown on desktop */}
+                              <span className="hidden text-muted-foreground md:block">{fare.refund || "Refund rule on request"}</span>
+                              
+                              {/* Price and button - prominent on mobile */}
                               <div className="flex items-center justify-between gap-3 md:justify-end">
-                                <span className="whitespace-nowrap text-base font-black text-foreground">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</span>
+                                <span className="whitespace-nowrap text-lg font-black text-primary md:text-base md:text-foreground">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</span>
                                 {searchExpired ? (
-                                  <Button size="sm" className="rounded-lg" onClick={revalidateSearch}>Revalidate</Button>
+                                  <Button size="sm" className="rounded-lg h-9 px-4 text-xs font-semibold md:h-8" onClick={revalidateSearch}>Revalidate</Button>
                                 ) : (
                                   <Link to={bookingHref(flight, fare)}>
-                                    <Button size="sm" className="rounded-lg">Book Fare</Button>
+                                    <Button size="sm" className="rounded-lg h-9 px-4 text-xs font-semibold md:h-8">Book Fare</Button>
                                   </Link>
                                 )}
                               </div>
