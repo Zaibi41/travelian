@@ -73,22 +73,43 @@ export class SooperFareAdapter extends ProviderAdapter {
       throw this.error(firstError?.message || "SooperFare search returned no provider results");
     }
     const flatOffers = payloads.flatMap((payload) => extractOffersFlat(payload));
+    
+    // Track airline distribution in raw/flat offers
+    const rawAirlineBreakdown = flatOffers.reduce((acc, offer) => {
+      const flight = offer.__outboundFlight || offer.__legFlights?.[0] || offer;
+      const airline = pick(flight, ["marketing_carrier.name", "airline.name", "airline_name", "carrier.name", "provider", "supplier"]) || "Unknown";
+      acc[airline] = (acc[airline] || 0) + 1;
+      return acc;
+    }, {});
+
     const extractedOffers = request.tripType === "roundtrip"
       ? combineRoundtripOffers(flatOffers, request)
       : request.tripType === "multicity"
         ? combineMulticityOffers(flatOffers, request)
         : flatOffers;
     // Roundtrip/multicity must stay combined; do not fall back to single-leg offers.
-    const offers = extractedOffers
-      .map((offer, index) => this.normalizeOffer(offer, request, index))
-      .filter(Boolean);
+    const normalizedWithNull = extractedOffers.map((offer, index) => this.normalizeOffer(offer, request, index));
+    const offers = normalizedWithNull.filter(Boolean);
+    const droppedCount = normalizedWithNull.length - offers.length;
+
+    // Track airline distribution in final results
+    const airlineBreakdown = offers.reduce((acc, offer) => {
+      const airline = offer.airline || "Unknown";
+      acc[airline] = (acc[airline] || 0) + 1;
+      return acc;
+    }, {});
 
     safeLogInfo({
       provider: this.name,
       step: "search-complete",
       requestId,
       payloadCount: payloads.length,
+      flatOffersCount: flatOffers.length,
+      rawAirlineBreakdown,
+      extractedOffersCount: extractedOffers.length,
       normalizedOffersCount: offers.length,
+      droppedOffersCount: droppedCount,
+      airlineBreakdown,
       providerNames,
       fulfilledProviderCalls,
       rejectedProviderCalls,
@@ -372,7 +393,20 @@ export class SooperFareAdapter extends ProviderAdapter {
           extractPrice(offer.__returnFare || offer.__returnFlight),
         )
         : extractPrice(offer);
-    if (!first || !last || !price.total) return null;
+    if (!first || !last || !price.total) {
+      const sourceFlight = isMulticity ? offer.__legFlights?.[0] : isRoundtrip ? offer.__outboundFlight : offer;
+      const airline = pick(sourceFlight, ["marketing_carrier.name", "airline.name", "airline_name", "carrier.name"]) || "Unknown";
+      safeLogWarn({
+        provider: this.name,
+        step: "normalize-offer-dropped",
+        airline,
+        reason: !first ? "missing-first-segment" : !last ? "missing-last-segment" : "missing-price",
+        segmentsCount: segments.length,
+        hasPrice: Boolean(price.total),
+        refId: outboundRefId,
+      });
+      return null;
+    }
 
     const sourceFlight = isMulticity
       ? offer.__legFlights[0]

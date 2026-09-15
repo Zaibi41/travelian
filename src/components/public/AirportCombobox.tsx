@@ -49,12 +49,17 @@ const popularAirportByCode = new Map(popularAirports.map(airport => [airport.cod
 let airportCache: Airport[] | null = null;
 let airportCachePromise: Promise<Airport[]> | null = null;
 
+/** Prefer curated commercial city labels over geographic municipality names in the raw dataset. */
+function resolveAirport(airport: Airport): Airport {
+  return popularAirportByCode.get(airport.code) ?? airport;
+}
+
 function loadAirportDataset() {
   if (airportCache) return Promise.resolve(airportCache);
   if (!airportCachePromise) {
     airportCachePromise = import("@/data/airports").then(module => {
-      airportCache = module.airports;
-      return module.airports;
+      airportCache = module.airports.map(resolveAirport);
+      return airportCache;
     });
   }
   return airportCachePromise;
@@ -81,7 +86,8 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
   const [allAirports, setAllAirports] = useState<Airport[] | null>(airportCache);
   const [isLoadingAirports, setIsLoadingAirports] = useState(false);
   const [loadError, setLoadError] = useState("");
-  const selected = allAirports?.find(airport => airport.code === value) || popularAirportByCode.get(value);
+  const matchedAirport = allAirports?.find(airport => airport.code === value);
+  const selected = (matchedAirport ? resolveAirport(matchedAirport) : undefined) || popularAirportByCode.get(value);
   const label = selected ? `${selected.code} - ${selected.city}` : value || placeholder;
   const FieldIcon = iconVariant === "arrival" ? PlaneLanding : Plane;
 
@@ -197,6 +203,7 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
 }
 
 export function getAirportDisplay(code: string) {
-  const airport = airportCache?.find(item => item.code === code) || popularAirportByCode.get(code);
+  const matched = airportCache?.find(item => item.code === code);
+  const airport = (matched ? resolveAirport(matched) : undefined) || popularAirportByCode.get(code);
   return airport ? `${airport.code} - ${airport.city}` : code;
 }

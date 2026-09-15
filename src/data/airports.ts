@@ -19665,7 +19665,7 @@ export const airports: Airport[] = [
   {
     "code": "ISB",
     "name": "Islamabad International Airport",
-    "city": "Attock",
+    "city": "Islamabad",
     "country": "PK"
   },
   {
@@ -23655,7 +23655,7 @@ export const airports: Airport[] = [
   {
     "code": "KUL",
     "name": "Kuala Lumpur International Airport",
-    "city": "Sepang",
+    "city": "Kuala Lumpur",
     "country": "MY"
   },
   {
@@ -27183,7 +27183,7 @@ export const airports: Airport[] = [
   {
     "code": "MCT",
     "name": "Muscat International Airport",
-    "city": "Muscat/Seeb",
+    "city": "Muscat",
     "country": "OM"
   },
   {
