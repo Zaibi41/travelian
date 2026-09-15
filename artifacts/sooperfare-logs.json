@@ -1,0 +1,215 @@
+﻿{
+    "events": [
+        {
+            "logStreamName": "2026/08/31/[$LATEST]531705630cf743868a9fa60be5cff953",
+            "timestamp": 1788205564453,
+            "message": "2026-08-31T19:46:04.453Z\ta39fcef5-33e4-4dc0-9dbb-332012678a10\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"search-start\",\"requestId\":\"SOOPERFARE-1788205564453-z65q5t\",\"tripType\":\"multicity\",\"origin\":\"LHE\",\"destination\":\"DXB\",\"departureDate\":\"2026-09-05\",\"returnDate\":null,\"cabin\":\"Economy\",\"currency\":\"PKR\",\"timestamp\":\"2026-08-31T19:46:04.453Z\"}\n",
+            "ingestionTime": 1788205566342,
+            "eventId": "39878316655460982503177511082931663211569430529528758282"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]531705630cf743868a9fa60be5cff953",
+            "timestamp": 1788205564969,
+            "message": "2026-08-31T19:46:04.969Z\ta39fcef5-33e4-4dc0-9dbb-332012678a10\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"provider-request\",\"requestId\":\"SOOPERFARE-1788205564453-z65q5t\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"body\":{\"flexible_dates\":false,\"trip_type\":\"multi_city\",\"cabin_class\":\"economy\",\"legs\":[{\"return\":null},{\"return\":null}],\"travelers\":[{\"type\":\"adult\",\"qty\":1},{\"type\":\"child\",\"qty\":0},{\"type\":\"infant\",\"qty\":0}]},\"timestamp\":\"2026-08-31T19:46:04.969Z\"}\n",
+            "ingestionTime": 1788205566342,
+            "eventId": "39878316666968167025619312623964093840255985066614652939"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]531705630cf743868a9fa60be5cff953",
+            "timestamp": 1788205565369,
+            "message": "2026-08-31T19:46:05.369Z\ta39fcef5-33e4-4dc0-9dbb-332012678a10\tERROR\t{\"provider\":\"sooperfare\",\"step\":\"provider-error\",\"requestId\":\"SOOPERFARE-1788205564453-z65q5t\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"httpStatus\":422,\"responseTimeMs\":399,\"error\":\"Operation Successfull\",\"body\":{\"status\":false,\"message\":\"Operation Successfull\",\"type\":\"json\",\"errors\":{\"legs.0.from\":[\"The legs.0.from field is required.\"],\"legs.1.from\":[\"The legs.1.from field is required.\"],\"legs.0.to\":[\"The legs.0.to field is required.\"],\"legs.1.to\":[\"The legs.1.to field is required.\"]}},\"timestamp\":\"2026-08-31T19:46:05.369Z\"}\n",
+            "ingestionTime": 1788205566342,
+            "eventId": "39878316675888465105031561880578381149315329669006819340"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]531705630cf743868a9fa60be5cff953",
+            "timestamp": 1788205591015,
+            "message": "2026-08-31T19:46:31.015Z\t78afefe9-c96c-40e0-9200-166acc6c0d09\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"search-start\",\"requestId\":\"SOOPERFARE-1788205591015-rt570k\",\"tripType\":\"multicity\",\"origin\":\"LHE\",\"destination\":\"DXB\",\"departureDate\":\"2026-09-01\",\"returnDate\":null,\"cabin\":\"Economy\",\"currency\":\"PKR\",\"timestamp\":\"2026-08-31T19:46:31.015Z\"}\n",
+            "ingestionTime": 1788205599779,
+            "eventId": "39878317247813376466547923008826091834766512782494466052"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]531705630cf743868a9fa60be5cff953",
+            "timestamp": 1788205591016,
+            "message": "2026-08-31T19:46:31.016Z\t78afefe9-c96c-40e0-9200-166acc6c0d09\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"provider-request\",\"requestId\":\"SOOPERFARE-1788205591015-rt570k\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"body\":{\"flexible_dates\":false,\"trip_type\":\"multi_city\",\"cabin_class\":\"economy\",\"legs\":[{\"return\":null},{\"return\":null}],\"travelers\":[{\"type\":\"adult\",\"qty\":1},{\"type\":\"child\",\"qty\":0},{\"type\":\"infant\",\"qty\":0}]},\"timestamp\":\"2026-08-31T19:46:31.016Z\"}\n",
+            "ingestionTime": 1788205599779,
+            "eventId": "39878317247835677211746453631967627553039161144000446469"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]531705630cf743868a9fa60be5cff953",
+            "timestamp": 1788205591429,
+            "message": "2026-08-31T19:46:31.429Z\t78afefe9-c96c-40e0-9200-166acc6c0d09\tERROR\t{\"provider\":\"sooperfare\",\"step\":\"provider-error\",\"requestId\":\"SOOPERFARE-1788205591015-rt570k\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"httpStatus\":422,\"responseTimeMs\":412,\"error\":\"Operation Successfull\",\"body\":{\"status\":false,\"message\":\"Operation Successfull\",\"type\":\"json\",\"errors\":{\"legs.0.from\":[\"The legs.0.from field is required.\"],\"legs.1.from\":[\"The legs.1.from field is required.\"],\"legs.0.to\":[\"The legs.0.to field is required.\"],\"legs.1.to\":[\"The legs.1.to field is required.\"]}},\"timestamp\":\"2026-08-31T19:46:31.429Z\"}\n",
+            "ingestionTime": 1788205599779,
+            "eventId": "39878317257045884978739600989421879199642934445970358278"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]9efc4c73c52d48ffb5df8266ea26db4a",
+            "timestamp": 1788205621398,
+            "message": "2026-08-31T19:47:01.398Z\t25644044-02c4-493d-991a-d33479973bfc\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"search-start\",\"requestId\":\"SOOPERFARE-1788205621382-r8neo4\",\"tripType\":\"multicity\",\"origin\":\"LHE\",\"destination\":\"DXB\",\"departureDate\":\"2026-09-01\",\"returnDate\":null,\"cabin\":\"Economy\",\"currency\":\"PKR\",\"timestamp\":\"2026-08-31T19:47:01.397Z\"}\n",
+            "ingestionTime": 1788205623250,
+            "eventId": "39878317925376917833503845946480456687067797738641162246"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]9efc4c73c52d48ffb5df8266ea26db4a",
+            "timestamp": 1788205622539,
+            "message": "2026-08-31T19:47:02.539Z\t25644044-02c4-493d-991a-d33479973bfc\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"provider-request\",\"requestId\":\"SOOPERFARE-1788205621382-r8neo4\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"body\":{\"flexible_dates\":false,\"trip_type\":\"multi_city\",\"cabin_class\":\"economy\",\"legs\":[{\"return\":null},{\"return\":null}],\"travelers\":[{\"type\":\"adult\",\"qty\":1},{\"type\":\"child\",\"qty\":0},{\"type\":\"infant\",\"qty\":0}]},\"timestamp\":\"2026-08-31T19:47:02.539Z\"}\n",
+            "ingestionTime": 1788205623250,
+            "eventId": "39878317950822068105027286950972711236159578216964816903"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]9efc4c73c52d48ffb5df8266ea26db4a",
+            "timestamp": 1788205622958,
+            "message": "2026-08-31T19:47:02.958Z\t25644044-02c4-493d-991a-d33479973bfc\tERROR\t{\"provider\":\"sooperfare\",\"step\":\"provider-error\",\"requestId\":\"SOOPERFARE-1788205621382-r8neo4\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"httpStatus\":422,\"responseTimeMs\":402,\"error\":\"Operation Successfull\",\"body\":{\"status\":false,\"message\":\"Operation Successfull\",\"type\":\"json\",\"errors\":{\"legs.0.from\":[\"The legs.0.from field is required.\"],\"legs.1.from\":[\"The legs.1.from field is required.\"],\"legs.0.to\":[\"The legs.0.to field is required.\"],\"legs.1.to\":[\"The legs.1.to field is required.\"]}},\"timestamp\":\"2026-08-31T19:47:02.958Z\"}\n",
+            "ingestionTime": 1788205623250,
+            "eventId": "39878317960166080343211618047276177192399241687970611208"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]9efc4c73c52d48ffb5df8266ea26db4a",
+            "timestamp": 1788205642426,
+            "message": "2026-08-31T19:47:22.426Z\t66bf4848-8527-4383-ada4-ab4e5736e7ba\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"search-start\",\"requestId\":\"SOOPERFARE-1788205642426-5jud9j\",\"tripType\":\"roundtrip\",\"origin\":\"LHE\",\"destination\":\"DXB\",\"departureDate\":\"2026-09-15\",\"returnDate\":\"2026-09-30\",\"cabin\":\"Economy\",\"currency\":\"PKR\",\"timestamp\":\"2026-08-31T19:47:22.426Z\"}\n",
+            "ingestionTime": 1788205651198,
+            "eventId": "39878318394316987868205789400480930328069126127104819207"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]9efc4c73c52d48ffb5df8266ea26db4a",
+            "timestamp": 1788205642428,
+            "message": "2026-08-31T19:47:22.428Z\t66bf4848-8527-4383-ada4-ab4e5736e7ba\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"provider-request\",\"requestId\":\"SOOPERFARE-1788205642426-5jud9j\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"body\":{\"flexible_dates\":false,\"trip_type\":\"Return\",\"cabin_class\":\"economy\",\"legs\":[{\"from\":\"LHE\",\"to\":\"DXB\",\"date\":\"2026-09-15\",\"return\":\"2026-09-30\"}],\"travelers\":[{\"type\":\"adult\",\"qty\":1},{\"type\":\"child\",\"qty\":0},{\"type\":\"infant\",\"qty\":0}]},\"timestamp\":\"2026-08-31T19:47:22.428Z\"}\n",
+            "ingestionTime": 1788205651198,
+            "eventId": "39878318394361589358602850646764001764614422850116780040"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205642436,
+            "message": "2026-08-31T19:47:22.436Z\t5097c066-81d1-4855-9151-455ec7822571\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"search-start\",\"requestId\":\"SOOPERFARE-1788205642436-umo9g4\",\"tripType\":\"roundtrip\",\"origin\":\"LHE\",\"destination\":\"DXB\",\"departureDate\":\"2026-09-12\",\"returnDate\":\"2026-09-30\",\"cabin\":\"Economy\",\"currency\":\"PKR\",\"timestamp\":\"2026-08-31T19:47:22.436Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318394539995320191095632194608046159181004509609985"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]9efc4c73c52d48ffb5df8266ea26db4a",
+            "timestamp": 1788205642856,
+            "message": "2026-08-31T19:47:22.856Z\t66bf4848-8527-4383-ada4-ab4e5736e7ba\tERROR\t{\"provider\":\"sooperfare\",\"step\":\"provider-error\",\"requestId\":\"SOOPERFARE-1788205642426-5jud9j\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"httpStatus\":422,\"responseTimeMs\":428,\"error\":\"Operation Successfull\",\"body\":{\"status\":false,\"message\":\"Operation Successfull\",\"type\":\"json\",\"errors\":{\"trip_type\":[\"The selected trip type is invalid.\"]}},\"timestamp\":\"2026-08-31T19:47:22.856Z\"}\n",
+            "ingestionTime": 1788205651198,
+            "eventId": "39878318403906308303573957351341289185307921574676398089"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205644032,
+            "message": "2026-08-31T19:47:24.032Z\t5097c066-81d1-4855-9151-455ec7822571\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"provider-request\",\"requestId\":\"SOOPERFARE-1788205642436-umo9g4\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"body\":{\"flexible_dates\":false,\"trip_type\":\"Return\",\"cabin_class\":\"economy\",\"legs\":[{\"from\":\"LHE\",\"to\":\"DXB\",\"date\":\"2026-09-12\",\"return\":\"2026-09-30\"}],\"travelers\":[{\"type\":\"adult\",\"qty\":1},{\"type\":\"child\",\"qty\":0},{\"type\":\"infant\",\"qty\":0}]},\"timestamp\":\"2026-08-31T19:47:24.032Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318430131984657045970166085614409305965968054353922"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205644413,
+            "message": "2026-08-31T19:47:24.413Z\t5097c066-81d1-4855-9151-455ec7822571\tERROR\t{\"provider\":\"sooperfare\",\"step\":\"provider-error\",\"requestId\":\"SOOPERFARE-1788205642436-umo9g4\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"httpStatus\":422,\"responseTimeMs\":380,\"error\":\"Operation Successfull\",\"body\":{\"status\":false,\"message\":\"Operation Successfull\",\"type\":\"json\",\"errors\":{\"trip_type\":[\"The selected trip type is invalid.\"]}},\"timestamp\":\"2026-08-31T19:47:24.413Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318438628568577686137583010723071184991701832892419"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205647047,
+            "message": "2026-08-31T19:47:27.047Z\t8145f521-7bc3-4c17-85ed-1f7be3c99873\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"search-start\",\"requestId\":\"SOOPERFARE-1788205647047-fje20k\",\"tripType\":\"roundtrip\",\"origin\":\"LHE\",\"destination\":\"DXB\",\"departureDate\":\"2026-09-13\",\"returnDate\":\"2026-09-30\",\"cabin\":\"Economy\",\"currency\":\"PKR\",\"timestamp\":\"2026-08-31T19:47:27.047Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318497368731430615798937815805001340775908585308167"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205647049,
+            "message": "2026-08-31T19:47:27.049Z\t8145f521-7bc3-4c17-85ed-1f7be3c99873\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"provider-request\",\"requestId\":\"SOOPERFARE-1788205647047-fje20k\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"body\":{\"flexible_dates\":false,\"trip_type\":\"Return\",\"cabin_class\":\"economy\",\"legs\":[{\"from\":\"LHE\",\"to\":\"DXB\",\"date\":\"2026-09-13\",\"return\":\"2026-09-30\"}],\"travelers\":[{\"type\":\"adult\",\"qty\":1},{\"type\":\"child\",\"qty\":0},{\"type\":\"infant\",\"qty\":0}]},\"timestamp\":\"2026-08-31T19:47:27.049Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318497413332921012860184098876437886072631597269000"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205647474,
+            "message": "2026-08-31T19:47:27.474Z\t8145f521-7bc3-4c17-85ed-1f7be3c99873\tERROR\t{\"provider\":\"sooperfare\",\"step\":\"provider-error\",\"requestId\":\"SOOPERFARE-1788205647047-fje20k\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"httpStatus\":422,\"responseTimeMs\":424,\"error\":\"Operation Successfull\",\"body\":{\"status\":false,\"message\":\"Operation Successfull\",\"type\":\"json\",\"errors\":{\"trip_type\":[\"The selected trip type is invalid.\"]}},\"timestamp\":\"2026-08-31T19:47:27.474Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318506891149630388375019251556703761626271638945801"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205648577,
+            "message": "2026-08-31T19:47:28.577Z\t500e2f5e-f210-4e40-96f7-7ac53c621b78\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"search-start\",\"requestId\":\"SOOPERFARE-1788205648577-6uu13z\",\"tripType\":\"roundtrip\",\"origin\":\"LHE\",\"destination\":\"DXB\",\"departureDate\":\"2026-09-14\",\"returnDate\":\"2026-09-30\",\"cabin\":\"Economy\",\"currency\":\"PKR\",\"timestamp\":\"2026-08-31T19:47:28.577Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318531488871584367652344365453958492769012735344656"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205648579,
+            "message": "2026-08-31T19:47:28.579Z\t500e2f5e-f210-4e40-96f7-7ac53c621b78\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"provider-request\",\"requestId\":\"SOOPERFARE-1788205648577-6uu13z\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"body\":{\"flexible_dates\":false,\"trip_type\":\"Return\",\"cabin_class\":\"economy\",\"legs\":[{\"from\":\"LHE\",\"to\":\"DXB\",\"date\":\"2026-09-14\",\"return\":\"2026-09-30\"}],\"travelers\":[{\"type\":\"adult\",\"qty\":1},{\"type\":\"child\",\"qty\":0},{\"type\":\"infant\",\"qty\":0}]},\"timestamp\":\"2026-08-31T19:47:28.579Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318531533473074764713590648525395038065735747305489"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205648971,
+            "message": "2026-08-31T19:47:28.971Z\t500e2f5e-f210-4e40-96f7-7ac53c621b78\tERROR\t{\"provider\":\"sooperfare\",\"step\":\"provider-error\",\"requestId\":\"SOOPERFARE-1788205648577-6uu13z\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"httpStatus\":422,\"responseTimeMs\":391,\"error\":\"Operation Successfull\",\"body\":{\"status\":false,\"message\":\"Operation Successfull\",\"type\":\"json\",\"errors\":{\"trip_type\":[\"The selected trip type is invalid.\"]}},\"timestamp\":\"2026-08-31T19:47:28.971Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318540275365192588717862130526957916223446091628562"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205649874,
+            "message": "2026-08-31T19:47:29.874Z\t5a4b7e72-ca01-49a2-82e4-c96059e9e045\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"search-start\",\"requestId\":\"SOOPERFARE-1788205649873-m13411\",\"tripType\":\"roundtrip\",\"origin\":\"LHE\",\"destination\":\"DXB\",\"departureDate\":\"2026-09-16\",\"returnDate\":\"2026-09-30\",\"cabin\":\"Economy\",\"currency\":\"PKR\",\"timestamp\":\"2026-08-31T19:47:29.874Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318560412938106861870558937280558117693885991944214"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205649875,
+            "message": "2026-08-31T19:47:29.875Z\t5a4b7e72-ca01-49a2-82e4-c96059e9e045\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"provider-request\",\"requestId\":\"SOOPERFARE-1788205649873-m13411\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"body\":{\"flexible_dates\":false,\"trip_type\":\"Return\",\"cabin_class\":\"economy\",\"legs\":[{\"from\":\"LHE\",\"to\":\"DXB\",\"date\":\"2026-09-16\",\"return\":\"2026-09-30\"}],\"travelers\":[{\"type\":\"adult\",\"qty\":1},{\"type\":\"child\",\"qty\":0},{\"type\":\"infant\",\"qty\":0}]},\"timestamp\":\"2026-08-31T19:47:29.875Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318560435238852060401182078816276390342247497924631"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205650260,
+            "message": "2026-08-31T19:47:30.260Z\t5a4b7e72-ca01-49a2-82e4-c96059e9e045\tERROR\t{\"provider\":\"sooperfare\",\"step\":\"provider-error\",\"requestId\":\"SOOPERFARE-1788205649873-m13411\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"httpStatus\":422,\"responseTimeMs\":385,\"error\":\"Operation Successfull\",\"body\":{\"status\":false,\"message\":\"Operation Successfull\",\"type\":\"json\",\"errors\":{\"trip_type\":[\"The selected trip type is invalid.\"]}},\"timestamp\":\"2026-08-31T19:47:30.260Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318569021025753494691091570067811359961427300384792"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205651121,
+            "message": "2026-08-31T19:47:31.121Z\t5e9cea60-d81c-4b7c-807d-c90edaf078bb\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"search-start\",\"requestId\":\"SOOPERFARE-1788205651121-238dao\",\"tripType\":\"roundtrip\",\"origin\":\"LHE\",\"destination\":\"DXB\",\"departureDate\":\"2026-09-17\",\"returnDate\":\"2026-09-30\",\"cabin\":\"Economy\",\"currency\":\"PKR\",\"timestamp\":\"2026-08-31T19:47:31.121Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318588221967369429557616432321244110200683949522972"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205651122,
+            "message": "2026-08-31T19:47:31.122Z\t5e9cea60-d81c-4b7c-807d-c90edaf078bb\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"provider-request\",\"requestId\":\"SOOPERFARE-1788205651121-238dao\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"body\":{\"flexible_dates\":false,\"trip_type\":\"Return\",\"cabin_class\":\"economy\",\"legs\":[{\"from\":\"LHE\",\"to\":\"DXB\",\"date\":\"2026-09-17\",\"return\":\"2026-09-30\"}],\"travelers\":[{\"type\":\"adult\",\"qty\":1},{\"type\":\"child\",\"qty\":0},{\"type\":\"infant\",\"qty\":0}]},\"timestamp\":\"2026-08-31T19:47:31.122Z\"}\n",
+            "ingestionTime": 1788205651445,
+            "eventId": "39878318588244268114628088239573856962382849045455503389"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205651494,
+            "message": "2026-08-31T19:47:31.494Z\t5e9cea60-d81c-4b7c-807d-c90edaf078bb\tERROR\t{\"provider\":\"sooperfare\",\"step\":\"provider-error\",\"requestId\":\"SOOPERFARE-1788205651121-238dao\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"httpStatus\":422,\"responseTimeMs\":372,\"error\":\"Operation Successfull\",\"body\":{\"status\":false,\"message\":\"Operation Successfull\",\"type\":\"json\",\"errors\":{\"trip_type\":[\"The selected trip type is invalid.\"]}},\"timestamp\":\"2026-08-31T19:47:31.494Z\"}\n",
+            "ingestionTime": 1788205660512,
+            "eventId": "39878318596540145328481480059186854649372355193886736384"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205652325,
+            "message": "2026-08-31T19:47:32.325Z\td158f61d-80b5-4877-b292-5d6dcb613213\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"search-start\",\"requestId\":\"SOOPERFARE-1788205652325-d5k168\",\"tripType\":\"roundtrip\",\"origin\":\"LHE\",\"destination\":\"DXB\",\"departureDate\":\"2026-09-18\",\"returnDate\":\"2026-09-30\",\"cabin\":\"Economy\",\"currency\":\"PKR\",\"timestamp\":\"2026-08-31T19:47:32.325Z\"}\n",
+            "ingestionTime": 1788205660512,
+            "eventId": "39878318615072064588460427889803036533943143605356462084"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205652326,
+            "message": "2026-08-31T19:47:32.326Z\td158f61d-80b5-4877-b292-5d6dcb613213\tINFO\t{\"provider\":\"sooperfare\",\"step\":\"provider-request\",\"requestId\":\"SOOPERFARE-1788205652325-d5k168\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"body\":{\"flexible_dates\":false,\"trip_type\":\"Return\",\"cabin_class\":\"economy\",\"legs\":[{\"from\":\"LHE\",\"to\":\"DXB\",\"date\":\"2026-09-18\",\"return\":\"2026-09-30\"}],\"travelers\":[{\"type\":\"adult\",\"qty\":1},{\"type\":\"child\",\"qty\":0},{\"type\":\"infant\",\"qty\":0}]},\"timestamp\":\"2026-08-31T19:47:32.326Z\"}\n",
+            "ingestionTime": 1788205660512,
+            "eventId": "39878318615094365333658958512944572252215791966862442501"
+        },
+        {
+            "logStreamName": "2026/08/31/[$LATEST]e2e9b6e78c6c486d85c00e29e7a0f5b3",
+            "timestamp": 1788205652694,
+            "message": "2026-08-31T19:47:32.694Z\td158f61d-80b5-4877-b292-5d6dcb613213\tERROR\t{\"provider\":\"sooperfare\",\"step\":\"provider-error\",\"requestId\":\"SOOPERFARE-1788205652325-d5k168\",\"method\":\"GET\",\"path\":\"/v1/airline/availability\",\"httpStatus\":422,\"responseTimeMs\":368,\"error\":\"Operation Successfull\",\"body\":{\"status\":false,\"message\":\"Operation Successfull\",\"type\":\"json\",\"errors\":{\"trip_type\":[\"The selected trip type is invalid.\"]}},\"timestamp\":\"2026-08-31T19:47:32.694Z\"}\n",
+            "ingestionTime": 1788205660512,
+            "eventId": "39878318623301039566718227829029716576550389001063235590"
+        }
+    ],
+    "searchedLogStreams": []
+}

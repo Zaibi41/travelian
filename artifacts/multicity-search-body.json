@@ -1,0 +1,13 @@
+﻿{
+  " tripType\: \multicity\,
+ \origin\: \LHE\,
+ \destination\: \DXB\,
+ \departureDate\: \2026-09-24\,
+ \segments\: [
+ { \from\: \LHE\, \to\: \DXB\, \date\: \2026-09-24\ },
+ { \from\: \DXB\, \to\: \JED\, \date\: \2026-09-27\ }
+ ],
+ \cabin\: \Economy\,
+ \passengers\: { \adults\: 1, \children\: 0, \infants\: 0 },
+ \currency\: \PKR\
+}
