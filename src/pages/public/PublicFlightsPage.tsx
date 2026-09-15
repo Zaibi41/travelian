@@ -22,6 +22,36 @@ import { AirlineLogo } from "@/components/public/AirlineLogo";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
 import { whatsappUrl } from "@/lib/site-config";
+import { airports } from "@/data/airports";
+
+// Preload airports for routeLabel lookup
+const airportCache = airports;
+const popularAirportByCode = new Map(
+  [
+    { code: "LHE", city: "Lahore" },
+    { code: "KHI", city: "Karachi" },
+    { code: "ISB", city: "Islamabad" },
+    { code: "SKT", city: "Sialkot" },
+    { code: "PEW", city: "Peshawar" },
+    { code: "MUX", city: "Multan" },
+    { code: "DXB", city: "Dubai" },
+    { code: "JED", city: "Jeddah" },
+    { code: "MED", city: "Madinah" },
+    { code: "RUH", city: "Riyadh" },
+    { code: "IST", city: "Istanbul" },
+    { code: "DOH", city: "Doha" },
+    { code: "AUH", city: "Abu Dhabi" },
+    { code: "LHR", city: "London" },
+    { code: "MAN", city: "Manchester" },
+    { code: "JFK", city: "New York" },
+    { code: "YYZ", city: "Toronto" },
+    { code: "KUL", city: "Kuala Lumpur" },
+    { code: "BKK", city: "Bangkok" },
+    { code: "SIN", city: "Singapore" },
+    { code: "MCT", city: "Muscat" },
+    { code: "SHJ", city: "Sharjah" },
+  ].map(a => [a.code, a])
+);
 
 type FlightTripType = "oneway" | "roundtrip" | "multicity";
 type FlightSegment = { from: string; to: string; date: Date | undefined };
@@ -624,8 +654,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   };
   const routeLabel = (code: string, airportName?: string | null) => {
     const cleanCode = String(code || "").trim().toUpperCase();
-    const cleanAirportName = String(airportName || "").trim();
-    return cleanAirportName ? `${cleanCode} - ${cleanAirportName}` : cleanCode;
+    // Show just "IATA City" instead of full airport name for consistency with SooperFare
+    const airport = airportCache?.find(a => a.code === cleanCode) || popularAirportByCode.get(cleanCode);
+    return airport ? `${cleanCode} ${airport.city}` : cleanCode;
   };
   const airportCode = (value?: string | null) => String(value || "").trim().toUpperCase();
   const firstSegment = (flight: TravelianFlight) => flight.segments?.[0];
@@ -1250,6 +1281,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={flight.airlineImage} className="h-12 w-12 rounded-xl" />
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-foreground" title={flight.airline}>{limitText(flight.airline, 12)}</p>
+                            {/* Refundable/Non-refundable badge */}
+                            {flight.refundable !== undefined && (
+                              <Badge variant={flight.refundable ? "outline" : "secondary"} className={cn("mt-0.5 rounded-md border-0 text-[10px]", flight.refundable ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>
+                                {flight.refundable ? "Refundable" : "Non-refundable"}
+                              </Badge>
+                            )}
                             {flight.status === 'delayed' && <Badge className="bg-warning/10 text-warning border-0 text-[10px] rounded-md">Delayed</Badge>}
                             {false && adminMode && flight.provider && (
                               <Badge variant="outline" className="rounded-md border-sky-200 bg-sky-50 text-[10px] font-semibold text-sky-700">

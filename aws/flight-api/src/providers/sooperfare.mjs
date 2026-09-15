@@ -956,8 +956,11 @@ function extractFareOptions(offer, fallbackPrice) {
   const flightMeal = mealLabel(mealFromSooperFareFlight(offer));
   return fares.map((fare) => {
     const price = extractPrice(fare);
+    const tierName = pick(fare, ["name", "brand", "fare_brand", "type"]) || "Supplier Fare";
+    const bookingClass = pick(fare, ["class_code", "rbd", "booking_class", "cabin_code", "class", "code"]);
+    const tier = bookingClass && bookingClass.length <= 2 ? `${tierName} (${String(bookingClass).toUpperCase()})` : tierName;
     return {
-      tier: pick(fare, ["name", "brand", "fare_brand", "type"]) || "Supplier Fare",
+      tier,
       price: price.total ? price : fallbackPrice,
       bags: baggageFromSooperFareFare(fare) || baggageFromSooperFareOffer(offer) || "Baggage info not available",
       meal: flightMeal,
@@ -992,8 +995,12 @@ function extractRoundtripFareOptions(outboundFlight, returnFlight, fallbackPrice
     for (const returnFare of returnFareList) {
       const price = combinePrices(extractPrice(outboundFare), extractPrice(returnFare));
       if (!price.total) continue;
+      const tierName = fareTierName(outboundFare) || fareTierName(returnFare) || "Supplier Fare";
+      const bookingClass = pick(outboundFare, ["class_code", "rbd", "booking_class", "cabin_code"]) 
+        || pick(returnFare, ["class_code", "rbd", "booking_class", "cabin_code"]);
+      const tier = bookingClass && bookingClass.length <= 2 ? `${tierName} (${String(bookingClass).toUpperCase()})` : tierName;
       options.push({
-        tier: fareTierName(outboundFare) || fareTierName(returnFare) || "Supplier Fare",
+        tier,
         price,
         bags: baggageFromSooperFareFare(outboundFare)
           || baggageFromSooperFareFare(returnFare)
@@ -1014,12 +1021,14 @@ function extractRoundtripFareOptions(outboundFlight, returnFlight, fallbackPrice
 
   if (!options.length) return extractFareOptions(outboundFlight, fallbackPrice);
 
-  const byTier = new Map();
+  // Deduplicate by tier+baggage combination to preserve fare variations with different baggage
+  const byKey = new Map();
   for (const option of options) {
-    const existing = byTier.get(option.tier);
-    if (!existing || option.price.total < existing.price.total) byTier.set(option.tier, option);
+    const key = `${option.tier}|${option.bags}`;
+    const existing = byKey.get(key);
+    if (!existing || option.price.total < existing.price.total) byKey.set(key, option);
   }
-  return Array.from(byTier.values());
+  return Array.from(byKey.values());
 }
 
 function extractMulticityFareOptions(flights, fallbackPrice) {
@@ -1073,8 +1082,11 @@ function extractMulticityFareOptions(flights, fallbackPrice) {
     );
     if (!price.total) continue;
 
+    const tierName = fareTierName(firstFare) || "Supplier Fare";
+    const bookingClass = pick(firstFare, ["class_code", "rbd", "booking_class", "cabin_code"]);
+    const tier = bookingClass && bookingClass.length <= 2 ? `${tierName} (${String(bookingClass).toUpperCase()})` : tierName;
     options.push({
-      tier: fareTierName(firstFare) || "Supplier Fare",
+      tier,
       price,
       bags: baggageFromSooperFareFare(firstFare)
         || baggageFromSooperFareOffer(flights[0])
@@ -1092,12 +1104,14 @@ function extractMulticityFareOptions(flights, fallbackPrice) {
 
   if (!options.length) return extractFareOptions(flights[0], fallbackPrice);
 
-  const byTier = new Map();
+  // Deduplicate by tier+baggage combination to preserve fare variations with different baggage
+  const byKey = new Map();
   for (const option of options) {
-    const existing = byTier.get(option.tier);
-    if (!existing || option.price.total < existing.price.total) byTier.set(option.tier, option);
+    const key = `${option.tier}|${option.bags}`;
+    const existing = byKey.get(key);
+    if (!existing || option.price.total < existing.price.total) byKey.set(key, option);
   }
-  return Array.from(byTier.values());
+  return Array.from(byKey.values());
 }
 
 function formatSooperFareBaggagePolicies(policies) {
