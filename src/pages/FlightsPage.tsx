@@ -16,6 +16,23 @@ import { listFlightSearchLogs, type FlightSearchLogRecord } from "@/lib/flight-s
 
 const scopeOptions: MarkupScope[] = ["global", "supplier", "airline", "route", "cabin", "agency", "b2c", "seasonal"];
 
+// Common airlines for quick selection
+const commonAirlines = [
+  { code: "G9", name: "Air Arabia", label: "Air Arabia (G9)" },
+  { code: "PA", name: "Airblue", label: "Airblue (PA)" },
+  { code: "PK", name: "Pakistan International Airlines", label: "PIA (PK)" },
+  { code: "ER", name: "Fly Jinnah", label: "Fly Jinnah (ER)" },
+  { code: "9P", name: "Air Sial", label: "AirSial (9P)" },
+  { code: "EK", name: "Emirates", label: "Emirates (EK)" },
+  { code: "QR", name: "Qatar Airways", label: "Qatar Airways (QR)" },
+  { code: "SV", name: "Saudia", label: "Saudia (SV)" },
+  { code: "TK", name: "Turkish Airlines", label: "Turkish Airlines (TK)" },
+  { code: "GF", name: "Gulf Air", label: "Gulf Air (GF)" },
+  { code: "FZ", name: "Flydubai", label: "flydubai (FZ)" },
+  { code: "XY", name: "Flynas", label: "Flynas (XY)" },
+  { code: "OV", name: "Salam Air", label: "Salam Air (OV)" },
+];
+
 export default function FlightsPage() {
   const [scope, setScope] = useState<MarkupScope>("supplier");
   const [serviceTarget, setServiceTarget] = useState("");
@@ -130,7 +147,7 @@ export default function FlightsPage() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display">Flight Pricing & Rules</h1>
@@ -145,6 +162,30 @@ export default function FlightsPage() {
           <Plus className="h-4 w-4" /> Create Markup Rule
         </Button>
       </div>
+
+      {/* Airline-based promotion example */}
+      <Card className="border-primary/20 bg-primary/5 shadow-card">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Tags className="h-4 w-4" />
+            </div>
+            <div className="min-w-0 flex-1 space-y-2">
+              <h3 className="font-bold">Airline-Based Promotions</h3>
+              <p className="text-sm text-muted-foreground">
+                Apply different discounts per airline, regardless of which provider returns them. 
+                Example: <span className="font-semibold">Airblue flights get PKR 200 off</span>, 
+                <span className="font-semibold ml-1">Air Arabia flights get PKR 100 off</span>, 
+                other airlines unchanged.
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Badge variant="outline" className="font-normal">Scope: Airline</Badge>
+                <Badge variant="outline" className="font-normal">Works across all providers</Badge>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {providers.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -342,6 +383,38 @@ function RuleTarget({ scope, providers, value, onChange }: { scope: MarkupScope;
       </div>
     );
   }
+  
+  if (scope === "airline") {
+    return (
+      <div className="space-y-2 md:col-span-2">
+        <Label>Airline target</Label>
+        <div className="flex flex-wrap gap-2 rounded-lg border bg-muted/20 p-3">
+          {commonAirlines.map((airline) => (
+            <Button
+              key={airline.code}
+              type="button"
+              size="sm"
+              variant={value.toLowerCase() === airline.name.toLowerCase() || value.toUpperCase() === airline.code ? "default" : "outline"}
+              onClick={() => onChange(airline.name)}
+              className="text-xs"
+            >
+              {airline.label}
+            </Button>
+          ))}
+        </div>
+        <Input 
+          value={value} 
+          onChange={(event) => onChange(event.target.value)} 
+          placeholder={targetPlaceholder(scope)}
+          className="mt-2"
+        />
+        <p className="text-xs text-muted-foreground">
+          Select a common airline or type airline name/code. Discount applies to all fares from this airline, regardless of provider.
+        </p>
+      </div>
+    );
+  }
+  
   if (scope === "supplier") {
     return (
       <div className="space-y-2">
@@ -355,6 +428,7 @@ function RuleTarget({ scope, providers, value, onChange }: { scope: MarkupScope;
       </div>
     );
   }
+  
   return (
     <div className="space-y-2">
       <Label>{titleCase(scope)} target</Label>
