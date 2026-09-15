@@ -44,12 +44,12 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="relative flex h-full min-h-0 items-center justify-center overflow-y-auto gradient-hero px-4 py-6">
+    <div className="relative flex min-h-screen items-center justify-center gradient-hero px-4 py-8 sm:py-12">
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <div className="absolute left-10 top-10 h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
         <div className="absolute bottom-0 right-12 h-80 w-80 rounded-full bg-gold/20 blur-3xl" />
       </div>
-      <Card className="relative w-full max-w-4xl overflow-hidden rounded-2xl border border-border/60 shadow-hover">
+      <Card className="relative w-full max-w-4xl overflow-hidden rounded-2xl border border-border/60 shadow-hover my-auto">
         <CardContent className="grid p-0 md:grid-cols-[0.95fr_1.05fr]">
           <AuthAside
             eyebrow="Member access"
@@ -61,16 +61,16 @@ export default function SignInPage() {
               "WhatsApp & office support",
             ]}
           />
-          <div className="p-6 sm:p-9">
-            <Link to="/" className="flex items-center justify-center">
-              <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-14 w-52 object-contain" />
+          <div className="p-6 sm:p-8 md:p-9">
+            <Link to="/" className="flex items-center justify-center mb-2">
+              <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-12 sm:h-14 w-44 sm:w-52 object-contain" />
             </Link>
-            <h1 className="mt-3 text-center font-display text-2xl font-bold text-foreground">Sign in to your account</h1>
-            <p className="mt-1.5 text-center text-sm text-muted-foreground">
+            <h1 className="mt-2 text-center font-display text-xl sm:text-2xl font-bold text-foreground">Sign in to your account</h1>
+            <p className="mt-1.5 text-center text-xs sm:text-sm text-muted-foreground">
               Access your trips, bookings, and agency workspace
             </p>
 
-            <form onSubmit={signIn} className="mt-7 space-y-4">
+            <form onSubmit={signIn} className="mt-6 space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email</Label>
                 <div className="relative">
@@ -97,14 +97,14 @@ export default function SignInPage() {
               </Button>
             </form>
 
-            <div className="mt-6 flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 px-3 py-2.5">
+            <div className="mt-5 flex items-center gap-2.5 sm:gap-3 rounded-xl border border-border/60 bg-muted/30 px-2.5 sm:px-3 py-2.5">
               <ShieldCheck className="h-4 w-4 shrink-0 text-gold" />
-              <p className="text-xs leading-snug text-muted-foreground">
+              <p className="text-[11px] sm:text-xs leading-snug text-muted-foreground">
                 Your details are protected with encrypted, secure sign-in.
               </p>
             </div>
 
-            <p className="mt-5 text-center text-sm text-muted-foreground">
+            <p className="mt-4 text-center text-xs sm:text-sm text-muted-foreground">
               New to Travelian? <Link to="/register" className="font-semibold text-primary hover:underline">Create an account</Link>
             </p>
           </div>
