@@ -1274,16 +1274,16 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     fareOptionsOpen ? "ring-2 ring-primary" : ""
                   }`}
                 >
-                  <CardContent className="p-5">
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-3 md:flex-row md:items-start">
-                        <div className="flex min-w-0 items-center gap-3 md:w-[11rem] md:shrink-0 md:pt-1">
-                          <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={flight.airlineImage} className="h-12 w-12 rounded-xl" />
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-foreground" title={flight.airline}>{limitText(flight.airline, 12)}</p>
+                  <CardContent className="p-4 sm:p-5">
+                    <div className="flex flex-col gap-3 sm:gap-4">
+                      <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-start">
+                        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3 md:w-[11rem] md:shrink-0 md:pt-1">
+                          <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={flight.airlineImage} className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs sm:text-sm font-semibold text-foreground" title={flight.airline}>{limitText(flight.airline, 12)}</p>
                             {/* Refundable/Non-refundable badge */}
                             {flight.refundable !== undefined && (
-                              <Badge variant={flight.refundable ? "outline" : "secondary"} className={cn("mt-0.5 rounded-md border-0 text-[10px]", flight.refundable ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>
+                              <Badge variant={flight.refundable ? "outline" : "secondary"} className={cn("mt-0.5 rounded-md border-0 text-[9px] sm:text-[10px]", flight.refundable ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>
                                 {flight.refundable ? "Refundable" : "Non-refundable"}
                               </Badge>
                             )}
@@ -1331,30 +1331,30 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         {/* Mobile: Option B compact rows for return/multicity */}
                         <div className="min-w-0 flex-1 md:hidden">
                           {showStackedLegs && journeyLegs.length > 1 ? (
-                            <div className="space-y-2">
+                            <div className="space-y-2.5">
                               {journeyLegs.map((leg) => (
                                 <LegTimelineMobile key={leg.key} leg={leg} />
                               ))}
                             </div>
                           ) : (
-                            <div className="flex min-w-0 items-center gap-3">
-                              <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
-                                <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
-                                <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
-                                <p className="truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
+                            <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                              <div className="min-w-0 shrink-0 basis-[7.5rem] sm:basis-[8.75rem] text-left">
+                                <p className="text-lg sm:text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
+                                <p className="mt-1 text-[10px] sm:text-[11px] text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
+                                <p className="truncate text-[11px] sm:text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
                               </div>
-                              <div className="flex min-w-[5rem] flex-1 flex-col items-center px-1">
-                                <span className="max-w-full truncate text-[10px] font-medium text-muted-foreground">{getFlightDuration(flight)}</span>
+                              <div className="flex min-w-[4rem] sm:min-w-[5rem] flex-1 flex-col items-center px-1">
+                                <span className="max-w-full truncate text-[9px] sm:text-[10px] font-medium text-muted-foreground">{getFlightDuration(flight)}</span>
                                 <div className="relative my-1.5 h-px w-full bg-border">
-                                  <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
-                                  <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-primary" />
+                                  <div className="absolute left-0 top-1/2 h-2 w-2 sm:h-2.5 sm:w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
+                                  <div className="absolute right-0 top-1/2 h-2 w-2 sm:h-2.5 sm:w-2.5 -translate-y-1/2 rounded-full bg-primary" />
                                 </div>
-                                {stopLabel(flight) && <span className="max-w-full truncate text-[10px] font-medium text-success" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
+                                {stopLabel(flight) && <span className="max-w-full truncate text-[9px] sm:text-[10px] font-medium text-success" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
                               </div>
-                              <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
-                                <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
-                                <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
-                                <p className="truncate text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
+                              <div className="min-w-0 shrink-0 basis-[7.5rem] sm:basis-[8.75rem] text-left">
+                                <p className="text-lg sm:text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
+                                <p className="mt-1 text-[10px] sm:text-[11px] text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
+                                <p className="truncate text-[11px] sm:text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
                               </div>
                             </div>
                           )}
@@ -1365,7 +1365,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="ml-auto h-8 shrink-0 rounded-lg px-3 text-xs font-semibold md:mt-1"
+                            className="ml-auto h-7 sm:h-8 shrink-0 rounded-lg px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold md:mt-1"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
