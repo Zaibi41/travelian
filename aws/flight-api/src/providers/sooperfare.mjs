@@ -235,6 +235,25 @@ export class SooperFareAdapter extends ProviderAdapter {
     return this.post("/v1/airline/fares", compact(body), config);
   }
 
+  async fareOptions(payload) {
+    const response = await this.fareRules(payload);
+    const legs = extractArray(response, ["data.providers"]).flatMap((provider) => extractArray(provider, ["legs"]));
+    const references = payload.rawRef?.flightRefIds || [];
+    const flights = legs.map((leg, index) => {
+      const candidates = extractArray(leg, ["flights"]);
+      return candidates.find((flight) => pick(flight, ["ref_id"]) === references[index]) || null;
+    });
+    if (!flights.length || flights.some((flight) => !flight)) {
+      throw this.error("Selected SooperFare flight is no longer available. Please search again.", 409);
+    }
+    const options = flights.length === 1
+      ? extractFareOptions(flights[0], extractPrice(flights[0]))
+      : flights.length === 2
+        ? extractRoundtripFareOptions(flights[0], flights[1], extractPrice(flights[0]))
+        : extractMulticityFareOptions(flights, extractPrice(flights[0]));
+    return { fareOptions: options.filter((option) => Number(option.price?.total) > 0) };
+  }
+
   async seatMap(payload) {
     const config = await this.config();
     const refId = payload.refId || payload.rawRef?.refId || payload.offerId?.replace(/^sooperfare-/, "");
@@ -512,6 +531,11 @@ export class SooperFareAdapter extends ProviderAdapter {
         refId,
         quotePayload: buildQuotePayload(offer, refId),
         faresPayload: buildFaresPayload(offer, refId),
+        flightRefIds: isMulticity
+          ? offer.__legFlights.map((flight) => pick(flight, ["ref_id"]))
+          : isRoundtrip
+            ? [pick(offer.__outboundFlight, ["ref_id"]), pick(offer.__returnFlight, ["ref_id"])]
+            : [outboundRefId],
       },
     };
   }
@@ -1042,7 +1066,7 @@ function segmentFrom(segment) {
 }
 
 function extractPrice(offer) {
-  const total = number(pick(offer, ["price.total", "fare.total", "total_price", "billable_price", "total", "amount", "fares.0.total_price", "fares.0.billable_price", "fares.0.total", "fares.0.amount", "pricing.total"]));
+  const total = number(pick(offer, ["price.total", "price", "fare.total", "total_price", "billable_price", "total", "amount", "fares.0.total_price", "fares.0.billable_price", "fares.0.total", "fares.0.amount", "pricing.total"]));
   const base = number(pick(offer, ["price.base", "fare.base", "base_price", "base", "base_fare", "fares.0.base_price", "fares.0.base", "pricing.base"])) || total;
   const taxes = number(pick(offer, ["price.taxes", "fare.taxes", "taxes", "tax", "fares.0.taxes", "pricing.taxes"]));
   return {

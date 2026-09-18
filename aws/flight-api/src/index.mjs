@@ -1,5 +1,6 @@
 import { json, method, normalizePath, readJson, requestId } from "./http.mjs";
 import { providerAction, searchFlights } from "./services/flights.mjs";
+import { applyFlightPricingRules } from "./services/pricing.mjs";
 import { searchHotels, searchTransfers } from "./services/products.mjs";
 import {
   createPackageImageUploadUrl,
@@ -49,6 +50,7 @@ const routes = {
   "POST /hotels/search": hotelsSearch,
   "POST /transfers/search": transfersSearch,
   "POST /flights/price": flightsPrice,
+  "POST /flights/fares": flightsFares,
   "GET /flights/fare-rules": fareRules,
   "GET /flights/seat-map": seatMap,
   "POST /bookings": createBooking,
@@ -222,6 +224,27 @@ async function documents(event, path) {
 async function listBlog(event) {
   const status = event.queryStringParameters?.status;
   return { items: await listBlogPosts({ status }) };
+}
+
+async function flightsFares(event) {
+  const body = await readJson(event);
+  requireFields(body, ["provider", "offerId"]);
+  if (body.provider !== "sooperfare") {
+    const error = new Error("Fare options are only available for SooperFare flights");
+    error.statusCode = 400;
+    throw error;
+  }
+  const result = await providerAction(body.provider, "fareOptions", body);
+  const [priced] = await applyFlightPricingRules([{
+    provider: body.provider,
+    airline: body.airline,
+    flightNumber: body.flightNumber,
+    origin: body.origin,
+    destination: body.destination,
+    cabin: body.cabin,
+    fareOptions: result.fareOptions,
+  }]);
+  return { result: { fareOptions: priced.fareOptions } };
 }
 
 async function listHotelContent(event) {

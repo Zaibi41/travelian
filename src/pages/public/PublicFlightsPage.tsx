@@ -14,7 +14,7 @@ import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { SEO } from "@/components/SEO";
 import { TravelersClassPicker, formatTravelers, type TravelersValue } from "@/components/public/TravelersClassPicker";
-import { searchFlights, type TravelianFlight } from "@/lib/travelian-api";
+import { fetchFlightFares, searchFlights, type TravelianFlight } from "@/lib/travelian-api";
 import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { FlightSearchLoader } from "@/components/public/FlightSearchLoader";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
@@ -186,6 +186,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [selectedDepartureTimes, setSelectedDepartureTimes] = useState<string[]>([]);
   const [sort, setSort] = useState("price-asc");
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
+  const [loadingFares, setLoadingFares] = useState<string | null>(null);
+  const [fareErrors, setFareErrors] = useState<Record<string, string>>({});
+  const [loadedFares, setLoadedFares] = useState<Record<string, NonNullable<TravelianFlight["fareOptions"]>>>({});
   const [departDate, setDepartDate] = useState<Date>(initDate);
   const [returnDate, setReturnDate] = useState<Date | undefined>(initReturnDate);
   const [tripType, setTripType] = useState<FlightTripType>(initTripType);
@@ -1082,7 +1085,29 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   };
   const revalidateSearch = () => {
     setSelectedFlight(null);
+    setLoadedFares({});
+    setFareErrors({});
     setSearchRefreshKey((value) => value + 1);
+  };
+
+  const toggleFareOptions = async (flight: TravelianFlight) => {
+    if (selectedFlight === flight.flightId) {
+      setSelectedFlight(null);
+      return;
+    }
+    setSelectedFlight(flight.flightId);
+    if (flight.provider !== "sooperfare" || loadedFares[flight.flightId]) return;
+    setLoadingFares(flight.flightId);
+    setFareErrors((errors) => ({ ...errors, [flight.flightId]: "" }));
+    try {
+      const options = await fetchFlightFares(flight);
+      if (!options.length) throw new Error("No additional fares are available for this flight.");
+      setLoadedFares((current) => ({ ...current, [flight.flightId]: options }));
+    } catch (error) {
+      setFareErrors((errors) => ({ ...errors, [flight.flightId]: error instanceof Error ? error.message : "Unable to load fares." }));
+    } finally {
+      setLoadingFares(null);
+    }
   };
 
   return (
@@ -1410,7 +1435,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               const isGroup = isGroupTicketingProvider(flight.provider) || flight.fareBrand === "Group Ticket" || flight.flightId.startsWith("group-");
               const hasFareOptions = (flight.fareOptions || []).length > 0;
               const fareOptionsOpen = selectedFlight === flight.flightId;
-              const displayFares = fareRows(flight);
+              const displayFares = fareRows({ ...flight, fareOptions: fareOptionsOpen ? loadedFares[flight.flightId] || flight.fareOptions : flight.fareOptions });
               const primaryFare = displayFares[0];
               const journeyLegs = journeyLegsForCard(flight);
               const showStackedLegs = tripType === "roundtrip" || tripType === "multicity";
@@ -1529,6 +1554,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         )}
                       </div>
                       <div className="overflow-hidden rounded-2xl border">
+                        {flight.provider === "sooperfare" && (
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-muted/20 px-4 py-2">
+                            <span className="text-xs text-muted-foreground">{loadingFares === flight.flightId ? "Loading live fare options..." : fareErrors[flight.flightId] || (loadedFares[flight.flightId] ? `${loadedFares[flight.flightId]?.length} fare options` : "More fare options may be available")}</span>
+                            <Button type="button" variant="outline" size="sm" disabled={loadingFares === flight.flightId} onClick={() => void toggleFareOptions(flight)}>
+                              {fareOptionsOpen && loadedFares[flight.flightId] ? "Hide fare options" : "View all fares"}
+                            </Button>
+                          </div>
+                        )}
                         <table className="hidden w-full table-fixed border-collapse md:table">
                           <colgroup>
                             <col className="w-[20%]" />

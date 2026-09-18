@@ -55,6 +55,7 @@ interface FlightOffer {
     total: number;
   };
   fareOptions?: FareOption[];
+  rawRef?: { faresPayload?: { ref_id: string; legs: { ref_id: string }[] }; flightRefIds?: string[] };
 }
 
 interface FlightSearchResponse {
@@ -85,7 +86,31 @@ export type TravelianFlight = Flight & {
   airlineImage?: string;
   fareBrand?: string;
   fareOptions?: FareOption[];
+  rawRef?: FlightOffer["rawRef"];
 };
+
+export async function fetchFlightFares(flight: TravelianFlight): Promise<FareOption[]> {
+  if (flight.provider !== "sooperfare" || !flight.rawRef?.faresPayload) {
+    throw new Error("Fare options are unavailable for this flight.");
+  }
+  const response = await fetch(`${API_BASE_URL}/flights/fares`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      provider: flight.provider,
+      offerId: flight.offerId,
+      airline: flight.airline,
+      flightNumber: flight.flightNumber,
+      origin: flight.origin,
+      destination: flight.destination,
+      cabin: flight.class,
+      rawRef: flight.rawRef,
+    }),
+  });
+  const payload = await response.json().catch(() => null) as { result?: { fareOptions?: FareOption[] }; error?: string } | null;
+  if (!response.ok) throw new Error(payload?.error || "Unable to load fare options. Please try again.");
+  return payload?.result?.fareOptions || [];
+}
 
 export interface FlightSearchResult {
   searchId: string;
@@ -290,6 +315,7 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
     class: normalizeCabin(cabin),
     fareBrand: safeText(offer.fareBrand),
     fareOptions: offer.fareOptions || [],
+    rawRef: offer.rawRef,
     duration: offer.duration || undefined,
     stops: offer.stops ?? undefined,
     baggage: offer.baggage || undefined,
