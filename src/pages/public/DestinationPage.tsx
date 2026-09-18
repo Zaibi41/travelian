@@ -1,5 +1,4 @@
-import { Link, useParams } from "react-router-dom";
-import { PUBLIC_SERVICE_VISIBILITY } from "@/lib/public-services";
+﻿import { Link, useParams } from "react-router-dom";
 import { ArrowRight, Hotel, MapPin, Plane, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,7 +16,7 @@ const destinationMap: Record<string, {
     name: "Makkah",
     country: "Saudi Arabia",
     image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=1400&h=720&fit=crop&q=80",
-    summary: "Plan Umrah stays near Masjid al-Haram with verified hotels, transfers, and visa support.",
+    summary: "Plan Umrah stays near Masjid al-Haram with verified hotels, transfers, and guidance.",
     highlights: ["Haram area hotels", "Umrah packages", "Private transfers"],
   },
   madinah: {
@@ -31,41 +30,35 @@ const destinationMap: Record<string, {
     name: "Istanbul",
     country: "Turkey",
     image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=1400&h=720&fit=crop&q=80",
-    summary: "Explore Istanbul tours, Bosphorus stays, and curated Turkey holiday packages.",
-    highlights: ["City tours", "Bosphorus stays", "Family holidays"],
+    summary: "Explore Istanbul hotels, Bosphorus stays, and curated Turkey holiday packages.",
+    highlights: ["Bosphorus stays", "City hotels", "Family holidays"],
   },
   dubai: {
     name: "Dubai",
     country: "UAE",
     image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=1400&h=720&fit=crop&q=80",
-    summary: "Book Dubai hotels, visas, desert safari add-ons, and premium city experiences.",
-    highlights: ["UAE visas", "Luxury hotels", "Desert safari"],
+    summary: "Book Dubai hotels, desert safari add-ons, and premium city experiences.",
+    highlights: ["Luxury hotels", "Desert safari", "City stays"],
   },
   "kuala-lumpur": {
     name: "Kuala Lumpur",
     country: "Malaysia",
     image: "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?w=1400&h=720&fit=crop&q=80",
-    summary: "Discover Malaysia hotels, city tours, and family-friendly Kuala Lumpur packages.",
-    highlights: ["City hotels", "Theme parks", "Malaysia visas"],
+    summary: "Discover Malaysia hotels and family-friendly Kuala Lumpur packages.",
+    highlights: ["City hotels", "Theme parks", "Family stays"],
   },
   cairo: {
     name: "Cairo",
     country: "Egypt",
     image: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=1400&h=720&fit=crop&q=80",
-    summary: "Plan Cairo and Nile heritage trips with hotels, tours, and guided sightseeing.",
-    highlights: ["Pyramids tours", "Nile stays", "Guided itineraries"],
+    summary: "Plan Cairo and Nile heritage trips with hotels and guided sightseeing.",
+    highlights: ["Nile stays", "Historic sites", "City hotels"],
   },
 };
 
 export default function DestinationPage() {
   const { slug = "makkah" } = useParams();
-  const storedDestination = destinationMap[slug] || destinationMap.makkah;
-  const destination = !["makkah", "madinah"].includes(slug) && destinationMap[slug] &&
-    (!PUBLIC_SERVICE_VISIBILITY.visa || !PUBLIC_SERVICE_VISIBILITY.tour)
-    ? { ...storedDestination,
-        summary: `Find flights and hotels for your stay in ${storedDestination.name} with Travelian.`,
-        highlights: ["City hotels", "Flight booking", "Family rooms"] }
-    : storedDestination;
+  const destination = destinationMap[slug] || destinationMap.makkah;
 
   return (
     <div>

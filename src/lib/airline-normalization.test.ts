@@ -30,4 +30,21 @@ describe("airline-normalization", () => {
   it("falls back to original trimmed text for unknown airlines", () => {
     expect(normalizeAirlineName("Custom Charter Air")).toBe("Custom Charter Air");
   });
+
+  it("normalizes Air Arabia and Flynas aliases", () => {
+    expect(normalizeAirlineName("Air Arabia")).toBe("Air Arabia");
+    expect(normalizeAirlineName("airarabia")).toBe("Air Arabia");
+    expect(normalizeAirlineName("air_arabia")).toBe("Air Arabia");
+    expect(isSameAirline("Air Arabia", "airarabia")).toBe(true);
+    expect(normalizeAirlineName("Flynas")).toBe("Flynas");
+    expect(normalizeAirlineName("nasair")).toBe("Flynas");
+    expect(isSameAirline("Flynas", "nasair")).toBe(true);
+  });
+
+  it("handles multi-carrier connections like Fly Jinnah + Air Arabia", () => {
+    expect(normalizeAirlineName("Fly Jinnah / Air Arabia")).toBe("Fly Jinnah / Air Arabia");
+    expect(isSameAirline("Air Arabia", "Fly Jinnah / Air Arabia")).toBe(true);
+    expect(isSameAirline("Fly Jinnah", "Fly Jinnah / Air Arabia")).toBe(true);
+    expect(isSameAirline("PIA", "Fly Jinnah / Air Arabia")).toBe(false);
+  });
 });

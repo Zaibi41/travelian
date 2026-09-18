@@ -90,7 +90,7 @@ export function GroupTicketingSearchBar({
   ) : null;
 
   return (
-    <div className="rounded-2xl border bg-card p-4 shadow-card">
+    <div className="w-full">
       <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_auto_1fr_1fr_auto]">
         <div>
           {label("From")}

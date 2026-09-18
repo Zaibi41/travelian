@@ -25,7 +25,7 @@ import { whatsappUrl } from "@/lib/site-config";
 import { airports } from "@/data/airports";
 import { isGroupTicketingProvider, groupTicketToFlight, decodeGroupTicketId } from "@/lib/provider-systems";
 import { fetchGroupTickets, filterGroupTickets } from "@/lib/group-ticketing";
-import { normalizeAirlineName, isSameAirline } from "@/lib/airline-normalization";
+import { normalizeAirlineName, isSameAirline, extractAllAirlines, getAirlineNameFromCarrier } from "@/lib/airline-normalization";
 
 // Preload airports for routeLabel lookup
 const airportCache = airports;
@@ -122,6 +122,37 @@ function clampToToday(date: Date | undefined) {
   const today = startOfLocalDay(new Date());
   if (!date) return today;
   return startOfLocalDay(date) < today ? today : date;
+}
+
+function consolidateFlights(list: TravelianFlight[]): TravelianFlight[] {
+  const byKey = new Map<string, TravelianFlight>();
+  for (const f of list) {
+    const flightNo = String(f.flightNumber || "").trim().toLowerCase();
+    const depart = String(f.departureTime || "").trim().toLowerCase();
+    const orig = String(f.origin || "").trim().toLowerCase();
+    const dest = String(f.destination || "").trim().toLowerCase();
+    const key = `${flightNo}-${orig}-${dest}-${depart}`;
+
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, { ...f, fareOptions: f.fareOptions ? [...f.fareOptions] : [] });
+    } else {
+      const existingOptions = existing.fareOptions || [];
+      const newOptions = f.fareOptions || [];
+      const combined = [...existingOptions];
+      for (const opt of newOptions) {
+        const optKey = `${opt.tier}-${opt.bags}`.toLowerCase();
+        if (!combined.some((o) => `${o.tier}-${o.bags}`.toLowerCase() === optKey)) {
+          combined.push(opt);
+        }
+      }
+      existing.fareOptions = combined;
+      if (f.price && (!existing.price || f.price < existing.price)) {
+        existing.price = f.price;
+      }
+    }
+  }
+  return Array.from(byKey.values());
 }
 
 export default function PublicFlightsPage({ bookingPath = "/booking", adminMode = false }: { bookingPath?: string; adminMode?: boolean } = {}) {
@@ -377,12 +408,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           return;
         }
 
-        setApiFlights(flightsList);
-        const liveMaxPrice = Math.max(700, ...flightsList.map((f) => f.price));
+        const consolidated = consolidateFlights(flightsList);
+        setApiFlights(consolidated);
+        const liveMaxPrice = Math.max(700, ...consolidated.map((f) => f.price));
         setPriceRange([0, Math.ceil(liveMaxPrice / 1000) * 1000]);
         setApiStatus("success");
-        setApiMessage(flightsList.length ? "" : "No live bookable fares returned for this search.");
-        setExpirySeconds(flightsList.length ? SEARCH_RESULT_TTL_SECONDS : 0);
+        setApiMessage(consolidated.length ? "" : "No live bookable fares returned for this search.");
+        setExpirySeconds(consolidated.length ? SEARCH_RESULT_TTL_SECONDS : 0);
       })
       .catch((error) => {
         if (controller.signal.aborted) return;
@@ -519,20 +551,21 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         refund: fare.refund,
         change: fare.change,
         noShow: (fare as DisplayFare).noShow,
-        cancellation: (fare as DisplayFare).cancellation,
+        cancellation: (fare as DisplayFare).cancellation || fare.refund,
         conditions: (fare as DisplayFare).conditions,
         amenities: fare.amenities,
       }));
     }
+    const isNonRefundable = flight.refundable === false;
     return [{
       tier: cleanFareText(flight.fareBrand, "Fare option"),
       price: { currency: flight.currency, total: flight.price },
       bags: flight.baggage,
       meal: flight.meal,
-      refund: flight.baggage ? "Subject to fare rules" : "",
-      change: "",
+      refund: isNonRefundable ? "Non-refundable as per airline policy." : "Refundable subject to airline fare conditions.",
+      change: "Permitted subject to airline date change fees and fare difference.",
       noShow: "",
-      cancellation: "",
+      cancellation: isNonRefundable ? "Non-refundable as per airline policy." : "Refundable subject to airline fare conditions.",
       conditions: "",
       amenities: [],
     }];
@@ -727,7 +760,17 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return () => controller.abort();
   }, [dateFlexDays, departDate, from, to, tripType, returnDate, travelers, currency]);
 
-  const airlineOptions = useMemo(() => Array.from(new Set(flights.map(f => normalizeAirlineName(f.airline)).filter(Boolean))).sort(), [flights]);
+  const airlineOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const f of flights) {
+      const airlines = extractAllAirlines(f.airline);
+      for (const a of airlines) {
+        const canonical = normalizeAirlineName(a);
+        if (canonical) set.add(canonical);
+      }
+    }
+    return Array.from(set).sort();
+  }, [flights]);
   const stopOptions = [
     { value: "nonstop", label: "Non-stop" },
     { value: "1stop", label: "1 Stop" },
@@ -959,7 +1002,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           const stopCode = String(layover?.location || segment.destination || nextSegment?.origin || "Transit").trim().toUpperCase();
           const stopAirport = segment.arrivalAirport || nextSegment?.departureAirport || "";
           const flightNumber = segment.flightNumber || flight.flightNumber;
-          const airlineName = segment.carrier || flight.airline;
+          const segmentAirline = segment.airline || getAirlineNameFromCarrier(segment.carrier) || segment.carrier || flight.airline;
+          const isSameAsParent = isSameAirline(segmentAirline, flight.airline);
 
           return (
             <div key={`${flightNumber}-${index}`} className="space-y-3">
@@ -967,7 +1011,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <span className="rounded-full bg-primary/5 px-3 py-1 text-xs font-black uppercase tracking-wide text-primary">Flight {index + 1}</span>
                   <div className="flex min-w-0 items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-1.5 text-xs font-bold text-slate-900 ring-1 ring-slate-100">
-                    <AirlineLogo airline={flight.airline} flightNumber={flightNumber} imageUrl={flight.airlineImage} className="h-6 w-6 shrink-0 rounded-md border-0 shadow-none ring-0" />
+                    <AirlineLogo airline={segmentAirline} flightNumber={flightNumber} imageUrl={isSameAsParent ? flight.airlineImage : undefined} className="h-6 w-6 shrink-0 rounded-md border-0 shadow-none ring-0" />
                     <span className="truncate">{flightNumber}</span>
                   </div>
                 </div>
@@ -990,7 +1034,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     </div>
 
                     <div className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
-                      {airlineName} · {flightNumber} · Duration {segmentDuration(segment)}
+                      {segmentAirline} · {flightNumber} · Duration {segmentDuration(segment)}
                     </div>
 
                     <div className="grid gap-1 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-4">
@@ -1325,7 +1369,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   {airlineOptions.map(a => (
                     <label key={a} className="flex min-w-0 cursor-pointer items-center gap-2 group" title={a}>
                       <Checkbox checked={selectedAirlines.some(sel => isSameAirline(sel, a))} onCheckedChange={() => toggleAirline(a)} />
-                      <span className="min-w-0 truncate text-xs text-muted-foreground transition-colors group-hover:text-foreground">{limitText(a, 15)}</span>
+                      <span className="min-w-0 truncate text-xs text-muted-foreground transition-colors group-hover:text-foreground">{a}</span>
                     </label>
                   ))}
                 </div>
@@ -1385,7 +1429,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={flight.airlineImage} className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl shrink-0" />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
-                              <p className="truncate text-xs sm:text-sm font-semibold text-foreground" title={flight.airline}>{limitText(flight.airline, 12)}</p>
+                              <p className="truncate text-xs sm:text-sm font-semibold text-foreground" title={flight.airline}>{flight.airline}</p>
                               {isGroup && (
                                 <Users className="h-3.5 w-3.5 shrink-0 text-blue-600" title="Group" />
                               )}
@@ -1935,21 +1979,32 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 {fareDetailsTab === "rules" && (
                   <div className="rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-sm">
                     <div className="space-y-2">
-                      {fareRows(fareDetails.flight).map((fare) => {
-                        const isOpen = expandedFareRule === fare.tier;
-                        const cancellation = cleanFareText(fare.cancellation || fare.refund, "Could not load cancellation rules.");
-                        const dateChange = cleanFareText(fare.change, "Could not load date change rules.");
+                      {fareRows(fareDetails.flight).map((fare, idx) => {
+                        const isOpen = expandedFareRule === fare.tier || (expandedFareRule === null && idx === 0);
+                        const isNonRefundable =
+                          fareDetails.flight.refundable === false ||
+                          /non[- ]?refundable|not refundable|no refund/i.test(fare.cancellation || fare.refund || "");
+                        const defaultCancellation = isNonRefundable
+                          ? "Non-refundable as per airline policy."
+                          : "Refundable subject to airline fare conditions and cancellation penalties.";
+                        const defaultDateChange = "Permitted subject to airline date change fees and any fare difference.";
+
+                        const cancellation = cleanFareText(fare.cancellation || fare.refund, defaultCancellation);
+                        const dateChange = cleanFareText(fare.change, defaultDateChange);
                         return (
                           <div key={`${fare.tier}-${fareDetailsTab}`} className="border-b border-dashed pb-2 last:border-b-0 last:pb-0">
                             <button
                               type="button"
                               className="flex w-full items-center justify-between gap-3 rounded-xl bg-sky-50/70 px-4 py-3 text-left transition-colors hover:bg-primary/5"
-                              onClick={() => setExpandedFareRule(isOpen ? null : fare.tier)}
+                              onClick={() => setExpandedFareRule(isOpen && expandedFareRule !== null ? null : fare.tier)}
                             >
                               <span className="truncate font-bold text-primary" title={fare.tier}>{fare.tier}</span>
                               <span className="flex shrink-0 items-center gap-3">
-                                <span className="rounded-lg bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-600">
-                                  {/non[- ]?refundable|not refundable|no refund/i.test(cancellation) ? "Non-Refundable" : cleanFareText(fare.refund, "Rules unavailable")}
+                                <span className={cn(
+                                  "rounded-lg px-2.5 py-1 text-xs font-semibold",
+                                  isNonRefundable ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
+                                )}>
+                                  {isNonRefundable ? "Non-Refundable" : "Refundable"}
                                 </span>
                                 {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                               </span>
@@ -1958,11 +2013,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               <div className="mx-4 my-3 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
                                 <div className="rounded-xl border border-red-100 bg-red-50/50 p-3">
                                   <p className="mb-1 text-xs font-bold uppercase tracking-wide text-red-500">Cancellation</p>
-                                  <p>{cancellation}</p>
+                                  <p className="whitespace-pre-line text-sm text-slate-700">{cancellation}</p>
                                 </div>
                                 <div className="rounded-xl border border-primary/10 bg-primary/5 p-3">
                                   <p className="mb-1 text-xs font-bold uppercase tracking-wide text-primary">Date Change</p>
-                                  <p>{dateChange}</p>
+                                  <p className="whitespace-pre-line text-sm text-slate-700">{dateChange}</p>
                                 </div>
                               </div>
                             )}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Hotel, Plane, Car, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets, FileCheck2, Map } from "lucide-react";
+import { Hotel, Plane, Car, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -20,8 +20,6 @@ const tabs = [
   { id: "group-ticketing", label: "Group Ticketing", icon: Tickets },
   { id: "hotels", label: "Hotels", icon: Hotel },
   { id: "umrah", label: "Umrah", icon: MapPin },
-  { id: "visas", label: "Visas", icon: FileCheck2 },
-  { id: "tours", label: "Tours", icon: Map },
   { id: "transfers", label: "Transfers", icon: Car },
 ];
 
@@ -245,9 +243,8 @@ export function SearchTabs({
       });
       navigate(`/transfers-search?${params.toString()}`);
     }
-    else if (activeTab === "visas") navigate("/visa-services");
     else if (activeTab === "umrah") navigate("/umrah-packages");
-    else navigate("/tour-packages");
+    else navigate("/");
   };
 
   const addMultiCitySegment = () => {
@@ -279,14 +276,6 @@ export function SearchTabs({
             onClick={() => {
               if (tab.id === "umrah") {
                 navigate("/umrah-packages");
-                return;
-              }
-              if (tab.id === "visas") {
-                navigate("/visa-services");
-                return;
-              }
-              if (tab.id === "tours") {
-                navigate("/tour-packages");
                 return;
               }
               if (tab.id === "flights" && location.pathname.startsWith("/group-ticketing")) {

@@ -1,5 +1,4 @@
-import { Link } from "react-router-dom";
-import { isPublicPathVisible } from "@/lib/public-services";
+﻿import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -13,17 +12,10 @@ const services = [
   },
   {
     title: "Umrah Packages",
-    desc: "Complete Umrah travel support with flights, hotels, transport and visa guidance.",
+    desc: "Complete Umrah travel support with flights, hotels, transport and guidance.",
     cta: "View Umrah Packages",
     to: "/umrah-packages",
     image: "https://images.unsplash.com/photo-1565330770968-0240c0046ce3?w=800&h=560&fit=crop&q=80",
-  },
-  {
-    title: "Visit & Study Visas",
-    desc: "Document guidance, appointment support and application handling for visit and study visas.",
-    cta: "View Visa Services",
-    to: "/visa-services",
-    image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&h=560&fit=crop&q=80",
   },
   {
     title: "Hotels & Accommodation",
@@ -31,13 +23,6 @@ const services = [
     cta: "Find Hotels",
     to: "/hotels-search",
     image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=560&fit=crop&q=80",
-  },
-  {
-    title: "Tours",
-    desc: "Curated holiday and family tour packages with hotels, transfers and sightseeing.",
-    cta: "Explore Tours",
-    to: "/tour-packages",
-    image: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=800&h=560&fit=crop&q=80",
   },
 ];
 
@@ -58,7 +43,7 @@ export function HomeServices() {
         </div>
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {services.filter((service) => isPublicPathVisible(service.to)).map((s) => (
+          {services.map((s) => (
             <article
               key={s.title}
               className="group flex h-full flex-col overflow-hidden rounded-2xl border-0 bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-hover"

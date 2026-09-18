@@ -1,4 +1,4 @@
-﻿import { ProviderAdapter } from "./provider-base.mjs";
+import { ProviderAdapter } from "./provider-base.mjs";
 import { getSecretJson } from "../secrets.mjs";
 import { outboundFetch } from "../http.mjs";
 
@@ -89,7 +89,7 @@ export class SooperFareAdapter extends ProviderAdapter {
         : flatOffers;
     // Roundtrip/multicity must stay combined; do not fall back to single-leg offers.
     const normalizedWithNull = extractedOffers.map((offer, index) => this.normalizeOffer(offer, request, index));
-    const offers = normalizedWithNull.filter(Boolean);
+    const offers = consolidateFlightOffers(normalizedWithNull.filter(Boolean));
     const droppedCount = normalizedWithNull.length - offers.length;
 
     // Track airline distribution in final results
@@ -168,13 +168,48 @@ export class SooperFareAdapter extends ProviderAdapter {
   }
 
   async availableProviders(request, config) {
+    const defaultProviders = [
+      "SABRE",
+      "PIA",
+      "AIRBLUE",
+      "AIRSIAL",
+      "FLYJINNAH",
+      "FLYNAS",
+      "AIRARABIA",
+      "FLYADEAL",
+      "SERENE",
+    ];
     const fallbackProviders = Array.isArray(config.providers) && config.providers.length
       ? config.providers
-      : [config.provider || "SABRE"];
-    const payload = this.availabilityPayload(request);
-    const availability = await this.request("GET", "/v1/airline/availability", payload, config);
-    const providers = extractAvailabilityProviders(availability);
-    return providers.length ? providers : fallbackProviders;
+      : (config.provider ? [config.provider] : defaultProviders);
+
+    try {
+      const payload = this.availabilityPayload(request);
+      const availability = await this.request("GET", "/v1/airline/availability", payload, config);
+      const providers = extractAvailabilityProviders(availability);
+      const candidates = providers.length ? new Set(providers) : new Set(fallbackProviders);
+
+      const origin = airportCode(request?.origin);
+      const dest = airportCode(request?.destination);
+      const ksaAirports = ["JED", "RUH", "DMM", "MED", "AHB", "ELQ", "GIZ"];
+      const uaeAirports = ["DXB", "SHJ", "AUH", "DWC", "RKT"];
+
+      if (ksaAirports.includes(origin) || ksaAirports.includes(dest)) {
+        candidates.add("FLYNAS");
+      }
+      if (uaeAirports.includes(origin) || uaeAirports.includes(dest) || ksaAirports.includes(origin) || ksaAirports.includes(dest)) {
+        candidates.add("FLYJINNAH");
+        candidates.add("AIRARABIA");
+      }
+      return Array.from(candidates);
+    } catch (error) {
+      safeLogWarn({
+        provider: this.name,
+        step: "availability-fallback",
+        error: error.message,
+      });
+      return fallbackProviders;
+    }
   }
 
   async priceOffer(payload) {
@@ -413,8 +448,16 @@ export class SooperFareAdapter extends ProviderAdapter {
       : isRoundtrip
         ? offer.__outboundFlight
         : offer;
-    const airline = pick(sourceFlight, ["marketing_carrier.name", "airline.name", "airline_name", "carrier.name", "provider", "supplier"]) || first.airline || "SooperFare";
-    const airlineCode = pick(sourceFlight, ["marketing_carrier.iata", "airline.code", "carrier.code"]) || first.carrier || "";
+    const segmentAirlines = Array.from(new Set(
+      segments.map((segment) => segment.airline || AIRLINE_CODE_MAP[segment.carrier]).filter(Boolean)
+    ));
+    const isMultiCarrier = segmentAirlines.length > 1;
+    const fallbackAirline = pick(sourceFlight, ["marketing_carrier.name", "airline.name", "airline_name", "carrier.name", "provider", "supplier"]) || first.airline || "SooperFare";
+    const airline = isMultiCarrier ? segmentAirlines.join(" / ") : fallbackAirline;
+    const segmentCarrierCodes = Array.from(new Set(segments.map((segment) => segment.carrier).filter(Boolean)));
+    const airlineCode = isMultiCarrier && segmentCarrierCodes.length > 1
+      ? segmentCarrierCodes.join(" / ")
+      : (pick(sourceFlight, ["marketing_carrier.iata", "airline.code", "carrier.code"]) || first.carrier || "");
     const fareOptions = isMulticity
       ? extractMulticityFareOptions(offer.__legFlights, price)
       : isRoundtrip
@@ -443,6 +486,7 @@ export class SooperFareAdapter extends ProviderAdapter {
           : `sooperfare-${outboundRefId || refId}`,
       airline,
       airlineCode,
+      airlines: segmentAirlines,
       airlineImage: pick(sourceFlight, ["marketing_carrier.logo", "airline.logo", "airline.logo_url", "logo", "image_url", "image"]),
       flightNumber: segments.map((segment) => segment.flightNumber).filter(Boolean).join(" / ") || pick(sourceFlight, ["flight_number", "flightNo"]) || `SF-${index + 1}`,
       origin: request.origin,
@@ -719,6 +763,32 @@ function extractArray(payload, paths = ["data", "results", "items", "bookings"])
   return [];
 }
 
+function consolidateFlightOffers(offers) {
+  const byKey = new Map();
+  for (const offer of offers) {
+    if (!offer) continue;
+    const key = `${offer.airlineCode || offer.airline}-${offer.flightNumber}-${offer.origin}-${offer.destination}-${offer.departureTime}`.toLowerCase();
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, { ...offer, fareOptions: Array.isArray(offer.fareOptions) ? [...offer.fareOptions] : [] });
+    } else {
+      const existingOptions = existing.fareOptions || [];
+      const newOptions = offer.fareOptions || [];
+      for (const opt of newOptions) {
+        const optKey = `${opt.tier}-${opt.bags}`.toLowerCase();
+        if (!existingOptions.some((o) => `${o.tier}-${o.bags}`.toLowerCase() === optKey)) {
+          existingOptions.push(opt);
+        }
+      }
+      existing.fareOptions = existingOptions;
+      if (offer.price?.total && (!existing.price?.total || offer.price.total < existing.price.total)) {
+        existing.price = offer.price;
+      }
+    }
+  }
+  return Array.from(byKey.values());
+}
+
 function combineRoundtripOffers(flatOffers, request) {
   const origin = airportCode(request?.origin);
   const destination = airportCode(request?.destination);
@@ -812,13 +882,30 @@ function airportCode(value) {
 }
 
 function marketingCarrierCode(flight) {
-  return airportCode(pick(flight, [
+  const direct = airportCode(pick(flight, [
     "marketing_carrier.iata",
     "marketing_carrier.code",
     "airline.code",
     "carrier",
     "segments.0.operating_carrier.iata",
+    "segments.0.carrier",
   ]));
+  if (direct) return direct;
+  const segments = extractArray(flight, ["segments", "flights"]);
+  for (const seg of segments) {
+    const c = airportCode(pick(seg, ["carrier", "airline.code", "operating_carrier.iata", "marketing_carrier.iata"]));
+    if (c) return c;
+  }
+  return "";
+}
+
+function areCarriersCompatible(carrierA, carrierB) {
+  if (!carrierA || !carrierB) return true;
+  if (carrierA === carrierB) return true;
+  // Fly Jinnah (9P) and Air Arabia (G9) are joint venture / codeshare partners
+  const partnerCodes = new Set(["9P", "G9"]);
+  if (partnerCodes.has(carrierA) && partnerCodes.has(carrierB)) return true;
+  return false;
 }
 
 function fareTierName(fare) {
@@ -835,8 +922,9 @@ function cheapestFare(flight) {
 }
 
 function pickReturnFlightPair(outboundFlight, returnFlights) {
+  const outboundCarrier = marketingCarrierCode(outboundFlight);
   const compatibleReturns = returnFlights.filter(
-    (candidate) => marketingCarrierCode(candidate) === marketingCarrierCode(outboundFlight),
+    (candidate) => areCarriersCompatible(marketingCarrierCode(candidate), outboundCarrier),
   );
   if (!compatibleReturns.length) return null;
 
@@ -899,6 +987,27 @@ function extractSegments(leg) {
   return [segmentFrom(leg)];
 }
 
+const AIRLINE_CODE_MAP = {
+  "9P": "Fly Jinnah",
+  "G9": "Air Arabia",
+  "XY": "Flynas",
+  "PF": "AirSial",
+  "PA": "Airblue",
+  "PK": "PIA",
+  "ER": "SereneAir",
+  "FZ": "Flydubai",
+  "EK": "Emirates",
+  "QR": "Qatar Airways",
+  "SV": "Saudia",
+  "F3": "Flyadeal",
+  "WY": "Oman Air",
+  "J9": "Jazeera Airways",
+  "KU": "Kuwait Airways",
+  "TK": "Turkish Airlines",
+  "OV": "SalamAir",
+  "EY": "Etihad Airways",
+};
+
 function segmentFrom(segment) {
   const origin = pick(segment, ["from.iata", "from.code", "from", "origin", "departure.airport", "departure.iata", "departure.location", "departure_airport"]);
   const destination = pick(segment, ["to.iata", "to.code", "to", "destination", "arrival.airport", "arrival.iata", "arrival.location", "arrival_airport"]);
@@ -913,10 +1022,14 @@ function segmentFrom(segment) {
     pick(segment, ["arrival_at", "arrivalTime", "arrival.datetime"])
   );
   if (!origin || !destination || !departureTime) return null;
+  const rawCarrier = pick(segment, ["carrier", "airline.code", "operating_carrier.iata", "marketing_carrier.iata", "carrier.code"]);
+  const carrierCode = String(rawCarrier || "").trim().toUpperCase();
+  const rawAirline = pick(segment, ["airline.name", "airline_name", "operating_carrier.name", "marketing_carrier.name"]);
+  const airline = rawAirline || AIRLINE_CODE_MAP[carrierCode] || undefined;
   return {
-    flightNumber: normalizeFlightNumber(pick(segment, ["flight_number", "flightNo", "number"]) || [pick(segment, ["carrier", "airline.code", "operating_carrier.iata", "marketing_carrier.iata"]), pick(segment, ["flight.number"])].filter(Boolean).join("-")),
-    carrier: pick(segment, ["carrier", "airline.code", "operating_carrier.iata", "marketing_carrier.iata"]),
-    airline: pick(segment, ["airline.name", "airline_name", "operating_carrier.name", "marketing_carrier.name"]),
+    flightNumber: normalizeFlightNumber(pick(segment, ["flight_number", "flightNo", "number"]) || [carrierCode, pick(segment, ["flight.number"])].filter(Boolean).join("-")),
+    carrier: carrierCode || undefined,
+    airline,
     origin: String(origin).toUpperCase(),
     destination: String(destination).toUpperCase(),
     departureAirport: pick(segment, ["from.name", "departure.name", "departure_airport_name"]) || origin,
@@ -944,28 +1057,33 @@ function extractFareOptions(offer, fallbackPrice) {
   const fares = extractArray(offer, ["fares", "fare_options", "brands", "data.fares"]);
   if (!fares.length) {
     return [{
-      tier: pick(offer, ["fare_brand", "brand", "fare.name"]) || "Supplier Fare",
+      tier: pick(offer, ["fare_brand", "brand", "fare.name", "type"]) || "Supplier Fare",
       price: fallbackPrice,
       bags: baggageFromSooperFareOffer(offer) || "Baggage info not available",
       meal: mealLabel(mealFromSooperFareFlight(offer)),
       change: "Subject to supplier rules",
-      refund: "Subject to supplier rules",
+      refund: offer.refundable === false ? "Non-refundable" : "Subject to supplier rules",
+      cancellation: offer.refundable === false ? "Non-refundable" : "Subject to supplier rules",
       amenities: [],
     }];
   }
   const flightMeal = mealLabel(mealFromSooperFareFlight(offer));
   return fares.map((fare) => {
     const price = extractPrice(fare);
-    const tierName = pick(fare, ["name", "brand", "fare_brand", "type"]) || "Supplier Fare";
+    const tierName = pick(fare, ["name", "brand", "fare_brand", "brand_name", "type", "fare_type", "family", "fare_family", "tier"]) || "Supplier Fare";
     const bookingClass = pick(fare, ["class_code", "rbd", "booking_class", "cabin_code", "class", "code"]);
     const tier = bookingClass && bookingClass.length <= 2 ? `${tierName} (${String(bookingClass).toUpperCase()})` : tierName;
+    const refund = refundFromSooperFareFare(fare, offer) || (offer.refundable === false ? "Non-refundable" : "Subject to supplier rules");
+    const change = changeFromSooperFareFare(fare) || "Subject to supplier rules";
     return {
       tier,
       price: price.total ? price : fallbackPrice,
       bags: baggageFromSooperFareFare(fare) || baggageFromSooperFareOffer(offer) || "Baggage info not available",
       meal: flightMeal,
-      change: pick(fare, ["change", "change_fee"]) || "Subject to supplier rules",
-      refund: pick(fare, ["refund", "refundable"]) || "Subject to supplier rules",
+      change,
+      refund,
+      cancellation: refund,
+      farePolicies: Array.isArray(fare.fare_policies) ? fare.fare_policies : undefined,
       amenities: extractArray(fare, ["amenities", "attributes"]).map((item) => typeof item === "string" ? item : pick(item, ["name", "label", "Classification"])).filter(Boolean),
       refId: pick(fare, ["ref_id", "id"]),
     };
@@ -1007,8 +1125,19 @@ function extractRoundtripFareOptions(outboundFlight, returnFlight, fallbackPrice
           || baggageFromSooperFareOffer(outboundFlight)
           || "Baggage info not available",
         meal: roundtripMeal,
-        change: "Subject to supplier rules",
-        refund: "Subject to supplier rules",
+        change: changeFromSooperFareFare(outboundFare)
+          || changeFromSooperFareFare(returnFare)
+          || "Subject to supplier rules",
+        refund: refundFromSooperFareFare(outboundFare, outboundFlight)
+          || refundFromSooperFareFare(returnFare, returnFlight)
+          || (outboundFlight?.refundable === false || returnFlight?.refundable === false ? "Non-refundable" : "Subject to supplier rules"),
+        cancellation: refundFromSooperFareFare(outboundFare, outboundFlight)
+          || refundFromSooperFareFare(returnFare, returnFlight)
+          || (outboundFlight?.refundable === false || returnFlight?.refundable === false ? "Non-refundable" : "Subject to supplier rules"),
+        farePolicies: [
+          ...(Array.isArray(outboundFare.fare_policies) ? outboundFare.fare_policies : []),
+          ...(Array.isArray(returnFare.fare_policies) ? returnFare.fare_policies : []),
+        ],
         amenities: unique([
           ...extractArray(outboundFare, ["amenities", "attributes"]).map((item) => typeof item === "string" ? item : pick(item, ["name", "label", "Classification"])),
           ...extractArray(returnFare, ["amenities", "attributes"]).map((item) => typeof item === "string" ? item : pick(item, ["name", "label", "Classification"])),
@@ -1092,8 +1221,12 @@ function extractMulticityFareOptions(flights, fallbackPrice) {
         || baggageFromSooperFareOffer(flights[0])
         || "Baggage info not available",
       meal,
-      change: "Subject to supplier rules",
-      refund: "Subject to supplier rules",
+      change: matchedFares.map((f) => changeFromSooperFareFare(f)).find(Boolean) || "Subject to supplier rules",
+      refund: matchedFares.map((f) => refundFromSooperFareFare(f)).find(Boolean)
+        || (flights.some((f) => f?.refundable === false) ? "Non-refundable" : "Subject to supplier rules"),
+      cancellation: matchedFares.map((f) => refundFromSooperFareFare(f)).find(Boolean)
+        || (flights.some((f) => f?.refundable === false) ? "Non-refundable" : "Subject to supplier rules"),
+      farePolicies: matchedFares.flatMap((f) => Array.isArray(f.fare_policies) ? f.fare_policies : []),
       amenities: unique(matchedFares.flatMap((fare) => extractArray(fare, ["amenities", "attributes"])
         .map((item) => typeof item === "string" ? item : pick(item, ["name", "label", "Classification"]))
         .filter(Boolean))),
@@ -1118,30 +1251,50 @@ function formatSooperFareBaggagePolicies(policies) {
   if (!Array.isArray(policies) || !policies.length) return null;
 
   const findPolicy = (type) => policies.find((policy) => String(policy?.type || "").toLowerCase() === type);
-  const carry = findPolicy("carry");
-  const checked = findPolicy("checked");
+  const carry = findPolicy("carry") || findPolicy("cabin") || findPolicy("hand");
+  const checked = findPolicy("checked") || findPolicy("checkin") || findPolicy("check_in");
 
-  const carryWeight = Number(carry?.weight_limit) || 0;
+  const carryWeight = Number(carry?.weight_limit || carry?.weight || 0);
   const parts = carryWeight > 0 ? [carryWeight] : [];
 
   if (checked) {
-    const weight = Number(checked.weight_limit) || 0;
-    const pieces = Number(checked.pieces) || 0;
+    let weight = Number(checked.weight_limit || checked.weight || 0);
+    if (weight === 0 && checked.description) {
+      const match = String(checked.description).match(/(\d+)\s*(?:kg|kilos|k)\b/i);
+      if (match) weight = Number(match[1]);
+    }
+    const pieces = Number(checked.pieces) || (weight > 0 ? 1 : 0);
     if (weight > 0 && pieces > 0) {
       for (let index = 0; index < pieces; index += 1) {
         parts.push(weight);
       }
+    } else if (pieces > 0 && !parts.length) {
+      return `${pieces} Piece${pieces > 1 ? "s" : ""}`;
     }
   }
 
-  return parts.length ? parts.map((weight) => `${weight}Kg`).join(" + ") : null;
+  if (parts.length) return parts.map((weight) => `${weight}Kg`).join(" + ");
+
+  const descriptions = policies.map((p) => p?.description).filter(Boolean);
+  if (descriptions.length) return descriptions.join(" + ");
+
+  return null;
 }
 
 function baggageFromSooperFareFare(fare) {
   if (!fare || typeof fare !== "object") return null;
   const fromPolicies = formatSooperFareBaggagePolicies(fare.baggage_policies);
   if (fromPolicies) return fromPolicies;
-  return pick(fare, ["baggage", "bags"]) || null;
+  const direct = pick(fare, ["baggage", "bags", "baggage_info", "baggage_allowance", "included_baggage", "allowance"]);
+  if (direct && typeof direct === "string" && direct.trim()) return direct.trim();
+
+  // Flynas tier defaults when policy is missing or incomplete
+  const tierName = String(pick(fare, ["name", "brand", "fare_brand", "type"]) || "").toLowerCase();
+  if (tierName.includes("light")) return "7Kg";
+  if (tierName.includes("value")) return "7Kg + 20Kg";
+  if (tierName.includes("plus")) return "7Kg + 30Kg";
+
+  return null;
 }
 
 function baggageFromSooperFareOffer(offer) {
@@ -1152,6 +1305,44 @@ function baggageFromSooperFareOffer(offer) {
   }
   return pick(offer, ["baggage", "baggage_info", "included_baggage"]) || null;
 }
+
+function formatSooperFareFarePolicies(policies, type) {
+  if (!Array.isArray(policies) || !policies.length) return null;
+  const target = String(type || "").trim().toLowerCase();
+  const matched = policies.filter((policy) => String(policy?.type || "").trim().toLowerCase() === target);
+  if (!matched.length) return null;
+
+  const adultOrAll = matched.filter((p) => !p?.traveler_type || String(p.traveler_type).toLowerCase() === "adult");
+  const chosen = adultOrAll.length ? adultOrAll : matched;
+
+  const descriptions = chosen
+    .map((p) => String(p?.description || "").trim())
+    .filter(Boolean);
+
+  const unique = Array.from(new Set(descriptions));
+  return unique.length ? unique.join("\n") : null;
+}
+
+function refundFromSooperFareFare(fare, fallbackOffer) {
+  if (!fare || typeof fare !== "object") return null;
+  const fromPolicies = formatSooperFareFarePolicies(fare.fare_policies, "refund");
+  if (fromPolicies) return fromPolicies;
+  const direct = pick(fare, ["refund", "cancellation", "cancellation_policy", "refund_policy", "cancellation_fee", "refund_fee"]);
+  if (direct && typeof direct === "string" && direct.trim()) return direct.trim();
+  if (fare.refundable === false || fare.is_refundable === false || fallbackOffer?.refundable === false) return "Non-refundable";
+  if (fare.refundable === true || fare.is_refundable === true || fallbackOffer?.refundable === true) return "Refundable (subject to airline policy)";
+  return null;
+}
+
+function changeFromSooperFareFare(fare) {
+  if (!fare || typeof fare !== "object") return null;
+  const fromPolicies = formatSooperFareFarePolicies(fare.fare_policies, "exchange");
+  if (fromPolicies) return fromPolicies;
+  const direct = pick(fare, ["change", "change_policy", "change_fee", "exchange_policy", "date_change"]);
+  if (direct && typeof direct === "string" && direct.trim()) return direct.trim();
+  return null;
+}
+
 
 function isSooperFareMealAvailable(item) {
   const type = String(item?.availability_type || "").toLowerCase();

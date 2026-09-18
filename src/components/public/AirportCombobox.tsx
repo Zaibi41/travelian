@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { Airport } from "@/data/airports";
+import { formatAirportSubtitle, getCountryName } from "@/lib/country-names";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -73,12 +74,16 @@ function airportMatchScore(airport: Airport, search: string) {
   const code = airport.code.toLowerCase();
   const city = airport.city.toLowerCase();
   const name = airport.name.toLowerCase();
-  const country = airport.country.toLowerCase();
+  const countryCode = airport.country.toLowerCase();
+  const countryName = getCountryName(airport.country).toLowerCase();
   if (code === needle) return 0;
   if (code.startsWith(needle)) return 1;
   if (city.startsWith(needle)) return 2;
   if (name.startsWith(needle)) return 3;
-  if (country.startsWith(needle)) return 4;
+  if (countryName.startsWith(needle) || countryCode.startsWith(needle)) return 4;
+  if (city.includes(needle)) return 5;
+  if (name.includes(needle)) return 6;
+  if (countryName.includes(needle)) return 7;
   return Number.POSITIVE_INFINITY;
 }
 
@@ -167,26 +172,30 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
           <CommandList className="max-h-[min(calc(var(--radix-popover-content-available-height)-3.25rem),20rem)]">
             {!isLoadingAirports && !loadError && shownAirports.length === 0 && <CommandEmpty>No airport found.</CommandEmpty>}
             <CommandGroup heading="Airports">
-              {shownAirports.map((airport) => (
-                <CommandItem
-                  key={airport.code}
-                  value={`${airport.code} ${airport.city} ${airport.name} ${airport.country}`}
-                  onSelect={() => {
-                    onChange(airport.code);
-                    setOpen(false);
-                  }}
-                  className="min-w-0 gap-2"
-                >
-                  <Check className={cn("h-4 w-4", value === airport.code ? "opacity-100" : "opacity-0")} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="shrink-0 font-semibold">{airport.code}</span>
-                      <span className="truncate">{airport.city}</span>
+              {shownAirports.map((airport) => {
+                const countryName = getCountryName(airport.country);
+                const subtitle = formatAirportSubtitle(airport.name, airport.country);
+                return (
+                  <CommandItem
+                    key={airport.code}
+                    value={`${airport.code} ${airport.city} ${airport.name} ${countryName} ${airport.country}`}
+                    onSelect={() => {
+                      onChange(airport.code);
+                      setOpen(false);
+                    }}
+                    className="min-w-0 gap-2"
+                  >
+                    <Check className={cn("h-4 w-4", value === airport.code ? "opacity-100" : "opacity-0")} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="shrink-0 font-semibold">{airport.code}</span>
+                        <span className="truncate">{airport.city}</span>
+                      </div>
+                      <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
                     </div>
-                    <p className="truncate text-xs text-muted-foreground">{airport.name} - {airport.country}</p>
-                  </div>
-                </CommandItem>
-              ))}
+                  </CommandItem>
+                );
+              })}
               {isLoadingAirports && (
                 <div className="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />

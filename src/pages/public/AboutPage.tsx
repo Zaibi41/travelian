@@ -1,6 +1,5 @@
-import { Link } from "react-router-dom";
-import { isPublicPathVisible, PUBLIC_SERVICE_VISIBILITY } from "@/lib/public-services";
-import { Plane, Hotel, Package, FileCheck, Map, GraduationCap, Shield, Headphones, Zap, Search, MousePointerClick, Compass } from "lucide-react";
+﻿import { Link } from "react-router-dom";
+import { Plane, Hotel, Package, Shield, Headphones, Zap, Search, MousePointerClick, Compass } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/public/PageHeader";
@@ -11,16 +10,12 @@ const services = [
   { icon: Plane, title: "Flight Booking", desc: "Search available domestic and international flight fares.", to: "/flights-search" },
   { icon: Hotel, title: "Hotel Booking", desc: "Search available hotel rates for your destination.", to: "/hotels-search" },
   { icon: Package, title: "Umrah Packages", desc: "Browse published Umrah packages with package details.", to: "/umrah-packages" },
-  { icon: FileCheck, title: "Visit Visas", desc: "Travel visa assistance for available destinations.", to: "/visa-services" },
-  { icon: GraduationCap, title: "Study Visas", desc: "Guidance for supported study visa applications.", to: "/visa-services" },
-  { icon: Map, title: "Tours", desc: "Browse published domestic and international tours.", to: "/tour-packages" },
 ];
 
 const why = [
   { icon: Shield, title: "Booking Support", desc: "Assistance from search through ticketing." },
   { icon: Headphones, title: "Customer Support", desc: "Help with travel service inquiries." },
-  { icon: Zap, title: "Travel Assistance", desc: "Support for flights, packages and travel services." },
-  { icon: FileCheck, title: "Visa Assistance", desc: "Guidance for supported visa applications." },
+  { icon: Zap, title: "Travel Assistance", desc: "Support for flights, hotels and Umrah packages." },
 ];
 
 const steps = [
@@ -52,7 +47,7 @@ export default function AboutPage() {
             <p className="text-sm text-muted-foreground mt-2">Everything you need to plan, book and travel.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {services.filter(service => isPublicPathVisible(service.to)).map(service => (
+            {services.map(service => (
               <Link to={service.to} key={service.title}>
                 <Card className="h-full hover:shadow-elevated transition-all border-0 shadow-card group">
                   <CardContent className="p-5">
@@ -74,8 +69,8 @@ export default function AboutPage() {
           <div className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-bold font-display text-foreground">Why Choose Us</h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {why.filter(item => item.title !== "Visa Assistance" || PUBLIC_SERVICE_VISIBILITY.visa).map(item => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {why.map(item => (
               <Card key={item.title} className="text-center border-0 shadow-card">
                 <CardContent className="p-5">
                   <div className="h-11 w-11 rounded-xl bg-gold-light flex items-center justify-center mx-auto mb-3">

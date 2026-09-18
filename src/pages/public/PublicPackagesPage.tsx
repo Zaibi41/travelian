@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import { PUBLIC_SERVICE_VISIBILITY } from "@/lib/public-services";
+﻿import { useMemo } from "react";
 import { Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/public/PageHeader";
@@ -15,7 +14,6 @@ import {
   UmrahFinalCta,
   UmrahNotes,
   UmrahTierComparison,
-  UmrahVisaRates,
 } from "@/components/public/umrah/UmrahSections";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
@@ -36,7 +34,7 @@ export default function PublicPackagesPage() {
     <div>
       <SEO
         title="Umrah Packages from Pakistan | Travelian"
-        description="Umrah packages from Lahore, Islamabad, Karachi, Multan and Sialkot with Makkah and Madinah hotels, visa, transport and ziarat. Starting-from rates, custom packages on WhatsApp."
+        description="Umrah packages from Lahore, Islamabad, Karachi, Multan and Sialkot with Makkah and Madinah hotels, transport and ziarat. Starting-from rates, custom packages on WhatsApp."
       />
 
       <PageHeader
@@ -75,7 +73,6 @@ export default function PublicPackagesPage() {
         <UmrahTierComparison />
         <UmrahRequestForm />
         <UmrahCityPackages />
-        {PUBLIC_SERVICE_VISIBILITY.visa && <UmrahVisaRates />}
         <UmrahHotels
           id="makkah-hotels"
           eyebrow="Makkah stay"

@@ -1,5 +1,4 @@
 import { Link, useLocation } from "react-router-dom";
-import { isPublicPathVisible } from "@/lib/public-services";
 import { ChevronDown, Globe, Menu, Phone, X } from "lucide-react";
 import { useState } from "react";
 import {
@@ -17,11 +16,9 @@ const serviceLinks = [
   { label: "Flights", href: "/", match: ["/", "/flights-search"] },
   { label: "Umrah", href: "/umrah-packages", match: ["/umrah-packages", "/umrah"] },
   { label: "Hotels", href: "/hotels-search", match: ["/hotels-search", "/hotel"] },
-  { label: "Visas", href: "/visa-services", match: ["/visa-services", "/visa"] },
-  { label: "Tours", href: "/tour-packages", match: ["/tour-packages", "/tour"] },
   { label: "About", href: "/about", match: ["/about"] },
   { label: "Contact", href: "/contact", match: ["/contact"] },
-].filter((link) => isPublicPathVisible(link.href));
+];
 
 export function PublicNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
