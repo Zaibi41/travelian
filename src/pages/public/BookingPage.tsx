@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { PUBLIC_SERVICE_VISIBILITY } from "@/lib/public-services";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -188,7 +189,7 @@ export default function BookingPage() {
               <Link to="/"><Button className="gradient-primary text-primary-foreground rounded-xl">Search Flights</Button></Link>
               <Link to="/hotels-search"><Button variant="outline" className="rounded-xl">Find Hotels</Button></Link>
               <Link to="/umrah-packages"><Button variant="outline" className="rounded-xl">Umrah Packages</Button></Link>
-              <Link to="/tour-packages"><Button variant="outline" className="rounded-xl">Tours</Button></Link>
+              {PUBLIC_SERVICE_VISIBILITY.tour && <Link to="/tour-packages"><Button variant="outline" className="rounded-xl">Tours</Button></Link>}
             </div>
           </CardContent>
         </Card>

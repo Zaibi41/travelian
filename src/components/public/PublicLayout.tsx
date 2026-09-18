@@ -1,10 +1,14 @@
 import { PublicNavbar } from "./PublicNavbar";
+import { Navigate, useLocation } from "react-router-dom";
+import { isPublicPathVisible } from "@/lib/public-services";
 import { PublicFooter } from "./PublicFooter";
 import { WhatsAppIcon } from "./WhatsAppIcon";
 import { MoveToTopButton } from "@/components/MoveToTopButton";
 import { whatsappUrl } from "@/lib/site-config";
 
 export function PublicLayout({ children, showFooter = true }: { children: React.ReactNode; showFooter?: boolean }) {
+  const { pathname, search } = useLocation();
+  if (!isPublicPathVisible(pathname + search)) return <Navigate to="/" replace />;
   return (
     <div className={showFooter ? "min-h-screen overflow-x-hidden flex flex-col" : "h-dvh overflow-hidden flex flex-col"}>
       <PublicNavbar />

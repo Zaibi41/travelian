@@ -21,16 +21,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://travelian.pk/study-abroad</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://travelian.pk/visa-services</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://travelian.pk/deals</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>

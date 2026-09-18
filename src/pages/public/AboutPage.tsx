@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { isPublicPathVisible, PUBLIC_SERVICE_VISIBILITY } from "@/lib/public-services";
 import { Plane, Hotel, Package, FileCheck, Map, GraduationCap, Shield, Headphones, Zap, Search, MousePointerClick, Compass } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,13 +33,13 @@ const steps = [
 export default function AboutPage() {
   return (
     <div>
-      <PageHeader title="About Travelian" tagline="Your Trusted Travel Partner for Flights, Hotels, Umrah, Tours & Visas" />
+      <PageHeader title="About Travelian" tagline="Your Trusted Travel Partner for Flights, Umrah & Hotels" />
 
       <section className="py-14">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl md:text-3xl font-bold font-display text-foreground mb-4">Who We Are</h2>
           <p className="text-muted-foreground leading-relaxed">
-            Travelian provides travel management services for flights, hotels, Umrah packages, guided tours and visa assistance.
+            Travelian provides travel management services for flights, hotels and Umrah packages.
             Our team helps travelers and agencies find available options and continue through the appropriate booking process.
           </p>
         </div>
@@ -50,8 +51,8 @@ export default function AboutPage() {
             <h2 className="text-2xl md:text-3xl font-bold font-display text-foreground">Our Services</h2>
             <p className="text-sm text-muted-foreground mt-2">Everything you need to plan, book and travel.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {services.map(service => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {services.filter(service => isPublicPathVisible(service.to)).map(service => (
               <Link to={service.to} key={service.title}>
                 <Card className="h-full hover:shadow-elevated transition-all border-0 shadow-card group">
                   <CardContent className="p-5">
@@ -73,8 +74,8 @@ export default function AboutPage() {
           <div className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-bold font-display text-foreground">Why Choose Us</h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {why.map(item => (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {why.filter(item => item.title !== "Visa Assistance" || PUBLIC_SERVICE_VISIBILITY.visa).map(item => (
               <Card key={item.title} className="text-center border-0 shadow-card">
                 <CardContent className="p-5">
                   <div className="h-11 w-11 rounded-xl bg-gold-light flex items-center justify-center mx-auto mb-3">

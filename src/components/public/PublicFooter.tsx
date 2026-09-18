@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { PUBLIC_SERVICE_VISIBILITY } from "@/lib/public-services";
 import { BriefcaseBusiness, Building2, CircleHelp, Facebook, Globe, Instagram, Mail, MapPin, Music2, Phone, Youtube } from "lucide-react";
 import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from "@/lib/site-config";
 
@@ -20,7 +21,7 @@ export function PublicFooter() {
               </span>
               <span className="text-lg font-bold font-display text-sidebar-accent-foreground">Travelian</span>
             </Link>
-            <p className="text-sm text-sidebar-muted leading-relaxed mb-4">Travel support for flights, hotels, Umrah packages, tours and visa services.</p>
+            <p className="text-sm text-sidebar-muted leading-relaxed mb-4">Travel support for flights, hotels and Umrah packages{PUBLIC_SERVICE_VISIBILITY.tour && ", tours"}{PUBLIC_SERVICE_VISIBILITY.visa && " and visa services"}.</p>
             <div className="flex gap-2">
               <a href="https://www.facebook.com/Travelian.pk/" target="_blank" rel="noreferrer" aria-label="Travelian on Facebook" className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-muted transition-all hover:-translate-y-0.5 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"><Facebook className="h-4 w-4" /></a>
               <a href="https://www.instagram.com/travelian.pk/" target="_blank" rel="noreferrer" aria-label="Travelian on Instagram" className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sidebar-muted transition-all hover:-translate-y-0.5 hover:bg-sidebar-primary hover:text-sidebar-primary-foreground"><Instagram className="h-4 w-4" /></a>
@@ -35,8 +36,8 @@ export function PublicFooter() {
               <li><Link to="/" onClick={scrollToTop} className="hover:text-sidebar-primary">Flights</Link></li>
               <li><Link to="/hotels-search" className="hover:text-sidebar-primary">Hotels</Link></li>
               <li><Link to="/umrah-packages" className="hover:text-sidebar-primary">Umrah Packages</Link></li>
-              <li><Link to="/tour-packages" className="hover:text-sidebar-primary">Tours</Link></li>
-              <li><Link to="/visa-services" className="hover:text-sidebar-primary">Visa Services</Link></li>
+              {PUBLIC_SERVICE_VISIBILITY.tour && <li><Link to="/tour-packages" className="hover:text-sidebar-primary">Tours</Link></li>}
+              {PUBLIC_SERVICE_VISIBILITY.visa && <li><Link to="/visa-services" className="hover:text-sidebar-primary">Visa Services</Link></li>}
             </ul>
           </div>
 

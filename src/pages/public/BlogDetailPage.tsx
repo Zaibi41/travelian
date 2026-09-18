@@ -51,7 +51,7 @@ export default function BlogDetailPage() {
       <div className="prose prose-sm md:prose-base max-w-none mt-8 text-foreground leading-relaxed space-y-4">
         <p>{post.content || post.excerpt}</p>
         <p>
-          At Travelian we curate every detail of your journey, from flights and hotels to visas and ground transport.
+          At Travelian we help you plan your journey with flights, hotels and Umrah packages.
           This article covers the essentials you need to plan with confidence.
         </p>
         <h2 className="text-xl font-semibold mt-6">Key takeaways</h2>

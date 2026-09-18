@@ -52,13 +52,13 @@ export default function ContactPage() {
   return (
     <div>
       <SEO
-        title="Contact Travelian | Flights, Umrah, Visa & Hotel Support"
-        description="Talk to the Travelian team about flights, Umrah packages, visas, hotels and tours. Call, WhatsApp or send us a message and we reply within 24 hours."
+        title="Contact Travelian | Flights, Umrah & Hotel Support"
+        description="Talk to the Travelian team about flights, Umrah packages and hotels. Call, WhatsApp or send us a message and we reply within 24 hours."
       />
       <PageHeader
         eyebrow="We're here to help"
         title="Contact Travelian"
-        tagline="Speak to a real travel consultant about fares, Umrah packages, visa documents or a booking you have already made."
+        tagline="Speak to a real travel consultant about fares, Umrah packages, hotels or a booking you have already made."
         icon={<Headphones className="h-6 w-6" />}
       />
 

@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { PUBLIC_SERVICE_VISIBILITY } from "@/lib/public-services";
 import { ArrowRight, Hotel, MapPin, Plane, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,7 +59,13 @@ const destinationMap: Record<string, {
 
 export default function DestinationPage() {
   const { slug = "makkah" } = useParams();
-  const destination = destinationMap[slug] || destinationMap.makkah;
+  const storedDestination = destinationMap[slug] || destinationMap.makkah;
+  const destination = !["makkah", "madinah"].includes(slug) && destinationMap[slug] &&
+    (!PUBLIC_SERVICE_VISIBILITY.visa || !PUBLIC_SERVICE_VISIBILITY.tour)
+    ? { ...storedDestination,
+        summary: `Find flights and hotels for your stay in ${storedDestination.name} with Travelian.`,
+        highlights: ["City hotels", "Flight booking", "Family rooms"] }
+    : storedDestination;
 
   return (
     <div>

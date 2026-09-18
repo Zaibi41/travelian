@@ -1,6 +1,7 @@
 // Generates public/sitemap.xml before dev and build.
 import { writeFileSync } from "fs";
 import { resolve } from "path";
+import { isPublicPathVisible } from "../src/lib/public-services";
 
 const BASE_URL = "https://travelian.pk";
 
@@ -45,5 +46,6 @@ function generateSitemap(items: SitemapEntry[]) {
   ].join("\n");
 }
 
-writeFileSync(resolve("public/sitemap.xml"), generateSitemap(entries));
-console.log(`sitemap.xml written (${entries.length} entries)`);
+const visibleEntries = entries.filter((entry) => isPublicPathVisible(entry.path));
+writeFileSync(resolve("public/sitemap.xml"), generateSitemap(visibleEntries));
+console.log(`sitemap.xml written (${visibleEntries.length} entries)`);

@@ -18,8 +18,8 @@ const faqs = [
     a: "Yes. You can contact a Travelian consultant on WhatsApp, phone, or email before confirming your booking.",
   },
   {
-    q: "Do you help with Umrah packages and visas?",
-    a: "Yes. Travelian provides support for Umrah packages, visit visas, study visas, hotels, tours, and other travel-related services.",
+    q: "Do you help with Umrah packages and hotels?",
+    a: "Yes. Travelian provides support for Umrah packages, hotels and flights.",
   },
   {
     q: "Do you work with travel agents and corporate clients?",

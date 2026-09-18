@@ -19,7 +19,7 @@ const steps = [
   {
     icon: TicketCheck,
     title: "Get Your Confirmation",
-    desc: "Receive your ticket, voucher or visa confirmation with support details.",
+    desc: "Receive your ticket or booking voucher with support details.",
   },
 ];
 

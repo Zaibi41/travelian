@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { PUBLIC_SERVICE_VISIBILITY } from "@/lib/public-services";
 import { Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/public/PageHeader";
@@ -74,7 +75,7 @@ export default function PublicPackagesPage() {
         <UmrahTierComparison />
         <UmrahRequestForm />
         <UmrahCityPackages />
-        <UmrahVisaRates />
+        {PUBLIC_SERVICE_VISIBILITY.visa && <UmrahVisaRates />}
         <UmrahHotels
           id="makkah-hotels"
           eyebrow="Makkah stay"

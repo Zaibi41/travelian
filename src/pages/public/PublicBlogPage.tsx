@@ -24,13 +24,13 @@ export default function PublicBlogPage() {
     <div>
       <SEO
         title="Travel Guides & Blog | Travelian"
-        description="Travel guides for Pakistani travellers: Umrah planning, flight booking tips, visa requirements and hotel recommendations from the Travelian team."
+        description="Travel guides for Pakistani travellers: Umrah planning, flight booking tips and hotel recommendations from the Travelian team."
       />
       <PageHeader
         eyebrow="Travel guide"
         icon={<BookOpen className="h-5 w-5" />}
         title="Travelian Travel Blog"
-        tagline="Practical guides on flights, Umrah, visas and destinations — written for Pakistani travellers."
+        tagline="Practical guides on flights, Umrah, hotels and destinations — written for Pakistani travellers."
       />
 
 

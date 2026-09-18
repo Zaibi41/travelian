@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { isPublicPathVisible, isPublicServiceVisible } from "@/lib/public-services";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Flame, Clock, Percent, Zap, Tag, MapPin, Heart, ArrowRight, Check, Copy, Hotel as HotelIcon } from "lucide-react";
@@ -15,7 +16,7 @@ const flashDeals: Array<{ title: string; discount: string; desc: string; bg: str
 export default function DealsPage() {
   const { coupons } = useAdmin();
   const today = new Date().toISOString().slice(0, 10);
-  const activeCoupons = coupons.filter(c => c.status === 'active' && c.validUntil >= today);
+  const activeCoupons = coupons.filter(c => c.status === 'active' && c.validUntil >= today && isPublicServiceVisible(c.applicableTo));
   const discountedHotels: Hotel[] = [];
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -32,13 +33,13 @@ export default function DealsPage() {
     <div>
       <SEO
         title="Travel Deals & Promo Codes | Travelian"
-        description="Current Travelian promo codes and travel offers on flights, hotels, Umrah packages and tours. Verified deals only, no expired listings."
+        description="Current Travelian promo codes and travel offers on flights, hotels and Umrah packages. Verified deals only, no expired listings."
       />
       <PageHeader
         eyebrow="Limited time"
         icon={<Flame className="h-5 w-5" />}
         title="Deals & Promotions"
-        tagline="Active discounts on flights, hotels, Umrah packages and tours — published straight from Travelian inventory, never expired."
+        tagline="Active discounts on flights, hotels and Umrah packages — published straight from Travelian inventory, never expired."
       />
 
 
@@ -50,7 +51,7 @@ export default function DealsPage() {
             <h2 className="text-xl font-bold font-display text-foreground">Flash Deals</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {flashDeals.map((deal, i) => (
+            {flashDeals.filter(deal => isPublicPathVisible(deal.to)).map((deal, i) => (
               <Link to={deal.to} key={i} className={`${deal.bg} rounded-2xl p-5 text-primary-foreground relative overflow-hidden hover:scale-[1.02] transition-transform block`}>
                 <div className="absolute top-0 right-0 w-24 h-24 bg-primary-foreground/5 rounded-full -mr-8 -mt-8" />
                 <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 text-[10px] mb-2">{deal.category}</Badge>

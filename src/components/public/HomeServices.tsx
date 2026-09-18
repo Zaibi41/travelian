@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { isPublicPathVisible } from "@/lib/public-services";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -57,7 +58,7 @@ export function HomeServices() {
         </div>
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((s) => (
+          {services.filter((service) => isPublicPathVisible(service.to)).map((s) => (
             <article
               key={s.title}
               className="group flex h-full flex-col overflow-hidden rounded-2xl border-0 bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-hover"

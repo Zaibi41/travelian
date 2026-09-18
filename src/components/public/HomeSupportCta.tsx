@@ -19,7 +19,7 @@ export function HomeSupportCta() {
                 Need help planning your journey?
               </h2>
               <p className="mt-2 text-sm md:text-base leading-7 text-primary-foreground/75">
-                Talk to our travel team for flights, Umrah, visas, hotels and tours.
+                Talk to our travel team for flights, Umrah and hotels.
               </p>
             </div>
             <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row">
