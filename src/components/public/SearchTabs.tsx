@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Hotel, Plane, Car, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets, FileCheck2, Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, startOfDay } from "date-fns";
@@ -119,7 +119,15 @@ type SearchTabsProps = {
   onGroupSearch?: Parameters<typeof GroupTicketingSearchBar>[0]["onSearch"];
 };
 
-export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResultsPath = "/flights-search", groupInitialValues, onGroupSearch }: SearchTabsProps = {}) {
+const DEFAULT_VISIBLE_TAB_IDS = ["flights", "group-ticketing", "hotels"];
+
+export function SearchTabs({
+  initialTab = "flights",
+  visibleTabIds = DEFAULT_VISIBLE_TAB_IDS,
+  flightResultsPath = "/flights-search",
+  groupInitialValues,
+  onGroupSearch,
+}: SearchTabsProps = {}) {
   const { currency } = useLocale();
   const visibleTabs = visibleTabIds?.length ? tabs.filter((tab) => visibleTabIds.includes(tab.id)) : tabs;
   const [activeTab, setActiveTab] = useState(visibleTabs.some((tab) => tab.id === initialTab) ? initialTab : visibleTabs[0]?.id || "flights");
@@ -143,6 +151,7 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
     { from: "", to: "", date: undefined },
   ]);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
 
@@ -278,6 +287,10 @@ export function SearchTabs({ initialTab = "flights", visibleTabIds, flightResult
               }
               if (tab.id === "tours") {
                 navigate("/tour-packages");
+                return;
+              }
+              if (tab.id === "flights" && location.pathname.startsWith("/group-ticketing")) {
+                navigate("/");
                 return;
               }
               setActiveTab(tab.id);

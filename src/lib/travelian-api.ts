@@ -1,4 +1,5 @@
 import type { Flight } from "@/data/models";
+import { normalizeAirlineName } from "./airline-normalization";
 
 const API_BASE_URL = (import.meta.env.VITE_TRAVELIAN_API_BASE_URL || "https://api.travelian.pk").replace(/\/$/, "");
 
@@ -253,7 +254,7 @@ function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
   const preserveAirportTime = safeText(offer.provider).toLowerCase() === "sooperfare";
   const formatTime = (value: string | null | undefined) => formatFlightDateTime(value, preserveAirportTime);
   const flightNumber = safeText(offer.flightNumber, "Not specified");
-  const airline = safeText(offer.airline, "Airline");
+  const airline = normalizeAirlineName(safeText(offer.airline, "Airline"));
   const origin = safeText(offer.origin);
   const destination = safeText(offer.destination);
   const cabin = safeText(offer.cabin, "Economy");

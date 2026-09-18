@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -23,6 +23,9 @@ import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
 import { whatsappUrl } from "@/lib/site-config";
 import { airports } from "@/data/airports";
+import { isGroupTicketingProvider, groupTicketToFlight, decodeGroupTicketId } from "@/lib/provider-systems";
+import { fetchGroupTickets, filterGroupTickets } from "@/lib/group-ticketing";
+import { normalizeAirlineName, isSameAirline } from "@/lib/airline-normalization";
 
 // Preload airports for routeLabel lookup
 const airportCache = airports;
@@ -252,9 +255,27 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     setEditTo(editFrom);
   };
 
-  const toggleAirline = (a: string) => setSelectedAirlines(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
+  const toggleAirline = (a: string) => {
+    const canonical = normalizeAirlineName(a);
+    setSelectedAirlines(prev =>
+      prev.some(x => isSameAirline(x, canonical))
+        ? prev.filter(x => !isSameAirline(x, canonical))
+        : [...prev, canonical]
+    );
+  };
   const toggleStopFilter = (value: string) => setSelectedStops(prev => prev.includes(value) ? prev.filter(x => x !== value) : [...prev, value]);
   const toggleDepartureTimeFilter = (value: string) => setSelectedDepartureTimes(prev => prev.includes(value) ? prev.filter(x => x !== value) : [...prev, value]);
+
+  const [, setProviderUpdateCounter] = useState(0);
+  useEffect(() => {
+    const onProviderChanged = () => setProviderUpdateCounter((c) => c + 1);
+    window.addEventListener("travelian:provider-systems-changed", onProviderChanged);
+    window.addEventListener("storage", onProviderChanged);
+    return () => {
+      window.removeEventListener("travelian:provider-systems-changed", onProviderChanged);
+      window.removeEventListener("storage", onProviderChanged);
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -271,35 +292,99 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       localStorage.setItem(key, JSON.stringify(dedup));
     } catch { /* localStorage unavailable */ }
 
+    const departDateStr = formatDateOnly(departDate);
+    const originAirport = from.trim().toUpperCase();
+    const destAirport = to.trim().toUpperCase();
 
-    searchFlights({
-      from,
-      to,
-      tripType,
-      departureDate: formatDateOnly(departDate),
-      returnDate: returnDate ? formatDateOnly(returnDate) : undefined,
-      segments: segments.map((segment) => ({
-        from: segment.from,
-        to: segment.to,
-        date: segment.date ? formatDateOnly(segment.date) : "",
-      })),
-      cabin: travelers.cabin,
-      currency,
-      passengers: {
-        adults: travelers.adults,
-        children: travelers.children,
-        infants: travelers.infants,
-      },
-    }, controller.signal)
-      .then(result => {
-        setApiFlights(result.flights);
-        const liveMaxPrice = Math.max(700, ...result.flights.map(f => f.price));
+    Promise.allSettled([
+      searchFlights({
+        from,
+        to,
+        tripType,
+        departureDate: departDateStr,
+        returnDate: returnDate ? formatDateOnly(returnDate) : undefined,
+        segments: segments.map((segment) => ({
+          from: segment.from,
+          to: segment.to,
+          date: segment.date ? formatDateOnly(segment.date) : "",
+        })),
+        cabin: travelers.cabin,
+        currency,
+        passengers: {
+          adults: travelers.adults,
+          children: travelers.children,
+          infants: travelers.infants,
+        },
+      }, controller.signal),
+      fetchGroupTickets("all", controller.signal).then((groups) => {
+        return filterGroupTickets(groups, {
+          from: originAirport,
+          to: destAirport,
+          dateFrom: departDateStr,
+        });
+      }),
+    ])
+      .then(([flightsOutcome, groupsOutcome]) => {
+        if (controller.signal.aborted) return;
+        let flightsList: TravelianFlight[] = [];
+        if (flightsOutcome.status === "fulfilled") {
+          flightsList = flightsOutcome.value.flights;
+        }
+
+        if (groupsOutcome.status === "fulfilled" && groupsOutcome.value.length > 0) {
+          for (const gt of groupsOutcome.value) {
+            const converted = groupTicketToFlight(gt);
+            const decodedId = decodeGroupTicketId(gt.id).toLowerCase();
+            const gtTimeMatch = String(converted.departureTime).match(/\b(\d{1,2}:\d{2})\b/)?.[1] || "";
+
+            const exists = flightsList.some((lf) => {
+              const lfOffer = String(lf.offerId || "").toLowerCase();
+              const lfFlightId = String(lf.flightId || "").toLowerCase();
+              if (
+                lfOffer === decodedId ||
+                lfFlightId === `group-${decodedId}` ||
+                (decodedId && lfOffer.includes(decodedId)) ||
+                (gt.id && lfOffer.includes(gt.id.toLowerCase()))
+              ) {
+                return true;
+              }
+              const lfTimeMatch = String(lf.departureTime).match(/\b(\d{1,2}:\d{2})\b/)?.[1] || "";
+              if (
+                lf.provider &&
+                converted.provider &&
+                lf.provider.toLowerCase() === converted.provider.toLowerCase() &&
+                gtTimeMatch &&
+                lfTimeMatch === gtTimeMatch
+              ) {
+                return true;
+              }
+              return false;
+            });
+
+            if (!exists) {
+              flightsList.push(converted);
+            }
+          }
+        }
+
+        if (flightsOutcome.status === "rejected" && flightsList.length === 0) {
+          const err = flightsOutcome.reason;
+          setApiFlights([]);
+          setPriceRange([0, 700]);
+          setApiStatus("error");
+          setApiMessage(err instanceof Error ? err.message : "Live flight search is unavailable. Please modify your search and try again.");
+          setExpirySeconds(0);
+          return;
+        }
+
+        setApiFlights(flightsList);
+        const liveMaxPrice = Math.max(700, ...flightsList.map((f) => f.price));
         setPriceRange([0, Math.ceil(liveMaxPrice / 1000) * 1000]);
         setApiStatus("success");
-        setApiMessage(result.flights.length ? "" : "No live bookable fares returned for this search.");
-        setExpirySeconds(result.flights.length ? SEARCH_RESULT_TTL_SECONDS : 0);
+        setApiMessage(flightsList.length ? "" : "No live bookable fares returned for this search.");
+        setExpirySeconds(flightsList.length ? SEARCH_RESULT_TTL_SECONDS : 0);
       })
-      .catch(error => {
+      .catch((error) => {
         if (controller.signal.aborted) return;
         setApiFlights([]);
         setPriceRange([0, 700]);
@@ -322,9 +407,19 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const maxPrice = Math.max(700, ...flights.map(f => f.price));
 
   let filtered = flights.filter(f => {
-    if (search && !f.origin.toLowerCase().includes(search.toLowerCase()) && !f.destination.toLowerCase().includes(search.toLowerCase()) && !f.airline.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search) {
+      const q = search.toLowerCase().trim();
+      const qCompact = q.replace(/[^a-z0-9]/g, "");
+      const airlineCompact = (f.airline || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const matchSearch =
+        f.origin.toLowerCase().includes(q) ||
+        f.destination.toLowerCase().includes(q) ||
+        f.airline.toLowerCase().includes(q) ||
+        (qCompact.length > 0 && airlineCompact.includes(qCompact));
+      if (!matchSearch) return false;
+    }
     if (f.price < priceRange[0] || f.price > priceRange[1]) return false;
-    if (selectedAirlines.length > 0 && !selectedAirlines.includes(f.airline)) return false;
+    if (selectedAirlines.length > 0 && !selectedAirlines.some(selected => isSameAirline(selected, f.airline))) return false;
     if (selectedStops.length > 0) {
       const stops = f.stops || 0;
       const stopKey = stops === 0 ? "nonstop" : stops === 1 ? "1stop" : "2plus";
@@ -632,7 +727,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return () => controller.abort();
   }, [dateFlexDays, departDate, from, to, tripType, returnDate, travelers, currency]);
 
-  const airlineOptions = useMemo(() => Array.from(new Set(flights.map(f => f.airline).filter(Boolean))).sort(), [flights]);
+  const airlineOptions = useMemo(() => Array.from(new Set(flights.map(f => normalizeAirlineName(f.airline)).filter(Boolean))).sort(), [flights]);
   const stopOptions = [
     { value: "nonstop", label: "Non-stop" },
     { value: "1stop", label: "1 Stop" },
@@ -1229,7 +1324,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   )}
                   {airlineOptions.map(a => (
                     <label key={a} className="flex min-w-0 cursor-pointer items-center gap-2 group" title={a}>
-                      <Checkbox checked={selectedAirlines.includes(a)} onCheckedChange={() => toggleAirline(a)} />
+                      <Checkbox checked={selectedAirlines.some(sel => isSameAirline(sel, a))} onCheckedChange={() => toggleAirline(a)} />
                       <span className="min-w-0 truncate text-xs text-muted-foreground transition-colors group-hover:text-foreground">{limitText(a, 15)}</span>
                     </label>
                   ))}
@@ -1268,6 +1363,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             )}
 
             {apiStatus !== "loading" && filtered.map((flight) => {
+              const isGroup = isGroupTicketingProvider(flight.provider) || flight.fareBrand === "Group Ticket" || flight.flightId.startsWith("group-");
               const hasFareOptions = (flight.fareOptions || []).length > 0;
               const fareOptionsOpen = selectedFlight === flight.flightId;
               const displayFares = fareRows(flight);
@@ -1288,19 +1384,21 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         <div className="flex min-w-0 items-center gap-2.5 sm:gap-3 md:w-[11rem] md:shrink-0 md:pt-1">
                           <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={flight.airlineImage} className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl shrink-0" />
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-xs sm:text-sm font-semibold text-foreground" title={flight.airline}>{limitText(flight.airline, 12)}</p>
-                            {/* Refundable/Non-refundable badge */}
-                            {flight.refundable !== undefined && (
-                              <Badge variant={flight.refundable ? "outline" : "secondary"} className={cn("mt-0.5 rounded-md border-0 text-[9px] sm:text-[10px]", flight.refundable ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>
-                                {flight.refundable ? "Refundable" : "Non-refundable"}
-                              </Badge>
-                            )}
-                            {flight.status === 'delayed' && <Badge className="bg-warning/10 text-warning border-0 text-[10px] rounded-md">Delayed</Badge>}
-                            {false && adminMode && flight.provider && (
-                              <Badge variant="outline" className="rounded-md border-sky-200 bg-sky-50 text-[10px] font-semibold text-sky-700">
-                                Supplier: {formatProviderGroup(flight.provider)} · {formatProviderName(flight.provider)}
-                              </Badge>
-                            )}
+                            <div className="flex items-center gap-1.5">
+                              <p className="truncate text-xs sm:text-sm font-semibold text-foreground" title={flight.airline}>{limitText(flight.airline, 12)}</p>
+                              {isGroup && (
+                                <Users className="h-3.5 w-3.5 shrink-0 text-blue-600" title="Group" />
+                              )}
+                            </div>
+                            <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                              {/* Refundable/Non-refundable badge */}
+                              {flight.refundable !== undefined && (
+                                <Badge variant={flight.refundable ? "outline" : "secondary"} className={cn("rounded-md border-0 text-[9px] sm:text-[10px]", flight.refundable ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>
+                                  {flight.refundable ? "Refundable" : "Non-refundable"}
+                                </Badge>
+                              )}
+                              {flight.status === 'delayed' && <Badge className="bg-warning/10 text-warning border-0 text-[10px] rounded-md">Delayed</Badge>}
+                            </div>
                           </div>
                         </div>
 
@@ -1898,10 +1996,17 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             <div className="min-h-0 space-y-5 overflow-y-auto py-2 pr-1">
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-muted/40 p-4">
                 <div>
-                  <p className="text-lg font-bold text-foreground">{detailsFlight.airline}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-lg font-bold text-foreground">{detailsFlight.airline}</p>
+                    {(isGroupTicketingProvider(detailsFlight.provider) || detailsFlight.fareBrand === "Group Ticket" || detailsFlight.flightId.startsWith("group-")) && (
+                      <Users className="h-4 w-4 shrink-0 text-blue-600" title="Group" />
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">{detailsFlight.flightNumber} · {detailsFlight.origin} to {detailsFlight.destination}</p>
                 </div>
-                <Badge className="rounded-full">{detailsFlight.stops ? `${detailsFlight.stops} stop${detailsFlight.stops === 1 ? "" : "s"}` : "Non-stop"}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge className="rounded-full">{detailsFlight.stops ? `${detailsFlight.stops} stop${detailsFlight.stops === 1 ? "" : "s"}` : "Non-stop"}</Badge>
+                </div>
               </div>
               <JourneyTimeline flight={detailsFlight} />
 

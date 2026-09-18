@@ -1,4 +1,5 @@
 import { listPublicGroupTicketingCollections } from "@/lib/group-ticketing-collections-api";
+import { normalizeAirlineName } from "@/lib/airline-normalization";
 
 export interface GroupTicketLeg {
   id?: string;
@@ -452,7 +453,7 @@ export function normalizeGroupTicket(input: unknown): GroupTicket {
     categorySlug: supplierCategorySlug || slugify(categoryLabel),
     categoryLabel,
     categoryImage: value(record, ["category_image", "image", "banner", "thumbnail"]) as string | undefined,
-    airlineName: airline ? String(airline) : undefined,
+    airlineName: airline ? normalizeAirlineName(String(airline)) : undefined,
     airlineCode: value(airlineRecord, ["short_name", "iata", "code"]) as string | undefined,
     airlineLogo: (value(record, ["airline_logo", "logo", "airlineLogo"]) || value(airlineRecord, ["logo_url", "logo", "logo_path"])) as string | undefined,
     sector,

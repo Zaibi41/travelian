@@ -6,108 +6,13 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRole } from "@/contexts/RoleContext";
-import { AlertTriangle, Cloud, KeyRound, Lock, Plane, RefreshCw, Settings2, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Cloud, KeyRound, Lock, Plane, RefreshCw, Settings2, ShieldCheck, Users } from "lucide-react";
 import { toast } from "sonner";
-
-type ProviderSystem = {
-  id: string;
-  name: string;
-  category: "flight" | "hotel" | "transfer" | "payment";
-  environment: "production" | "staging";
-  status: "healthy" | "degraded" | "not_configured";
-  enabled: boolean;
-  secretId: string;
-  endpoint: string;
-  priority: number;
-  lastChecked: string;
-};
-
-const initialProviders: ProviderSystem[] = [
-  {
-    id: "skypass",
-    name: "Skypass",
-    category: "flight",
-    environment: "production",
-    status: "healthy",
-    enabled: true,
-    secretId: "travelian/providers/skypass",
-    endpoint: "api.travelian.pk/skypass/tickets",
-    priority: 1,
-    lastChecked: "Live API verified",
-  },
-  {
-    id: "travelport",
-    name: "Travelport",
-    category: "flight",
-    environment: "production",
-    status: "not_configured",
-    enabled: true,
-    secretId: "travelian/providers/travelport",
-    endpoint: "api.travelian.pk/flights/search",
-    priority: 2,
-    lastChecked: "Replace placeholder OAuth credentials",
-  },
-  {
-    id: "airsial",
-    name: "AirSial",
-    category: "flight",
-    environment: "staging",
-    status: "not_configured",
-    enabled: false,
-    secretId: "travelian/providers/airsial",
-    endpoint: "api.travelian.pk/flights/search",
-    priority: 3,
-    lastChecked: "Pending credentials",
-  },
-  {
-    id: "flyadeal",
-    name: "Flyadeal",
-    category: "flight",
-    environment: "staging",
-    status: "not_configured",
-    enabled: false,
-    secretId: "travelian/providers/flyadeal",
-    endpoint: "api.travelian.pk/flights/search",
-    priority: 4,
-    lastChecked: "Pending credentials",
-  },
-  {
-    id: "pia",
-    name: "PIA",
-    category: "flight",
-    environment: "staging",
-    status: "not_configured",
-    enabled: false,
-    secretId: "travelian/providers/pia",
-    endpoint: "api.travelian.pk/flights/search",
-    priority: 5,
-    lastChecked: "Pending credentials",
-  },
-  {
-    id: "travelport-hotels",
-    name: "Travelport Hotels",
-    category: "hotel",
-    environment: "production",
-    status: "not_configured",
-    enabled: false,
-    secretId: "travelian/providers/travelport",
-    endpoint: "api.travelian.pk/hotels/search",
-    priority: 1,
-    lastChecked: "Waiting for Travelport OAuth credentials",
-  },
-  {
-    id: "travelport-transfers",
-    name: "Travelport Transfers",
-    category: "transfer",
-    environment: "production",
-    status: "not_configured",
-    enabled: false,
-    secretId: "travelian/providers/travelport",
-    endpoint: "api.travelian.pk/transfers/search",
-    priority: 1,
-    lastChecked: "Waiting for Travelport OAuth credentials",
-  },
-];
+import {
+  type ProviderSystem,
+  loadProviderSystems,
+  saveProviderSystems,
+} from "@/lib/provider-systems";
 
 const statusStyles: Record<ProviderSystem["status"], string> = {
   healthy: "bg-success/10 text-success border-success/20",
@@ -124,9 +29,10 @@ const categoryLabels: Record<ProviderSystem["category"], string> = {
 
 export default function ProviderSystemsPage() {
   const { currentRole } = useRole();
-  const [providers, setProviders] = useState(initialProviders);
+  const [providers, setProviders] = useState<ProviderSystem[]>(loadProviderSystems);
   const activeCount = providers.filter((provider) => provider.enabled).length;
   const healthyCount = providers.filter((provider) => provider.status === "healthy").length;
+  const groupTicketingCount = providers.filter((provider) => provider.category === "flight" && provider.isGroupTicketing).length;
 
   const groupedProviders = useMemo(() => {
     return providers.reduce<Record<string, ProviderSystem[]>>((groups, provider) => {
@@ -149,13 +55,30 @@ export default function ProviderSystemsPage() {
   }
 
   const toggleProvider = (id: string, enabled: boolean) => {
-    setProviders((items) => items.map((item) => item.id === id ? { ...item, enabled } : item));
+    setProviders((items) => {
+      const updated = items.map((item) => item.id === id ? { ...item, enabled } : item);
+      saveProviderSystems(updated);
+      return updated;
+    });
     toast.success(enabled ? "Provider enabled" : "Provider disabled");
   };
 
   const updateEnvironment = (id: string, environment: ProviderSystem["environment"]) => {
-    setProviders((items) => items.map((item) => item.id === id ? { ...item, environment } : item));
+    setProviders((items) => {
+      const updated = items.map((item) => item.id === id ? { ...item, environment } : item);
+      saveProviderSystems(updated);
+      return updated;
+    });
     toast.success("Provider environment updated");
+  };
+
+  const toggleGroupTicketing = (id: string, isGroupTicketing: boolean) => {
+    setProviders((items) => {
+      const updated = items.map((item) => item.id === id ? { ...item, isGroupTicketing } : item);
+      saveProviderSystems(updated);
+      return updated;
+    });
+    toast.success(isGroupTicketing ? "Marked as group ticketing provider" : "Removed group ticketing status");
   };
 
   return (
@@ -170,7 +93,7 @@ export default function ProviderSystemsPage() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-5">
             <Cloud className="h-5 w-5 text-primary mb-3" />
@@ -192,6 +115,13 @@ export default function ProviderSystemsPage() {
             <p className="text-sm text-muted-foreground">Healthy providers</p>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="p-5">
+            <Users className="h-5 w-5 text-primary mb-3" />
+            <p className="text-2xl font-bold">{groupTicketingCount}</p>
+            <p className="text-sm text-muted-foreground">Group ticketing providers</p>
+          </CardContent>
+        </Card>
       </div>
 
       <Card className="border-warning/30">
@@ -199,7 +129,7 @@ export default function ProviderSystemsPage() {
           <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold">Secrets stay in AWS Secrets Manager</p>
-            <p className="text-xs text-muted-foreground">This screen controls provider status and routing priority. Credential values must remain in the listed secret IDs, never in browser code.</p>
+            <p className="text-xs text-muted-foreground">This screen controls provider status, routing priority, and group ticketing designation. Credential values must remain in the listed secret IDs, never in browser code.</p>
           </div>
         </CardContent>
       </Card>
@@ -217,10 +147,17 @@ export default function ProviderSystemsPage() {
                 <CardHeader className="pb-3">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <CardTitle className="text-base font-display flex items-center gap-2">
-                        <Settings2 className="h-4 w-4 text-primary" />
-                        {provider.name}
-                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <CardTitle className="text-base font-display flex items-center gap-2">
+                          <Settings2 className="h-4 w-4 text-primary" />
+                          {provider.name}
+                        </CardTitle>
+                        {provider.isGroupTicketing && (
+                          <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700 gap-1 text-[11px] font-medium">
+                            <Users className="h-3 w-3 text-blue-600" /> Group Ticketing
+                          </Badge>
+                        )}
+                      </div>
                       <p className="mt-1 text-xs text-muted-foreground">{provider.endpoint}</p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -229,31 +166,56 @@ export default function ProviderSystemsPage() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="grid gap-4 md:grid-cols-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Secret ID</p>
-                    <p className="mt-1 flex items-center gap-1 text-sm font-mono"><KeyRound className="h-3.5 w-3.5" /> {provider.secretId}</p>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Secret ID</p>
+                      <p className="mt-1 flex items-center gap-1 text-sm font-mono"><KeyRound className="h-3.5 w-3.5" /> {provider.secretId}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Environment</p>
+                      <Select value={provider.environment} onValueChange={(value) => updateEnvironment(provider.id, value as ProviderSystem["environment"])}>
+                        <SelectTrigger className="mt-1 h-9">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="production">Production</SelectItem>
+                          <SelectItem value="staging">Staging</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Priority</p>
+                      <p className="mt-2 text-sm font-semibold">#{provider.priority}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Last check</p>
+                      <p className="mt-2 text-sm font-semibold">{provider.lastChecked}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Environment</p>
-                    <Select value={provider.environment} onValueChange={(value) => updateEnvironment(provider.id, value as ProviderSystem["environment"])}>
-                      <SelectTrigger className="mt-1 h-9">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="production">Production</SelectItem>
-                        <SelectItem value="staging">Staging</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Priority</p>
-                    <p className="mt-2 text-sm font-semibold">#{provider.priority}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Last check</p>
-                    <p className="mt-2 text-sm font-semibold">{provider.lastChecked}</p>
-                  </div>
+
+                  {provider.category === "flight" && (
+                    <div className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <Users className="h-4 w-4 text-primary shrink-0" />
+                        <div>
+                          <p className="text-xs font-semibold text-foreground">Group Ticketing Provider</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            Mark this provider as a group ticketing provider. Live search tickets will show the dedicated Group Icon badge.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {provider.isGroupTicketing ? "Active" : "Disabled"}
+                        </span>
+                        <Switch
+                          checked={Boolean(provider.isGroupTicketing)}
+                          onCheckedChange={(checked) => toggleGroupTicketing(provider.id, checked)}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
