@@ -329,6 +329,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     const departDateStr = formatDateOnly(departDate);
     const originAirport = from.trim().toUpperCase();
     const destAirport = to.trim().toUpperCase();
+    const adultsCount = Number(travelers.adults ?? 1);
+    const childrenCount = Number(travelers.children ?? 0);
+    const infantsCount = Number(travelers.infants ?? 0);
+    const isSingleAdultOnly = adultsCount === 1 && childrenCount === 0 && infantsCount === 0;
 
     Promise.allSettled([
       searchFlights({
@@ -350,13 +354,15 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           infants: travelers.infants,
         },
       }, controller.signal),
-      fetchGroupTickets("all", controller.signal).then((groups) => {
-        return filterGroupTickets(groups, {
-          from: originAirport,
-          to: destAirport,
-          dateFrom: departDateStr,
-        });
-      }),
+      (isSingleAdultOnly
+        ? fetchGroupTickets("all", controller.signal).then((groups) => {
+            return filterGroupTickets(groups, {
+              from: originAirport,
+              to: destAirport,
+              dateFrom: departDateStr,
+            });
+          })
+        : Promise.resolve([])),
     ])
       .then(([flightsOutcome, groupsOutcome]) => {
         if (controller.signal.aborted) return;
@@ -365,7 +371,15 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           flightsList = flightsOutcome.value.flights;
         }
 
-        if (groupsOutcome.status === "fulfilled" && groupsOutcome.value.length > 0) {
+        if (!isSingleAdultOnly) {
+          flightsList = flightsList.filter((f) =>
+            !isGroupTicketingProvider(f.provider) &&
+            f.fareBrand !== "Group Ticket" &&
+            !f.flightId.startsWith("group-")
+          );
+        }
+
+        if (isSingleAdultOnly && groupsOutcome.status === "fulfilled" && groupsOutcome.value.length > 0) {
           for (const gt of groupsOutcome.value) {
             const converted = groupTicketToFlight(gt);
             const decodedId = decodeGroupTicketId(gt.id).toLowerCase();
@@ -441,7 +455,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const flights = apiFlights;
   const maxPrice = Math.max(700, ...flights.map(f => f.price));
 
+  const isSingleAdultOnly = Number(travelers.adults ?? 1) === 1 && Number(travelers.children ?? 0) === 0 && Number(travelers.infants ?? 0) === 0;
+
   let filtered = flights.filter(f => {
+    if (!isSingleAdultOnly) {
+      const isGroup = isGroupTicketingProvider(f.provider) || f.fareBrand === "Group Ticket" || f.flightId.startsWith("group-");
+      if (isGroup) return false;
+    }
     if (search) {
       const q = search.toLowerCase().trim();
       const qCompact = q.replace(/[^a-z0-9]/g, "");
@@ -530,6 +550,20 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return text;
   };
 
+  const isGdsBrandCarrier = (airline?: string | null, code?: string | null) => {
+    const c = String(code || "").trim().toUpperCase();
+    const a = String(airline || "").trim().toLowerCase();
+    return ["QR", "SV", "GF", "EK"].includes(c) || /qatar|saudia|saudi arabian|gulf air|emirates/i.test(a);
+  };
+
+  const cleanFareTier = (value: unknown, fallback: string, flight: TravelianFlight) => {
+    const text = cleanFareText(value, fallback);
+    if (isGdsBrandCarrier(flight.airline, flight.airlineCode)) {
+      return text.replace(/\s*\([A-Z0-9]{1,2}\)$/i, "").trim() || text;
+    }
+    return text;
+  };
+
   const mealLabel = (fare: DisplayFare, flight: TravelianFlight) => {
     const meal = cleanFareText(fare.meal || flight.meal, "No Meal");
     if (/included|available|yes/i.test(meal)) return "Meal";
@@ -547,7 +581,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const fareRows = (flight: TravelianFlight): DisplayFare[] => {
     if (flight.fareOptions?.length) {
       return flight.fareOptions.map((fare) => ({
-        tier: cleanFareText(fare.tier, flight.fareBrand || "Fare option"),
+        tier: cleanFareTier(fare.tier, flight.fareBrand || "Fare option", flight),
         price: fare.price,
         bags: fare.bags,
         meal: fare.meal || flight.meal,
@@ -561,7 +595,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     }
     const isNonRefundable = flight.refundable === false;
     return [{
-      tier: cleanFareText(flight.fareBrand, "Fare option"),
+      tier: cleanFareTier(flight.fareBrand, "Fare option", flight),
       price: { currency: flight.currency, total: flight.price },
       bags: flight.baggage,
       meal: flight.meal,
@@ -1913,9 +1947,15 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 </Popover>
               </div>
             )}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Travelers & Class</label>
-              <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="min-w-0">
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Travelers</label>
+                <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} mode="travelers" />
+              </div>
+              <div className="min-w-0">
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Cabin Class</label>
+                <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} mode="cabin" />
+              </div>
             </div>
           </div>
           <DialogFooter className="shrink-0 border-t bg-background px-5 py-4">
@@ -2106,7 +2146,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               <div className="rounded-2xl border p-4">
                 <p className="font-semibold text-foreground">Rules and conditions</p>
                 <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
-                  {(detailsFlight.fareOptions || []).length ? detailsFlight.fareOptions?.map((fare) => (
+                  {fareRows(detailsFlight).length ? fareRows(detailsFlight).map((fare) => (
                     <p key={fare.tier}>
                       <span className="font-semibold text-foreground">{fare.tier}:</span> Refund: {fare.refund || "On request"} · Change: {fare.change || "On request"} · Bags: {fare.bags || detailsFlight.baggage || "TBA"}
                     </p>

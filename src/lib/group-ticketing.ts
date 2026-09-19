@@ -285,16 +285,117 @@ export function groupTicketOriginCode(group: GroupTicket): string | undefined {
 }
 
 export function groupTicketDestinationCode(group: GroupTicket): string | undefined {
+  const isRoundtrip = group.tripType === "round-trip" || Boolean(group.returnDate);
   const legs = group.itinerary || [];
-  const lastLeg = legs[legs.length - 1];
-  const fromLeg = airportCodeFromText(lastLeg?.destination);
-  if (fromLeg) return fromLeg;
+
+  if (isRoundtrip && legs.length >= 2) {
+    const outboundDest = airportCodeFromText(legs[0]?.destination);
+    if (outboundDest) return outboundDest;
+  }
 
   const sectorCodes = iataCodesFromSector(group.sector);
-  if (sectorCodes.length) return sectorCodes[sectorCodes.length - 1];
+  if (sectorCodes.length) {
+    if (isRoundtrip && sectorCodes.length >= 3) {
+      return sectorCodes[1];
+    }
+    return sectorCodes[sectorCodes.length - 1];
+  }
+
+  const lastLeg = legs[legs.length - 1];
+  const fromLeg = airportCodeFromText(lastLeg?.destination);
+  if (fromLeg && !isRoundtrip) return fromLeg;
 
   const sectorParts = String(group.sector || "").split("-").map((part) => part.trim()).filter(Boolean);
+  if (isRoundtrip && sectorParts.length >= 3) {
+    return airportCodeFromText(sectorParts[1]);
+  }
   return airportCodeFromText(sectorParts[sectorParts.length - 1]);
+}
+
+export function getSupplierGCode(group: GroupTicket): string {
+  const provider = String(group.provider || "").toLowerCase();
+  const slug = String(group.categorySlug || "").toLowerCase();
+  const label = String(group.categoryLabel || "").toLowerCase();
+  const id = String(group.id || "").toLowerCase();
+
+  // Al Haider (AH) -> G1
+  if (
+    provider.includes("alhaider") ||
+    provider.includes("haider") ||
+    slug.includes("collection-1") ||
+    id.startsWith("alhaider") ||
+    label.includes("al haider") ||
+    label.includes("alhaider")
+  ) {
+    return "G1";
+  }
+
+  // Dhillon & Sahi (D&S) -> G2
+  if (
+    provider.includes("dhill") ||
+    provider.includes("sahi") ||
+    slug.includes("collection-2") ||
+    id.startsWith("dhill") ||
+    label.includes("dhillon") ||
+    label.includes("dhillu")
+  ) {
+    return "G2";
+  }
+
+  // SkyPass (SP) -> G3
+  if (
+    provider.includes("skypass") ||
+    slug.includes("collection-3") ||
+    id.startsWith("skypass") ||
+    label.includes("skypass")
+  ) {
+    return "G3";
+  }
+
+  // Travel n Tours -> G4
+  if (
+    provider.includes("travelntours") ||
+    provider.includes("travel_n_tours") ||
+    slug.includes("collection-4") ||
+    id.startsWith("travelntours") ||
+    label.includes("travel n tours")
+  ) {
+    return "G4";
+  }
+
+  return "G5";
+}
+
+export interface AvailableSector {
+  sector: string;
+  from: string;
+  to: string;
+  label: string;
+  count: number;
+}
+
+export function extractAvailableSectors(groups: GroupTicket[]): AvailableSector[] {
+  const map = new Map<string, AvailableSector>();
+  for (const group of groups) {
+    const from = groupTicketOriginCode(group);
+    const to = groupTicketDestinationCode(group);
+    if (from && to && from !== to) {
+      const key = `${from}-${to}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        map.set(key, {
+          sector: key,
+          from,
+          to,
+          label: `${from} → ${to}`,
+          count: 1,
+        });
+      }
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
 
 export interface GroupTicketSearchFilters {
@@ -529,6 +630,7 @@ export async function fetchGroupTicketDetail(groupId: string, signal?: AbortSign
 
 export function groupTicketWhatsAppMessage(category: string, group: GroupTicket) {
   const display = maskGroupTicketForDisplay(group);
+  const gCode = getSupplierGCode(group);
   const itinerary = display.itinerary?.length
     ? ["", "Itinerary:", ...display.itinerary.map((leg) => `- ${leg.flightDate || "Date TBA"}: ${leg.origin || "Origin TBA"} to ${leg.destination || "Destination TBA"}${leg.departureTime || leg.arrivalTime ? ` (${leg.departureTime || "TBA"} - ${leg.arrivalTime || "TBA"})` : ""}`)]
     : [];
@@ -537,14 +639,14 @@ export function groupTicketWhatsAppMessage(category: string, group: GroupTicket)
     "",
     "I want to inquire about this group ticket:",
     "",
-    `Collection: ${category}`,
+    `Supplier Code: ${gCode}`,
     `Route: ${display.sector || "Please confirm"}`,
+    `Trip Type: ${display.tripType === "round-trip" ? "Return" : "One-Way"}`,
     `Departure Date: ${display.departureDate || "Please confirm"}`,
-    `Return Date: ${display.returnDate || "Not listed"}`,
+    ...(display.returnDate ? [`Return Date: ${display.returnDate}`] : []),
     `Baggage: ${display.baggage || "Please confirm"}`,
     `Seats Available: ${display.seatsAvailable || "Please confirm"}`,
     `Fare: ${display.fare ? `${display.currency || "PKR"} ${display.fare}` : "Please confirm"}`,
-    `Listing URL: ${SITE_BASE}/group-ticketing/${display.categorySlug || "all"}`,
     ...itinerary,
     "",
     "Please share availability and booking details.",

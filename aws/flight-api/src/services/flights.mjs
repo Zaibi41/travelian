@@ -4,7 +4,23 @@ import { recordFlightSearch } from "./content.mjs";
 
 export async function searchFlights(request) {
   const searchId = crypto.randomUUID();
-  const providers = enabledProviders(request.providers);
+  const adults = Number(request.passengers?.adults ?? request.adults ?? 1);
+  const children = Number(request.passengers?.children ?? request.children ?? 0);
+  const infants = Number(request.passengers?.infants ?? request.infants ?? 0);
+  const isSingleAdultOnly = adults === 1 && children === 0 && infants === 0;
+
+  const isGroupProvider = (name) => ["alhaider", "dhilluandsahi", "skypass"].includes(String(name || "").trim().toLowerCase());
+
+  let requestedProviders = request.providers;
+  if (!isSingleAdultOnly && Array.isArray(requestedProviders)) {
+    requestedProviders = requestedProviders.filter((p) => !isGroupProvider(p));
+  }
+
+  let providers = enabledProviders(requestedProviders);
+  if (!isSingleAdultOnly) {
+    providers = providers.filter((p) => !isGroupProvider(p.name));
+  }
+
   const startedAt = Date.now();
   const settled = await Promise.allSettled(
     providers.map(async (provider) => {
@@ -32,7 +48,11 @@ export async function searchFlights(request) {
     }
   }
 
-  const pricedResults = sortOffers(await applyFlightPricingRules(results));
+  const eligibleResults = !isSingleAdultOnly
+    ? results.filter((item) => !isGroupProvider(item.provider) && item.fareBrand !== "Group Ticket" && !String(item.offerId || "").startsWith("group-"))
+    : results;
+
+  const pricedResults = sortOffers(await applyFlightPricingRules(eligibleResults));
   await recordFlightSearch({
     request,
     providerStatus,

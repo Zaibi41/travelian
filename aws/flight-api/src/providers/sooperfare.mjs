@@ -477,11 +477,13 @@ export class SooperFareAdapter extends ProviderAdapter {
     const airlineCode = isMultiCarrier && segmentCarrierCodes.length > 1
       ? segmentCarrierCodes.join(" / ")
       : (pick(sourceFlight, ["marketing_carrier.iata", "airline.code", "carrier.code"]) || first.carrier || "");
+    const outboundFlight = offer.__outboundFlight ? { ...offer.__outboundFlight, airline, airlineCode } : offer;
+    const returnFlight = offer.__returnFlight ? { ...offer.__returnFlight, airline, airlineCode } : offer;
     const fareOptions = isMulticity
-      ? extractMulticityFareOptions(offer.__legFlights, price)
+      ? extractMulticityFareOptions((offer.__legFlights || []).map((flight) => ({ ...flight, airline, airlineCode })), price)
       : isRoundtrip
-        ? extractRoundtripFareOptions(offer.__outboundFlight, offer.__returnFlight, price)
-        : extractFareOptions(offer, price);
+        ? extractRoundtripFareOptions(outboundFlight, returnFlight, price)
+        : extractFareOptions({ ...offer, airline, airlineCode }, price);
     const baggage = baggageFromSooperFareOffer(sourceFlight) || unique(segments.map((segment) => segment.baggage).filter(Boolean)).join(", ") || null;
     const meal = mealFromSooperFareOffer(offer) || unique(segments.map((segment) => segment.meal).filter(Boolean)).join(", ") || null;
     const layovers = isMulticity
@@ -519,7 +521,7 @@ export class SooperFareAdapter extends ProviderAdapter {
       segments,
       layovers,
       cabin: request.cabin,
-      fareBrand: pick(offer, ["fare_brand", "brand", "fare.name"]) || request.cabin,
+      fareBrand: cleanGdsFareBrand(pick(offer, ["fare_brand", "brand", "fare.name"]) || request.cabin, airline, airlineCode),
       baggage,
       meal: mealLabel(meal),
       seats: pick(offer, ["seats", "availability", "available_seats", "fares.0.available_seats"]),
@@ -1077,6 +1079,137 @@ function extractPrice(offer) {
   };
 }
 
+function resolveFlightCarrierInfo(flight) {
+  const carrierCode = String(
+    flight?.airlineCode
+    || pick(flight, ["carrier", "marketing_carrier.iata", "operating_carrier.iata", "airline.code", "airline_code", "iata"])
+    || flight?.segments?.[0]?.carrier
+    || flight?.segments?.[0]?.marketing_carrier?.iata
+    || ""
+  ).trim().toUpperCase();
+
+  const airlineName = String(
+    flight?.airline
+    || pick(flight, ["marketing_carrier.name", "operating_carrier.name", "airline.name", "airline_name"])
+    || flight?.segments?.[0]?.airline
+    || flight?.segments?.[0]?.marketing_carrier?.name
+    || AIRLINE_CODE_MAP[carrierCode]
+    || ""
+  ).trim().toLowerCase();
+
+  const provider = String(flight?.provider || "").trim().toUpperCase();
+
+  return { carrierCode, airlineName, provider };
+}
+
+function cleanGdsFareBrand(brand, airline, code) {
+  const text = String(brand || "").trim();
+  if (!text) return text;
+  const isExcludedGds = ["QR", "SV", "GF", "EK"].includes(String(code || "").toUpperCase())
+    || /qatar|saudia|saudi arabian|gulf air|emirates/i.test(String(airline || ""));
+  return isExcludedGds ? text.replace(/\s*\([A-Z0-9]{1,2}\)$/i, "").trim() || text : text;
+}
+
+function formatSooperFareTier(fare, flight) {
+  const tierName = (pick(fare, ["name", "brand", "fare_brand", "brand_name", "type", "fare_type", "family", "fare_family", "tier"]) || "Supplier Fare").trim();
+  const bookingClass = pick(fare, ["class_code", "rbd", "booking_class", "cabin_code", "class", "code"]);
+
+  const { carrierCode, airlineName, provider } = resolveFlightCarrierInfo(flight);
+
+  // 1. Qatar Airways (QR), Saudia (SV), Gulf Air (GF), Emirates (EK)
+  // Remove booking class code from fare type: e.g. "Economy Classic" instead of "Economy Classic (T)"
+  const isExcludedGds = ["QR", "SV", "GF", "EK"].includes(carrierCode)
+    || /qatar|saudia|saudi arabian|gulf air|emirates/i.test(airlineName);
+
+  if (isExcludedGds) {
+    return tierName.replace(/\s*\([A-Z0-9]{1,2}\)$/i, "").trim() || tierName;
+  }
+
+  // 2. AirSial (PF), Airblue (PA), Fly Jinnah (9P)
+  // For these airlines, original fare/class information must remain visible and NOT stripped
+  const isDomesticPreserve = ["PF", "PA", "9P"].includes(carrierCode)
+    || ["AIRSIAL", "AIRBLUE", "FLYJINNAH"].includes(provider)
+    || /airsial|air sial|airblue|air blue|fly jinnah|flyjinnah/i.test(airlineName);
+
+  if (isDomesticPreserve) {
+    if (bookingClass && String(bookingClass).trim().length <= 2) {
+      const code = String(bookingClass).trim().toUpperCase();
+      if (tierName.toUpperCase().includes(`(${code})`) || tierName.toUpperCase() === code) {
+        return tierName;
+      }
+      return `${tierName} (${code})`;
+    }
+    return tierName;
+  }
+
+  // 3. Other domestic carriers (PIA, Serene)
+  const isOtherDomestic = ["PK", "ER"].includes(carrierCode)
+    || ["PIA", "SERENE"].includes(provider)
+    || /pakistan international|serene/i.test(airlineName);
+
+  if (isOtherDomestic) {
+    if (bookingClass && String(bookingClass).trim().length <= 2) {
+      const code = String(bookingClass).trim().toUpperCase();
+      if (tierName.toUpperCase().includes(`(${code})`) || tierName.toUpperCase() === code) {
+        return tierName;
+      }
+      return `${tierName} (${code})`;
+    }
+    return tierName;
+  }
+
+  // 4. Default: If bookingClass is available and it's not excluded GDS, preserve tierName + bookingClass
+  if (bookingClass && String(bookingClass).trim().length <= 2) {
+    const code = String(bookingClass).trim().toUpperCase();
+    if (tierName.toUpperCase().includes(`(${code})`) || tierName.toUpperCase() === code) {
+      return tierName;
+    }
+    return `${tierName} (${code})`;
+  }
+
+  return tierName;
+}
+
+function formatSooperFareRoundtripTier(outboundFare, returnFare, outboundFlight, returnFlight) {
+  const tierName = (fareTierName(outboundFare) || fareTierName(returnFare) || "Supplier Fare").trim();
+  const bookingClass = pick(outboundFare, ["class_code", "rbd", "booking_class", "cabin_code"])
+    || pick(returnFare, ["class_code", "rbd", "booking_class", "cabin_code"]);
+
+  const { carrierCode, airlineName, provider } = resolveFlightCarrierInfo(outboundFlight);
+
+  const isExcludedGds = ["QR", "SV", "GF", "EK"].includes(carrierCode)
+    || /qatar|saudia|saudi arabian|gulf air|emirates/i.test(airlineName);
+
+  if (isExcludedGds) {
+    return tierName.replace(/\s*\([A-Z0-9]{1,2}\)$/i, "").trim() || tierName;
+  }
+
+  const isDomesticPreserve = ["PF", "PA", "9P"].includes(carrierCode)
+    || ["AIRSIAL", "AIRBLUE", "FLYJINNAH"].includes(provider)
+    || /airsial|air sial|airblue|air blue|fly jinnah|flyjinnah/i.test(airlineName);
+
+  if (isDomesticPreserve) {
+    if (bookingClass && String(bookingClass).trim().length <= 2) {
+      const code = String(bookingClass).trim().toUpperCase();
+      if (tierName.toUpperCase().includes(`(${code})`) || tierName.toUpperCase() === code) {
+        return tierName;
+      }
+      return `${tierName} (${code})`;
+    }
+    return tierName;
+  }
+
+  if (bookingClass && String(bookingClass).trim().length <= 2) {
+    const code = String(bookingClass).trim().toUpperCase();
+    if (tierName.toUpperCase().includes(`(${code})`) || tierName.toUpperCase() === code) {
+      return tierName;
+    }
+    return `${tierName} (${code})`;
+  }
+
+  return tierName;
+}
+
 function extractFareOptions(offer, fallbackPrice) {
   const fares = extractArray(offer, ["fares", "fare_options", "brands", "data.fares"]);
   if (!fares.length) {
@@ -1094,9 +1227,7 @@ function extractFareOptions(offer, fallbackPrice) {
   const flightMeal = mealLabel(mealFromSooperFareFlight(offer));
   return fares.map((fare) => {
     const price = extractPrice(fare);
-    const tierName = pick(fare, ["name", "brand", "fare_brand", "brand_name", "type", "fare_type", "family", "fare_family", "tier"]) || "Supplier Fare";
-    const bookingClass = pick(fare, ["class_code", "rbd", "booking_class", "cabin_code", "class", "code"]);
-    const tier = bookingClass && bookingClass.length <= 2 ? `${tierName} (${String(bookingClass).toUpperCase()})` : tierName;
+    const tier = formatSooperFareTier(fare, offer);
     const refund = refundFromSooperFareFare(fare, offer) || (offer.refundable === false ? "Non-refundable" : "Subject to supplier rules");
     const change = changeFromSooperFareFare(fare) || "Subject to supplier rules";
     return {
@@ -1137,10 +1268,7 @@ function extractRoundtripFareOptions(outboundFlight, returnFlight, fallbackPrice
     for (const returnFare of returnFareList) {
       const price = combinePrices(extractPrice(outboundFare), extractPrice(returnFare));
       if (!price.total) continue;
-      const tierName = fareTierName(outboundFare) || fareTierName(returnFare) || "Supplier Fare";
-      const bookingClass = pick(outboundFare, ["class_code", "rbd", "booking_class", "cabin_code"]) 
-        || pick(returnFare, ["class_code", "rbd", "booking_class", "cabin_code"]);
-      const tier = bookingClass && bookingClass.length <= 2 ? `${tierName} (${String(bookingClass).toUpperCase()})` : tierName;
+      const tier = formatSooperFareRoundtripTier(outboundFare, returnFare, outboundFlight, returnFlight);
       options.push({
         tier,
         price,
@@ -1235,9 +1363,7 @@ function extractMulticityFareOptions(flights, fallbackPrice) {
     );
     if (!price.total) continue;
 
-    const tierName = fareTierName(firstFare) || "Supplier Fare";
-    const bookingClass = pick(firstFare, ["class_code", "rbd", "booking_class", "cabin_code"]);
-    const tier = bookingClass && bookingClass.length <= 2 ? `${tierName} (${String(bookingClass).toUpperCase()})` : tierName;
+    const tier = formatSooperFareTier(firstFare, flights[0]);
     options.push({
       tier,
       price,

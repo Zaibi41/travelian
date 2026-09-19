@@ -219,3 +219,101 @@ test("SooperFareAdapter extracts 3 Flynas fare tiers with distinct baggage allow
   assert.equal(normalized.fareOptions[2].tier, "Plus");
   assert.equal(normalized.fareOptions[2].bags, "7Kg + 30Kg");
 });
+
+test("SooperFareAdapter strips booking class codes for Qatar, Saudia, Gulf Air, Emirates", () => {
+  const adapter = new SooperFareAdapter();
+
+  const carriers = [
+    { code: "QR", name: "Qatar Airways", rawTier: "Economy Classic", bookingClass: "T", expected: "Economy Classic" },
+    { code: "SV", name: "Saudia", rawTier: "Basic Eco (U)", bookingClass: "U", expected: "Basic Eco" },
+    { code: "GF", name: "Gulf Air", rawTier: "Economy Friendly", bookingClass: "W", expected: "Economy Friendly" },
+    { code: "EK", name: "Emirates", rawTier: "Economy Saver", bookingClass: "X", expected: "Economy Saver" },
+  ];
+
+  for (const item of carriers) {
+    const mockOffer = {
+      ref_id: `gds-${item.code}`,
+      provider: "SABRE",
+      marketing_carrier: { name: item.name, iata: item.code },
+      fares: [
+        {
+          ref_id: `fare-${item.code}`,
+          name: item.rawTier,
+          class_code: item.bookingClass,
+          billable_price: 120000,
+          currency: "PKR",
+        }
+      ],
+      segments: [
+        {
+          carrier: item.code,
+          airline: item.name,
+          flight_number: `${item.code}-101`,
+          from: { iata: "LHE", name: "Lahore" },
+          to: { iata: "DXB", name: "Dubai" },
+          departure: { date: "2026-10-15", time: "10:00" },
+          arrival: { date: "2026-10-15", time: "12:30" }
+        }
+      ]
+    };
+
+    const normalized = adapter.normalizeOffer(mockOffer, {
+      tripType: "oneway",
+      cabin: "Economy",
+      origin: "LHE",
+      destination: "DXB"
+    });
+
+    assert.ok(normalized);
+    assert.equal(normalized.fareOptions[0].tier, item.expected);
+  }
+});
+
+test("SooperFareAdapter preserves booking class codes for AirSial, Airblue, and Fly Jinnah", () => {
+  const adapter = new SooperFareAdapter();
+
+  const carriers = [
+    { code: "PF", name: "AirSial", provider: "AIRSIAL", rawTier: "Economy", bookingClass: "B", expected: "Economy (B)" },
+    { code: "PA", name: "Airblue", provider: "AIRBLUE", rawTier: "Economy", bookingClass: "ED", expected: "Economy (ED)" },
+    { code: "9P", name: "Fly Jinnah", provider: "FLYJINNAH", rawTier: "Economy", bookingClass: "Y", expected: "Economy (Y)" },
+  ];
+
+  for (const item of carriers) {
+    const mockOffer = {
+      ref_id: `dom-${item.code}`,
+      provider: item.provider,
+      marketing_carrier: { name: item.name, iata: item.code },
+      fares: [
+        {
+          ref_id: `fare-${item.code}`,
+          name: item.rawTier,
+          class_code: item.bookingClass,
+          billable_price: 25000,
+          currency: "PKR",
+        }
+      ],
+      segments: [
+        {
+          carrier: item.code,
+          airline: item.name,
+          flight_number: `${item.code}-202`,
+          from: { iata: "KHI", name: "Karachi" },
+          to: { iata: "ISB", name: "Islamabad" },
+          departure: { date: "2026-10-15", time: "09:00" },
+          arrival: { date: "2026-10-15", time: "11:00" }
+        }
+      ]
+    };
+
+    const normalized = adapter.normalizeOffer(mockOffer, {
+      tripType: "oneway",
+      cabin: "Economy",
+      origin: "KHI",
+      destination: "ISB"
+    });
+
+    assert.ok(normalized);
+    assert.equal(normalized.fareOptions[0].tier, item.expected);
+  }
+});
+
