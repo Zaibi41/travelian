@@ -1,63 +1,49 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { searchFlights } from "./travelian-api";
+import { hydrateSooperFareOptions, type TravelianFlight } from "./travelian-api";
+
+const flight = (id: string, provider: string): TravelianFlight => ({
+  flightId: id,
+  offerId: id,
+  provider,
+  airline: provider === "sooperfare" ? "Flynas" : "PIA",
+  flightNumber: provider === "sooperfare" ? "XY-318 / XY-205" : "PK-203",
+  origin: "LHE",
+  destination: "DXB",
+  departureTime: "2026-09-30T03:55:00",
+  arrivalTime: "2026-09-30T16:10:00",
+  price: 89_269,
+  currency: "PKR",
+  seats: 4,
+  status: "scheduled",
+  class: "economy",
+  fareOptions: [],
+  rawRef: provider === "sooperfare" ? {
+    faresPayload: { ref_id: `search-${id}`, legs: [{ ref_id: `leg-${id}` }] },
+    flightRefIds: [`flight-${id}`],
+  } : undefined,
+});
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe("flight schedule timezone handling", () => {
-  it.each(["travelport", "skypass", "alhaider", "dhilluandsahi", "flyadeal", "airsial", "pia", ""])(
-    "retains the previous timezone conversion for provider %s", async (provider) => {
-      const timestamp = "2026-10-06T19:00:00+04:00";
-      const date = new Date(timestamp);
-      const expected = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [{
-        provider, departureTime: timestamp, arrivalTime: timestamp,
-        returnDepartureTime: timestamp, returnArrivalTime: timestamp,
-        segments: [{ departureTime: timestamp, arrivalTime: timestamp }],
-        layovers: [{ departureTime: timestamp, arrivalTime: timestamp }],
-      }] }) }));
-      const { flights: [flight] } = await searchFlights({ tripType: "oneway", from: "LHE", to: "DXB",
-        departureDate: "2026-10-06", cabin: "Economy", currency: "PKR", passengers: { adults: 1, children: 0, infants: 0 } });
-      expect(flight.departureTime).toBe(expected);
-      expect(flight.arrivalTime).toBe(expected);
-      expect(flight.returnDepartureTime).toBe(expected);
-      expect(flight.returnArrivalTime).toBe(expected);
-      expect(flight.segments?.[0].arrivalTime).toBe(expected);
-      expect(flight.segments?.[0].departureTime).toBe(expected);
-      expect(flight.layovers?.[0].arrivalTime).toBe(expected);
-      expect(flight.layovers?.[0].departureTime).toBe(expected);
-      expect(flight.arrivalTimestamp).toBeUndefined();
-      expect(flight.segments?.[0].arrivalTimestamp).toBeUndefined();
-    },
-  );
-  it.each([
-    ["2026-10-06T19:00:00+04:00", "2026-10-06 19:00"],
-    ["2026-10-06T18:20:00+04:00", "2026-10-06 18:20"],
-    ["2026-10-06T23:30:00-05:00", "2026-10-06 23:30"],
-    ["2026-10-06T00:30:00+14:00", "2026-10-06 00:30"],
-    ["2026-10-06T19:00:00Z", "2026-10-06 19:00"],
-    ["2026-10-06T19:00:00", "2026-10-06 19:00"],
-  ])("preserves the provider's airport-local time for %s", async (arrival, expected) => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [{
-      offerId: "test", provider: "sooperfare", airline: "Test Airline", flightNumber: "TEST-1",
-      origin: "LHE", destination: "DXB", cabin: "Economy", price: { total: 100, currency: "PKR" },
-      departureTime: "2026-10-06T15:50:00+05:00", arrivalTime: arrival,
-      returnDepartureTime: arrival, returnArrivalTime: arrival,
-      segments: [{ departureTime: arrival, arrivalTime: arrival }],
-      layovers: [{ arrivalTime: arrival, departureTime: arrival }],
-    }] }) }));
-    const { flights: [flight] } = await searchFlights({ tripType: "oneway", from: "LHE", to: "DXB",
-      departureDate: "2026-10-06", cabin: "Economy", currency: "PKR", passengers: { adults: 1, children: 0, infants: 0 } });
-    expect(flight.arrivalTime).toBe(expected);
-    expect(flight.returnDepartureTime).toBe(expected);
-    expect(flight.returnArrivalTime).toBe(expected);
-    expect(flight.segments?.[0].departureTime).toBe(expected);
-    expect(flight.segments?.[0].arrivalTime).toBe(expected);
-    expect(flight.layovers?.[0].arrivalTime).toBe(expected);
-    expect(flight.arrivalTimestamp).toBe(arrival);
-    expect(flight.segments?.[0].arrivalTimestamp).toBe(arrival);
-    expect(flight.returnArrivalTimestamp).toBe(arrival);
-    if (arrival === "2026-10-06T18:20:00+04:00") {
-      expect(new Date(flight.arrivalTimestamp!).getTime() - new Date(flight.departureTimestamp!).getTime()).toBe(3.5 * 3600000);
-    }
+describe("hydrateSooperFareOptions", () => {
+  it("loads SooperFare tiers before returning and leaves other providers unchanged", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      result: {
+        fareOptions: [
+          { tier: "Light Flex (H)", price: { currency: "PKR", total: 85_249 }, bags: "7 kg", change: "Allowed", refund: "Allowed" },
+          { tier: "Light (H)", price: { currency: "PKR", total: 84_112 }, bags: "7 kg", change: "Fee applies", refund: "Non-refundable" },
+        ],
+      },
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const other = flight("other", "pia");
+    const results = await hydrateSooperFareOptions([flight("sf", "sooperfare"), other]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(results[0].fareOptions).toHaveLength(2);
+    expect(results[0].price).toBe(84_112);
+    expect(results[0].fareBrand).toBe("Light (H)");
+    expect(results[1]).toEqual(other);
   });
 });

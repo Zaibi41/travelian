@@ -89,13 +89,14 @@ export type TravelianFlight = Flight & {
   rawRef?: FlightOffer["rawRef"];
 };
 
-export async function fetchFlightFares(flight: TravelianFlight): Promise<FareOption[]> {
+export async function fetchFlightFares(flight: TravelianFlight, signal?: AbortSignal): Promise<FareOption[]> {
   if (flight.provider !== "sooperfare" || !flight.rawRef?.faresPayload) {
     throw new Error("Fare options are unavailable for this flight.");
   }
   const response = await fetch(`${API_BASE_URL}/flights/fares`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    signal,
     body: JSON.stringify({
       provider: flight.provider,
       offerId: flight.offerId,
@@ -110,6 +111,46 @@ export async function fetchFlightFares(flight: TravelianFlight): Promise<FareOpt
   const payload = await response.json().catch(() => null) as { result?: { fareOptions?: FareOption[] }; error?: string } | null;
   if (!response.ok) throw new Error(payload?.error || "Unable to load fare options. Please try again.");
   return payload?.result?.fareOptions || [];
+}
+
+export async function hydrateSooperFareOptions(
+  flights: TravelianFlight[],
+  signal?: AbortSignal,
+  concurrency = 4,
+): Promise<TravelianFlight[]> {
+  const hydrated = [...flights];
+  const indexes = flights
+    .map((flight, index) => flight.provider === "sooperfare" && flight.rawRef?.faresPayload ? index : -1)
+    .filter((index) => index >= 0);
+  let cursor = 0;
+
+  const worker = async () => {
+    while (cursor < indexes.length) {
+      const index = indexes[cursor++];
+      const flight = flights[index];
+      try {
+        const fareOptions = await fetchFlightFares(flight, signal);
+        if (!fareOptions.length) continue;
+        const lowestFare = fareOptions.reduce((lowest, fare) =>
+          fare.price.total < lowest.price.total ? fare : lowest
+        );
+        hydrated[index] = {
+          ...flight,
+          fareOptions,
+          fareBrand: lowestFare.tier,
+          price: lowestFare.price.total,
+          currency: lowestFare.price.currency || flight.currency,
+          baggage: lowestFare.bags || flight.baggage,
+        };
+      } catch (error) {
+        if (signal?.aborted) throw error;
+        // Keep the search fare when the supplier cannot expand this one offer.
+      }
+    }
+  };
+
+  await Promise.all(Array.from({ length: Math.min(concurrency, indexes.length) }, () => worker()));
+  return hydrated;
 }
 
 export interface FlightSearchResult {
