@@ -46,4 +46,46 @@ describe("hydrateSooperFareOptions", () => {
     expect(results[0].fareBrand).toBe("Light (H)");
     expect(results[1]).toEqual(other);
   });
+
+  it("invokes onFlightHydrated with real-time progress as each flight resolves", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      result: {
+        fareOptions: [
+          { tier: "Standard", price: { currency: "PKR", total: 70_000 }, bags: "20 kg" },
+        ],
+      },
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const progressUpdates: Array<{ id: string; loaded: number; total: number }> = [];
+    const sf1 = flight("sf1", "sooperfare");
+    const sf2 = flight("sf2", "sooperfare");
+
+    await hydrateSooperFareOptions([sf1, sf2], undefined, 2, (flight, _index, progress) => {
+      progressUpdates.push({ id: flight.flightId, loaded: progress.loaded, total: progress.total });
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(progressUpdates).toHaveLength(2);
+    expect(progressUpdates[1].loaded).toBe(2);
+    expect(progressUpdates[1].total).toBe(2);
+  });
+
+  it("skips flights that already have multiple fare options", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const multiFareFlight: TravelianFlight = {
+      ...flight("sf-multi", "sooperfare"),
+      fareOptions: [
+        { tier: "Light", price: { currency: "PKR", total: 60_000 } },
+        { tier: "Value", price: { currency: "PKR", total: 75_000 } },
+      ],
+    };
+
+    const results = await hydrateSooperFareOptions([multiFareFlight]);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(results[0]).toEqual(multiFareFlight);
+  });
 });

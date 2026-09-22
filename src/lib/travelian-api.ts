@@ -113,38 +113,71 @@ export async function fetchFlightFares(flight: TravelianFlight, signal?: AbortSi
   return payload?.result?.fareOptions || [];
 }
 
+export interface FareHydrationProgress {
+  loaded: number;
+  total: number;
+}
+
+export type OnFlightHydratedCallback = (
+  updatedFlight: TravelianFlight,
+  index: number,
+  progress: FareHydrationProgress,
+) => void;
+
 export async function hydrateSooperFareOptions(
   flights: TravelianFlight[],
   signal?: AbortSignal,
   concurrency = 4,
+  onFlightHydrated?: OnFlightHydratedCallback,
 ): Promise<TravelianFlight[]> {
   const hydrated = [...flights];
   const indexes = flights
-    .map((flight, index) => flight.provider === "sooperfare" && flight.rawRef?.faresPayload ? index : -1)
+    .map((flight, index) =>
+      flight.provider === "sooperfare" &&
+      flight.rawRef?.faresPayload &&
+      (!flight.fareOptions || flight.fareOptions.length <= 1)
+        ? index
+        : -1,
+    )
     .filter((index) => index >= 0);
+
+  if (!indexes.length) {
+    return hydrated;
+  }
+
   let cursor = 0;
+  let loadedCount = 0;
 
   const worker = async () => {
     while (cursor < indexes.length) {
-      const index = indexes[cursor++];
-      const flight = flights[index];
+      if (signal?.aborted) return;
+      const currentIndex = cursor++;
+      const flightIndex = indexes[currentIndex];
+      const flight = flights[flightIndex];
       try {
         const fareOptions = await fetchFlightFares(flight, signal);
-        if (!fareOptions.length) continue;
-        const lowestFare = fareOptions.reduce((lowest, fare) =>
-          fare.price.total < lowest.price.total ? fare : lowest
-        );
-        hydrated[index] = {
-          ...flight,
-          fareOptions,
-          fareBrand: lowestFare.tier,
-          price: lowestFare.price.total,
-          currency: lowestFare.price.currency || flight.currency,
-          baggage: lowestFare.bags || flight.baggage,
-        };
+        if (fareOptions.length) {
+          const lowestFare = fareOptions.reduce((lowest, fare) =>
+            fare.price.total < lowest.price.total ? fare : lowest,
+          );
+          hydrated[flightIndex] = {
+            ...flight,
+            fareOptions,
+            fareBrand: lowestFare.tier,
+            price: lowestFare.price.total,
+            currency: lowestFare.price.currency || flight.currency,
+            baggage: lowestFare.bags || flight.baggage,
+          };
+        }
       } catch (error) {
         if (signal?.aborted) throw error;
         // Keep the search fare when the supplier cannot expand this one offer.
+      } finally {
+        loadedCount++;
+        onFlightHydrated?.(hydrated[flightIndex], flightIndex, {
+          loaded: loadedCount,
+          total: indexes.length,
+        });
       }
     }
   };

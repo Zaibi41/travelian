@@ -8,13 +8,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users } from "lucide-react";
+import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users, Loader2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { SEO } from "@/components/SEO";
 import { TravelersClassPicker, formatTravelers, type TravelersValue } from "@/components/public/TravelersClassPicker";
-import { hydrateSooperFareOptions, searchFlights, type TravelianFlight } from "@/lib/travelian-api";
+import { fetchFlightFares, hydrateSooperFareOptions, searchFlights, type FareOption, type TravelianFlight } from "@/lib/travelian-api";
 import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { FlightSearchLoader } from "@/components/public/FlightSearchLoader";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
@@ -70,7 +70,7 @@ type DisplayFare = {
   conditions?: string | null;
   amenities?: string[];
 };
-type FareDetailsTab = "flight" | "rules" | "baggage";
+type FareDetailsTab = "options" | "flight" | "rules" | "baggage";
 type ItinerarySegment = NonNullable<TravelianFlight["segments"]>[number];
 type DisplayJourneyLeg = {
   key: string;
@@ -206,6 +206,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [calculatorServiceFee, setCalculatorServiceFee] = useState("");
   const [searchRefreshKey, setSearchRefreshKey] = useState(0);
   const [dateFareMap, setDateFareMap] = useState<Record<string, { price: number; currency: string } | null>>({});
+  const [modalFaresLoading, setModalFaresLoading] = useState(false);
+  const [modalFaresError, setModalFaresError] = useState<string | null>(null);
+  const [modalFaresCache, setModalFaresCache] = useState<Record<string, FareOption[]>>({});
 
   // Modal-local edit state
   const [editFrom, setEditFrom] = useState(from);
@@ -423,14 +426,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         }
 
         const consolidated = consolidateFlights(flightsList);
-        const hydrated = await hydrateSooperFareOptions(consolidated, controller.signal);
-        if (controller.signal.aborted) return;
-        setApiFlights(hydrated);
-        const liveMaxPrice = Math.max(700, ...hydrated.map((f) => f.price));
+
+        // Render search results immediately with zero background fare overhead
+        setApiFlights(consolidated);
+        const liveMaxPrice = Math.max(700, ...consolidated.map((f) => f.price));
         setPriceRange([0, Math.ceil(liveMaxPrice / 1000) * 1000]);
         setApiStatus("success");
-        setApiMessage(hydrated.length ? "" : "No live bookable fares returned for this search.");
-        setExpirySeconds(hydrated.length ? SEARCH_RESULT_TTL_SECONDS : 0);
+        setApiMessage(consolidated.length ? "" : "No live bookable fares returned for this search.");
+        setExpirySeconds(consolidated.length ? SEARCH_RESULT_TTL_SECONDS : 0);
       })
       .catch((error) => {
         if (controller.signal.aborted) return;
@@ -1118,7 +1121,56 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   };
   const revalidateSearch = () => {
     setSelectedFlight(null);
+    setModalFaresCache({});
     setSearchRefreshKey((value) => value + 1);
+  };
+
+  const openFlightDetails = async (flight: TravelianFlight, primaryFare: DisplayFare) => {
+    setFareDetailsTab("options");
+    setExpandedFareRule(primaryFare.tier);
+    setFareDetails({ flight, fare: primaryFare });
+    setModalFaresError(null);
+
+    const cachedOptions = modalFaresCache[flight.flightId] || (flight.fareOptions && flight.fareOptions.length > 1 ? flight.fareOptions : null);
+    if (cachedOptions) {
+      setModalFaresLoading(false);
+      return;
+    }
+
+    if (flight.provider === "sooperfare" && flight.rawRef?.faresPayload) {
+      setModalFaresLoading(true);
+      try {
+        const options = await fetchFlightFares(flight);
+        if (options && options.length > 0) {
+          setModalFaresCache((prev) => ({ ...prev, [flight.flightId]: options }));
+          const lowestFare = options.reduce((lowest, fare) =>
+            fare.price.total < lowest.price.total ? fare : lowest
+          );
+          const updatedFlight: TravelianFlight = {
+            ...flight,
+            fareOptions: options,
+            fareBrand: lowestFare.tier,
+            price: lowestFare.price.total,
+            currency: lowestFare.price.currency || flight.currency,
+            baggage: lowestFare.bags || flight.baggage,
+          };
+          setApiFlights((current) =>
+            current.map((f) => (f.flightId === flight.flightId ? updatedFlight : f))
+          );
+          setFareDetails((current) =>
+            current && current.flight.flightId === flight.flightId
+              ? { flight: updatedFlight, fare: fareRows(updatedFlight)[0] }
+              : current
+          );
+        }
+      } catch (err) {
+        setModalFaresError(err instanceof Error ? err.message : "Unable to load additional fare tiers.");
+      } finally {
+        setModalFaresLoading(false);
+      }
+    } else {
+      setModalFaresLoading(false);
+    }
   };
 
   return (
@@ -1442,7 +1494,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               </>
             )}
 
-            {apiStatus !== "loading" && filtered.map((flight) => {
+            {apiStatus !== "loading" && (
+              <>
+                {filtered.map((flight) => {
               const isGroup = isGroupTicketingProvider(flight.provider) || flight.fareBrand === "Group Ticket" || flight.flightId.startsWith("group-");
               const hasFareOptions = (flight.fareOptions || []).length > 0;
               const fareOptionsOpen = selectedFlight === flight.flightId;
@@ -1555,9 +1609,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
-                              setFareDetailsTab("flight");
-                              setExpandedFareRule(primaryFare.tier);
-                              setFareDetails({ flight, fare: primaryFare });
+                              void openFlightDetails(flight, primaryFare);
                             }}
                           >
                             Flight Details
@@ -1765,6 +1817,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 </Card>
               );
             })}
+              </>
+            )}
 
             {apiStatus !== "loading" && filtered.length === 0 && (
               <div className="rounded-3xl border bg-card px-6 py-14 text-center shadow-card">
@@ -1991,8 +2045,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               </DialogHeader>
 
               <div className="shrink-0 bg-white/60 px-4 pt-3 sm:px-5">
-                <div className="grid overflow-hidden rounded-xl border border-primary/15 bg-white p-1 text-xs font-bold text-slate-600 shadow-sm sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-1 overflow-hidden rounded-xl border border-primary/15 bg-white p-1 text-xs font-bold text-slate-600 shadow-sm sm:grid-cols-4">
                   {([
+                    ["options", "Fare Options"],
                     ["flight", "Flight Info"],
                     ["rules", "Fare Rules"],
                     ["baggage", "Baggage"],
@@ -2002,7 +2057,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       type="button"
                       onClick={() => setFareDetailsTab(tab)}
                       className={cn(
-                        "flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 transition-colors",
+                        "flex items-center justify-center gap-1.5 rounded-lg px-3 py-2 transition-colors",
                         fareDetailsTab === tab ? "bg-primary text-primary-foreground shadow-sm" : "bg-transparent hover:bg-primary/5 hover:text-primary",
                       )}
                     >
@@ -2014,6 +2069,96 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+                {fareDetailsTab === "options" && (
+                  <div className="space-y-4">
+                    {modalFaresLoading ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="mt-3 text-sm font-bold text-slate-900">Loading live fare options & baggage...</p>
+                        <p className="text-xs text-muted-foreground mt-1">Checking available fare families from the airline</p>
+                      </div>
+                    ) : (
+                      <>
+                        {modalFaresError && (
+                          <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-800">
+                            {modalFaresError} Showing default fare.
+                          </div>
+                        )}
+                        <div className="space-y-3">
+                          {fareRows(fareDetails.flight).map((fare) => {
+                            const isNonRefundable =
+                              fareDetails.flight.refundable === false ||
+                              /non[- ]?refundable|not refundable|no refund/i.test(fare.cancellation || fare.refund || "");
+                            return (
+                              <div
+                                key={`${fare.tier}-${fare.price.total}`}
+                                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-base font-bold text-slate-950" title={fare.tier}>
+                                      {fare.tier}
+                                    </p>
+                                  </div>
+                                  <Badge
+                                    variant={isNonRefundable ? "secondary" : "outline"}
+                                    className={cn(
+                                      "rounded-lg px-2.5 py-1 text-xs font-semibold border-0",
+                                      isNonRefundable ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
+                                    )}
+                                  >
+                                    {isNonRefundable ? "Non-Refundable" : "Refundable"}
+                                  </Badge>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 py-3 sm:grid-cols-3">
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Luggage className={cn("h-4 w-4 shrink-0", hasBaggage(fare, fareDetails.flight) ? "text-emerald-600" : "text-slate-400")} />
+                                    <span className="truncate font-medium text-slate-700">{baggageLabel(fare, fareDetails.flight)}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    {hasMeal(fare, fareDetails.flight) ? (
+                                      <Utensils className="h-4 w-4 shrink-0 text-emerald-600" />
+                                    ) : (
+                                      <UtensilsCrossed className="h-4 w-4 shrink-0 text-slate-400" />
+                                    )}
+                                    <span className="truncate font-medium text-slate-700">{mealLabel(fare, fareDetails.flight)}</span>
+                                  </div>
+                                  <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-xs text-muted-foreground">
+                                    <Clock className="h-4 w-4 shrink-0 text-primary" />
+                                    <span className="truncate font-medium text-slate-700">
+                                      {fare.change && !isUnclearDisplayValue(fare.change) ? fare.change : "Changeable with fee"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+                                  <div>
+                                    <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Total Fare</span>
+                                    <p className="text-xl font-black text-primary">
+                                      {formatFare(fare.price.total, fare.price.currency || fareDetails.flight.currency)}
+                                    </p>
+                                  </div>
+                                  <a
+                                    href={fareWhatsAppHref(fareDetails.flight, fare)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="shrink-0"
+                                  >
+                                    <Button size="sm" className="h-9 gap-2 rounded-xl px-4 font-semibold">
+                                      <WhatsAppIcon className="h-4 w-4" /> WhatsApp Help
+                                    </Button>
+                                  </a>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
                 {fareDetailsTab === "flight" && (
                   <JourneyTimeline flight={fareDetails.flight} />
                 )}
