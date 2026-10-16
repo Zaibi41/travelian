@@ -274,3 +274,6 @@ Before saying the task is done, confirm:
 - Existing confirmed flows are not broken.
 
 Do not mark the task complete if the fix only works for the simplest visible screenshot.
+<!-- LOVABLE:BEGIN -->
+- Keep hotel search controls in a hotel-specific component; isolate presentation changes from Flights and Group Ticketing.
+<!-- LOVABLE:END -->
