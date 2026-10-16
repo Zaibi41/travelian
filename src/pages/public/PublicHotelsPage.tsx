@@ -2,10 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, MapPin, Wifi, UtensilsCrossed, Dumbbell, Search, SlidersHorizontal, Grid3X3, List, Heart, X, ChevronDown, Map as MapIcon, ArrowUpDown, Users, Waves, Coffee, Hotel } from "lucide-react";
+import { Star, MapPin, Wifi, UtensilsCrossed, Dumbbell, SlidersHorizontal, X, Map as MapIcon, ArrowUpDown, Waves, Coffee, Hotel } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { searchHotels, type HotelOffer } from "@/lib/travelian-api";
@@ -53,7 +52,8 @@ export default function PublicHotelsPage() {
   const priceMaximum = Math.max(100000, ...apiHotels.map(h => Math.ceil(h.pricePerNight / 1000) * 1000));
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [sort, setSort] = useState("popular");
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(() => window.innerWidth >= 768);
+  const [failedImages, setFailedImages] = useState<string[]>([]);
 
   const toggleStar = (s: number) => {
     setStarFilter(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
@@ -286,7 +286,7 @@ export default function PublicHotelsPage() {
                   <Card key={hotel.hotelId} className="overflow-hidden rounded-lg shadow-card transition-shadow hover:shadow-elevated">
                     <div className="grid md:grid-cols-[180px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_190px]">
                       <Link to={`/hotel/${encodeURIComponent(hotel.hotelId)}`} aria-label={`View ${hotel.name}`} className="flex aspect-[16/9] items-center justify-center bg-muted md:aspect-auto md:min-h-48">
-                        {hotel.image ? <img src={hotel.image} alt={hotel.name} className="h-full max-h-64 w-full object-cover md:max-h-none" loading="lazy" onError={event => { event.currentTarget.style.display = "none"; }} /> : <Hotel className="h-12 w-12 text-muted-foreground" />}
+                        {hotel.image && !failedImages.includes(hotel.hotelId) ? <img src={hotel.image} alt={hotel.name} className="h-full max-h-64 w-full object-cover md:max-h-none" loading="lazy" onError={() => setFailedImages(current => [...current, hotel.hotelId])} /> : <Hotel className="h-12 w-12 text-muted-foreground" />}
                       </Link>
                       <div className="min-w-0 p-4">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
