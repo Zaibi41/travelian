@@ -1,15 +1,17 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Star, MapPin, Wifi, UtensilsCrossed, Dumbbell, Search, SlidersHorizontal, Grid3X3, List, Heart, X, ChevronDown, Map as MapIcon, ArrowUpDown, Users, Waves, Coffee, Hotel } from "lucide-react";
+import { Star, MapPin, Wifi, UtensilsCrossed, Dumbbell, SlidersHorizontal, X, Map as MapIcon, ArrowUpDown, Waves, Coffee, Hotel } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { searchHotels, type HotelOffer } from "@/lib/travelian-api";
 import { useLocale } from "@/contexts/LocaleContext";
+import { addDays } from "date-fns";
+import { formatDateOnly } from "@/lib/date-only";
+import { HotelSearchBar } from "@/components/public/HotelSearchBar";
 
 const amenityFilters = [
   { id: "wifi", label: "Free WiFi", icon: Wifi },
@@ -30,16 +32,28 @@ const sortOptions = [
 export default function PublicHotelsPage() {
   const [params, setParams] = useSearchParams();
   const { currency } = useLocale();
-  const [search, setSearch] = useState(params.get("location") || "");
+  const [retry, setRetry] = useState(0);
+  const searchValues = useMemo(() => {
+    const count = (key: string, fallback: number, min: number) => Math.max(min, Math.min(20, Number(params.get(key)) || fallback));
+    const adults = count("adults", 2, 1);
+    return {
+      location: params.get("location") || "",
+      checkIn: params.get("checkIn") || formatDateOnly(addDays(new Date(), 7)),
+      checkOut: params.get("checkOut") || formatDateOnly(addDays(new Date(), 10)),
+      adults, children: count("children", 0, 0), rooms: Math.min(adults, count("rooms", 1, 1)),
+    };
+  }, [params]);
+  const hasSearch = !!params.get("location");
   const [apiHotels, setApiHotels] = useState<HotelOffer[]>([]);
   const [apiStatus, setApiStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [apiMessage, setApiMessage] = useState("");
   const [starFilter, setStarFilter] = useState<number[]>([]);
-  const [priceRange, setPriceRange] = useState([0, 500]);
+  const [priceRange, setPriceRange] = useState([0, 100000]);
+  const priceMaximum = Math.max(100000, ...apiHotels.map(h => Math.ceil(h.pricePerNight / 1000) * 1000));
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
-  const [view, setView] = useState<"grid" | "list">("grid");
   const [sort, setSort] = useState("popular");
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(() => window.innerWidth >= 768);
+  const [failedImages, setFailedImages] = useState<string[]>([]);
 
   const toggleStar = (s: number) => {
     setStarFilter(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
@@ -50,40 +64,28 @@ export default function PublicHotelsPage() {
   };
 
   useEffect(() => {
+    if (!hasSearch) { setApiStatus("idle"); setApiHotels([]); return; }
     const controller = new AbortController();
-    const checkIn = params.get("checkIn") || new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 10);
-    const checkOut = params.get("checkOut") || new Date(Date.now() + 86400000 * 10).toISOString().slice(0, 10);
-    const location = params.get("location") || search || "Dubai";
-    const adults = Number(params.get("adults") || 2);
-
     setApiStatus("loading");
-    searchHotels({
-      location,
-      checkIn,
-      checkOut,
-      rooms: 1,
-      guests: { adults, children: 0 },
-      currency,
-    }, controller.signal)
+    setApiMessage("");
+    searchHotels({ ...searchValues, guests: { adults: searchValues.adults, children: searchValues.children }, currency }, controller.signal)
       .then(result => {
+        if (controller.signal.aborted) return;
         setApiHotels(result.hotels);
         setApiStatus("success");
-        setApiMessage(result.hotels.length ? "" : "No hotel rates returned.");
       })
-      .catch(error => {
+      .catch(() => {
         if (controller.signal.aborted) return;
         setApiHotels([]);
         setApiStatus("error");
-        setApiMessage(error instanceof Error ? error.message : "Hotel search failed.");
+        setApiMessage("Hotel rates could not be loaded. Please try again shortly.");
       });
-
     return () => controller.abort();
-  }, [params, currency]);
+  }, [searchValues, hasSearch, currency, retry]);
 
   let filtered = apiHotels.filter(h => {
-    if (search && !h.name.toLowerCase().includes(search.toLowerCase()) && !h.city.toLowerCase().includes(search.toLowerCase())) return false;
     if (starFilter.length > 0 && !starFilter.includes(h.starRating)) return false;
-    if (h.pricePerNight < priceRange[0] || h.pricePerNight > priceRange[1]) return false;
+    if (h.pricePerNight < priceRange[0] || (priceRange[1] < 100000 && h.pricePerNight > priceRange[1])) return false;
     if (selectedAmenities.length > 0) {
       const hotelAmenities = h.amenities.map(a => a.toLowerCase());
       if (!selectedAmenities.every(sa => hotelAmenities.some(ha => ha.includes(sa)))) return false;
@@ -93,46 +95,19 @@ export default function PublicHotelsPage() {
 
   if (sort === "price-asc") filtered.sort((a, b) => a.pricePerNight - b.pricePerNight);
   else if (sort === "price-desc") filtered.sort((a, b) => b.pricePerNight - a.pricePerNight);
-  else if (sort === "stars") filtered.sort((a, b) => b.starRating - a.starRating);
+  else if (sort === "stars" || sort === "rating") filtered.sort((a, b) => b.starRating - a.starRating);
 
-  const activeFilterCount = starFilter.length + selectedAmenities.length + (priceRange[0] > 0 || priceRange[1] < 500 ? 1 : 0);
+  const activeFilterCount = starFilter.length + selectedAmenities.length + (priceRange[0] > 0 || priceRange[1] < 100000 ? 1 : 0);
 
   return (
     <div>
-      {/* Search Header */}
-      <section className="relative isolate overflow-hidden gradient-hero py-8 md:py-10">
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div
-            className="absolute inset-0 opacity-[0.07]"
-            style={{
-              backgroundImage: "radial-gradient(circle at 1px 1px, hsl(0 0% 100%) 1px, transparent 0)",
-              backgroundSize: "22px 22px",
-            }}
-          />
-          <div className="absolute -top-24 left-1/2 h-80 w-[34rem] -translate-x-1/2 rounded-full bg-primary/35 blur-3xl" />
-          <div className="absolute -bottom-16 right-8 h-64 w-64 rounded-full bg-teal/20 blur-3xl" />
-          <div className="absolute -bottom-24 left-0 h-56 w-56 rounded-full bg-gold/15 blur-3xl" />
-        </div>
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-gold">Stay with Travelian</p>
-          <h1 className="text-2xl md:text-3xl font-black font-display tracking-tight text-primary-foreground">Hotels &amp; Accommodation</h1>
-          <p className="mt-2 max-w-xl text-sm text-primary-foreground/80">Compare verified properties with transparent rates and human booking support.</p>
-          <div className="mt-5 flex flex-col gap-2 rounded-2xl bg-card p-3 shadow-elevated sm:flex-row sm:items-center max-w-3xl">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search hotel, city, or destination..." className="pl-9 h-12 rounded-xl bg-muted/30 border-muted" value={search} onChange={e => setSearch(e.target.value)} />
-            </div>
-            <Button
-              className="gradient-primary text-primary-foreground h-12 rounded-xl px-6 font-semibold"
-              onClick={() => setParams(new URLSearchParams({
-                location: search || "Dubai",
-                checkIn: params.get("checkIn") || new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 10),
-                checkOut: params.get("checkOut") || new Date(Date.now() + 86400000 * 10).toISOString().slice(0, 10),
-                adults: params.get("adults") || "2",
-                currency,
-              }))}
-            ><Search className="h-4 w-4 mr-2" /> Search hotels</Button>
-          </div>
+      <section className="border-b bg-card py-5 md:py-6">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h1 className="mb-4 font-display text-xl font-bold text-foreground">{hasSearch ? `Hotels in ${searchValues.location}` : "Hotels & Accommodation"}</h1>
+          <HotelSearchBar initialValues={searchValues} loading={apiStatus === "loading"} onSearch={values => {
+            setParams(new URLSearchParams({ location: values.location, checkIn: values.checkIn, checkOut: values.checkOut, adults: String(values.adults), children: String(values.children), rooms: String(values.rooms), currency }));
+            setRetry(value => value + 1);
+          }} />
         </div>
       </section>
 
@@ -155,7 +130,7 @@ export default function PublicHotelsPage() {
               )}
             </Button>
             <span className="text-sm text-muted-foreground">
-              {apiStatus === "loading" ? "Searching Travelport hotel rates" : `${filtered.length} properties found`}
+              {apiStatus === "loading" ? "Searching hotel rates…" : hasSearch ? `${filtered.length} properties found` : "Find your next stay"}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -171,23 +146,14 @@ export default function PublicHotelsPage() {
                 ))}
               </select>
             </div>
-            <div className="w-px h-5 bg-border mx-1" />
-            <Button size="icon" variant={view === "grid" ? "default" : "ghost"} onClick={() => setView("grid")} className="h-8 w-8">
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-            <Button size="icon" variant={view === "list" ? "default" : "ghost"} onClick={() => setView("list")} className="h-8 w-8">
-              <List className="h-4 w-4" />
-            </Button>
-            <Button size="sm" variant="outline" className="gap-2 hidden md:flex">
-              <MapIcon className="h-4 w-4" /> Map View
-            </Button>
+
           </div>
         </div>
 
-        <div className="flex gap-6">
+        <div className="flex flex-col gap-6 md:flex-row">
           {/* Sidebar Filters */}
           {showFilters && (
-            <aside className="hidden md:block w-64 shrink-0 space-y-6">
+            <aside className="grid w-full shrink-0 gap-4 sm:grid-cols-2 md:block md:w-56 md:space-y-4">
               {/* Price Range */}
               <div className="bg-card rounded-xl p-5 shadow-card">
                 <h3 className="font-semibold text-foreground text-sm mb-4">Price per night</h3>
@@ -195,13 +161,13 @@ export default function PublicHotelsPage() {
                   value={priceRange}
                   onValueChange={setPriceRange}
                   min={0}
-                  max={500}
-                  step={10}
+                  max={priceMaximum}
+                  step={100}
                   className="mb-3"
                 />
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>PKR {priceRange[0]}</span>
-                  <span>PKR {priceRange[1]}+</span>
+                  <span>{currency} {priceRange[0].toLocaleString()}</span>
+                  <span>{currency} {priceRange[1].toLocaleString()}{priceRange[1] >= 100000 ? "+" : ""}</span>
                 </div>
               </div>
 
@@ -280,14 +246,14 @@ export default function PublicHotelsPage() {
           <div className="flex-1 min-w-0">
             {apiStatus === "error" && (
               <div className="mb-4 rounded-xl border border-warning/20 bg-warning/5 px-4 py-3 text-sm text-warning">
-                {apiMessage}
+                {apiMessage} <Button variant="outline" size="sm" className="ml-2" onClick={() => setRetry(value => value + 1)}>Try again</Button>
               </div>
             )}
 
             {apiStatus === "loading" && (
               <Card className="mb-4 border-primary/15 shadow-card">
                 <CardContent className="p-5">
-                  <p className="text-sm font-semibold text-foreground">Searching Travelport hotel rates</p>
+                  <p className="text-sm font-semibold text-foreground">Searching hotel rates</p>
                   <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
                     <div className="h-full w-1/3 animate-[premiumProgress_1.8s_ease-in-out_infinite] bg-gradient-to-r from-primary via-gold to-primary" />
                   </div>
@@ -308,109 +274,45 @@ export default function PublicHotelsPage() {
                     {a} <X className="h-3 w-3" />
                   </Badge>
                 ))}
-                <button className="text-xs text-primary hover:underline" onClick={() => { setStarFilter([]); setSelectedAmenities([]); setPriceRange([0, 500]); }}>
+                <Button variant="ghost" size="sm" className="text-xs text-primary hover:underline" onClick={() => { setStarFilter([]); setSelectedAmenities([]); setPriceRange([0, 100000]); }}>
                   Clear all
-                </button>
+                </Button>
               </div>
             )}
 
-            {apiStatus !== "loading" && view === "grid" ? (
-              <div className={`grid gap-4 ${showFilters ? 'grid-cols-1 lg:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}>
-                {filtered.map(hotel => (
-                  <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
-                    <Card className="overflow-hidden group hover:shadow-elevated transition-all h-full">
-                      <div className="h-44 bg-gradient-to-br from-primary/5 to-accent relative flex items-center justify-center">
-                        <Hotel className="h-12 w-12 text-primary/40 transition-transform group-hover:scale-110" />
-                        <div className="absolute top-3 left-3 flex items-center gap-0.5">
-                          {Array.from({ length: hotel.starRating }).map((_, i) => (
-                            <Star key={i} className="h-3 w-3 fill-gold text-gold" />
-                          ))}
-                        </div>
-                        <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground hover:bg-foreground/40 transition-colors">
-                          <Heart className="h-3.5 w-3.5" />
-                        </button>
-                        {hotel.refundable && <Badge className="absolute bottom-3 left-3 bg-success/90 text-success-foreground border-0 text-[10px]">Refundable</Badge>}
-                      </div>
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <h3 className="font-semibold text-foreground text-sm truncate">{hotel.name}</h3>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <MapPin className="h-3 w-3 shrink-0" /> {hotel.city}, {hotel.country}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {hotel.amenities.slice(0, 3).map(a => (
-                            <span key={a} className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">{a}</span>
-                          ))}
-                        </div>
-                        <div className="flex items-end justify-between mt-3 pt-3 border-t">
-                          <div>
-                            <p className="price-lg">{hotel.currency} {hotel.pricePerNight}<span className="text-[10px] font-normal text-muted-foreground">/night</span></p>
-                          </div>
-                          <span className="text-[10px] text-muted-foreground">{hotel.rooms} room option{hotel.rooms === 1 ? "" : "s"}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            ) : apiStatus !== "loading" ? (
+            {apiStatus === "success" && (
               <div className="space-y-4">
                 {filtered.map(hotel => (
-                  <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
-                    <Card className="overflow-hidden hover:shadow-elevated transition-all">
-                      <div className="flex flex-col md:flex-row">
-                        <div className="w-full md:w-72 h-48 md:h-auto bg-gradient-to-br from-primary/5 to-accent flex items-center justify-center shrink-0 relative">
-                          <Hotel className="h-12 w-12 text-primary/40" />
-                          <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground">
-                            <Heart className="h-3.5 w-3.5" />
-                          </button>
+                  <Card key={hotel.hotelId} className="overflow-hidden rounded-lg shadow-card transition-shadow hover:shadow-elevated">
+                    <div className="grid md:grid-cols-[180px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_190px]">
+                      <Link to={`/hotel/${encodeURIComponent(hotel.hotelId)}`} aria-label={`View ${hotel.name}`} className="flex aspect-[16/9] items-center justify-center bg-muted md:aspect-auto md:min-h-48">
+                        {hotel.image && !failedImages.includes(hotel.hotelId) ? <img src={hotel.image} alt={hotel.name} className="h-full max-h-64 w-full object-cover md:max-h-none" loading="lazy" onError={() => setFailedImages(current => [...current, hotel.hotelId])} /> : <Hotel className="h-12 w-12 text-muted-foreground" />}
+                      </Link>
+                      <div className="min-w-0 p-4">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <Link to={`/hotel/${encodeURIComponent(hotel.hotelId)}`} className="min-w-0 max-w-full"><h2 className="break-words text-base font-bold text-foreground">{hotel.name}</h2></Link>
+                          <div className="flex shrink-0 gap-0.5" aria-label={`${hotel.starRating} stars`}>{Array.from({ length: Math.max(0, Math.min(5, hotel.starRating)) }).map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-gold text-gold" />)}</div>
                         </div>
-                        <CardContent className="p-5 flex-1 flex flex-col justify-between">
-                          <div>
-                            <div className="flex items-start justify-between gap-4">
-                              <div>
-                                <div className="flex items-center gap-1 mb-1">
-                                  {Array.from({ length: hotel.starRating }).map((_, i) => (
-                                    <Star key={i} className="h-3 w-3 fill-gold text-gold" />
-                                  ))}
-                                </div>
-                                <h3 className="font-semibold text-foreground text-lg">{hotel.name}</h3>
-                                <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
-                                  <MapPin className="h-3.5 w-3.5" /> {hotel.city}, {hotel.country}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5 mt-3">
-                              {hotel.amenities.map(a => (
-                                <span key={a} className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">{a}</span>
-                              ))}
-                            </div>
-                            {hotel.refundable && <Badge className="mt-2 bg-success/10 text-success border-0 text-[10px]">Refundable</Badge>}
-                          </div>
-                          <div className="flex items-end justify-between mt-4 pt-3 border-t">
-                            <div>
-                              <span className="text-xs text-muted-foreground">Per night</span>
-                              <p className="price-xl">{hotel.currency} {hotel.pricePerNight}</p>
-                            </div>
-                            <Button className="gradient-primary text-primary-foreground">Select Room</Button>
-                          </div>
-                        </CardContent>
+                        <p className="mt-1 flex min-w-0 items-center gap-1 text-xs text-muted-foreground"><MapPin className="h-3.5 w-3.5 shrink-0" /><span className="truncate">{hotel.city}, {hotel.country}</span></p>
+                        {hotel.refundable && <p className="mt-3 text-xs font-semibold text-success">Refundable rate available</p>}
+                        <div className="mt-3 grid gap-x-3 gap-y-2 sm:grid-cols-2">{hotel.amenities.slice(0, 6).map(amenity => <span key={amenity} className="truncate text-xs text-muted-foreground">{amenity}</span>)}</div>
                       </div>
-                    </Card>
-                  </Link>
+                      <div className="flex items-end justify-between gap-3 border-t p-4 md:col-span-2 xl:col-span-1 xl:flex-col xl:justify-center xl:border-l xl:border-t-0 xl:text-right">
+                        <div className="min-w-0"><p className="text-xs text-muted-foreground">Per night</p><p className="break-words text-xl font-bold text-foreground">{hotel.currency} {hotel.pricePerNight.toLocaleString()}</p><p className="mt-1 text-xs text-muted-foreground">{hotel.rooms} room option{hotel.rooms === 1 ? "" : "s"}</p></div>
+                        <Button asChild size="sm" className="shrink-0"><Link to={`/hotel/${encodeURIComponent(hotel.hotelId)}`}>Select Room</Link></Button>
+                      </div>
+                    </div>
+                  </Card>
                 ))}
               </div>
-            ) : null}
+            )}
 
-            {apiStatus !== "loading" && filtered.length === 0 && (
+            {apiStatus === "success" && filtered.length === 0 && (
               <div className="text-center py-16">
                 <MapIcon className="mx-auto mb-4 h-14 w-14 text-muted-foreground" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">No properties found</h3>
                 <p className="text-sm text-muted-foreground mb-4">No hotel rates returned. Try another city or date.</p>
-                <Button variant="outline" onClick={() => { setStarFilter([]); setSelectedAmenities([]); setPriceRange([0, 500]); setSearch(""); }}>
+                <Button variant="outline" onClick={() => { setStarFilter([]); setSelectedAmenities([]); setPriceRange([0, 100000]); }}>
                   Clear All Filters
                 </Button>
               </div>
