@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { addDays, format, startOfDay } from "date-fns";
-import { CalendarIcon, ChevronDown, MapPin, Minus, Plus, Search, Users } from "lucide-react";
+import { CalendarIcon, ChevronDown, MapPin, Minus, Plus, Search, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
@@ -32,11 +32,38 @@ function StayDate({ label, value, minimum, onChange }: { label: string; value: s
   </div>;
 }
 
+const popularCities = [
+  "Makkah", "Al Madinah", "Dubai", "Baku",
+  "Lahore", "Istanbul", "Karachi", "Islamabad",
+  "Kuala Lumpur", "New York", "London", "Brussels",
+  "Bangkok", "Jeddah", "Phuket", "Doha",
+  "Manama", "Skardu", "Tokyo", "Multan",
+];
+
 export function HotelSearchBar({ initialValues, onSearch, loading }: { initialValues: HotelSearchValues; onSearch: (values: HotelSearchValues) => void; loading: boolean }) {
   const [values, setValues] = useState(initialValues);
   const [open, setOpen] = useState(false);
+  const [destOpen, setDestOpen] = useState(false);
+  const destRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState("");
   useEffect(() => { setValues(initialValues); setError(""); }, [initialValues]);
+  useEffect(() => {
+    if (!destOpen) return;
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      if (destRef.current && !destRef.current.contains(event.target as Node)) setDestOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setDestOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [destOpen]);
   const update = (next: Partial<HotelSearchValues>) => { setValues(current => ({ ...current, ...next })); setError(""); };
   return <form className="space-y-3" onSubmit={event => {
     event.preventDefault();
@@ -47,7 +74,33 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
     <div className="grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.1fr)_auto]">
       <div className="min-w-0 space-y-1.5">
         <label htmlFor="hotel-destination" className="text-xs font-medium text-muted-foreground">Destination</label>
-        <div className="relative"><MapPin className="pointer-events-none absolute left-3 top-4 h-4 w-4 text-muted-foreground" /><Input id="hotel-destination" value={values.location} onChange={event => update({ location: event.target.value })} placeholder="City or destination" className="h-12 rounded-xl border-muted bg-muted/30 pl-9" /></div>
+        <div className="relative" ref={destRef}>
+          <MapPin className="pointer-events-none absolute left-3 top-4 z-10 h-4 w-4 text-muted-foreground" />
+          <Input id="hotel-destination" value={values.location} onChange={event => update({ location: event.target.value })} onFocus={() => setDestOpen(true)} placeholder="City or destination" className="h-12 rounded-xl border-muted bg-muted/30 pl-9 pr-9" autoComplete="off" />
+          {values.location && (
+            <button type="button" aria-label="Clear destination" onClick={event => { event.stopPropagation(); update({ location: "" }); }} className="absolute right-2.5 top-3.5 z-10 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+          {destOpen && (
+            <div className="absolute left-0 right-0 top-full z-[1120] mt-2 max-h-72 overflow-y-auto rounded-2xl border bg-popover p-3 text-popover-foreground shadow-elevated">
+              <p className="mb-2 text-xs font-semibold text-muted-foreground">Search By City, District, Region, Hotel Name</p>
+              <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
+                {(values.location.trim()
+                  ? popularCities.filter(city => city.toLowerCase().includes(values.location.trim().toLowerCase()))
+                  : popularCities
+                ).map(city => (
+                  <button key={city} type="button" className="truncate rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted" onClick={() => { update({ location: city }); setDestOpen(false); }}>
+                    {city}
+                  </button>
+                ))}
+              </div>
+              {values.location.trim() && !popularCities.some(city => city.toLowerCase().includes(values.location.trim().toLowerCase())) && (
+                <p className="mt-1 text-xs text-muted-foreground">No matching city suggestion — you can still search this destination.</p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       <StayDate label="Check-in" value={values.checkIn} minimum={new Date()} onChange={checkIn => { const date = parseDateOnly(checkIn); update({ checkIn, ...(date && values.checkOut <= checkIn ? { checkOut: formatDateOnly(addDays(date, 1)) } : {}) }); }} />
       <StayDate label="Check-out" value={values.checkOut} minimum={addDays(parseDateOnly(values.checkIn) || new Date(), 1)} onChange={checkOut => update({ checkOut })} />
