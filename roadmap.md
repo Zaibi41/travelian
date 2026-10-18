@@ -7,4 +7,4 @@
 ## 2026-10-18
 - [x] Hotels tab on homepage uses same HotelSearchBar as /hotels-search
 - [x] Fix preview typecheck errors (flight types, Info import, lucide title props)
-- [ ] Destination field opens popular-cities dropdown (reference screenshot)
+- [x] Destination field opens popular-cities dropdown (reference screenshot)
