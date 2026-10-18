@@ -457,6 +457,7 @@ export function SearchTabs({
         {activeTab === "hotels" && (
           <HotelSearchBar
             initialValues={hotelValues}
+            loading={false}
             onSearch={(values) => {
               setHotelValues(values);
               const params = new URLSearchParams({

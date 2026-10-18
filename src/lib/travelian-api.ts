@@ -43,6 +43,7 @@ interface FlightOffer {
   stops?: number | null;
   baggage?: string | null;
   meal?: string | null;
+  refundable?: boolean | null;
   seats?: number | string | null;
   segments?: Flight["segments"];
   layovers?: Flight["layovers"];
@@ -76,6 +77,7 @@ export interface FareOption {
   bags: string;
   change: string;
   refund: string;
+  meal?: string;
   amenities?: string[];
   popular?: boolean;
 }
@@ -84,8 +86,10 @@ export type TravelianFlight = Flight & {
   provider?: string;
   offerId?: string;
   airlineImage?: string;
+  airlineCode?: string;
   fareBrand?: string;
   fareOptions?: FareOption[];
+  refundable?: boolean;
   rawRef?: FlightOffer["rawRef"];
 };
 
