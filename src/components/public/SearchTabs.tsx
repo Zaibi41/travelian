@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, startOfDay } from "date-fns";
+import { format, startOfDay, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { TravelersClassPicker, type TravelersValue } from "@/components/public/TravelersClassPicker";
 import { AirportCombobox } from "@/components/public/AirportCombobox";
@@ -14,6 +14,7 @@ import { useLocale } from "@/contexts/LocaleContext";
 import { formatDateOnly } from "@/lib/date-only";
 import { buildGroupTicketSearchParams } from "@/lib/group-ticketing";
 import { GroupTicketingSearchBar } from "@/components/public/GroupTicketingSearchBar";
+import { HotelSearchBar, type HotelSearchValues } from "@/components/public/HotelSearchBar";
 
 const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
@@ -133,10 +134,14 @@ export function SearchTabs({
   const [travelers, setTravelers] = useState<TravelersValue>({ adults: 1, children: 0, infants: 0, cabin: "Economy" });
   const [departDate, setDepartDate] = useState<Date>();
   const [returnDate, setReturnDate] = useState<Date>();
-  const [hotelCheckIn, setHotelCheckIn] = useState<Date>();
-  const [hotelCheckOut, setHotelCheckOut] = useState<Date>();
-  const [hotelLocation, setHotelLocation] = useState("");
-  const [hotelGuests, setHotelGuests] = useState("2");
+  const [hotelValues, setHotelValues] = useState<HotelSearchValues>(() => ({
+    location: "",
+    checkIn: formatDateOnly(addDays(new Date(), 7)),
+    checkOut: formatDateOnly(addDays(new Date(), 10)),
+    adults: 2,
+    children: 0,
+    rooms: 1,
+  }));
   const [transDate, setTransDate] = useState<Date>();
   const [transferPickup, setTransferPickup] = useState("");
   const [transferDropoff, setTransferDropoff] = useState("");
@@ -225,13 +230,16 @@ export function SearchTabs({
     }
     if (activeTab === "hotels") {
       const params = new URLSearchParams({
-        location: hotelLocation || "Dubai",
-        checkIn: hotelCheckIn ? formatDateOnly(hotelCheckIn) : "",
-        checkOut: hotelCheckOut ? formatDateOnly(hotelCheckOut) : "",
-        adults: hotelGuests || "2",
+        location: hotelValues.location,
+        checkIn: hotelValues.checkIn,
+        checkOut: hotelValues.checkOut,
+        adults: String(hotelValues.adults),
+        children: String(hotelValues.children),
+        rooms: String(hotelValues.rooms),
         currency,
       });
       navigate(`/hotels-search?${params.toString()}`);
+      return;
     }
     else if (activeTab === "transfers") {
       const params = new URLSearchParams({
@@ -447,21 +455,22 @@ export function SearchTabs({
         )}
 
         {activeTab === "hotels" && (
-          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-3 items-center">
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input value={hotelLocation} onChange={(event) => setHotelLocation(event.target.value)} placeholder="City, hotel, or destination" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <DatePickerField date={hotelCheckIn} onSelect={setHotelCheckIn} placeholder="Check-in" />
-            <DatePickerField date={hotelCheckOut} onSelect={setHotelCheckOut} placeholder="Check-out" />
-            <div className="relative md:hidden">
-              <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input value={hotelGuests} onChange={(event) => setHotelGuests(event.target.value)} type="number" min={1} placeholder="Guests" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
-              <Search className="h-4 w-4 mr-2" /> Search
-            </Button>
-          </div>
+          <HotelSearchBar
+            initialValues={hotelValues}
+            onSearch={(values) => {
+              setHotelValues(values);
+              const params = new URLSearchParams({
+                location: values.location,
+                checkIn: values.checkIn,
+                checkOut: values.checkOut,
+                adults: String(values.adults),
+                children: String(values.children),
+                rooms: String(values.rooms),
+                currency,
+              });
+              navigate(`/hotels-search?${params.toString()}`);
+            }}
+          />
         )}
 
 
