@@ -238,6 +238,7 @@ export interface Flight {
 export interface FlightItinerarySegment {
   id?: string | null;
   carrier?: string | null;
+  airline?: string | null;
   flightNumber?: string | null;
   origin?: string | null;
   destination?: string | null;

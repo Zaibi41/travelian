@@ -1521,7 +1521,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             <div className="flex items-center gap-1.5">
                               <p className="truncate text-xs sm:text-sm font-semibold text-foreground" title={flight.airline}>{flight.airline}</p>
                               {isGroup && (
-                                <Users className="h-3.5 w-3.5 shrink-0 text-blue-600" title="Group" />
+                                <Users className="h-3.5 w-3.5 shrink-0 text-blue-600" aria-label="Group" />
                               )}
                             </div>
                             <div className="mt-0.5 flex flex-wrap items-center gap-1">
@@ -2241,7 +2241,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   <div className="flex items-center gap-2">
                     <p className="text-lg font-bold text-foreground">{detailsFlight.airline}</p>
                     {(isGroupTicketingProvider(detailsFlight.provider) || detailsFlight.fareBrand === "Group Ticket" || detailsFlight.flightId.startsWith("group-")) && (
-                      <Users className="h-4 w-4 shrink-0 text-blue-600" title="Group" />
+                      <Users className="h-4 w-4 shrink-0 text-blue-600" aria-label="Group" />
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">{detailsFlight.flightNumber} · {detailsFlight.origin} to {detailsFlight.destination}</p>

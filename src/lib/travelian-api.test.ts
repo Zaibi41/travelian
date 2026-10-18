@@ -78,8 +78,8 @@ describe("hydrateSooperFareOptions", () => {
     const multiFareFlight: TravelianFlight = {
       ...flight("sf-multi", "sooperfare"),
       fareOptions: [
-        { tier: "Light", price: { currency: "PKR", total: 60_000 } },
-        { tier: "Value", price: { currency: "PKR", total: 75_000 } },
+        { tier: "Light", price: { currency: "PKR", total: 60_000 }, bags: "", change: "", refund: "" },
+        { tier: "Value", price: { currency: "PKR", total: 75_000 }, bags: "", change: "", refund: "" },
       ],
     };
 
