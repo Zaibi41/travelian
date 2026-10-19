@@ -46,6 +46,7 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
   const [open, setOpen] = useState(false);
   const [destOpen, setDestOpen] = useState(false);
   const destRef = useRef<HTMLDivElement>(null);
+  const destPanelRef = useRef<HTMLDivElement>(null);
   const [destRect, setDestRect] = useState<{ left: number; top: number; width: number } | null>(null);
   const [error, setError] = useState("");
   useEffect(() => { setValues(initialValues); setError(""); }, [initialValues]);
@@ -59,7 +60,9 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
     window.addEventListener("resize", updateRect);
     window.addEventListener("scroll", updateRect, true);
     const onPointerDown = (event: MouseEvent | TouchEvent) => {
-      if (destRef.current && !destRef.current.contains(event.target as Node)) setDestOpen(false);
+      const target = event.target as Node;
+      if (destRef.current?.contains(target) || destPanelRef.current?.contains(target)) return;
+      setDestOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setDestOpen(false);
@@ -95,6 +98,7 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
           )}
           {destOpen && destRect && createPortal(
             <div
+              ref={destPanelRef}
               className="fixed z-[1120] max-h-72 overflow-y-auto rounded-2xl border bg-popover p-3 text-popover-foreground shadow-elevated"
               style={{
                 left: Math.max(8, Math.min(destRect.left, window.innerWidth - destRect.width - 8)),
