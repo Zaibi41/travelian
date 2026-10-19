@@ -117,7 +117,8 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
               {values.location.trim() && !popularCities.some(city => city.toLowerCase().includes(values.location.trim().toLowerCase())) && (
                 <p className="mt-1 text-xs text-muted-foreground">No matching city suggestion — you can still search this destination.</p>
               )}
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       </div>
