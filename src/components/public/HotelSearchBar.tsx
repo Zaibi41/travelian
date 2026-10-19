@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { addDays, format, startOfDay } from "date-fns";
 import { CalendarIcon, ChevronDown, MapPin, Minus, Plus, Search, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -45,12 +46,23 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
   const [open, setOpen] = useState(false);
   const [destOpen, setDestOpen] = useState(false);
   const destRef = useRef<HTMLDivElement>(null);
+  const destPanelRef = useRef<HTMLDivElement>(null);
+  const [destRect, setDestRect] = useState<{ left: number; top: number; width: number } | null>(null);
   const [error, setError] = useState("");
   useEffect(() => { setValues(initialValues); setError(""); }, [initialValues]);
   useEffect(() => {
     if (!destOpen) return;
+    const updateRect = () => {
+      const rect = destRef.current?.getBoundingClientRect();
+      if (rect) setDestRect({ left: rect.left, top: rect.bottom + 8, width: rect.width });
+    };
+    updateRect();
+    window.addEventListener("resize", updateRect);
+    window.addEventListener("scroll", updateRect, true);
     const onPointerDown = (event: MouseEvent | TouchEvent) => {
-      if (destRef.current && !destRef.current.contains(event.target as Node)) setDestOpen(false);
+      const target = event.target as Node;
+      if (destRef.current?.contains(target) || destPanelRef.current?.contains(target)) return;
+      setDestOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setDestOpen(false);
@@ -59,6 +71,8 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
     document.addEventListener("touchstart", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     return () => {
+      window.removeEventListener("resize", updateRect);
+      window.removeEventListener("scroll", updateRect, true);
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("touchstart", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
@@ -82,8 +96,17 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
               <X className="h-4 w-4" />
             </button>
           )}
-          {destOpen && (
-            <div className="absolute left-0 right-0 top-full z-[1120] mt-2 max-h-72 overflow-y-auto rounded-2xl border bg-popover p-3 text-popover-foreground shadow-elevated">
+          {destOpen && destRect && createPortal(
+            <div
+              ref={destPanelRef}
+              className="fixed z-[1120] max-h-72 overflow-y-auto rounded-2xl border bg-popover p-3 text-popover-foreground shadow-elevated"
+              style={{
+                left: Math.max(8, Math.min(destRect.left, window.innerWidth - destRect.width - 8)),
+                top: destRect.top,
+                width: destRect.width,
+                maxWidth: "calc(100vw - 1rem)",
+              }}
+            >
               <p className="mb-2 text-xs font-semibold text-muted-foreground">Search By City, District, Region, Hotel Name</p>
               <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
                 {(values.location.trim()
@@ -98,7 +121,8 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
               {values.location.trim() && !popularCities.some(city => city.toLowerCase().includes(values.location.trim().toLowerCase())) && (
                 <p className="mt-1 text-xs text-muted-foreground">No matching city suggestion — you can still search this destination.</p>
               )}
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       </div>

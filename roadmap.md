@@ -8,3 +8,7 @@
 - [x] Hotels tab on homepage uses same HotelSearchBar as /hotels-search
 - [x] Fix preview typecheck errors (flight types, Info import, lucide title props)
 - [x] Destination field opens popular-cities dropdown (reference screenshot)
+
+## 2026-10-19
+- [x] Site-wide dropdown clipping fix: hero overflow scoped to decorative layer, select z-index aligned to 1120, airport popover collision handling restored, hotel destination panel portaled
+- [x] Cabin popup selected state: flat themed card + gold checkmark/ring (blue gradient removed)

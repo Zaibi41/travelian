@@ -63,8 +63,8 @@ export default function HomePage() {
         ]}
       />
       {/* Premium hero */}
-      <section className="relative isolate overflow-hidden gradient-hero pt-8 pb-10 md:pt-12 md:pb-14">
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+      <section className="relative isolate gradient-hero pt-8 pb-10 md:pt-12 md:pb-14">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
           <div
             className="absolute inset-0 opacity-[0.07]"
             style={{

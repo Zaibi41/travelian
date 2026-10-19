@@ -89,9 +89,8 @@ export function TravelersClassPicker({
             type="button"
             className={cn(
               "group relative flex min-h-[80px] flex-col items-center justify-center gap-1.5 rounded-xl px-2 py-3 text-center transition-all",
-              selected
-                ? "gradient-primary text-primary-foreground shadow-md ring-1 ring-gold/40"
-                : cn("border border-transparent", meta.unselectedClass),
+              cn("border", meta.unselectedClass),
+              selected ? "border-gold/60 ring-1 ring-gold/40" : "border-transparent",
             )}
             onClick={() => update({ cabin: c })}
             aria-pressed={selected}
