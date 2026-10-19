@@ -157,7 +157,6 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
         align="start"
         side="bottom"
         sideOffset={8}
-        avoidCollisions={false}
         collisionPadding={16}
       >
         <Command shouldFilter={false}>
