@@ -68,6 +68,8 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
     document.addEventListener("touchstart", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
     return () => {
+      window.removeEventListener("resize", updateRect);
+      window.removeEventListener("scroll", updateRect, true);
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("touchstart", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
@@ -91,8 +93,16 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
               <X className="h-4 w-4" />
             </button>
           )}
-          {destOpen && (
-            <div className="absolute left-0 right-0 top-full z-[1120] mt-2 max-h-72 overflow-y-auto rounded-2xl border bg-popover p-3 text-popover-foreground shadow-elevated">
+          {destOpen && destRect && createPortal(
+            <div
+              className="fixed z-[1120] max-h-72 overflow-y-auto rounded-2xl border bg-popover p-3 text-popover-foreground shadow-elevated"
+              style={{
+                left: Math.max(8, Math.min(destRect.left, window.innerWidth - destRect.width - 8)),
+                top: destRect.top,
+                width: destRect.width,
+                maxWidth: "calc(100vw - 1rem)",
+              }}
+            >
               <p className="mb-2 text-xs font-semibold text-muted-foreground">Search By City, District, Region, Hotel Name</p>
               <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
                 {(values.location.trim()
