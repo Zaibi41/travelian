@@ -51,6 +51,13 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
   useEffect(() => { setValues(initialValues); setError(""); }, [initialValues]);
   useEffect(() => {
     if (!destOpen) return;
+    const updateRect = () => {
+      const rect = destRef.current?.getBoundingClientRect();
+      if (rect) setDestRect({ left: rect.left, top: rect.bottom + 8, width: rect.width });
+    };
+    updateRect();
+    window.addEventListener("resize", updateRect);
+    window.addEventListener("scroll", updateRect, true);
     const onPointerDown = (event: MouseEvent | TouchEvent) => {
       if (destRef.current && !destRef.current.contains(event.target as Node)) setDestOpen(false);
     };
