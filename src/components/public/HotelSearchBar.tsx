@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { addDays, format, startOfDay } from "date-fns";
 import { CalendarIcon, ChevronDown, MapPin, Minus, Plus, Search, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
   const [open, setOpen] = useState(false);
   const [destOpen, setDestOpen] = useState(false);
   const destRef = useRef<HTMLDivElement>(null);
+  const [destRect, setDestRect] = useState<{ left: number; top: number; width: number } | null>(null);
   const [error, setError] = useState("");
   useEffect(() => { setValues(initialValues); setError(""); }, [initialValues]);
   useEffect(() => {
