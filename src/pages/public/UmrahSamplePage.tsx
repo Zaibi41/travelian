@@ -1,3 +1,4 @@
+import type React from "react";
 import { useMemo, useState } from "react";
 import { BadgeCheck, BedDouble, CalendarDays, Check, Hotel, MapPin, Plane, Search, ShieldCheck, Star, X } from "lucide-react";
 import heroImg from "@/assets/umrah-sample-hero.jpg";
