@@ -19,6 +19,7 @@ import HotelDetailPage from "./pages/public/HotelDetailPage";
 import PublicFlightsPage from "./pages/public/PublicFlightsPage";
 import FlightDetailPage from "./pages/public/FlightDetailPage";
 import PublicPackagesPage from "./pages/public/PublicPackagesPage";
+import UmrahSamplePage from "./pages/public/UmrahSamplePage";
 import PublicToursPage from "./pages/public/PublicToursPage";
 import PublicVisaPage from "./pages/public/PublicVisaPage";
 
@@ -95,6 +96,7 @@ const App = () => (
             <Route path="/flights-search" element={<PublicLayout><PublicFlightsPage /></PublicLayout>} />
             <Route path="/flight/:id" element={<PublicLayout><FlightDetailPage /></PublicLayout>} />
             <Route path="/umrah-packages" element={<PublicLayout><PublicPackagesPage /></PublicLayout>} />
+            <Route path="/umrah-sample" element={<PublicLayout><UmrahSamplePage /></PublicLayout>} />
             <Route path="/umrah/:id" element={<PublicLayout><UmrahDetailPage /></PublicLayout>} />
             <Route path="/tour-packages" element={<PublicLayout><PublicToursPage /></PublicLayout>} />
             <Route path="/study-abroad" element={<Navigate to="/visa-services?type=study" replace />} />
