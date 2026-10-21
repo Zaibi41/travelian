@@ -130,7 +130,7 @@ type SearchTabsProps = {
   onGroupSearch?: Parameters<typeof GroupTicketingSearchBar>[0]["onSearch"];
 };
 
-const DEFAULT_VISIBLE_TAB_IDS = ["flights", "group-ticketing", "hotels"];
+const DEFAULT_VISIBLE_TAB_IDS = ["flights", "group-ticketing", "hotels", "umrah"];
 
 export function SearchTabs({
   initialTab = "flights",
@@ -154,6 +154,10 @@ export function SearchTabs({
     children: 0,
     rooms: 1,
   }));
+  const [umrahCity, setUmrahCity] = useState("any");
+  const [umrahMonth, setUmrahMonth] = useState("any");
+  const [umrahDuration, setUmrahDuration] = useState("any");
+  const [umrahTier, setUmrahTier] = useState("any");
   const [transDate, setTransDate] = useState<Date>();
   const [transferPickup, setTransferPickup] = useState("");
   const [transferDropoff, setTransferDropoff] = useState("");
