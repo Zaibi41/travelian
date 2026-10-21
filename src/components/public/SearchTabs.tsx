@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Hotel, Plane, Car, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ import { formatDateOnly } from "@/lib/date-only";
 import { buildGroupTicketSearchParams } from "@/lib/group-ticketing";
 import { GroupTicketingSearchBar } from "@/components/public/GroupTicketingSearchBar";
 import { HotelSearchBar, type HotelSearchValues } from "@/components/public/HotelSearchBar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UMRAH_DEPARTURE_CITIES, UMRAH_DURATIONS, UMRAH_TIERS } from "@/data/services/umrah";
 
 const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
@@ -23,6 +25,16 @@ const tabs = [
   { id: "umrah", label: "Umrah", icon: MapPin },
   { id: "transfers", label: "Transfers", icon: Car },
 ];
+
+const umrahMonths = Array.from({ length: 12 }, (_, i) => {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + i);
+  return {
+    value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+    label: d.toLocaleDateString("en-GB", { month: "short", year: "numeric" }),
+  };
+});
 
 const tripTypes = [
   { id: "oneway", label: "One-way" },
