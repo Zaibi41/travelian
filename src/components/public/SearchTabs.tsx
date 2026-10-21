@@ -492,6 +492,50 @@ export function SearchTabs({
 
 
 
+        {activeTab === "umrah" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-3 items-end">
+            <UmrahField label="Departure city">
+              <Select value={umrahCity} onValueChange={setUmrahCity}>
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-muted" aria-label="Departure city"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">All cities</SelectItem>
+                  {UMRAH_DEPARTURE_CITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </UmrahField>
+            <UmrahField label="Travel month">
+              <Select value={umrahMonth} onValueChange={setUmrahMonth}>
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-muted" aria-label="Travel month"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any month</SelectItem>
+                  {umrahMonths.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </UmrahField>
+            <UmrahField label="Duration">
+              <Select value={umrahDuration} onValueChange={setUmrahDuration}>
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-muted" aria-label="Duration"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any duration</SelectItem>
+                  {UMRAH_DURATIONS.map((d) => <SelectItem key={d} value={String(d)}>{d} Days</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </UmrahField>
+            <UmrahField label="Package type">
+              <Select value={umrahTier} onValueChange={setUmrahTier}>
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-muted" aria-label="Package type"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">All types</SelectItem>
+                  {UMRAH_TIERS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </UmrahField>
+            <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl whitespace-nowrap">
+              <Search className="h-4 w-4 mr-2" /> Search Umrah
+            </Button>
+          </div>
+        )}
+
         {activeTab === "group-ticketing" && (
           <GroupTicketingSearchBar
             initialValues={groupInitialValues}
