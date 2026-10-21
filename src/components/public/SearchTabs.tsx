@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Hotel, Plane, Car, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ import { formatDateOnly } from "@/lib/date-only";
 import { buildGroupTicketSearchParams } from "@/lib/group-ticketing";
 import { GroupTicketingSearchBar } from "@/components/public/GroupTicketingSearchBar";
 import { HotelSearchBar, type HotelSearchValues } from "@/components/public/HotelSearchBar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UMRAH_DEPARTURE_CITIES, UMRAH_DURATIONS, UMRAH_TIERS } from "@/data/services/umrah";
 
 const tabs = [
   { id: "flights", label: "Flights", icon: Plane },
@@ -23,6 +25,16 @@ const tabs = [
   { id: "umrah", label: "Umrah", icon: MapPin },
   { id: "transfers", label: "Transfers", icon: Car },
 ];
+
+const umrahMonths = Array.from({ length: 12 }, (_, i) => {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + i);
+  return {
+    value: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+    label: d.toLocaleDateString("en-GB", { month: "short", year: "numeric" }),
+  };
+});
 
 const tripTypes = [
   { id: "oneway", label: "One-way" },
@@ -118,7 +130,7 @@ type SearchTabsProps = {
   onGroupSearch?: Parameters<typeof GroupTicketingSearchBar>[0]["onSearch"];
 };
 
-const DEFAULT_VISIBLE_TAB_IDS = ["flights", "group-ticketing", "hotels"];
+const DEFAULT_VISIBLE_TAB_IDS = ["flights", "group-ticketing", "hotels", "umrah"];
 
 export function SearchTabs({
   initialTab = "flights",
@@ -142,6 +154,10 @@ export function SearchTabs({
     children: 0,
     rooms: 1,
   }));
+  const [umrahCity, setUmrahCity] = useState("any");
+  const [umrahMonth, setUmrahMonth] = useState("any");
+  const [umrahDuration, setUmrahDuration] = useState("any");
+  const [umrahTier, setUmrahTier] = useState("any");
   const [transDate, setTransDate] = useState<Date>();
   const [transferPickup, setTransferPickup] = useState("");
   const [transferDropoff, setTransferDropoff] = useState("");
@@ -251,7 +267,10 @@ export function SearchTabs({
       });
       navigate(`/transfers-search?${params.toString()}`);
     }
-    else if (activeTab === "umrah") navigate("/umrah-packages");
+    else if (activeTab === "umrah") {
+      const params = new URLSearchParams({ city: umrahCity, month: umrahMonth, duration: umrahDuration, tier: umrahTier });
+      navigate(`/umrah-sample?${params.toString()}`);
+    }
     else navigate("/");
   };
 
@@ -282,10 +301,6 @@ export function SearchTabs({
           <button
             key={tab.id}
             onClick={() => {
-              if (tab.id === "umrah") {
-                navigate("/umrah-packages");
-                return;
-              }
               if (tab.id === "flights" && location.pathname.startsWith("/group-ticketing")) {
                 navigate("/");
                 return;
@@ -477,6 +492,50 @@ export function SearchTabs({
 
 
 
+        {activeTab === "umrah" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto] gap-3 items-end">
+            <UmrahField label="Departure city">
+              <Select value={umrahCity} onValueChange={setUmrahCity}>
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-muted" aria-label="Departure city"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">All cities</SelectItem>
+                  {UMRAH_DEPARTURE_CITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </UmrahField>
+            <UmrahField label="Travel month">
+              <Select value={umrahMonth} onValueChange={setUmrahMonth}>
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-muted" aria-label="Travel month"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any month</SelectItem>
+                  {umrahMonths.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </UmrahField>
+            <UmrahField label="Duration">
+              <Select value={umrahDuration} onValueChange={setUmrahDuration}>
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-muted" aria-label="Duration"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Any duration</SelectItem>
+                  {UMRAH_DURATIONS.map((d) => <SelectItem key={d} value={String(d)}>{d} Days</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </UmrahField>
+            <UmrahField label="Package type">
+              <Select value={umrahTier} onValueChange={setUmrahTier}>
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-muted" aria-label="Package type"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">All types</SelectItem>
+                  {UMRAH_TIERS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </UmrahField>
+            <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl whitespace-nowrap">
+              <Search className="h-4 w-4 mr-2" /> Search Umrah
+            </Button>
+          </div>
+        )}
+
         {activeTab === "group-ticketing" && (
           <GroupTicketingSearchBar
             initialValues={groupInitialValues}
@@ -514,6 +573,15 @@ export function SearchTabs({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function UmrahField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="min-w-0 space-y-1.5">
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      {children}
     </div>
   );
 }
