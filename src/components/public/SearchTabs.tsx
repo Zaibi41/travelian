@@ -267,7 +267,10 @@ export function SearchTabs({
       });
       navigate(`/transfers-search?${params.toString()}`);
     }
-    else if (activeTab === "umrah") navigate("/umrah-packages");
+    else if (activeTab === "umrah") {
+      const params = new URLSearchParams({ city: umrahCity, month: umrahMonth, duration: umrahDuration, tier: umrahTier });
+      navigate(`/umrah-sample?${params.toString()}`);
+    }
     else navigate("/");
   };
 
@@ -298,10 +301,6 @@ export function SearchTabs({
           <button
             key={tab.id}
             onClick={() => {
-              if (tab.id === "umrah") {
-                navigate("/umrah-packages");
-                return;
-              }
               if (tab.id === "flights" && location.pathname.startsWith("/group-ticketing")) {
                 navigate("/");
                 return;
