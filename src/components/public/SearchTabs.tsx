@@ -576,3 +576,12 @@ export function SearchTabs({
     </div>
   );
 }
+
+function UmrahField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="min-w-0 space-y-1.5">
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      {children}
+    </div>
+  );
+}
