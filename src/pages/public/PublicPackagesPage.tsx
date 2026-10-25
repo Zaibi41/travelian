@@ -1,5 +1,7 @@
-import { useMemo } from "react";
-import { Button } from "@/components/ui/button";
+import { useSearchParams } from "react-router-dom";
+import { UmrahSearchBar } from "@/components/public/umrah/UmrahSearchBar";
+import { parseUmrahSearch, serializeUmrahSearch } from "@/lib/umrah-search";
+import { useEffect, useMemo, useState } from "react";
 import { SearchPageHero, SearchCard, SEARCH_PAGE_CONTAINER } from "@/components/public/SearchPageShell";
 import { ProductTabs } from "@/components/public/ProductTabs";
 import { SEO } from "@/components/SEO";
@@ -23,12 +25,22 @@ import { packageToUmrahOffer } from "@/data/services/umrah-adapter";
 
 export default function PublicPackagesPage() {
   const { packages } = useAdmin();
+  const [params, setParams] = useSearchParams();
+  const search = useMemo(() => parseUmrahSearch(params), [params]);
+  const [draft, setDraft] = useState(search);
+  useEffect(() => setDraft(search), [search]);
 
   const offers = useMemo(() => {
     const adminOffers = packages.filter(isPublishedUmrahPackage).map(packageToUmrahOffer);
     const seen = new Set(adminOffers.map((offer) => offer.id));
     return [...adminOffers, ...umrahOffers.filter((offer) => !seen.has(offer.id))];
   }, [packages]);
+
+  const focusResults = () => requestAnimationFrame(() => {
+    const results = document.getElementById("umrah-packages");
+    results?.scrollIntoView({ behavior: "instant", block: "start" });
+    results?.focus({ preventScroll: true });
+  });
 
   return (
     <div>
@@ -40,26 +52,18 @@ export default function PublicPackagesPage() {
       <SearchPageHero title="Plan Your Umrah with Travelian" description="Explore Umrah packages, flights and stay options with Travelian support.">
         <SearchCard>
           <ProductTabs active="umrah" />
-        <div className="flex flex-col items-center justify-center gap-3 p-5 sm:flex-row sm:gap-4">
-          <Button
-            asChild
-            size="lg"
-            variant="outline"
-            className="h-12 w-full rounded-xl border-primary/20 bg-primary px-6 text-sm font-semibold text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground sm:w-auto"
-          >
-            <a href="#custom-umrah">Request Custom Umrah</a>
-          </Button>
-          <Button asChild size="lg" className="h-12 w-full rounded-xl bg-whatsapp px-6 text-sm font-semibold text-whatsapp-foreground hover:bg-whatsapp-hover sm:w-auto">
-            <a href={whatsappUrl("Assalam o Alaikum Travelian, I need help with an Umrah package.")} target="_blank" rel="noreferrer">
-              <WhatsAppIcon className="mr-2 h-5 w-5" aria-hidden="true" /> Chat on WhatsApp
-            </a>
-          </Button>
-        </div>
+          <div className="p-5">
+            <UmrahSearchBar offers={offers} value={draft} onChange={setDraft} onSearch={value => {
+              setParams(serializeUmrahSearch(value));
+              focusResults();
+            }} />
+            <a href={whatsappUrl("Assalam o Alaikum Travelian, I need help with an Umrah package.")} target="_blank" rel="noreferrer" className="mt-2 inline-flex min-h-11 items-center gap-2 rounded text-xs text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><WhatsAppIcon className="h-4 w-4" aria-hidden="true" />Need help? Chat on WhatsApp</a>
+          </div>
         </SearchCard>
       </SearchPageHero>
 
       <div className={`${SEARCH_PAGE_CONTAINER} space-y-10 py-8 md:py-10`}>
-        <UmrahPackages offers={offers} />
+        <UmrahPackages key={params.toString()} offers={offers} search={search} onResetSearch={() => { setParams(new URLSearchParams()); focusResults(); }} />
         <UmrahTierComparison />
         <UmrahRequestForm />
         <UmrahCityPackages />

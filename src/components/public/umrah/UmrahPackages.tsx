@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet";
+import { DEFAULT_UMRAH_SEARCH, matchesUmrahPreferences, UMRAH_ROOM_TYPES, type UmrahSearchValues } from "@/lib/umrah-search";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { BedDouble, CalendarDays, Building2, Plane, Ticket, Users, Clock, MapPin, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +24,7 @@ function formatDate(value?: string) {
   return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function inquiryMessage(offer: UmrahOffer) {
+function inquiryMessage(offer: UmrahOffer, search?: UmrahSearchValues) {
   return [
     "Assalam o Alaikum Travelian,",
     "",
@@ -38,14 +40,26 @@ function inquiryMessage(offer: UmrahOffer) {
     `Madinah hotel: ${offer.madinahHotel} (${offer.madinahDistance})`,
     `Starting from: ${startingFrom(offer.startingFrom ?? offer.prices.sharing)}`,
     "",
+    ...(search ? [
+      `Travellers: ${search.travelers.adults} adults, ${search.travelers.children} children, ${search.travelers.infants} infants`,
+      `Preferred room: ${UMRAH_ROOM_TYPES.find(room => room.value === search.room)?.label || "Please advise"}`,
+    ] : []),
     "Please confirm availability, room sharing options and final price.",
   ].join("\n");
 }
 
-export function UmrahPackages({ offers }: { offers: UmrahOffer[] }) {
-  const [duration, setDuration] = useState(ANY);
-  const [tier, setTier] = useState(ANY);
-  const [city, setCity] = useState(ANY);
+export function UmrahPackages({ offers, search = DEFAULT_UMRAH_SEARCH, onResetSearch }: { offers: UmrahOffer[]; search?: UmrahSearchValues; onResetSearch?: () => void }) {
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const desktop = window.matchMedia("(min-width: 640px)");
+    const close = () => { if (desktop.matches) setFiltersOpen(false); };
+    desktop.addEventListener("change", close);
+    return () => desktop.removeEventListener("change", close);
+  }, [filtersOpen]);
+  const [duration, setDuration] = useState(search.duration);
+  const [tier, setTier] = useState(search.tier);
+  const [city, setCity] = useState(search.city);
   const [airline, setAirline] = useState(ANY);
   const [distance, setDistance] = useState(ANY);
   const [status, setStatus] = useState(ANY);
@@ -56,6 +70,7 @@ export function UmrahPackages({ offers }: { offers: UmrahOffer[] }) {
   const filtered = useMemo(
     () =>
       offers.filter((offer) => {
+        if (!matchesUmrahPreferences(offer, search)) return false;
         const from = offer.startingFrom ?? offer.prices.sharing;
         if (duration !== ANY && String(offer.days) !== duration) return false;
         if (tier !== ANY && offer.tier !== tier) return false;
@@ -71,7 +86,7 @@ export function UmrahPackages({ offers }: { offers: UmrahOffer[] }) {
         if (maxPrice < MAX_PRICE && from && from > maxPrice) return false;
         return true;
       }),
-    [offers, duration, tier, city, airline, status, distance, maxPrice],
+    [offers, duration, tier, city, airline, status, distance, maxPrice, search],
   );
 
   const reset = () => {
@@ -82,18 +97,12 @@ export function UmrahPackages({ offers }: { offers: UmrahOffer[] }) {
     setDistance(ANY);
     setStatus(ANY);
     setMaxPrice(MAX_PRICE);
+    onResetSearch?.();
   };
 
-  const filtersActive = [duration, tier, city, airline, distance, status].some((v) => v !== ANY) || maxPrice < MAX_PRICE;
+  const filtersActive = [duration, tier, city, airline, distance, status].some((v) => v !== ANY) || maxPrice < MAX_PRICE || search.month !== ANY || search.room !== ANY;
 
-  return (
-    <section id="umrah-packages" className="space-y-6 scroll-mt-24">
-      <SectionHeading
-        eyebrow="Ready-made packages"
-        title="Umrah Packages"
-        description="Filter by duration, package type, departure city, airline, hotel distance and budget. All rates are starting-from and confirmed before booking."
-      />
-
+  const filterPanel = (
       <Card className="rounded-xl border-border/70 shadow-card">
         <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
           <FilterSelect label="Duration" value={duration} onChange={setDuration} placeholder="Any duration"
@@ -127,9 +136,28 @@ export function UmrahPackages({ offers }: { offers: UmrahOffer[] }) {
           </div>
         </CardContent>
       </Card>
+  );
+
+  return (
+    <section id="umrah-packages" tabIndex={-1} aria-label="Umrah package results" className="space-y-6 scroll-mt-24 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+      <SectionHeading
+        eyebrow="Ready-made packages"
+        title="Umrah Packages"
+        description="Browse available packages and refine by your preferences. Rates are starting-from and confirmed before booking."
+      />
+
+      <div className="hidden sm:block">{filterPanel}</div>
+      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <SheetTrigger asChild><Button variant="outline" className="h-12 w-full rounded-xl sm:hidden">Refine packages{filtersActive ? " · Filters applied" : ""}</Button></SheetTrigger>
+        <SheetContent side="bottom" overlayClassName="z-[1050]" className="z-[1100] flex max-h-[90dvh] flex-col gap-4 rounded-t-xl p-4">
+          <SheetHeader className="shrink-0 pr-8"><SheetTitle>Refine Umrah packages</SheetTitle><SheetDescription>Choose your preferences to refine the available packages.</SheetDescription></SheetHeader>
+          <div className="min-h-0 overflow-y-auto">{filterPanel}</div>
+          <div className="grid shrink-0 grid-cols-2 gap-3 border-t pt-3"><Button variant="outline" className="h-12 rounded-xl" onClick={reset}>Clear filters</Button><Button className="h-12 rounded-xl" onClick={() => setFiltersOpen(false)}>Show {filtered.length} packages</Button></div>
+        </SheetContent>
+      </Sheet>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
+        <p role="status" aria-live="polite" className="text-sm text-muted-foreground">
           Showing <span className="font-bold text-foreground">{filtered.length}</span> of {offers.length} packages
         </p>
         {filtersActive && (
@@ -138,13 +166,14 @@ export function UmrahPackages({ offers }: { offers: UmrahOffer[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <Card className="rounded-xl border-border/70 shadow-card">
+        <Card role="status" className="rounded-xl border-border/70 shadow-card">
           <CardContent className="p-8 text-center">
-            <p className="font-bold text-foreground">No package matches these filters</p>
+            <p className="font-bold text-foreground">No Umrah packages match your current filters.</p>
             <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">
               Tell us your dates, hotel preference and budget and we will build a custom Umrah package for you.
             </p>
-            <Button asChild className="mt-5 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover">
+            <Button variant="outline" className="mr-2 mt-5 h-12 rounded-xl" onClick={reset}>Clear filters</Button>
+            <Button asChild className="mt-5 h-12 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover">
               <a href={whatsappUrl("Assalam o Alaikum Travelian, I need a custom Umrah package quote.")} target="_blank" rel="noreferrer">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> Request custom package
               </a>
@@ -153,7 +182,7 @@ export function UmrahPackages({ offers }: { offers: UmrahOffer[] }) {
         </Card>
       ) : (
         <div className="grid gap-5 lg:grid-cols-2">
-          {filtered.map((offer) => <OfferCard key={offer.id} offer={offer} />)}
+          {filtered.map((offer) => <OfferCard key={offer.id} offer={offer} search={search} />)}
         </div>
       )}
     </section>
@@ -167,7 +196,7 @@ function FilterSelect({ label, value, onChange, options, placeholder }: {
     <div>
       <label className="text-xs font-semibold text-muted-foreground">{label}</label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger aria-label={label} className="mt-1.5 h-11 rounded-xl border-muted bg-muted/30"><SelectValue placeholder={placeholder} /></SelectTrigger>
+        <SelectTrigger aria-label={label} className="mt-1.5 h-12 rounded-xl border-muted bg-muted/30"><SelectValue placeholder={placeholder} /></SelectTrigger>
         <SelectContent>
           <SelectItem value={ANY}>{placeholder}</SelectItem>
           {options.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
@@ -177,7 +206,7 @@ function FilterSelect({ label, value, onChange, options, placeholder }: {
   );
 }
 
-function OfferCard({ offer }: { offer: UmrahOffer }) {
+function OfferCard({ offer, search }: { offer: UmrahOffer; search?: UmrahSearchValues }) {
   const includes = [
     { label: "Air ticket", ok: offer.includes.ticket },
     { label: "Umrah visa", ok: offer.includes.visa },
@@ -251,7 +280,7 @@ function OfferCard({ offer }: { offer: UmrahOffer }) {
             <Link to={`/umrah/${encodeURIComponent(offer.id)}`}>Request Details</Link>
           </Button>
           <Button asChild className="h-11 w-full rounded-xl bg-whatsapp font-semibold text-whatsapp-foreground hover:bg-whatsapp-hover">
-            <a href={whatsappUrl(inquiryMessage(offer))} target="_blank" rel="noreferrer">
+            <a href={whatsappUrl(inquiryMessage(offer, search))} target="_blank" rel="noreferrer">
               <WhatsAppIcon className="mr-2 h-4 w-4" /> Send on WhatsApp
             </a>
           </Button>
