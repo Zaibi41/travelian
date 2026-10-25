@@ -1,6 +1,6 @@
 import type { CustomerProfile } from "@/data/models";
 
-const API_BASE_URL = (import.meta.env.VITE_TRAVELIAN_API_BASE_URL || "https://api.travelian.pk").replace(/\/$/, "");
+import { API_BASE_URL } from "./api-config";
 
 export async function listCustomers(): Promise<CustomerProfile[]> {
   const response = await fetch(`${API_BASE_URL}/content/customers`);

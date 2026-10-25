@@ -1,3 +1,4 @@
+import { API_BASE_URL as API_BASE } from "./api-config";
 import { listPublicGroupTicketingCollections } from "@/lib/group-ticketing-collections-api";
 import { normalizeAirlineName } from "@/lib/airline-normalization";
 
@@ -467,7 +468,7 @@ export function buildGroupTicketSearchParams(values: GroupTicketSearchParams): U
   return params;
 }
 
-const API_BASE = (import.meta.env.VITE_TRAVELIAN_API_BASE_URL || "https://api.travelian.pk").replace(/\/$/, "");
+
 const ALL_GROUPS_SLUG = "all";
 const SITE_BASE = "https://www.travelian.pk";
 

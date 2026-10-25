@@ -1,6 +1,6 @@
 import type { TravelTicket } from "@/data/models";
 
-const API_BASE_URL = (import.meta.env.VITE_TRAVELIAN_API_BASE_URL || "https://api.travelian.pk").replace(/\/$/, "");
+import { API_BASE_URL } from "./api-config";
 
 export async function listTickets(includeDeleted = false): Promise<TravelTicket[]> {
   const query = includeDeleted ? "?includeDeleted=true" : "";

@@ -23,6 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# Lambda deploy artifacts
-aws/**/deploy.zip
-aws/**/deploy-lambda.zip
+# Generated verification output
+artifacts/
+playwright-report/
+test-results/
+
+# Backend deployment archives do not belong in the frontend repository
+deploy-lambda*.zip

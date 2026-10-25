@@ -1,6 +1,6 @@
 import type { UmrahPackage } from "@/data/models";
 
-const API_BASE_URL = (import.meta.env.VITE_TRAVELIAN_API_BASE_URL || "https://api.travelian.pk").replace(/\/$/, "");
+import { API_BASE_URL } from "./api-config";
 
 type PackageImageCategory = Extract<UmrahPackage["category"], "umrah" | "tour" | "visa">;
 
