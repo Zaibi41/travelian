@@ -1,3 +1,5 @@
+import { useScrollReveal } from "@/hooks/use-scroll-reveal";
+import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, Globe, Menu, Phone, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -69,13 +71,18 @@ function LocaleControls({ compact = false }: { compact?: boolean }) {
 
 export function PublicNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const navRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLElement | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const { pathname } = useLocation();
+  const visible = useScrollReveal({ pageKey: pathname, scrollContainerSelector: "[data-public-page-scroll]" });
 
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!visible) setMobileOpen(false);
+  }, [visible]);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -128,16 +135,18 @@ export function PublicNavbar() {
   );
 
   return (
-    <nav ref={navRef} aria-label="Main navigation" className="fixed inset-x-0 top-0 z-[1000] border-b border-border/70 bg-white [&_a]:focus-visible:outline-none [&_a]:focus-visible:ring-2 [&_a]:focus-visible:ring-primary [&_a]:focus-visible:ring-offset-2 [&_button]:focus-visible:outline-none [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-primary [&_button]:focus-visible:ring-offset-2">
-      <div aria-label="Booking and preferences" className="hidden h-8 items-center justify-between border-b border-border/50 bg-muted/30 px-8 xl:flex">
-        {requestBookingLink}
-        <div className="flex items-center gap-2">
-          {phoneLink}
-          <LocaleControls compact />
-          {signInLink}
+    <nav ref={element => { navRef.current = element; if (element) element.inert = !visible; }} aria-hidden={!visible} aria-label="Main navigation" className={cn("fixed inset-x-0 top-0 z-[1000] shadow-sm transition-[transform,opacity,visibility] duration-200 ease-out motion-reduce:transition-none border-b border-border/70 bg-white [&_a]:focus-visible:outline-none [&_a]:focus-visible:ring-2 [&_a]:focus-visible:ring-primary [&_a]:focus-visible:ring-offset-2 [&_button]:focus-visible:outline-none [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-primary [&_button]:focus-visible:ring-offset-2", visible ? "visible translate-y-0 opacity-100" : "invisible pointer-events-none -translate-y-full opacity-0")}>
+      <div aria-label="Booking and preferences" className="hidden border-b border-border/50 bg-muted/30 xl:block">
+        <div className="travelian-container flex h-8 items-center justify-between">
+          {requestBookingLink}
+          <div className="flex items-center gap-2">
+            {phoneLink}
+            <LocaleControls key={visible ? "visible" : "hidden"} compact />
+            {signInLink}
+          </div>
         </div>
       </div>
-      <div className="flex h-16 w-full items-center gap-4 px-4 sm:px-6 lg:px-8 xl:grid xl:grid-cols-[1fr_auto_1fr]">
+      <div className="travelian-container flex h-16 items-center gap-4 xl:grid xl:grid-cols-[1fr_auto_1fr]">
         <Link to="/" onClick={() => setMobileOpen(false)} className="flex w-fit shrink-0 items-center justify-self-start" aria-label="Travelian home">
           <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-9 w-auto max-w-[8rem] object-contain" />
         </Link>
@@ -150,8 +159,8 @@ export function PublicNavbar() {
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
-      {mobileOpen && (
-        <div id="mobile-navigation" className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-border bg-white px-4 py-3 sm:px-6 xl:hidden">
+      {mobileOpen && visible && (
+        <div id="mobile-navigation" className="travelian-container max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-border bg-white py-3 xl:hidden">
           <div className="grid gap-1">{renderLinks(true)}</div>
           <div className="mt-2 grid gap-1 border-t border-border pt-2">{renderLinks(true, true)}</div>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2">
@@ -160,7 +169,7 @@ export function PublicNavbar() {
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
             {phoneLink}
-            <div className="flex items-center gap-1"><LocaleControls /></div>
+            <div className="flex items-center gap-1"><LocaleControls key={visible ? "visible" : "hidden"} /></div>
           </div>
         </div>
       )}

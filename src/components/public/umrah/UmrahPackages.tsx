@@ -41,7 +41,7 @@ function inquiryMessage(offer: UmrahOffer, search?: UmrahSearchValues) {
     `Starting from: ${startingFrom(offer.startingFrom ?? offer.prices.sharing)}`,
     "",
     ...(search ? [
-      `Travellers: ${search.travelers.adults} adults, ${search.travelers.children} children, ${search.travelers.infants} infants`,
+      `Travellers: ${search.travelers.adults} adult${search.travelers.adults === 1 ? "" : "s"}, ${search.travelers.children} ${search.travelers.children === 1 ? "child" : "children"}, ${search.travelers.infants} infant${search.travelers.infants === 1 ? "" : "s"}`,
       `Preferred room: ${UMRAH_ROOM_TYPES.find(room => room.value === search.room)?.label || "Please advise"}`,
     ] : []),
     "Please confirm availability, room sharing options and final price.",

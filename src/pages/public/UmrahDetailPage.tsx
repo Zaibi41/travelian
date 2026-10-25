@@ -61,7 +61,7 @@ export default function UmrahDetailPage() {
 
   return (
     <div className="bg-muted/30 py-8">
-      <div className="mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8">
+      <div className="travelian-container space-y-6">
         <UmrahPackageShowcase item={item} detailMode />
 
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">

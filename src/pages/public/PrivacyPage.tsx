@@ -4,7 +4,7 @@ export default function PrivacyPage() {
   return (
     <div>
       <PageHeader title="Privacy Policy" tagline="How we collect, use and protect your data" />
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 prose prose-sm max-w-none">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 prose prose-sm">
         <p className="text-muted-foreground">Effective date: {new Date().getFullYear()}</p>
         <h2 className="text-lg font-bold mt-6">Information We Collect</h2>
         <p className="text-muted-foreground">We collect personal information you provide when booking, including name, contact details, passport information, and payment data.</p>

@@ -3,7 +3,7 @@ import { DEFAULT_UMRAH_SEARCH, serializeUmrahSearch } from "@/lib/umrah-search";
 import { umrahOffers } from "@/data/services/umrah";
 import { ProductTabs } from "./ProductTabs";
 import { PRODUCT_TABS } from "./product-navigation";
-import { SearchCard } from "./SearchPageShell";
+import { SearchCard, SearchContent } from "./SearchPageShell";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Search, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
@@ -76,7 +76,8 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
             !date && "text-muted-foreground"
           )}>
             <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-            {date ? format(date, "MMM dd, yyyy") : placeholder}
+            <span className="min-w-0 truncate sm:hidden">{date ? format(date, "dd MMM yy") : placeholder}</span>
+            <span className="hidden min-w-0 truncate sm:block">{date ? format(date, "MMM dd, yyyy") : placeholder}</span>
           </button>
         </PopoverTrigger>
         {!isMobileCalendar && (
@@ -85,7 +86,7 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
             align="start"
             side="bottom"
             sideOffset={8}
-            avoidCollisions={false}
+            avoidCollisions
             collisionPadding={16}
           >
             {calendar}
@@ -266,7 +267,7 @@ export function SearchTabs({
         setActiveTab(id);
       }} />}
 
-      <div className="p-5 space-y-4">
+      <SearchContent stable={visibleTabs.length > 1}>
         {/* Flight-specific controls */}
         {activeTab === "flights" && (
           <>
@@ -296,7 +297,7 @@ export function SearchTabs({
             {tripType === "multicity" ? (
               <div className="space-y-3">
                 {multiCitySegments.map((seg, idx) => (
-                  <div key={idx} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
+                  <div key={idx} className="unified-search-segment-grid grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
                     <div className="relative">
                       {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">From</label>}
                       <div className="relative">
@@ -334,7 +335,7 @@ export function SearchTabs({
                   >
                     <Plus className="h-4 w-4" /> Add Flight
                   </button>
-                  <Button onClick={handleSearch} className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl">
+                  <Button onClick={handleSearch} className="unified-search-submit h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl">
                     <Search className="h-4 w-4 mr-2" /> Search Flights
                   </Button>
                 </div>
@@ -342,9 +343,9 @@ export function SearchTabs({
             ) : tripType === "oneway" ? (
               /* One-way: From | swap | To | Date | Search (compact, balanced) */
               <div>
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-center">
+                <div className="unified-search-flight-grid grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-center">
                   <div className="relative">
-                    <AirportCombobox value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="From where?" invalid={!!errors.from} />
+                    <AirportCombobox value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="From" invalid={!!errors.from} />
                   </div>
                   <div className="hidden md:flex items-center justify-center">
                     <button
@@ -357,19 +358,19 @@ export function SearchTabs({
                     </button>
                   </div>
                   <div className="relative">
-                    <AirportCombobox value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To where?" invalid={!!errors.to} iconVariant="arrival" />
+                    <AirportCombobox value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To" invalid={!!errors.to} iconVariant="arrival" />
                   </div>
                   <DatePickerField date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
                   <Button
                     onClick={handleSearch}
                     disabled={!flightsValid}
-                    className="h-12 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl whitespace-nowrap disabled:opacity-50"
+                    className="unified-search-submit h-12 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl whitespace-nowrap disabled:opacity-50"
                   >
                     <Search className="h-4 w-4 mr-2" /> Search
                   </Button>
                 </div>
                 {(errors.from || errors.to || errors.depart) && (
-                  <div className="mt-2 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 text-xs text-destructive">
+                  <div className="unified-search-feedback mt-2 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_auto] gap-1 text-xs text-destructive">
                     <p>{errors.from || ""}</p><span className="hidden md:block" /><p>{errors.to || ""}</p><p>{errors.depart || ""}</p><span className="hidden md:block" />
                   </div>
                 )}
@@ -377,9 +378,9 @@ export function SearchTabs({
             ) : (
               /* Round-trip: adds return date */
               <div>
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-center">
+                <div className="unified-search-flight-grid grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-center">
                   <div className="relative">
-                    <AirportCombobox value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="From where?" invalid={!!errors.from} />
+                    <AirportCombobox value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="From" invalid={!!errors.from} />
                   </div>
                   <div className="hidden md:flex items-center justify-center">
                     <button
@@ -392,7 +393,7 @@ export function SearchTabs({
                     </button>
                   </div>
                   <div className="relative">
-                    <AirportCombobox value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To where?" invalid={!!errors.to} iconVariant="arrival" />
+                    <AirportCombobox value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To" invalid={!!errors.to} iconVariant="arrival" />
                   </div>
                   <DatePickerField date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
                   <DatePickerField date={returnDate} onSelect={(d) => { setReturnDate(d); if (errors.return) setErrors(p => ({ ...p, return: undefined })); }} placeholder="Return date" />
@@ -400,13 +401,13 @@ export function SearchTabs({
                     onClick={handleSearch}
                     disabled={!flightsValid}
                     aria-label="Search flights"
-                    className="h-12 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl whitespace-nowrap disabled:opacity-50"
+                    className="unified-search-submit h-12 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl whitespace-nowrap disabled:opacity-50"
                   >
                     <Search className="h-4 w-4" />
                   </Button>
                 </div>
                 {(errors.from || errors.to || errors.depart || errors.return) && (
-                  <p className="mt-2 text-xs text-destructive">
+                  <p className="unified-search-feedback mt-2 text-xs text-destructive">
                     {[errors.from, errors.to, errors.depart, errors.return].filter(Boolean).join(" • ")}
                   </p>
                 )}
@@ -457,7 +458,7 @@ export function SearchTabs({
         )}
 
 
-      </div>
+      </SearchContent>
     </SearchCard>
   );
 }

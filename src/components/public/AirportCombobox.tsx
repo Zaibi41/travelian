@@ -153,7 +153,7 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="max-h-[min(var(--radix-popover-content-available-height),24rem)] w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
+        className="max-h-[min(var(--radix-popover-content-available-height),24rem)] w-[var(--radix-popover-trigger-width)] min-w-[min(20rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
         align="start"
         side="bottom"
         sideOffset={8}

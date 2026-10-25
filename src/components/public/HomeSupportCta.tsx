@@ -6,7 +6,7 @@ import { SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
 export function HomeSupportCta() {
   return (
     <section className="py-12 md:py-14">
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="travelian-container ">
         <div className="relative isolate overflow-hidden rounded-3xl gradient-hero p-6 shadow-elevated md:p-8">
           <div className="absolute inset-x-0 top-0 h-1 gradient-gold" aria-hidden="true" />
           <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-teal/20 blur-3xl" aria-hidden="true" />

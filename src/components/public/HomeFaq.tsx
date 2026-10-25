@@ -41,7 +41,7 @@ export function HomeFaq() {
   return (
     <section className="bg-muted/30 py-12 md:py-14">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
+      <div className="travelian-container ">
         <div className="mx-auto mb-7 max-w-2xl text-center">
           <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
             Frequently asked questions

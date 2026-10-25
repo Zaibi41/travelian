@@ -12,7 +12,7 @@ export function PublicLayout({ children, showFooter = true }: { children: React.
   return (
     <div className={showFooter ? "min-h-screen overflow-x-hidden flex flex-col" : "h-dvh overflow-hidden flex flex-col"}>
       <PublicNavbar />
-      <main className={showFooter ? "min-w-0 flex-1 overflow-x-hidden pt-16 xl:pt-24" : "flex-1 min-h-0 overflow-hidden pt-16 xl:pt-24"}>{children}</main>
+      <main className={showFooter ? "min-w-0 flex-1 overflow-x-hidden" : "flex-1 min-h-0 overflow-hidden"}>{children}</main>
       {showFooter && (
         <>
         <MoveToTopButton />

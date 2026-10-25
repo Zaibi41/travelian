@@ -123,7 +123,7 @@ export default function UmrahSamplePage() {
           <div className="absolute inset-0 gradient-hero opacity-80" />
           <div className="absolute inset-0 bg-gradient-to-r from-sidebar via-sidebar/70 to-transparent" />
         </div>
-        <div className="mx-auto max-w-7xl px-4 pb-24 pt-12 sm:px-6 md:pb-28 md:pt-16 lg:px-8">
+        <div className="travelian-container pb-24 pt-12 md:pb-28 md:pt-16">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-gold">Umrah 2026 · From Pakistan</p>
           <h1 className="mt-3 max-w-2xl font-display text-3xl font-black tracking-tight text-primary-foreground md:text-5xl">
             Your Umrah, planned with care
@@ -143,7 +143,7 @@ export default function UmrahSamplePage() {
       </section>
 
       {/* FLOATING SEARCH CARD */}
-      <div className="relative z-20 mx-auto -mt-16 max-w-6xl px-4 sm:px-6 lg:px-8">
+      <div className="travelian-container relative z-20 -mt-16">
         <div className="rounded-2xl border bg-card p-4 shadow-elevated md:p-5">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto]">
             <FilterSelect icon={<MapPin className="h-4 w-4" />} label="Departure city" value={city} onChange={(v) => setParam("city", v)}
@@ -168,7 +168,7 @@ export default function UmrahSamplePage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl space-y-14 px-4 py-12 sm:px-6 lg:px-8">
+      <div className="travelian-container space-y-14 py-12">
         {/* PACKAGE TYPE CARDS */}
         <section>
           <SectionHeading eyebrow="Package types" title="Choose your Umrah style" description="Four package types, each with one clear starting price." />

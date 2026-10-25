@@ -31,7 +31,7 @@ const groups = [
 export function HomePopularLinks() {
   return (
     <section className="py-12 md:py-14">
-      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
+      <div className="travelian-container ">
         <div className="mx-auto mb-7 max-w-2xl text-center">
           <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
             Explore popular flights and hotels with Travelian

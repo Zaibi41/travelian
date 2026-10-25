@@ -1253,7 +1253,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
       {/* Date flexibility row with centered "See Price" subtitle */}
       <div className="bg-card border-b">
-        <div className={cn(adminMode ? "px-4 md:px-6" : "w-full mx-auto px-4 sm:px-6 lg:px-8")}>
+        <div className={cn(adminMode ? "px-4 md:px-6" : "travelian-container")}>
           <div className="flex items-center justify-center gap-1.5 py-3 overflow-x-auto scrollbar-hide">
             {dateFlexDays.map((day, i) => (
               <button
@@ -1278,7 +1278,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         </div>
       </div>
 
-      <div className={cn(adminMode ? "px-4 md:px-6 py-5" : "w-full mx-auto px-4 sm:px-6 lg:px-8 py-6")}>
+      <div className={cn(adminMode ? "px-4 md:px-6 py-5" : "travelian-container py-6")}>
         {false && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm">
           <div>
             <p className="text-sm font-semibold text-foreground">

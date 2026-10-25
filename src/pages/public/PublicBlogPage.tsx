@@ -34,7 +34,7 @@ export default function PublicBlogPage() {
       />
 
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="travelian-container py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {!loading && posts.length === 0 && (
             <div className="col-span-full rounded-xl border bg-card p-8 text-center text-sm text-muted-foreground">

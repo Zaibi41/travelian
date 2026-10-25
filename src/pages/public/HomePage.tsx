@@ -81,7 +81,7 @@ export default function HomePage() {
 
       {/* Trust Bar */}
       <section className="py-6 bg-card border-b">
-        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="travelian-container ">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
 
             {features.map((f) => (

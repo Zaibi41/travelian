@@ -62,7 +62,7 @@ export default function PublicTransfersPage() {
     <div>
       <SEO title="Airport Transfers - Travelian" description="Search live Travelian airport transfer options." />
       <section className="gradient-hero py-8">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="travelian-container ">
           <h1 className="mb-4 text-2xl font-bold text-primary-foreground md:text-3xl">Airport Transfers</h1>
           <div className="grid gap-3 rounded-2xl bg-card/10 p-4 backdrop-blur-sm md:grid-cols-[1fr_1fr_auto]">
             <div className="relative">
@@ -80,7 +80,7 @@ export default function PublicTransfersPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="travelian-container py-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-muted-foreground">
             {status === "loading" ? "Searching Travelport transfers" : `${transfers.length} transfer options found`}

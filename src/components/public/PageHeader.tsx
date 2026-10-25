@@ -29,7 +29,7 @@ export function PageHeader({ title, tagline, eyebrow, icon, breadcrumb, children
         <div className="absolute -bottom-24 left-0 h-64 w-64 rounded-full bg-gold/15 blur-3xl" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="travelian-container relative z-10">
         <div className={centered ? "text-center" : "text-left"}>
           {breadcrumb && (
             <div className={`mb-4 flex text-xs text-primary-foreground/70 ${centered ? "justify-center" : ""}`}>{breadcrumb}</div>

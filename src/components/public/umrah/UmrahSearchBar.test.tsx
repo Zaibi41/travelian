@@ -11,19 +11,22 @@ function Harness({ submit }: { submit: (value: UmrahSearchValues) => void }) {
   return <UmrahSearchBar offers={umrahOffers} value={value} onChange={onChange} onSearch={submit} />;
 }
 describe("shared Umrah search form", () => {
-  it("submits selected discovery and traveller preferences only when Search is pressed", () => {
+  it("preserves existing preferences and submits only when Search is pressed", () => {
     const submit = vi.fn();
     render(<Harness submit={submit} />);
     expect(submit).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "4 Travelers" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Search Umrah Packages" }));
+    expect(screen.getAllByRole("combobox")).toHaveLength(4);
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
     expect(submit).toHaveBeenCalledWith(expect.objectContaining({ city: "Lahore", travelers: { adults: 2, children: 1, infants: 1, cabin: "Economy" } }));
   });
-  it("clears committed preferences as well as the visible draft", () => {
+  it("exposes the four retained fields without removed controls", () => {
     const submit = vi.fn();
     render(<Harness submit={submit} />);
-    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
-    expect(submit).toHaveBeenCalledWith(DEFAULT_UMRAH_SEARCH);
-    expect(screen.getByRole("button", { name: "1 Traveler" })).toBeInTheDocument();
+    for (const name of ["Departure City", "Travel Month", "Package Type", "Duration"]) {
+      expect(screen.getByRole("combobox", { name })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole("combobox", { name: "Room Type" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Travelers|Clear search/ })).not.toBeInTheDocument();
+    expect(submit).not.toHaveBeenCalled();
   });
 });

@@ -66,7 +66,7 @@ export default function DestinationPage() {
       <section className="relative min-h-[420px] overflow-hidden">
         <img src={destination.image} alt={destination.name} className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/85 via-foreground/30 to-transparent" />
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-[420px] flex items-end pb-12">
+        <div className="travelian-container relative z-10 min-h-[420px] flex items-end pb-12">
           <div className="max-w-2xl text-white">
             <Badge className="mb-4 bg-white/20 text-white border-white/20">Travelian Destination</Badge>
             <h1 className="text-4xl md:text-6xl font-extrabold font-display">{destination.name}</h1>
@@ -85,7 +85,7 @@ export default function DestinationPage() {
       </section>
 
       <section className="py-12 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid gap-5 md:grid-cols-3">
+        <div className="travelian-container grid gap-5 md:grid-cols-3">
           {destination.highlights.map((highlight, index) => {
             const Icon = index === 0 ? Hotel : index === 1 ? Plane : Star;
             return (

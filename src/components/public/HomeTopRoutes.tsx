@@ -19,7 +19,7 @@ const loopRoutes = [...routes, ...routes];
 export function HomeTopRoutes() {
   return (
     <section className="overflow-hidden bg-muted/30 py-12 md:py-14">
-      <div className="mx-auto w-full px-4 sm:px-6 lg:px-8">
+      <div className="travelian-container ">
         <div className="mb-6 max-w-2xl">
           <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">Top Searched Destinations from Pakistan</h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -28,8 +28,8 @@ export function HomeTopRoutes() {
         </div>
       </div>
 
-      <div className="group flex overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <div className="flex min-w-max gap-4 px-4 motion-safe:animate-route-marquee sm:px-6 lg:px-8 group-hover:[animation-play-state:paused]">
+      <div className="travelian-container group flex overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex min-w-max gap-4 motion-safe:animate-route-marquee group-hover:[animation-play-state:paused]">
           {loopRoutes.map((route, index) => (
             <Link
               key={`${route.code}-${index}`}

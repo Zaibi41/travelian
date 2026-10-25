@@ -208,3 +208,83 @@
     border-radius: var(--radius);
   }
 }
+
+@layer components {
+  /* Canonical public content width; section backgrounds stay full viewport width. */
+  .travelian-container {
+    @apply mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8;
+  }
+}
+
+@layer components {
+  /* One measured budget for all homepage search modes, including validation space.
+     Shorter forms align their primary action to the same baseline. No clipping. */
+  .unified-search-content {
+    --search-content-height: 25rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 1rem;
+    min-height: var(--search-content-height);
+    padding: 1rem 1.25rem 3rem;
+  }
+  .unified-search-content > form,
+  .unified-search-content > .w-full { margin-top: 0; }
+  .unified-search-content .unified-search-feedback,
+  .unified-search-content .hotel-search-feedback {
+    position: absolute;
+    inset-inline: 1.25rem;
+    bottom: .5rem;
+    margin: 0;
+  }
+  @media (max-width: 639px) {
+    .unified-search-content .umrah-search-fields {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 640px) {
+    .unified-search-content { --search-content-height: 22rem; }
+  }
+  @media (min-width: 768px) {
+    .unified-search-content { --search-content-height: 19rem; }
+  }
+  @media (min-width: 1024px) {
+    .unified-search-content { --search-content-height: 11rem; }
+  }
+  @media (max-width: 1023px) {
+    .unified-search-content {
+      justify-content: flex-start;
+      padding-bottom: 7rem;
+    }
+    .unified-search-content .unified-search-submit {
+      position: absolute;
+      inset-inline: 1.25rem;
+      bottom: 3rem;
+      width: calc(100% - 2.5rem);
+      margin: 0;
+    }
+  }
+  @media (max-width: 767px) {
+    .unified-search-content .unified-search-segment-grid > :last-child:empty { display: none; }
+    .unified-search-content .unified-search-flight-grid,
+    .unified-search-content .unified-search-segment-grid,
+    .unified-search-content .group-search-fields {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .unified-search-content .unified-search-flight-grid > :nth-child(4):nth-last-child(2),
+    .unified-search-content .unified-search-segment-grid > :nth-child(3),
+    .unified-search-content .group-search-fields > :nth-child(4) {
+      grid-column: 1 / -1;
+    }
+  }
+  @media (max-width: 639px) {
+    .unified-search-content .hotel-search-fields {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .unified-search-content .hotel-search-fields > :first-child,
+    .unified-search-content .hotel-search-fields > :nth-child(4) {
+      grid-column: 1 / -1;
+    }
+  }
+}
