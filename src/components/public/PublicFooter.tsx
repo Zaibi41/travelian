@@ -11,7 +11,7 @@ export function PublicFooter() {
 
   return (
     <footer className="bg-sidebar text-sidebar-foreground">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8">
           <div className="col-span-2 md:col-span-1">
             <Link to="/" onClick={scrollToTop} className="mb-4 flex items-center gap-2">
@@ -44,14 +44,13 @@ export function PublicFooter() {
               <li><Link to="/about" className="hover:text-sidebar-primary">About</Link></li>
               
               <li><Link to="/contact" className="hover:text-sidebar-primary">Contact Us</Link></li>
-              <li><Link to="/careers" className="hover:text-sidebar-primary">Careers</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-sidebar-accent-foreground"><CircleHelp className="h-4 w-4 text-sidebar-primary" /> Support</h4>
             <ul className="space-y-2.5 text-sm text-sidebar-muted">
-              <li><Link to="/faq" className="hover:text-sidebar-primary">Help Center / FAQ</Link></li>
+              <li><Link to="/faq" className="hover:text-sidebar-primary">FAQ</Link></li>
               <li><Link to="/terms" className="hover:text-sidebar-primary">Terms & Conditions</Link></li>
               <li><Link to="/privacy" className="hover:text-sidebar-primary">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-sidebar-primary">Refund/Cancellation Policy</Link></li>

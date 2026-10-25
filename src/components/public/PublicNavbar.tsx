@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, Globe, Menu, Phone, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,127 +10,157 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CURRENCIES, LANGUAGES, useLocale } from "@/contexts/LocaleContext";
-import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from "@/lib/site-config";
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
 
 const serviceLinks = [
   { label: "Flights", href: "/", match: ["/", "/flights-search"] },
-  { label: "Umrah", href: "/umrah-packages", match: ["/umrah-packages", "/umrah"] },
   { label: "Hotels", href: "/hotels-search", match: ["/hotels-search", "/hotel"] },
-  { label: "About", href: "/about", match: ["/about"] },
-  { label: "Contact", href: "/contact", match: ["/contact"] },
+  { label: "Umrah", href: "/umrah-packages", match: ["/umrah-packages", "/umrah"] },
+  // { label: "About", href: "/about", match: ["/about"] },
+  // { label: "Contact", href: "/contact", match: ["/contact"] },
 ];
+
+function LocaleControls({ compact = false }: { compact?: boolean }) {
+  const { currency, setCurrency, language, setLanguage } = useLocale();
+  const triggerClass = `flex items-center gap-1.5 rounded px-2 font-medium text-primary transition-colors hover:bg-accent ${compact ? "h-8 text-xs" : "h-11 text-sm"}`;
+  const menuClass = "z-[1120] max-h-[min(24rem,70dvh)] overflow-y-auto rounded-lg bg-popover p-1 shadow-sm";
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button type="button" aria-label="Select currency" className={triggerClass}>
+            {currency} <ChevronDown className="h-3 w-3" aria-hidden="true" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" sideOffset={6} collisionPadding={12} className={menuClass}>
+          <DropdownMenuLabel className="text-xs">Currency</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {CURRENCIES.map((item) => (
+            <DropdownMenuItem key={item.code} onClick={() => setCurrency(item.code)} className="gap-2 text-sm">
+              <span className="w-9 font-medium">{item.code}</span>
+              <span className="text-muted-foreground">{item.label}</span>
+              {currency === item.code && <span className="ml-auto text-primary">✓</span>}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button type="button" aria-label="Select language" className={triggerClass}>
+            <Globe className="h-4 w-4" aria-hidden="true" /> {language.toUpperCase()}
+            <ChevronDown className="h-3 w-3" aria-hidden="true" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" sideOffset={6} collisionPadding={12} className={menuClass}>
+          <DropdownMenuLabel className="text-xs">Language</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {LANGUAGES.map((item) => (
+            <DropdownMenuItem key={item.code} onClick={() => setLanguage(item.code)} className="gap-2 text-sm">
+              <span>{item.label}</span>
+              <span className="text-muted-foreground">{item.native}</span>
+              {language === item.code && <span className="ml-auto text-primary">✓</span>}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  );
+}
 
 export function PublicNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const { pathname } = useLocation();
-  const { currency, setCurrency, language, setLanguage } = useLocale();
 
-  const isActive = (match: string[]) =>
-    match.some((path) => (path === "/" ? pathname === "/" : pathname.startsWith(path)));
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      // Let the existing dropdown handle Escape before closing the mobile menu.
+      if (event.key === "Escape" && !document.querySelector('[role="menu"]')) {
+        setMobileOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      const target = event.target as HTMLElement;
+      if (!navRef.current?.contains(target) && !target.closest('[role="menu"]')) setMobileOpen(false);
+    };
+    const desktop = window.matchMedia("(min-width: 1280px)");
+    const closeOnDesktop = () => { if (desktop.matches) setMobileOpen(false); };
+    document.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      desktop.removeEventListener("change", closeOnDesktop);
+    };
+  }, [mobileOpen]);
+
+  const renderLinks = (mobile = false, company = false) => serviceLinks
+    .filter((link) => ["About", "Contact"].includes(link.label) === company)
+    .map((link) => {
+      const active = link.match.some((path) => path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`));
+      const className = `${mobile ? "min-h-11 px-3 py-3" : "flex h-16 items-center px-2"} relative whitespace-nowrap text-[15px] font-medium transition-colors hover:text-primary ${active ? "text-primary after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:bg-primary" : "text-primary/70"}`;
+      return <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} aria-current={active ? "page" : undefined} className={className}>{link.label}</Link>;
+    });
+
+  const requestBookingLink = (
+    <a href={whatsappUrl("Assalam o Alaikum Travelian, I would like to request a booking.")} target="_blank" rel="noreferrer" onClick={() => setMobileOpen(false)} className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-primary hover:underline xl:min-h-0 xl:h-8 xl:text-xs">
+      Request a Booking
+    </a>
+  );
+
+  const phoneLink = (
+    <a href={`tel:${SUPPORT_PHONE_TEL}`} className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg px-2 text-sm font-medium text-primary hover:bg-accent/60 xl:min-h-0 xl:h-8 xl:text-xs">
+      <Phone className="h-4 w-4" aria-hidden="true" /> {SUPPORT_PHONE_DISPLAY}
+    </a>
+  );
+  const signInLink = (
+    <Link to="/signin" onClick={() => setMobileOpen(false)} className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded px-3 text-sm font-medium text-primary transition-colors hover:bg-accent xl:h-8 xl:text-xs">
+      Sign In
+    </Link>
+  );
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-[1000] border-b border-border/60 bg-card shadow-sm backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
-        <Link to="/" className="flex h-14 shrink-0 items-center" aria-label="Travelian home">
-          <img
-            src="/travelian-logo-wordmark.png"
-            alt="Travelian"
-            className="h-8 w-auto max-w-[10rem] object-contain sm:h-9 sm:max-w-[12rem]"
-          />
+    <nav ref={navRef} aria-label="Main navigation" className="fixed inset-x-0 top-0 z-[1000] border-b border-border/70 bg-white [&_a]:focus-visible:outline-none [&_a]:focus-visible:ring-2 [&_a]:focus-visible:ring-primary [&_a]:focus-visible:ring-offset-2 [&_button]:focus-visible:outline-none [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-primary [&_button]:focus-visible:ring-offset-2">
+      <div aria-label="Booking and preferences" className="hidden h-8 items-center justify-between border-b border-border/50 bg-muted/30 px-8 xl:flex">
+        {requestBookingLink}
+        <div className="flex items-center gap-2">
+          {phoneLink}
+          <LocaleControls compact />
+          {signInLink}
+        </div>
+      </div>
+      <div className="flex h-16 w-full items-center gap-4 px-4 sm:px-6 lg:px-8 xl:grid xl:grid-cols-[1fr_auto_1fr]">
+        <Link to="/" onClick={() => setMobileOpen(false)} className="flex w-fit shrink-0 items-center justify-self-start" aria-label="Travelian home">
+          <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-9 w-auto max-w-[8rem] object-contain" />
         </Link>
-
-        <div className="hidden flex-1 items-center justify-center gap-1 lg:flex">
-          {serviceLinks.map((link) => (
-            <Link
-              key={link.href}
-              to={link.href}
-              className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                isActive(link.match)
-                  ? "bg-accent text-primary"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              }`}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <div className="hidden items-center gap-8 xl:flex">
+          <div className="flex items-center gap-5">{renderLinks()}</div>
+          <div className="flex items-center gap-5">{renderLinks(false, true)}</div>
         </div>
-
-        <div className="hidden shrink-0 items-center gap-1 lg:flex">
-          <a href={`tel:${SUPPORT_PHONE_TEL}`} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground">
-            <Phone className="h-3.5 w-3.5" />
-            <span>{SUPPORT_PHONE_DISPLAY}</span>
-          </a>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground">
-                {currency} <ChevronDown className="h-3 w-3" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-[1120] bg-popover">
-              <DropdownMenuLabel className="text-xs">Currency</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {CURRENCIES.map((c) => (
-                <DropdownMenuItem key={c.code} onClick={() => setCurrency(c.code)} className="text-xs">
-                  <span className="w-10 font-semibold">{c.code}</span>
-                  <span className="text-muted-foreground">{c.label}</span>
-                  {currency === c.code && <span className="ml-auto text-primary">✓</span>}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted/60 hover:text-foreground">
-                <Globe className="h-3.5 w-3.5" /> {language.toUpperCase()} <ChevronDown className="h-3 w-3" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-[1120] bg-popover">
-              <DropdownMenuLabel className="text-xs">Language</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {LANGUAGES.map((l) => (
-                <DropdownMenuItem key={l.code} onClick={() => setLanguage(l.code)} className="text-xs">
-                  <span className="w-12">{l.label}</span>
-                  <span className="text-muted-foreground">{l.native}</span>
-                  {language === l.code && <span className="ml-auto text-primary">✓</span>}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <button
-          type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border text-foreground lg:hidden"
-          aria-label={mobileOpen ? "Close menu" : "Open menu"}
-          aria-expanded={mobileOpen}
-          onClick={() => setMobileOpen((open) => !open)}
-        >
+        <div aria-hidden="true" className="hidden justify-self-end xl:block" />
+        <button ref={menuButtonRef} type="button" className="ml-auto flex h-11 w-11 items-center justify-center rounded-lg text-primary hover:bg-accent xl:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen((open) => !open)}>
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
-
       {mobileOpen && (
-        <div className="border-t bg-card px-4 py-4 shadow-elevated lg:hidden">
-          <div className="grid gap-2">
-            {serviceLinks.map((link) => (
-              <Link
-                key={link.href}
-                to={link.href}
-                onClick={() => setMobileOpen(false)}
-                className={`rounded-xl px-3 py-3 text-sm font-semibold transition-colors ${
-                  isActive(link.match) ? "bg-accent text-primary" : "text-foreground hover:bg-muted/50"
-                }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+        <div id="mobile-navigation" className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-border bg-white px-4 py-3 sm:px-6 xl:hidden">
+          <div className="grid gap-1">{renderLinks(true)}</div>
+          <div className="mt-2 grid gap-1 border-t border-border pt-2">{renderLinks(true, true)}</div>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2">
+            {requestBookingLink}
+            {signInLink}
           </div>
-
-          <div className="mt-4 border-t pt-4">
-            <a href={`tel:${SUPPORT_PHONE_TEL}`} className="flex items-center justify-center gap-2 rounded-xl border border-primary bg-primary px-3 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:bg-primary/95">
-              <Phone className="h-4 w-4" /> Call
-            </a>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+            {phoneLink}
+            <div className="flex items-center gap-1"><LocaleControls /></div>
           </div>
         </div>
       )}

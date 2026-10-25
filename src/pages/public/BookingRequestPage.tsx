@@ -12,7 +12,7 @@ import type { BookingRequestType, UmrahPackage } from "@/data/models";
 import { createBookingRequest } from "@/lib/booking-request-api";
 import { getPackage } from "@/lib/package-api";
 
-const supportedCategories = new Set(["umrah", "tour", "visa"]);
+const supportedCategories = new Set(["umrah"]);
 
 export default function BookingRequestPage() {
   const [searchParams] = useSearchParams();
@@ -46,7 +46,7 @@ export default function BookingRequestPage() {
   }, [category, packageId]);
 
   const options = useMemo(() => item?.hotelOptions?.map(option => option.label).filter(Boolean) || [], [item]);
-  const detailPath = category === "tour" ? `/tour/${item?.packageId}` : category === "visa" ? `/visa/${item?.packageId}` : `/umrah/${item?.packageId}`;
+  const detailPath = `/umrah/${item?.packageId}`;
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Armchair, Baby, Check, ChevronDown, Minus, Plus, User, Users, X } from "lucide-react";
+import { Armchair, Check, ChevronDown, Minus, Plus, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -22,19 +22,6 @@ export function formatTravelerCount(v: TravelersValue): string {
   const total = v.adults + v.children + v.infants;
   return `${total} Traveler${total > 1 ? "s" : ""}`;
 }
-
-interface CabinMeta {
-  label: string;
-  icon: typeof Armchair;
-  unselectedClass: string;
-}
-
-const cabinMeta: Record<string, CabinMeta> = {
-  Economy: { label: "Economy", icon: Armchair, unselectedClass: "bg-muted/50 text-foreground hover:bg-muted" },
-  "Premium Economy": { label: "Premium Economy", icon: Armchair, unselectedClass: "bg-accent/50 text-primary hover:bg-accent/70" },
-  Business: { label: "Business", icon: Armchair, unselectedClass: "bg-teal-soft text-teal hover:bg-teal-soft/80" },
-  First: { label: "First", icon: Armchair, unselectedClass: "bg-gold-light/60 text-gold hover:bg-gold-light/80" },
-};
 
 interface Props {
   value: TravelersValue;
@@ -65,9 +52,9 @@ export function TravelersClassPicker({
   const update = (patch: Partial<TravelersValue>) => onChange({ ...value, ...patch });
 
   const rows = [
-    { label: "Adults", sub: "12+ years", key: "adults" as const, min: 1, icon: User, iconWrap: "bg-accent text-primary" },
-    { label: "Children", sub: "2–11 years", key: "children" as const, min: 0, icon: Baby, iconWrap: "bg-teal-soft text-teal" },
-    { label: "Infants", sub: "Under 2", key: "infants" as const, min: 0, icon: Baby, iconWrap: "bg-gold-light text-gold" },
+    { label: "Adults", sub: "12+ years", key: "adults" as const, min: Math.max(1, value.infants), max: Infinity },
+    { label: "Children", sub: "2–11 years", key: "children" as const, min: 0, max: Infinity },
+    { label: "Infants", sub: "Under 2 years", key: "infants" as const, min: 0, max: value.adults },
   ];
 
   const triggerClass =
@@ -78,34 +65,25 @@ export function TravelersClassPicker({
         : "flex items-center gap-2 w-full h-11 bg-background border border-input rounded-xl px-3 text-sm text-left hover:border-primary/30 transition-colors";
 
   const cabinSection = (
-    <div className={cn("grid grid-cols-2 gap-2.5")}>
-      {CABIN_CLASSES.map((c) => {
-        const meta = cabinMeta[c];
-        const selected = value.cabin === c;
-        const Icon = meta.icon;
-        return (
-          <button
-            key={c}
-            type="button"
-            className={cn(
-              "group relative flex min-h-[80px] flex-col items-center justify-center gap-1.5 rounded-xl px-2 py-3 text-center transition-all",
-              cn("border", meta.unselectedClass),
-              selected ? "border-gold/60 ring-1 ring-gold/40" : "border-transparent",
-            )}
-            onClick={() => update({ cabin: c })}
-            aria-pressed={selected}
-            aria-label={`Select ${c} cabin`}
-          >
-            {selected && (
-              <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-gold text-primary">
-                <Check className="h-3 w-3" strokeWidth={3} />
-              </span>
-            )}
-            <Icon className="h-5 w-5 text-current" />
-            <span className="text-xs font-bold leading-tight text-current">{meta.label}</span>
-          </button>
-        );
-      })}
+    <div className="space-y-1" role="group" aria-label="Cabin Class">
+      {CABIN_CLASSES.map((cabin) => (
+        <button
+          key={cabin}
+          type="button"
+          className={cn(
+            "flex min-h-11 w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors",
+            value.cabin === cabin ? "bg-accent text-primary" : "text-foreground hover:bg-muted/60",
+          )}
+          onClick={() => update({ cabin })}
+          aria-pressed={value.cabin === cabin}
+          aria-label={`Select ${cabin} cabin`}
+        >
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+            {value.cabin === cabin && <Check className="h-4 w-4" aria-hidden="true" />}
+          </span>
+          {cabin}
+        </button>
+      ))}
     </div>
   );
 
@@ -142,95 +120,57 @@ export function TravelersClassPicker({
         </button>
       </PopoverTrigger>
       <PopoverContent
+        aria-label={mode === "cabin" ? "Cabin Class" : "Travelers"}
         align={effectiveAlign}
         side={side}
         sideOffset={8}
         collisionPadding={16}
         className={cn(
-          "z-[1120] max-h-[82vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_24px_80px_rgba(15,23,42,0.22)]",
+          "z-[1120] flex max-h-[min(82dvh,var(--radix-popover-content-available-height))] flex-col overflow-hidden rounded-xl border border-border bg-white p-3 shadow-md",
           mode === "cabin"
-            ? "w-[min(calc(100vw-2rem),320px)]"
-            : mode === "travelers"
-              ? "w-[min(calc(100vw-2rem),340px)]"
-              : "w-[min(calc(100vw-2rem),380px)]",
+            ? "w-[min(calc(100vw-2rem),300px)]"
+            : "w-[min(calc(100vw-2rem),320px)]",
         )}
       >
-        {mode === "cabin" && (
-          <div className="flex items-center justify-between pb-3">
-            <p className="text-base font-black tracking-tight text-primary">Cabin Class</p>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-slate-100 hover:text-foreground"
-              aria-label="Close cabin class selector"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-
-        {mode !== "cabin" && (
-          <div className="text-center">
-            <p className="text-base font-black tracking-tight text-primary">Travelers</p>
-            <p className="mt-0.5 text-xs font-medium text-muted-foreground">Select passengers for your trip</p>
-          </div>
-        )}
-
-        {mode !== "cabin" && (
-          <div className="mt-3.5 space-y-2">
-            {rows.map((p) => (
-              <div
-                key={p.key}
-                className="flex items-center gap-3 rounded-xl border border-border/70 bg-muted/30 p-2.5"
-              >
-                <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-full", p.iconWrap)}>
-                  <p.icon className="h-4 w-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-foreground">{p.label}</p>
-                  <p className="text-xs font-medium text-muted-foreground">{p.sub}</p>
+        <div className="mb-1 flex shrink-0 items-center justify-between">
+          <p className="text-sm font-semibold text-foreground">{mode === "cabin" ? "Cabin Class" : "Travelers"}</p>
+          <button type="button" onClick={() => setOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted" aria-label={`Close ${mode === "cabin" ? "cabin class" : "travelers"} selector`}>
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="min-h-0 overflow-y-auto">
+          {mode !== "cabin" && (
+            <div className="divide-y divide-border/60">
+              {rows.map((passenger) => (
+                <div key={passenger.key} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">{passenger.label}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{passenger.sub}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button type="button" disabled={value[passenger.key] <= passenger.min} aria-label={`Decrease ${passenger.label}`} onClick={() => update({ [passenger.key]: Math.max(passenger.min, value[passenger.key] - 1) })} className="flex h-9 w-9 items-center justify-center rounded-md border border-primary/20 text-primary transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:border-border disabled:bg-muted/40 disabled:text-muted-foreground/40">
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="w-5 text-center text-sm font-semibold tabular-nums">{value[passenger.key]}</span>
+                    <button type="button" disabled={value[passenger.key] >= passenger.max} aria-label={`Increase ${passenger.label}`} onClick={() => update({ [passenger.key]: Math.min(passenger.max, value[passenger.key] + 1) })} className="flex h-9 w-9 items-center justify-center rounded-md border border-primary/20 text-primary transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:border-border disabled:bg-muted/40 disabled:text-muted-foreground/40">
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 rounded-full bg-accent/70 p-1">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      update({ [p.key]: Math.max(p.min, value[p.key] - 1) } as any);
-                    }}
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-primary transition-colors hover:bg-background disabled:cursor-not-allowed disabled:text-muted-foreground/40 disabled:hover:bg-transparent"
-                    disabled={value[p.key] <= p.min}
-                    aria-label={`Decrease ${p.label}`}
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </button>
-                  <span className="w-5 text-center text-sm font-black tabular-nums text-foreground">{value[p.key]}</span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      update({ [p.key]: value[p.key] + 1 } as any);
-                    }}
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-primary transition-colors hover:bg-background"
-                    aria-label={`Increase ${p.label}`}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {mode !== "travelers" && (
-          <div className={cn(mode === "combined" && "mt-4 border-t pt-4")}>
-            {mode === "combined" && <p className="mb-2.5 text-sm font-black text-foreground">Cabin Class</p>}
-            {cabinSection}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+          {mode !== "travelers" && (
+            <div className={cn(mode === "combined" && "mt-2 border-t pt-3")}>
+              {mode === "combined" && <p className="mb-2 text-sm font-semibold">Cabin Class</p>}
+              {cabinSection}
+            </div>
+          )}
+        </div>
 
         <Button
           type="button"
-          className="mt-3.5 h-10 w-full rounded-xl gradient-primary text-xs font-bold text-primary-foreground"
+          className="mt-3 h-10 w-full shrink-0 rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90"
           onClick={() => setOpen(false)}
         >
           Done

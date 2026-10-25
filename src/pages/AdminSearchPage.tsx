@@ -401,7 +401,7 @@ function ServiceSearchPanel({
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
                   <p className="text-xl font-black text-primary">{formatPrice(item.basePrice || 0)}</p>
                   <div className="flex gap-2">
-                    <Button asChild variant="outline" className="rounded-xl"><Link to={`/${detailBase}/${item.packageId}`}>{category === "visa" ? "View Visa" : category === "tour" ? "View Tour" : "View Package"}</Link></Button>
+                    <Button asChild variant="outline" className="rounded-xl"><Link to={category === "umrah" ? `/${detailBase}/${item.packageId}` : category === "visa" ? "/admin/visa" : "/admin/tours"}>{category === "visa" ? "View Visa" : category === "tour" ? "View Tour" : "View Package"}</Link></Button>
                     <Button className="rounded-xl" onClick={() => setRequestItem(item)}>{category === "visa" ? "Request Visa" : category === "tour" ? "Request Tour" : "Request Package"}</Button>
                   </div>
                 </div>

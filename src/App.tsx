@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
@@ -14,19 +15,17 @@ import { LocaleProvider } from "@/contexts/LocaleContext";
 // Public pages
 import HomePage from "./pages/public/HomePage";
 import PublicHotelsPage from "./pages/public/PublicHotelsPage";
-import PublicTransfersPage from "./pages/public/PublicTransfersPage";
+const PublicTransfersPage = lazy(() => import("./pages/public/PublicTransfersPage"));
 import HotelDetailPage from "./pages/public/HotelDetailPage";
 import PublicFlightsPage from "./pages/public/PublicFlightsPage";
 import FlightDetailPage from "./pages/public/FlightDetailPage";
 import PublicPackagesPage from "./pages/public/PublicPackagesPage";
-import UmrahSamplePage from "./pages/public/UmrahSamplePage";
-import PublicToursPage from "./pages/public/PublicToursPage";
-import PublicVisaPage from "./pages/public/PublicVisaPage";
+const UmrahSamplePage = lazy(() => import("./pages/public/UmrahSamplePage"));
 
-import PublicBlogPage from "./pages/public/PublicBlogPage";
+const PublicBlogPage = lazy(() => import("./pages/public/PublicBlogPage"));
 import ContactPage from "./pages/public/ContactPage";
 import AboutPage from "./pages/public/AboutPage";
-import DealsPage from "./pages/public/DealsPage";
+const DealsPage = lazy(() => import("./pages/public/DealsPage"));
 import BookingPage from "./pages/public/BookingPage";
 import AccountPage from "./pages/public/AccountPage";
 import SignInPage from "./pages/public/SignInPage";
@@ -35,13 +34,11 @@ import AuthCallbackPage from "./pages/public/AuthCallbackPage";
 import FaqPage from "./pages/public/FaqPage";
 import PrivacyPage from "./pages/public/PrivacyPage";
 import TermsPage from "./pages/public/TermsPage";
-import CareersPage from "./pages/public/CareersPage";
+const CareersPage = lazy(() => import("./pages/public/CareersPage"));
 import UmrahDetailPage from "./pages/public/UmrahDetailPage";
 import MyBookingsPage from "./pages/public/MyBookingsPage";
-import TourDetailPage from "./pages/public/TourDetailPage";
-import VisaDetailPage from "./pages/public/VisaDetailPage";
-import BlogDetailPage from "./pages/public/BlogDetailPage";
-import DestinationPage from "./pages/public/DestinationPage";
+const BlogDetailPage = lazy(() => import("./pages/public/BlogDetailPage"));
+const DestinationPage = lazy(() => import("./pages/public/DestinationPage"));
 import BookingRequestPage from "./pages/public/BookingRequestPage";
 import GroupTicketingPage from "./pages/public/GroupTicketingPage";
 
@@ -91,25 +88,20 @@ const App = () => (
             {/* Public routes */}
             <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
             <Route path="/hotels-search" element={<PublicLayout><PublicHotelsPage /></PublicLayout>} />
-            <Route path="/transfers-search" element={<PublicLayout><PublicTransfersPage /></PublicLayout>} />
+            <Route path="/transfers-search" element={<PublicLayout><Suspense fallback={<div role="status" className="px-4 py-8 text-sm text-muted-foreground">Loading page…</div>}><PublicTransfersPage /></Suspense></PublicLayout>} />
             <Route path="/hotel/:id" element={<PublicLayout><HotelDetailPage /></PublicLayout>} />
             <Route path="/flights-search" element={<PublicLayout><PublicFlightsPage /></PublicLayout>} />
             <Route path="/flight/:id" element={<PublicLayout><FlightDetailPage /></PublicLayout>} />
             <Route path="/umrah-packages" element={<PublicLayout><PublicPackagesPage /></PublicLayout>} />
-            <Route path="/umrah-sample" element={<PublicLayout><UmrahSamplePage /></PublicLayout>} />
+            <Route path="/umrah-sample" element={<PublicLayout><Suspense fallback={<div role="status" className="px-4 py-8 text-sm text-muted-foreground">Loading page…</div>}><UmrahSamplePage /></Suspense></PublicLayout>} />
             <Route path="/umrah/:id" element={<PublicLayout><UmrahDetailPage /></PublicLayout>} />
-            <Route path="/tour-packages" element={<PublicLayout><PublicToursPage /></PublicLayout>} />
-            <Route path="/study-abroad" element={<Navigate to="/visa-services?type=study" replace />} />
-            <Route path="/visa-services" element={<PublicLayout><PublicVisaPage /></PublicLayout>} />
-            <Route path="/blog" element={<PublicLayout><PublicBlogPage /></PublicLayout>} />
+            <Route path="/blog" element={<PublicLayout><Suspense fallback={<div role="status" className="px-4 py-8 text-sm text-muted-foreground">Loading page…</div>}><PublicBlogPage /></Suspense></PublicLayout>} />
             <Route path="/blog-public" element={<Navigate to="/blog" replace />} />
-            <Route path="/blog/:slug" element={<PublicLayout><BlogDetailPage /></PublicLayout>} />
-            <Route path="/tour/:id" element={<PublicLayout><TourDetailPage /></PublicLayout>} />
-            <Route path="/visa/:id" element={<PublicLayout><VisaDetailPage /></PublicLayout>} />
+            <Route path="/blog/:slug" element={<PublicLayout><Suspense fallback={<div role="status" className="px-4 py-8 text-sm text-muted-foreground">Loading page…</div>}><BlogDetailPage /></Suspense></PublicLayout>} />
             <Route path="/contact" element={<PublicLayout><ContactPage /></PublicLayout>} />
             <Route path="/about" element={<PublicLayout><AboutPage /></PublicLayout>} />
-            <Route path="/deals" element={<PublicLayout><DealsPage /></PublicLayout>} />
-            <Route path="/destination/:slug" element={<PublicLayout><DestinationPage /></PublicLayout>} />
+            <Route path="/deals" element={<PublicLayout><Suspense fallback={<div role="status" className="px-4 py-8 text-sm text-muted-foreground">Loading page…</div>}><DealsPage /></Suspense></PublicLayout>} />
+            <Route path="/destination/:slug" element={<PublicLayout><Suspense fallback={<div role="status" className="px-4 py-8 text-sm text-muted-foreground">Loading page…</div>}><DestinationPage /></Suspense></PublicLayout>} />
             <Route path="/group-ticketing" element={<PublicLayout><GroupTicketingPage /></PublicLayout>} />
             <Route path="/group-ticketing/:category" element={<PublicLayout><GroupTicketingPage /></PublicLayout>} />
             <Route path="/booking" element={<PublicLayout><BookingPage /></PublicLayout>} />
@@ -122,7 +114,7 @@ const App = () => (
             <Route path="/faq" element={<PublicLayout><FaqPage /></PublicLayout>} />
             <Route path="/privacy" element={<PublicLayout><PrivacyPage /></PublicLayout>} />
             <Route path="/terms" element={<PublicLayout><TermsPage /></PublicLayout>} />
-            <Route path="/careers" element={<PublicLayout><CareersPage /></PublicLayout>} />
+            <Route path="/careers" element={<PublicLayout><Suspense fallback={<div role="status" className="px-4 py-8 text-sm text-muted-foreground">Loading page…</div>}><CareersPage /></Suspense></PublicLayout>} />
 
             {/* Admin routes */}
             <Route path="/admin" element={<AdminLayout><DashboardPage /></AdminLayout>} />

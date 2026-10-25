@@ -634,8 +634,8 @@ export default function BookingPage() {
     ? "/flights-search"
     : (productCtx.type as string) === "hotel" ? "/hotels-search"
     : (productCtx.type as string) === "umrah" ? "/umrah-packages"
-    : (productCtx.type as string) === "tour" ? "/tour-packages"
-    : "/visa-services";
+    : (productCtx.type as string) === "tour" ? "/admin/tours"
+    : "/admin/visa";
 
   return (
     <div className="bg-muted/20 min-h-screen">
@@ -1406,7 +1406,7 @@ function ServiceBookingRequest({ productCtx }: { productCtx: ProductCtx }) {
   const [touched, setTouched] = useState(false);
   const [saved, setSaved] = useState<BookingRecord | null>(null);
   const [saving, setSaving] = useState(false);
-  const backLink = productCtx.type === "umrah" ? "/umrah-packages" : productCtx.type === "tour" ? "/tour-packages" : "/visa-services";
+  const backLink = productCtx.type === "umrah" ? "/umrah-packages" : productCtx.type === "tour" ? "/admin/tours" : "/admin/visa";
   const formatMoney = (amount: number) => `${productCtx.currency || "PKR"} ${Math.round(amount).toLocaleString()}`;
   const cleanPhone = phone.replace(/[^\d+]/g, "");
   const valid = name.trim().length >= 2 && cleanPhone.replace(/\D/g, "").length >= 7;

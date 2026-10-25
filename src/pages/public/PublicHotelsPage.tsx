@@ -1,3 +1,5 @@
+import { SearchPageHero, SearchCard } from "@/components/public/SearchPageShell";
+import { ProductTabs } from "@/components/public/ProductTabs";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -101,17 +103,19 @@ export default function PublicHotelsPage() {
 
   return (
     <div>
-      <section className="border-b bg-card py-5 md:py-6">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h1 className="mb-4 font-display text-xl font-bold text-foreground">{hasSearch ? `Hotels in ${searchValues.location}` : "Hotels & Accommodation"}</h1>
+      <SearchPageHero title="Find Hotels with Travelian" description="Search stays by destination, dates and guests.">
+        <SearchCard>
+          <ProductTabs active="hotels" />
+          <div className="p-5">
           <HotelSearchBar initialValues={searchValues} loading={apiStatus === "loading"} onSearch={values => {
             setParams(new URLSearchParams({ location: values.location, checkIn: values.checkIn, checkOut: values.checkOut, adults: String(values.adults), children: String(values.children), rooms: String(values.rooms), currency }));
             setRetry(value => value + 1);
           }} />
-        </div>
-      </section>
+          </div>
+        </SearchCard>
+      </SearchPageHero>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           <div className="flex items-center gap-2">
@@ -137,7 +141,7 @@ export default function PublicHotelsPage() {
             <div className="flex items-center gap-1 text-sm">
               <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
               <select
-                className="bg-transparent text-sm font-medium text-foreground border-0 focus:outline-none cursor-pointer"
+                aria-label="Sort hotels" className="rounded-md border border-input bg-card px-2 py-2 text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={sort}
                 onChange={e => setSort(e.target.value)}
               >
@@ -155,7 +159,7 @@ export default function PublicHotelsPage() {
           {showFilters && (
             <aside className="grid w-full shrink-0 gap-4 sm:grid-cols-2 md:block md:w-56 md:space-y-4">
               {/* Price Range */}
-              <div className="bg-card rounded-xl p-5 shadow-card">
+              <div className="bg-card rounded-xl border border-border/70 p-5 shadow-card">
                 <h3 className="font-semibold text-foreground text-sm mb-4">Price per night</h3>
                 <Slider
                   value={priceRange}
@@ -172,12 +176,13 @@ export default function PublicHotelsPage() {
               </div>
 
               {/* Star Rating */}
-              <div className="bg-card rounded-xl p-5 shadow-card">
+              <div className="bg-card rounded-xl border border-border/70 p-5 shadow-card">
                 <h3 className="font-semibold text-foreground text-sm mb-3">Star Rating</h3>
                 <div className="space-y-2">
                   {[5, 4, 3, 2, 1].map(s => (
                     <label key={s} className="flex items-center gap-2 cursor-pointer group">
                       <Checkbox
+                        aria-label={`${s} star hotels`}
                         checked={starFilter.includes(s)}
                         onCheckedChange={() => toggleStar(s)}
                       />
@@ -193,7 +198,7 @@ export default function PublicHotelsPage() {
               </div>
 
               {/* Guest Rating */}
-              <div className="bg-card rounded-xl p-5 shadow-card">
+              <div className="bg-card rounded-xl border border-border/70 p-5 shadow-card">
                 <h3 className="font-semibold text-foreground text-sm mb-3">Guest Rating</h3>
                 <div className="space-y-2">
                   {[
@@ -211,12 +216,13 @@ export default function PublicHotelsPage() {
               </div>
 
               {/* Amenities */}
-              <div className="bg-card rounded-xl p-5 shadow-card">
+              <div className="bg-card rounded-xl border border-border/70 p-5 shadow-card">
                 <h3 className="font-semibold text-foreground text-sm mb-3">Amenities</h3>
                 <div className="space-y-2">
                   {amenityFilters.map(a => (
                     <label key={a.id} className="flex items-center gap-2 cursor-pointer group">
                       <Checkbox
+                        aria-label={a.label}
                         checked={selectedAmenities.includes(a.id)}
                         onCheckedChange={() => toggleAmenity(a.id)}
                       />
@@ -228,7 +234,7 @@ export default function PublicHotelsPage() {
               </div>
 
               {/* Property Type */}
-              <div className="bg-card rounded-xl p-5 shadow-card">
+              <div className="bg-card rounded-xl border border-border/70 p-5 shadow-card">
                 <h3 className="font-semibold text-foreground text-sm mb-3">Property Type</h3>
                 <div className="space-y-2">
                   {["Hotels", "Resorts", "Apartments", "Villas", "Hostels"].map(t => (
@@ -244,21 +250,20 @@ export default function PublicHotelsPage() {
 
           {/* Results */}
           <div className="flex-1 min-w-0">
+            {apiStatus === "idle" && (
+              <Card role="status" className="rounded-xl border-border/70 shadow-card"><CardContent className="px-5 py-10 text-center"><Hotel className="mx-auto mb-3 h-8 w-8 text-primary" aria-hidden="true" /><h2 className="text-lg font-semibold">Find your next stay</h2><p className="mt-2 text-sm text-muted-foreground">Search a destination to see available hotels.</p></CardContent></Card>
+            )}
             {apiStatus === "error" && (
-              <div className="mb-4 rounded-xl border border-warning/20 bg-warning/5 px-4 py-3 text-sm text-warning">
+              <div role="alert" className="mb-4 rounded-xl border border-warning/20 bg-warning/5 px-4 py-3 text-sm text-warning">
                 {apiMessage} <Button variant="outline" size="sm" className="ml-2" onClick={() => setRetry(value => value + 1)}>Try again</Button>
               </div>
             )}
 
             {apiStatus === "loading" && (
-              <Card className="mb-4 border-primary/15 shadow-card">
-                <CardContent className="p-5">
-                  <p className="text-sm font-semibold text-foreground">Searching hotel rates</p>
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full w-1/3 animate-[premiumProgress_1.8s_ease-in-out_infinite] bg-gradient-to-r from-primary via-gold to-primary" />
-                  </div>
-                </CardContent>
-              </Card>
+              <div role="status" aria-label="Searching hotel rates" className="space-y-4">
+                <span className="sr-only">Searching hotel rates</span>
+                {[0, 1, 2].map(index => <Card key={index} aria-hidden="true" className="overflow-hidden rounded-xl border-border/70 shadow-card"><CardContent className="flex gap-4 p-4"><div className="h-36 w-1/3 animate-pulse rounded-lg bg-muted" /><div className="flex-1 space-y-3 py-2"><div className="h-5 w-3/4 animate-pulse rounded bg-muted" /><div className="h-4 w-1/2 animate-pulse rounded bg-muted" /><div className="h-4 w-2/3 animate-pulse rounded bg-muted" /></div></CardContent></Card>)}
+              </div>
             )}
 
             {/* Active Filters */}
@@ -283,7 +288,7 @@ export default function PublicHotelsPage() {
             {apiStatus === "success" && (
               <div className="space-y-4">
                 {filtered.map(hotel => (
-                  <Card key={hotel.hotelId} className="overflow-hidden rounded-lg shadow-card transition-shadow hover:shadow-elevated">
+                  <Card key={hotel.hotelId} className="overflow-hidden rounded-xl border-border/70 shadow-card transition-shadow hover:shadow-md">
                     <div className="grid md:grid-cols-[180px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_190px]">
                       <Link to={`/hotel/${encodeURIComponent(hotel.hotelId)}`} aria-label={`View ${hotel.name}`} className="flex aspect-[16/9] items-center justify-center bg-muted md:aspect-auto md:min-h-48">
                         {hotel.image && !failedImages.includes(hotel.hotelId) ? <img src={hotel.image} alt={hotel.name} className="h-full max-h-64 w-full object-cover md:max-h-none" loading="lazy" onError={() => setFailedImages(current => [...current, hotel.hotelId])} /> : <Hotel className="h-12 w-12 text-muted-foreground" />}
@@ -308,7 +313,7 @@ export default function PublicHotelsPage() {
             )}
 
             {apiStatus === "success" && filtered.length === 0 && (
-              <div className="text-center py-16">
+              <div role="status" className="rounded-xl border border-border/70 bg-card px-5 py-10 text-center shadow-card">
                 <MapIcon className="mx-auto mb-4 h-14 w-14 text-muted-foreground" />
                 <h3 className="text-lg font-semibold text-foreground mb-2">No properties found</h3>
                 <p className="text-sm text-muted-foreground mb-4">No hotel rates returned. Try another city or date.</p>

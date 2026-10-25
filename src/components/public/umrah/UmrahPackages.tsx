@@ -94,7 +94,7 @@ export function UmrahPackages({ offers }: { offers: UmrahOffer[] }) {
         description="Filter by duration, package type, departure city, airline, hotel distance and budget. All rates are starting-from and confirmed before booking."
       />
 
-      <Card className="border-0 shadow-card">
+      <Card className="rounded-xl border-border/70 shadow-card">
         <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
           <FilterSelect label="Duration" value={duration} onChange={setDuration} placeholder="Any duration"
             options={UMRAH_DURATIONS.map((d) => ({ value: String(d), label: `${d} Days` }))} />
@@ -138,17 +138,17 @@ export function UmrahPackages({ offers }: { offers: UmrahOffer[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <Card className="border-0 shadow-card">
+        <Card className="rounded-xl border-border/70 shadow-card">
           <CardContent className="p-8 text-center">
             <p className="font-bold text-foreground">No package matches these filters</p>
             <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">
               Tell us your dates, hotel preference and budget and we will build a custom Umrah package for you.
             </p>
-            <a href={whatsappUrl("Assalam o Alaikum Travelian, I need a custom Umrah package quote.")} target="_blank" rel="noreferrer">
-              <Button className="mt-5 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover">
+            <Button asChild className="mt-5 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover">
+              <a href={whatsappUrl("Assalam o Alaikum Travelian, I need a custom Umrah package quote.")} target="_blank" rel="noreferrer">
                 <WhatsAppIcon className="mr-2 h-4 w-4" /> Request custom package
-              </Button>
-            </a>
+              </a>
+          </Button>
           </CardContent>
         </Card>
       ) : (
@@ -167,7 +167,7 @@ function FilterSelect({ label, value, onChange, options, placeholder }: {
     <div>
       <label className="text-xs font-semibold text-muted-foreground">{label}</label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="mt-1.5 h-11 rounded-xl border-muted bg-muted/30"><SelectValue placeholder={placeholder} /></SelectTrigger>
+        <SelectTrigger aria-label={label} className="mt-1.5 h-11 rounded-xl border-muted bg-muted/30"><SelectValue placeholder={placeholder} /></SelectTrigger>
         <SelectContent>
           <SelectItem value={ANY}>{placeholder}</SelectItem>
           {options.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
@@ -187,18 +187,16 @@ function OfferCard({ offer }: { offer: UmrahOffer }) {
   ];
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden border-0 shadow-card transition-shadow hover:shadow-elevated">
-      <div className="relative isolate overflow-hidden gradient-hero px-5 py-5">
-        <div className="absolute inset-0 opacity-[0.08]" aria-hidden="true"
-          style={{ backgroundImage: "radial-gradient(circle at 1px 1px, hsl(0 0% 100%) 1px, transparent 0)", backgroundSize: "20px 20px" }} />
+    <Card className="flex h-full flex-col overflow-hidden rounded-xl border-border/70 shadow-card transition-shadow hover:shadow-md">
+      <div className="relative isolate overflow-hidden border-b border-border/70 bg-card px-5 py-5">
         <div className="relative z-10">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge className="bg-gold/20 text-gold hover:bg-gold/20">{offer.tier}</Badge>
-            <Badge variant="secondary" className="bg-white/10 text-primary-foreground hover:bg-white/10">{offer.durationLabel}</Badge>
-            <Badge variant="secondary" className={offer.status === "Available" ? "bg-success/20 text-success hover:bg-success/20" : "bg-white/10 text-primary-foreground hover:bg-white/10"}>{offer.status}</Badge>
+            <Badge className="bg-accent text-primary hover:bg-accent">{offer.tier}</Badge>
+            <Badge variant="secondary" className="bg-muted text-muted-foreground hover:bg-muted">{offer.durationLabel}</Badge>
+            <Badge variant="secondary" className={offer.status === "Available" ? "bg-success/20 text-success hover:bg-success/20" : "bg-muted text-muted-foreground hover:bg-muted"}>{offer.status}</Badge>
           </div>
-          <h3 className="mt-3 font-display text-lg font-black tracking-tight text-primary-foreground md:text-xl">{offer.name}</h3>
-          <p className="mt-1 text-sm font-semibold text-gold">{startingFrom(offer.startingFrom ?? offer.prices.sharing)}</p>
+          <h3 className="mt-3 font-display text-lg font-semibold tracking-tight text-foreground md:text-xl">{offer.name}</h3>
+          <p className="mt-1 text-sm font-semibold text-primary">{startingFrom(offer.startingFrom ?? offer.prices.sharing)}</p>
         </div>
       </div>
 
@@ -250,13 +248,13 @@ function OfferCard({ offer }: { offer: UmrahOffer }) {
 
         <div className="mt-auto grid gap-2 sm:grid-cols-2">
           <Button asChild variant="outline" className="h-11 rounded-xl font-semibold">
-            <Link to={`/umrah/${encodeURIComponent(offer.id)}`}>View Details</Link>
+            <Link to={`/umrah/${encodeURIComponent(offer.id)}`}>Request Details</Link>
           </Button>
-          <a href={whatsappUrl(inquiryMessage(offer))} target="_blank" rel="noreferrer">
-            <Button className="h-11 w-full rounded-xl bg-whatsapp font-semibold text-whatsapp-foreground hover:bg-whatsapp-hover">
+          <Button asChild className="h-11 w-full rounded-xl bg-whatsapp font-semibold text-whatsapp-foreground hover:bg-whatsapp-hover">
+            <a href={whatsappUrl(inquiryMessage(offer))} target="_blank" rel="noreferrer">
               <WhatsAppIcon className="mr-2 h-4 w-4" /> Send on WhatsApp
-            </Button>
-          </a>
+            </a>
+          </Button>
         </div>
       </CardContent>
     </Card>

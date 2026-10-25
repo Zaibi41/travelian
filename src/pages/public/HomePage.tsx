@@ -1,3 +1,4 @@
+import { SearchPageHero } from "@/components/public/SearchPageShell";
 import { SearchTabs } from "@/components/public/SearchTabs";
 import { SEO } from "@/components/SEO";
 import { BadgeCheck, Globe, Headphones, Shield } from "lucide-react";
@@ -62,41 +63,8 @@ export default function HomePage() {
           },
         ]}
       />
-      {/* Premium hero */}
-      <section className="relative isolate gradient-hero pt-8 pb-10 md:pt-12 md:pb-14">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-          <div
-            className="absolute inset-0 opacity-[0.07]"
-            style={{
-              backgroundImage:
-                "radial-gradient(circle at 1px 1px, hsl(0 0% 100%) 1px, transparent 0)",
-              backgroundSize: "22px 22px",
-            }}
-          />
-          <div className="absolute -top-24 left-1/2 h-96 w-[38rem] -translate-x-1/2 rounded-full bg-primary/35 blur-3xl" />
-          <div className="absolute -bottom-16 right-8 h-80 w-80 rounded-full bg-teal/20 blur-3xl" />
-          <div className="absolute -bottom-24 left-0 h-72 w-72 rounded-full bg-gold/15 blur-3xl" />
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <h1 className="text-[1.75rem] font-black font-display leading-tight tracking-tight text-primary-foreground animate-fade-in-up">
-              Book Flights, Umrah &amp; Hotels with{" "}
-              <span className="relative inline-block whitespace-nowrap font-black text-primary-foreground drop-shadow-[0_0_18px_hsl(var(--teal)/0.35)]">
-                Travelian
-                <span className="absolute -bottom-1 left-0 h-0.5 w-full rounded-full bg-gradient-to-r from-teal via-gold to-teal opacity-90 shadow-[0_0_14px_hsl(var(--gold)/0.45)]" aria-hidden="true" />
-              </span>
-            </h1>
-          </div>
-
-          <div className="relative mt-5 md:mt-7">
-            <div className="pointer-events-none absolute -inset-4 rounded-[2rem] bg-white/5 blur-2xl" aria-hidden="true" />
-            <div className="relative">
-              <SearchTabs visibleTabIds={["flights", "group-ticketing", "hotels", "umrah"]} />
-            </div>
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-2 md:gap-3">
+      <SearchPageHero title="Book Flights, Umrah & Hotels with Travelian" support={
+          <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3">
             {heroBadges.map((b) => (
               <span
                 key={b.label}
@@ -107,12 +75,13 @@ export default function HomePage() {
               </span>
             ))}
           </div>
-        </div>
-      </section>
+      }>
+        <SearchTabs visibleTabIds={["flights", "group-ticketing", "hotels", "umrah"]} />
+      </SearchPageHero>
 
       {/* Trust Bar */}
       <section className="py-6 bg-card border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
 
             {features.map((f) => (

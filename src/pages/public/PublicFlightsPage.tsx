@@ -1,3 +1,5 @@
+import { SearchPageHero, SearchCard } from "@/components/public/SearchPageShell";
+import { ProductTabs } from "@/components/public/ProductTabs";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1183,11 +1185,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       <h1 className="sr-only">Flight search results: {from} to {to}</h1>
 
       {/* Search summary */}
-      <section className={cn("gradient-hero z-30 shadow-md", adminMode ? "py-2" : "py-4")}>
-        <div className={cn(adminMode ? "px-4 md:px-6" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8")}>
-          <div className="bg-card/10 backdrop-blur-sm rounded-2xl px-4 py-3 border border-primary-foreground/10">
+      <SearchPageHero compact={adminMode} title={adminMode ? undefined : "Find Flights with Travelian"} description={adminMode ? undefined : "Compare fares and plan your next journey."}>
+        <SearchCard className={adminMode ? "border-0 bg-transparent shadow-none" : undefined}>
+          {!adminMode && <ProductTabs active="flights" />}
+          <div className={cn(adminMode ? "rounded-2xl bg-card/10 px-4 py-3 border border-primary-foreground/10" : "rounded-b-xl bg-card p-5")}>
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <div className="flex items-center gap-2 text-primary-foreground text-sm flex-wrap min-w-0">
+              <div className={cn("flex items-center gap-2 text-primary-foreground text-sm flex-wrap min-w-0", !adminMode && "text-foreground")}>
                 <Plane className="h-4 w-4 shrink-0" />
                 <span className="min-w-0 max-w-[14rem] truncate font-semibold">{routeLabel(from)}</span>
                 <button
@@ -1204,28 +1207,28 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     setParams(next, { replace: true });
                   }}
                   aria-label="Swap origin and destination"
-                  className="h-6 w-6 rounded-full border border-primary-foreground/30 flex items-center justify-center text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0"
+                  className={cn("h-6 w-6 rounded-full border border-primary-foreground/30 flex items-center justify-center text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0", !adminMode && "text-muted-foreground")}
                 >
                   <ArrowLeftRight className="h-3.5 w-3.5" />
                 </button>
                 <span className="min-w-0 max-w-[14rem] truncate font-semibold">{routeLabel(to)}</span>
-                <span className="text-primary-foreground/60 text-xs">-</span>
-                <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{format(departDate, "EEE, MMM d")}</span>
-                {tripType === "roundtrip" && returnDate && <span className="text-primary-foreground/80 text-xs whitespace-nowrap">to {format(returnDate, "EEE, MMM d")}</span>}
-                {tripType === "multicity" && <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{segments.length} flights</span>}
-                <span className="text-primary-foreground/60 text-xs">-</span>
-                <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{formatTravelers(travelers)}</span>
-                <span className="text-primary-foreground/60 text-xs">-</span>
-                <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{currency}</span>
+                <span className={cn("text-primary-foreground/60 text-xs", !adminMode && "text-muted-foreground")}>-</span>
+                <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>{format(departDate, "EEE, MMM d")}</span>
+                {tripType === "roundtrip" && returnDate && <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>to {format(returnDate, "EEE, MMM d")}</span>}
+                {tripType === "multicity" && <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>{segments.length} flights</span>}
+                <span className={cn("text-primary-foreground/60 text-xs", !adminMode && "text-muted-foreground")}>-</span>
+                <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>{formatTravelers(travelers)}</span>
+                <span className={cn("text-primary-foreground/60 text-xs", !adminMode && "text-muted-foreground")}>-</span>
+                <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>{currency}</span>
                 {apiStatus === "loading" ? (
                   <>
-                    <span className="text-primary-foreground/60 text-xs">-</span>
-                    <span className="text-primary-foreground/80 text-xs whitespace-nowrap">Searching live fares</span>
+                    <span className={cn("text-primary-foreground/60 text-xs", !adminMode && "text-muted-foreground")}>-</span>
+                    <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>Searching live fares</span>
                   </>
                 ) : !searchExpired ? (
                   <>
-                    <span className="text-primary-foreground/60 text-xs">-</span>
-                    <span className="text-primary-foreground/80 text-xs whitespace-nowrap">{filtered.length} live {filtered.length === 1 ? "fare" : "fares"}</span>
+                    <span className={cn("text-primary-foreground/60 text-xs", !adminMode && "text-muted-foreground")}>-</span>
+                    <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>{filtered.length} live {filtered.length === 1 ? "fare" : "fares"}</span>
                   </>
                 ) : null}
                 {apiStatus === "success" && flights.length > 0 && (
@@ -1245,12 +1248,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               </Button>
             </div>
           </div>
-        </div>
-      </section>
+        </SearchCard>
+      </SearchPageHero>
 
       {/* Date flexibility row with centered "See Price" subtitle */}
       <div className="bg-card border-b">
-        <div className={cn(adminMode ? "px-4 md:px-6" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8")}>
+        <div className={cn(adminMode ? "px-4 md:px-6" : "w-full mx-auto px-4 sm:px-6 lg:px-8")}>
           <div className="flex items-center justify-center gap-1.5 py-3 overflow-x-auto scrollbar-hide">
             {dateFlexDays.map((day, i) => (
               <button
@@ -1275,7 +1278,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         </div>
       </div>
 
-      <div className={cn(adminMode ? "px-4 md:px-6 py-5" : "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6")}>
+      <div className={cn(adminMode ? "px-4 md:px-6 py-5" : "w-full mx-auto px-4 sm:px-6 lg:px-8 py-6")}>
         {false && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm">
           <div>
             <p className="text-sm font-semibold text-foreground">

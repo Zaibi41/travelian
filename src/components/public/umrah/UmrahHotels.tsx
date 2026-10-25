@@ -39,7 +39,7 @@ export function UmrahHotels({ id, eyebrow, title, description, hotels }: Props) 
       <SectionHeading eyebrow={eyebrow} title={title} description={description} />
       <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {hotels.map((hotel) => (
-          <Card key={hotel.id} className="flex h-full flex-col overflow-hidden border-0 shadow-card transition-shadow hover:shadow-elevated">
+          <Card key={hotel.id} className="flex h-full flex-col overflow-hidden rounded-xl border-border/70 shadow-card transition-shadow hover:shadow-md">
             <div className="relative">
               <PackageImage src={hotel.image} alt={`${hotel.name}, ${hotel.city}`} className="h-40 w-full" />
               <Badge className="absolute left-3 top-3 bg-primary/90 text-primary-foreground hover:bg-primary/90">{hotel.category}</Badge>
@@ -72,11 +72,11 @@ export function UmrahHotels({ id, eyebrow, title, description, hotels }: Props) 
                 <p className="mt-2 text-[11px] text-muted-foreground">{hotel.rateValidity}{hotel.supplier ? ` · ${hotel.supplier}` : ""}</p>
               </div>
 
-              <a className="mt-auto" href={whatsappUrl(hotelMessage(hotel))} target="_blank" rel="noreferrer">
-                <Button className="h-11 w-full rounded-xl bg-whatsapp font-semibold text-whatsapp-foreground hover:bg-whatsapp-hover">
+              <Button asChild className="h-11 w-full rounded-xl bg-whatsapp font-semibold text-whatsapp-foreground hover:bg-whatsapp-hover">
+                <a className="mt-auto" href={whatsappUrl(hotelMessage(hotel))} target="_blank" rel="noreferrer">
                   <WhatsAppIcon className="mr-2 h-4 w-4" /> Ask Hotel Price
-                </Button>
-              </a>
+                </a>
+          </Button>
             </CardContent>
           </Card>
         ))}

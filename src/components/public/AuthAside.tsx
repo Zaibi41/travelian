@@ -4,10 +4,23 @@ interface AuthAsideProps {
   eyebrow: string;
   title: string;
   description: string;
-  points: string[];
+  points?: string[];
+  variant?: "default" | "minimal";
 }
 
-export function AuthAside({ eyebrow, title, description, points }: AuthAsideProps) {
+export function AuthAside({ eyebrow, title, description, points = [], variant = "default" }: AuthAsideProps) {
+  if (variant === "minimal") {
+    return (
+      <aside className="relative hidden overflow-hidden bg-primary px-9 py-12 text-primary-foreground lg:flex lg:flex-col lg:justify-center">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.07]" aria-hidden="true" style={{ backgroundImage: "radial-gradient(currentColor 1px, transparent 1px)", backgroundSize: "18px 18px" }} />
+        <div className="relative">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-primary-foreground/70">{eyebrow}</p>
+          <h2 className="mt-5 font-display text-3xl font-semibold tracking-tight">{title}</h2>
+          <p className="mt-4 max-w-xs text-sm leading-7 text-primary-foreground/80">{description}</p>
+        </div>
+      </aside>
+    );
+  }
   return (
     <div className="relative hidden flex-col justify-between overflow-hidden bg-primary p-6 sm:p-7 md:p-8 text-primary-foreground md:flex md:min-h-[420px] lg:min-h-[480px]">
       {/* layered ambience */}

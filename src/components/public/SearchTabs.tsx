@@ -1,8 +1,10 @@
+import { ProductTabs } from "./ProductTabs";
+import { PRODUCT_TABS } from "./product-navigation";
+import { SearchCard } from "./SearchPageShell";
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Hotel, Plane, Car, Search, MapPin, Users, ArrowLeftRight, Plus, CalendarIcon, X, Tickets } from "lucide-react";
+import { Search, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -18,13 +20,7 @@ import { HotelSearchBar, type HotelSearchValues } from "@/components/public/Hote
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UMRAH_DEPARTURE_CITIES, UMRAH_DURATIONS, UMRAH_TIERS } from "@/data/services/umrah";
 
-const tabs = [
-  { id: "flights", label: "Flights", icon: Plane },
-  { id: "group-ticketing", label: "Group Ticketing", icon: Tickets },
-  { id: "hotels", label: "Hotels", icon: Hotel },
-  { id: "umrah", label: "Umrah", icon: MapPin },
-  { id: "transfers", label: "Transfers", icon: Car },
-];
+const tabs = PRODUCT_TABS;
 
 const umrahMonths = Array.from({ length: 12 }, (_, i) => {
   const d = new Date();
@@ -158,10 +154,6 @@ export function SearchTabs({
   const [umrahMonth, setUmrahMonth] = useState("any");
   const [umrahDuration, setUmrahDuration] = useState("any");
   const [umrahTier, setUmrahTier] = useState("any");
-  const [transDate, setTransDate] = useState<Date>();
-  const [transferPickup, setTransferPickup] = useState("");
-  const [transferDropoff, setTransferDropoff] = useState("");
-  const [transferPassengers, setTransferPassengers] = useState("1");
   const [fromValue, setFromValue] = useState("");
   const [toValue, setToValue] = useState("");
   const [errors, setErrors] = useState<{ from?: string; to?: string; depart?: string; return?: string }>({});
@@ -257,16 +249,6 @@ export function SearchTabs({
       navigate(`/hotels-search?${params.toString()}`);
       return;
     }
-    else if (activeTab === "transfers") {
-      const params = new URLSearchParams({
-        pickup: transferPickup || "Dubai International Airport",
-        dropoff: transferDropoff || "Downtown Dubai",
-        pickupDate: transDate ? formatDateOnly(transDate) : "",
-        passengers: transferPassengers || "1",
-        currency,
-      });
-      navigate(`/transfers-search?${params.toString()}`);
-    }
     else if (activeTab === "umrah") {
       const params = new URLSearchParams({ city: umrahCity, month: umrahMonth, duration: umrahDuration, tier: umrahTier });
       navigate(`/umrah-sample?${params.toString()}`);
@@ -293,32 +275,11 @@ export function SearchTabs({
   };
 
   return (
-    <div className="relative z-10 bg-card rounded-2xl shadow-elevated max-w-6xl mx-auto animate-scale-in">
-      {/* Tabs */}
-      {visibleTabs.length > 1 && (
-      <div className="flex bg-muted/60 rounded-t-2xl overflow-x-auto overflow-y-hidden">
-        {visibleTabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => {
-              if (tab.id === "flights" && location.pathname.startsWith("/group-ticketing")) {
-                navigate("/");
-                return;
-              }
-              setActiveTab(tab.id);
-            }}
-            className={`flex-1 min-w-[4.5rem] shrink-0 flex items-center justify-center gap-1.5 px-3 sm:px-4 py-3.5 text-xs sm:text-sm font-semibold transition-all duration-200 ${
-              activeTab === tab.id
-                ? "bg-card text-primary border-b-2 border-primary shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-card/60"
-            }`}
-          >
-            <tab.icon className="h-4 w-4" />
-            <span className="hidden sm:inline">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-      )}
+    <SearchCard>
+      {visibleTabs.length > 1 && <ProductTabs active={activeTab} visibleIds={visibleTabs.map(tab => tab.id)} onSelect={id => {
+        if (id === "flights" && location.pathname.startsWith("/group-ticketing")) { navigate("/"); return; }
+        setActiveTab(id);
+      }} />}
 
       <div className="p-5 space-y-4">
         {/* Flight-specific controls */}
@@ -388,7 +349,7 @@ export function SearchTabs({
                   >
                     <Plus className="h-4 w-4" /> Add Flight
                   </button>
-                  <Button onClick={handleSearch} className="h-12 px-8 gradient-primary text-primary-foreground font-semibold rounded-xl">
+                  <Button onClick={handleSearch} className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl">
                     <Search className="h-4 w-4 mr-2" /> Search Flights
                   </Button>
                 </div>
@@ -417,7 +378,7 @@ export function SearchTabs({
                   <Button
                     onClick={handleSearch}
                     disabled={!flightsValid}
-                    className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl whitespace-nowrap disabled:opacity-50"
+                    className="h-12 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl whitespace-nowrap disabled:opacity-50"
                   >
                     <Search className="h-4 w-4 mr-2" /> Search
                   </Button>
@@ -454,7 +415,7 @@ export function SearchTabs({
                     onClick={handleSearch}
                     disabled={!flightsValid}
                     aria-label="Search flights"
-                    className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl whitespace-nowrap disabled:opacity-50"
+                    className="h-12 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl whitespace-nowrap disabled:opacity-50"
                   >
                     <Search className="h-4 w-4" />
                   </Button>
@@ -530,7 +491,7 @@ export function SearchTabs({
                 </SelectContent>
               </Select>
             </UmrahField>
-            <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl whitespace-nowrap">
+            <Button onClick={handleSearch} className="h-12 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl whitespace-nowrap">
               <Search className="h-4 w-4 mr-2" /> Search Umrah
             </Button>
           </div>
@@ -552,28 +513,9 @@ export function SearchTabs({
           />
         )}
 
-        {activeTab === "transfers" && (
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-center">
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input value={transferPickup} onChange={(event) => setTransferPickup(event.target.value)} placeholder="Pick-up location" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input value={transferDropoff} onChange={(event) => setTransferDropoff(event.target.value)} placeholder="Drop-off location" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <DatePickerField date={transDate} onSelect={setTransDate} placeholder="Select date" />
-            <div className="relative md:hidden">
-              <Users className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input value={transferPassengers} onChange={(event) => setTransferPassengers(event.target.value)} type="number" min={1} placeholder="Passengers" className="pl-9 h-12 bg-muted/30 border-muted rounded-xl text-sm" />
-            </div>
-            <Button onClick={handleSearch} className="h-12 px-6 gradient-primary text-primary-foreground font-semibold rounded-xl">
-              <Search className="h-4 w-4 mr-2" /> Search
-            </Button>
-          </div>
-        )}
+
       </div>
-    </div>
+    </SearchCard>
   );
 }
 

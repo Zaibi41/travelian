@@ -32,7 +32,7 @@ export function UmrahTransport() {
       />
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {umrahTransportRates.map((item) => (
-          <Card key={item.id} className="flex h-full flex-col border-0 shadow-card transition-shadow hover:shadow-elevated">
+          <Card key={item.id} className="flex h-full flex-col rounded-xl border-border/70 shadow-card transition-shadow hover:shadow-md">
             <CardContent className="flex flex-1 flex-col gap-3 p-5">
               <div className="flex items-start justify-between gap-3">
                 <h3 className="text-sm font-black leading-5 text-foreground">{item.route}</h3>

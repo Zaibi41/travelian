@@ -20,7 +20,7 @@ export function UmrahCityPackages() {
       />
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {umrahCityOffers.map((city) => (
-          <Card key={city.city} className="border-0 shadow-card transition-shadow hover:shadow-elevated">
+          <Card key={city.city} className="rounded-xl border-border/70 shadow-card transition-shadow hover:shadow-md">
             <CardContent className="space-y-3 p-5">
               <div className="flex items-center gap-2">
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><MapPin className="h-5 w-5" /></span>
@@ -54,7 +54,7 @@ export function UmrahVisaRates() {
       />
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {umrahVisaRates.map((rate) => (
-          <Card key={rate.id} className="flex h-full flex-col border-0 shadow-card transition-shadow hover:shadow-elevated">
+          <Card key={rate.id} className="flex h-full flex-col rounded-xl border-border/70 shadow-card transition-shadow hover:shadow-md">
             <CardContent className="flex flex-1 flex-col gap-3 p-5">
               <div className="flex items-center justify-between gap-2">
                 <h3 className="text-base font-black text-foreground">{rate.label}</h3>
@@ -89,7 +89,7 @@ export function UmrahTierComparison() {
         title="Which Package Type Suits You?"
         description="Economy, Standard, Executive and Premium differ mainly in hotel distance, room sharing and transport."
       />
-      <Card className="mt-6 overflow-hidden border-0 shadow-card">
+      <Card className="mt-6 overflow-hidden rounded-xl border-border/70 shadow-card">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -163,7 +163,7 @@ export function UmrahFaqs() {
 
 export function UmrahFinalCta() {
   return (
-    <section className="relative isolate overflow-hidden rounded-2xl gradient-hero px-6 py-10 text-center md:px-10">
+    <section className="relative isolate overflow-hidden rounded-xl bg-sidebar px-6 py-10 text-center md:px-10">
       <div className="absolute inset-0 opacity-[0.08]" aria-hidden="true"
         style={{ backgroundImage: "radial-gradient(circle at 1px 1px, hsl(0 0% 100%) 1px, transparent 0)", backgroundSize: "22px 22px" }} />
       <div className="absolute -bottom-20 left-1/2 h-56 w-72 -translate-x-1/2 rounded-full bg-gold/15 blur-3xl" aria-hidden="true" />

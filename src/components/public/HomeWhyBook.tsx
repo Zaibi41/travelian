@@ -22,7 +22,7 @@ const reasons = [
 export function HomeWhyBook() {
   return (
     <section className="py-10 md:pt-6 md:pb-10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
           <h2 className="text-2xl md:text-3xl font-bold font-display tracking-tight text-foreground">
             Why book with Travelian?

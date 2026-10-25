@@ -78,7 +78,7 @@ export function UmrahRequestForm() {
         title="Request a Custom Umrah Package"
         description="Share your travel plan and our Umrah desk will send a tailored quote on WhatsApp with hotel, transport and visa options."
       />
-      <Card className="mt-6 border-0 shadow-card">
+      <Card className="mt-6 rounded-xl border-border/70 shadow-card">
         <CardContent className="grid gap-4 p-5 md:grid-cols-2 md:p-6">
           <Field label="Full name" error={errors.name}>
             <Input className="h-11 rounded-xl border-muted bg-muted/30" maxLength={80} value={form.name} onChange={(e) => set("name")(e.target.value)} placeholder="Your name" />

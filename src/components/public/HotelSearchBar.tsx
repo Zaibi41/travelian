@@ -90,7 +90,7 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
         <label htmlFor="hotel-destination" className="text-xs font-medium text-muted-foreground">Destination</label>
         <div className="relative" ref={destRef}>
           <MapPin className="pointer-events-none absolute left-3 top-4 z-10 h-4 w-4 text-muted-foreground" />
-          <Input id="hotel-destination" value={values.location} onChange={event => update({ location: event.target.value })} onFocus={() => setDestOpen(true)} placeholder="City or destination" className="h-12 rounded-xl border-muted bg-muted/30 pl-9 pr-9" autoComplete="off" />
+          <Input id="hotel-destination" value={values.location} onChange={event => update({ location: event.target.value })} onFocus={() => setDestOpen(true)} aria-label="Destination" placeholder="City or destination" className="h-12 rounded-xl border-muted bg-muted/30 pl-9 pr-9" autoComplete="off" />
           {values.location && (
             <button type="button" aria-label="Clear destination" onClick={event => { event.stopPropagation(); update({ location: "" }); }} className="absolute right-2.5 top-3.5 z-10 rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
               <X className="h-4 w-4" />

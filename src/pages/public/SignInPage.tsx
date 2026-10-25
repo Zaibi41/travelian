@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plane, Loader2, Mail, ShieldCheck } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { signInWithPassword } from "@/lib/cognito-auth";
 import { isAdminPortalRole, roleForSession } from "@/lib/role-mapping";
@@ -18,17 +18,30 @@ export default function SignInPage() {
   const [searchParams] = useSearchParams();
   const { setCurrentRole } = useRole();
   const [loading, setLoading] = useState(false);
+  const submitting = useRef(false);
+  const [errors, setErrors] = useState({ email: "", password: "" });
+  const [serverError, setServerError] = useState("");
 
   const signIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    if (submitting.current) return;
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const email = String(form.get("email") || "");
     const password = String(form.get("password") || "");
-    if (!email || !password) {
-      toast.error("Email and password are required");
+    const emailInput = formElement.elements.namedItem("email") as HTMLInputElement;
+    const nextErrors = {
+      email: !email ? "Enter your email address." : emailInput.validity.typeMismatch ? "Enter a valid email address." : "",
+      password: !password ? "Enter your password." : "",
+    };
+    setErrors(nextErrors);
+    setServerError("");
+    if (nextErrors.email || nextErrors.password) {
+      (formElement.elements.namedItem(nextErrors.email ? "email" : "password") as HTMLInputElement).focus();
       return;
     }
     try {
+      submitting.current = true;
       setLoading(true);
       const session = await signInWithPassword(email, password);
       const role = roleForSession(session);
@@ -39,78 +52,55 @@ export default function SignInPage() {
       navigate(redirect && redirect.startsWith("/") ? redirect : fallback);
     } catch (error) {
       setLoading(false);
-      toast.error(error instanceof Error ? error.message : "Sign in failed. Please try again.");
+      const message = error instanceof Error ? error.message : "Sign in failed. Please try again.";
+      setServerError(message);
+      toast.error(message);
+    } finally {
+      submitting.current = false;
     }
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center gradient-hero px-4 py-8 sm:py-12">
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <div className="absolute left-10 top-10 h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
-        <div className="absolute bottom-0 right-12 h-80 w-80 rounded-full bg-gold/20 blur-3xl" />
-      </div>
-      <Card className="relative w-full max-w-4xl overflow-hidden rounded-2xl border border-border/60 shadow-hover my-auto">
-        <CardContent className="grid p-0 md:grid-cols-[0.95fr_1.05fr]">
-          <AuthAside
-            eyebrow="Member access"
-            title="Welcome back to Travelian"
-            description="Sign in to manage bookings, e-tickets and requests — customers and travel partners use the same login."
-            points={[
-              "Secure account access",
-              "All trips and e-tickets in one place",
-              "WhatsApp & office support",
-            ]}
-          />
-          <div className="p-6 sm:p-8 md:p-9">
-            <Link to="/" className="flex items-center justify-center mb-2">
-              <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-12 sm:h-14 w-44 sm:w-52 object-contain" />
-            </Link>
-            <h1 className="mt-2 text-center font-display text-xl sm:text-2xl font-bold text-foreground">Sign in to your account</h1>
-            <p className="mt-1.5 text-center text-xs sm:text-sm text-muted-foreground">
-              Access your trips, bookings, and agency workspace
-            </p>
+    <div className="h-full min-h-0 overflow-y-auto bg-sidebar">
+      <div className="flex min-h-full items-center justify-center px-4 py-6 sm:px-6 sm:py-8">
+        <Card className="my-auto w-full max-w-[880px] shrink-0 overflow-hidden rounded-xl border border-border/60 bg-white shadow-md">
+          <CardContent className="grid p-0 lg:grid-cols-[44fr_56fr]">
+            <AuthAside variant="minimal" eyebrow="Member access" title="Welcome back" description="Manage your trips, bookings and account from one place." />
+            <div className="px-6 py-8 sm:px-10 sm:py-10">
+              <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">Sign in to Travelian</h1>
+              <p className="mt-2 text-sm text-muted-foreground">Access your bookings and account.</p>
 
-            <form onSubmit={signIn} className="mt-6 space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-4 h-4 w-4 text-muted-foreground" />
-                  <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" className="h-12 rounded-xl bg-muted/30 pl-9" />
+              <form onSubmit={signIn} noValidate aria-busy={loading} className="mt-7">
+                <div>
+                  <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                  <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" required aria-invalid={!!errors.email} aria-describedby="email-error" onChange={() => { if (errors.email) setErrors(current => ({ ...current, email: "" })); }} className="mt-2 h-12 rounded-lg bg-white" />
+                  <p id="email-error" aria-live="polite" className="min-h-6 pt-1 text-xs leading-5 text-destructive">{errors.email}</p>
                 </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Password</Label>
-                <PasswordInput id="password" name="password" autoComplete="current-password" placeholder="Password" />
-              </div>
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-primary hover:underline"
-                  onClick={() => toast.info("Password reset is available through Travelian support while account recovery is being finalized.")}
-                >
-                  Forgot password?
-                </button>
-              </div>
-              <Button type="submit" disabled={loading} className="h-12 w-full rounded-xl gradient-primary text-base font-semibold text-primary-foreground shadow-elegant transition-transform hover:-translate-y-0.5">
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sign In
-              </Button>
-            </form>
-
-            <div className="mt-5 flex items-center gap-2.5 sm:gap-3 rounded-xl border border-border/60 bg-muted/30 px-2.5 sm:px-3 py-2.5">
-              <ShieldCheck className="h-4 w-4 shrink-0 text-gold" />
-              <p className="text-[11px] sm:text-xs leading-snug text-muted-foreground">
-                Your details are protected with encrypted, secure sign-in.
+                <div className="mt-2">
+                  <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                  <div className="mt-2 [&_button]:right-1 [&_button]:top-0.5 [&_button]:h-11 [&_button]:w-11 [&_button]:rounded-md [&_button]:focus-visible:outline-none [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-ring">
+                    <PasswordInput id="password" name="password" autoComplete="current-password" placeholder="Password" required aria-invalid={!!errors.password} aria-describedby="password-error" onChange={() => { if (errors.password) setErrors(current => ({ ...current, password: "" })); }} className="h-12 rounded-lg bg-white pr-12" />
+                  </div>
+                  <p id="password-error" aria-live="polite" className="min-h-6 pt-1 text-xs leading-5 text-destructive">{errors.password}</p>
+                </div>
+                <div className="flex justify-end">
+                  <button type="button" className="min-h-8 rounded text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => toast.info("Password reset is available through Travelian support while account recovery is being finalized.")}>
+                    Forgot password?
+                  </button>
+                </div>
+                <p role="alert" className="min-h-12 py-2 text-sm leading-5 text-destructive">{serverError}</p>
+                <Button type="submit" disabled={loading} className="h-12 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+                  {loading ? "Signing in…" : "Sign In"}
+                </Button>
+              </form>
+              <p className="mt-6 text-center text-sm text-muted-foreground">
+                New to Travelian? <Link to="/register" className="rounded font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Create an account</Link>
               </p>
             </div>
-
-            <p className="mt-4 text-center text-xs sm:text-sm text-muted-foreground">
-              New to Travelian? <Link to="/register" className="font-semibold text-primary hover:underline">Create an account</Link>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
-
