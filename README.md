@@ -5,11 +5,10 @@ The backend API server is maintained and deployed separately.
 
 ## Run locally
 
-Install Node.js 20+ and npm, then run:
+Install Node.js 22 and npm, then run:
 
 ```sh
 npm ci
-cp .env.example .env.local
 npm run dev
 ```
 
@@ -17,7 +16,19 @@ The development site runs at http://localhost:8080.
 
 ## Backend connection
 
-Set the backend origin in `.env.local` for development or `.env.production` for production:
+Environment files are selected by Vite mode:
+
+| Environment | File | Start locally | Build |
+| --- | --- | --- | --- |
+| Development | `.env.development` | `npm run dev` | `npm run build:dev` |
+| Staging | `.env.staging` | `npm run dev:staging` | `npm run build:staging` |
+| Production | `.env.production` | `npm run dev:prod` | `npm run build` or `npm run build:prod` |
+
+Development currently uses the existing production API and Cognito configuration. Set your development services before using it against a separate backend. Staging values are intentionally empty: configure the staging API URL and Cognito settings before running staging mode.
+
+`.env` is reserved for shared settings. Use `.env.development.local`, `.env.staging.local` or `.env.production.local` for private local overrides (ignored by Git). Avoid mode-specific values in `.env.local`, because it applies across modes. Shell environment variables take priority over environment files.
+
+Set the backend origin in the selected mode file:
 
 ```dotenv
 VITE_TRAVELIAN_API_BASE_URL=https://api.travelian.pk
@@ -55,7 +66,9 @@ npm test            # Unit tests
 npm run lint        # ESLint
 ```
 
-`npm run dev` and `npm run build` generate the public sitemap first.
+All development and build modes generate the public sitemap first using the locally installed `tsx` tool. Missing or invalid backend configuration stops Vite before serving or building.
+
+Run `npm run typecheck` for TypeScript validation and `npm run check` for the full local check sequence. Tests load `.env.test`. GitHub Actions runs types, tests and the production build; its separate lint job is temporarily non-blocking because of existing errors (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## Repository layout
 

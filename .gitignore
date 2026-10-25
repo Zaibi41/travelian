@@ -30,3 +30,9 @@ test-results/
 
 # Backend deployment archives do not belong in the frontend repository
 deploy-lambda*.zip
+
+# Local environment configuration
+.env
+
+# TypeScript incremental build cache
+*.tsbuildinfo

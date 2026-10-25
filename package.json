@@ -4,15 +4,27 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "npx tsx scripts/generate-sitemap.ts",
+    "predev": "npm run sitemap",
     "dev": "vite",
-    "prebuild": "npx tsx scripts/generate-sitemap.ts",
+    "prebuild": "npm run sitemap",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "dev:staging": "vite --mode staging",
+    "dev:prod": "vite --mode production",
+    "predev:staging": "npm run sitemap",
+    "predev:prod": "npm run sitemap",
+    "prebuild:dev": "npm run sitemap",
+    "prebuild:staging": "npm run sitemap",
+    "build:staging": "vite build --mode staging",
+    "prebuild:prod": "npm run sitemap",
+    "build:prod": "vite build --mode production",
+    "sitemap": "node --import tsx scripts/generate-sitemap.ts",
+    "typecheck": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -93,9 +105,14 @@
     "lovable-tagger": "^1.3.3",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.15",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19",
     "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=9.0.0"
   }
 }
