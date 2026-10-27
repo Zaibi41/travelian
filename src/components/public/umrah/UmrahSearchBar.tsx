@@ -1,3 +1,4 @@
+import { SearchShortcuts } from "../SearchShortcuts";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ export function UmrahSearchBar({ value, onChange, onSearch, offers }: { value: U
     { key: "tier" as const, label: "Package Type", any: "Any type", options: UMRAH_TIERS.map(tier => ({ value: tier, label: tier })) },
   ];
   return <form noValidate aria-label="Umrah package search" className="space-y-4" onSubmit={event => { event.preventDefault(); onSearch(value); }}>
+    <SearchShortcuts label="Departure cities" options={[...new Set([...offers.map(offer => offer.departureCity), ...UMRAH_DEPARTURE_CITIES])].filter(Boolean).slice(0, 4)} value={value.city} onSelect={city => onChange({ ...value, city })} />
     <div className="umrah-search-fields grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto]">
       {fields.map(field => <div key={field.key} className="min-w-0 space-y-1.5">
         <Label htmlFor={`umrah-search-${field.key}`} className="text-xs font-medium text-muted-foreground">{field.label}</Label>

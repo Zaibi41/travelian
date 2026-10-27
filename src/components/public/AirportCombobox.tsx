@@ -15,6 +15,7 @@ import { formatAirportSubtitle, getCountryName } from "@/lib/country-names";
 import { cn } from "@/lib/utils";
 
 interface Props {
+  id?: string;
   value: string;
   onChange: (code: string) => void;
   placeholder?: string;
@@ -87,7 +88,7 @@ function airportMatchScore(airport: Airport, search: string) {
   return Number.POSITIVE_INFINITY;
 }
 
-export function AirportCombobox({ value, onChange, placeholder = "Select airport", className, invalid, iconVariant = "departure" }: Props) {
+export function AirportCombobox({ id, value, onChange, placeholder = "Select airport", className, invalid, iconVariant = "departure" }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [allAirports, setAllAirports] = useState<Airport[] | null>(airportCache);
@@ -134,6 +135,7 @@ export function AirportCombobox({ value, onChange, placeholder = "Select airport
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           type="button"
           variant="outline"
           role="combobox"

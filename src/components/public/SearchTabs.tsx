@@ -4,7 +4,7 @@ import { umrahOffers } from "@/data/services/umrah";
 import { ProductTabs } from "./ProductTabs";
 import { PRODUCT_TABS } from "./product-navigation";
 import { SearchCard, SearchContent } from "./SearchPageShell";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { Search, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ interface MultiCitySegment {
   date: Date | undefined;
 }
 
-function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string }) {
+function DatePickerField({ id, date, onSelect, placeholder }: { id?: string; date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string }) {
   const [open, setOpen] = useState(false);
   const [isMobileCalendar, setIsMobileCalendar] = useState(false);
   const today = startOfDay(new Date());
@@ -71,7 +71,7 @@ function DatePickerField({ date, onSelect, placeholder }: { date: Date | undefin
     <>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <button type="button" className={cn(
+          <button id={id} type="button" className={cn(
             "flex items-center gap-2 w-full h-12 bg-muted/30 border border-muted rounded-xl px-3 text-sm text-left transition-colors hover:border-primary/30",
             !date && "text-muted-foreground"
           )}>
@@ -128,6 +128,7 @@ export function SearchTabs({
   groupInitialValues,
   onGroupSearch,
 }: SearchTabsProps = {}) {
+  const fieldId = useId();
   const { currency } = useLocale();
   const visibleTabs = visibleTabIds?.length ? tabs.filter((tab) => visibleTabIds.includes(tab.id)) : tabs;
   const [activeTab, setActiveTab] = useState(visibleTabs.some((tab) => tab.id === initialTab) ? initialTab : visibleTabs[0]?.id || "flights");
@@ -277,7 +278,7 @@ export function SearchTabs({
                   <button
                     key={t.id}
                     onClick={() => setTripType(t.id)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    className={`whitespace-nowrap px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                       tripType === t.id
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -343,11 +344,12 @@ export function SearchTabs({
             ) : tripType === "oneway" ? (
               /* One-way: From | swap | To | Date | Search (compact, balanced) */
               <div>
-                <div className="unified-search-flight-grid grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-center">
+                <div className="unified-search-flight-grid grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-end">
                   <div className="relative">
-                    <AirportCombobox value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="From" invalid={!!errors.from} />
+                    <label htmlFor={`${fieldId}-from`} className="mb-1 block text-xs font-medium text-muted-foreground">From</label>
+                    <AirportCombobox id={`${fieldId}-from`} value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="From" invalid={!!errors.from} />
                   </div>
-                  <div className="hidden md:flex items-center justify-center">
+                  <div className="hidden md:flex items-center justify-center pb-1.5">
                     <button
                       type="button"
                       onClick={() => { const a = fromValue; setFromValue(toValue); setToValue(a); }}
@@ -358,9 +360,13 @@ export function SearchTabs({
                     </button>
                   </div>
                   <div className="relative">
-                    <AirportCombobox value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To" invalid={!!errors.to} iconVariant="arrival" />
+                    <label htmlFor={`${fieldId}-to`} className="mb-1 block text-xs font-medium text-muted-foreground">To</label>
+                    <AirportCombobox id={`${fieldId}-to`} value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To" invalid={!!errors.to} iconVariant="arrival" />
                   </div>
-                  <DatePickerField date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
+                  <div className="min-w-0">
+                    <label htmlFor={`${fieldId}-depart`} className="mb-1 block text-xs font-medium text-muted-foreground">Departure Date</label>
+                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
+                  </div>
                   <Button
                     onClick={handleSearch}
                     disabled={!flightsValid}
@@ -378,11 +384,12 @@ export function SearchTabs({
             ) : (
               /* Round-trip: adds return date */
               <div>
-                <div className="unified-search-flight-grid grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-center">
+                <div className="unified-search-flight-grid grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-end">
                   <div className="relative">
-                    <AirportCombobox value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="From" invalid={!!errors.from} />
+                    <label htmlFor={`${fieldId}-from`} className="mb-1 block text-xs font-medium text-muted-foreground">From</label>
+                    <AirportCombobox id={`${fieldId}-from`} value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="From" invalid={!!errors.from} />
                   </div>
-                  <div className="hidden md:flex items-center justify-center">
+                  <div className="hidden md:flex items-center justify-center pb-1.5">
                     <button
                       type="button"
                       onClick={() => { const a = fromValue; setFromValue(toValue); setToValue(a); }}
@@ -393,10 +400,17 @@ export function SearchTabs({
                     </button>
                   </div>
                   <div className="relative">
-                    <AirportCombobox value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To" invalid={!!errors.to} iconVariant="arrival" />
+                    <label htmlFor={`${fieldId}-to`} className="mb-1 block text-xs font-medium text-muted-foreground">To</label>
+                    <AirportCombobox id={`${fieldId}-to`} value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To" invalid={!!errors.to} iconVariant="arrival" />
                   </div>
-                  <DatePickerField date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
-                  <DatePickerField date={returnDate} onSelect={(d) => { setReturnDate(d); if (errors.return) setErrors(p => ({ ...p, return: undefined })); }} placeholder="Return date" />
+                  <div className="min-w-0">
+                    <label htmlFor={`${fieldId}-depart`} className="mb-1 block text-xs font-medium text-muted-foreground">Departure Date</label>
+                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
+                  </div>
+                  <div className="min-w-0">
+                    <label htmlFor={`${fieldId}-return`} className="mb-1 block text-xs font-medium text-muted-foreground">Return Date</label>
+                    <DatePickerField id={`${fieldId}-return`} date={returnDate} onSelect={(d) => { setReturnDate(d); if (errors.return) setErrors(p => ({ ...p, return: undefined })); }} placeholder="Return date" />
+                  </div>
                   <Button
                     onClick={handleSearch}
                     disabled={!flightsValid}

@@ -42,6 +42,12 @@ import {
 
 
 
+// Search shortcuts only; these do not represent available inventory.
+const SUGGESTED_SECTORS: AvailableSector[] = ["LHE-JED", "ISB-JED", "KHI-JED", "LHE-MED"].map(sector => {
+  const [from, to] = sector.split("-");
+  return { sector, from, to, label: `${from} → ${to}`, count: 0 };
+});
+
 export interface GroupTicketingSearchValues {
 
   from?: string;
@@ -230,6 +236,9 @@ export function GroupTicketingSearchBar({
 
 
 
+  const hasAvailableSectors = sectors.length > 0;
+  const displayedSectors = hasAvailableSectors ? sectors : SUGGESTED_SECTORS;
+
   const handleSectorSelect = (secKey: string) => {
 
     if (!secKey || secKey === "all") {
@@ -237,6 +246,8 @@ export function GroupTicketingSearchBar({
       setFromValue("");
 
       setToValue("");
+
+      if (!hasAvailableSectors) return;
 
       onSearch({
 
@@ -252,13 +263,15 @@ export function GroupTicketingSearchBar({
 
     }
 
-    const found = sectors.find((s) => s.sector === secKey);
+    const found = displayedSectors.find((s) => s.sector === secKey);
 
     if (found) {
 
       setFromValue(found.from);
 
       setToValue(found.to);
+
+      if (!hasAvailableSectors) return;
 
       onSearch({
 
@@ -294,21 +307,21 @@ export function GroupTicketingSearchBar({
 
       {/* Available Sector Dropdown & Popular Sector Badges */}
 
-      {sectors.length > 0 && (
+      {displayedSectors.length > 0 && (
 
-        <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-primary/15 bg-primary/5 px-3.5 py-2.5">
+        <div className="grid grid-cols-1 items-center gap-x-2 gap-y-1.5 sm:flex sm:flex-wrap">
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="contents">
 
-            <span className="flex items-center gap-1.5 text-xs font-bold text-primary">
+            <span className="order-1 flex items-center gap-1.5 whitespace-nowrap text-xs font-medium text-muted-foreground">
 
-              <Compass className="h-4 w-4" /> Available Sectors:
+              <Compass className="h-3.5 w-3.5" /> {hasAvailableSectors ? "Available Sectors:" : "Suggested routes:"}
 
             </span>
 
-            <div className="flex flex-wrap items-center gap-1.5">
+            <div className="order-2 col-span-full flex min-w-0 gap-1.5 overflow-x-auto pb-0.5 sm:order-2 sm:flex-1 sm:flex-wrap sm:pb-0">
 
-              {sectors.slice(0, 4).map((sec) => {
+              {displayedSectors.slice(0, 4).map((sec) => {
 
                 const isSelected = fromValue === sec.from && toValue === sec.to;
 
@@ -320,23 +333,25 @@ export function GroupTicketingSearchBar({
 
                     type="button"
 
+                    aria-pressed={isSelected}
+
                     onClick={() => handleSectorSelect(sec.sector)}
 
                     className={cn(
 
-                      "rounded-lg px-2.5 py-1 text-xs font-bold transition-colors",
+                      "min-h-8 shrink-0 whitespace-nowrap rounded-md border px-2 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-7",
 
                       isSelected
 
-                        ? "bg-primary text-primary-foreground shadow-sm"
+                        ? "border-primary bg-primary text-primary-foreground"
 
-                        : "bg-white/80 text-slate-700 hover:bg-white hover:text-primary border border-slate-200",
+                        : "border-border bg-muted/30 text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-primary",
 
                     )}
 
                   >
 
-                    {sec.label} <span className="text-[10px] opacity-70 font-normal">({sec.count})</span>
+                    {sec.label} {hasAvailableSectors && <span className="text-[10px] opacity-70 font-normal">({sec.count})</span>}
 
                   </button>
 
@@ -350,31 +365,31 @@ export function GroupTicketingSearchBar({
 
 
 
-          <div className="flex items-center gap-2">
+          <div className="order-3 w-full sm:ml-auto sm:w-auto">
 
-            <label className="text-xs font-semibold text-muted-foreground hidden sm:inline">Sector:</label>
+            <Select value={displayedSectors.some(sector => sector.sector === currentSectorKey) ? currentSectorKey : "select-sector-placeholder"} onValueChange={handleSectorSelect}>
 
-            <Select value={currentSectorKey || undefined} onValueChange={handleSectorSelect}>
+              <SelectTrigger aria-label={`Select available sector${currentSectorKey ? `, ${currentSectorKey}` : ""}`} className="h-8 w-full min-w-[11rem] justify-between gap-2 rounded-md border-border bg-transparent px-2 text-xs sm:w-auto hover:bg-muted">
 
-              <SelectTrigger className="h-8 w-auto min-w-[150px] rounded-lg border-slate-200 bg-white text-xs font-semibold">
-
-                <SelectValue placeholder="Select Available Sector..." />
+                <SelectValue placeholder="Select available sector" />
 
               </SelectTrigger>
 
               <SelectContent className="z-[1120] max-h-60">
 
+                <SelectItem value="select-sector-placeholder" disabled className="text-xs">Select available sector</SelectItem>
+
                 <SelectItem value="all" className="text-xs font-semibold">
 
-                  All Available Sectors
+                  {hasAvailableSectors ? "All Available Sectors" : "All routes"}
 
                 </SelectItem>
 
-                {sectors.map((sec) => (
+                {displayedSectors.map((sec) => (
 
                   <SelectItem key={sec.sector} value={sec.sector} className="text-xs">
 
-                    {sec.label} ({sec.count} available)
+                    {sec.label}{hasAvailableSectors ? ` (${sec.count} available)` : ""}
 
                   </SelectItem>
 

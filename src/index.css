@@ -279,7 +279,8 @@
     }
   }
   @media (max-width: 639px) {
-    .unified-search-content .hotel-search-fields {
+    .unified-search-content .hotel-search-fields,
+    .unified-search-content .umrah-search-fields {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .unified-search-content .hotel-search-fields > :first-child,

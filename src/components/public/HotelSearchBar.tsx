@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { addDays, format, startOfDay } from "date-fns";
 import { CalendarIcon, ChevronDown, MapPin, Minus, Plus, Search, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SearchShortcuts } from "./SearchShortcuts";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -85,6 +86,7 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
     if (!parseDateOnly(values.checkIn) || !parseDateOnly(values.checkOut) || values.checkIn < formatDateOnly(new Date()) || values.checkOut <= values.checkIn) { setError("Choose a check-in date from today and a later check-out date."); return; }
     onSearch({ ...values, location: values.location.trim() });
   }}>
+    <SearchShortcuts label="Popular destinations" options={popularCities.filter(city => ["Makkah", "Al Madinah", "Dubai", "Istanbul"].includes(city))} value={values.location} onSelect={location => { update({ location }); setDestOpen(false); }} />
     <div className="hotel-search-fields grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.1fr)_auto]">
       <div className="min-w-0 space-y-1.5">
         <label htmlFor="hotel-destination" className="text-xs font-medium text-muted-foreground">Destination</label>

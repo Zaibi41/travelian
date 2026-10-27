@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { useState } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { umrahOffers } from "@/data/services/umrah";
 import { DEFAULT_UMRAH_SEARCH, type UmrahSearchValues } from "@/lib/umrah-search";
@@ -29,4 +29,16 @@ describe("shared Umrah search form", () => {
     expect(screen.queryByRole("button", { name: /Travelers|Clear search/ })).not.toBeInTheDocument();
     expect(submit).not.toHaveBeenCalled();
   });
+  it("prefills a departure city without automatically searching", () => {
+    const submit = vi.fn();
+    render(<Harness submit={submit} />);
+    const karachi = within(screen.getByRole("group", { name: "Departure cities" })).getByRole("button", { name: "Karachi" });
+    fireEvent.click(karachi);
+    expect(screen.getByRole("combobox", { name: "Departure City" })).toHaveTextContent("Karachi");
+    expect(karachi).toHaveAttribute("aria-pressed", "true");
+    expect(submit).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+    expect(submit).toHaveBeenCalledWith(expect.objectContaining({ city: "Karachi", travelers: { adults: 2, children: 1, infants: 1, cabin: "Economy" } }));
+  });
+
 });
