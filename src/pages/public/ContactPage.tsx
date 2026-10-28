@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { SearchPageHero, PageSection } from "@/components/public/SearchPageShell";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
-import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
+import { SUPPORT_ADDRESS, SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
@@ -76,7 +76,7 @@ export default function ContactPage() {
             </Card>
             <Card className="rounded-xl border-border/70 shadow-card">
               <CardContent className="space-y-4 p-5">
-                <div className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" /><div><h3 className="text-sm font-semibold">Office</h3><p className="mt-1 text-sm text-muted-foreground">589-J2, Johar Town Lahore</p></div></div>
+                <div className="flex items-start gap-3"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" /><div><h3 className="text-sm font-semibold">Office</h3><p className="mt-1 text-sm text-muted-foreground">{SUPPORT_ADDRESS}</p></div></div>
                 <div className="flex items-start gap-3"><Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" /><div><h3 className="text-sm font-semibold">Working Hours</h3><p className="mt-1 text-sm text-muted-foreground">Mon-Sat: 9AM - 6PM (PKT)</p></div></div>
               </CardContent>
             </Card>

@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export const SEARCH_PAGE_CONTAINER = "travelian-container";
@@ -24,28 +24,9 @@ export function PageSection({ children, className }: { children: ReactNode; clas
   return <section className={cn("py-8 md:py-10", className)}><div className={SEARCH_PAGE_CONTAINER}>{children}</div></section>;
 }
 
-/** Shared responsive space; retain extra space added by multi-city legs until resize. */
+/** Shared responsive baseline; active content grows and collapses in normal flow. */
 export function SearchContent({ children, stable = true }: { children: ReactNode; stable?: boolean }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [minimum, setMinimum] = useState<number>();
-  useLayoutEffect(() => {
-    const element = ref.current;
-    if (!element || !stable) return;
-    const observer = new ResizeObserver(([entry]) => {
-      const height = entry.borderBoxSize?.[0]?.blockSize ?? element.getBoundingClientRect().height;
-      setMinimum(previous => Math.max(previous ?? 0, height));
-    });
-    let width = window.innerWidth;
-    const reset = () => {
-      if (window.innerWidth === width) return;
-      width = window.innerWidth;
-      setMinimum(undefined);
-    };
-    observer.observe(element);
-    window.addEventListener("resize", reset);
-    return () => { observer.disconnect(); window.removeEventListener("resize", reset); };
-  }, [stable]);
-  return <div ref={ref} className={stable ? "unified-search-content" : "p-5 space-y-4"} style={stable ? { minHeight: minimum } : undefined}>
+  return <div className={stable ? "unified-search-content" : "p-5 space-y-4"}>
     {children}
   </div>;
 }
