@@ -1,8 +1,9 @@
+import { ProductValuePills, TravelianTrustStrip } from "@/components/public/ProductTrust";
 import { useSearchParams } from "react-router-dom";
 import { UmrahSearchBar } from "@/components/public/umrah/UmrahSearchBar";
 import { parseUmrahSearch, serializeUmrahSearch } from "@/lib/umrah-search";
 import { useEffect, useMemo, useState } from "react";
-import { SearchPageHero, SearchCard, SEARCH_PAGE_CONTAINER } from "@/components/public/SearchPageShell";
+import { SearchPageHero, SearchCard, SearchContent, SEARCH_PAGE_CONTAINER } from "@/components/public/SearchPageShell";
 import { ProductTabs } from "@/components/public/ProductTabs";
 import { SEO } from "@/components/SEO";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
@@ -49,18 +50,19 @@ export default function PublicPackagesPage() {
         description="Umrah packages from Lahore, Islamabad, Karachi, Multan and Sialkot with Makkah and Madinah hotels, transport and ziarat. Starting-from rates, custom packages on WhatsApp."
       />
 
-      <SearchPageHero title="Plan Your Umrah with Travelian" description="Explore Umrah packages, flights and stay options with Travelian support.">
+      <SearchPageHero title={<><span className="sm:hidden">Umrah with Travelian</span><span className="hidden sm:inline">Plan Your Umrah with Travelian</span></>} description="Find your Umrah package." support={<ProductValuePills product="umrah" />}>
         <SearchCard>
           <ProductTabs active="umrah" />
-          <div className="p-5">
+          <SearchContent>
             <UmrahSearchBar offers={offers} value={draft} onChange={setDraft} onSearch={value => {
               setParams(serializeUmrahSearch(value));
               focusResults();
             }} />
-            <a href={whatsappUrl("Assalam o Alaikum Travelian, I need help with an Umrah package.")} target="_blank" rel="noreferrer" className="mt-2 inline-flex min-h-11 items-center gap-2 rounded text-xs text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><WhatsAppIcon className="h-4 w-4" aria-hidden="true" />Need help? Chat on WhatsApp</a>
-          </div>
+            <a href={whatsappUrl("Assalam o Alaikum Travelian, I need help with an Umrah package.")} target="_blank" rel="noreferrer" className="absolute bottom-1 left-5 inline-flex min-h-11 items-center gap-2 rounded text-xs text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><WhatsAppIcon className="h-4 w-4" aria-hidden="true" />Need help? Chat on WhatsApp</a>
+          </SearchContent>
         </SearchCard>
       </SearchPageHero>
+      <TravelianTrustStrip />
 
       <div className={`${SEARCH_PAGE_CONTAINER} space-y-10 py-8 md:py-10`}>
         <UmrahPackages key={params.toString()} offers={offers} search={search} onResetSearch={() => { setParams(new URLSearchParams()); focusResults(); }} />

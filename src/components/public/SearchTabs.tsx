@@ -2,13 +2,12 @@ import { UmrahSearchBar } from "./umrah/UmrahSearchBar";
 import { DEFAULT_UMRAH_SEARCH, serializeUmrahSearch } from "@/lib/umrah-search";
 import { umrahOffers } from "@/data/services/umrah";
 import { ProductTabs } from "./ProductTabs";
-import { PRODUCT_TABS } from "./product-navigation";
 import { SearchCard, SearchContent } from "./SearchPageShell";
 import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { Search, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format, startOfDay, addDays } from "date-fns";
@@ -21,7 +20,6 @@ import { buildGroupTicketSearchParams } from "@/lib/group-ticketing";
 import { GroupTicketingSearchBar } from "@/components/public/GroupTicketingSearchBar";
 import { HotelSearchBar, type HotelSearchValues } from "@/components/public/HotelSearchBar";
 
-const tabs = PRODUCT_TABS;
 
 
 const tripTypes = [
@@ -113,25 +111,24 @@ function DatePickerField({ id, date, onSelect, placeholder }: { id?: string; dat
 
 type SearchTabsProps = {
   initialTab?: string;
-  visibleTabIds?: string[];
+  showProductNavigation?: boolean;
   flightResultsPath?: string;
   groupInitialValues?: Parameters<typeof GroupTicketingSearchBar>[0]["initialValues"];
   onGroupSearch?: Parameters<typeof GroupTicketingSearchBar>[0]["onSearch"];
 };
 
-const DEFAULT_VISIBLE_TAB_IDS = ["flights", "group-ticketing", "hotels", "umrah"];
+
 
 export function SearchTabs({
   initialTab = "flights",
-  visibleTabIds = DEFAULT_VISIBLE_TAB_IDS,
+  showProductNavigation = true,
   flightResultsPath = "/flights-search",
   groupInitialValues,
   onGroupSearch,
 }: SearchTabsProps = {}) {
   const fieldId = useId();
   const { currency } = useLocale();
-  const visibleTabs = visibleTabIds?.length ? tabs.filter((tab) => visibleTabIds.includes(tab.id)) : tabs;
-  const [activeTab, setActiveTab] = useState(visibleTabs.some((tab) => tab.id === initialTab) ? initialTab : visibleTabs[0]?.id || "flights");
+  const activeTab = initialTab;
   const [tripType, setTripType] = useState("oneway"); // default One-way
   const [travelers, setTravelers] = useState<TravelersValue>({ adults: 1, children: 0, infants: 0, cabin: "Economy" });
   const [departDate, setDepartDate] = useState<Date>();
@@ -153,7 +150,6 @@ export function SearchTabs({
     { from: "", to: "", date: undefined },
   ]);
   const navigate = useNavigate();
-  const location = useLocation();
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
 
@@ -263,12 +259,9 @@ export function SearchTabs({
 
   return (
     <SearchCard>
-      {visibleTabs.length > 1 && <ProductTabs active={activeTab} visibleIds={visibleTabs.map(tab => tab.id)} onSelect={id => {
-        if (id === "flights" && location.pathname.startsWith("/group-ticketing")) { navigate("/"); return; }
-        setActiveTab(id);
-      }} />}
+      {showProductNavigation && <ProductTabs active={activeTab} />}
 
-      <SearchContent stable={visibleTabs.length > 1}>
+      <SearchContent stable={showProductNavigation}>
         {/* Flight-specific controls */}
         {activeTab === "flights" && (
           <>

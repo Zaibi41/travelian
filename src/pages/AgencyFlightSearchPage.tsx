@@ -16,7 +16,7 @@ export default function AgencyFlightSearchPage() {
         </p>
       </div>
 
-      <SearchTabs initialTab="flights" visibleTabIds={["flights"]} flightResultsPath="/admin/flights-search" />
+      <SearchTabs initialTab="flights" showProductNavigation={false} flightResultsPath="/admin/flights-search" />
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="shadow-card">

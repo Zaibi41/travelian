@@ -1,4 +1,5 @@
-import { SearchPageHero, SearchCard } from "@/components/public/SearchPageShell";
+import { ProductValuePills, TravelianTrustStrip } from "@/components/public/ProductTrust";
+import { SearchPageHero, SearchCard, SearchContent } from "@/components/public/SearchPageShell";
 import { ProductTabs } from "@/components/public/ProductTabs";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -103,17 +104,18 @@ export default function PublicHotelsPage() {
 
   return (
     <div>
-      <SearchPageHero title="Find Hotels with Travelian" description="Search stays by destination, dates and guests.">
+      <SearchPageHero title="Find Hotels with Travelian" description="Find your next stay." support={<ProductValuePills product="hotels" />}>
         <SearchCard>
           <ProductTabs active="hotels" />
-          <div className="p-5">
+          <SearchContent>
           <HotelSearchBar initialValues={searchValues} loading={apiStatus === "loading"} onSearch={values => {
             setParams(new URLSearchParams({ location: values.location, checkIn: values.checkIn, checkOut: values.checkOut, adults: String(values.adults), children: String(values.children), rooms: String(values.rooms), currency }));
             setRetry(value => value + 1);
           }} />
-          </div>
+          </SearchContent>
         </SearchCard>
       </SearchPageHero>
+      <TravelianTrustStrip />
 
       <div className="travelian-container py-6">
         {/* Toolbar */}

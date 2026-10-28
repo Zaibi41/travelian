@@ -217,10 +217,10 @@
 }
 
 @layer components {
-  /* One measured budget for all homepage search modes, including validation space.
+  /* One measured budget for all public product search modes, including validation space.
      Shorter forms align their primary action to the same baseline. No clipping. */
   .unified-search-content {
-    --search-content-height: 25rem;
+    --search-content-height: 28.5rem;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -247,10 +247,10 @@
     .unified-search-content { --search-content-height: 22rem; }
   }
   @media (min-width: 768px) {
-    .unified-search-content { --search-content-height: 19rem; }
+    .unified-search-content { --search-content-height: 21.5rem; }
   }
   @media (min-width: 1024px) {
-    .unified-search-content { --search-content-height: 11rem; }
+    .unified-search-content { --search-content-height: 12rem; }
   }
   @media (max-width: 1023px) {
     .unified-search-content {
@@ -287,5 +287,47 @@
     .unified-search-content .hotel-search-fields > :nth-child(4) {
       grid-column: 1 / -1;
     }
+  }
+}
+
+@layer components {
+  /* Shared search surfaces: visible controls without changing their geometry. */
+  .home-search .travelian-search-card :is(input, [role="combobox"], button[aria-haspopup="dialog"]) {
+    border-color: hsl(var(--muted-foreground) / 0.8);
+    background-color: hsl(var(--muted) / 0.55);
+  }
+  .home-search .travelian-search-card :is(input, [role="combobox"], button[aria-haspopup="dialog"]):focus-visible {
+    border-color: hsl(var(--primary));
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+  .home-search .travelian-search-card .unified-search-submit {
+    background-image: none;
+    background-color: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+  .home-search .travelian-search-card .unified-search-submit:not(:disabled):hover {
+    background-color: hsl(var(--primary-hover));
+  }
+  .home-search .travelian-search-card .unified-search-submit:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+}
+
+
+@layer components {
+  @media (max-width: 639px) {
+    .home-search .travelian-search-card button[role="combobox"] {
+      padding-inline: 0.5rem;
+      column-gap: 0.25rem;
+    }
+  }
+}
+
+@layer components {
+  .travelian-navbar :is(a, button):focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
   }
 }

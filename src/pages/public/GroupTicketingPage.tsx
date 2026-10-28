@@ -1,3 +1,4 @@
+import { ProductValuePills, TravelianTrustStrip } from "@/components/public/ProductTrust";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -20,7 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AirlineLogo } from "@/components/public/AirlineLogo";
-import { PageHeader } from "@/components/public/PageHeader";
+import { SearchPageHero } from "@/components/public/SearchPageShell";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { SearchTabs } from "@/components/public/SearchTabs";
 import { whatsappUrl } from "@/lib/site-config";
@@ -676,17 +677,18 @@ export default function GroupTicketingPage() {
       {/* 1. Navbar handled globally */}
 
       {/* 2. Group Ticketing Hero + Search */}
-      <PageHeader
+      <SearchPageHero
         title="Group Ticketing"
-        tagline="Exclusive wholesale fixed-rate group inventory with instant WhatsApp confirmation"
+        description="Find group fares by route."
+        support={<ProductValuePills product="group-ticketing" />}
       >
         <SearchTabs
           initialTab="group-ticketing"
-          visibleTabIds={["flights", "group-ticketing", "hotels"]}
           groupInitialValues={searchFilters}
           onGroupSearch={handleSearch}
         />
-      </PageHeader>
+      </SearchPageHero>
+      <TravelianTrustStrip />
 
       <div className="travelian-container py-10 space-y-12">
         {/* Loading state */}

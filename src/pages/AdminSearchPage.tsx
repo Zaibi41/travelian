@@ -460,7 +460,7 @@ export default function AdminSearchPage() {
       </div>
 
       {activeTab === "flights" && (
-        <SearchTabs initialTab="flights" visibleTabIds={["flights"]} flightResultsPath="/admin/flights-search" />
+        <SearchTabs initialTab="flights" showProductNavigation={false} flightResultsPath="/admin/flights-search" />
       )}
       {activeTab === "hotels" && <HotelSearchPanel hotels={hotels} />}
       {activeTab === "umrah" && (
