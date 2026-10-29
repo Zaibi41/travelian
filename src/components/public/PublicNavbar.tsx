@@ -113,7 +113,7 @@ export function PublicNavbar() {
   const renderLinks = (links: Array<Pick<(typeof PRODUCT_TABS)[number], "label" | "href" | "icon" | "match">>, mobile = false) => links
     .map((link) => {
       const active = link.match.some((path) => path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`));
-      const className = `${mobile ? "min-h-11 px-3 py-3" : "h-full px-1"} inline-flex items-center gap-2 rounded-sm relative whitespace-nowrap ${links === serviceLinks ? "text-xs" : "text-sm"} font-medium transition-colors hover:text-primary ${active ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary" : "text-primary/70"}`;
+      const className = `${mobile ? "min-h-11 px-3 py-2" : "h-full px-1"} inline-flex items-center gap-2 rounded-sm relative whitespace-nowrap text-sm font-medium transition-colors hover:text-primary ${active ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary" : "text-primary/70"}`;
       return <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} aria-current={active ? "page" : undefined} className={className}><link.icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" /><span>{link.label}</span></Link>;
     });
 
@@ -131,22 +131,22 @@ export function PublicNavbar() {
   );
 
   return (
-    <header ref={headerRef} aria-label="Travelian header" className="relative h-[65px] shrink-0">
+    <header ref={headerRef} aria-label="Travelian header" className="relative h-[57px] shrink-0">
       <div ref={element => { navRef.current = element; if (element) element.inert = hidden; }} aria-hidden={hidden} data-header-state={headerState} className={cn("travelian-navbar inset-x-0 top-0 z-[1000] border-b border-border/70 bg-background transition-[transform,opacity,visibility] duration-200 motion-reduce:transition-none [&_a]:focus-visible:ring-2 [&_a]:focus-visible:ring-primary [&_a]:focus-visible:ring-offset-2 [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-primary [&_button]:focus-visible:ring-offset-2", headerState === "sticky" ? "fixed" : "absolute", hidden ? "invisible pointer-events-none -translate-y-full opacity-0" : "visible translate-y-0 opacity-100", headerState === "sticky" && "shadow-sm")}>
         <div className="travelian-container relative">
           <nav aria-label="Main navigation">
-            <div className={cn("flex items-center gap-4 transition-[height] duration-200 motion-reduce:transition-none lg:grid lg:grid-cols-[1fr_auto_1fr]", compact ? "h-[60px]" : "h-16")}>
+            <div className={cn("flex items-center gap-4 transition-[height] duration-200 motion-reduce:transition-none lg:grid lg:grid-cols-[1fr_auto_1fr]", "h-14")}>
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex w-fit shrink-0 items-center justify-self-start" aria-label="Travelian home">
-                <img src="/travelian-logo-wordmark.png" alt="Travelian" className={cn("w-auto max-w-[8rem] object-contain mix-blend-multiply transition-[height] duration-200 motion-reduce:transition-none", compact ? "h-8" : "h-9")} />
+                <img src="/travelian-logo-wordmark.png" alt="Travelian" className={cn("w-auto max-w-[10rem] object-contain mix-blend-multiply transition-[height] duration-200 motion-reduce:transition-none", compact ? "h-10" : "h-11")} />
               </Link>
-              <div className="hidden h-full items-center justify-center gap-2 lg:flex xl:gap-6">{headerState === "sticky" && renderLinks(serviceLinks)}</div>
+              <div className="hidden h-full items-center justify-center gap-2 lg:flex xl:gap-4">{headerState === "sticky" && renderLinks(serviceLinks)}</div>
               <div aria-hidden="true" className="hidden lg:block" />
               <button ref={menuButtonRef} type="button" className="ml-auto flex h-11 w-11 items-center justify-center rounded-lg text-primary hover:bg-accent lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(open => !open)}>
                 {mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
               </button>
             </div>
             {mobileOpen && (
-              <div id="mobile-navigation" className="max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-border bg-background py-3 lg:hidden">
+              <div id="mobile-navigation" className="max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-t border-border bg-background py-2 lg:hidden">
                 <section aria-label="Services">
                   <h2 className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Services</h2>
                   <div className="grid gap-1">{renderLinks(serviceLinks, true)}</div>
