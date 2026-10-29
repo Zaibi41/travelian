@@ -70,7 +70,7 @@ function DatePickerField({ id, date, onSelect, placeholder }: { id?: string; dat
           </button>
         </PopoverTrigger>
           <PopoverContent
-            className="z-[1120] max-h-[min(var(--radix-popover-content-available-height),24rem)] w-[var(--radix-popover-trigger-width)] min-w-[18rem] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
+            className="z-[1120] max-h-[min(var(--radix-popover-content-available-height),24rem)] w-auto min-w-[18rem] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
             align="start"
             side="bottom"
             sideOffset={8}
@@ -271,13 +271,13 @@ export function SearchTabs({
                     <div className="relative">
                       {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">From</label>}
                       <div className="relative">
-                        <AirportCombobox value={String(seg.from || "")} onChange={code => updateSegment(idx, "from", code)} placeholder="From airport" />
+                        <AirportCombobox value={String(seg.from || "")} onChange={code => updateSegment(idx, "from", code)} placeholder="Origin" />
                       </div>
                     </div>
                     <div className="relative">
                       {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>}
                       <div className="relative">
-                        <AirportCombobox value={String(seg.to || "")} onChange={code => updateSegment(idx, "to", code)} placeholder="To airport" iconVariant="arrival" />
+                        <AirportCombobox value={String(seg.to || "")} onChange={code => updateSegment(idx, "to", code)} placeholder="Destination" iconVariant="arrival" />
                       </div>
                     </div>
                     <div>
@@ -317,7 +317,7 @@ export function SearchTabs({
                 <div className="unified-search-flight-grid grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-end">
                   <div className="relative">
                     <label htmlFor={`${fieldId}-from`} className="mb-1 block text-xs font-medium text-muted-foreground">From</label>
-                    <AirportCombobox id={`${fieldId}-from`} value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="From" invalid={!!errors.from} />
+                    <AirportCombobox id={`${fieldId}-from`} value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="Origin" invalid={!!errors.from} />
                   </div>
                   <div className="hidden md:flex items-center justify-center pb-1.5">
                     <button
@@ -331,7 +331,7 @@ export function SearchTabs({
                   </div>
                   <div className="relative">
                     <label htmlFor={`${fieldId}-to`} className="mb-1 block text-xs font-medium text-muted-foreground">To</label>
-                    <AirportCombobox id={`${fieldId}-to`} value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To" invalid={!!errors.to} iconVariant="arrival" />
+                    <AirportCombobox id={`${fieldId}-to`} value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="Destination" invalid={!!errors.to} iconVariant="arrival" />
                   </div>
                   <div className="min-w-0">
                     <label htmlFor={`${fieldId}-depart`} className="mb-1 block text-xs font-medium text-muted-foreground">Departure Date</label>
@@ -357,7 +357,7 @@ export function SearchTabs({
                 <div className="unified-search-flight-grid grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-end">
                   <div className="relative">
                     <label htmlFor={`${fieldId}-from`} className="mb-1 block text-xs font-medium text-muted-foreground">From</label>
-                    <AirportCombobox id={`${fieldId}-from`} value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="From" invalid={!!errors.from} />
+                    <AirportCombobox id={`${fieldId}-from`} value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="Origin" invalid={!!errors.from} />
                   </div>
                   <div className="hidden md:flex items-center justify-center pb-1.5">
                     <button
@@ -371,7 +371,7 @@ export function SearchTabs({
                   </div>
                   <div className="relative">
                     <label htmlFor={`${fieldId}-to`} className="mb-1 block text-xs font-medium text-muted-foreground">To</label>
-                    <AirportCombobox id={`${fieldId}-to`} value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="To" invalid={!!errors.to} iconVariant="arrival" />
+                    <AirportCombobox id={`${fieldId}-to`} value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="Destination" invalid={!!errors.to} iconVariant="arrival" />
                   </div>
                   <div className="min-w-0">
                     <label htmlFor={`${fieldId}-depart`} className="mb-1 block text-xs font-medium text-muted-foreground">Departure Date</label>

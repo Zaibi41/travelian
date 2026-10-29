@@ -1,3 +1,4 @@
+import { makeRoomBelowField } from "@/hooks/use-below-field";
 import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +18,10 @@ export function SearchPageHero({ title, description, children, support, compact 
 }
 
 export function SearchCard({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("travelian-search-card relative z-10 w-full rounded-xl border border-border/70 bg-card shadow-card", className)}>{children}</div>;
+  return <div onFocusCapture={event => {
+    const field = event.target as HTMLElement;
+    if (event.currentTarget.contains(field) && field.matches("input, select, textarea")) makeRoomBelowField(field);
+  }} className={cn("travelian-search-card relative z-10 w-full rounded-xl border border-border/70 bg-card shadow-card", className)}>{children}</div>;
 }
 
 export function PageSection({ children, className }: { children: ReactNode; className?: string }) {

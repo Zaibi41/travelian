@@ -1,5 +1,33 @@
 import { useCallback, useLayoutEffect, useState, type ForwardedRef } from "react";
 
+/** Bring the search card into view, then keep sufficient room below its fields. */
+export function makeRoomBelowField(trigger: HTMLElement) {
+  if (trigger.closest("header")) return;
+  const viewport = window.visualViewport;
+  const bottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
+  const rect = trigger.getBoundingClientRect();
+  const card = trigger.closest<HTMLElement>(".travelian-search-card");
+  if (card && !trigger.closest('[role="dialog"]')) {
+    const cardDelta = card.getBoundingClientRect().top - 16;
+    // Long mobile/multi-city forms must keep the actual active field visible too.
+    const fieldDelta = rect.bottom - (bottom - Math.min(320, bottom / 2));
+    const delta = Math.max(cardDelta, fieldDelta);
+    if (Math.abs(delta) > 2) window.scrollBy({ top: delta, behavior: "instant" });
+    return;
+  }
+  if (bottom - rect.bottom >= Math.min(440, bottom - 100)) return;
+  let parent = trigger.parentElement;
+  while (parent && parent !== document.body) {
+    if (/(auto|scroll)/.test(getComputedStyle(parent).overflowY) && parent.scrollHeight > parent.clientHeight) {
+      parent.scrollTop += Math.max(0, rect.top - Math.max(72, parent.getBoundingClientRect().top + 12));
+      return;
+    }
+    parent = parent.parentElement;
+  }
+  if (trigger.closest('[role="dialog"]')) return;
+  window.scrollBy({ top: Math.max(0, rect.top - 72), behavior: "instant" });
+}
+
 /** Keep field overlays below their anchor, with horizontal collision handling. */
 export function useBelowField<T extends HTMLElement>(forwardedRef: ForwardedRef<T>) {
   const [node, setNode] = useState<T | null>(null);
@@ -22,6 +50,13 @@ export function useBelowField<T extends HTMLElement>(forwardedRef: ForwardedRef<
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => { setViewportHeight(window.innerHeight); measure(); });
     };
+    if (node.id) {
+      const trigger = Array.from(document.querySelectorAll<HTMLElement>("[aria-controls]")).find(element => {
+        const target = document.getElementById(element.getAttribute("aria-controls") ?? "");
+        return target === node || (target !== null && node.contains(target));
+      });
+      if (trigger) makeRoomBelowField(trigger);
+    }
     measure();
     window.addEventListener("resize", update);
     window.addEventListener("scroll", update, true);

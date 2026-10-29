@@ -1,3 +1,4 @@
+import { makeRoomBelowField } from "@/hooks/use-below-field";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { addDays, format, startOfDay } from "date-fns";
@@ -53,6 +54,7 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
   useEffect(() => { setValues(initialValues); setError(""); }, [initialValues]);
   useEffect(() => {
     if (!destOpen) return;
+    if (destRef.current) makeRoomBelowField(destRef.current);
     const updateRect = () => {
       const rect = destRef.current?.getBoundingClientRect();
       if (rect) setDestRect({ left: rect.left, top: rect.bottom + 8, width: rect.width });

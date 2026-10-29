@@ -1,15 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, ChevronsUpDown, Loader2, PlaneLanding, PlaneTakeoff } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import type { Airport } from "@/data/airports";
 import { formatAirportSubtitle, getCountryName } from "@/lib/country-names";
 import { cn } from "@/lib/utils";
@@ -90,14 +81,20 @@ function airportMatchScore(airport: Airport, search: string) {
 
 export function AirportCombobox({ id, value, onChange, placeholder = "Select airport", className, invalid, iconVariant = "departure" }: Props) {
   const [open, setOpen] = useState(false);
+  const [keyboardFocus, setKeyboardFocus] = useState(false);
+  const pointerFocus = useRef(false);
   const [query, setQuery] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
+  const listId = useId();
+  const fieldRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const [allAirports, setAllAirports] = useState<Airport[] | null>(airportCache);
   const [isLoadingAirports, setIsLoadingAirports] = useState(false);
   const [loadError, setLoadError] = useState("");
   const matchedAirport = allAirports?.find(airport => airport.code === value);
   const selected = (matchedAirport ? resolveAirport(matchedAirport) : undefined) || popularAirportByCode.get(value);
   const FieldIcon = iconVariant === "departure" ? PlaneTakeoff : PlaneLanding;
-  const label = selected ? `${selected.code} ${selected.city}` : value || placeholder;
+  const label = selected ? `${selected.code} ${selected.city}` : value;
 
   const loadFullAirports = () => {
     if (allAirports || isLoadingAirports) return;
@@ -131,85 +128,104 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
       .slice(0, trimmedQuery ? 80 : 24);
   }, [allAirports, query]);
 
+  useEffect(() => { setActiveIndex(0); }, [query, open]);
+  useEffect(() => {
+    if (open) listRef.current?.querySelector<HTMLElement>(`[data-active="true"]`)?.scrollIntoView({ block: "nearest" });
+  }, [activeIndex, open]);
+
+  const selectAirport = (airport: Airport) => {
+    onChange(airport.code);
+    setOpen(false);
+    setQuery("");
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          id={id}
-          type="button"
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "h-12 min-w-0 w-full justify-between overflow-hidden rounded-xl border-muted bg-muted/30 px-3 text-left text-sm font-normal",
-            !selected && !value && "text-muted-foreground",
-            invalid && "border-destructive",
-            className,
-          )}
-        >
-          <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-            <FieldIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className="truncate">{label}</span>
-          </span>
-          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        style={{ overflowY: "hidden" }}
-        className="flex flex-col max-h-[min(var(--radix-popover-content-available-height),24rem)] w-[var(--radix-popover-trigger-width)] min-w-[min(20rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
-        align="start"
-        side="bottom"
-        sideOffset={8}
-        collisionPadding={16}
-      >
-        <Command shouldFilter={false} className="h-auto min-h-0 [&_[cmdk-input-wrapper]]:shrink-0">
-          <CommandInput
-            value={query}
-            onValueChange={(nextQuery) => {
-              setQuery(nextQuery);
-              if (nextQuery.trim().length >= 2) loadFullAirports();
+      <PopoverAnchor asChild>
+        <div ref={fieldRef} className={cn(
+          "flex h-12 min-w-0 w-full items-center gap-2 rounded-xl border border-muted-foreground/80 bg-muted/30 px-3 text-sm",
+          keyboardFocus && "ring-2 ring-ring ring-offset-2",
+          invalid && "border-destructive", className,
+        )}>
+          <FieldIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <input
+            id={id}
+            role="combobox"
+            aria-label={placeholder}
+            aria-autocomplete="list"
+            aria-haspopup="listbox"
+            aria-expanded={open}
+            aria-controls={listId}
+            aria-activedescendant={open && shownAirports[activeIndex] ? `${listId}-${shownAirports[activeIndex].code}` : undefined}
+            aria-invalid={invalid || undefined}
+            autoComplete="off"
+            style={{ outline: "none" }}
+            placeholder={placeholder}
+            value={open ? query : label}
+            onPointerDown={() => { pointerFocus.current = true; setKeyboardFocus(false); }}
+            onFocus={() => { setKeyboardFocus(!pointerFocus.current); pointerFocus.current = false; setQuery(""); setOpen(true); }}
+            onBlur={() => { setKeyboardFocus(false); pointerFocus.current = false; }}
+            onClick={() => setOpen(true)}
+            onChange={event => {
+              setQuery(event.target.value);
+              setOpen(true);
+              if (event.target.value.trim().length >= 2) loadFullAirports();
             }}
-            placeholder="Search city, airport, or IATA code..."
+            onKeyDown={event => {
+              if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                event.preventDefault();
+                if (!open) { setOpen(true); return; }
+                setActiveIndex(current => Math.max(0, Math.min(shownAirports.length - 1, current + (event.key === "ArrowDown" ? 1 : -1))));
+              } else if (event.key === "Enter" && open) {
+                event.preventDefault();
+                if (shownAirports[activeIndex]) selectAirport(shownAirports[activeIndex]);
+              } else if (event.key === "Escape" && open) {
+                event.preventDefault();
+                event.stopPropagation();
+                setOpen(false);
+              } else if (event.key === "Tab") setOpen(false);
+            }}
+            className="h-full min-w-0 flex-1 truncate !border-0 !bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
           />
-          <CommandList className="min-h-0 max-h-[min(calc(var(--radix-popover-content-available-height)-3.25rem),20rem)]">
-            {!isLoadingAirports && !loadError && shownAirports.length === 0 && <CommandEmpty>No airport found.</CommandEmpty>}
-            <CommandGroup heading="Airports">
-              {shownAirports.map((airport) => {
-                const countryName = getCountryName(airport.country);
-                const subtitle = formatAirportSubtitle(airport.name, airport.country);
-                return (
-                  <CommandItem
-                    key={airport.code}
-                    value={`${airport.code} ${airport.city} ${airport.name} ${countryName} ${airport.country}`}
-                    onSelect={() => {
-                      onChange(airport.code);
-                      setOpen(false);
-                    }}
-                    className="min-w-0 gap-2"
-                  >
-                    <Check className={cn("h-4 w-4", value === airport.code ? "opacity-100" : "opacity-0")} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span className="shrink-0 font-semibold">{airport.code}</span>
-                        <span className="truncate">{airport.city}</span>
-                      </div>
-                      <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
-                    </div>
-                  </CommandItem>
-                );
-              })}
-              {isLoadingAirports && (
-                <div className="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading full airport directory...
-                </div>
-              )}
-              {loadError && (
-                <div className="px-3 py-3 text-sm text-destructive">{loadError}</div>
-              )}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+          <ChevronsUpDown aria-hidden="true" className="pointer-events-none h-4 w-4 shrink-0 opacity-50" />
+        </div>
+      </PopoverAnchor>
+      <PopoverContent
+        onOpenAutoFocus={event => event.preventDefault()}
+        onCloseAutoFocus={event => event.preventDefault()}
+        onInteractOutside={event => { if (fieldRef.current?.contains(event.target as Node)) event.preventDefault(); }}
+        style={{ overflowY: "hidden" }}
+        className="flex flex-col w-[var(--radix-popover-trigger-width)] min-w-[min(20rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] p-0"
+        align="start"
+        sideOffset={8}
+      >
+        <div ref={listRef} id={listId} role="listbox" aria-label="Airports" className="min-h-0 max-h-80 flex-1 overflow-y-auto p-1">
+          <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Airports</p>
+          {!isLoadingAirports && !loadError && shownAirports.length === 0 && <p className="py-6 text-center text-sm">No airport found.</p>}
+          {shownAirports.map((airport, index) => (
+            <button
+              key={airport.code}
+              id={`${listId}-${airport.code}`}
+              type="button"
+              role="option"
+              aria-selected={activeIndex === index}
+              data-active={activeIndex === index}
+              tabIndex={-1}
+              onMouseDown={event => event.preventDefault()}
+              onClick={() => selectAirport(airport)}
+              onPointerMove={() => setActiveIndex(index)}
+              className={cn("flex w-full min-w-0 items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm", activeIndex === index && "bg-accent text-accent-foreground")}
+            >
+              <Check aria-hidden="true" className={cn("h-4 w-4 shrink-0", value === airport.code ? "opacity-100" : "opacity-0")} />
+              <span className="min-w-0 flex-1">
+                <span className="flex min-w-0 items-center gap-2"><span className="shrink-0 font-semibold">{airport.code}</span><span className="truncate">{airport.city}</span></span>
+                <span className="block truncate text-xs text-muted-foreground">{formatAirportSubtitle(airport.name, airport.country)}</span>
+              </span>
+            </button>
+          ))}
+          {isLoadingAirports && <div role="status" className="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground"><Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />Loading full airport directory...</div>}
+          {loadError && <p role="status" className="px-3 py-3 text-sm text-destructive">{loadError}</p>}
+        </div>
       </PopoverContent>
     </Popover>
   );

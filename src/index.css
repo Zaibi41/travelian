@@ -291,6 +291,10 @@
 }
 
 @layer components {
+  /* Consistent field borders across every public hero search mode. */
+  .travelian-search-card :is(input, select, [role="combobox"], button[aria-haspopup]):not([aria-invalid="true"]) {
+    border-color: hsl(var(--muted-foreground) / 0.8);
+  }
   /* Shared search surfaces: visible controls without changing their geometry. */
   .home-search .travelian-search-card :is(input, [role="combobox"], button[aria-haspopup="dialog"]) {
     border-color: hsl(var(--muted-foreground) / 0.8);
