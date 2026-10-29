@@ -30,29 +30,11 @@ export function HomeSupplierNetwork() {
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl backdrop-blur-sm sm:p-7 lg:p-8">
           <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-end">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-gold ring-1 ring-white/15">
-                <Network className="h-3 w-3" /> Travel technology
-              </span>
               <h2 className="mt-4 text-2xl font-bold font-display tracking-tight text-white md:text-3xl">
                 Connected Supplier Network
               </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base md:leading-7">
-                Travelian connects flight, hotel and payment capabilities to support wider fare options,
-                secure payments and reliable booking support.
-              </p>
             </div>
 
-            <div className="flex flex-wrap gap-2 lg:justify-end">
-              {capabilities.map((capability) => (
-                <span
-                  key={capability}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/90 ring-1 ring-white/12"
-                >
-                  <BadgeCheck className="h-3.5 w-3.5 text-teal" />
-                  {capability}
-                </span>
-              ))}
-            </div>
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
