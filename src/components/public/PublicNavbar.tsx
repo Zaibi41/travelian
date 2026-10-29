@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CURRENCIES, LANGUAGES, useLocale } from "@/contexts/LocaleContext";
-import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from "@/lib/site-config";
 
 const serviceLinks = [
   { label: "Flights", icon: Plane, href: "/", match: ["/", "/flights-search"] },
@@ -116,12 +116,6 @@ export function PublicNavbar() {
       return <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} aria-current={active ? "page" : undefined} className={className}><link.icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" /><span>{link.label}</span></Link>;
     });
 
-  const requestBookingLink = (
-    <a href={whatsappUrl("Assalam o Alaikum Travelian, I would like to request a booking.")} target="_blank" rel="noreferrer" onClick={() => setMobileOpen(false)} className="inline-flex min-h-11 items-center px-2 text-sm font-medium text-primary hover:underline lg:min-h-0 lg:h-8 lg:text-xs">
-      Request a Booking
-    </a>
-  );
-
   const phoneLink = (
     <a href={`tel:${SUPPORT_PHONE_TEL}`} className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg px-2 text-sm font-medium text-primary hover:bg-accent/60 lg:min-h-0 lg:h-8 lg:text-xs">
       <Phone className="h-4 w-4" aria-hidden="true" /> {SUPPORT_PHONE_DISPLAY}
@@ -135,22 +129,16 @@ export function PublicNavbar() {
 
   return (
     <nav ref={element => { navRef.current = element; if (element) element.inert = !visible; }} aria-hidden={!visible} aria-label="Main navigation" className={cn("travelian-navbar fixed inset-x-0 top-0 z-[1000] shadow-sm transition-[transform,opacity,visibility] duration-200 ease-out motion-reduce:transition-none border-b border-border/70 bg-white [&_a]:focus-visible:ring-2 [&_a]:focus-visible:ring-primary [&_a]:focus-visible:ring-offset-2 [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-primary [&_button]:focus-visible:ring-offset-2", visible ? "visible translate-y-0 opacity-100" : "invisible pointer-events-none -translate-y-full opacity-0")}>
-      <div aria-label="Booking and preferences" className="hidden border-b border-border/50 bg-muted/30 lg:block">
-        <div className="travelian-container flex h-8 items-center justify-between">
-          {requestBookingLink}
-          <div className="flex items-center gap-2">
-            {phoneLink}
-            <LocaleControls key={visible ? "visible" : "hidden"} compact />
-            {signInLink}
-          </div>
-        </div>
-      </div>
-      <div className="travelian-container flex h-16 items-center gap-4 lg:grid lg:grid-cols-[1fr_auto_1fr]">
+      <div className="travelian-container flex h-16 items-center gap-4 lg:grid lg:grid-cols-[auto_minmax(0,1fr)_auto] xl:grid-cols-[1fr_auto_1fr]">
         <Link to="/" onClick={() => setMobileOpen(false)} className="flex w-fit shrink-0 items-center justify-self-start" aria-label="Travelian home">
           <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-9 w-auto max-w-[8rem] object-contain" />
         </Link>
-        <div className="hidden items-center gap-8 lg:flex">{renderLinks()}</div>
-        <div aria-hidden="true" className="hidden justify-self-end lg:block" />
+        <div className="hidden items-center justify-center gap-4 lg:flex xl:gap-6">{renderLinks()}</div>
+        <div aria-label="Account and preferences" className="hidden items-center justify-self-end gap-1 lg:flex">
+          {phoneLink}
+          <LocaleControls key={visible ? "visible" : "hidden"} compact />
+          {signInLink}
+        </div>
         <button ref={menuButtonRef} type="button" className="ml-auto flex h-11 w-11 items-center justify-center rounded-lg text-primary hover:bg-accent lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen((open) => !open)}>
           {mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
         </button>
@@ -159,7 +147,6 @@ export function PublicNavbar() {
         <div id="mobile-navigation" className="travelian-container max-h-[calc(100dvh-4rem)] overflow-y-auto border-t border-border bg-white py-3 lg:hidden">
           <div className="grid gap-1">{renderLinks(true)}</div>
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2">
-            {requestBookingLink}
             {signInLink}
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
