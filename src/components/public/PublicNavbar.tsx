@@ -113,7 +113,7 @@ export function PublicNavbar() {
   const renderLinks = (links: Array<Pick<(typeof PRODUCT_TABS)[number], "label" | "href" | "icon" | "match">>, mobile = false) => links
     .map((link) => {
       const active = link.match.some((path) => path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`));
-      const className = `${mobile ? "min-h-11 px-3 py-3" : "h-full px-1"} inline-flex items-center gap-2 rounded-sm relative whitespace-nowrap text-sm font-medium transition-colors hover:text-primary ${active ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary" : "text-primary/70"}`;
+      const className = `${mobile ? "min-h-11 px-3 py-3" : "h-full px-1"} inline-flex items-center gap-2 rounded-sm relative whitespace-nowrap ${links === serviceLinks ? "text-xs" : "text-sm"} font-medium transition-colors hover:text-primary ${active ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary" : "text-primary/70"}`;
       return <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} aria-current={active ? "page" : undefined} className={className}><link.icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" /><span>{link.label}</span></Link>;
     });
 
