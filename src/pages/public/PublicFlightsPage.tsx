@@ -1,7 +1,5 @@
 import { MAX_MULTI_CITY_FLIGHTS } from "@/lib/flight-search-limits";
-import { SearchPageHero, SearchCard } from "@/components/public/SearchPageShell";
-import { ProductTabs } from "@/components/public/ProductTabs";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -198,6 +196,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [apiStatus, setApiStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [apiMessage, setApiMessage] = useState("");
   const [expirySeconds, setExpirySeconds] = useState(0);
+  const expiryReloaded = useRef(false);
   const [fareCalculatorOpen, setFareCalculatorOpen] = useState(false);
   const [addToQuotations, setAddToQuotations] = useState(false);
   const [detailsFlight, setDetailsFlight] = useState<TravelianFlight | null>(null);
@@ -456,6 +455,17 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return () => window.clearInterval(interval);
   }, [apiStatus, expirySeconds]);
 
+
+  useEffect(() => {
+    if (expirySeconds > 0) {
+      expiryReloaded.current = false;
+      return;
+    }
+    if (!adminMode && apiStatus === "success" && apiFlights.length > 0 && !expiryReloaded.current) {
+      expiryReloaded.current = true;
+      window.location.reload();
+    }
+  }, [adminMode, apiStatus, apiFlights.length, expirySeconds]);
 
   const flights = apiFlights;
   const maxPrice = Math.max(700, ...flights.map(f => f.price));
@@ -1186,12 +1196,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       <h1 className="sr-only">Flight search results: {from} to {to}</h1>
 
       {/* Search summary */}
-      <SearchPageHero compact={adminMode} title={adminMode ? undefined : "Find Flights with Travelian"} description={adminMode ? undefined : "Compare fares and plan your next journey."}>
-        <SearchCard className={adminMode ? "border-0 bg-transparent shadow-none" : undefined}>
-          {!adminMode && <ProductTabs active="flights" />}
-          <div className={cn(adminMode ? "rounded-2xl bg-card/10 px-4 py-3 border border-primary-foreground/10" : "rounded-b-xl bg-card p-5")}>
+      <section aria-label="Flight search summary" className={cn("relative isolate bg-sidebar", adminMode ? "gradient-hero py-2" : "py-4")}>
+        <div className={adminMode ? "px-4 md:px-6" : "travelian-container"}>
+          <div className="rounded-2xl border border-primary-foreground/10 bg-primary-foreground/10 px-4 py-3">
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <div className={cn("flex items-center gap-2 text-primary-foreground text-sm flex-wrap min-w-0", !adminMode && "text-foreground")}>
+              <div className={cn("flex items-center gap-2 text-primary-foreground text-sm flex-wrap min-w-0")}>
                 <Plane className="h-4 w-4 shrink-0" />
                 <span className="min-w-0 max-w-[14rem] truncate font-semibold">{routeLabel(from)}</span>
                 <button
@@ -1208,36 +1217,37 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     setParams(next, { replace: true });
                   }}
                   aria-label="Swap origin and destination"
-                  className={cn("h-6 w-6 rounded-full border border-primary-foreground/30 flex items-center justify-center text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0", !adminMode && "text-muted-foreground")}
+                  className={cn("h-6 w-6 rounded-full border border-primary-foreground/30 flex items-center justify-center text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0")}
                 >
                   <ArrowLeftRight className="h-3.5 w-3.5" />
                 </button>
                 <span className="min-w-0 max-w-[14rem] truncate font-semibold">{routeLabel(to)}</span>
-                <span className={cn("text-primary-foreground/60 text-xs", !adminMode && "text-muted-foreground")}>-</span>
-                <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>{format(departDate, "EEE, MMM d")}</span>
-                {tripType === "roundtrip" && returnDate && <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>to {format(returnDate, "EEE, MMM d")}</span>}
-                {tripType === "multicity" && <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>{segments.length} flights</span>}
-                <span className={cn("text-primary-foreground/60 text-xs", !adminMode && "text-muted-foreground")}>-</span>
-                <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>{formatTravelers(travelers)}</span>
-                <span className={cn("text-primary-foreground/60 text-xs", !adminMode && "text-muted-foreground")}>-</span>
-                <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>{currency}</span>
+                <span className={cn("text-primary-foreground/60 text-xs")}>-</span>
+                <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>{format(departDate, "EEE, MMM d")}</span>
+                {tripType === "roundtrip" && returnDate && <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>to {format(returnDate, "EEE, MMM d")}</span>}
+                {tripType === "multicity" && <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>{segments.length} flights</span>}
+                <span className={cn("text-primary-foreground/60 text-xs")}>-</span>
+                <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>{formatTravelers(travelers)}</span>
+                <span className={cn("text-primary-foreground/60 text-xs")}>-</span>
+                <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>{currency}</span>
                 {apiStatus === "loading" ? (
                   <>
-                    <span className={cn("text-primary-foreground/60 text-xs", !adminMode && "text-muted-foreground")}>-</span>
-                    <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>Searching live fares</span>
+                    <span className={cn("text-primary-foreground/60 text-xs")}>-</span>
+                    <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>Searching live fares</span>
                   </>
                 ) : !searchExpired ? (
                   <>
-                    <span className={cn("text-primary-foreground/60 text-xs", !adminMode && "text-muted-foreground")}>-</span>
-                    <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap", !adminMode && "text-muted-foreground")}>{filtered.length} live {filtered.length === 1 ? "fare" : "fares"}</span>
+                    <span className={cn("text-primary-foreground/60 text-xs")}>-</span>
+                    <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>{filtered.length} live {filtered.length === 1 ? "fare" : "fares"}</span>
                   </>
                 ) : null}
-                {apiStatus === "success" && flights.length > 0 && (
-                  <Badge className={cn("gap-1 rounded-full border-0", searchExpired ? "bg-destructive/20 text-primary-foreground" : "bg-primary-foreground/15 text-primary-foreground")}>
-                    <Clock className="h-3 w-3" />
-                    {searchExpired ? "Search expired" : `Expires in ${expiryLabel}`}
-                  </Badge>
-                )}
+                <Badge role="timer" aria-label="Search expiry" aria-live="off" className={cn("gap-1 rounded-full border-0 whitespace-nowrap tabular-nums", searchExpired ? "bg-destructive/20 text-primary-foreground" : "bg-primary-foreground/15 text-primary-foreground")}>
+                  <Clock className="h-3 w-3" aria-hidden="true" />
+                  {apiStatus === "success" && flights.length > 0
+                    ? searchExpired ? "Search expired" : `Expires in ${expiryLabel}`
+                    : apiStatus === "error" ? "Expiry unavailable"
+                    : apiStatus === "success" ? "No active fares" : "Waiting for fares"}
+                </Badge>
               </div>
               <Button
                 size="sm"
@@ -1249,8 +1259,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               </Button>
             </div>
           </div>
-        </SearchCard>
-      </SearchPageHero>
+        </div>
+      </section>
 
       {/* Date flexibility row with centered "See Price" subtitle */}
       <div className="bg-card border-b">

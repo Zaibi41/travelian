@@ -22,7 +22,7 @@ const quickLinks = [
 
 function LocaleControls({ compact = false }: { compact?: boolean }) {
   const { currency, setCurrency, language, setLanguage } = useLocale();
-  const triggerClass = `flex items-center gap-1.5 rounded px-2 font-medium text-primary transition-colors hover:bg-accent ${compact ? "h-8 text-xs" : "h-11 text-sm"}`;
+  const triggerClass = `flex items-center gap-1 rounded-md px-2 font-medium text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground ${compact ? "h-8 text-xs" : "h-11 text-sm"}`;
   const menuClass = "z-[1120] max-h-[min(24rem,70dvh)] overflow-y-auto rounded-lg bg-popover p-1 shadow-sm";
   return (
     <>
@@ -47,7 +47,7 @@ function LocaleControls({ compact = false }: { compact?: boolean }) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button type="button" aria-label="Select language" className={triggerClass}>
-            <Globe className="h-4 w-4" aria-hidden="true" /> {language.toUpperCase()}
+            <Globe className="h-3.5 w-3.5" aria-hidden="true" /> {language.toUpperCase()}
             <ChevronDown className="h-3 w-3" aria-hidden="true" />
           </button>
         </DropdownMenuTrigger>
@@ -73,7 +73,8 @@ export function PublicNavbar() {
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const headerRef = useRef<HTMLElement>(null);
   const { pathname } = useLocation();
-  const headerState = useSearchHeaderState({ pageKey: pathname, headerRef });
+  const observedHeaderState = useSearchHeaderState({ pageKey: pathname, headerRef });
+  const headerState = pathname === "/flights-search" ? "sticky" : observedHeaderState;
   const compact = headerState !== "top";
   const hidden = headerState === "search";
 
@@ -113,40 +114,40 @@ export function PublicNavbar() {
   const renderLinks = (links: Array<Pick<(typeof PRODUCT_TABS)[number], "label" | "href" | "icon" | "match">>, mobile = false) => links
     .map((link) => {
       const active = link.match.some((path) => path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`));
-      const className = `${mobile ? "min-h-11 px-3 py-2" : "h-full px-1"} inline-flex items-center gap-2 rounded-sm relative whitespace-nowrap text-sm font-medium transition-colors hover:text-primary ${active ? "text-primary after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary" : "text-primary/70"}`;
-      return <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} aria-current={active ? "page" : undefined} className={className}><link.icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" /><span>{link.label}</span></Link>;
+      const className = `${mobile ? "min-h-11 px-3 py-3" : "px-3 py-2"} inline-flex items-center gap-2 rounded-lg whitespace-nowrap text-sm font-semibold transition-colors ${active ? "bg-accent text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`;
+      return <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} aria-current={active ? "page" : undefined} className={className}>{mobile && <link.icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />}<span>{link.label}</span></Link>;
     });
 
   const requestBookingLink = <a href={whatsappUrl("Assalam o Alaikum Travelian, I would like to request a booking.")} target="_blank" rel="noreferrer" onClick={() => setMobileOpen(false)} className="inline-flex min-h-11 items-center rounded px-2 text-sm font-medium text-primary hover:bg-accent lg:min-h-0 lg:h-8 lg:text-xs">Request a Booking</a>;
 
   const phoneLink = (
-    <a href={`tel:${SUPPORT_PHONE_TEL}`} className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg px-2 text-sm font-medium text-primary hover:bg-accent/60 lg:min-h-0 lg:h-8 lg:text-xs">
-      <Phone className="h-4 w-4" aria-hidden="true" /> {SUPPORT_PHONE_DISPLAY}
+    <a href={`tel:${SUPPORT_PHONE_TEL}`} className="inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-sm font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground lg:min-h-0 lg:h-8 lg:text-xs">
+      <Phone className="h-3.5 w-3.5" aria-hidden="true" /> {SUPPORT_PHONE_DISPLAY}
     </a>
   );
   const signInLink = (
-    <Link to="/signin" onClick={() => setMobileOpen(false)} className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded px-3 text-sm font-medium text-primary transition-colors hover:bg-accent lg:h-8 lg:text-xs">
+    <Link to="/signin" onClick={() => setMobileOpen(false)} className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-md px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground lg:h-8 lg:text-xs">
       Sign In
     </Link>
   );
 
   return (
     <header ref={headerRef} aria-label="Travelian header" className="relative h-[57px] shrink-0">
-      <div ref={element => { navRef.current = element; if (element) element.inert = hidden; }} aria-hidden={hidden} data-header-state={headerState} className={cn("travelian-navbar inset-x-0 top-0 z-[1000] border-b border-border/70 bg-background transition-[transform,opacity,visibility] duration-200 motion-reduce:transition-none [&_a]:focus-visible:ring-2 [&_a]:focus-visible:ring-primary [&_a]:focus-visible:ring-offset-2 [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-primary [&_button]:focus-visible:ring-offset-2", headerState === "sticky" ? "fixed" : "absolute", hidden ? "invisible pointer-events-none -translate-y-full opacity-0" : "visible translate-y-0 opacity-100", headerState === "sticky" && "shadow-sm")}>
+      <div ref={element => { navRef.current = element; if (element) element.inert = hidden; }} aria-hidden={hidden} data-header-state={headerState} className={cn("travelian-navbar inset-x-0 top-0 z-[1000] border-b border-border/60 bg-card shadow-sm backdrop-blur-md transition-[transform,opacity,visibility] duration-200 motion-reduce:transition-none [&_a]:focus-visible:ring-2 [&_a]:focus-visible:ring-primary [&_a]:focus-visible:ring-offset-2 [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-primary [&_button]:focus-visible:ring-offset-2", headerState === "sticky" ? "fixed" : "absolute", hidden ? "invisible pointer-events-none -translate-y-full opacity-0" : "visible translate-y-0 opacity-100", headerState === "sticky" && "shadow-sm")}>
         <div className="travelian-container relative">
           <nav aria-label="Main navigation">
             <div className={cn("flex items-center gap-4 transition-[height] duration-200 motion-reduce:transition-none lg:grid lg:grid-cols-[1fr_auto_1fr]", "h-14")}>
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex w-fit shrink-0 items-center justify-self-start" aria-label="Travelian home">
-                <img src="/travelian-logo-wordmark.png" alt="Travelian" className={cn("w-auto max-w-[10rem] object-contain mix-blend-multiply transition-[height] duration-200 motion-reduce:transition-none", compact ? "h-10" : "h-11")} />
+                <img src="/travelian-logo-wordmark.png" alt="Travelian" className={cn("h-8 w-auto max-w-[10rem] object-contain mix-blend-multiply sm:h-9 sm:max-w-[12rem]")} />
               </Link>
-              <div className="hidden h-full items-center justify-center gap-2 lg:flex xl:gap-4">{headerState === "sticky" && renderLinks(serviceLinks)}</div>
+              <div className="hidden h-full items-center justify-center gap-1 lg:flex">{headerState === "sticky" && renderLinks(serviceLinks)}</div>
               <div aria-hidden="true" className="hidden lg:block" />
-              <button ref={menuButtonRef} type="button" className="ml-auto flex h-11 w-11 items-center justify-center rounded-lg text-primary hover:bg-accent lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(open => !open)}>
+              <button ref={menuButtonRef} type="button" className="ml-auto flex h-9 w-9 items-center justify-center rounded-lg border border-border text-foreground hover:bg-muted/60 lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(open => !open)}>
                 {mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
               </button>
             </div>
             {mobileOpen && (
-              <div id="mobile-navigation" className="max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-t border-border bg-background py-2 lg:hidden">
+              <div id="mobile-navigation" className="max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-t border-border bg-card py-4 lg:hidden">
                 <section aria-label="Services">
                   <h2 className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Services</h2>
                   <div className="grid gap-1">{renderLinks(serviceLinks, true)}</div>
@@ -161,7 +162,7 @@ export function PublicNavbar() {
             )}
           </nav>
           <div aria-label="Account and preferences" className="absolute right-5 top-1/2 hidden h-8 -translate-y-1/2 items-center gap-1 sm:right-6 lg:right-8 lg:flex">
-            <div className={compact ? "hidden" : "block"}>{phoneLink}</div>
+            <div className={compact ? pathname === "/flights-search" ? "hidden xl:block" : "hidden" : "block"}>{phoneLink}</div>
             <LocaleControls key={hidden ? "hidden" : "visible"} compact />
             {signInLink}
           </div>

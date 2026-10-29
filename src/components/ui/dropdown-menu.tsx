@@ -3,6 +3,7 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useBelowField } from "@/hooks/use-below-field";
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
 
@@ -56,20 +57,26 @@ DropdownMenuSubContent.displayName = DropdownMenuPrimitive.SubContent.displayNam
 const DropdownMenuContent = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Content>
->(({ className, sideOffset = 4, collisionPadding = 16, ...props }, ref) => (
+>(({ className, sideOffset = 4, style, ...props }, ref) => {
+  const below = useBelowField(ref);
+  return (
   <DropdownMenuPrimitive.Portal>
     <DropdownMenuPrimitive.Content
-      ref={ref}
+      ref={below.ref}
       sideOffset={sideOffset}
-      collisionPadding={collisionPadding}
       className={cn(
         "z-[1120] min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         className,
       )}
       {...props}
+      side="bottom"
+      avoidCollisions
+      collisionPadding={below.collisionPadding}
+      style={{ ...style, maxHeight: "min(24rem, var(--travelian-dropdown-available-height, calc(100dvh - 2rem)))", overflowY: "auto", "--radix-dropdown-menu-content-available-height": "var(--travelian-dropdown-available-height, calc(100dvh - 2rem))" } as React.CSSProperties}
     />
   </DropdownMenuPrimitive.Portal>
-));
+);
+});
 DropdownMenuContent.displayName = DropdownMenuPrimitive.Content.displayName;
 
 const DropdownMenuItem = React.forwardRef<

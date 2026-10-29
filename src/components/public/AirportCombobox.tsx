@@ -155,13 +155,14 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="max-h-[min(var(--radix-popover-content-available-height),24rem)] w-[var(--radix-popover-trigger-width)] min-w-[min(20rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
+        style={{ overflowY: "hidden" }}
+        className="flex flex-col max-h-[min(var(--radix-popover-content-available-height),24rem)] w-[var(--radix-popover-trigger-width)] min-w-[min(20rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
         align="start"
         side="bottom"
         sideOffset={8}
         collisionPadding={16}
       >
-        <Command shouldFilter={false}>
+        <Command shouldFilter={false} className="h-auto min-h-0 [&_[cmdk-input-wrapper]]:shrink-0">
           <CommandInput
             value={query}
             onValueChange={(nextQuery) => {
@@ -170,7 +171,7 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
             }}
             placeholder="Search city, airport, or IATA code..."
           />
-          <CommandList className="max-h-[min(calc(var(--radix-popover-content-available-height)-3.25rem),20rem)]">
+          <CommandList className="min-h-0 max-h-[min(calc(var(--radix-popover-content-available-height)-3.25rem),20rem)]">
             {!isLoadingAirports && !loadError && shownAirports.length === 0 && <CommandEmpty>No airport found.</CommandEmpty>}
             <CommandGroup heading="Airports">
               {shownAirports.map((airport) => {

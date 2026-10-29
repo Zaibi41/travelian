@@ -5,7 +5,6 @@ import { umrahOffers } from "@/data/services/umrah";
 import { ProductTabs } from "./ProductTabs";
 import { SearchCard, SearchContent } from "./SearchPageShell";
 import { useEffect, useId, useState } from "react";
-import { createPortal } from "react-dom";
 import { Search, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -39,21 +38,12 @@ interface MultiCitySegment {
 
 function DatePickerField({ id, date, onSelect, placeholder }: { id?: string; date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string }) {
   const [open, setOpen] = useState(false);
-  const [isMobileCalendar, setIsMobileCalendar] = useState(false);
   const today = startOfDay(new Date());
   const selectDate = (nextDate: Date | undefined) => {
     onSelect(nextDate);
     if (nextDate) setOpen(false);
   };
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const media = window.matchMedia("(max-width: 639px)");
-    const sync = () => setIsMobileCalendar(media.matches);
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
 
   const calendar = (
     <Calendar
@@ -79,7 +69,6 @@ function DatePickerField({ id, date, onSelect, placeholder }: { id?: string; dat
             <span className="hidden min-w-0 truncate sm:block">{date ? format(date, "MMM dd, yyyy") : placeholder}</span>
           </button>
         </PopoverTrigger>
-        {!isMobileCalendar && (
           <PopoverContent
             className="z-[1120] max-h-[min(var(--radix-popover-content-available-height),24rem)] w-[var(--radix-popover-trigger-width)] min-w-[18rem] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
             align="start"
@@ -90,22 +79,8 @@ function DatePickerField({ id, date, onSelect, placeholder }: { id?: string; dat
           >
             {calendar}
           </PopoverContent>
-        )}
       </Popover>
-      {open && isMobileCalendar && typeof document !== "undefined" && createPortal(
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-[1110] bg-slate-950/35"
-            aria-label="Close date picker"
-            onClick={() => setOpen(false)}
-          />
-          <div className="fixed inset-x-3 bottom-3 z-[1120] max-h-[85vh] overflow-y-auto rounded-2xl border bg-popover p-0 text-popover-foreground shadow-elevated">
-            {calendar}
-          </div>
-        </>,
-        document.body,
-      )}
+
     </>
   );
 }

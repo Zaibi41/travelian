@@ -1,0 +1,47 @@
+import { useCallback, useLayoutEffect, useState, type ForwardedRef } from "react";
+
+/** Keep field overlays below their anchor, with horizontal collision handling. */
+export function useBelowField<T extends HTMLElement>(forwardedRef: ForwardedRef<T>) {
+  const [node, setNode] = useState<T | null>(null);
+  const [viewportHeight, setViewportHeight] = useState(() => typeof window === "undefined" ? 0 : window.innerHeight);
+  const ref = useCallback((element: T | null) => {
+    setNode(element);
+    if (typeof forwardedRef === "function") forwardedRef(element);
+    else if (forwardedRef) forwardedRef.current = element;
+  }, [forwardedRef]);
+  const measure = useCallback(() => {
+    if (!node) return;
+    const viewport = window.visualViewport;
+    const bottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight;
+    node.style.setProperty("--travelian-dropdown-available-height", `${Math.max(0, bottom - node.getBoundingClientRect().top - 12)}px`);
+  }, [node]);
+  useLayoutEffect(() => {
+    if (!node) return;
+    let frame = 0;
+    const update = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => { setViewportHeight(window.innerHeight); measure(); });
+    };
+    measure();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    const placement = new MutationObserver(update);
+    if (node.parentElement) placement.observe(node.parentElement, { attributes: true, attributeFilter: ["style"] });
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      placement.disconnect();
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+    };
+  }, [node, measure]);
+  // Extend only the vertical collision boundary so Radix never flips upwards.
+  // Horizontal collision detection remains active; actual height is capped below.
+  return { ref, measure, collisionPadding: { top: 0, bottom: -viewportHeight, left: 16, right: 16 } };
+}

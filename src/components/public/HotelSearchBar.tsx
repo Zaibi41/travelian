@@ -107,6 +107,7 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
                 top: destRect.top,
                 width: destRect.width,
                 maxWidth: "calc(100vw - 1rem)",
+                maxHeight: Math.max(0, Math.min(288, window.innerHeight - destRect.top - 12)),
               }}
             >
               <p className="mb-2 text-xs font-semibold text-muted-foreground">Search By City, District, Region, Hotel Name</p>
