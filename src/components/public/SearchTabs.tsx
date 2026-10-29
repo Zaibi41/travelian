@@ -65,8 +65,8 @@ function DatePickerField({ id, date, onSelect, placeholder }: { id?: string; dat
             !date && "text-muted-foreground"
           )}>
             <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span className="min-w-0 truncate sm:hidden">{date ? format(date, "dd MMM yy") : placeholder}</span>
-            <span className="hidden min-w-0 truncate sm:block">{date ? format(date, "MMM dd, yyyy") : placeholder}</span>
+            <span className="min-w-0 truncate sm:hidden">{date ? format(date, "EEE, dd MMM yy") : placeholder}</span>
+            <span className="hidden min-w-0 truncate sm:block">{date ? format(date, "EEE, MMM dd, yyyy") : placeholder}</span>
           </button>
         </PopoverTrigger>
           <PopoverContent
