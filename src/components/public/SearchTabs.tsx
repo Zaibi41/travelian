@@ -8,7 +8,7 @@ import { useEffect, useId, useState } from "react";
 import { Search, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { format, startOfDay, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -58,8 +58,8 @@ function DatePickerField({ id, date, onSelect, placeholder }: { id?: string; dat
 
   return (
     <>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
           <button id={id} type="button" className={cn(
             "flex items-center gap-2 w-full h-12 bg-muted/30 border border-muted rounded-xl px-3 text-sm text-left transition-colors hover:border-primary/30",
             !date && "text-muted-foreground"
@@ -68,18 +68,14 @@ function DatePickerField({ id, date, onSelect, placeholder }: { id?: string; dat
             <span className="min-w-0 truncate sm:hidden">{date ? format(date, "EEE, dd MMM yy") : placeholder}</span>
             <span className="hidden min-w-0 truncate sm:block">{date ? format(date, "EEE, MMM dd, yyyy") : placeholder}</span>
           </button>
-        </PopoverTrigger>
-          <PopoverContent
-            className="z-[1120] max-h-[min(var(--radix-popover-content-available-height),24rem)] w-auto min-w-[18rem] max-w-[calc(100vw-2rem)] overflow-hidden p-0"
-            align="start"
-            side="bottom"
-            sideOffset={8}
-            avoidCollisions
-            collisionPadding={16}
-          >
-            {calendar}
-          </PopoverContent>
-      </Popover>
+        </DialogTrigger>
+        <DialogContent aria-describedby={undefined} className="flex max-h-[90dvh] w-fit max-w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden rounded-xl bg-card p-0 sm:max-w-[calc(100vw-2rem)]">
+          <DialogHeader className="shrink-0 border-b border-border px-4 py-4 pr-14">
+            <DialogTitle>{placeholder === "Select date" ? "Select flight date" : `Select ${placeholder.toLowerCase()}`}</DialogTitle>
+          </DialogHeader>
+          <div className="min-h-0 overflow-y-auto">{calendar}</div>
+        </DialogContent>
+      </Dialog>
 
     </>
   );
