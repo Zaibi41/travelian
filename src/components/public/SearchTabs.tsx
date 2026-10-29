@@ -1,3 +1,4 @@
+import { MAX_MULTI_CITY_FLIGHTS } from "@/lib/flight-search-limits";
 import { UmrahSearchBar } from "./umrah/UmrahSearchBar";
 import { DEFAULT_UMRAH_SEARCH, serializeUmrahSearch } from "@/lib/umrah-search";
 import { umrahOffers } from "@/data/services/umrah";
@@ -240,9 +241,9 @@ export function SearchTabs({
   };
 
   const addMultiCitySegment = () => {
-    if (multiCitySegments.length < 6) {
-      setMultiCitySegments([...multiCitySegments, { from: "", to: "", date: undefined }]);
-    }
+    setMultiCitySegments(current => current.length < MAX_MULTI_CITY_FLIGHTS
+      ? [...current, { from: "", to: "", date: undefined }]
+      : current);
   };
 
   const updateSegment = (index: number, field: keyof MultiCitySegment, value: string | Date | undefined) => {
@@ -325,7 +326,8 @@ export function SearchTabs({
                   <button
                     type="button"
                     onClick={addMultiCitySegment}
-                    className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                    disabled={multiCitySegments.length >= MAX_MULTI_CITY_FLIGHTS}
+                    className="disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
                   >
                     <Plus className="h-4 w-4" /> Add Flight
                   </button>

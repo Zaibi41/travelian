@@ -1,3 +1,4 @@
+import { MAX_MULTI_CITY_FLIGHTS } from "@/lib/flight-search-limits";
 import { SearchPageHero, SearchCard } from "@/components/public/SearchPageShell";
 import { ProductTabs } from "@/components/public/ProductTabs";
 import { useEffect, useMemo, useState } from "react";
@@ -1906,7 +1907,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     <Button type="button" variant="outline" size="sm" className="shrink-0" disabled={editSegments.length <= 2} onClick={() => setEditSegments((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Remove</Button>
                   </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" onClick={() => setEditSegments((current) => [...current, { from: "", to: "", date: undefined }])}>Add flight</Button>
+                <Button type="button" variant="outline" size="sm" disabled={editSegments.length >= MAX_MULTI_CITY_FLIGHTS} onClick={() => setEditSegments((current) => current.length < MAX_MULTI_CITY_FLIGHTS ? [...current, { from: "", to: "", date: undefined }] : current)}>Add flight</Button>
               </div>
             ) : (
             <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">

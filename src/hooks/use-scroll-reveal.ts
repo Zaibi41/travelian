@@ -1,43 +1,72 @@
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState, type RefObject } from "react";
 
-interface ScrollRevealOptions {
-  pageKey?: string;
-  revealAt?: number;
-  hideAt?: number;
-  /** Pages such as auth use a dedicated content scroller rather than window. */
-  scrollContainerSelector?: string;
-}
+type HeaderState = "top" | "search" | "sticky";
 
-export function useScrollReveal({ pageKey, revealAt = 100, hideAt = 32, scrollContainerSelector }: ScrollRevealOptions = {}) {
-  const [visible, setVisible] = useState(false);
+/** Observe document-flow elements, never the moving/fixed navigation itself. */
+export function useSearchHeaderState({ pageKey, headerRef }: { pageKey: string; headerRef: RefObject<HTMLElement> }): HeaderState {
+  const [state, setState] = useState<HeaderState>("top");
 
-  useEffect(() => {
-    let frame: number | null = null;
-    let initial = true;
-    const readPosition = () => {
-      frame = null;
-      const container = scrollContainerSelector ? document.querySelector<HTMLElement>(scrollContainerSelector) : null;
-      const top = Math.max(0, container ? container.scrollTop : window.scrollY);
-      if (initial) { setVisible(top >= revealAt); initial = false; }
-      else setVisible(current => current ? top > hideAt : top >= revealAt);
+  useLayoutEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    let disposed = false;
+    let headerVisible = header.getBoundingClientRect().bottom > 0;
+    let searchPassed = false;
+    let searchObservers: IntersectionObserver[] = [];
+    let pendingTarget: MutationObserver | undefined;
+    const publish = () => { if (!disposed) setState(headerVisible ? "top" : searchPassed ? "sticky" : "search"); };
+
+    const observeSearch = (target: Element) => {
+      if (disposed) return;
+      searchObservers.forEach(observer => observer.disconnect());
+      searchPassed = target.getBoundingClientRect().bottom <= -8;
+      publish();
+      // Reveal only after the product tabs are 8px above the viewport. Hide once 8px
+      // re-enters. Separate observer margins preserve this small dead zone.
+      const reveal = new IntersectionObserver(([entry]) => {
+        if (!entry.isIntersecting && entry.boundingClientRect.bottom <= (entry.rootBounds?.top ?? -8)) {
+          searchPassed = true;
+          publish();
+        }
+      }, { rootMargin: "8px 0px 0px 0px", threshold: 0 });
+      const hide = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting || entry.boundingClientRect.top >= (entry.rootBounds?.bottom ?? window.innerHeight)) {
+          searchPassed = false;
+          publish();
+        }
+      }, { rootMargin: "-8px 0px 0px 0px", threshold: 0 });
+      reveal.observe(target);
+      hide.observe(target);
+      searchObservers = [reveal, hide];
     };
-    const schedule = () => {
-      if (frame === null) frame = window.requestAnimationFrame(readPosition);
-    };
-    const onContainerScroll = (event: Event) => {
-      if (event.target instanceof HTMLElement && scrollContainerSelector && event.target.matches(scrollContainerSelector)) schedule();
-    };
-    readPosition();
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("pageshow", schedule);
-    document.addEventListener("scroll", onContainerScroll, { passive: true, capture: true });
+
+    const headerObserver = new IntersectionObserver(([entry]) => {
+      headerVisible = entry.isIntersecting;
+      publish();
+    }, { threshold: 0 });
+    headerObserver.observe(header);
+
+    const search = document.querySelector("[data-product-search-navigation]");
+    // Content-only pages still get a compact header after the normal header
+    // leaves view. An auth page's own scroller does not move its outer header.
+    observeSearch(search ?? header);
+    if (!search) {
+      pendingTarget = new MutationObserver(() => {
+        const mountedSearch = document.querySelector("[data-product-search-navigation]");
+        if (!mountedSearch) return;
+        pendingTarget?.disconnect();
+        observeSearch(mountedSearch);
+      });
+      pendingTarget.observe(document.querySelector("main") ?? document.body, { childList: true, subtree: true });
+    }
+
     return () => {
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("pageshow", schedule);
-      document.removeEventListener("scroll", onContainerScroll, true);
-      if (frame !== null) window.cancelAnimationFrame(frame);
+      disposed = true;
+      headerObserver.disconnect();
+      searchObservers.forEach(observer => observer.disconnect());
+      pendingTarget?.disconnect();
     };
-  }, [pageKey, revealAt, hideAt, scrollContainerSelector]);
+  }, [pageKey, headerRef]);
 
-  return visible;
+  return state;
 }
