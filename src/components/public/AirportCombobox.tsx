@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, ChevronsUpDown, Loader2, Plane, PlaneLanding } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2, PlaneLanding, PlaneTakeoff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -96,8 +96,8 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
   const [loadError, setLoadError] = useState("");
   const matchedAirport = allAirports?.find(airport => airport.code === value);
   const selected = (matchedAirport ? resolveAirport(matchedAirport) : undefined) || popularAirportByCode.get(value);
+  const FieldIcon = iconVariant === "departure" ? PlaneTakeoff : PlaneLanding;
   const label = selected ? `${selected.code} ${selected.city}` : value || placeholder;
-  const FieldIcon = iconVariant === "arrival" ? PlaneLanding : Plane;
 
   const loadFullAirports = () => {
     if (allAirports || isLoadingAirports) return;
@@ -148,7 +148,7 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
           )}
         >
           <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-            <FieldIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <FieldIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground" />
             <span className="truncate">{label}</span>
           </span>
           <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
