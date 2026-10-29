@@ -2,7 +2,7 @@ import { PRODUCT_TABS } from "./product-navigation";
 import { useSearchHeaderState } from "@/hooks/use-scroll-reveal";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Globe, Menu, Phone, X, Mail, Info } from "lucide-react";
+import { ChevronDown, Globe, Menu, Phone, X, Info } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   DropdownMenu,
@@ -17,7 +17,6 @@ import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/sit
 
 const serviceLinks = PRODUCT_TABS;
 const quickLinks = [
-  { label: "Contact", href: "/contact", icon: Mail, match: ["/contact"] },
   { label: "About Us", href: "/about", icon: Info, match: ["/about"] },
 ];
 
@@ -162,7 +161,6 @@ export function PublicNavbar() {
             )}
           </nav>
           <div aria-label="Account and preferences" className="absolute right-5 top-1/2 hidden h-8 -translate-y-1/2 items-center gap-1 sm:right-6 lg:right-8 lg:flex">
-            <Link to="/contact" aria-current={pathname === "/contact" ? "page" : undefined} className={cn("inline-flex h-8 items-center rounded px-2 text-xs font-medium text-primary hover:bg-accent", pathname === "/contact" && "underline decoration-2 underline-offset-4")}>Contact</Link>
             <div className={compact ? "hidden" : "block"}>{phoneLink}</div>
             <LocaleControls key={hidden ? "hidden" : "visible"} compact />
             {signInLink}
