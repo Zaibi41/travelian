@@ -35,15 +35,17 @@ const trustItems = [
 
 export function TravelianTrustStrip() {
   return (
-    <section aria-label="Booking confidence" className="border-b bg-card py-3 sm:py-4">
+    <section aria-label="Booking confidence" className="w-full border-b bg-card py-3 sm:py-4">
       <div className="travelian-container">
-        <ul className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+        <ul className="m-0 grid w-full list-none grid-cols-1 gap-3 p-0 md:grid-cols-3 md:gap-4">
           {trustItems.map(item => (
-            <li key={item.title} className="flex items-start gap-2.5">
-              <item.icon aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-foreground sm:text-sm">{item.title}</p>
-                <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{item.description}</p>
+            <li key={item.title} className="flex min-w-0 justify-start text-left md:justify-center">
+              <div className="flex w-fit min-w-0 max-w-full items-start gap-2.5">
+                <item.icon aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-foreground sm:text-sm">{item.title}</p>
+                  <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{item.description}</p>
+                </div>
               </div>
             </li>
           ))}

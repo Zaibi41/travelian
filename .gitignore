@@ -36,3 +36,12 @@ deploy-lambda*.zip
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# Local-only automated tests
+*.test.*
+*.spec.*
+/e2e/
+
+# Local-only design and UI behavior notes
+/DESIGN.md
+/UX-CONTRACT.md

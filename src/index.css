@@ -338,3 +338,7 @@
     outline-offset: 3px;
   }
 }
+
+@layer base {
+  html, [data-public-page-scroll] { scroll-padding-top: 6.5rem; }
+}
