@@ -11,6 +11,8 @@ export interface TravelersValue {
   cabin: string;
 }
 
+const MAX_TRAVELERS = 9;
+
 export const CABIN_CLASSES = ["Economy", "Premium Economy", "Business", "First"] as const;
 
 export function formatTravelers(v: TravelersValue): string {
@@ -45,6 +47,7 @@ export function TravelersClassPicker({
   side = "bottom",
 }: Props) {
   const [open, setOpen] = useState(false);
+  const total = value.adults + value.children + value.infants;
 
   const effectiveAlign: "start" | "center" | "end" =
     align === "left" ? "start" : align === "right" ? "end" : align;
@@ -152,7 +155,7 @@ export function TravelersClassPicker({
                       <Minus className="h-4 w-4" />
                     </button>
                     <span className="w-5 text-center text-sm font-semibold tabular-nums">{value[passenger.key]}</span>
-                    <button type="button" disabled={value[passenger.key] >= passenger.max} aria-label={`Increase ${passenger.label}`} onClick={() => update({ [passenger.key]: Math.min(passenger.max, value[passenger.key] + 1) })} className="flex h-9 w-9 items-center justify-center rounded-md border border-primary/20 text-primary transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:border-border disabled:bg-muted/40 disabled:text-muted-foreground/40">
+                    <button type="button" disabled={total >= MAX_TRAVELERS || value[passenger.key] >= passenger.max} aria-label={`Increase ${passenger.label}`} onClick={() => { if (total < MAX_TRAVELERS) update({ [passenger.key]: Math.min(passenger.max, value[passenger.key] + 1) }); }} className="flex h-9 w-9 items-center justify-center rounded-md border border-primary/20 text-primary transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:border-border disabled:bg-muted/40 disabled:text-muted-foreground/40">
                       <Plus className="h-4 w-4" />
                     </button>
                   </div>
@@ -168,6 +171,10 @@ export function TravelersClassPicker({
           )}
         </div>
 
+        {mode !== "cabin" && <div className="mt-3 flex shrink-0 items-center justify-between border-t border-border/60 pt-2 text-xs text-muted-foreground">
+          <span>Total passengers</span>
+          <span role="status" aria-label="Passenger count" aria-live="polite" aria-atomic="true" className="font-semibold tabular-nums text-foreground">{total}/{MAX_TRAVELERS}</span>
+        </div>}
         <Button
           type="button"
           className="mt-3 h-10 w-full shrink-0 rounded-md bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90"
