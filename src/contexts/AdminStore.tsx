@@ -1,3 +1,4 @@
+import { useLocation } from "react-router-dom";
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import {
   Booking, Flight, Hotel, Agency, WalletTransaction, Notification,
@@ -73,6 +74,7 @@ interface AdminState {
   notifications: Notification[];
   tickets: TravelTicket[];
   users: User[];
+  packageLoadStatus: "idle" | "loading" | "success" | "error";
   packages: UmrahPackage[];
   tourPackages: UmrahPackage[];
   visaPackages: UmrahPackage[];
@@ -201,6 +203,10 @@ function loadStoredArray<T>(key: string): T[] {
 }
 
 export function AdminProvider({ children }: { children: ReactNode }) {
+  const { pathname, search } = useLocation();
+  const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
+  const needsUmrah = isAdmin || pathname.startsWith("/umrah") || pathname === "/request-booking" || (pathname === "/booking" && new URLSearchParams(search).get("type") === "umrah");
+  const [packageLoadStatus, setPackageLoadStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [flights, setFlights] = useState<Flight[]>([]);
   const [hotels, setHotels] = useState<Hotel[]>([]);
@@ -235,31 +241,32 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!needsUmrah) return;
     let cancelled = false;
-    Promise.all([listRemotePackages("umrah"), listRemotePackages("tour"), listRemotePackages("visa")])
-      .then(([umrahItems, tourItems, visaItems]) => {
-        if (cancelled) return;
-        setPackages(umrahItems);
-        setTourPackages(tourItems);
-        setVisaPackages(visaItems);
-      })
-      .catch(error => console.error("Unable to load package content from AWS", error));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    setPackageLoadStatus("loading");
+    listRemotePackages("umrah").then(items => {
+      if (!cancelled) {
+        setPackages(items);
+        setPackageLoadStatus("success");
+      }
+    }).catch(() => {
+      if (!cancelled) setPackageLoadStatus("error");
+    });
+    return () => { cancelled = true; };
+  }, [needsUmrah]);
 
   useEffect(() => {
+    if (!isAdmin) return;
     let cancelled = false;
-    listRemoteTickets()
-      .then(items => {
-        if (!cancelled) setTickets(items);
-      })
-      .catch(error => console.error("Unable to load tickets from AWS", error));
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    // Independent categories must not discard each other's successful responses.
+    const loads = [
+      listRemotePackages("tour").then(items => { if (!cancelled) setTourPackages(items); }),
+      listRemotePackages("visa").then(items => { if (!cancelled) setVisaPackages(items); }),
+      listRemoteTickets().then(items => { if (!cancelled) setTickets(items); }),
+    ];
+    void Promise.allSettled(loads);
+    return () => { cancelled = true; };
+  }, [isAdmin]);
 
   // Hotel content is loaded on demand via loadHotelContent (Home, admin hotel search).
   useEffect(() => {
@@ -580,7 +587,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   return (
     <AdminContext.Provider value={{
       bookings, flights, hotels, agencies, transactions, notifications, tickets, users,
-      packages, tourPackages, visaPackages, coupons, blogPosts, flightSearchLogs, paymentLinks,
+      packageLoadStatus, packages, tourPackages, visaPackages, coupons, blogPosts, flightSearchLogs, paymentLinks,
       paymentConfig, secretKeys, walletLedger, walletDeposits, paymentWebhookEvents,
       loadHotelContent,
       updateBookingStatus, addBooking, deleteBooking,

@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/public/PageHeader";
 
@@ -13,6 +14,7 @@ const faqs = [
 export default function FaqPage() {
   return (
     <div>
+      <SEO title="Travel Help & Frequently Asked Questions | Travelian" description="Find answers about booking flights, changing trips, Umrah packages, payments and contacting Travelian support." />
       <PageHeader title="Help Center / FAQ" tagline="Answers to the most common questions" />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Accordion type="single" collapsible className="w-full">

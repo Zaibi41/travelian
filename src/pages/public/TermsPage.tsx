@@ -1,8 +1,10 @@
+import { SEO } from "@/components/SEO";
 import { PageHeader } from "@/components/public/PageHeader";
 
 export default function TermsPage() {
   return (
     <div>
+      <SEO title="Booking Terms & Conditions | Travelian" description="Review Travelian booking terms, cancellation policies and refund conditions before making your travel arrangements." />
       <PageHeader title="Terms & Conditions" tagline="Booking terms, cancellation and refund policies" />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-6 text-sm text-muted-foreground">
         <section>

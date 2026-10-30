@@ -14,62 +14,62 @@ import { LocaleProvider } from "@/contexts/LocaleContext";
 
 // Public pages
 import HomePage from "./pages/public/HomePage";
-import PublicHotelsPage from "./pages/public/PublicHotelsPage";
+const PublicHotelsPage = lazy(() => import("./pages/public/PublicHotelsPage"));
 const PublicTransfersPage = lazy(() => import("./pages/public/PublicTransfersPage"));
-import HotelDetailPage from "./pages/public/HotelDetailPage";
-import PublicFlightsPage from "./pages/public/PublicFlightsPage";
-import FlightDetailPage from "./pages/public/FlightDetailPage";
-import PublicPackagesPage from "./pages/public/PublicPackagesPage";
+const HotelDetailPage = lazy(() => import("./pages/public/HotelDetailPage"));
+const PublicFlightsPage = lazy(() => import("./pages/public/PublicFlightsPage"));
+const FlightDetailPage = lazy(() => import("./pages/public/FlightDetailPage"));
+const PublicPackagesPage = lazy(() => import("./pages/public/PublicPackagesPage"));
 const UmrahSamplePage = lazy(() => import("./pages/public/UmrahSamplePage"));
 
 const PublicBlogPage = lazy(() => import("./pages/public/PublicBlogPage"));
-import ContactPage from "./pages/public/ContactPage";
-import AboutPage from "./pages/public/AboutPage";
+const ContactPage = lazy(() => import("./pages/public/ContactPage"));
+const AboutPage = lazy(() => import("./pages/public/AboutPage"));
 const DealsPage = lazy(() => import("./pages/public/DealsPage"));
-import BookingPage from "./pages/public/BookingPage";
-import AccountPage from "./pages/public/AccountPage";
-import SignInPage from "./pages/public/SignInPage";
-import RegisterPage from "./pages/public/RegisterPage";
-import AuthCallbackPage from "./pages/public/AuthCallbackPage";
-import FaqPage from "./pages/public/FaqPage";
-import PrivacyPage from "./pages/public/PrivacyPage";
-import TermsPage from "./pages/public/TermsPage";
+const BookingPage = lazy(() => import("./pages/public/BookingPage"));
+const AccountPage = lazy(() => import("./pages/public/AccountPage"));
+const SignInPage = lazy(() => import("./pages/public/SignInPage"));
+const RegisterPage = lazy(() => import("./pages/public/RegisterPage"));
+const AuthCallbackPage = lazy(() => import("./pages/public/AuthCallbackPage"));
+const FaqPage = lazy(() => import("./pages/public/FaqPage"));
+const PrivacyPage = lazy(() => import("./pages/public/PrivacyPage"));
+const TermsPage = lazy(() => import("./pages/public/TermsPage"));
 const CareersPage = lazy(() => import("./pages/public/CareersPage"));
-import UmrahDetailPage from "./pages/public/UmrahDetailPage";
-import MyBookingsPage from "./pages/public/MyBookingsPage";
+const UmrahDetailPage = lazy(() => import("./pages/public/UmrahDetailPage"));
+const MyBookingsPage = lazy(() => import("./pages/public/MyBookingsPage"));
 const BlogDetailPage = lazy(() => import("./pages/public/BlogDetailPage"));
 const DestinationPage = lazy(() => import("./pages/public/DestinationPage"));
-import BookingRequestPage from "./pages/public/BookingRequestPage";
-import GroupTicketingPage from "./pages/public/GroupTicketingPage";
+const BookingRequestPage = lazy(() => import("./pages/public/BookingRequestPage"));
+const GroupTicketingPage = lazy(() => import("./pages/public/GroupTicketingPage"));
 
 // Admin pages
-import DashboardPage from "./pages/DashboardPage";
-import AgenciesPage from "./pages/AgenciesPage";
-import PackagesPage from "./pages/PackagesPage";
-import TourPackagesPage from "./pages/TourPackagesPage";
-import VisaPackagesPage from "./pages/VisaPackagesPage";
-import HotelsPage from "./pages/HotelsPage";
-import FlightsPage from "./pages/FlightsPage";
-import WalletPage from "./pages/WalletPage";
-import PaymentsPage from "./pages/PaymentsPage";
-import SecretManagerPage from "./pages/SecretManagerPage";
-import ProviderSystemsPage from "./pages/ProviderSystemsPage";
-import GroupTicketingCollectionsPage from "./pages/GroupTicketingCollectionsPage";
-import AdminSearchPage from "./pages/AdminSearchPage";
-import FlightBookingsPage from "./pages/FlightBookingsPage";
-import CustomerPortalPage from "./pages/CustomerPortalPage";
-import UsersPage from "./pages/UsersPage";
-import CustomersPage from "./pages/CustomersPage";
-import RBACPage from "./pages/RBACPage";
-import CouponsPage from "./pages/CouponsPage";
-import BlogPage from "./pages/BlogPage";
-import DocumentsPage from "./pages/DocumentsPage";
-import NotificationsPage from "./pages/NotificationsPage";
-import SettingsPage from "./pages/SettingsPage";
-import NotFound from "./pages/NotFound";
-import BookingRequestsPage from "./pages/BookingRequestsPage";
-import ReportsPage from "./pages/ReportsPage";
-import RoadmapPlaceholderPage from "./pages/RoadmapPlaceholderPage";
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const AgenciesPage = lazy(() => import("./pages/AgenciesPage"));
+const PackagesPage = lazy(() => import("./pages/PackagesPage"));
+const TourPackagesPage = lazy(() => import("./pages/TourPackagesPage"));
+const VisaPackagesPage = lazy(() => import("./pages/VisaPackagesPage"));
+const HotelsPage = lazy(() => import("./pages/HotelsPage"));
+const FlightsPage = lazy(() => import("./pages/FlightsPage"));
+const WalletPage = lazy(() => import("./pages/WalletPage"));
+const PaymentsPage = lazy(() => import("./pages/PaymentsPage"));
+const SecretManagerPage = lazy(() => import("./pages/SecretManagerPage"));
+const ProviderSystemsPage = lazy(() => import("./pages/ProviderSystemsPage"));
+const GroupTicketingCollectionsPage = lazy(() => import("./pages/GroupTicketingCollectionsPage"));
+const AdminSearchPage = lazy(() => import("./pages/AdminSearchPage"));
+const FlightBookingsPage = lazy(() => import("./pages/FlightBookingsPage"));
+const CustomerPortalPage = lazy(() => import("./pages/CustomerPortalPage"));
+const UsersPage = lazy(() => import("./pages/UsersPage"));
+const CustomersPage = lazy(() => import("./pages/CustomersPage"));
+const RBACPage = lazy(() => import("./pages/RBACPage"));
+const CouponsPage = lazy(() => import("./pages/CouponsPage"));
+const BlogPage = lazy(() => import("./pages/BlogPage"));
+const DocumentsPage = lazy(() => import("./pages/DocumentsPage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const BookingRequestsPage = lazy(() => import("./pages/BookingRequestsPage"));
+const ReportsPage = lazy(() => import("./pages/ReportsPage"));
+const RoadmapPlaceholderPage = lazy(() => import("./pages/RoadmapPlaceholderPage"));
 
 const queryClient = new QueryClient();
 
@@ -84,6 +84,7 @@ const App = () => (
             <LocaleProvider>
               <AdminProvider>
               <ScrollToTop />
+          <Suspense fallback={<div role="status" className="travelian-container py-8 text-sm text-muted-foreground">Loading page…</div>}>
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
@@ -156,6 +157,7 @@ const App = () => (
             <Route path="/admin/customer/*" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
+          </Suspense>
             </AdminProvider>
             </LocaleProvider>
           </RoleProvider>

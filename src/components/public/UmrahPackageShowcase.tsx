@@ -75,7 +75,7 @@ export function UmrahPackageShowcase({ item, detailMode = false }: UmrahPackageS
       <CardContent className="p-0">
         {detailMode && (
           <div className="bg-[#0b2145] px-6 py-8 text-center text-white md:px-10">
-            <h1 className="text-3xl font-black tracking-tight md:text-5xl">Umrah Packages</h1>
+            <h1 className="text-3xl font-black tracking-tight md:text-5xl">{item.name}</h1>
             <p className="mt-2 text-sm font-medium text-white/75 md:text-base">Carefully managed Umrah packages from Travelian inventory</p>
           </div>
         )}

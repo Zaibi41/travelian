@@ -1,8 +1,10 @@
+import { SEO } from "@/components/SEO";
 import { PageHeader } from "@/components/public/PageHeader";
 
 export default function PrivacyPage() {
   return (
     <div>
+      <SEO title="Privacy Policy | Travelian" description="Read how Travelian collects, uses and protects personal information provided during travel searches and bookings." />
       <PageHeader title="Privacy Policy" tagline="How we collect, use and protect your data" />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 prose prose-sm">
         <p className="text-muted-foreground">Effective date: {new Date().getFullYear()}</p>

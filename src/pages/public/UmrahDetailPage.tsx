@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { CalendarDays, Check, Package, Plane, Users } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { whatsappUrl } from "@/lib/site-config";
 import { findSeedUmrahOffer, umrahOfferToPackage } from "@/data/services/umrah-adapter";
 
-const siteBase = "https://www.travelian.pk";
+const siteBase = "https://travelian.pk";
 
 function formatPrice(value?: number) {
   return value && value > 0 ? `PKR ${value.toLocaleString()}` : "On request";
@@ -61,6 +62,7 @@ export default function UmrahDetailPage() {
 
   return (
     <div className="bg-muted/30 py-8">
+      <SEO title={`${item.name} | Travelian`} description={item.description || `${item.name}: explore hotels, inclusions and booking enquiries with Travelian.`} />
       <div className="travelian-container space-y-6">
         <UmrahPackageShowcase item={item} detailMode />
 

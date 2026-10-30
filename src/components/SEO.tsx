@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/site-config";
 import { Helmet } from "react-helmet-async";
 
 interface SEOProps {
@@ -7,20 +8,23 @@ interface SEOProps {
   image?: string;
   type?: "website" | "article";
   jsonLd?: object | object[];
+  noIndex?: boolean;
 }
 
 const SITE_NAME = "Travelian";
 const DEFAULT_IMAGE = "/travelian-logo-wordmark.png";
 
-export function SEO({ title, description, canonical, image = DEFAULT_IMAGE, type = "website", jsonLd }: SEOProps) {
+export function SEO({ title, description, canonical, image = DEFAULT_IMAGE, type = "website", jsonLd, noIndex = false }: SEOProps) {
   const fullTitle = title.length > 60 ? title.slice(0, 57) + "..." : title;
   const desc = description.length > 160 ? description.slice(0, 157) + "..." : description;
-  const url = canonical || (typeof window !== "undefined" ? window.location.href : "");
+  const url = canonical || new URL(typeof window !== "undefined" ? window.location.pathname : "/", SITE_URL).href;
+  const imageUrl = new URL(image, SITE_URL).href;
   const blocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 
   return (
     <Helmet>
       <title>{fullTitle}</title>
+      <meta name="robots" content={noIndex ? "noindex, follow" : "index, follow"} />
       <meta name="description" content={desc} />
       {url && <link rel="canonical" href={url} />}
       <meta property="og:site_name" content={SITE_NAME} />
@@ -28,11 +32,11 @@ export function SEO({ title, description, canonical, image = DEFAULT_IMAGE, type
       <meta property="og:description" content={desc} />
       <meta property="og:type" content={type} />
       {url && <meta property="og:url" content={url} />}
-      <meta property="og:image" content={image} />
+      <meta property="og:image" content={imageUrl} />
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={desc} />
-      <meta name="twitter:image" content={image} />
+      <meta name="twitter:image" content={imageUrl} />
       {blocks.map((b, i) => (
         <script key={i} type="application/ld+json">{JSON.stringify(b)}</script>
       ))}

@@ -61,7 +61,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div data-public-page-scroll className="h-full min-h-0 overflow-y-auto bg-sidebar">
+    <div data-public-page-scroll className="h-full min-h-0 overflow-y-auto travelian-hero-background">
       <div className="flex min-h-full items-center justify-center px-4 py-6 sm:px-6 sm:py-8">
         <Card className="my-auto w-full max-w-[880px] shrink-0 overflow-hidden rounded-xl border border-border/60 bg-white shadow-md">
           <CardContent className="grid p-0 lg:grid-cols-[44fr_56fr]">

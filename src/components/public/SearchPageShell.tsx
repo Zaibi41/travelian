@@ -6,8 +6,7 @@ export const SEARCH_PAGE_CONTAINER = "travelian-container";
 
 export function SearchPageHero({ title, description, children, support, compact = false }: { title?: ReactNode; description?: string; children?: ReactNode; support?: ReactNode; compact?: boolean }) {
   return (
-    <section className={cn("relative isolate bg-sidebar", compact ? "gradient-hero py-2" : "py-6")}>
-      {!compact && <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(hsl(var(--primary-foreground)) 1px, transparent 1px)", backgroundSize: "22px 22px" }} />}
+    <section className={cn("relative isolate", compact ? "bg-sidebar gradient-hero py-2" : "travelian-hero-background py-6")}>
       <div className={cn(compact ? "px-4 md:px-6" : SEARCH_PAGE_CONTAINER, "relative")}>
         {title && <div className={cn("text-center", children && "mb-4 md:mb-5")}><h1 className="font-display text-xl sm:text-2xl md:text-[1.75rem] font-bold leading-7 sm:leading-8 md:leading-9 tracking-tight text-primary-foreground">{title}</h1>{description && <p className="mt-2 text-sm text-primary-foreground/75">{description}</p>}</div>}
         {children}

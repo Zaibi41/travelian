@@ -1,3 +1,4 @@
+import { SEO } from "@/components/SEO";
 import { Link } from "react-router-dom";
 import { Plane, Hotel, Package, Shield, Headphones, Zap, Search, MousePointerClick, Compass, Tickets } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,6 +30,7 @@ const steps = [
 export default function AboutPage() {
   return (
     <div>
+      <SEO title="About Travelian | Flights, Hotels & Umrah" description="Learn about Travelian and our support for flight bookings, group ticketing, hotels and Umrah travel." />
       <SearchPageHero title="About Travelian" description="Building a modern travel platform for flights, hotels, Umrah and group travel." />
 
       <PageSection>

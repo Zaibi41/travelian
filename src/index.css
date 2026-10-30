@@ -210,6 +210,13 @@
 }
 
 @layer components {
+  /* Shared navy dotted surface for search heroes and account page backgrounds. */
+  .travelian-hero-background {
+    background-color: hsl(var(--sidebar-background));
+    background-image: radial-gradient(hsl(var(--primary-foreground) / 0.07) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
   /* Canonical public content width; section backgrounds stay full viewport width. */
   .travelian-container {
     @apply mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8;

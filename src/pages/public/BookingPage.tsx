@@ -20,6 +20,7 @@ import { toast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
 import { AirlineLogo } from "@/components/public/AirlineLogo";
 import type { UmrahPackage } from "@/data/models";
+import { findSeedUmrahOffer, umrahOfferToPackage } from "@/data/services/umrah-adapter";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { format, addDays } from "date-fns";
 import { useAdmin } from "@/contexts/AdminStore";
@@ -123,8 +124,10 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
     return null;
   }
   if (type === "umrah") {
-    const p = inventory.packages.find(x => x.packageId === id && isPublishedUmrahPackage(x));
-    if (!p) return null;
+    const stored = inventory.packages.find(x => x.packageId === id);
+    const seed = stored ? undefined : findSeedUmrahOffer(id);
+    const p = stored ?? (seed ? umrahOfferToPackage(seed) : undefined);
+    if (!p || !isPublishedUmrahPackage(p)) return null;
     return {
       type: "umrah",
       title: p.name,
@@ -166,9 +169,12 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
 
 export default function BookingPage() {
   const [params] = useSearchParams();
-  const { packages, tourPackages, visaPackages } = useAdmin();
-  const { currency: activeCurrency } = useLocale();
+  const { packages, tourPackages, visaPackages, packageLoadStatus } = useAdmin();
   const productCtx = useMemo(() => buildCtx(params, { packages, tourPackages, visaPackages }), [params, packages, tourPackages, visaPackages]);
+
+  if (!productCtx && params.get("type") === "umrah" && params.get("id") && (packageLoadStatus === "idle" || packageLoadStatus === "loading")) {
+    return <div role="status" className="travelian-container py-16 text-center">Loading package details…</div>;
+  }
 
   // Empty state if no booking context provided
   if (!productCtx) {
@@ -180,9 +186,11 @@ export default function BookingPage() {
             <div className="h-16 w-16 rounded-2xl bg-accent flex items-center justify-center mx-auto mb-5">
               <Search className="h-7 w-7 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">No booking selected</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-2">{params.get("id") ? "Package unavailable" : "No booking selected"}</h1>
             <p className="text-sm text-muted-foreground mb-6">
-              You haven't chosen a flight, hotel or package yet. Start a search and select a product to proceed to checkout.
+              {params.get("id") && packageLoadStatus === "error"
+                ? "We couldn't load this package. Please try again or contact Travelian to confirm availability."
+                : "Start a search and select an available flight, hotel or package to proceed to checkout."}
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               <Link to="/"><Button className="gradient-primary text-primary-foreground rounded-xl">Search Flights</Button></Link>
@@ -195,6 +203,12 @@ export default function BookingPage() {
     );
   }
 
+  if (productCtx.type !== "flight") return <ServiceBookingRequest productCtx={productCtx} />;
+  return <FlightCheckout productCtx={productCtx} params={params} />;
+}
+
+function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params: URLSearchParams }) {
+  const { currency: activeCurrency } = useLocale();
   const isFlight = productCtx.type === "flight";
   const adultCount = isFlight ? Math.max(1, Number(params.get("adults") || "1") || 1) : 1;
   const childCount = isFlight ? Math.max(0, Number(params.get("children") || "0") || 0) : 0;
@@ -457,10 +471,6 @@ export default function BookingPage() {
   const onPhoneChange = (setter: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setter(e.target.value.replace(/[^\d]/g, ""));
   };
-
-  if (productCtx.type !== "flight") {
-    return <ServiceBookingRequest productCtx={productCtx} />;
-  }
 
   // Hosted online payments are collected on PayFast, not inside Travelian.
   const cardNumberValid = cardNumber.replace(/\s/g, "").length >= 13 && /^\d+$/.test(cardNumber.replace(/\s/g, ""));
@@ -1407,7 +1417,7 @@ function ServiceBookingRequest({ productCtx }: { productCtx: ProductCtx }) {
   const [saved, setSaved] = useState<BookingRecord | null>(null);
   const [saving, setSaving] = useState(false);
   const backLink = productCtx.type === "umrah" ? "/umrah-packages" : productCtx.type === "tour" ? "/admin/tours" : "/admin/visa";
-  const formatMoney = (amount: number) => `${productCtx.currency || "PKR"} ${Math.round(amount).toLocaleString()}`;
+  const formatMoney = (amount: number) => amount > 0 ? `${productCtx.currency || "PKR"} ${Math.round(amount).toLocaleString()}` : "On request";
   const cleanPhone = phone.replace(/[^\d+]/g, "");
   const valid = name.trim().length >= 2 && cleanPhone.replace(/\D/g, "").length >= 7;
 
@@ -1446,8 +1456,8 @@ function ServiceBookingRequest({ productCtx }: { productCtx: ProductCtx }) {
       });
       setSaved(savedRequest);
       toast({
-        title: "Request submitted",
-        description: "Travelian has received your request and will contact you shortly.",
+        title: "Request saved on this device",
+        description: "Contact Travelian to share your request and confirm availability.",
       });
     } finally {
       setSaving(false);
@@ -1470,9 +1480,9 @@ function ServiceBookingRequest({ productCtx }: { productCtx: ProductCtx }) {
                   <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
                     <Check className="h-8 w-8 text-success" />
                   </div>
-                  <h1 className="text-2xl font-black text-foreground">Request received</h1>
+                  <h1 className="text-2xl font-black text-foreground">Request saved on this device</h1>
                   <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
-                    Your {productCtx.type} request is saved with reference {saved.id}. Travelian will contact you on {cleanPhone}.
+                    Your {productCtx.type} request is saved with reference {saved.id}. It has not been sent to Travelian. Please contact our team to confirm availability and share your details.
                   </p>
                   <div className="mt-6 flex flex-wrap justify-center gap-2">
                     <Link to="/my-bookings"><Button className="rounded-xl">View Requests</Button></Link>
@@ -1482,25 +1492,25 @@ function ServiceBookingRequest({ productCtx }: { productCtx: ProductCtx }) {
               ) : (
                 <>
                   <h1 className="text-2xl font-black text-foreground">Request booking</h1>
-                  <p className="mt-1 text-sm text-muted-foreground">Only your contact details are required at this stage. Travelian will confirm availability, documents and payment next.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Save your contact details on this device, then contact Travelian to confirm availability, documents and payment.</p>
                   <div className="mt-6 grid gap-4">
                     <div>
-                      <Label>Name *</Label>
-                      <Input value={name} onChange={(event) => setName(event.target.value)} className="mt-1.5 h-11 rounded-xl" placeholder="Your full name" />
+                      <Label htmlFor="request-name">Name *</Label>
+                      <Input id="request-name" required autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} className="mt-1.5 h-11 rounded-xl" placeholder="Your full name" />
                       {touched && !name.trim() && <p className="mt-1 text-xs text-destructive">Name is required</p>}
                     </div>
                     <div>
-                      <Label>Phone number *</Label>
-                      <Input value={phone} onChange={(event) => setPhone(event.target.value)} className="mt-1.5 h-11 rounded-xl" placeholder="+92 300 1234567" />
+                      <Label htmlFor="request-phone">Phone number *</Label>
+                      <Input id="request-phone" required type="tel" autoComplete="tel" value={phone} onChange={(event) => setPhone(event.target.value)} className="mt-1.5 h-11 rounded-xl" placeholder="+92 300 1234567" />
                       {touched && cleanPhone.replace(/\D/g, "").length < 7 && <p className="mt-1 text-xs text-destructive">Valid phone number is required</p>}
                     </div>
                     <div>
-                      <Label>Email</Label>
-                      <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1.5 h-11 rounded-xl" placeholder="Optional email" />
+                      <Label htmlFor="request-email">Email</Label>
+                      <Input id="request-email" autoComplete="email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1.5 h-11 rounded-xl" placeholder="Optional email" />
                     </div>
                   </div>
                   <Button onClick={handleSubmit} disabled={saving} className="mt-6 h-11 rounded-xl gradient-primary text-primary-foreground">
-                    {saving ? "Submitting..." : "Submit Request"}
+                    {saving ? "Saving..." : "Save Request"}
                   </Button>
                 </>
               )}

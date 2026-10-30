@@ -21,7 +21,7 @@ export function whatsappUrlFor(phoneDigits: string, message?: string) {
 }
 
 export const SUPPORT_ADDRESS = "589-J2, Johar Town, Lahore";
-export const SITE_URL = "https://www.travelian.pk";
+export const SITE_URL = "https://travelian.pk";
 export const SITE_DISPLAY = "www.travelian.pk";
 export const SOCIAL_LINKS = [
   { id: "facebook", label: "Facebook", href: "https://www.facebook.com/Travelian.pk/" },
