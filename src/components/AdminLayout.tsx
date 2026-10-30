@@ -1,6 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
-import { Bell, ChevronDown, KeyRound, LogOut, Pencil, UserRound, Wallet } from "lucide-react";
+import { Bell, ChevronDown, KeyRound, LogOut, Megaphone, Pencil, UserRound, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
@@ -19,10 +19,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 
 import { AdminProfileDialog, type ProfileAction } from "@/components/AdminProfileDialog";
 import { formatPkr, getWalletSummary } from "@/lib/wallet-summary";
+import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { whatsappUrl } from "@/lib/site-config";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { notifications, agencies, walletLedger, walletDeposits } = useAdmin();
   const unreadCount = notifications.filter(notification => !notification.read).length;
+  const announcement = notifications.filter(notification => notification.type === "system").sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   const navigate = useNavigate();
   const location = useLocation();
   const { currentRole, currentUser } = useRole();
@@ -76,6 +79,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <SidebarTrigger />
             </div>
             <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+              {location.pathname === "/admin" && canAccessAdminPath(currentRole, "/admin/notifications") && (
+                <Link to="/admin/notifications" title={announcement?.message || "No announcements yet"} aria-label={`Announcements: ${announcement?.message || "No announcements yet"}`} className="flex min-w-0 max-w-24 items-center gap-1.5 rounded-lg bg-muted/50 px-1.5 py-2 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:max-w-32 lg:max-w-64">
+                  <Megaphone aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="truncate">{announcement?.message || "No announcements yet"}</span>
+                </Link>
+              )}
               {walletSummary && (
                 <Link to="/admin/wallet" aria-label={`Wallet balance ${formatPkr(walletSummary.available)}`} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-2 py-1.5 text-sm font-bold text-primary transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-3">
                   <Wallet aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
@@ -125,7 +134,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           <main className="flex-1 bg-muted/20 p-4 md:p-6">
             {!isAuthenticated ? null : allowed ? children : <AccessDeniedPage />}
           </main>
-          <MoveToTopButton className="bottom-6" />
+          <MoveToTopButton className={location.pathname === "/admin" ? "bottom-20" : "bottom-6"} />
+          {location.pathname === "/admin" && (
+            <a href={whatsappUrl("Hello Travelian, I need help with an admin or agency request.")} target="_blank" rel="noreferrer" aria-label="Chat with Travelian on WhatsApp" className="fixed bottom-5 right-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transform-none">
+              <WhatsAppIcon aria-hidden="true" className="h-6 w-6" />
+            </a>
+          )}
           {profileAction && <AdminProfileDialog key={profileAction} action={profileAction} onRestoreFocus={() => { if (!profileActionRef.current && accountTriggerRef.current?.getAttribute("aria-expanded") !== "true") accountTriggerRef.current?.focus(); }} onClose={() => setProfileAction(null)} onEdit={() => setProfileAction("edit")} />}
         </div>
       </div>

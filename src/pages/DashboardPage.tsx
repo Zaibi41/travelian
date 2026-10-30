@@ -1,22 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, CalendarCheck, CreditCard, FileText, LifeBuoy, Megaphone, Plane, Receipt, RefreshCw, TimerReset, Wallet } from "lucide-react";
+import { CalendarCheck, CreditCard, RefreshCw, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Link } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
-import { EmptyState } from "@/components/EmptyState";
 import { useAdmin } from "@/contexts/AdminStore";
 import { listServerBookings } from "@/lib/booking-api";
-import { listBookingRequests } from "@/lib/booking-request-api";
 import type { BookingRecord } from "@/lib/booking-store";
-import type { BookingRequest } from "@/data/models";
-import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
-import { whatsappUrl } from "@/lib/site-config";
 import { formatPkr, getWalletSummary } from "@/lib/wallet-summary";
+
+const demoBookingReport = [
+  { name: "Total", count: 24 },
+  { name: "Ticketed", count: 16 },
+  { name: "Cancelled / refund", count: 3 },
+  { name: "Expired", count: 2 },
+];
 
 function useLiveDashboardData() {
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
-  const [requests, setRequests] = useState<BookingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -24,16 +27,10 @@ function useLiveDashboardData() {
     setLoading(true);
     setError("");
     try {
-      const [bookingItems, requestItems] = await Promise.all([
-        listServerBookings().catch(() => []),
-        listBookingRequests().catch(() => []),
-      ]);
-      setBookings(bookingItems);
-      setRequests(requestItems);
+      setBookings(await listServerBookings());
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Dashboard records are unavailable");
       setBookings([]);
-      setRequests([]);
     } finally {
       setLoading(false);
     }
@@ -43,26 +40,20 @@ function useLiveDashboardData() {
     void refresh();
   }, []);
 
-  return { bookings, requests, loading, error, refresh };
+  return { bookings, loading, error, refresh };
 }
 
 export default function DashboardPage() {
   const { currentRole, currentUser } = useRole();
   const { agencies, walletLedger, walletDeposits } = useAdmin();
-  const { bookings, requests, loading, error, refresh } = useLiveDashboardData();
+  const { bookings, loading, error, refresh } = useLiveDashboardData();
   const isAgency = currentRole === "agency_owner" || currentRole === "agency_staff";
-  const canManageTicketInvoices = ["super_admin", "admin", "agency_owner", "qa", "internal_support"].includes(currentRole);
   const agencyId = currentUser.agencyId || "";
 
   const visibleBookings = useMemo(() => bookings.filter((booking) => {
-    if (!isAgency || !agencyId) return true;
-    return booking.contact?.email === currentUser.email || booking.id.includes(agencyId);
+    if (!isAgency) return true;
+    return booking.contact?.email === currentUser.email || (!!agencyId && booking.id.includes(agencyId));
   }), [agencyId, bookings, currentUser.email, isAgency]);
-
-  const visibleRequests = useMemo(() => requests.filter((request) => {
-    if (!isAgency || !agencyId) return true;
-    return request.email === currentUser.email || request.assignedStaff === currentUser.email;
-  }), [agencyId, currentUser.email, isAgency, requests]);
 
   const walletSummary = useMemo(() => getWalletSummary(agencies, walletLedger, walletDeposits, currentRole, agencyId), [agencies, agencyId, currentRole, walletDeposits, walletLedger]);
 
@@ -70,14 +61,21 @@ export default function DashboardPage() {
     .filter(booking => booking.paymentStatus === "paid" || booking.status === "payment_received" || booking.status === "ticket_issued")
     .reduce((sum, booking) => sum + (booking.pricing?.total || 0), 0);
   const pendingPayments = visibleBookings.filter(booking => booking.paymentStatus !== "paid").length;
-  const openRequests = visibleRequests.filter(request => !["confirmed", "cancelled_lost"].includes(request.status)).length;
 
   const cards = [
-    { title: "Bookings", value: visibleBookings.length, caption: loading ? "Loading records" : "Live DB records", icon: CalendarCheck, href: "/admin/flight-bookings?tab=all" },
+    { title: "Bookings", value: loading || error ? "—" : visibleBookings.length, caption: error ? "Bookings unavailable" : loading ? "Loading bookings" : "All booking records", icon: CalendarCheck, href: "/admin/flight-bookings?tab=all" },
     { title: "Wallet Balance", value: formatPkr(walletSummary.available), caption: walletSummary.pending ? `${formatPkr(walletSummary.pending)} pending` : "Approved ledger balance", icon: Wallet, href: "/admin/wallet" },
-    { title: "Payments", value: formatPkr(collected), caption: `${pendingPayments} pending payment${pendingPayments === 1 ? "" : "s"}`, icon: CreditCard, href: "/admin/payments" },
-    { title: "Requests", value: openRequests, caption: "Assisted service queue", icon: Receipt, href: "/admin/requests?tab=all" },
+    { title: "Payments", value: loading || error ? "—" : formatPkr(collected), caption: error ? "Payments unavailable" : loading ? "Loading payments" : `${pendingPayments} pending payment${pendingPayments === 1 ? "" : "s"}`, icon: CreditCard, href: "/admin/payments" },
   ];
+
+  const liveReport = [
+    { name: "Total", count: visibleBookings.length },
+    { name: "Ticketed", count: visibleBookings.filter(booking => booking.status === "ticket_issued" || booking.ticketStatus === "issued").length },
+    { name: "Cancelled / refund", count: visibleBookings.filter(booking => booking.status === "cancelled").length },
+    { name: "Expired", count: visibleBookings.filter(booking => booking.status === "expired").length },
+  ];
+  const showingDemoReport = !loading && (!!error || visibleBookings.length === 0);
+  const report = showingDemoReport ? demoBookingReport : liveReport;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -85,20 +83,17 @@ export default function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold font-display">{isAgency ? "Agency Dashboard" : "Dashboard"}</h1>
           <p className="text-sm text-muted-foreground">
-            Welcome back, {currentUser.name}. Track wallet, bookings, requests, fare validity, and support from one place.
+            Welcome back, {currentUser.name}. Review bookings, payments, and wallet activity.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button asChild className="gradient-primary text-primary-foreground">
-            <Link to="/admin/search?tab=flights">{isAgency ? "Search Flights" : "Flight Booking"}</Link>
-          </Button>
           <Button variant="outline" className="gap-2" onClick={() => void refresh()} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => (
           <Link to={card.href} key={card.title}>
             <Card className="h-full shadow-card transition-all hover:-translate-y-0.5 hover:shadow-hover">
@@ -117,89 +112,34 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
-        <Card className="shadow-card">
-          <CardContent className="p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-                  <TimerReset className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-foreground">Fare revalidation notice</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Airfares and availability can change quickly. Revalidate search results before hold, ticket issue, refund, or reissue.
-                  </p>
-                </div>
-              </div>
-              <Button asChild variant="outline" className="rounded-xl">
-                <Link to="/admin/search?tab=flights">Search Fresh Fares</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-card">
-          <CardContent className="p-5">
-            <h2 className="font-bold text-foreground">Quick support</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Use support channels for ticketing, payments, refunds, hotels, and urgent billing matters.</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <a href={whatsappUrl("Hello Travelian, I need help with an admin or agency request.")} target="_blank" rel="noreferrer">
-                <Button className="gap-2 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover">
-                  <WhatsAppIcon className="h-4 w-4" /> WhatsApp
-                </Button>
-              </a>
-              <Button asChild variant="outline" className="gap-2 rounded-xl">
-                <Link to="/admin/customer/support"><LifeBuoy className="h-4 w-4" /> Helpdesk</Link>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {canManageTicketInvoices && (
-        <div className="grid gap-4 lg:grid-cols-3">
-          <WorkflowCard icon={Plane} title="Search" description="Search one-way, round-trip, multi-city, hotels, group tickets, and Umrah." href="/admin/search?tab=flights" action="Open Search" />
-          <WorkflowCard icon={Receipt} title="Flight Bookings" description="Use PNR/ticketing records to issue, hold, download, invoice, refund, or reissue tickets." href="/admin/flight-bookings?tab=all" action="Open Bookings" />
-          <WorkflowCard icon={FileText} title="Requests" description="Process Umrah, hotel, and assisted service requests." href="/admin/requests?tab=all" action="Open Requests" />
-        </div>
-      )}
-
       <Card className="shadow-card">
-        <CardContent className="p-5">
-          <div className="mb-4 flex items-center gap-2">
-            <Megaphone className="h-5 w-5 text-primary" />
-            <h2 className="font-bold text-foreground">Announcements</h2>
+        <CardContent className="p-5 md:p-6">
+          <div className="mb-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-bold text-foreground">Booking report</h2>
+              {showingDemoReport && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">Demo data</span>}
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {showingDemoReport ? "Sample booking figures for preview. These are not live bookings." : "Current booking statuses."} Cancelled / refund includes cancellations and refund actions; completed refunds are not tracked separately.
+            </p>
           </div>
-          <EmptyState
-            icon={BarChart3}
-            title={error ? "Dashboard records are partially unavailable" : "No announcements yet"}
-            description={error || "Airline updates, Umrah offers, payment updates, and fare notices will appear here after admin CMS records are added."}
-          />
+          {error && <p role="alert" className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">Live booking data is unavailable. Showing demo report data.</p>}
+          {loading ? (
+            <p role="status" className="py-12 text-center text-sm text-muted-foreground">Loading booking report…</p>
+          ) : (
+            <ChartContainer config={{ count: { label: "Bookings", color: "hsl(var(--primary))" } }} className="h-72 w-full aspect-auto">
+              <BarChart data={report} margin={{ top: 8, right: 8, left: -20, bottom: 8 }} accessibilityLayer>
+                <CartesianGrid vertical={false} stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 11 }} interval={0} tickFormatter={value => value === "Cancelled / refund" ? "Cancelled" : value} />
+                <YAxis allowDecimals={false} tickLine={false} axisLine={false} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar dataKey="count" fill="var(--color-count)" radius={[5, 5, 0, 0]} maxBarSize={72} isAnimationActive={false} />
+              </BarChart>
+            </ChartContainer>
+          )}
+          {!loading && <p className="sr-only">{showingDemoReport ? "Demo data. " : ""}{report.map(item => `${item.name}: ${item.count}`).join(". ")}</p>}
         </CardContent>
       </Card>
     </div>
   );
 }
-
-function WorkflowCard({ icon: Icon, title, description, href, action }: { icon: typeof Plane; title: string; description: string; href: string; action: string }) {
-  return (
-    <Card className="shadow-card">
-      <CardContent className="flex h-full flex-col gap-4 p-5">
-        <div className="flex gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Icon className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="font-bold text-foreground">{title}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
-          </div>
-        </div>
-        <Button asChild variant="outline" className="mt-auto rounded-xl">
-          <Link to={href}>{action}</Link>
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
