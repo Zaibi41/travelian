@@ -679,7 +679,6 @@ export default function GroupTicketingPage() {
       {/* 2. Group Ticketing Hero + Search */}
       <SearchPageHero
         title="Group Ticketing"
-        description="Find group fares by route."
         support={<ProductValuePills product="group-ticketing" />}
       >
         <SearchTabs

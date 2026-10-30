@@ -18,6 +18,7 @@ import {
   KeyRound,
   LayoutDashboard,
   LifeBuoy,
+  Megaphone,
   Package,
   PenTool,
   Plane,
@@ -220,6 +221,7 @@ export const adminNavigation: AdminNavSection[] = [
   {
     category: "Website & CMS",
     items: [
+      item("Announcements", "/admin/announcements", Megaphone, ["super_admin"]),
       item("Blog / News", "/admin/blog", PenTool, internalAdminRoles),
     ],
   },

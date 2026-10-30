@@ -50,7 +50,7 @@ export default function PublicPackagesPage() {
         description="Umrah packages from Lahore, Islamabad, Karachi, Multan and Sialkot with Makkah and Madinah hotels, transport and ziarat. Starting-from rates, custom packages on WhatsApp."
       />
 
-      <SearchPageHero title={<><span className="sm:hidden">Umrah with Travelian</span><span className="hidden sm:inline">Plan Your Umrah with Travelian</span></>} description="Find your Umrah package." support={<ProductValuePills product="umrah" />}>
+      <SearchPageHero title={<><span className="sm:hidden">Umrah with Travelian</span><span className="hidden sm:inline">Plan Your Umrah with Travelian</span></>} support={<ProductValuePills product="umrah" />}>
         <SearchCard>
           <ProductTabs active="umrah" />
           <SearchContent>

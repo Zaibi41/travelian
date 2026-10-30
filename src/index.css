@@ -383,3 +383,20 @@
     }
   }
 }
+@keyframes admin-announcement-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.admin-announcement-scroll {
+  animation: admin-announcement-scroll 18s linear infinite;
+}
+
+.admin-announcement-scroll:hover,
+.admin-announcement-scroll:focus-within {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-announcement-scroll { animation: none; }
+}

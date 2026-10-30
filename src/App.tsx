@@ -62,6 +62,7 @@ const CouponsPage = lazy(() => import("./pages/CouponsPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const DocumentsPage = lazy(() => import("./pages/DocumentsPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const AnnouncementsPage = lazy(() => import("./pages/AnnouncementsPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookingRequestsPage = lazy(() => import("./pages/BookingRequestsPage"));
@@ -146,6 +147,7 @@ const App = () => (
             <Route path="/admin/blog" element={<AdminLayout><BlogPage /></AdminLayout>} />
             <Route path="/admin/documents" element={<AdminLayout><DocumentsPage /></AdminLayout>} />
             <Route path="/admin/notifications" element={<AdminLayout><NotificationsPage /></AdminLayout>} />
+            <Route path="/admin/announcements" element={<AdminLayout><AnnouncementsPage /></AdminLayout>} />
             <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
             <Route path="/admin/customer" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />
             <Route path="/admin/customer/*" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />

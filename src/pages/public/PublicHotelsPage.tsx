@@ -104,7 +104,7 @@ export default function PublicHotelsPage() {
 
   return (
     <div>
-      <SearchPageHero title="Find Hotels with Travelian" description="Find your next stay." support={<ProductValuePills product="hotels" />}>
+      <SearchPageHero title="Find Hotels with Travelian" support={<ProductValuePills product="hotels" />}>
         <SearchCard>
           <ProductTabs active="hotels" />
           <SearchContent>

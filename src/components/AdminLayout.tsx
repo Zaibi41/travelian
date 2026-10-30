@@ -21,11 +21,12 @@ import { AdminProfileDialog, type ProfileAction } from "@/components/AdminProfil
 import { formatPkr, getWalletSummary } from "@/lib/wallet-summary";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { whatsappUrl } from "@/lib/site-config";
+import { ANNOUNCEMENTS_CHANGED, listAdminAnnouncements } from "@/lib/admin-announcements";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { notifications, agencies, walletLedger, walletDeposits } = useAdmin();
   const unreadCount = notifications.filter(notification => !notification.read).length;
-  const announcement = notifications.filter(notification => notification.type === "system").sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  const [announcements, setAnnouncements] = useState(listAdminAnnouncements);
   const navigate = useNavigate();
   const location = useLocation();
   const { currentRole, currentUser } = useRole();
@@ -42,6 +43,16 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = getSession();
   const isAuthenticated = !!session;
   const allowed = isAuthenticated && canAccessAdminPath(currentRole, location.pathname);
+
+  useEffect(() => {
+    const update = () => setAnnouncements(listAdminAnnouncements());
+    window.addEventListener(ANNOUNCEMENTS_CHANGED, update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener(ANNOUNCEMENTS_CHANGED, update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -74,17 +85,24 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-svh w-full bg-muted/20">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-30 h-14 flex items-center justify-between border-b bg-card/95 px-4 shrink-0 backdrop-blur">
-            <div className="flex items-center gap-2">
+          <header className="sticky top-0 z-30 h-16 flex items-center justify-between border-b bg-card/95 px-4 shrink-0 backdrop-blur">
+            <div className="flex shrink-0 items-center gap-2">
               <SidebarTrigger />
             </div>
-            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-              {location.pathname === "/admin" && canAccessAdminPath(currentRole, "/admin/notifications") && (
-                <Link to="/admin/notifications" title={announcement?.message || "No announcements yet"} aria-label={`Announcements: ${announcement?.message || "No announcements yet"}`} className="flex min-w-0 max-w-24 items-center gap-1.5 rounded-lg bg-muted/50 px-1.5 py-2 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:max-w-32 lg:max-w-64">
-                  <Megaphone aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-                  <span className="truncate">{announcement?.message || "No announcements yet"}</span>
-                </Link>
-              )}
+            {announcements.length > 0 && <div className="mx-2 flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-xs text-primary sm:mx-4" role="region" aria-label="Announcements">
+              <Megaphone aria-hidden="true" className="h-4 w-4 shrink-0" />
+              <div className="min-w-0 flex-1 overflow-hidden">
+                <div className="admin-announcement-scroll flex w-max items-center whitespace-nowrap font-medium motion-reduce:!animate-none" style={{ animationDuration: `${Math.max(18, announcements.length * 10)}s` }}>
+                  {[0, 1].map(copy => <div key={copy} aria-hidden={copy === 1 ? true : undefined} className={`flex w-max shrink-0 items-center gap-5 pr-5 ${copy === 1 ? "motion-reduce:hidden" : ""}`}>
+                    {announcements.map((item, index) => <span key={item.id} className="flex items-center gap-5">
+                      {index > 0 && <span aria-hidden="true" className="h-1 w-1 shrink-0 rounded-full bg-primary/50" />}
+                      <span>{item.message}</span>
+                    </span>)}
+                  </div>)}
+                </div>
+              </div>
+            </div>}
+            <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
               {walletSummary && (
                 <Link to="/admin/wallet" aria-label={`Wallet balance ${formatPkr(walletSummary.available)}`} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-2 py-1.5 text-sm font-bold text-primary transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-3">
                   <Wallet aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
