@@ -49,16 +49,6 @@ export interface UmrahCityOffer {
   note: string;
 }
 
-export interface UmrahVisaRate {
-  id: string;
-  label: string;
-  travellers: string;
-  startingFromSar?: number;
-  startingFromPkr?: number;
-  processingNote: string;
-  documents: string[];
-}
-
 export interface UmrahHotelRate {
   id: string;
   name: string;
@@ -223,15 +213,6 @@ export const umrahCityOffers: UmrahCityOffer[] = [
   { city: "Karachi", route: "KHI - JED / MED", startingFrom: 298000, note: "Best fares on Saudia and Qatar Airways connections." },
   { city: "Multan", route: "MUX - JED / MED", startingFrom: 335000, note: "Seasonal direct departures, limited seats." },
   { city: "Sialkot", route: "SKT - JED / MED", note: "Departures on request, subject to ticket availability." },
-];
-
-export const umrahVisaRates: UmrahVisaRate[] = [
-  { id: "visa-1", label: "1 Person", travellers: "Single applicant", startingFromSar: 590, processingNote: "Processing in 3-5 working days after documents.", documents: ["Passport (6+ months validity)", "Recent white background photo", "CNIC copy"] },
-  { id: "visa-2", label: "2 Persons", travellers: "Couple / 2 applicants", startingFromSar: 570, processingNote: "Per person rate, family cases need FRC.", documents: ["Passports", "Photos", "CNIC / Nikah nama for couples"] },
-  { id: "visa-3", label: "3 Persons", travellers: "3 applicants", startingFromSar: 560, processingNote: "Per person rate for the same file.", documents: ["Passports", "Photos", "CNIC / B-Form"] },
-  { id: "visa-4", label: "4 Persons", travellers: "4 applicants", startingFromSar: 550, processingNote: "Per person rate for the same file.", documents: ["Passports", "Photos", "FRC for families"] },
-  { id: "visa-group", label: "Group 5+ Persons", travellers: "5 or more applicants", startingFromSar: 535, processingNote: "Group rate confirmed after passport list review.", documents: ["Passport list", "Photos", "Group leader contact"] },
-  { id: "visa-infant", label: "Infant", travellers: "Below 2 years", processingNote: "Contact for updated infant visa rate.", documents: ["Passport", "B-Form", "Parent passport copies"] },
 ];
 
 export const makkahHotels: UmrahHotelRate[] = [

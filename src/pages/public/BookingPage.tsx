@@ -52,7 +52,7 @@ function convertCurrencyAmount(amount: number, fromCurrency: string, toCurrency:
   return amount / fromRate * toRate;
 }
 
-type BookingType = "flight" | "hotel" | "umrah" | "tour" | "visa";
+type BookingType = "flight" | "hotel" | "umrah";
 
 interface ProductCtx {
   type: BookingType;
@@ -83,8 +83,6 @@ type BookingSegment = {
 
 interface PackageInventory {
   packages: UmrahPackage[];
-  tourPackages: UmrahPackage[];
-  visaPackages: UmrahPackage[];
 }
 
 function buildCtx(params: URLSearchParams, inventory: PackageInventory): ProductCtx | null {
@@ -138,39 +136,13 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
       currency: "PKR",
     };
   }
-  if (type === "tour") {
-    const t = inventory.tourPackages.find(x => x.packageId === id && !x.deletedAt);
-    if (!t) return null;
-    return {
-      type: "tour",
-      title: t.name,
-      subtitle: t.city,
-      meta: `${t.duration}`,
-      emoji: "",
-      base: t.basePrice,
-      currency: "PKR",
-    };
-  }
-  if (type === "visa") {
-    const v = inventory.visaPackages.find(x => x.packageId === id && !x.deletedAt);
-    if (!v) return null;
-    return {
-      type: "visa",
-      title: v.name,
-      subtitle: v.city,
-      meta: `${v.duration} processing`,
-      emoji: "",
-      base: v.basePrice,
-      currency: "PKR",
-    };
-  }
   return null;
 }
 
 export default function BookingPage() {
   const [params] = useSearchParams();
-  const { packages, tourPackages, visaPackages, packageLoadStatus } = useAdmin();
-  const productCtx = useMemo(() => buildCtx(params, { packages, tourPackages, visaPackages }), [params, packages, tourPackages, visaPackages]);
+  const { packages, packageLoadStatus } = useAdmin();
+  const productCtx = useMemo(() => buildCtx(params, { packages }), [params, packages]);
 
   if (!productCtx && params.get("type") === "umrah" && params.get("id") && (packageLoadStatus === "idle" || packageLoadStatus === "loading")) {
     return <div role="status" className="travelian-container py-16 text-center">Loading package details…</div>;
@@ -283,7 +255,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   // Mock wallet balance for B2B precheck (real value will come from Cloud later).
   const walletBalance = isAgency ? 250000 : 1000000;
 
-  const docType: "passport" = "passport";
+  const docType = "passport" as const;
 
   const [passengerForms, setPassengerForms] = useState<PassengerForm[]>(() =>
     passengerLabels.map((passenger) => createPassengerForm(passenger.type, passenger.label)),
@@ -644,8 +616,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
     ? "/flights-search"
     : (productCtx.type as string) === "hotel" ? "/hotels-search"
     : (productCtx.type as string) === "umrah" ? "/umrah-packages"
-    : (productCtx.type as string) === "tour" ? "/admin/tours"
-    : "/admin/visa";
+    : "/umrah-packages";
 
   return (
     <div className="bg-muted/20 min-h-screen">
@@ -1416,7 +1387,7 @@ function ServiceBookingRequest({ productCtx }: { productCtx: ProductCtx }) {
   const [touched, setTouched] = useState(false);
   const [saved, setSaved] = useState<BookingRecord | null>(null);
   const [saving, setSaving] = useState(false);
-  const backLink = productCtx.type === "umrah" ? "/umrah-packages" : productCtx.type === "tour" ? "/admin/tours" : "/admin/visa";
+  const backLink = "/umrah-packages";
   const formatMoney = (amount: number) => amount > 0 ? `${productCtx.currency || "PKR"} ${Math.round(amount).toLocaleString()}` : "On request";
   const cleanPhone = phone.replace(/[^\d+]/g, "");
   const valid = name.trim().length >= 2 && cleanPhone.replace(/\D/g, "").length >= 7;

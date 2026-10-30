@@ -353,3 +353,33 @@
 @layer base {
   html, [data-public-page-scroll] { scroll-padding-top: 6.5rem; }
 }
+
+@layer components {
+  /* Admin fields respond to space remaining beside the sidebar. */
+  .admin-product-search {
+    container: admin-product-search / inline-size;
+    min-width: 0;
+  }
+  @container admin-product-search (max-width: 800px) {
+    .admin-product-search .unified-search-flight-grid,
+    .admin-product-search .unified-search-segment-grid,
+    .admin-product-search .group-search-fields {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .unified-search-flight-grid > :nth-child(2),
+    .group-search-fields > :nth-child(2),
+    .unified-search-segment-grid > :last-child:empty {
+      display: none;
+    }
+    .unified-search-flight-grid > :nth-child(4):nth-last-child(2),
+    .unified-search-segment-grid > :nth-child(3),
+    .group-search-fields > :nth-child(4) {
+      grid-column: 1 / -1;
+    }
+    .unified-search-flight-grid > .unified-search-submit,
+    .group-search-fields > .unified-search-submit {
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+  }
+}

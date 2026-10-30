@@ -28,8 +28,6 @@ const statusOptions: { value: BookingRequestStatus; label: string }[] = [
 const requestTabs = [
   { value: "all", label: "All" },
   { value: "umrah", label: "Umrah" },
-  { value: "visas", label: "Visas" },
-  { value: "tours", label: "Tours" },
   { value: "hotels", label: "Hotels" },
   { value: "manual", label: "Manual" },
 ] as const;
@@ -84,20 +82,18 @@ export default function BookingRequestsPage() {
     }
   }, [setParams, tabParam]);
 
-  const visibleItems = useMemo(() => items.filter(item => item.type !== "group"), [items]);
+  const visibleItems = useMemo(() => items.filter(item => !["group", "tour", "visa", "study_visa", "visit_visa"].includes(item.type)), [items]);
 
   const matchesRequestTab = (item: BookingRequest, tab: RequestTab) => {
     if (tab === "all") return true;
     if (tab === "umrah") return item.type === "umrah" || item.type === "package";
-    if (tab === "visas") return item.type === "visa" || item.type === "study_visa" || item.type === "visit_visa";
-    if (tab === "tours") return item.type === "tour";
     if (tab === "hotels") return item.type === "hotel";
     if (tab === "manual") return item.type === "manual_flight" || item.type === "whatsapp_inquiry" || item.type === "service";
     return true;
   };
 
   const typeCounts = useMemo(() => {
-    const counts: Record<RequestTab, number> = { all: visibleItems.length, umrah: 0, visas: 0, tours: 0, hotels: 0, manual: 0 };
+    const counts: Record<RequestTab, number> = { all: visibleItems.length, umrah: 0, hotels: 0, manual: 0 };
     visibleItems.forEach(item => {
       requestTabs.forEach(tab => {
         if (tab.value !== "all" && matchesRequestTab(item, tab.value)) counts[tab.value] += 1;
@@ -148,7 +144,7 @@ export default function BookingRequestsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display">Requests</h1>
-          <p className="text-sm text-muted-foreground">Non-flight service requests for Umrah, visas, tours, hotels, and assisted manual inquiries.</p>
+          <p className="text-sm text-muted-foreground">Non-flight requests for Umrah, hotels, and assisted services.</p>
         </div>
         <Button variant="outline" onClick={() => void load()} disabled={loading}><RefreshCw className="mr-2 h-4 w-4" /> Refresh</Button>
       </div>

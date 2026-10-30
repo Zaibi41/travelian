@@ -50,7 +50,7 @@ export interface UmrahPackage {
   city: string;
   status: 'active' | 'inactive';
   includes: string[];
-  category: 'umrah' | 'tour' | 'visa';
+  category: 'umrah';
   image?: string;
   packageType?: string;
   makkahHotel?: string;
@@ -274,7 +274,7 @@ export interface Coupon {
   validFrom: string;
   validUntil: string;
   status: 'active' | 'expired' | 'inactive';
-  applicableTo: 'all' | 'umrah' | 'tour' | 'visa';
+  applicableTo: 'all' | 'umrah';
 }
 
 export interface BlogPost {
@@ -436,8 +436,6 @@ export const availableModules: ModulePermission[] = [
   { moduleId: 'dashboard', moduleName: 'Dashboard', description: 'View system dashboard and analytics', icon: 'LayoutDashboard' },
   { moduleId: 'agencies', moduleName: 'Agencies', description: 'Manage travel agencies', icon: 'Building2' },
   { moduleId: 'packages', moduleName: 'Umrah Packages', description: 'Manage Umrah packages', icon: 'Package' },
-  { moduleId: 'tours', moduleName: 'Tour Packages', description: 'Manage tour packages', icon: 'Map' },
-  { moduleId: 'visa', moduleName: 'Visa Packages', description: 'Manage visa services', icon: 'FileCheck' },
   { moduleId: 'bookings', moduleName: 'Bookings', description: 'Manage all bookings', icon: 'CalendarCheck' },
   { moduleId: 'tickets', moduleName: 'Travel Tickets', description: 'Issue and manage travel tickets', icon: 'Ticket' },
   { moduleId: 'wallet', moduleName: 'Wallet', description: 'Manage agency wallets', icon: 'Wallet' },

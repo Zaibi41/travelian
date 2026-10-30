@@ -14,7 +14,7 @@ export type MarkupScope =
 export interface MarkupRule {
   id: string;
   name: string;
-  service: "flights" | "hotels" | "umrah" | "tours" | "visas" | "all";
+  service: "flights" | "hotels" | "umrah" | "all";
   scope: MarkupScope;
   target?: string;
   percentage: number;

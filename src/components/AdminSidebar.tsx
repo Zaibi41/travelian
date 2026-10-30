@@ -16,8 +16,8 @@ import {
 } from "@/components/ui/sidebar";
 
 export function AdminSidebar() {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+  const { state, isMobile } = useSidebar();
+  const collapsed = state === "collapsed" && !isMobile;
   const location = useLocation();
   const { currentRole, currentUser } = useRole();
   const sections = useMemo(() => getNavigationForRole(currentRole), [currentRole]);
@@ -38,8 +38,6 @@ export function AdminSidebar() {
   );
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const directCategories = new Set(["Dashboard", "Search", "Flight Bookings", "Requests"]);
-  const isAgency = currentRole === "agency_owner" || currentRole === "agency_staff";
-  const isCustomer = currentRole === "customer";
 
   useEffect(() => {
     const categoryToOpen = activeCategory || sections[0]?.category;
@@ -50,24 +48,17 @@ export function AdminSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/70">
-      <SidebarHeader className="px-3 py-3">
-        <div className={collapsed ? "flex items-center justify-center border border-sidebar-border/60 bg-sidebar-accent/35 px-1 py-2" : "flex items-center gap-2.5 border border-sidebar-border/60 bg-sidebar-accent/35 px-2.5 py-2"}>
+      <SidebarHeader className="h-16 shrink-0 items-center justify-center border-b border-border bg-card px-4 py-2">
+        <Link to="/admin" aria-label="Travelian dashboard" className="flex w-fit max-w-full items-center justify-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card">
           <img
-            src="/travelian-logo-wordmark.png"
-            alt=""
-            className={collapsed ? "h-10 w-12 shrink-0 object-contain" : "h-10 w-32 shrink-0 object-contain"}
+            src={collapsed ? "/travelian-official-icon.png" : "/travelian-logo-wordmark.png"}
+            alt="Travelian"
+            className={collapsed ? "h-10 w-10 object-contain" : "h-11 w-auto max-w-full object-contain"}
           />
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="text-[10px] text-sidebar-muted">
-                {isCustomer ? "Customer Portal" : isAgency ? "Agency Portal" : "Enterprise Console"}
-              </p>
-            </div>
-          )}
-        </div>
+        </Link>
       </SidebarHeader>
 
-      <div className="travelian-sidebar-nav flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 pb-2">
+      <div className="travelian-sidebar-nav flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 pt-3 pb-2">
         {collapsed ? (
           <SidebarMenu className="gap-1">
             {allItems.map((item) => (

@@ -14,8 +14,8 @@ export default function HomePage() {
   return (
     <div>
       <SEO
-        title="Travelian | Flights, Umrah & Hotels"
-        description="Search available flights and browse Travelian hotels and Umrah packages."
+        title="Travelian | Flights, Group Tickets, Hotels & Umrah"
+        description="Search flights and group tickets, hotels and Umrah packages with Travelian."
         jsonLd={[
           {
             "@context": "https://schema.org",
@@ -48,7 +48,7 @@ export default function HomePage() {
           },
         ]}
       />
-      <SearchPageHero title={<><span className="text-xl sm:hidden">Book travel with Travelian</span><span className="hidden sm:inline sm:text-2xl md:text-[1.75rem]">Book Flights, Hotels &amp; Umrah with Travelian</span></>} description="Compare live and group fares." support={<ProductValuePills product="flights" />}>
+      <SearchPageHero title={<><span className="text-xl sm:hidden">Book travel with Travelian</span><span className="hidden sm:inline sm:text-2xl md:text-[1.75rem]">Book Flights, Group Tickets, Hotels &amp; Umrah</span></>} description="Compare live and group fares." support={<ProductValuePills product="flights" />}>
         <div className="home-search"><SearchTabs /></div>
       </SearchPageHero>
 

@@ -224,33 +224,6 @@ export interface HotelOffer {
   image?: string | null;
 }
 
-export interface TransferSearchInput {
-  pickup: string;
-  dropoff: string;
-  pickupDate: string;
-  pickupTime?: string;
-  passengers?: number;
-  currency: string;
-}
-
-export interface TransferOffer {
-  provider: string;
-  transferId: string;
-  vehicleName: string;
-  pickup: string;
-  dropoff: string;
-  pickupDate: string;
-  pickupTime: string;
-  passengers: number;
-  bags: number;
-  durationMinutes: number;
-  cancellationPolicy: string;
-  price: {
-    currency: string;
-    total: number;
-  };
-}
-
 export function extractAirportCode(value: string) {
   const text = String(value || "");
   const match = text.match(/\(([A-Z]{3})\)/i) || text.trim().match(/^([A-Z]{3})$/i);
@@ -321,34 +294,6 @@ export async function searchHotels(input: HotelSearchInput, signal?: AbortSignal
 
   return {
     hotels: payload?.results || [],
-    providerStatus: payload?.providerStatus || {},
-  };
-}
-
-export async function searchTransfers(input: TransferSearchInput, signal?: AbortSignal): Promise<{ transfers: TransferOffer[]; providerStatus: Record<string, string> }> {
-  const response = await fetch(`${API_BASE_URL}/transfers/search`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    signal,
-    body: JSON.stringify({
-      pickup: input.pickup,
-      dropoff: input.dropoff,
-      pickupDate: input.pickupDate,
-      pickupTime: input.pickupTime || "10:00",
-      passengers: input.passengers || 1,
-      currency: input.currency || "PKR",
-      providers: ["travelport"],
-    }),
-  });
-
-  const payload = await response.json().catch(() => null) as { results?: TransferOffer[]; providerStatus?: Record<string, string>; error?: string; details?: string[] } | null;
-  if (!response.ok) {
-    const details = payload?.details?.length ? `: ${payload.details.join(", ")}` : "";
-    throw new Error(`${payload?.error || "Transfer search failed"}${details}`);
-  }
-
-  return {
-    transfers: payload?.results || [],
     providerStatus: payload?.providerStatus || {},
   };
 }

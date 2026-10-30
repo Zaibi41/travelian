@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { BarChart3, CalendarCheck, CreditCard, FileText, LifeBuoy, Megaphone, Plane, Receipt, RefreshCw, TimerReset, Wallet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
 import { EmptyState } from "@/components/EmptyState";
@@ -13,10 +12,7 @@ import type { BookingRecord } from "@/lib/booking-store";
 import type { BookingRequest } from "@/data/models";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { whatsappUrl } from "@/lib/site-config";
-
-function formatPkr(amount: number) {
-  return `PKR ${Math.max(0, Math.round(amount)).toLocaleString()}`;
-}
+import { formatPkr, getWalletSummary } from "@/lib/wallet-summary";
 
 function useLiveDashboardData() {
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
@@ -68,19 +64,7 @@ export default function DashboardPage() {
     return request.email === currentUser.email || request.assignedStaff === currentUser.email;
   }), [agencyId, currentUser.email, isAgency, requests]);
 
-  const walletSummary = useMemo(() => {
-    const allowedAgencyIds = isAgency && agencyId ? [agencyId] : agencies.filter(agency => agency.status === "active").map(agency => agency.agencyId);
-    const credits = walletLedger
-      .filter(entry => allowedAgencyIds.includes(entry.agencyId) && entry.type === "credit" && entry.status === "approved")
-      .reduce((sum, entry) => sum + entry.amount, 0);
-    const debits = walletLedger
-      .filter(entry => allowedAgencyIds.includes(entry.agencyId) && entry.type === "debit" && entry.status === "approved")
-      .reduce((sum, entry) => sum + entry.amount, 0);
-    const pending = walletDeposits
-      .filter(deposit => allowedAgencyIds.includes(deposit.agencyId) && deposit.status === "pending")
-      .reduce((sum, deposit) => sum + deposit.amount, 0);
-    return { available: credits - debits, pending };
-  }, [agencies, agencyId, isAgency, walletDeposits, walletLedger]);
+  const walletSummary = useMemo(() => getWalletSummary(agencies, walletLedger, walletDeposits, currentRole, agencyId), [agencies, agencyId, currentRole, walletDeposits, walletLedger]);
 
   const collected = visibleBookings
     .filter(booking => booking.paymentStatus === "paid" || booking.status === "payment_received" || booking.status === "ticket_issued")
@@ -99,9 +83,6 @@ export default function DashboardPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <Badge className="mb-2 w-fit bg-primary/10 text-primary border-primary/20" variant="outline">
-            {isAgency ? "Agency operations" : "Enterprise operations"}
-          </Badge>
           <h1 className="text-2xl font-bold font-display">{isAgency ? "Agency Dashboard" : "Dashboard"}</h1>
           <p className="text-sm text-muted-foreground">
             Welcome back, {currentUser.name}. Track wallet, bookings, requests, fare validity, and support from one place.
@@ -178,9 +159,9 @@ export default function DashboardPage() {
 
       {canManageTicketInvoices && (
         <div className="grid gap-4 lg:grid-cols-3">
-          <WorkflowCard icon={Plane} title="Search" description="Search one-way, round-trip, multi-city, hotels, packages, visas, and tours." href="/admin/search?tab=flights" action="Open Search" />
+          <WorkflowCard icon={Plane} title="Search" description="Search one-way, round-trip, multi-city, hotels, group tickets, and Umrah." href="/admin/search?tab=flights" action="Open Search" />
           <WorkflowCard icon={Receipt} title="Flight Bookings" description="Use PNR/ticketing records to issue, hold, download, invoice, refund, or reissue tickets." href="/admin/flight-bookings?tab=all" action="Open Bookings" />
-          <WorkflowCard icon={FileText} title="Requests" description="Process Umrah, tour, visa, study visa, hotel, and assisted service requests." href="/admin/requests?tab=all" action="Open Requests" />
+          <WorkflowCard icon={FileText} title="Requests" description="Process Umrah, hotel, and assisted service requests." href="/admin/requests?tab=all" action="Open Requests" />
         </div>
       )}
 
@@ -193,7 +174,7 @@ export default function DashboardPage() {
           <EmptyState
             icon={BarChart3}
             title={error ? "Dashboard records are partially unavailable" : "No announcements yet"}
-            description={error || "Airline updates, Umrah offers, visa alerts, payment updates, and fare notices will appear here after admin CMS records are added."}
+            description={error || "Airline updates, Umrah offers, payment updates, and fare notices will appear here after admin CMS records are added."}
           />
         </CardContent>
       </Card>

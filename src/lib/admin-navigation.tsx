@@ -9,7 +9,6 @@ import {
   ClipboardCheck,
   CloudCog,
   CreditCard,
-  FileCheck,
   FileText,
   Gift,
   Globe,
@@ -19,7 +18,6 @@ import {
   KeyRound,
   LayoutDashboard,
   LifeBuoy,
-  Map,
   Package,
   PenTool,
   Plane,
@@ -126,8 +124,6 @@ export const adminNavigation: AdminNavSection[] = [
     items: [
       item("Hotels Inventory", "/admin/hotels", Hotel, internalAdminRoles),
       item("Umrah Packages", "/admin/packages", Package, internalAdminRoles),
-      item("Tour Packages", "/admin/tours", Map, internalAdminRoles),
-      item("Visa Packages", "/admin/visa", FileCheck, internalAdminRoles),
     ],
   },
   {

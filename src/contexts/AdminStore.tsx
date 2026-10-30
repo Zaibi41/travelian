@@ -76,8 +76,6 @@ interface AdminState {
   users: User[];
   packageLoadStatus: "idle" | "loading" | "success" | "error";
   packages: UmrahPackage[];
-  tourPackages: UmrahPackage[];
-  visaPackages: UmrahPackage[];
   coupons: Coupon[];
   blogPosts: BlogPost[];
   flightSearchLogs: FlightSearchLog[];
@@ -153,12 +151,6 @@ interface AdminState {
   addPackage: (p: UmrahPackage) => void;
   updatePackage: (id: string, data: Partial<UmrahPackage>) => void;
   deletePackage: (id: string) => void;
-  addTourPackage: (p: UmrahPackage) => void;
-  updateTourPackage: (id: string, data: Partial<UmrahPackage>) => void;
-  deleteTourPackage: (id: string) => void;
-  addVisaPackage: (p: UmrahPackage) => void;
-  updateVisaPackage: (id: string, data: Partial<UmrahPackage>) => void;
-  deleteVisaPackage: (id: string) => void;
 
   // Coupon actions
   addCoupon: (c: Coupon) => void;
@@ -216,8 +208,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [tickets, setTickets] = useState<TravelTicket[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [packages, setPackages] = useState<UmrahPackage[]>([]);
-  const [tourPackages, setTourPackages] = useState<UmrahPackage[]>([]);
-  const [visaPackages, setVisaPackages] = useState<UmrahPackage[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [blogPosts] = useState<BlogPost[]>([]);
   const [flightSearchLogs, setFlightSearchLogs] = useState<FlightSearchLog[]>(initialSearchLogs);
@@ -258,13 +248,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isAdmin) return;
     let cancelled = false;
-    // Independent categories must not discard each other's successful responses.
-    const loads = [
-      listRemotePackages("tour").then(items => { if (!cancelled) setTourPackages(items); }),
-      listRemotePackages("visa").then(items => { if (!cancelled) setVisaPackages(items); }),
-      listRemoteTickets().then(items => { if (!cancelled) setTickets(items); }),
-    ];
-    void Promise.allSettled(loads);
+    void listRemoteTickets().then(items => { if (!cancelled) setTickets(items); }).catch(() => {});
     return () => { cancelled = true; };
   }, [isAdmin]);
 
@@ -514,43 +498,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     setPackages(p => p.map(pk => pk.packageId === id ? { ...pk, deletedAt, status: 'inactive' } : pk));
     softDeleteRemotePackage("umrah", id).catch(error => console.error("Unable to delete Umrah package", error));
   }, []);
-  const addTourPackage = useCallback((pk: UmrahPackage) => {
-    setTourPackages(p => [pk, ...p]);
-    saveRemotePackage({ ...pk, category: "tour" })
-      .then(saved => setTourPackages(p => p.map(item => item.packageId === pk.packageId ? saved : item)))
-      .catch(error => console.error("Unable to save tour package", error));
-  }, []);
-  const updateTourPackage = useCallback((id: string, data: Partial<UmrahPackage>) => setTourPackages(previous => {
-    const existing = previous.find(pk => pk.packageId === id);
-    if (!existing) return previous;
-    const next = { ...existing, ...data, category: "tour" as const };
-    saveRemotePackage(next).catch(error => console.error("Unable to update tour package", error));
-    return previous.map(pk => pk.packageId === id ? next : pk);
-  }), []);
-  const deleteTourPackage = useCallback((id: string) => {
-    const deletedAt = new Date().toISOString();
-    setTourPackages(p => p.map(pk => pk.packageId === id ? { ...pk, deletedAt, status: 'inactive' } : pk));
-    softDeleteRemotePackage("tour", id).catch(error => console.error("Unable to delete tour package", error));
-  }, []);
-  const addVisaPackage = useCallback((pk: UmrahPackage) => {
-    setVisaPackages(p => [pk, ...p]);
-    saveRemotePackage({ ...pk, category: "visa" })
-      .then(saved => setVisaPackages(p => p.map(item => item.packageId === pk.packageId ? saved : item)))
-      .catch(error => console.error("Unable to save visa package", error));
-  }, []);
-  const updateVisaPackage = useCallback((id: string, data: Partial<UmrahPackage>) => setVisaPackages(previous => {
-    const existing = previous.find(pk => pk.packageId === id);
-    if (!existing) return previous;
-    const next = { ...existing, ...data, category: "visa" as const };
-    saveRemotePackage(next).catch(error => console.error("Unable to update visa package", error));
-    return previous.map(pk => pk.packageId === id ? next : pk);
-  }), []);
-  const deleteVisaPackage = useCallback((id: string) => {
-    const deletedAt = new Date().toISOString();
-    setVisaPackages(p => p.map(pk => pk.packageId === id ? { ...pk, deletedAt, status: "inactive" } : pk));
-    softDeleteRemotePackage("visa", id).catch(error => console.error("Unable to delete visa package", error));
-  }, []);
-
   // Coupons
   const addCoupon = useCallback((c: Coupon) => setCoupons(p => [...p, c]), []);
   const updateCoupon = useCallback((id: string, data: Partial<Coupon>) => setCoupons(p => p.map(c => c.couponId === id ? { ...c, ...data } : c)), []);
@@ -587,7 +534,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   return (
     <AdminContext.Provider value={{
       bookings, flights, hotels, agencies, transactions, notifications, tickets, users,
-      packageLoadStatus, packages, tourPackages, visaPackages, coupons, blogPosts, flightSearchLogs, paymentLinks,
+      packageLoadStatus, packages, coupons, blogPosts, flightSearchLogs, paymentLinks,
       paymentConfig, secretKeys, walletLedger, walletDeposits, paymentWebhookEvents,
       loadHotelContent,
       updateBookingStatus, addBooking, deleteBooking,
@@ -598,8 +545,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       addWalletFunds, deductWalletFunds, createWalletDeposit, approveWalletDeposit, rejectWalletDeposit, manualWalletAdjustment,
       addNotification, markNotificationRead, markAllRead,
       addUser, updateUser, deleteUser,
-      addPackage, updatePackage, deletePackage, addTourPackage, updateTourPackage, deleteTourPackage,
-      addVisaPackage, updateVisaPackage, deleteVisaPackage,
+      addPackage, updatePackage, deletePackage,
       addCoupon, updateCoupon, deleteCoupon,
       addFlightSearchLog, addPaymentLink, updatePaymentLink,
       updatePaymentConfig, addSecretKey, updateSecretKey, deleteSecretKey,

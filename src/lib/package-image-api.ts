@@ -2,7 +2,7 @@ import type { UmrahPackage } from "@/data/models";
 
 import { API_BASE_URL } from "./api-config";
 
-type PackageImageCategory = Extract<UmrahPackage["category"], "umrah" | "tour" | "visa">;
+type PackageImageCategory = UmrahPackage["category"];
 
 interface UploadUrlResponse {
   key: string;

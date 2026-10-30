@@ -133,8 +133,6 @@ export default function CouponsPage() {
                 <SelectContent>
                   <SelectItem value="all">All Packages</SelectItem>
                   <SelectItem value="umrah">Umrah Only</SelectItem>
-                  <SelectItem value="tour">Tours Only</SelectItem>
-                  <SelectItem value="visa">Visa Only</SelectItem>
                 </SelectContent>
               </Select>
             </div>

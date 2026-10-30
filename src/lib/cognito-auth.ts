@@ -1,4 +1,4 @@
-import { setSession, type AuthSession } from "@/lib/auth-session";
+import { getSession, setSession, type AuthSession } from "@/lib/auth-session";
 import {
   AuthenticationDetails,
   CognitoUser,
@@ -44,6 +44,7 @@ type TokenResponse = {
 };
 
 type CognitoProfile = {
+  picture?: string;
   sub?: string;
   email?: string;
   name?: string;
@@ -150,6 +151,7 @@ function sessionFromTokens(tokens: TokenResponse): AuthSession {
   const session: AuthSession = {
     email,
     name,
+    picture: profile.picture,
     sub: profile.sub,
     provider: "Cognito",
     createdAt: new Date().toISOString(),
@@ -293,3 +295,33 @@ export function cognitoLogoutUrl() {
 }
 
 export const cognitoConfig = cognitoEnv;
+
+function requireAccountSession() {
+  const session = getSession();
+  if (!session || session.provider !== "Cognito" || !session.accessToken || (session.expiresAt && session.expiresAt <= Date.now())) {
+    throw new Error("Please sign in again to update your account.");
+  }
+  return session;
+}
+
+export async function updateAccountName(value: string) {
+  const name = value.trim();
+  if (!name || name.length > 100) throw new Error("Enter a name between 1 and 100 characters.");
+  const session = requireAccountSession();
+  await cognitoRequest("UpdateUserAttributes", {
+    AccessToken: session.accessToken,
+    UserAttributes: [{ Name: "name", Value: name }],
+  });
+  const current = getSession();
+  if (current?.email === session.email && current?.accessToken === session.accessToken) setSession({ ...current, name });
+}
+
+export async function changeAccountPassword(currentPassword: string, newPassword: string) {
+  const session = requireAccountSession();
+  if (!currentPassword || !newPassword) throw new Error("Enter your current and new passwords.");
+  await cognitoRequest("ChangePassword", {
+    AccessToken: session.accessToken,
+    PreviousPassword: currentPassword,
+    ProposedPassword: newPassword,
+  });
+}

@@ -15,7 +15,6 @@ import { LocaleProvider } from "@/contexts/LocaleContext";
 // Public pages
 import HomePage from "./pages/public/HomePage";
 const PublicHotelsPage = lazy(() => import("./pages/public/PublicHotelsPage"));
-const PublicTransfersPage = lazy(() => import("./pages/public/PublicTransfersPage"));
 const HotelDetailPage = lazy(() => import("./pages/public/HotelDetailPage"));
 const PublicFlightsPage = lazy(() => import("./pages/public/PublicFlightsPage"));
 const FlightDetailPage = lazy(() => import("./pages/public/FlightDetailPage"));
@@ -46,8 +45,6 @@ const GroupTicketingPage = lazy(() => import("./pages/public/GroupTicketingPage"
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const AgenciesPage = lazy(() => import("./pages/AgenciesPage"));
 const PackagesPage = lazy(() => import("./pages/PackagesPage"));
-const TourPackagesPage = lazy(() => import("./pages/TourPackagesPage"));
-const VisaPackagesPage = lazy(() => import("./pages/VisaPackagesPage"));
 const HotelsPage = lazy(() => import("./pages/HotelsPage"));
 const FlightsPage = lazy(() => import("./pages/FlightsPage"));
 const WalletPage = lazy(() => import("./pages/WalletPage"));
@@ -89,7 +86,6 @@ const App = () => (
             {/* Public routes */}
             <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />
             <Route path="/hotels-search" element={<PublicLayout><PublicHotelsPage /></PublicLayout>} />
-            <Route path="/transfers-search" element={<PublicLayout><Suspense fallback={<div role="status" className="px-4 py-8 text-sm text-muted-foreground">Loading page…</div>}><PublicTransfersPage /></Suspense></PublicLayout>} />
             <Route path="/hotel/:id" element={<PublicLayout><HotelDetailPage /></PublicLayout>} />
             <Route path="/flights-search" element={<PublicLayout><PublicFlightsPage /></PublicLayout>} />
             <Route path="/flight/:id" element={<PublicLayout><FlightDetailPage /></PublicLayout>} />
@@ -121,8 +117,6 @@ const App = () => (
             <Route path="/admin" element={<AdminLayout><DashboardPage /></AdminLayout>} />
             <Route path="/admin/agencies" element={<AdminLayout><AgenciesPage /></AdminLayout>} />
             <Route path="/admin/packages" element={<AdminLayout><PackagesPage /></AdminLayout>} />
-            <Route path="/admin/tours" element={<AdminLayout><TourPackagesPage /></AdminLayout>} />
-            <Route path="/admin/visa" element={<AdminLayout><VisaPackagesPage /></AdminLayout>} />
             <Route path="/admin/bookings" element={<AdminLayout><Navigate to="/admin/flight-bookings?tab=all" replace /></AdminLayout>} />
             <Route path="/admin/bookings/holds" element={<AdminLayout><Navigate to="/admin/flight-bookings?tab=held" replace /></AdminLayout>} />
             <Route path="/admin/booking-requests" element={<AdminLayout><Navigate to="/admin/requests?tab=all" replace /></AdminLayout>} />

@@ -1,5 +1,4 @@
-// Retired public products stay blocked in legacy booking queries and coupons.
-// Admin inventory and shared booking records are retained independently.
+// Keep retired service URLs and legacy coupons hidden.
 
 export function isPublicServiceVisible(service: string): boolean {
   if (service === "visa" || service === "visas") return false;

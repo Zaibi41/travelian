@@ -5,6 +5,7 @@ const KEY = "travelian.session.v1";
 export interface AuthSession {
   email: string;
   name: string;
+  picture?: string;
   createdAt: string;
   provider?: string;
   sub?: string;

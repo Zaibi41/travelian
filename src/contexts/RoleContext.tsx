@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { UserRole } from "@/data/models";
 import { getSession } from "@/lib/auth-session";
 import { roleForSession } from "@/lib/role-mapping";
@@ -48,7 +48,16 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     }
   };
   const currentRole = currentRoleState;
-  const session = getSession();
+  const [session, setSessionState] = useState(getSession);
+  useEffect(() => {
+    const update = () => setSessionState(getSession());
+    window.addEventListener("travelian:session", update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener("travelian:session", update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
   const fallbackUser = roleUsers[currentRole];
   const currentUser = session
     ? { ...fallbackUser, name: session.name || fallbackUser.name, email: session.email || fallbackUser.email }

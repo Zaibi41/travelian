@@ -44,7 +44,8 @@ const popularCities = [
   "Manama", "Skardu", "Tokyo", "Multan",
 ];
 
-export function HotelSearchBar({ initialValues, onSearch, loading }: { initialValues: HotelSearchValues; onSearch: (values: HotelSearchValues) => void; loading: boolean }) {
+export function HotelSearchBar({ initialValues, onSearch, loading, destinationSuggestions = [] }: { initialValues: HotelSearchValues; onSearch: (values: HotelSearchValues) => void; loading: boolean; destinationSuggestions?: string[] }) {
+  const cities = Array.from(new Set([...popularCities, ...destinationSuggestions]));
   const [values, setValues] = useState(initialValues);
   const [open, setOpen] = useState(false);
   const [destOpen, setDestOpen] = useState(false);
@@ -116,15 +117,15 @@ export function HotelSearchBar({ initialValues, onSearch, loading }: { initialVa
               <p className="mb-2 text-xs font-semibold text-muted-foreground">Search By City, District, Region, Hotel Name</p>
               <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
                 {(values.location.trim()
-                  ? popularCities.filter(city => city.toLowerCase().includes(values.location.trim().toLowerCase()))
-                  : popularCities
+                  ? cities.filter(city => city.toLowerCase().includes(values.location.trim().toLowerCase()))
+                  : cities
                 ).map(city => (
                   <button key={city} type="button" className="truncate rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted" onClick={() => { update({ location: city }); setDestOpen(false); }}>
                     {city}
                   </button>
                 ))}
               </div>
-              {values.location.trim() && !popularCities.some(city => city.toLowerCase().includes(values.location.trim().toLowerCase())) && (
+              {values.location.trim() && !cities.some(city => city.toLowerCase().includes(values.location.trim().toLowerCase())) && (
                 <p className="mt-1 text-xs text-muted-foreground">No matching city suggestion — you can still search this destination.</p>
               )}
             </div>,
