@@ -8,7 +8,7 @@ import { useEffect, useId, useState } from "react";
 import { Search, ArrowLeftRight, Plus, CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/components/ui/calendar-popup";
 import { Calendar } from "@/components/ui/calendar";
 import { format, startOfDay, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -47,19 +47,20 @@ function DatePickerField({ id, date, onSelect, placeholder }: { id?: string; dat
 
   const calendar = (
     <Calendar
+      size="large"
       mode="single"
       selected={date}
       onSelect={selectDate}
       disabled={(day) => startOfDay(day) < today}
       initialFocus
-      className="p-3 pointer-events-auto"
+      className="p-3 sm:p-5 pointer-events-auto"
     />
   );
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
+      <CalendarPopup open={open} onOpenChange={setOpen}>
+        <CalendarPopupTrigger asChild>
           <button id={id} type="button" className={cn(
             "flex items-center gap-2 w-full h-12 bg-muted/30 border border-muted rounded-xl px-3 text-sm text-left transition-colors hover:border-primary/30",
             !date && "text-muted-foreground"
@@ -68,14 +69,11 @@ function DatePickerField({ id, date, onSelect, placeholder }: { id?: string; dat
             <span className="min-w-0 truncate sm:hidden">{date ? format(date, "EEE, dd MMM yy") : placeholder}</span>
             <span className="hidden min-w-0 truncate sm:block">{date ? format(date, "EEE, MMM dd, yyyy") : placeholder}</span>
           </button>
-        </DialogTrigger>
-        <DialogContent aria-describedby={undefined} className="flex max-h-[90dvh] w-fit max-w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden rounded-xl bg-card p-0 sm:max-w-[calc(100vw-2rem)]">
-          <DialogHeader className="shrink-0 border-b border-border px-4 py-4 pr-14">
-            <DialogTitle>{placeholder === "Select date" ? "Select flight date" : `Select ${placeholder.toLowerCase()}`}</DialogTitle>
-          </DialogHeader>
-          <div className="min-h-0 overflow-y-auto">{calendar}</div>
-        </DialogContent>
-      </Dialog>
+        </CalendarPopupTrigger>
+        <CalendarPopupContent title={placeholder === "Select date" ? "Select flight date" : `Select ${placeholder.toLowerCase()}`}>
+          {calendar}
+        </CalendarPopupContent>
+      </CalendarPopup>
 
     </>
   );

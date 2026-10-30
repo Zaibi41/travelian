@@ -4,7 +4,7 @@ import { DayPicker } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+export type CalendarProps = React.ComponentProps<typeof DayPicker> & { size?: "default" | "large" };
 
 function getInitialMonth(props: CalendarProps) {
   if (props.defaultMonth) return props.defaultMonth;
@@ -15,7 +15,7 @@ function getInitialMonth(props: CalendarProps) {
   return undefined;
 }
 
-function Calendar({ className, classNames, numberOfMonths = 2, showOutsideDays = false, captionLayout = "dropdown-buttons", fromYear = 2024, toYear = 2035, ...props }: CalendarProps) {
+function Calendar({ className, classNames, size = "default", numberOfMonths = 2, showOutsideDays = false, captionLayout = "dropdown-buttons", fromYear = 2024, toYear = 2035, ...props }: CalendarProps) {
   return (
     <DayPicker
       numberOfMonths={numberOfMonths}
@@ -44,10 +44,10 @@ function Calendar({ className, classNames, numberOfMonths = 2, showOutsideDays =
         nav_button_next: "absolute right-0 top-1",
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
-        head_cell: "text-muted-foreground rounded-md w-9 sm:w-10 font-normal text-[0.8rem]",
+        head_cell: cn("text-muted-foreground rounded-md w-9 sm:w-10 font-normal text-[0.8rem]", size === "large" && "sm:w-12"),
         row: "flex w-full mt-1",
-        cell: "h-9 w-9 sm:h-10 sm:w-10 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-        day: cn(buttonVariants({ variant: "ghost" }), "h-9 w-9 sm:h-10 sm:w-10 p-0 font-normal aria-selected:opacity-100"),
+        cell: cn("h-9 w-9 sm:h-10 sm:w-10 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20", size === "large" && "sm:h-12 sm:w-12"),
+        day: cn(buttonVariants({ variant: "ghost" }), "h-9 w-9 sm:h-10 sm:w-10 p-0 font-normal aria-selected:opacity-100", size === "large" && "sm:h-12 sm:w-12"),
         day_range_end: "day-range-end",
         day_selected:
           "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",

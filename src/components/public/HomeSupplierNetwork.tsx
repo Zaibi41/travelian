@@ -13,7 +13,7 @@ const categories = [
 
 export function HomeSupplierNetwork() {
   return (
-    <section className="relative isolate overflow-hidden gradient-hero py-12 md:py-14">
+    <section className="relative isolate overflow-hidden gradient-hero py-6 md:py-8">
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <div
           className="absolute inset-0 opacity-[0.06]"
@@ -27,19 +27,19 @@ export function HomeSupplierNetwork() {
       </div>
 
       <div className="travelian-container relative">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl backdrop-blur-sm sm:p-7 lg:p-8">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-4 shadow-2xl backdrop-blur-sm sm:p-5 lg:p-6">
           <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-end">
             <div>
-              <h2 className="mt-4 text-2xl font-bold font-display tracking-tight text-white md:text-3xl">
+              <h2 className="text-2xl font-bold font-display tracking-tight text-white md:text-3xl">
                 Connected Supplier Network
               </h2>
             </div>
 
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {categories.map((category) => (
-              <div key={category.title} className="rounded-2xl border border-white/10 bg-white/[0.065] p-4">
+              <div key={category.title} className="rounded-2xl border border-white/10 bg-white/[0.065] p-3">
                 <div className="flex items-center gap-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal/15 text-teal ring-1 ring-teal/20">
                     <category.icon className="h-4 w-4" />
@@ -53,7 +53,7 @@ export function HomeSupplierNetwork() {
             ))}
           </div>
 
-          <div className="mt-6 flex flex-col gap-4 border-t border-white/10 pt-5 sm:flex-row sm:items-center">
+          <div className="mt-4 flex flex-col gap-4 border-t border-white/10 pt-4 sm:flex-row sm:items-center">
             <Button asChild size="sm" className="w-full rounded-xl bg-gold font-semibold text-gold-foreground hover:bg-gold/90 sm:w-auto">
               <Link to="/contact">
                 Talk to our team <ArrowRight className="ml-1 h-4 w-4" />

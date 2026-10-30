@@ -6,7 +6,7 @@ import { format, startOfDay } from "date-fns";
 
 import { Button } from "@/components/ui/button";
 
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/components/ui/calendar-popup";
 
 import { Calendar } from "@/components/ui/calendar";
 
@@ -94,9 +94,9 @@ function DatePickerField({
 
   return (
 
-    <Popover open={open} onOpenChange={setOpen}>
+    <CalendarPopup open={open} onOpenChange={setOpen}>
 
-      <PopoverTrigger asChild>
+      <CalendarPopupTrigger asChild>
 
         <button
 
@@ -114,15 +114,15 @@ function DatePickerField({
 
           <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
 
-          {date ? format(date, "MMM dd, yyyy") : placeholder}
+          {date ? format(date, "EEE, MMM dd, yyyy") : placeholder}
 
         </button>
 
-      </PopoverTrigger>
+      </CalendarPopupTrigger>
 
-      <PopoverContent className="z-[1120] w-auto p-0" align="start" side="bottom" sideOffset={10} collisionPadding={16}>
+      <CalendarPopupContent title="Select departure date">
 
-        <Calendar
+        <Calendar size="large"
 
           mode="single"
 
@@ -134,13 +134,13 @@ function DatePickerField({
 
           initialFocus
 
-          className="pointer-events-auto p-3"
+          className="pointer-events-auto p-3 sm:p-5"
 
         />
 
-      </PopoverContent>
+      </CalendarPopupContent>
 
-    </Popover>
+    </CalendarPopup>
 
   );
 

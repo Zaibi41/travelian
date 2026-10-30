@@ -1,3 +1,4 @@
+import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/components/ui/calendar-popup";
 import { makeRoomBelowField } from "@/hooks/use-below-field";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -24,14 +25,14 @@ function StayDate({ label, value, minimum, onChange }: { label: string; value: s
   const date = parseDateOnly(value);
   return <div className="min-w-0 space-y-1.5">
     <span className="text-xs font-medium text-muted-foreground">{label}</span>
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild><Button type="button" variant="outline" aria-label={label} className="h-12 w-full justify-start gap-2 rounded-xl border-muted bg-muted/30 px-3 font-normal">
+    <CalendarPopup open={open} onOpenChange={setOpen}>
+      <CalendarPopupTrigger asChild><Button type="button" variant="outline" aria-label={label} className="h-12 w-full justify-start gap-2 rounded-xl border-muted bg-muted/30 px-3 font-normal">
         <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="truncate sm:hidden">{date ? format(date, "dd MMM yy") : label}</span><span className="hidden truncate sm:block">{date ? format(date, "EEE, dd MMM yyyy") : label}</span>
-      </Button></PopoverTrigger>
-      <PopoverContent align="start" className="w-auto max-w-[calc(100vw-2rem)] p-0">
-        <Calendar mode="single" selected={date} defaultMonth={date} disabled={day => startOfDay(day) < startOfDay(minimum)} initialFocus className="pointer-events-auto p-3" onSelect={next => { if (next) { onChange(formatDateOnly(next)); setOpen(false); } }} />
-      </PopoverContent>
-    </Popover>
+      </Button></CalendarPopupTrigger>
+      <CalendarPopupContent title={`Select ${label.toLowerCase()}`}>
+        <Calendar size="large" mode="single" selected={date} defaultMonth={date} disabled={day => startOfDay(day) < startOfDay(minimum)} initialFocus className="pointer-events-auto p-3 sm:p-5" onSelect={next => { if (next) { onChange(formatDateOnly(next)); setOpen(false); } }} />
+      </CalendarPopupContent>
+    </CalendarPopup>
   </div>;
 }
 

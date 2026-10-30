@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/components/ui/calendar-popup";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users, Loader2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -1895,15 +1895,15 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
                     <AirportCombobox value={segment.from} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, from: value } : item))} placeholder="Origin" />
                     <AirportCombobox value={segment.to} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, to: value } : item))} placeholder="Destination" iconVariant="arrival" />
-                    <Popover open={editSegmentDateOpen === index} onOpenChange={(open) => setEditSegmentDateOpen(open ? index : null)}>
-                      <PopoverTrigger asChild>
+                    <CalendarPopup open={editSegmentDateOpen === index} onOpenChange={(open) => setEditSegmentDateOpen(open ? index : null)}>
+                      <CalendarPopupTrigger asChild>
                         <button type="button" className="flex h-11 items-center gap-2 rounded-xl border border-input bg-background px-3 text-left text-sm">
                           <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                           {segment.date ? format(segment.date, "MMM dd, yyyy") : "Select date"}
                         </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="z-[1120] max-h-[min(var(--radix-popover-content-available-height),22rem)] w-auto max-w-[calc(100vw-2rem)] overflow-y-auto p-0" align="start" side="bottom" sideOffset={8} avoidCollisions={false} collisionPadding={16}>
-                        <Calendar
+                      </CalendarPopupTrigger>
+                      <CalendarPopupContent title="Select flight date">
+                        <Calendar size="large"
                           mode="single"
                           selected={segment.date}
                           onSelect={(date) => {
@@ -1911,9 +1911,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             if (date) setEditSegmentDateOpen(null);
                           }}
                           initialFocus
+                          className="p-3 sm:p-5 pointer-events-auto"
                         />
-                      </PopoverContent>
-                    </Popover>
+                      </CalendarPopupContent>
+                    </CalendarPopup>
                     <Button type="button" variant="outline" size="sm" className="shrink-0" disabled={editSegments.length <= 2} onClick={() => setEditSegments((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Remove</Button>
                   </div>
                 ))}
@@ -1938,15 +1939,15 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             )}
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Departure Date</label>
-              <Popover open={editDateOpen} onOpenChange={setEditDateOpen}>
-                <PopoverTrigger asChild>
+              <CalendarPopup open={editDateOpen} onOpenChange={setEditDateOpen}>
+                <CalendarPopupTrigger asChild>
                   <button type="button" className="flex items-center gap-2 h-11 w-full bg-background border border-input rounded-xl px-3 text-sm text-left">
                     <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                     {editDate ? format(editDate, "MMM dd, yyyy") : "Select date"}
                   </button>
-                </PopoverTrigger>
-                <PopoverContent className="z-[1120] max-h-[min(var(--radix-popover-content-available-height),22rem)] w-auto max-w-[calc(100vw-2rem)] overflow-y-auto p-0" align="start" side="bottom" sideOffset={8} avoidCollisions={false} collisionPadding={16}>
-                  <Calendar
+                </CalendarPopupTrigger>
+                <CalendarPopupContent title="Select departure date">
+                  <Calendar size="large"
                     mode="single"
                     selected={editDate}
                     onSelect={(date) => {
@@ -1954,23 +1955,23 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       if (date) setEditDateOpen(false);
                     }}
                     initialFocus
-                    className="p-3 pointer-events-auto"
+                    className="p-3 sm:p-5 pointer-events-auto"
                   />
-                </PopoverContent>
-              </Popover>
+                </CalendarPopupContent>
+              </CalendarPopup>
             </div>
             {editTripType === "roundtrip" && (
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Return Date</label>
-                <Popover open={editReturnDateOpen} onOpenChange={setEditReturnDateOpen}>
-                  <PopoverTrigger asChild>
+                <CalendarPopup open={editReturnDateOpen} onOpenChange={setEditReturnDateOpen}>
+                  <CalendarPopupTrigger asChild>
                     <button type="button" className="flex items-center gap-2 h-11 w-full bg-background border border-input rounded-xl px-3 text-sm text-left">
                       <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                       {editReturnDate ? format(editReturnDate, "MMM dd, yyyy") : "Select return date"}
                     </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="z-[1120] max-h-[min(var(--radix-popover-content-available-height),22rem)] w-auto max-w-[calc(100vw-2rem)] overflow-y-auto p-0" align="start" side="bottom" sideOffset={8} avoidCollisions={false} collisionPadding={16}>
-                    <Calendar
+                  </CalendarPopupTrigger>
+                  <CalendarPopupContent title="Select return date">
+                    <Calendar size="large"
                       mode="single"
                       selected={editReturnDate}
                       onSelect={(date) => {
@@ -1978,10 +1979,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         if (date) setEditReturnDateOpen(false);
                       }}
                       initialFocus
-                      className="p-3 pointer-events-auto"
+                      className="p-3 sm:p-5 pointer-events-auto"
                     />
-                  </PopoverContent>
-                </Popover>
+                  </CalendarPopupContent>
+                </CalendarPopup>
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
