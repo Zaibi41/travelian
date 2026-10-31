@@ -586,8 +586,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   };
 
   const baggageLabel = (fare: DisplayFare, flight: TravelianFlight) => {
-    if (/nil baggage|no baggage/i.test(fare.tier)) return "No Baggage";
-    return cleanFareText(fare.bags || flight.baggage, "No Baggage");
+    if (/nil baggage/i.test(fare.tier)) return "7 KG";
+    const baggage = cleanFareText(fare.bags || flight.baggage, "7 KG");
+    return /^nil(?: baggage)?$/i.test(baggage) ? "7 KG" : baggage;
   };
 
   const hasMeal = (fare: DisplayFare, flight: TravelianFlight) => mealLabel(fare, flight) !== "No Meal";
@@ -606,7 +607,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         cancellation: (fare as DisplayFare).cancellation || fare.refund,
         conditions: (fare as DisplayFare).conditions,
         amenities: fare.amenities,
-      }));
+      })).sort((a, b) => a.price.total - b.price.total);
     }
     const isNonRefundable = flight.refundable === false;
     return [{
@@ -1516,6 +1517,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               const fareOptionsOpen = selectedFlight === flight.flightId;
               const displayFares = fareRows(flight);
               const primaryFare = displayFares[0];
+              const visibleFares = fareOptionsOpen ? displayFares : displayFares.slice(0, 1);
+              const hiddenFareCount = Math.max(0, displayFares.length - 1);
               const journeyLegs = journeyLegsForCard(flight);
               const showStackedLegs = tripType === "roundtrip" || tripType === "multicity";
 
@@ -1634,10 +1637,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         <table className="hidden w-full table-fixed border-collapse md:table">
                           <colgroup>
                             <col className="w-[20%]" />
-                            <col className="w-[19%]" />
+                            <col className="w-[18%]" />
                             <col className="w-[22%]" />
-                            <col className="w-[19%]" />
-                            <col className="w-[20%]" />
+                            <col className="w-[17%]" />
+                            <col className="w-[23%]" />
                           </colgroup>
                           <thead className="bg-muted/40 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                             <tr className="border-b">
@@ -1661,7 +1664,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             </tr>
                           </thead>
                           <tbody className="divide-y">
-                            {displayFares.map((fare) => (
+                            {visibleFares.map((fare) => (
                               <tr key={`${flight.flightId}-${fare.tier}-${fare.price.total}`} className="bg-card text-sm">
                                 <td className="min-w-0 px-4 py-3 align-middle">
                                   <p className="truncate font-bold text-foreground" title={fare.tier}>{fare.tier}</p>
@@ -1684,18 +1687,27 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                   <span className="block truncate whitespace-nowrap text-base font-black text-foreground" title={formatFare(fare.price.total, fare.price.currency || flight.currency)}>{formatFare(fare.price.total, fare.price.currency || flight.currency)}</span>
                                 </td>
                                 <td className="overflow-hidden px-3 py-3 text-right align-middle">
-                                  <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer">
-                                    <Button variant="outline" size="sm" className="w-full min-w-0 justify-center gap-2 rounded-xl px-3">
-                                      <WhatsAppIcon className="h-4 w-4" /> WhatsApp Help
-                                    </Button>
-                                  </a>
+                                  <div className="flex min-w-0 flex-col items-stretch gap-2">
+                                    <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer" className="min-w-0">
+                                      <Button variant="outline" size="sm" className="w-full min-w-0 justify-center gap-2 rounded-xl px-2">
+                                        <WhatsAppIcon className="h-4 w-4" /> WhatsApp
+                                      </Button>
+                                    </a>
+                                    {searchExpired ? (
+                                      <Button size="sm" className="w-full rounded-xl px-3" onClick={revalidateSearch}>Revalidate</Button>
+                                    ) : (
+                                      <Link to={bookingHref(flight, fare)} className="min-w-0">
+                                        <Button size="sm" className="w-full rounded-xl px-3">Book</Button>
+                                      </Link>
+                                    )}
+                                  </div>
                                 </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
                         <div className="divide-y md:hidden">
-                          {displayFares.map((fare) => (
+                          {visibleFares.map((fare) => (
                             <div key={`${flight.flightId}-${fare.tier}-${fare.price.total}`} className="bg-card px-4 py-4 text-sm space-y-3">
                               {/* Fare name */}
                               <div className="min-w-0">
@@ -1716,18 +1728,42 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 </p>
                               </div>
                               
-                              {/* Price and WhatsApp button */}
-                              <div className="flex items-center justify-between gap-3 pt-1">
+                              {/* Price and fare actions */}
+                              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                                 <p className="whitespace-nowrap text-lg font-black text-primary">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</p>
-                                <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer">
-                                  <Button variant="outline" size="sm" className="h-9 whitespace-nowrap rounded-xl gap-2 px-4 font-semibold">
-                                    <WhatsAppIcon className="h-4 w-4" /> WhatsApp Help
-                                  </Button>
-                                </a>
+                                <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
+                                  <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer" className="min-w-0">
+                                    <Button variant="outline" size="sm" className="h-9 w-full min-w-0 whitespace-nowrap rounded-xl gap-2 px-2 font-semibold">
+                                      <WhatsAppIcon className="h-4 w-4" /> WhatsApp
+                                    </Button>
+                                  </a>
+                                  {searchExpired ? (
+                                    <Button size="sm" className="h-9 w-full rounded-xl px-3 font-semibold" onClick={revalidateSearch}>Revalidate</Button>
+                                  ) : (
+                                    <Link to={bookingHref(flight, fare)} className="min-w-0">
+                                      <Button size="sm" className="h-9 w-full rounded-xl px-3 font-semibold">Book</Button>
+                                    </Link>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           ))}
                         </div>
+                        {hiddenFareCount > 0 && (
+                          <div className="border-t bg-muted/20 px-3 py-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="mx-auto flex h-8 gap-2 rounded-lg px-4 text-xs font-semibold text-primary hover:text-primary"
+                              aria-expanded={fareOptionsOpen}
+                              onClick={() => setSelectedFlight((current) => current === flight.flightId ? null : flight.flightId)}
+                            >
+                              {fareOptionsOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                              {fareOptionsOpen ? "Hide additional fares" : `Show ${hiddenFareCount} more ${hiddenFareCount === 1 ? "fare" : "fares"}`}
+                            </Button>
+                          </div>
+                        )}
                       </div>
                       <div className="hidden">
                         <div className="flex flex-col gap-2">
@@ -2268,7 +2304,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               <JourneyTimeline flight={detailsFlight} />
 
               <div className="grid gap-3 md:grid-cols-3">
-                <InfoBox title="Baggage" value={detailsFlight.baggage || "Baggage info not available"} />
+                <InfoBox title="Baggage" value={detailsFlight.baggage && !/^nil(?: baggage)?$/i.test(detailsFlight.baggage.trim()) ? detailsFlight.baggage : "7 KG"} />
                 <InfoBox title="Meal" value={detailsFlight.meal || "Meal info not available"} />
                 <InfoBox title="Fare" value={formatFare(detailsFlight.price, detailsFlight.currency)} />
               </div>

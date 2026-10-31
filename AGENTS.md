@@ -258,6 +258,15 @@ CTA sections:
 - Do not re-add WhatsApp buttons if removed from that specific section.
 - Call Travelian button should follow Travelian blue theme where requested.
 
+## Exact Requirements / No Invention Rule
+
+- Use the user's exact requested terminology for labels, fields, statuses, and workflows.
+- Do not invent additional concepts, fields, labels, badges, helper text, relationships, or workflow states.
+- Do not infer product requirements merely because they are common in another application.
+- If a required behavior cannot be determined from the request or existing implementation, ask the user before adding it.
+- Keep changes limited to the requested scope and established project behavior.
+- Examples: do not introduce terms such as “Document,” “Lead traveler,” or “Also travelling” when the user requested only passport/ID card details and did not request those concepts.
+
 ## Final QA Before Completion
 
 Before saying the task is done, confirm:

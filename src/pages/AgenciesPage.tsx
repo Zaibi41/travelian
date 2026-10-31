@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { ComponentType, ReactNode } from "react";
 import { Agency, AgencyStatus } from "@/data/models";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,9 +45,10 @@ const emptyAgency: AgencyForm = {
 };
 
 export default function AgenciesPage() {
+  const [searchParams] = useSearchParams();
   const { currentRole, currentUser } = useRole();
   const { agencies, users, addAgency, updateAgency } = useAdmin();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("search") || "");
   const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAgency, setEditingAgency] = useState<Agency | null>(null);

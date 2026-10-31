@@ -347,6 +347,7 @@ export interface CustomerProfile {
   email?: string;
   phone?: string;
   title?: string;
+  gender?: string;
   firstName?: string;
   lastName?: string;
   dateOfBirth?: string;
@@ -357,11 +358,51 @@ export interface CustomerProfile {
 }
 
 export type BookingRequestType = 'umrah' | 'tour' | 'visa' | 'study_visa' | 'visit_visa' | 'hotel' | 'service' | 'package' | 'group' | 'manual_flight' | 'whatsapp_inquiry';
-export type BookingRequestStatus = 'new' | 'contacted' | 'in_progress' | 'waiting_for_documents' | 'payment_pending' | 'confirmed' | 'cancelled_lost';
+export type BookingRequestStatus = 'new' | 'contacted' | 'in_progress' | 'waiting_for_documents' | 'payment_pending' | 'confirmed' | 'cancelled_lost' | 'issued' | 'pending' | 'expired' | 'refund' | 'cancel';
+
+export interface BookingRequestFlightDetails {
+  originCode?: string;
+  originCity?: string;
+  destinationCode?: string;
+  destinationCity?: string;
+  tripType?: 'One-way' | 'Round-trip' | 'Multi-city' | string;
+  airline?: string;
+  flightNumber?: string;
+  duration?: string;
+  baggage?: string;
+  cabinClass?: string;
+  departureAt?: string;
+  arrivalAt?: string;
+  passengers?: number;
+  seats?: number;
+}
+
+export interface BookingRequestTraveler {
+  travelerId: string;
+  customerId?: string;
+  title?: string;
+  firstName: string;
+  lastName: string;
+  passengerType: 'adult' | 'child' | 'infant';
+  dateOfBirth?: string;
+  identityDocumentType?: 'passport' | 'id_card';
+  identityDocumentNumber?: string;
+  passportOrIdCardIssuanceDate?: string;
+  identityDocumentExpiry?: string;
+  ticketNumber?: string;
+}
 
 export interface BookingRequest {
   requestId: string;
   type: BookingRequestType;
+  /** Immutable airline-issued booking record locator. */
+  readonly pnr?: string;
+  flightDetails?: BookingRequestFlightDetails;
+  /** The booking contact may be a traveler or may book on behalf of others. */
+  bookerIsTraveler?: boolean;
+  travelers?: BookingRequestTraveler[];
+  /** Internal supplier/provider reference used by admin filtering. */
+  provider?: string;
   packageId?: string;
   packageName?: string;
   customerName: string;
@@ -373,6 +414,11 @@ export interface BookingRequest {
   assignedStaff?: string;
   notificationStatus?: 'pending' | 'sent' | 'failed';
   notificationError?: string;
+  amount?: number;
+  commission?: number;
+  paymentStatus?: 'paid' | 'unpaid';
+  /** Supplier-provided deadline after which the booking can no longer be completed. */
+  expiresAt?: string;
   createdAt: string;
   updatedAt?: string;
 }

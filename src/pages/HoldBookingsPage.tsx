@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Hourglass, RefreshCw, Plane, Ticket, X } from "lucide-react";
+import { Hourglass, Plane, Ticket, X } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,7 +66,6 @@ export default function HoldBookingsPage() {
           <h1 className="text-2xl font-bold font-display">Hold Bookings</h1>
           <p className="text-sm text-muted-foreground">Active hold queue. Issue tickets before the countdown expires or release the seat.</p>
         </div>
-        <Button variant="outline" onClick={load} className="gap-2"><RefreshCw className="h-4 w-4" /> Refresh</Button>
       </div>
 
       {rows.length === 0 ? (

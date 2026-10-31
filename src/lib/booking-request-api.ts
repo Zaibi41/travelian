@@ -15,6 +15,7 @@ export async function listBookingRequests(filters: { status?: BookingRequestStat
 
 export async function createBookingRequest(input: {
   type: BookingRequestType;
+  provider?: string;
   packageId?: string;
   packageName?: string;
   customerName: string;

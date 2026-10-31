@@ -9,7 +9,6 @@ import {
   Info,
   Luggage,
   Plane,
-  RefreshCw,
   Search,
   ShieldCheck,
   Sparkles,
@@ -728,9 +727,6 @@ export default function GroupTicketingPage() {
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" className="rounded-xl text-xs" onClick={clearSearch}>
                   Clear search
-                </Button>
-                <Button variant="outline" size="sm" className="rounded-xl text-xs" onClick={load}>
-                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" /> Refresh
                 </Button>
               </div>
             </div>

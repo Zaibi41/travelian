@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Search, UserRound, Users } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,6 +17,7 @@ const emptyCustomer: Omit<CustomerProfile, "customerId"> = {
   email: "",
   phone: "",
   title: "Mr",
+  gender: "",
   firstName: "",
   lastName: "",
   dateOfBirth: "",
@@ -22,14 +25,70 @@ const emptyCustomer: Omit<CustomerProfile, "customerId"> = {
   passportExpiry: "",
 };
 
+const sampleCustomers: CustomerProfile[] = [
+  {
+    customerId: "SAMPLE-CUST-1001",
+    name: "Ahmed Raza",
+    firstName: "Ahmed",
+    lastName: "Raza",
+    title: "Mr",
+    gender: "male",
+    email: "ahmed@example.com",
+    phone: "+92 300 1112233",
+    dateOfBirth: "1988-04-12",
+    passportNumber: "PK1234567",
+    passportExpiry: "2031-08-20",
+  },
+  {
+    customerId: "SAMPLE-CUST-1002",
+    name: "Sana Malik",
+    firstName: "Sana",
+    lastName: "Malik",
+    title: "Ms",
+    gender: "female",
+    email: "sana@example.com",
+    phone: "+92 301 2223344",
+    dateOfBirth: "1992-07-19",
+    passportNumber: "PK2345678",
+    passportExpiry: "2030-05-14",
+  },
+  {
+    customerId: "SAMPLE-CUST-1003",
+    name: "Usman Ali",
+    firstName: "Usman",
+    lastName: "Ali",
+    title: "Mr",
+    gender: "male",
+    email: "usman@example.com",
+    phone: "+92 302 3334455",
+    dateOfBirth: "1985-11-03",
+    passportNumber: "PK3456789",
+    passportExpiry: "2029-11-03",
+  },
+  {
+    customerId: "SAMPLE-CUST-1004",
+    name: "Hira Saeed",
+    firstName: "Hira",
+    lastName: "Saeed",
+    title: "Mrs",
+    gender: "female",
+    email: "hira@example.com",
+    phone: "+92 307 8889900",
+    dateOfBirth: "1990-02-16",
+    passportNumber: "PK4567890",
+    passportExpiry: "2032-02-16",
+  },
+];
+
 function splitCustomerName(name = "") {
   const [firstName = "", ...lastNameParts] = name.trim().split(/\s+/).filter(Boolean);
   return { firstName, lastName: lastNameParts.join(" ") };
 }
 
 export default function CustomersPage() {
+  const [searchParams] = useSearchParams();
   const [customers, setCustomers] = useState<CustomerProfile[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("search") || "");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CustomerProfile | null>(null);
   const [form, setForm] = useState<Omit<CustomerProfile, "customerId">>(emptyCustomer);
@@ -37,10 +96,12 @@ export default function CustomersPage() {
 
   const loadCustomers = async () => {
     try {
-      setCustomers(await listCustomers());
+      const loadedCustomers = await listCustomers();
+      setCustomers(loadedCustomers.length ? loadedCustomers : sampleCustomers);
     } catch (error) {
       console.error("Unable to load customer profiles", error);
-      toast.error("Customer profiles could not be loaded");
+      setCustomers(sampleCustomers);
+      toast.warning("Live customer profiles could not be loaded. Showing sample data.");
     }
   };
 
@@ -66,30 +127,37 @@ export default function CustomersPage() {
 
   const openEdit = (customer: CustomerProfile) => {
     const { customerId: _customerId, ...editable } = customer;
+    const parsedName = splitCustomerName(customer.name);
     setEditing(customer);
-    setForm({ ...emptyCustomer, ...editable });
+    setForm({
+      ...emptyCustomer,
+      ...editable,
+      firstName: editable.firstName || parsedName.firstName,
+      lastName: editable.lastName || parsedName.lastName,
+    });
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
-    const name = form.name.trim() || [form.firstName, form.lastName].filter(Boolean).join(" ").trim();
-    if (!name) {
-      toast.error("Customer name is required");
+    const firstName = form.firstName?.trim() || "";
+    const lastName = form.lastName?.trim() || "";
+    if (!firstName || !lastName) {
+      toast.error("First name and last name are required");
       return;
     }
+    const name = `${firstName} ${lastName}`;
     if (!form.passportNumber?.trim()) {
       toast.error("Passport number is required");
       return;
     }
     setSaving(true);
     try {
-      const parsedName = splitCustomerName(name);
       const saved = await saveCustomer({
         ...form,
         customerId: editing?.customerId,
         name,
-        firstName: form.firstName || parsedName.firstName,
-        lastName: form.lastName || parsedName.lastName,
+        firstName,
+        lastName,
       });
       setCustomers(previous => [saved, ...previous.filter(customer => customer.customerId !== saved.customerId)]);
       setDialogOpen(false);
@@ -144,7 +212,12 @@ export default function CustomersPage() {
               <tbody>
                 {filtered.length ? filtered.map(customer => (
                   <tr key={customer.customerId} className="border-b transition-colors last:border-0 hover:bg-muted/30">
-                    <td className="p-3 font-medium">{customer.name}</td>
+                    <td className="p-3 font-medium">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span>{customer.name}</span>
+                        {customer.customerId.startsWith("SAMPLE-") && <Badge variant="secondary">Sample</Badge>}
+                      </div>
+                    </td>
                     <td className="p-3 text-muted-foreground"><p>{customer.email || "-"}</p><p>{customer.phone || "-"}</p></td>
                     <td className="p-3 font-mono text-xs">{customer.passportNumber}</td>
                     <td className="p-3 text-muted-foreground">{customer.dateOfBirth || "-"}</td>
@@ -163,10 +236,18 @@ export default function CustomersPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle className="font-display">{editing ? "Edit Customer" : "Add Customer"}</DialogTitle></DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Customer Name *"><Input value={form.name} onChange={event => setForm(previous => ({ ...previous, name: event.target.value }))} /></Field>
-            <Field label="Title"><Select value={form.title || "Mr"} onValueChange={value => setForm(previous => ({ ...previous, title: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Mr">Mr</SelectItem><SelectItem value="Mrs">Mrs</SelectItem><SelectItem value="Ms">Ms</SelectItem><SelectItem value="Miss">Miss</SelectItem><SelectItem value="Dr">Dr</SelectItem></SelectContent></Select></Field>
-            <Field label="First Name"><Input value={form.firstName || ""} onChange={event => setForm(previous => ({ ...previous, firstName: event.target.value }))} /></Field>
-            <Field label="Last Name"><Input value={form.lastName || ""} onChange={event => setForm(previous => ({ ...previous, lastName: event.target.value }))} /></Field>
+            <Field label="Title"><Select value={form.title || "Mr"} onValueChange={value => setForm(previous => ({ ...previous, title: value }))}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Mr">Mr</SelectItem><SelectItem value="Mrs">Mrs</SelectItem><SelectItem value="Ms">Ms</SelectItem><SelectItem value="Miss">Miss</SelectItem><SelectItem value="Mstr">Mstr</SelectItem></SelectContent></Select></Field>
+            <Field label="First Name *"><Input value={form.firstName || ""} onChange={event => setForm(previous => ({ ...previous, firstName: event.target.value }))} /></Field>
+            <Field label="Last Name *"><Input value={form.lastName || ""} onChange={event => setForm(previous => ({ ...previous, lastName: event.target.value }))} /></Field>
+            <Field label="Gender">
+              <Select value={form.gender || undefined} onValueChange={value => setForm(previous => ({ ...previous, gender: value }))}>
+                <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Male</SelectItem>
+                  <SelectItem value="female">Female</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
             <Field label="Customer Email"><Input type="email" value={form.email || ""} onChange={event => setForm(previous => ({ ...previous, email: event.target.value }))} /></Field>
             <Field label="Customer WhatsApp/Phone"><Input value={form.phone || ""} onChange={event => setForm(previous => ({ ...previous, phone: event.target.value }))} placeholder="+923001234567" /></Field>
             <Field label="Passport Number *"><Input value={form.passportNumber || ""} onChange={event => setForm(previous => ({ ...previous, passportNumber: event.target.value.toUpperCase() }))} /></Field>

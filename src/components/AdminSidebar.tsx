@@ -37,7 +37,7 @@ export function AdminSidebar() {
     [activeItemKey, sections],
   );
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-  const directCategories = new Set(["Dashboard", "Search", "Flight Bookings", "Requests"]);
+  const directCategories = new Set(["Dashboard", "Search", "Flight Bookings", "Requests", "Customers"]);
 
   useEffect(() => {
     const categoryToOpen = activeCategory || sections[0]?.category;

@@ -24,6 +24,7 @@ import {
   Plane,
   Receipt,
   RefreshCw,
+  Search,
   Settings,
   Shield,
   Tag,
@@ -97,19 +98,27 @@ export const adminNavigation: AdminNavSection[] = [
   {
     category: "Search",
     items: [
-      item("Search", "/admin/search", Plane, allSearchRoles),
+      item("Search", "/admin/search", Search, allSearchRoles),
     ],
   },
   {
     category: "Flight Bookings",
     items: [
-      item("Flight Bookings", "/admin/flight-bookings", CalendarCheck, allSearchRoles),
+      item("Flight Operations", "/admin/flight-bookings", CalendarCheck, allSearchRoles),
     ],
   },
   {
     category: "Requests",
     items: [
-      item("Requests", "/admin/requests", ClipboardCheck, allSearchRoles),
+      item("Bookings", "/admin/requests", ClipboardCheck, allSearchRoles),
+    ],
+  },
+  {
+    category: "Customers",
+    items: [
+      item("Customers", "/admin/customers", Users, [...internalAdminRoles, "staff"]),
+      item("My Customers", "/admin/customers", Users, agencyOwnerRoles),
+      item("Passenger Profiles", "/admin/customers", UserCircle, agencyStaffRoles),
     ],
   },
   {
@@ -180,14 +189,6 @@ export const adminNavigation: AdminNavSection[] = [
     category: "Payment Follow-up",
     items: [
       item("Payment Links", "/admin/payments", CreditCard, ["staff"]),
-    ],
-  },
-  {
-    category: "Customers",
-    items: [
-      item("Customers", "/admin/customers", Users, [...internalAdminRoles, "staff"]),
-      item("My Customers", "/admin/customers", Users, agencyOwnerRoles),
-      item("Passenger Profiles", "/admin/customers", UserCircle, agencyStaffRoles),
     ],
   },
   {
@@ -268,6 +269,7 @@ export const adminNavigation: AdminNavSection[] = [
 
 export function getNavigationForRole(role: UserRole): AdminNavSection[] {
   return adminNavigation
+    .filter((section) => section.category !== "Flight Bookings")
     .map((section) => ({
       ...section,
       items: section.items.filter((navItem) => navItem.roles.includes(role)),

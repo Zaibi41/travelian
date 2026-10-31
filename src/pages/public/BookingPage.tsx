@@ -4,11 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AdvancedDatePicker } from "@/components/ui/advanced-date-picker";
 import { CountryCodePicker } from "@/components/ui/country-code-picker";
 import { CountryPicker } from "@/components/ui/country-picker";
-import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Search, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Search, Info } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 // SeatMap is intentionally paused in the UI for now. Keep the component available for the future seat-selection phase.
 // import { SeatMap } from "@/components/booking/SeatMap";
@@ -248,6 +249,8 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const [recheckLoading, setRecheckLoading] = useState(false);
   const [recheckResult, setRecheckResult] = useState<{ oldPrice: number; newPrice: number } | null>(null);
   const [recheckAccepted, setRecheckAccepted] = useState(false);
+  const [nameConfirmationOpen, setNameConfirmationOpen] = useState(false);
+  const [nameAcknowledged, setNameAcknowledged] = useState(false);
   const [payConfirmOpen, setPayConfirmOpen] = useState(false);
   const { currentRole } = useRole();
   const isCustomer = currentRole === "customer";
@@ -260,7 +263,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const [passengerForms, setPassengerForms] = useState<PassengerForm[]>(() =>
     passengerLabels.map((passenger) => createPassengerForm(passenger.type, passenger.label)),
   );
-  const [expandedPassengers, setExpandedPassengers] = useState<Set<number>>(() => new Set(passengerLabels.map((_, index) => index)));
 
   // Contact
   const [email, setEmail] = useState("");
@@ -295,6 +297,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   };
 
   const passengerComplete = (passenger: PassengerForm) => Boolean(
+    passenger.gender &&
     passenger.firstName.trim() &&
     passenger.lastName.trim() &&
     passenger.dob &&
@@ -302,26 +305,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
     passengerDocValid(passenger) &&
     (!requiresPassport || passenger.expiryDate),
   );
-
-  const togglePassengerExpanded = (index: number) => {
-    setExpandedPassengers((current) => {
-      const next = new Set(current);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    setExpandedPassengers((current) => {
-      const next = new Set(current);
-      passengerForms.forEach((passenger, index) => {
-        if (passengerComplete(passenger)) next.delete(index);
-        else next.add(index);
-      });
-      return next;
-    });
-  }, [passengerForms]);
 
   const toggleAddon = (id: string) => {
     setSelectedAddons(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -342,6 +325,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
     passengerForms.forEach((passenger, index) => {
+      if (!passenger.gender) e[`passenger-${index}-gender`] = "Gender is required";
       if (!passenger.firstName.trim()) e[`passenger-${index}-firstName`] = "First name is required";
       if (!passenger.lastName.trim()) e[`passenger-${index}-lastName`] = "Last name is required";
       if (!passenger.dob) e[`passenger-${index}-dob`] = "Date of birth is required";
@@ -360,9 +344,22 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
   const isStep1Valid = Object.keys(errors).length === 0;
 
-  const handleContinue = () => {
-    setTouched(true);
-    if (!isStep1Valid) return;
+  const focusFirstInvalidField = () => {
+    const firstErrorKey = Object.keys(errors)[0];
+    if (!firstErrorKey) return;
+    window.requestAnimationFrame(() => {
+      const container = document.querySelector<HTMLElement>(`[data-error-key="${firstErrorKey}"]`);
+      if (!container) return;
+      container.scrollIntoView({ behavior: "smooth", block: "center" });
+      const field = container.matches("input, button, [tabindex]")
+        ? container
+        : container.querySelector<HTMLElement>("input, button, [tabindex]");
+      window.setTimeout(() => field?.focus({ preventScroll: true }), 350);
+    });
+  };
+
+  const continueAfterNameConfirmation = () => {
+    setNameConfirmationOpen(false);
     if (recheckAccepted) { setStep(2); return; }
     // Fare recheck interstitial: deterministic mock based on flight + total so behaviour is testable.
     setRecheckLoading(true);
@@ -382,6 +379,16 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
         setStep(2);
       }
     }, 1200);
+  };
+
+  const handleContinue = () => {
+    setTouched(true);
+    if (!isStep1Valid) {
+      focusFirstInvalidField();
+      return;
+    }
+    setNameAcknowledged(false);
+    setNameConfirmationOpen(true);
   };
 
   const draftKey = useMemo(() => `travelian.bookingDraft.${params.toString()}`, [params]);
@@ -410,30 +417,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
       localStorage.removeItem(draftKey);
     }
   }, [draftKey, passengerLabels.length]);
-
-  const saveProgress = () => {
-    try {
-      localStorage.setItem(draftKey, JSON.stringify({
-        passengerForms,
-        email,
-        phoneCode,
-        phone,
-        altPhoneCode,
-        altPhone,
-        savedAt: new Date().toISOString(),
-      }));
-      toast({
-        title: "Progress saved",
-        description: "This booking draft is saved on this device.",
-      });
-    } catch {
-      toast({
-        title: "Unable to save draft",
-        description: "Browser storage is unavailable. Please keep this page open.",
-        variant: "destructive",
-      });
-    }
-  };
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -675,8 +658,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
                 {passengerForms.map((passenger, index) => {
                   const isComplete = passengerComplete(passenger);
-                  const isExpanded = expandedPassengers.has(index);
-                  const passengerName = [passenger.title, passenger.firstName, passenger.lastName].filter(Boolean).join(" ");
                   const nameHelperId = `passenger-${index}-name-helper`;
                   const docHelperId = `passenger-${index}-document-helper`;
                   return (
@@ -692,14 +673,10 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                         <div className="flex items-center gap-2">
                           {isComplete && <Badge className="rounded-full bg-success/10 text-success hover:bg-success/10">Complete</Badge>}
                           <Badge variant="outline" className="capitalize">{passenger.passengerType}</Badge>
-                          <Button type="button" variant="ghost" size="sm" onClick={() => togglePassengerExpanded(index)} className="h-8 gap-1 rounded-lg">
-                            {isExpanded ? "Collapse" : "Edit"}
-                            {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                          </Button>
                         </div>
                       </div>
 
-                      <div className={isExpanded ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "hidden"}>
+                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
                           <Label className="text-sm font-medium">Title *</Label>
                           <Select value={passenger.title} onValueChange={(value) => updatePassenger(index, { title: value })}>
@@ -715,19 +692,20 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                             </SelectContent>
                           </Select>
                         </div>
-                        <div>
-                          <Label className="text-sm font-medium">Gender (Optional)</Label>
+                        <div data-error-key={`passenger-${index}-gender`}>
+                          <Label className="text-sm font-medium">Gender *</Label>
                           <Select value={passenger.gender} onValueChange={(value) => updatePassenger(index, { gender: value })}>
                             <SelectTrigger className="mt-1.5 h-11 rounded-xl">
                               <SelectValue placeholder="Select gender" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
                               <SelectItem value="male">Male</SelectItem>
                               <SelectItem value="female">Female</SelectItem>
                             </SelectContent>
                           </Select>
+                          {touched && errors[`passenger-${index}-gender`] && <p className="mt-1 text-xs text-destructive">{errors[`passenger-${index}-gender`]}</p>}
                         </div>
-                        <div>
+                        <div data-error-key={`passenger-${index}-firstName`}>
                           <Label className="text-sm font-medium">First Name *</Label>
                           <Input
                             placeholder="Given Name"
@@ -738,7 +716,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                           />
                           {touched && errors[`passenger-${index}-firstName`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-firstName`]}</p>}
                         </div>
-                        <div>
+                        <div data-error-key={`passenger-${index}-lastName`}>
                           <Label className="text-sm font-medium">Last Name *</Label>
                           <Input
                             placeholder="Surnames"
@@ -753,7 +731,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                           Name must match exactly as shown on your {requiresPassport ? "passport" : "CNIC"}.
                         </p>
 
-                        <div>
+                        <div data-error-key={`passenger-${index}-dob`}>
                           <Label className="text-sm font-medium">Date of Birth *</Label>
                           <div className="mt-1.5">
                             <AdvancedDatePicker
@@ -767,7 +745,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                           </div>
                           {touched && errors[`passenger-${index}-dob`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-dob`]}</p>}
                         </div>
-                        <div>
+                        <div data-error-key={`passenger-${index}-docNumber`}>
                           <Label className="text-sm font-medium">
                             {requiresPassport ? "Passport Number *" : "CNIC Number *"}
                           </Label>
@@ -798,7 +776,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                                 <CountryPicker value={passenger.issuanceCountry} onChange={(value) => updatePassenger(index, { issuanceCountry: value })} />
                               </div>
                             </div>
-                            <div className="md:col-span-2">
+                            <div className="md:col-span-2" data-error-key={`passenger-${index}-expiryDate`}>
                               <Label className="text-sm font-medium">Date of Expiry *</Label>
                               <div className="mt-1.5">
                                 <AdvancedDatePicker
@@ -815,21 +793,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                           </>
                         )}
                       </div>
-                      {!isExpanded && (
-                        <div className="rounded-2xl border bg-muted/30 p-4">
-                          <div className="flex flex-wrap items-center justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-bold text-foreground">{passengerName || passenger.label}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {[passenger.docNumber || "Document pending", passenger.dob ? format(passenger.dob, "dd MMM yyyy") : "DOB pending"].join(" - ")}
-                              </p>
-                            </div>
-                            <Button type="button" variant="outline" size="sm" onClick={() => togglePassengerExpanded(index)} className="rounded-lg">
-                              Edit Details
-                            </Button>
-                          </div>
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                   );
@@ -841,7 +804,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     <h2 className="text-lg font-bold text-foreground mb-1">Contact Information</h2>
                     <p className="text-sm text-muted-foreground mb-6">We'll use the mobile number for booking follow-up. Email is optional.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2">
+                      <div className="md:col-span-2" data-error-key="email">
                         <Label htmlFor="contact-email" className="text-sm font-medium">Email</Label>
                         <Input
                           id="contact-email"
@@ -855,7 +818,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                         {touched && errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
                         {!email.trim() && <p id="contact-email-hint" className="text-xs text-muted-foreground mt-1">Optional, but recommended for e-ticket delivery.</p>}
                       </div>
-                      <div className="md:col-span-2">
+                      <div className="md:col-span-2" data-error-key="phone">
                         <Label htmlFor="contact-phone" className="text-sm font-medium">Mobile Number *</Label>
                         <div className="flex gap-2 mt-1.5">
                           <CountryCodePicker value={phoneCode} onChange={setPhoneCode} />
@@ -872,7 +835,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                         <p id="contact-phone-hint" className="text-xs text-muted-foreground mt-1">Travelian will use this number for ticketing updates and support.</p>
                         {touched && errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
                       </div>
-                      <div className="md:col-span-2">
+                      <div className="md:col-span-2" data-error-key="altPhone">
                         <Label className="text-sm font-medium">Alternate Mobile Number</Label>
                         <div className="flex gap-2 mt-1.5">
                           <CountryCodePicker value={altPhoneCode} onChange={setAltPhoneCode} />
@@ -906,29 +869,9 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     </Badge>
                     <span className="text-muted-foreground">Refundable per supplier fare rules. Review terms before payment.</span>
                   </div>
-                  <div className="flex flex-wrap justify-end gap-2">
-                    <Button variant="ghost" onClick={saveProgress} disabled={processing} className="rounded-xl h-11 px-5">
-                      Save & Continue Later
-                    </Button>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
-                          {isCustomer ? "Reserve / Request Booking" : "Hold Booking"}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        {isCustomer
-                          ? "Save this request without payment. Travelian will contact you to confirm availability."
-                          : "Free 24-hour PNR hold. We will contact you to confirm before charging."}
-                      </TooltipContent>
-                    </Tooltip>
-                    <Button asChild variant="outline" className="rounded-xl h-11 px-5">
-                      <a href={bookingWhatsAppUrl} target="_blank" rel="noreferrer">WhatsApp Help</a>
-                    </Button>
-                    <Button onClick={handleContinue} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
-                      Continue <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
+                  <Button onClick={handleContinue} className="gradient-primary h-11 rounded-xl px-6 text-primary-foreground">
+                    Continue <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             )}
@@ -956,9 +899,9 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                               Hold Booking
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
+                          {/* <TooltipContent className="max-w-xs">
                             Free 24-hour PNR hold. Travelian can verify fare rules and confirm before payment.
-                          </TooltipContent>
+                          </TooltipContent> */}
                         </Tooltip>
                         )}
                         <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
@@ -1179,7 +1122,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                               <div className="flex min-w-[86px] flex-col items-center">
                                 <div className="mb-1 text-[10px] font-semibold text-primary">{segment.flightNumber || "Flight TBA"}</div>
                                 <div className="h-px w-full bg-border" />
-                                <Plane className="-mt-2 h-4 w-4 rotate-90 text-primary" />
                               </div>
                               <div className="text-right">
                                 <p className="text-lg font-black text-foreground">{bookingTime(segment.arrivalTime)}</p>
@@ -1253,6 +1195,29 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
           </div>
         </div>
       </div>
+
+      <Dialog open={nameConfirmationOpen} onOpenChange={setNameConfirmationOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Confirm traveler names</DialogTitle>
+            <DialogDescription>
+              Check every traveler’s first and last name before continuing.
+            </DialogDescription>
+          </DialogHeader>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border p-4 text-sm leading-5">
+            <Checkbox
+              checked={nameAcknowledged}
+              onCheckedChange={(checked) => setNameAcknowledged(checked === true)}
+              className="mt-0.5"
+            />
+            <span>I have checked each traveler’s first and last name, and they match the passport.</span>
+          </label>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setNameConfirmationOpen(false)}>Back</Button>
+            <Button disabled={!nameAcknowledged} onClick={continueAfterNameConfirmation}>Continue</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Fare recheck interstitial */}
       <Dialog open={recheckOpen} onOpenChange={(open) => { if (!open) { setRecheckOpen(false); setRecheckResult(null); } }}>

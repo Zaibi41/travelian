@@ -42,11 +42,15 @@ export interface BookingPricing {
   taxes: number;
   total: number;
   currency: string;
+  /** Full supplier cost in the same currency as total, when supplied by the backend. */
+  supplierCost?: number;
 }
 
 export interface BookingRecord {
   id: string;            // PNR-style booking reference
   pnr: string;           // 6-char alphanumeric
+  /** Internal supplier/provider reference used by admin reporting. */
+  provider?: string;
   type: "flight" | "hotel" | "umrah" | "tour" | "visa";
   status: BookingStatus;
   createdAt: string;

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CalendarCheck, Clock3, Download, Eye, Plane, RefreshCw, RotateCcw, Ticket, XCircle } from "lucide-react";
+import { CalendarCheck, Clock3, Download, Eye, Plane, RotateCcw, Ticket, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,14 +14,20 @@ import { listServerBookings, updateServerBooking } from "@/lib/booking-api";
 import { downloadETicket } from "@/lib/eticket-pdf";
 import { downloadTicketInvoice } from "@/lib/ticket-invoice-pdf";
 import type { BookingRecord } from "@/lib/booking-store";
+import { isIssuedTicket } from "@/lib/booking-business-metrics";
+import { matchesFlightOperation } from "@/lib/flight-operation-queues";
+import { useRole } from "@/contexts/RoleContext";
 import type { TravelTicket } from "@/data/models";
 
 const tabs = [
   { id: "all", label: "All" },
+  { id: "approval", label: "Approval & Issuance" },
+  { id: "payment", label: "Payment Pending" },
+  { id: "failed", label: "Failed / Review" },
+  { id: "expiring", label: "Expiring Soon" },
   { id: "held", label: "Held" },
   { id: "issued", label: "Issued" },
   { id: "refund", label: "Refund / Cancel" },
-  { id: "failed", label: "Expired / Failed" },
 ] as const;
 
 type TabId = typeof tabs[number]["id"];
@@ -130,14 +136,15 @@ function timeLimitLabel(booking: BookingRecord) {
 
 function matchesTab(booking: BookingRecord, tab: TabId) {
   if (tab === "all") return true;
+  if (tab === "approval" || tab === "payment" || tab === "failed" || tab === "expiring") return matchesFlightOperation(booking, tab);
   if (tab === "held") return booking.status === "held" || booking.status === "pending_payment";
-  if (tab === "issued") return booking.status === "ticket_issued" || booking.ticketStatus === "issued";
+  if (tab === "issued") return isIssuedTicket(booking);
   if (tab === "refund") return booking.status === "cancelled";
-  if (tab === "failed") return booking.status === "expired" || booking.paymentStatus === "pending";
   return true;
 }
 
 export default function FlightBookingsPage() {
+  const { currentRole, currentUser } = useRole();
   const [params, setParams] = useSearchParams();
   const tabParam = params.get("tab") as TabId | null;
   const activeTab = tabs.some((tab) => tab.id === tabParam) ? tabParam! : "all";
@@ -149,23 +156,26 @@ export default function FlightBookingsPage() {
   const [remarks, setRemarks] = useState("");
   const [savingAction, setSavingAction] = useState("");
 
-  const loadBookings = async () => {
+  const loadBookings = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
       const records = await listServerBookings();
-      setBookings(records.filter((booking) => booking.type === "flight"));
+      const isAgency = currentRole === "agency_owner" || currentRole === "agency_staff";
+      const isCustomer = currentRole === "customer";
+      setBookings(records.filter((booking) => booking.type === "flight" && (!isAgency && !isCustomer ||
+        booking.contact?.email === currentUser.email || (isAgency && !!currentUser.agencyId && booking.id.includes(currentUser.agencyId)))));
     } catch (loadError) {
       setBookings([]);
       setError(loadError instanceof Error ? loadError.message : "Unable to load flight bookings");
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentRole, currentUser.agencyId, currentUser.email]);
 
   useEffect(() => {
     void loadBookings();
-  }, []);
+  }, [loadBookings]);
 
   useEffect(() => {
     if (!tabParam || !tabs.some((tab) => tab.id === tabParam)) {
@@ -174,7 +184,7 @@ export default function FlightBookingsPage() {
   }, [setParams, tabParam]);
 
   const counts = useMemo(() => {
-    const next: Record<TabId, number> = { all: bookings.length, held: 0, issued: 0, refund: 0, failed: 0 };
+    const next: Record<TabId, number> = { all: bookings.length, approval: 0, payment: 0, failed: 0, expiring: 0, held: 0, issued: 0, refund: 0 };
     bookings.forEach((booking) => {
       tabs.forEach((tab) => {
         if (tab.id !== "all" && matchesTab(booking, tab.id)) next[tab.id] += 1;
@@ -264,12 +274,9 @@ export default function FlightBookingsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display">Flight Bookings</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Manage flight PNR holds, issued tickets, invoices, refunds, cancellations, and failed/expired records.</p>
+          <h1 className="text-2xl font-bold font-display">Flight Operations</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Review approvals, pending payments, expiring holds, issued tickets, and cancellations.</p>
         </div>
-        <Button variant="outline" className="gap-2 rounded-xl" onClick={loadBookings} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
-        </Button>
       </div>
 
       <div className="flex gap-2 overflow-x-auto rounded-2xl border bg-card p-2 shadow-card">

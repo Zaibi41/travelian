@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarCheck, Download, RefreshCw, RotateCcw, Search, Ticket, XCircle } from "lucide-react";
+import { CalendarCheck, Download, RotateCcw, Search, Ticket, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -81,9 +81,6 @@ export default function BookingsPage() {
           <h1 className="text-2xl font-bold font-display">Bookings</h1>
           <p className="text-sm text-muted-foreground">Track flight holds, PNRs, payment state, ticketing, refunds, and cancellation actions.</p>
         </div>
-        <Button variant="outline" className="gap-2 rounded-xl" onClick={loadBookings} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
-        </Button>
       </div>
 
       <Card className="shadow-card">
