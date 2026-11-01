@@ -116,6 +116,8 @@ export default function UmrahSamplePage() {
   );
 
   const hasFilters = [city, month, days, tier].some((v) => v !== ALL);
+  const visible = filtered.slice(0, visibleCount);
+  const remaining = filtered.length - visible.length;
   const scrollToResults = () => document.getElementById("sample-packages")?.scrollIntoView({ behavior: "smooth" });
 
   return (
@@ -219,8 +221,17 @@ export default function UmrahSamplePage() {
               </div>
             </div>
           ) : (
-            <div className="mt-6 space-y-5">
-              {filtered.map((o) => <PackageCard key={o.id} offer={o} />)}
+            <div className="mt-6 space-y-4">
+              {visible.map((o) => <PackageCard key={o.id} offer={o} />)}
+            </div>
+          )}
+
+          {remaining > 0 && (
+            <div className="mt-6 text-center">
+              <Button variant="outline" size="lg" className="rounded-xl px-8 font-bold" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
+                Show more packages ({remaining} more)
+              </Button>
+              <p className="mt-2 text-xs text-muted-foreground">Showing {visible.length} of {filtered.length} packages.</p>
             </div>
           )}
         </section>
