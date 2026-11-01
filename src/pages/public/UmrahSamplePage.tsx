@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { BadgeCheck, BedDouble, CalendarDays, Check, Clock, Hotel, MapPin, Plane, Search, ShieldCheck, Star, X } from "lucide-react";
+import { BadgeCheck, BedDouble, CalendarDays, Clock, Hotel, MapPin, Plane, Search, ShieldCheck, Star, X } from "lucide-react";
 import heroImg from "@/assets/umrah-sample-hero.jpg";
 import { SEO } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +61,7 @@ function offerMessage(o: UmrahOffer) {
     `Departure: ${o.departureCity}`,
     `Makkah Hotel: ${o.makkahHotel}`,
     `Madinah Hotel: ${o.madinahHotel}`,
+    ...(isPriced(o.prices.sharing) ? [`Room sharing: PKR ${priceValue(o.prices.sharing)}`] : []),
     o.startingFrom ? `Starting from PKR ${priceValue(o.startingFrom)}` : "Price on request",
     "",
     "Please share availability and final price.",
@@ -73,6 +74,12 @@ export default function UmrahSamplePage() {
   const month = searchParams.get("month") ?? ALL;
   const days = searchParams.get("duration") ?? ALL;
   const tier = searchParams.get("tier") ?? ALL;
+
+  // Listing loads in batches so a large inventory never renders all at once.
+  const PAGE_SIZE = 8;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => setVisibleCount(PAGE_SIZE), [city, month, days, tier]);
+
 
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(searchParams);
@@ -110,6 +117,8 @@ export default function UmrahSamplePage() {
   );
 
   const hasFilters = [city, month, days, tier].some((v) => v !== ALL);
+  const visible = filtered.slice(0, visibleCount);
+  const remaining = filtered.length - visible.length;
   const scrollToResults = () => document.getElementById("sample-packages")?.scrollIntoView({ behavior: "smooth" });
 
   return (
@@ -213,8 +222,17 @@ export default function UmrahSamplePage() {
               </div>
             </div>
           ) : (
-            <div className="mt-6 space-y-5">
-              {filtered.map((o) => <PackageCard key={o.id} offer={o} />)}
+            <div className="mt-6 space-y-4">
+              {visible.map((o) => <PackageCard key={o.id} offer={o} />)}
+            </div>
+          )}
+
+          {remaining > 0 && (
+            <div className="mt-6 text-center">
+              <Button variant="outline" size="lg" className="rounded-xl px-8 font-bold" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
+                Show more packages ({remaining} more)
+              </Button>
+              <p className="mt-2 text-xs text-muted-foreground">Showing {visible.length} of {filtered.length} packages.</p>
             </div>
           )}
         </section>
@@ -257,47 +275,31 @@ function FilterSelect({ icon, label, value, onChange, options, allLabel }: {
 }
 
 function PackageCard({ offer: o }: { offer: UmrahOffer }) {
-  const rates: [string, number | undefined][] = [["Sharing", o.prices.sharing], ["Quad", o.prices.quad], ["Triple", o.prices.triple], ["Double", o.prices.double]];
-  const inc: [string, boolean][] = [["Visa", o.includes.visa], ["Air ticket", o.includes.ticket], ["Hotels", o.includes.hotel], ["Transport", o.includes.transport], ["Ziarat", o.includes.ziarat]];
   return (
-    <article className="grid overflow-hidden rounded-2xl border bg-card shadow-card transition-shadow hover:shadow-elevated md:grid-cols-[220px_1fr] lg:grid-cols-[240px_1fr_230px]">
-      <div className="relative min-h-40 overflow-hidden bg-accent">
+    <article className="grid overflow-hidden rounded-2xl border bg-card shadow-card transition-shadow hover:shadow-elevated md:grid-cols-[200px_1fr_210px]">
+      <div className="relative min-h-36 overflow-hidden bg-accent">
         <img src={o.image || heroImg} alt="" loading="lazy" width={1600} height={800} className="absolute inset-0 h-full w-full object-cover" />
         <span className={`absolute left-3 top-3 rounded-lg px-2.5 py-1 text-xs font-bold ${tierStyle[o.tier]}`}>{o.tier}</span>
         {o.status !== "Available" && <span className="absolute bottom-3 left-3 rounded-lg bg-card px-2.5 py-1 text-xs font-bold text-warning">{o.status}</span>}
       </div>
 
-      <div className="min-w-0 space-y-3 p-4 md:p-5">
-        <h3 className="truncate font-display text-lg font-black text-foreground">{o.name}</h3>
-        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground sm:grid-cols-4">
-          <span className="flex items-center gap-1.5 truncate"><CalendarDays className="h-4 w-4 shrink-0 text-primary" />{o.durationLabel}</span>
-          <span className="flex items-center gap-1.5 truncate"><MapPin className="h-4 w-4 shrink-0 text-primary" />{o.departureCity}</span>
-          <span className="flex items-center gap-1.5 truncate"><Plane className="h-4 w-4 shrink-0 text-primary" />{o.airline}</span>
-          <span className="flex items-center gap-1.5 truncate"><CalendarDays className="h-4 w-4 shrink-0 text-primary" />{fmtDate(o.departureDate)} – {fmtDate(o.returnDate)}</span>
-        </div>
+      <div className="min-w-0 space-y-2.5 p-4">
+        <h3 className="truncate font-display text-base font-black text-foreground">{o.name}</h3>
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5 truncate"><CalendarDays className="h-3.5 w-3.5 shrink-0 text-primary" />{o.durationLabel}</span>
+          <span className="flex items-center gap-1.5 truncate"><MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />{o.departureCity}</span>
+          <span className="flex items-center gap-1.5 truncate"><Plane className="h-3.5 w-3.5 shrink-0 text-primary" />{fmtDate(o.departureDate)} – {fmtDate(o.returnDate)}</span>
+        </p>
         <div className="grid gap-2 sm:grid-cols-2">
           <HotelLine city="Makkah" name={o.makkahHotel} distance={o.makkahDistance} />
           <HotelLine city="Madinah" name={o.madinahHotel} distance={o.madinahDistance} />
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {inc.filter(([, on]) => on).map(([l]) => (
-            <span key={l} className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success"><Check className="h-3 w-3" />{l}</span>
-          ))}
-        </div>
       </div>
 
-      <div className="flex flex-col gap-3 border-t bg-muted/30 p-4 md:col-span-2 lg:col-span-1 lg:border-l lg:border-t-0">
+      <div className="flex flex-col gap-3 border-t bg-muted/30 p-4 md:border-l md:border-t-0">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Starting from</p>
-          <p className="font-display text-2xl font-black text-primary">{o.startingFrom ? `PKR ${priceValue(o.startingFrom)}` : "On Request"}</p>
-        </div>
-        <div className="grid grid-cols-4 gap-1 text-center lg:grid-cols-2">
-          {rates.map(([l, p]) => (
-            <div key={l} className="rounded-lg border bg-card px-1 py-1.5">
-              <p className="text-[10px] font-bold text-muted-foreground">{l}</p>
-              <p className="truncate text-xs font-black text-foreground">{priceValue(p, "On req.")}</p>
-            </div>
-          ))}
+          <p className="font-display text-xl font-black text-primary">{o.startingFrom ? `PKR ${priceValue(o.startingFrom)}` : "On Request"}</p>
         </div>
         <Button asChild className="mt-auto rounded-xl bg-whatsapp font-bold text-whatsapp-foreground hover:bg-whatsapp-hover">
           <a href={whatsappUrl(offerMessage(o))} target="_blank" rel="noreferrer"><WhatsAppIcon className="mr-1.5 h-4 w-4" /> WhatsApp Enquiry</a>
@@ -309,11 +311,10 @@ function PackageCard({ offer: o }: { offer: UmrahOffer }) {
 
 function HotelLine({ city, name, distance }: { city: string; name: string; distance: string }) {
   return (
-    <div className="flex min-w-0 items-center gap-2 rounded-xl border bg-background p-2.5">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent text-primary"><Hotel className="h-4 w-4" /></span>
+    <div className="flex min-w-0 items-center gap-2 rounded-lg border bg-background px-2.5 py-2">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent text-primary"><Hotel className="h-3.5 w-3.5" /></span>
       <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase text-primary">{city}</p>
-        <p className="truncate text-sm font-bold text-foreground">{name}</p>
+        <p className="truncate text-xs font-bold text-foreground"><span className="font-black uppercase text-primary">{city}</span> · {name}</p>
         <p className="truncate text-[11px] text-muted-foreground">{distance}</p>
       </div>
     </div>
