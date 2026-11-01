@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { BadgeCheck, BedDouble, CalendarDays, Check, Clock, Hotel, MapPin, Plane, Search, ShieldCheck, Star, X } from "lucide-react";
+import { BadgeCheck, BedDouble, CalendarDays, Clock, Hotel, MapPin, Plane, Search, ShieldCheck, Star, X } from "lucide-react";
 import heroImg from "@/assets/umrah-sample-hero.jpg";
 import { SEO } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
@@ -73,6 +73,12 @@ export default function UmrahSamplePage() {
   const month = searchParams.get("month") ?? ALL;
   const days = searchParams.get("duration") ?? ALL;
   const tier = searchParams.get("tier") ?? ALL;
+
+  // Listing loads in batches so a large inventory never renders all at once.
+  const PAGE_SIZE = 8;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  useEffect(() => setVisibleCount(PAGE_SIZE), [city, month, days, tier]);
+
 
   const setParam = (key: string, value: string) => {
     const next = new URLSearchParams(searchParams);
