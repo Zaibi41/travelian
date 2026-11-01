@@ -61,7 +61,7 @@ function offerMessage(o: UmrahOffer) {
     `Departure: ${o.departureCity}`,
     `Makkah Hotel: ${o.makkahHotel}`,
     `Madinah Hotel: ${o.madinahHotel}`,
-    priceValue(o.prices.sharing, undefined) !== "On request" ? `Room sharing: PKR ${priceValue(o.prices.sharing)}` : undefined,
+    ...(isPriced(o.prices.sharing) ? [`Room sharing: PKR ${priceValue(o.prices.sharing)}`] : []),
     o.startingFrom ? `Starting from PKR ${priceValue(o.startingFrom)}` : "Price on request",
     "",
     "Please share availability and final price.",
