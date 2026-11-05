@@ -45,3 +45,4 @@ deploy-lambda*.zip
 # Local-only design and UI behavior notes
 /DESIGN.md
 /UX-CONTRACT.md
+docs/*
