@@ -166,13 +166,11 @@ export default function GroupTicketingCollectionsPage() {
                     <TableCell className="font-mono text-xs">{collection.providerId || "—"}</TableCell>
                     <TableCell className="font-mono text-xs">{collection.slug}</TableCell>
                     <TableCell>
-                      <Link
-                        to="/admin/secrets"
-                        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                      >
-                        <KeyRound className="h-3.5 w-3.5" />
+                      {/* Secret name only (stored in AWS Parameter Store); the Secret Manager page was retired. */}
+                      <span className="inline-flex items-center gap-1 font-mono text-xs text-muted-foreground">
+                        <KeyRound aria-hidden="true" className="h-3.5 w-3.5" />
                         {collection.secretId}
-                      </Link>
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge variant={collection.enabled !== false && !collection.deletedAt ? "default" : "outline"}>

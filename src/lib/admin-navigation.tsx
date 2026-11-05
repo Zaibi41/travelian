@@ -182,7 +182,6 @@ export const adminNavigation: AdminNavSection[] = [
     category: "Operations",
     items: [
       item("Notifications", "/admin/notifications", Bell, internalOpsRoles),
-      item("Document Center", "/admin/documents", FileText, internalOpsRoles),
     ],
   },
   {
@@ -256,7 +255,6 @@ export const adminNavigation: AdminNavSection[] = [
     category: "System",
     items: [
       item("Roles & Permissions", "/admin/rbac", Shield, platformOwnerRoles),
-      item("Secret Manager", "/admin/secrets", KeyRound, platformOwnerRoles),
       item("General Settings", "/admin/settings", Settings, internalAdminRoles),
       item("Audit Logs", "/admin/roadmap/audit-logs", FileText, platformOwnerRoles),
       item("Webhook Logs", "/admin/roadmap/webhook-logs", CloudCog, platformOwnerRoles),
@@ -282,8 +280,8 @@ export function getNavigationForRole(role: UserRole): AdminNavSection[] {
 // 2026-11-06). Display only: page access still comes from `adminNavigation`
 // via canAccessAdminPath, so every existing link keeps its current access.
 // Agency owner, agency staff and customer sidebars are unchanged.
-// Not in this sidebar (still reachable by URL): Secret Manager, Notifications
-// (in the user menu), View Public Site (in the user menu).
+// Not in this sidebar: Notifications and View Public Site (both in the user menu).
+// Secret Manager and Document Center were retired (2026-11-06).
 // ---------------------------------------------------------------------------
 
 export const INTERNAL_ROLES: UserRole[] = ["super_admin", "admin", "staff", "qa", "internal_support"];
@@ -350,7 +348,6 @@ const internalSidebarMenus: SidebarMenuEntry[] = [
   {
     number: "14", title: "System", icon: Settings, items: [
       item("General Settings", "/admin/settings", Settings, internalAdminRoles),
-      item("Document Center", "/admin/documents", FileText, internalOpsRoles),
       item("Webhook Logs", "/admin/roadmap/webhook-logs", CloudCog, platformOwnerRoles),
     ],
   },

@@ -49,7 +49,6 @@ const HotelsPage = lazy(() => import("./pages/HotelsPage"));
 const FlightsPage = lazy(() => import("./pages/FlightsPage"));
 const WalletPage = lazy(() => import("./pages/WalletPage"));
 const PaymentsPage = lazy(() => import("./pages/PaymentsPage"));
-const SecretManagerPage = lazy(() => import("./pages/SecretManagerPage"));
 const ProviderSystemsPage = lazy(() => import("./pages/ProviderSystemsPage"));
 const GroupTicketingCollectionsPage = lazy(() => import("./pages/GroupTicketingCollectionsPage"));
 const AdminSearchPage = lazy(() => import("./pages/AdminSearchPage"));
@@ -60,7 +59,6 @@ const CustomersPage = lazy(() => import("./pages/CustomersPage"));
 const RBACPage = lazy(() => import("./pages/RBACPage"));
 const CouponsPage = lazy(() => import("./pages/CouponsPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
-const DocumentsPage = lazy(() => import("./pages/DocumentsPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const AnnouncementsPage = lazy(() => import("./pages/AnnouncementsPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
@@ -143,10 +141,8 @@ const App = () => (
             <Route path="/admin/rbac" element={<AdminLayout><RBACPage /></AdminLayout>} />
             <Route path="/admin/provider-systems" element={<AdminLayout><ProviderSystemsPage /></AdminLayout>} />
             <Route path="/admin/group-ticketing" element={<AdminLayout><GroupTicketingCollectionsPage /></AdminLayout>} />
-            <Route path="/admin/secrets" element={<AdminLayout><SecretManagerPage /></AdminLayout>} />
             <Route path="/admin/coupons" element={<AdminLayout><CouponsPage /></AdminLayout>} />
             <Route path="/admin/blog" element={<AdminLayout><BlogPage /></AdminLayout>} />
-            <Route path="/admin/documents" element={<AdminLayout><DocumentsPage /></AdminLayout>} />
             <Route path="/admin/notifications" element={<AdminLayout><NotificationsPage /></AdminLayout>} />
             <Route path="/admin/announcements" element={<AdminLayout><AnnouncementsPage /></AdminLayout>} />
             <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
