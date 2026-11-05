@@ -122,6 +122,7 @@ const App = () => (
             <Route path="/admin/bookings/holds" element={<AdminLayout><Navigate to="/admin/flight-bookings?tab=held" replace /></AdminLayout>} />
             <Route path="/admin/booking-requests" element={<AdminLayout><Navigate to="/admin/requests?tab=all" replace /></AdminLayout>} />
             <Route path="/admin/reports" element={<AdminLayout><ReportsPage /></AdminLayout>} />
+            <Route path="/admin/attention-queue" element={<AdminLayout><RoadmapPlaceholderPage title="Attention Queue" description="Unified case list: pending issuance, payment checks, TTL, failed/unknown issuance, supplier refunds; owner, priority, SLA and next action." /></AdminLayout>} />
             <Route path="/admin/roadmap/audit-logs" element={<AdminLayout><RoadmapPlaceholderPage title="Audit Logs" description="A searchable trail of every admin action (user, module, before/after) with filters by user, module and date." eta="Sprint 4" /></AdminLayout>} />
             <Route path="/admin/roadmap/webhook-logs" element={<AdminLayout><RoadmapPlaceholderPage title="Webhook Logs" description="Inbound and outbound webhook delivery logs for payment gateways and supplier APIs, with retry controls." eta="Sprint 3" /></AdminLayout>} />
             <Route path="/admin/roadmap/reconciliation" element={<AdminLayout><RoadmapPlaceholderPage title="Reconciliation" description="Match supplier statements, gateway settlements and Travelian ledger lines; flag mismatches for review." eta="Sprint 4" /></AdminLayout>} />

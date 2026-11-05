@@ -23,6 +23,7 @@
     "prebuild:prod": "npm run sitemap",
     "build:prod": "vite build --mode production",
     "sitemap": "node --import tsx scripts/generate-sitemap.ts",
+    "api:types": "npx --yes openapi-typescript@7.6.1 ../travelian-api-gateway/openapi.json -o src/lib/gateway/schema.d.ts",
     "typecheck": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
     "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },

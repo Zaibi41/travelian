@@ -284,6 +284,8 @@ export function canAccessAdminPath(role: UserRole, pathname: string) {
   if (normalized === "/admin/flight-search") return allSearchRoles.includes(role);
   if (["/admin/bookings", "/admin/bookings/holds", "/admin/tickets"].includes(normalized)) return allSearchRoles.includes(role);
   if (normalized === "/admin/booking-requests") return allSearchRoles.includes(role);
+  // Dashboard → Attention Queue placeholder (spec 2.01); same roles as the Dashboard item.
+  if (normalized === "/admin/attention-queue") return ["super_admin", "admin", "staff", "qa", "internal_support"].includes(role);
   if (role === "customer" && normalized === "/admin") return true;
   return adminNavigation.some((section) =>
     section.items.some((navItem) => {

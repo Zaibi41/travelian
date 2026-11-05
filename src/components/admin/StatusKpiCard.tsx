@@ -1,0 +1,66 @@
+import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
+import { StatusBadge } from "@/components/admin/StatusBadge";
+import { SEVERITY_LABEL } from "@/lib/admin-dashboard/severity";
+import type { Severity } from "@/lib/admin-dashboard/types";
+
+const STRIPE: Record<Severity, string> = {
+  critical: "border-l-status-critical",
+  action: "border-l-status-action",
+  fine: "border-l-status-fine",
+};
+
+const VALUE_TONE: Record<Severity, string> = {
+  critical: "text-status-critical-text",
+  action: "text-status-action-text",
+  fine: "text-status-fine-text",
+};
+
+interface StatusKpiCardProps {
+  label: string;
+  value: string;
+  /** Omit for neutral business cards. */
+  severity?: Severity;
+  hint?: string;
+  /** Full value for screen readers and hover when `value` is abbreviated. */
+  fullValue?: string;
+  to?: string;
+  size?: "default" | "sm";
+}
+
+export function StatusKpiCard({ label, value, severity, hint, fullValue, to, size = "default" }: StatusKpiCardProps) {
+  const body = (
+    <div
+      className={cn(
+        "flex h-full min-w-0 flex-col gap-1 rounded-lg border border-border bg-card px-card py-3 shadow-card",
+        severity && ["border-l-[length:var(--status-stripe)]", STRIPE[severity]],
+        to && "transition-colors group-hover:border-brand-navy/30 group-hover:bg-accent/40",
+      )}
+    >
+      <div className="flex min-w-0 items-start justify-between gap-2">
+        <span className="min-w-0 text-label text-muted-foreground">{label}</span>
+        {severity && <StatusBadge severity={severity} className="shrink-0" />}
+      </div>
+      <span
+        title={fullValue}
+        className={cn(
+          "truncate font-semibold tabular-nums",
+          size === "sm" ? "text-kpi-sm" : "text-kpi",
+          severity ? VALUE_TONE[severity] : "text-foreground",
+        )}
+      >
+        {value}
+      </span>
+      {hint && <span className="text-label text-muted-foreground">{hint}</span>}
+    </div>
+  );
+
+  const accessibleName = `${label}: ${fullValue ?? value}${severity ? `, ${SEVERITY_LABEL[severity]}` : ""}${hint ? `. ${hint}` : ""}`;
+  return to ? (
+    <Link to={to} aria-label={accessibleName} className="group block min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+      {body}
+    </Link>
+  ) : (
+    <div role="group" aria-label={accessibleName} className="min-w-0">{body}</div>
+  );
+}
