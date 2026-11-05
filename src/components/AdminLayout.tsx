@@ -3,7 +3,7 @@ import { AdminSidebar } from "@/components/AdminSidebar";
 import { Bell, ChevronDown, KeyRound, LogOut, Megaphone, Pencil, UserRound, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { clearSession, getSession } from "@/lib/auth-session";
 import { cognitoLogoutUrl } from "@/lib/cognito-auth";
@@ -43,6 +43,15 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = getSession();
   const isAuthenticated = !!session;
   const allowed = isAuthenticated && canAccessAdminPath(currentRole, location.pathname);
+
+  // Activate the admin design tokens (src/styles/theme.css). Set on <html>, not a
+  // wrapper, so portal content (dropdowns, dialogs, toasts) is themed too.
+  // Layout effect: applied before first paint, so no flash of public colors.
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-app-theme", "admin");
+    return () => root.removeAttribute("data-app-theme");
+  }, []);
 
   useEffect(() => {
     const update = () => setAnnouncements(listAdminAnnouncements());

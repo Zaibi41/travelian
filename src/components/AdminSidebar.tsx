@@ -67,9 +67,9 @@ export function AdminSidebar() {
                   asChild
                   isActive={isActive(item.category, item.url, item.title)}
                   tooltip={item.title}
-                  className="mx-auto h-10 w-10 rounded-xl p-0 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                  className="mx-auto h-10 w-10 rounded-xl p-0 data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                 >
-                  <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground" className="flex h-full w-full items-center justify-center">
+                  <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-sidebar-primary-foreground" className="flex h-full w-full items-center justify-center">
                     <item.icon className="h-5 w-5 shrink-0" />
                   </NavLink>
                 </SidebarMenuButton>
@@ -94,7 +94,7 @@ export function AdminSidebar() {
                       <SidebarMenuButton
                         asChild
                         isActive={isActive(section.category, item.url, item.title)}
-                        className="h-10 rounded-xl px-2.5 text-[14px] font-bold data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                        className="h-10 rounded-xl px-2.5 text-[14px] font-bold data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                       >
                         <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground font-bold">
                           <item.icon className="h-5 w-5 shrink-0" />
@@ -123,7 +123,7 @@ export function AdminSidebar() {
                           <SidebarMenuButton
                             asChild
                             isActive={isActive(section.category, item.url, item.title)}
-                            className="h-9 rounded-xl px-2.5 text-[13.5px] font-semibold data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                            className="h-9 rounded-xl px-2.5 text-[13.5px] font-semibold data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                           >
                             <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground font-semibold">
                               <item.icon className="h-5 w-5 shrink-0" />
