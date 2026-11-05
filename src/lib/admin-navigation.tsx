@@ -277,6 +277,92 @@ export function getNavigationForRole(role: UserRole): AdminNavSection[] {
     .filter((section) => section.items.length > 0);
 }
 
+// ---------------------------------------------------------------------------
+// Internal-role sidebar: exactly the 14 spec menus, in spec order (approved
+// 2026-11-06). Display only: page access still comes from `adminNavigation`
+// via canAccessAdminPath, so every existing link keeps its current access.
+// Agency owner, agency staff and customer sidebars are unchanged.
+// Not in this sidebar (still reachable by URL): Secret Manager, Notifications
+// (in the user menu), View Public Site (in the user menu).
+// ---------------------------------------------------------------------------
+
+export const INTERNAL_ROLES: UserRole[] = ["super_admin", "admin", "staff", "qa", "internal_support"];
+
+export function isInternalRole(role: UserRole) {
+  return INTERNAL_ROLES.includes(role);
+}
+
+export interface SidebarMenuEntry {
+  number: string;
+  title: string;
+  icon: AdminNavItem["icon"];
+  /** One item: the menu opens it directly. Several: the menu expands. */
+  items: AdminNavItem[];
+}
+
+const internalSidebarMenus: SidebarMenuEntry[] = [
+  { number: "01", title: "Dashboard", icon: LayoutDashboard, items: [item("Dashboard", "/admin", LayoutDashboard, INTERNAL_ROLES)] },
+  { number: "02", title: "Search", icon: Search, items: [item("Search", "/admin/search", Search, allSearchRoles)] },
+  { number: "03", title: "Bookings", icon: ClipboardCheck, items: [item("Bookings", "/admin/requests", ClipboardCheck, allSearchRoles)] },
+  { number: "04", title: "Customers & Travelers", icon: Users, items: [item("Customers", "/admin/customers", Users, [...internalAdminRoles, "staff"])] },
+  {
+    number: "05", title: "Finance", icon: Wallet, items: [
+      item("Wallets", "/admin/wallet", Wallet, internalAdminRoles),
+      item("Payments", "/admin/payments", CreditCard, [...internalAdminRoles, "staff"]),
+      item("Reconciliation", "/admin/roadmap/reconciliation", Receipt, platformOwnerRoles),
+    ],
+  },
+  { number: "06", title: "Flight Operations", icon: CalendarCheck, items: [item("Flight Operations", "/admin/flight-bookings", CalendarCheck, allSearchRoles)] },
+  {
+    number: "07", title: "Inventory & Services", icon: Hotel, items: [
+      item("Group Ticketing Collections", "/admin/group-ticketing", Ticket, internalAdminRoles),
+      item("Hotels Inventory", "/admin/hotels", Hotel, internalAdminRoles),
+      item("Umrah Packages", "/admin/packages", Package, internalAdminRoles),
+    ],
+  },
+  {
+    number: "08", title: "Pricing & Revenue", icon: Tag, items: [
+      item("Flight Pricing & Rules", "/admin/flights", Plane, platformOwnerRoles),
+      item("Deals & Promotions", "/admin/coupons", Tag, internalAdminRoles),
+    ],
+  },
+  { number: "09", title: "B2B Partners", icon: Building2, items: [item("Agencies", "/admin/agencies", Building2, internalAdminRoles)] },
+  {
+    number: "10", title: "Suppliers & Integrations", icon: CloudCog, items: [
+      item("Suppliers / API Providers", "/admin/provider-systems", CloudCog, platformOwnerRoles),
+      item("Payment Gateways", "/admin/roadmap/payment-gateways", CreditCard, platformOwnerRoles),
+    ],
+  },
+  {
+    number: "11", title: "Users & Access", icon: UserCog, items: [
+      item("Users & Staff", "/admin/users", UserCog, internalAdminRoles),
+      item("Roles & Permissions", "/admin/rbac", Shield, platformOwnerRoles),
+      item("Audit Logs", "/admin/roadmap/audit-logs", FileText, platformOwnerRoles),
+    ],
+  },
+  { number: "12", title: "Reports", icon: BarChart3, items: [item("Reports", "/admin/reports", BarChart3, [...internalAdminRoles, "staff"])] },
+  {
+    number: "13", title: "Website & CMS", icon: Megaphone, items: [
+      item("Announcements", "/admin/announcements", Megaphone, ["super_admin"]),
+      item("Blog / News", "/admin/blog", PenTool, internalAdminRoles),
+    ],
+  },
+  {
+    number: "14", title: "System", icon: Settings, items: [
+      item("General Settings", "/admin/settings", Settings, internalAdminRoles),
+      item("Document Center", "/admin/documents", FileText, internalOpsRoles),
+      item("Webhook Logs", "/admin/roadmap/webhook-logs", CloudCog, platformOwnerRoles),
+    ],
+  },
+];
+
+/** The 14 menus for an internal role, keeping only items that role may open. */
+export function getInternalSidebarForRole(role: UserRole): SidebarMenuEntry[] {
+  return internalSidebarMenus
+    .map((menu) => ({ ...menu, items: menu.items.filter((navItem) => navItem.roles.includes(role)) }))
+    .filter((menu) => menu.items.length > 0);
+}
+
 export function canAccessAdminPath(role: UserRole, pathname: string) {
   const normalized = pathname.replace(/\/+$/, "") || "/admin";
   if (normalized === "/admin/booking") return allSearchRoles.includes(role);
