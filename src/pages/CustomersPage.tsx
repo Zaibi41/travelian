@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { CustomerProfile } from "@/data/models";
 import { listCustomers, saveCustomer } from "@/lib/customer-api";
+import { maskDate, maskDocumentNumber, matchesMaskedDocument } from "@/lib/masking";
 
 const emptyCustomer: Omit<CustomerProfile, "customerId"> = {
   name: "",
@@ -112,10 +113,13 @@ export default function CustomersPage() {
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return customers;
+    // Passport matches on its visible (masked) last digits only; full-value search
+    // needs the reveal permission, which isn't available yet.
     return customers.filter(customer =>
-      [customer.name, customer.email, customer.phone, customer.passportNumber]
+      [customer.name, customer.email, customer.phone]
         .filter(Boolean)
-        .some(value => String(value).toLowerCase().includes(term)),
+        .some(value => String(value).toLowerCase().includes(term))
+      || matchesMaskedDocument(customer.passportNumber, term),
     );
   }, [customers, search]);
 
@@ -134,6 +138,8 @@ export default function CustomersPage() {
       ...editable,
       firstName: editable.firstName || parsedName.firstName,
       lastName: editable.lastName || parsedName.lastName,
+      // Never put the full passport number in the form; an empty field keeps it.
+      passportNumber: "",
     });
     setDialogOpen(true);
   };
@@ -146,7 +152,9 @@ export default function CustomersPage() {
       return;
     }
     const name = `${firstName} ${lastName}`;
-    if (!form.passportNumber?.trim()) {
+    // Edit: an empty passport field keeps the current number (never shown in full).
+    const passportNumber = form.passportNumber?.trim() || editing?.passportNumber?.trim() || "";
+    if (!passportNumber) {
       toast.error("Passport number is required");
       return;
     }
@@ -154,6 +162,7 @@ export default function CustomersPage() {
     try {
       const saved = await saveCustomer({
         ...form,
+        passportNumber,
         customerId: editing?.customerId,
         name,
         firstName,
@@ -199,7 +208,7 @@ export default function CustomersPage() {
 
       <div className="relative max-w-lg">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input value={search} onChange={event => setSearch(event.target.value)} className="pl-9" placeholder="Search by name, email, phone or passport number" />
+        <Input value={search} onChange={event => setSearch(event.target.value)} className="pl-9" placeholder="Search by name, email, phone or last 4 of passport" />
       </div>
 
       <Card className="shadow-card">
@@ -219,8 +228,8 @@ export default function CustomersPage() {
                       </div>
                     </td>
                     <td className="p-3 text-muted-foreground"><p>{customer.email || "-"}</p><p>{customer.phone || "-"}</p></td>
-                    <td className="p-3 font-mono text-xs">{customer.passportNumber}</td>
-                    <td className="p-3 text-muted-foreground">{customer.dateOfBirth || "-"}</td>
+                    <td className="p-3 font-mono text-xs" aria-label={customer.passportNumber ? `Passport ending ${customer.passportNumber.trim().slice(-4)}` : "No passport"}>{maskDocumentNumber(customer.passportNumber)}</td>
+                    <td className="p-3 text-muted-foreground" aria-label={customer.dateOfBirth ? "Date of birth hidden" : "No date of birth"}>{maskDate(customer.dateOfBirth)}</td>
                     <td className="p-3"><Button type="button" variant="ghost" size="sm" onClick={() => openEdit(customer)} className="gap-1"><Pencil className="h-3.5 w-3.5" /> Edit</Button></td>
                   </tr>
                 )) : (
@@ -250,7 +259,21 @@ export default function CustomersPage() {
             </Field>
             <Field label="Customer Email"><Input type="email" value={form.email || ""} onChange={event => setForm(previous => ({ ...previous, email: event.target.value }))} /></Field>
             <Field label="Customer WhatsApp/Phone"><Input value={form.phone || ""} onChange={event => setForm(previous => ({ ...previous, phone: event.target.value }))} placeholder="+923001234567" /></Field>
-            <Field label="Passport Number *"><Input value={form.passportNumber || ""} onChange={event => setForm(previous => ({ ...previous, passportNumber: event.target.value.toUpperCase() }))} /></Field>
+            <Field label={editing?.passportNumber ? "Passport Number" : "Passport Number *"}>
+              <Input
+                aria-label={editing?.passportNumber ? "Replacement passport number" : "Passport number"}
+                aria-describedby={editing?.passportNumber ? "customer-passport-current" : undefined}
+                placeholder={editing?.passportNumber ? "Enter a replacement number" : undefined}
+                autoComplete="off"
+                value={form.passportNumber || ""}
+                onChange={event => setForm(previous => ({ ...previous, passportNumber: event.target.value.toUpperCase() }))}
+              />
+              {editing?.passportNumber && (
+                <p id="customer-passport-current" className="text-xs text-muted-foreground">
+                  Current: <span className="font-mono">{maskDocumentNumber(editing.passportNumber)}</span>. Leave empty to keep it, or enter a replacement.
+                </p>
+              )}
+            </Field>
             <Field label="Passport Expiry"><Input type="date" value={form.passportExpiry || ""} onChange={event => setForm(previous => ({ ...previous, passportExpiry: event.target.value }))} /></Field>
             <Field label="Date of Birth"><Input type="date" value={form.dateOfBirth || ""} onChange={event => setForm(previous => ({ ...previous, dateOfBirth: event.target.value }))} /></Field>
           </div>
