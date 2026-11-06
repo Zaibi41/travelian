@@ -44,3 +44,21 @@ The gateway also needs CORS for the portal origins.
 | Branch filter | No branch master; bookings have no branch. | Branches table; `bookings.branch_id` |
 | Channel filter (B2C / B2B) | Bookings have no channel. | `bookings.channel` |
 | Agency filter | Bookings have no reliable agency owner. | `bookings.agency_id` populated from authenticated ownership |
+
+## 3. HIGH: mask identity data in the gateway, with a logged reveal
+
+**Priority: HIGH. Must be done before real customer data is used (roadmap item 4).**
+
+**Masking in the page is not protection.** The Customers screen masks passport numbers (last 4 shown) and dates of birth (hidden), and the Edit form never shows the full passport. But the browser still receives the full values from the API, so anyone can read them with the browser's developer tools or by calling the API directly. Today that API is the legacy `GET /content/customers`, which needs no sign-in (see item 1).
+
+The gateway must:
+
+| Needs | Detail |
+| --- | --- |
+| Masked values by default | Customer and traveler responses return passport/CNIC as last 4 only and no date of birth, unless the caller has the reveal permission |
+| Reveal permission | Users & Access > Roles & Permissions; spec v3.0: "Granted staff only, every reveal logged" |
+| Reveal endpoint, logged | Returns one full value to a granted role and writes an Audit Log entry: who, when, which customer, which field |
+| Server-side full-number search | Search by full passport number runs in the gateway for granted roles only |
+| Replace without reading | Updating a passport accepts a new number without returning the old one (the Edit form already works this way) |
+
+The portal shows no reveal button until this exists.
