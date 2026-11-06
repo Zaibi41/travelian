@@ -256,10 +256,10 @@ export const adminNavigation: AdminNavSection[] = [
     items: [
       item("Roles & Permissions", "/admin/rbac", Shield, platformOwnerRoles),
       item("General Settings", "/admin/settings", Settings, internalAdminRoles),
-      item("Audit Logs", "/admin/roadmap/audit-logs", FileText, platformOwnerRoles),
-      item("Webhook Logs", "/admin/roadmap/webhook-logs", CloudCog, platformOwnerRoles),
+      item("Audit Log", "/admin/roadmap/audit-log", FileText, platformOwnerRoles),
+      item("System Logs & Jobs", "/admin/roadmap/system-logs-jobs", CloudCog, platformOwnerRoles),
       item("Reconciliation", "/admin/roadmap/reconciliation", Receipt, platformOwnerRoles),
-      item("Payment Gateways", "/admin/roadmap/payment-gateways", CreditCard, platformOwnerRoles),
+      item("Payment Providers", "/admin/roadmap/payment-providers", CreditCard, platformOwnerRoles),
       item("View Public Site", "/", Globe, []),
     ],
   },
@@ -328,14 +328,14 @@ const internalSidebarMenus: SidebarMenuEntry[] = [
   {
     number: "10", title: "Suppliers & Integrations", icon: CloudCog, items: [
       item("Suppliers / API Providers", "/admin/provider-systems", CloudCog, platformOwnerRoles),
-      item("Payment Gateways", "/admin/roadmap/payment-gateways", CreditCard, platformOwnerRoles),
+      item("Payment Providers", "/admin/roadmap/payment-providers", CreditCard, platformOwnerRoles),
     ],
   },
   {
     number: "11", title: "Users & Access", icon: UserCog, items: [
       item("Users & Staff", "/admin/users", UserCog, internalAdminRoles),
       item("Roles & Permissions", "/admin/rbac", Shield, platformOwnerRoles),
-      item("Audit Logs", "/admin/roadmap/audit-logs", FileText, platformOwnerRoles),
+      item("Audit Log", "/admin/roadmap/audit-log", FileText, platformOwnerRoles),
     ],
   },
   { number: "12", title: "Reports", icon: BarChart3, items: [item("Reports", "/admin/reports", BarChart3, [...internalAdminRoles, "staff"])] },
@@ -348,7 +348,7 @@ const internalSidebarMenus: SidebarMenuEntry[] = [
   {
     number: "14", title: "System", icon: Settings, items: [
       item("General Settings", "/admin/settings", Settings, internalAdminRoles),
-      item("Webhook Logs", "/admin/roadmap/webhook-logs", CloudCog, platformOwnerRoles),
+      item("System Logs & Jobs", "/admin/roadmap/system-logs-jobs", CloudCog, platformOwnerRoles),
     ],
   },
 ];
@@ -360,8 +360,16 @@ export function getInternalSidebarForRole(role: UserRole): SidebarMenuEntry[] {
     .filter((menu) => menu.items.length > 0);
 }
 
+// Renamed placeholder URLs (2026-11-06). Old URLs redirect; they get the same access as the new ones.
+const RENAMED_ADMIN_PATHS: Record<string, string> = {
+  "/admin/roadmap/audit-logs": "/admin/roadmap/audit-log",
+  "/admin/roadmap/webhook-logs": "/admin/roadmap/system-logs-jobs",
+  "/admin/roadmap/payment-gateways": "/admin/roadmap/payment-providers",
+};
+
 export function canAccessAdminPath(role: UserRole, pathname: string) {
-  const normalized = pathname.replace(/\/+$/, "") || "/admin";
+  const trimmed = pathname.replace(/\/+$/, "") || "/admin";
+  const normalized = RENAMED_ADMIN_PATHS[trimmed] ?? trimmed;
   if (normalized === "/admin/booking") return allSearchRoles.includes(role);
   if (normalized === "/admin/flights-search") return allSearchRoles.includes(role);
   if (normalized === "/admin/flight-search") return allSearchRoles.includes(role);
@@ -369,6 +377,8 @@ export function canAccessAdminPath(role: UserRole, pathname: string) {
   if (normalized === "/admin/booking-requests") return allSearchRoles.includes(role);
   // Dashboard → Attention Queue placeholder (spec 2.01); same roles as the Dashboard item.
   if (normalized === "/admin/attention-queue") return ["super_admin", "admin", "staff", "qa", "internal_support"].includes(role);
+  // Dashboard → Alerts placeholder (spec 2.01); same roles as the Dashboard item.
+  if (normalized === "/admin/alerts") return ["super_admin", "admin", "staff", "qa", "internal_support"].includes(role);
   if (role === "customer" && normalized === "/admin") return true;
   return adminNavigation.some((section) =>
     section.items.some((navItem) => {

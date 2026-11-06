@@ -1178,6 +1178,12 @@ export interface components {
         DashboardSummary: {
             business: components["schemas"]["BusinessResults"];
             /**
+             * Contains Sample Data
+             * @description True while the bookings table holds rows from a one-time import (sample/test data).
+             * @default false
+             */
+            contains_sample_data: boolean;
+            /**
              * Generated At
              * Format: date-time
              */

@@ -35,7 +35,15 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-section-gap">
       {/* No scope chip: there is no branch data for "All branches" yet, and the role
           already shows in the user menu (docs/backend-todo.md: Branch). */}
-      <h1 className="font-display text-page-title font-bold text-foreground">{isAgency ? "Agency Dashboard" : "Dashboard"}</h1>
+      <div className="flex flex-wrap items-center gap-2.5">
+        <h1 className="font-display text-page-title font-bold text-foreground">{isAgency ? "Agency Dashboard" : "Dashboard"}</h1>
+        {/* Gateway flags imported (test) bookings so they're never mistaken for live figures. */}
+        {summary.data?.contains_sample_data && (
+          <span className="inline-flex h-badge items-center rounded-pill border border-border bg-muted px-2 text-label font-semibold text-foreground">
+            Sample data
+          </span>
+        )}
+      </div>
 
       <DashboardFilters query={query} options={filterOptions.data} onChange={setQuery} />
 
