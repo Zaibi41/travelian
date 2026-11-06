@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { cn } from "@/lib/utils";
 import { GatewayError, gatewayGet } from "@/lib/gateway/client";
 import { severityForCount, SEVERITY_LABEL } from "./severity";
-import { formatBucket, formatRs, formatRsCompact } from "./format";
+import { formatBucket, formatRs } from "./format";
 import { parseDashboardQuery, serializeDashboardQuery } from "./query-params";
 import { ATTENTION_QUEUE_PLACEHOLDER, attentionRowHref, needsActionLinks } from "./links";
 import { fetchAttentionQueue, fetchDashboardSummary } from "./api";
@@ -30,9 +30,7 @@ describe("formatting (display only; amounts arrive as paisa)", () => {
   it("uses the Rs label", () => {
     expect(formatRs(rs(1_284_500))).toBe("Rs 1,284,500");
     expect(formatRs({ amount_minor: 10_649_550, currency: "PKR" })).toBe("Rs 106,496");
-    expect(formatRsCompact(rs(12_840_000))).toBe("Rs 12.8M");
-    expect(formatRsCompact(rs(845_200))).toBe("Rs 845.2K");
-    expect(formatRsCompact(rs(64_300))).toBe("Rs 64,300");
+    expect(formatRs(rs(167_900))).toBe("Rs 167,900");
   });
   it("labels report buckets by granularity", () => {
     expect(formatBucket("2026-11-05", "day")).toBe("Thu 5 Nov");

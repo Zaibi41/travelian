@@ -82,7 +82,7 @@ export default function HotelsPage() {
               <div className="space-y-2"><Label>Target</Label><Input placeholder="Makkah, Hotelbeds, Ramadan" /></div>
               <div className="space-y-2"><Label>Base cost</Label><Input type="number" value={baseCost} onChange={(event) => setBaseCost(Number(event.target.value))} /></div>
               <div className="space-y-2"><Label>Percentage markup</Label><Input type="number" value={percentage} onChange={(event) => setPercentage(Number(event.target.value))} /></div>
-              <div className="space-y-2"><Label>Fixed PKR markup</Label><Input type="number" value={fixedAmount} onChange={(event) => setFixedAmount(Number(event.target.value))} /></div>
+              <div className="space-y-2"><Label>Fixed Rs markup</Label><Input type="number" value={fixedAmount} onChange={(event) => setFixedAmount(Number(event.target.value))} /></div>
               <div className="space-y-2"><Label>Minimum margin</Label><Input type="number" value={minimumMargin} onChange={(event) => setMinimumMargin(Number(event.target.value))} /></div>
             </CardContent>
           </Card>

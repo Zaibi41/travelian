@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { CreditCard, Wallet, Building2, Link2, Plus, Copy, CheckCircle, DollarSign, ShieldCheck, Send } from "lucide-react";
 
 function formatPkr(amount: number) {
-  return `PKR ${Math.max(0, Math.round(amount)).toLocaleString()}`;
+  return `Rs ${Math.max(0, Math.round(amount)).toLocaleString()}`;
 }
 
 export default function PaymentsPage() {
@@ -237,7 +237,7 @@ export default function PaymentsPage() {
               <div className="space-y-2"><Label>Customer Name *</Label><Input value={linkForm.customerName} onChange={e => setLinkForm(p => ({ ...p, customerName: e.target.value }))} /></div>
               <div className="space-y-2"><Label>Email</Label><Input value={linkForm.customerEmail} onChange={e => setLinkForm(p => ({ ...p, customerEmail: e.target.value }))} /></div>
             </div>
-            <div className="space-y-2"><Label>Amount (PKR) *</Label><Input type="number" value={linkForm.amount || ""} onChange={e => setLinkForm(p => ({ ...p, amount: Number(e.target.value) }))} /></div>
+            <div className="space-y-2"><Label>Amount (Rs) *</Label><Input type="number" value={linkForm.amount || ""} onChange={e => setLinkForm(p => ({ ...p, amount: Number(e.target.value) }))} /></div>
             <div className="flex gap-2 pt-2">
               <Button onClick={handleCreateLink} className="flex-1 gradient-primary text-primary-foreground gap-2"><Send className="h-4 w-4" /> Generate & Send</Button>
               <Button variant="outline" onClick={() => setLinkDialogOpen(false)}>Cancel</Button>

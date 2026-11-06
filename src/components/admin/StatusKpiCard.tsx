@@ -44,7 +44,7 @@ export function StatusKpiCard({ label, value, severity, hint, fullValue, to, siz
       <span
         title={fullValue}
         className={cn(
-          "truncate font-semibold tabular-nums",
+          "break-words font-semibold tabular-nums",
           size === "sm" ? "text-kpi-sm" : "text-kpi",
           severity ? VALUE_TONE[severity] : "text-foreground",
         )}

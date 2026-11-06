@@ -66,7 +66,7 @@ describe("DashboardPage", () => {
   it("shows Business results as neutral cards with Rs amounts", () => {
     renderPage();
     const section = screen.getByRole("region", { name: "Business results" });
-    expect(within(section).getByRole("group", { name: "Total sales: Rs 1,284,500" })).toHaveTextContent("Rs 1.3M");
+    expect(within(section).getByRole("group", { name: "Total sales: Rs 1,284,500" })).toHaveTextContent("Rs 1,284,500");
     expect(within(section).getByRole("group", { name: "Gross profit: Rs 96,400" })).toBeInTheDocument();
     expect(within(section).queryByText(/Needs action|Fine|Critical/)).not.toBeInTheDocument();
     expect(screen.queryByText(/PKR/)).not.toBeInTheDocument();

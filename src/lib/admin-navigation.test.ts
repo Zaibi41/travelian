@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { UserRole } from "@/data/models";
-import { INTERNAL_ROLES, canAccessAdminPath, getInternalSidebarForRole, getNavigationForRole, isInternalRole } from "./admin-navigation";
+import { INTERNAL_ROLES, adminPageTitle, canAccessAdminPath, getInternalSidebarForRole, getNavigationForRole, isInternalRole } from "./admin-navigation";
 
 const SPEC_MENUS = [
   "Dashboard", "Search", "Bookings", "Customers & Travelers", "Finance", "Flight Operations", "Inventory & Services",
@@ -94,5 +94,19 @@ describe("agency and customer sidebars are unchanged", () => {
     expect(getNavigationForRole("customer").map((section) => section.category)).toEqual([
       "Dashboard", "Search", "Requests", "My Trips", "Wallet & Payments", "Support", "My Account",
     ]);
+  });
+});
+
+describe("admin page titles", () => {
+  it("uses the label the sidebar shows", () => {
+    expect(adminPageTitle("super_admin", "/admin")).toBe("Dashboard");
+    expect(adminPageTitle("super_admin", "/admin/customers")).toBe("Customers & Travelers");
+    expect(adminPageTitle("super_admin", "/admin/agencies")).toBe("B2B Partners");
+    expect(adminPageTitle("super_admin", "/admin/hotels")).toBe("Hotels Inventory");
+    expect(adminPageTitle("super_admin", "/admin/wallet")).toBe("Wallets");
+    expect(adminPageTitle("super_admin", "/admin/roadmap/audit-log")).toBe("Audit Log");
+    expect(adminPageTitle("super_admin", "/admin/alerts")).toBe("Alerts");
+    expect(adminPageTitle("agency_owner", "/admin")).toBe("Agency Overview");
+    expect(adminPageTitle("super_admin", "/admin/unknown-page")).toBe("Admin");
   });
 });

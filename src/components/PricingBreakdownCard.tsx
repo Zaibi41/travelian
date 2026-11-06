@@ -10,11 +10,11 @@ export function PricingBreakdownCard({ rule, baseCost, discount = 0 }: { rule: P
         <CardTitle className="text-sm font-display">Margin Preview</CardTitle>
       </CardHeader>
       <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
-        <Row label="Base cost" value={`PKR ${pricing.baseCost.toLocaleString()}`} />
-        <Row label="Price adjustment" value={`PKR ${pricing.markupAmount.toLocaleString()}`} />
-        <Row label="Discount" value={`PKR ${pricing.discountAmount.toLocaleString()}`} />
-        <Row label="Final selling price" value={`PKR ${pricing.finalSellingPrice.toLocaleString()}`} strong />
-        <Row label="Travelian profit" value={`PKR ${pricing.profit.toLocaleString()}`} strong />
+        <Row label="Base cost" value={`Rs ${pricing.baseCost.toLocaleString()}`} />
+        <Row label="Price adjustment" value={`Rs ${pricing.markupAmount.toLocaleString()}`} />
+        <Row label="Discount" value={`Rs ${pricing.discountAmount.toLocaleString()}`} />
+        <Row label="Final selling price" value={`Rs ${pricing.finalSellingPrice.toLocaleString()}`} strong />
+        <Row label="Travelian profit" value={`Rs ${pricing.profit.toLocaleString()}`} strong />
         <Row label="Margin" value={`${pricing.marginPercent.toFixed(1)}%`} />
         {pricing.minimumMarginProtected && (
           <p className="sm:col-span-2 rounded-lg bg-warning/10 px-3 py-2 text-xs font-medium text-warning">

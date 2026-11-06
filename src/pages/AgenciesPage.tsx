@@ -180,6 +180,11 @@ export default function AgenciesPage() {
         <Input placeholder="Search agencies..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
       </div>
 
+      {filtered.length === 0 && (
+        <p className="rounded-lg border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
+          {search.trim() ? "No agencies match your search." : "No agencies yet."}
+        </p>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map(agency => {
           const agencyUsers = users.filter(u => u.agencyId === agency.agencyId);
@@ -247,7 +252,7 @@ export default function AgenciesPage() {
                   <p className="text-xs text-muted-foreground">Parent: {parentName(agency)}</p>
                 )}
                 <div className="grid grid-cols-3 gap-2 text-xs">
-                  <Metric icon={Wallet} value={`PKR ${agency.walletBalance.toLocaleString()}`} />
+                  <Metric icon={Wallet} value={`Rs ${agency.walletBalance.toLocaleString()}`} />
                   <Metric icon={Users} value={`${agencyUsers.length} users`} />
                   <Metric icon={Network} value={`${subAgencies.length} subs`} />
                 </div>
@@ -272,7 +277,7 @@ export default function AgenciesPage() {
                 <Info label="Status"><StatusBadge status={selectedAgency.status} /></Info>
                 <Info label="Type">{selectedAgency.agencyType === "sub" ? "Sub agency" : "Main agency"}</Info>
                 <Info label="Commission">{selectedAgency.commissionRate}%</Info>
-                <Info label="Wallet">PKR {selectedAgency.walletBalance.toLocaleString()}</Info>
+                <Info label="Wallet">Rs {selectedAgency.walletBalance.toLocaleString()}</Info>
                 <Info label="Bookings">{selectedAgency.totalBookings}</Info>
                 <Info label="Users">{users.filter(u => u.agencyId === selectedAgency.agencyId).length}</Info>
               </div>

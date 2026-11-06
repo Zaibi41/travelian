@@ -364,7 +364,7 @@ export default function TicketsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="shadow-card"><CardContent className="p-5"><Receipt className="h-5 w-5 text-primary" /><p className="mt-3 text-2xl font-bold">{visibleTickets.length}</p><p className="text-sm text-muted-foreground">Ticket bookings</p></CardContent></Card>
         <Card className="shadow-card"><CardContent className="p-5"><FileText className="h-5 w-5 text-primary" /><p className="mt-3 text-2xl font-bold">{visibleTickets.filter(t => t.status === "issued").length}</p><p className="text-sm text-muted-foreground">Issued invoices</p></CardContent></Card>
-        <Card className="shadow-card"><CardContent className="p-5"><Plane className="h-5 w-5 text-primary" /><p className="mt-3 text-2xl font-bold">PKR {visibleTickets.reduce((sum, t) => sum + Number(t.price || 0), 0).toLocaleString()}</p><p className="text-sm text-muted-foreground">Invoice value</p></CardContent></Card>
+        <Card className="shadow-card"><CardContent className="p-5"><Plane className="h-5 w-5 text-primary" /><p className="mt-3 text-2xl font-bold">Rs {visibleTickets.reduce((sum, t) => sum + Number(t.price || 0), 0).toLocaleString()}</p><p className="text-sm text-muted-foreground">Invoice value</p></CardContent></Card>
       </div>
 
       <div className="relative max-w-md">
@@ -411,7 +411,7 @@ export default function TicketsPage() {
                       </td>
                       <td className="p-3 text-xs">{ticket.origin || "---"} to {ticket.destination || "---"}</td>
                       <td className="p-3 text-xs text-muted-foreground">{ticket.departureDate || "Not set"}</td>
-                      <td className="p-3 font-bold text-primary">PKR {Number(ticket.price || 0).toLocaleString()}</td>
+                      <td className="p-3 font-bold text-primary">Rs {Number(ticket.price || 0).toLocaleString()}</td>
                       <td className="p-3"><StatusBadge status={ticket.status} /></td>
                       <td className="p-3">
                         <div className="flex gap-1">

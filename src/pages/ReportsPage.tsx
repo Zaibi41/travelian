@@ -1,18 +1,11 @@
-import { BarChart3 } from "lucide-react";
-import { EmptyState } from "@/components/EmptyState";
+import { RoadmapPlaceholderPage } from "@/pages/RoadmapPlaceholderPage";
 
+// Menu 12 has no built screen yet. Text: docs/spec-v3.md, menu table "Why".
 export default function ReportsPage() {
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-bold font-display">Reports</h1>
-        <p className="text-sm text-muted-foreground">Sales, financial, agency and operational reports — unified hub.</p>
-      </div>
-      <EmptyState
-        icon={BarChart3}
-        title="Reports hub coming soon"
-        description="The report builder (sales, wallet, agency, staff performance, API performance, refunds) is on the Sprint 4 roadmap. Until then, drill into the source modules directly."
-      />
-    </div>
+    <RoadmapPlaceholderPage
+      title="Reports"
+      description="Management reports and the airline sales reports used for IATA, GDS and airline applications"
+    />
   );
 }

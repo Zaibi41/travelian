@@ -1,5 +1,5 @@
 import { StatusKpiCard } from "@/components/admin/StatusKpiCard";
-import { formatCount, formatRs, formatRsCompact } from "@/lib/admin-dashboard/format";
+import { formatCount, formatRs } from "@/lib/admin-dashboard/format";
 import type { BusinessResults } from "@/lib/admin-dashboard/types";
 import { DashboardSection } from "./DashboardSection";
 import { CardGridSkeleton } from "./DashboardStates";
@@ -20,10 +20,10 @@ export function BusinessSection({ data, loading }: { data?: BusinessResults; loa
           <StatusKpiCard size="sm" label="Total bookings" value={formatCount(data.total_bookings)} />
           <StatusKpiCard size="sm" label="Issued tickets" value={formatCount(data.issued_tickets)} />
           {data.total_sales && (
-            <StatusKpiCard size="sm" label="Total sales" value={formatRsCompact(data.total_sales)} fullValue={formatRs(data.total_sales)} />
+            <StatusKpiCard size="sm" label="Total sales" value={formatRs(data.total_sales)} />
           )}
           {data.gross_profit && (
-            <StatusKpiCard size="sm" label="Gross profit" value={formatRsCompact(data.gross_profit)} fullValue={formatRs(data.gross_profit)} />
+            <StatusKpiCard size="sm" label="Gross profit" value={formatRs(data.gross_profit)} />
           )}
         </div>
       )}

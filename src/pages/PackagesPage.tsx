@@ -266,7 +266,7 @@ export default function PackagesPage() {
                   <p className="mt-1 text-sm text-muted-foreground">{item.duration || "Duration not set"} | {item.hotel || "Hotels not set"} | {item.city || "Departure city not set"}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Expires: {item.expiresAt || "Not set"}</p>
                   <p className="mt-1 max-w-full break-all text-xs text-muted-foreground">ID: <span className="font-mono">{item.packageId}</span></p>
-                  <p className="mt-1 font-bold text-primary">PKR {item.basePrice.toLocaleString()}</p>
+                  <p className="mt-1 font-bold text-primary">Rs {item.basePrice.toLocaleString()}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => openEdit(item)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>

@@ -210,6 +210,13 @@ export default function UsersPage() {
                     </tr>
                   );
                 })}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center text-muted-foreground">
+                      {search.trim() ? "No users match your search." : "No users yet."}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

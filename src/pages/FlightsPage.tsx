@@ -174,8 +174,8 @@ export default function FlightsPage() {
               <h3 className="font-bold">Airline-Based Promotions</h3>
               <p className="text-sm text-muted-foreground">
                 Apply different discounts per airline, regardless of which provider returns them. 
-                Example: <span className="font-semibold">Airblue flights get PKR 200 off</span>, 
-                <span className="font-semibold ml-1">Air Arabia flights get PKR 100 off</span>, 
+                Example: <span className="font-semibold">Airblue flights get Rs 200 off</span>, 
+                <span className="font-semibold ml-1">Air Arabia flights get Rs 100 off</span>, 
                 other airlines unchanged.
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
@@ -244,9 +244,9 @@ export default function FlightsPage() {
                 <Input inputMode="decimal" type="text" value={percentage} onChange={(event) => updatePricingText(event.target.value, setPercentage, true)} />
               </div>
               <div className="space-y-2">
-                <Label>Fixed PKR adjustment</Label>
+                <Label>Fixed Rs adjustment</Label>
                 <Input inputMode="decimal" type="text" value={fixedAmount} onChange={(event) => updatePricingText(event.target.value, setFixedAmount, true)} />
-                <p className="text-xs text-muted-foreground">Use a signed value. Example: <span className="font-semibold text-foreground">-500</span> reduces each matching fare by PKR 500.</p>
+                <p className="text-xs text-muted-foreground">Use a signed value. Example: <span className="font-semibold text-foreground">-500</span> reduces each matching fare by Rs 500.</p>
               </div>
               <div className="space-y-2">
                 <Label>Minimum margin protection</Label>
@@ -282,8 +282,8 @@ export default function FlightsPage() {
                           <Badge variant="secondary">{titleCase(rule.scope)}</Badge>
                         </div>
                         <p className="mt-2 text-sm text-muted-foreground">
-                          {rule.percentage}% + PKR {rule.fixedAmount.toLocaleString()} adjustment
-                          {rule.minimumMargin > 0 ? ` · minimum margin PKR ${rule.minimumMargin.toLocaleString()}` : ""}
+                          {rule.percentage}% + Rs {rule.fixedAmount.toLocaleString()} adjustment
+                          {rule.minimumMargin > 0 ? ` · minimum margin Rs ${rule.minimumMargin.toLocaleString()}` : ""}
                         </p>
                       </div>
                       <div className="flex shrink-0 gap-2">

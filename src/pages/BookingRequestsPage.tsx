@@ -109,7 +109,7 @@ function bookingAmount(item: BookingRequest) {
 
 function formatBookingAmount(item: BookingRequest) {
   const amount = bookingAmount(item);
-  return typeof amount === "number" ? `PKR ${amount.toLocaleString()}` : "—";
+  return typeof amount === "number" ? `Rs ${amount.toLocaleString()}` : "—";
 }
 
 function bookingPaymentStatus(item: BookingRequest) {
@@ -993,7 +993,7 @@ export default function BookingRequestsPage() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="booking-commission">Commission (PKR)</Label>
+                  <Label htmlFor="booking-commission">Commission (Rs)</Label>
                   <Input
                     id="booking-commission"
                     type="number"

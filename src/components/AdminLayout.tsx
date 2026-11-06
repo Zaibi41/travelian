@@ -10,7 +10,8 @@ import { cognitoLogoutUrl } from "@/lib/cognito-auth";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
-import { canAccessAdminPath, isInternalRole, roleLabel } from "@/lib/admin-navigation";
+import { adminPageTitle, canAccessAdminPath, isInternalRole, roleLabel } from "@/lib/admin-navigation";
+import { Helmet } from "react-helmet-async";
 import AccessDeniedPage from "@/pages/AccessDeniedPage";
 import { MoveToTopButton } from "@/components/MoveToTopButton";
 import { useAdmin } from "@/contexts/AdminStore";
@@ -19,8 +20,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 
 import { AdminProfileDialog, type ProfileAction } from "@/components/AdminProfileDialog";
 import { formatPkr, getWalletSummary } from "@/lib/wallet-summary";
-import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
-import { whatsappUrl } from "@/lib/site-config";
 import { ANNOUNCEMENTS_CHANGED, listAdminAnnouncements } from "@/lib/admin-announcements";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -93,6 +92,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   };
 
   return (
+    <>
+    <Helmet><title>{`${adminPageTitle(currentRole, location.pathname)} · Travelian Admin`}</title></Helmet>
     <SidebarProvider>
       <div className="flex min-h-svh w-full bg-muted/20">
         <AdminSidebar />
@@ -168,19 +169,16 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
             </DropdownMenu>
             </div>
           </header>
-          {/* Bottom padding keeps content scrollable clear of the fixed WhatsApp and Move-to-top buttons. */}
-          <main className="flex-1 bg-muted/20 p-4 pb-32 md:p-6 md:pb-32">
+          {/* Bottom padding keeps content scrollable clear of the fixed Move-to-top button. */}
+          <main className="flex-1 bg-muted/20 p-4 pb-24 md:p-6 md:pb-24">
             {!isAuthenticated ? null : allowed ? children : <AccessDeniedPage />}
           </main>
-          <MoveToTopButton className={location.pathname === "/admin" ? "bottom-20" : "bottom-6"} />
-          {location.pathname === "/admin" && (
-            <a href={whatsappUrl("Hello Travelian, I need help with an admin or agency request.")} target="_blank" rel="noreferrer" aria-label="Chat with Travelian on WhatsApp" className="fixed bottom-5 right-5 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-whatsapp text-whatsapp-foreground shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transform-none">
-              <WhatsAppIcon aria-hidden="true" className="h-6 w-6" />
-            </a>
-          )}
+          {/* No WhatsApp chat button in the admin: it is a public-site help channel. */}
+          <MoveToTopButton className="bottom-6" />
           {profileAction && <AdminProfileDialog key={profileAction} action={profileAction} onRestoreFocus={() => { if (!profileActionRef.current && accountTriggerRef.current?.getAttribute("aria-expanded") !== "true") accountTriggerRef.current?.focus(); }} onClose={() => setProfileAction(null)} onEdit={() => setProfileAction("edit")} />}
         </div>
       </div>
     </SidebarProvider>
+    </>
   );
 }

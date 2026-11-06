@@ -52,7 +52,7 @@ function statusLabel(booking: BookingRecord) {
 function amountLabel(booking: BookingRecord) {
   const currency = booking.pricing?.currency || "PKR";
   const total = Number(booking.pricing?.total || 0);
-  return `${currency} ${Math.round(total).toLocaleString()}`;
+  return `${currency.toUpperCase() === "PKR" ? "Rs" : currency} ${Math.round(total).toLocaleString()}`;
 }
 
 function dateFromDateTime(value?: string) {

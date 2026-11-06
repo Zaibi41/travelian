@@ -13,18 +13,6 @@ export function formatRs(money: Money) {
   return `${value < 0 ? "-" : ""}Rs ${Math.abs(value).toLocaleString("en-PK")}`;
 }
 
-/** Card value, e.g. "Rs 12.8M", "Rs 845.2K", "Rs 64,300". */
-export function formatRsCompact(money: Money) {
-  const value = rupees(money);
-  const absolute = Math.abs(value);
-  const compact = absolute >= 1_000_000
-    ? `${(absolute / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`
-    : absolute >= 100_000
-      ? `${(absolute / 1_000).toFixed(1).replace(/\.0$/, "")}K`
-      : Math.round(absolute).toLocaleString("en-PK");
-  return `${value < 0 ? "-" : ""}Rs ${compact}`;
-}
-
 export function formatCount(count: number) {
   return count.toLocaleString("en-PK");
 }

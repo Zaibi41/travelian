@@ -18,5 +18,5 @@ export function getWalletSummary(
 }
 
 export function formatPkr(amount: number) {
-  return `PKR ${Math.max(0, Math.round(amount)).toLocaleString()}`;
+  return `Rs ${Math.max(0, Math.round(amount)).toLocaleString()}`;
 }

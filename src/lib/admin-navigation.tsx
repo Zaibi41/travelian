@@ -393,3 +393,34 @@ export function canAccessAdminPath(role: UserRole, pathname: string) {
 export function roleLabel(role: UserRole) {
   return role.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
+
+// Browser tab titles for admin pages ("<title> · Travelian Admin"): the label the
+// sidebar shows for the page, so the tab and the menu always agree.
+const ADMIN_PAGES_OUTSIDE_SIDEBAR: Record<string, string> = {
+  "/admin/attention-queue": "Attention Queue",
+  "/admin/alerts": "Alerts",
+  "/admin/notifications": "Notifications",
+  "/admin/booking": "Booking",
+  "/admin/flights-search": "Search",
+};
+
+export function adminPageTitle(role: UserRole, pathname: string): string {
+  const path = pathname.replace(/\/+$/, "") || "/admin";
+  if (ADMIN_PAGES_OUTSIDE_SIDEBAR[path]) return ADMIN_PAGES_OUTSIDE_SIDEBAR[path];
+  const matches = (url: string) => {
+    const target = url.split("?")[0];
+    return target === "/admin" ? path === "/admin" : path === target || path.startsWith(`${target}/`);
+  };
+  if (isInternalRole(role)) {
+    for (const menu of getInternalSidebarForRole(role)) {
+      const found = menu.items.find((navItem) => matches(navItem.url));
+      if (found) return menu.items.length === 1 ? menu.title : found.title;
+    }
+  } else {
+    for (const section of getNavigationForRole(role)) {
+      const found = section.items.find((navItem) => matches(navItem.url));
+      if (found) return found.title;
+    }
+  }
+  return "Admin";
+}

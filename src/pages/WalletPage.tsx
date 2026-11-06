@@ -16,7 +16,7 @@ import { toast } from "sonner";
 type DepositMethod = "card" | "1link" | "bank_transfer";
 type AdjustmentType = "credit" | "debit";
 
-const formatPkr = (amount: number) => `PKR ${Math.max(0, amount).toLocaleString()}`;
+const formatPkr = (amount: number) => `Rs ${Math.max(0, amount).toLocaleString()}`;
 
 const methodLabels: Record<string, string> = {
   card: "Card",
@@ -98,7 +98,7 @@ export default function WalletPage() {
 
   const submitDeposit = () => {
     const amount = Number(depositAmount);
-    if (!depositAgencyId || !amount || amount <= 0) return toast.error("Select agency and enter a valid PKR amount");
+    if (!depositAgencyId || !amount || amount <= 0) return toast.error("Select agency and enter a valid Rs amount");
     if (depositMethod === "bank_transfer" && !depositReference.trim()) return toast.error("Bank transfer reference is required");
     const deposit = createWalletDeposit({
       agencyId: depositAgencyId,
@@ -163,7 +163,7 @@ export default function WalletPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold font-display">Wallet Ledger</h1>
-          <p className="text-sm text-muted-foreground">Agency wallet deposits, approvals and immutable PKR ledger activity</p>
+          <p className="text-sm text-muted-foreground">Agency wallet deposits, approvals and immutable Rs ledger activity</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button className="gradient-primary text-primary-foreground gap-2" onClick={() => openDeposit("card")}><CreditCard className="h-4 w-4" /> Card Deposit</Button>
@@ -283,7 +283,7 @@ export default function WalletPage() {
                   </Select>
                 </div>
               )}
-              <div className="space-y-2"><Label>Amount (PKR)</Label><Input type="number" value={depositAmount} onChange={event => setDepositAmount(event.target.value)} /></div>
+              <div className="space-y-2"><Label>Amount (Rs)</Label><Input type="number" value={depositAmount} onChange={event => setDepositAmount(event.target.value)} /></div>
               <div className="space-y-2"><Label>Reference</Label><Input value={depositReference} onChange={event => setDepositReference(event.target.value)} placeholder={depositMethod === "bank_transfer" ? "Bank transaction ID" : "Auto generated if blank"} /></div>
             </div>
             <TabsContent value="card" className="mt-4 rounded-xl border p-4 text-sm text-muted-foreground">Card payments are treated as confirmed payment callbacks in this v1 UI and automatically credit the ledger once submitted.</TabsContent>
@@ -310,7 +310,7 @@ export default function WalletPage() {
           <div className="space-y-4">
             <div className="space-y-2"><Label>Agency</Label><Select value={adjustmentAgencyId} onValueChange={setAdjustmentAgencyId}><SelectTrigger><SelectValue placeholder="Select agency" /></SelectTrigger><SelectContent>{activeAgencies.map(a => <SelectItem key={a.agencyId} value={a.agencyId}>{a.agencyName}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-2"><Label>Type</Label><Select value={adjustmentType} onValueChange={(value) => setAdjustmentType(value as AdjustmentType)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="credit">Credit</SelectItem><SelectItem value="debit">Debit</SelectItem></SelectContent></Select></div>
-            <div className="space-y-2"><Label>Amount (PKR)</Label><Input type="number" value={adjustmentAmount} onChange={event => setAdjustmentAmount(event.target.value)} /></div>
+            <div className="space-y-2"><Label>Amount (Rs)</Label><Input type="number" value={adjustmentAmount} onChange={event => setAdjustmentAmount(event.target.value)} /></div>
             <div className="space-y-2"><Label>Reason</Label><Textarea rows={3} value={adjustmentReason} onChange={event => setAdjustmentReason(event.target.value)} placeholder="Required audit reason" /></div>
             <Button onClick={submitAdjustment} className="w-full gradient-primary text-primary-foreground">Post Ledger Entry</Button>
           </div>
