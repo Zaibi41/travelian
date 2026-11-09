@@ -1108,6 +1108,11 @@ export interface components {
         BookingAuditEntry: {
             /** Action */
             action: string;
+            /**
+             * Actor Role
+             * @description The actor's role. User names aren't stored in the gateway yet.
+             */
+            actor_role?: string | null;
             /** Actor User Id */
             actor_user_id?: string | null;
             /**
@@ -1150,6 +1155,12 @@ export interface components {
             audit?: components["schemas"]["BookingAuditEntry"][] | null;
             /** Booking Id */
             booking_id: string;
+            /**
+             * Can Reveal Identity
+             * @description Whether this viewer may call the reveal endpoint (the endpoint still checks).
+             * @default false
+             */
+            can_reveal_identity: boolean;
             /** Created At */
             created_at?: string | null;
             /** @description Omitted when no customer was saved. */

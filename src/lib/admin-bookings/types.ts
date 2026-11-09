@@ -11,6 +11,9 @@ export type BookingListCards = Schemas["BookingListCards"];
 export type BookingDetail = Schemas["BookingDetail"];
 export type BookingMoney = Schemas["BookingMoney"];
 export type BookingStatuses = Schemas["BookingStatuses"];
+export type BookingPassenger = Schemas["app__schemas__admin_bookings__BookingPassenger"];
+export type BookingAuditEntry = Schemas["BookingAuditEntry"];
+export type RevealResponse = Schemas["RevealResponse"];
 
 type ListParams = NonNullable<operations["list_bookings_v1_admin_bookings_get"]["parameters"]["query"]>;
 export type BookingListParams = ListParams;

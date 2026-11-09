@@ -1,5 +1,10 @@
+import { useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { TabLinks } from "@/components/admin/bookings/TabLinks";
 import { NotAvailableTable } from "@/components/admin/bookings/NotAvailable";
@@ -10,7 +15,8 @@ import {
 } from "@/lib/admin-bookings/format";
 import { DETAIL_TABS, bookingDetailPath, type DetailTabSlug } from "@/lib/admin-bookings/tabs";
 import { useBookingDetail } from "@/lib/admin-bookings/use-bookings";
-import type { BookingDetail } from "@/lib/admin-bookings/types";
+import { revealTraveler } from "@/lib/admin-bookings/api";
+import type { BookingAuditEntry, BookingDetail, BookingPassenger, RevealResponse } from "@/lib/admin-bookings/types";
 
 // Tabs the gateway doesn't record yet: the mockup's columns with a not-available row
 // (docs/backend-todo.md, Booking detail). No "Edit booking" (decided 2026-11-09).
@@ -74,7 +80,9 @@ export default function AdminBookingDetailPage() {
       {tab === "overview" && <Overview booking={booking} />}
       {tab === "fare" && <Fare booking={booking} />}
       {tab === "supplier-payment" && booking.supplier_payment && <SupplierPaymentTab booking={booking} />}
-      {shell && <NotAvailableTable columns={shell.columns} message={`Not available yet. The gateway doesn't record ${shell.what} for bookings yet.`} />}
+      {tab === "passengers" && booking.passengers?.length ? <Passengers booking={booking} />
+        : tab === "audit" && booking.audit?.length ? <Audit entries={booking.audit} />
+        : shell && <NotAvailableTable columns={shell.columns} message={`Not available yet. The gateway doesn't record ${shell.what} for bookings yet.`} />}
     </div>
   );
 }
@@ -158,5 +166,152 @@ function SupplierPaymentTab({ booking }: { booking: BookingDetail }) {
         ["Hold deadline", <span className="tabular-nums">{formatDateTime(payment.hold_deadline)}</span>],
       ]}
     />
+  );
+}
+
+const PASSENGER_TYPE: Record<BookingPassenger["type"], string> = { ADT: "Adult", CHD: "Child", INF: "Infant" };
+const ID_TYPE: Record<BookingPassenger["id_type"], string> = { PSPT: "Passport", NATI: "National ID" };
+
+function Cell({ children, muted }: { children: React.ReactNode; muted?: boolean }) {
+  return <td className={`h-table-row max-w-[14rem] px-2.5 ${muted ? "text-muted-foreground" : "text-foreground"}`}><span className="line-clamp-2 break-words">{children}</span></td>;
+}
+
+// Passengers tab (mockup booking-detail-passengers): passport and date of birth masked by the
+// gateway; the full values only through the logged reveal, for viewers the gateway allows.
+function Passengers({ booking }: { booking: BookingDetail }) {
+  const [revealing, setRevealing] = useState<BookingPassenger | null>(null);
+  const passengers = booking.passengers ?? [];
+  const columns = ["Passenger name", "Type", "Document (masked)", "Date of birth (masked)", "Nationality", "Ticket number", ...(booking.can_reveal_identity ? ["Actions"] : [])];
+  return (
+    <section aria-label="Passengers" className="flex flex-col gap-2">
+      <div className="overflow-x-auto rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+        <table className="w-full min-w-[44rem] border-collapse text-table">
+          <thead>
+            <tr className="bg-muted text-left">
+              {columns.map(column => <th key={column} scope="col" className="h-table-header px-2.5 font-semibold text-foreground">{column}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {passengers.map(passenger => {
+              const name = [passenger.title, passenger.first_name, passenger.last_name].filter(Boolean).join(" ");
+              const type = PASSENGER_TYPE[passenger.type] + (passenger.type === "INF" && passenger.infant_of_position != null ? ` (with passenger ${passenger.infant_of_position + 1})` : "");
+              return (
+                <tr key={passenger.position} className="border-b border-border last:border-b-0">
+                  <Cell>{name}</Cell>
+                  <Cell>{type}</Cell>
+                  <Cell muted={!passenger.document_number_masked}>{ID_TYPE[passenger.id_type]} {passenger.document_number_masked ?? "—"}</Cell>
+                  <Cell>{passenger.date_of_birth_masked}</Cell>
+                  <Cell muted={!passenger.nationality}>{passenger.nationality ?? "—"}</Cell>
+                  <Cell muted={!passenger.ticket_number}>{passenger.ticket_number ?? "—"}</Cell>
+                  {booking.can_reveal_identity && (
+                    <td className="h-table-row px-2.5">
+                      <Button type="button" variant="outline" size="sm" className="h-8 text-body" aria-label={`Reveal (logged) ${name}`} onClick={() => setRevealing(passenger)}>
+                        Reveal (logged)
+                      </Button>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-body text-muted-foreground">Passport and date of birth are masked. Reveal is logged.</p>
+      {revealing && <RevealDialog bookingId={booking.booking_id} passenger={revealing} onClose={() => setRevealing(null)} />}
+    </section>
+  );
+}
+
+const REASON_MIN = 5;
+
+function RevealDialog({ bookingId, passenger, onClose }: { bookingId: string; passenger: BookingPassenger; onClose: () => void }) {
+  const [reason, setReason] = useState("");
+  const reveal = useMutation({ mutationFn: () => revealTraveler(bookingId, passenger.position, reason.trim()) });
+  const values: RevealResponse | undefined = reveal.data;
+  const name = [passenger.first_name, passenger.last_name].join(" ");
+  return (
+    <Dialog open onOpenChange={open => { if (!open) onClose(); }}>
+      <DialogContent className="flex max-h-[85vh] w-[calc(100%-2rem)] max-w-lg flex-col gap-3 overflow-hidden">
+        <DialogHeader>
+          <DialogTitle className="text-section">Reveal identity details</DialogTitle>
+          <DialogDescription className="text-body">{name}. The reveal is logged with your reason.</DialogDescription>
+        </DialogHeader>
+        <div className="min-h-0 overflow-y-auto">
+          {values ? (
+            <dl className="grid grid-cols-[minmax(8rem,10rem)_minmax(0,1fr)] text-body">
+              {([["Date of birth", values.date_of_birth], ["Document number", values.document_number], ["Document expiry", values.document_expiry]] as const).map(([label, value]) => (
+                <div key={label} className="contents">
+                  <dt className="border-b border-border py-2 font-semibold text-foreground">{label}</dt>
+                  <dd className="min-w-0 break-words border-b border-border py-2 tabular-nums text-foreground">{value ?? "—"}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="reveal-reason" className="text-label font-medium text-muted-foreground">Reason</label>
+              <Textarea id="reveal-reason" value={reason} maxLength={500} rows={3} onChange={event => setReason(event.target.value)} className="text-body" />
+              {reveal.error && <p role="alert" className="text-body text-status-critical-text">{reveal.error instanceof GatewayError ? reveal.error.message : "Identity details can't be shown right now."}</p>}
+            </div>
+          )}
+        </div>
+        <DialogFooter className="gap-2">
+          <Button type="button" variant="outline" className="h-control text-body" onClick={onClose}>{values ? "Done" : "Cancel"}</Button>
+          {!values && (
+            <Button type="button" className="h-control text-body" disabled={reason.trim().length < REASON_MIN || reveal.isPending} onClick={() => reveal.mutate()}>
+              {reveal.isPending ? "Revealing…" : "Reveal"}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+const AUDIT_ACTION: Record<string, string> = { hold_created: "Hold created", identity_revealed: "Identity revealed" };
+const FARE_CHECK: Record<string, string> = { matches: "total verified", differs: "total differs", no_total: "total not verified", failed: "total not verified" };
+const REVEALED_FIELD: Record<string, string> = { date_of_birth: "date of birth", document_number: "document number", document_expiry: "document expiry" };
+
+function auditDetails(entry: BookingAuditEntry) {
+  const d = entry.details as Record<string, unknown>;
+  if (entry.action === "hold_created") {
+    return [d.pnr && `PNR ${d.pnr}`, d.time_limit && `time limit ${d.time_limit}`, typeof d.travelers === "number" && `${d.travelers} ${d.travelers === 1 ? "traveler" : "travelers"}`,
+      typeof d.fare_info === "string" && (FARE_CHECK[d.fare_info] ?? d.fare_info), d.label].filter(Boolean).join(" · ");
+  }
+  if (entry.action === "identity_revealed") {
+    const fields = Array.isArray(d.fields) ? d.fields.map(field => REVEALED_FIELD[String(field)] ?? String(field)).join(", ") : "";
+    return [typeof d.traveler_position === "number" && `Passenger ${d.traveler_position + 1}`, fields, d.reason && `Reason: ${d.reason}`].filter(Boolean).join(" · ");
+  }
+  return Object.entries(d).map(([key, value]) => `${key.replace(/_/g, " ")}: ${String(value)}`).join(" · ");
+}
+
+function who(entry: BookingAuditEntry) {
+  if (!entry.actor_user_id) return "System";
+  const role = entry.actor_role ? entry.actor_role.replace(/_/g, " ").replace(/\b\w/g, letter => letter.toUpperCase()) : "User";
+  return `${role} · ${entry.actor_user_id.slice(0, 8)}`;
+}
+
+// Audit tab (mockup booking-detail-audit): When, Who, Action, Details. User names aren't
+// stored in the gateway yet, so Who is the role and a short user reference.
+function Audit({ entries }: { entries: BookingAuditEntry[] }) {
+  return (
+    <section aria-label="Audit" className="overflow-x-auto rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+      <table className="w-full min-w-[40rem] border-collapse text-table">
+        <thead>
+          <tr className="bg-muted text-left">
+            {["When", "Who", "Action", "Details"].map(column => <th key={column} scope="col" className="h-table-header px-2.5 font-semibold text-foreground">{column}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry, index) => (
+            <tr key={`${entry.at}-${index}`} className="border-b border-border last:border-b-0">
+              <td className="h-table-row whitespace-nowrap px-2.5 tabular-nums text-foreground">{formatDateTime(entry.at)}</td>
+              <Cell>{who(entry)}</Cell>
+              <Cell>{AUDIT_ACTION[entry.action] ?? entry.action.replace(/_/g, " ")}</Cell>
+              <Cell>{auditDetails(entry)}</Cell>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   );
 }
