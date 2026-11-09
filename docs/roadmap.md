@@ -16,6 +16,7 @@ Planned work, in order. Do not start a later item unless asked.
    - Requires the gateway-side identity masking and logged reveal (docs/backend-todo.md, HIGH).
    - **Go-live blocker:** Agency flight search still calls the legacy Lambda directly (supplier IDs and logos visible in the network tab; gateway cannot reprice). Must move to the gateway search before deployment.
    - **Go-live blocker:** Live flight search (`/v1/live-ticketing/flights/search`) calls Southair directly. It must go through the multi-provider `FlightSearchService` (`app/services/flight_search.py`): providers called in parallel with per-provider timeouts, results merged, and a provider failure reported without failing the whole search (D24).
+   - **Go-live blocker:** A key re-encryption command for traveler identity data (PII key rotation, gateway `docs/pii-encryption.md`). Until it exists, old keys can't be retired and a suspected key exposure can't be fully contained.
    - **Go-live blocker:** The flight search sessions and quotes (opaque fare IDs mapped to supplier tokens) live in gateway process memory. They must move to shared storage (database or cache) with the same expiry before the gateway runs more than one worker, or restarts lose them.
 5. **Admin: remaining menus**, one at a time, each only after its mockup is approved
 6. **Public website: update to the new brand colors from the logo** (navy and teal). Do as a separate task: first a preview page for approval, then apply. Touches about 47 files. Do not start until the admin work is done and I ask.
