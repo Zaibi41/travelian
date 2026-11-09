@@ -41,11 +41,11 @@ describe("Search (internal roles)", () => {
     gateway.search.mockResolvedValue(INVENTORY);
   });
 
-  it("shows the four product tabs; Flights, Hotels and Umrah say not available yet", () => {
+  it("shows the four product tabs; Flights opens the live search; Hotels and Umrah say not available yet", () => {
     renderAt("/admin/search");
     expect(within(screen.getByRole("navigation", { name: "Search products" })).getAllByRole("link").map(link => link.textContent))
       .toEqual(["Flights", "Group Ticketing", "Hotels", "Umrah"]);
-    expect(screen.getByRole("status")).toHaveTextContent("Flight search isn't available yet");
+    expect(screen.getByRole("button", { name: "Search flights" })).toBeDisabled();
     for (const tab of ["hotels", "umrah"]) {
       const { unmount } = renderAt(`/admin/search?tab=${tab}`);
       expect(screen.getAllByRole("status").slice(-1)[0]).toHaveTextContent(/search isn't available yet/);

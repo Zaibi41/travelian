@@ -866,7 +866,7 @@ export interface paths {
         put?: never;
         /**
          * Search Flights
-         * @description Search configured live-ticketing flight suppliers concurrently.
+         * @description Search Southair. Fare IDs stay valid for 15 minutes, for the user who searched.
          */
         post: operations["search_flights_v1_live_ticketing_flights_search_post"];
         delete?: never;
@@ -1431,6 +1431,36 @@ export interface components {
              */
             source: "gateway_bookings";
         };
+        /** FareView */
+        FareView: {
+            /** Baggage */
+            baggage?: string | null;
+            /**
+             * Id
+             * @description Opaque fare ID, valid until the search expires.
+             */
+            id: string;
+            /** Meal */
+            meal?: string | null;
+            /** Name */
+            name: string;
+            /** Refund */
+            refund?: string | null;
+            /** @description Per adult. Omitted when no markup is configured or the supplier sent no total. */
+            selling_price?: components["schemas"]["FlightMoney"] | null;
+            /**
+             * Supplier
+             * @description Only with the supplier names permission.
+             */
+            supplier?: string | null;
+            /** @description Per adult. Only with the cost and margin permission. */
+            supplier_cost?: components["schemas"]["FlightMoney"] | null;
+            /**
+             * Time Limit
+             * @description Supplier's hold time text, e.g. '1 hours for domestic'.
+             */
+            time_limit?: string | null;
+        };
         /** FilterOption */
         FilterOption: {
             /** Label */
@@ -1438,22 +1468,15 @@ export interface components {
             /** Value */
             value: string;
         };
-        /** FlightOffer */
-        FlightOffer: {
+        /** FlightMoney */
+        FlightMoney: {
+            /**
+             * Amount Minor
+             * @description Integer minor units (paisa for PKR).
+             */
+            amount_minor: number;
             /** Currency */
             currency: string;
-            /** Id */
-            id: string;
-            /** Price */
-            price: string;
-            /** Seats Available */
-            seats_available?: number | null;
-            /** Segments */
-            segments: components["schemas"]["FlightSegment"][];
-            /** Validating Airline */
-            validating_airline: string;
-            /** Vendor */
-            vendor: string;
         };
         /** FlightSearchRequest */
         FlightSearchRequest: {
@@ -1495,50 +1518,67 @@ export interface components {
             /** Return Date */
             return_date?: string | null;
         };
-        /** FlightSearchResponse */
-        FlightSearchResponse: {
-            /** Offers */
-            offers: components["schemas"]["FlightOffer"][];
-            /** Search Id */
+        /** FlightSearchView */
+        FlightSearchView: {
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Journeys */
+            journeys: components["schemas"]["JourneyView"][];
+            /**
+             * Notice
+             * @description D24: "Some results may be missing" when a provider fails, no provider names.
+             */
+            notice?: string | null;
+            /**
+             * Providers
+             * @description Only with the supplier names permission.
+             */
+            providers?: components["schemas"]["ProviderStatus"][] | null;
+            /**
+             * Search Id
+             * @description Opaque. Fare IDs from this search expire with it.
+             */
             search_id: string;
             /**
              * Status
              * @enum {string}
              */
-            status: "complete" | "partial" | "unavailable";
-            /** Vendor Results */
-            vendor_results: components["schemas"]["VendorResult"][];
-            /** Vendors Failed */
-            vendors_failed: components["schemas"]["VendorIssue"][];
-            /** Vendors Queried */
-            vendors_queried: string[];
-            /** Vendors Succeeded */
-            vendors_succeeded: string[];
+            status: "complete" | "unavailable";
         };
-        /** FlightSegment */
-        FlightSegment: {
-            /** Airline */
-            airline: string;
+        /** FlightView */
+        FlightView: {
+            /** Airline Code */
+            airline_code?: string | null;
+            /** Airline Name */
+            airline_name?: string | null;
+            /** Arrival Local */
+            arrival_local?: string | null;
             /**
-             * Arrival At
-             * Format: date-time
+             * Departure Local
+             * @description Local time, YYYY-MM-DDTHH:MM.
              */
-            arrival_at: string;
-            /** Cabin */
-            cabin: string;
-            /**
-             * Departure At
-             * Format: date-time
-             */
-            departure_at: string;
-            /** Destination */
-            destination: string;
+            departure_local?: string | null;
             /** Duration Minutes */
-            duration_minutes: number;
+            duration_minutes?: number | null;
+            /** Fares */
+            fares: components["schemas"]["FareView"][];
             /** Flight Number */
-            flight_number: string;
-            /** Origin */
-            origin: string;
+            flight_number?: string | null;
+            /**
+             * Id
+             * @description Opaque flight ID.
+             */
+            id: string;
+            /**
+             * Stop Cities
+             * @default []
+             */
+            stop_cities: string[];
+            /** Stops */
+            stops?: number | null;
         };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
@@ -1848,6 +1888,20 @@ export interface components {
             /** Scopes */
             scopes: string[];
         };
+        /** JourneyView */
+        JourneyView: {
+            /** Destination */
+            destination: string;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "outbound" | "return";
+            /** Flights */
+            flights: components["schemas"]["FlightView"][];
+            /** Origin */
+            origin: string;
+        };
         /** LoginRequest */
         LoginRequest: {
             /**
@@ -1890,6 +1944,16 @@ export interface components {
         PasswordResetMessage: {
             /** Message */
             message: string;
+        };
+        /** ProviderStatus */
+        ProviderStatus: {
+            /** Name */
+            name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "responded" | "failed" | "not_configured";
         };
         /** RefreshRequest */
         RefreshRequest: {
@@ -3892,8 +3956,22 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FlightSearchResponse"];
+                    "application/json": components["schemas"]["FlightSearchView"];
                 };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role may not search. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

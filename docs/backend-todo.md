@@ -126,7 +126,7 @@ Still open:
 
 | Hidden or not available | Needs |
 | --- | --- |
-| Flights tab (whole search) | A real flight provider in the gateway live-ticketing search (only the demo vendor exists, disabled). The old admin flight search used the legacy Lambda `/flights/search` and is no longer on this menu for internal roles |
+| Flights tab: Multi-city, Cabin, Provider filter, Quotes pending, Baggage and Price range filters, Fare rules, Quote | Southair search has no multi-city or cabin parameter and returns no baggage; one provider only; no quotations or fare-rules endpoint. Flights search itself runs on Southair through `/v1/live-ticketing/flights/search` |
 | Legacy flight search (agency roles, `/admin/flights-search`) | Still calls the legacy Lambda `/flights/search`; its response (network tab) contains supplier IDs, names and CDN logo URLs. The admin page no longer shows or links them, but only moving this search to the gateway removes them from the network. Admin checkout shows no price and blocks booking until the gateway reprices |
 | Hotels tab | Hotel provider search plus Hotel Inventory served by the gateway, one list (D25) |
 | Umrah tab | Umrah packages served by the gateway |

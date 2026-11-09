@@ -2,6 +2,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GroupTicketingSearch } from "@/components/admin/search/GroupTicketingSearch";
+import { FlightsSearch } from "@/components/admin/search/FlightsSearch";
 
 const TABS = [
   { id: "flights", label: "Flights" },
@@ -14,10 +15,6 @@ type TabId = (typeof TABS)[number]["id"];
 
 // Products without a gateway search endpoint yet (docs/backend-todo.md, Search).
 const SHELLS: Partial<Record<TabId, { title: string; body: string }>> = {
-  flights: {
-    title: "Flight search isn't available yet",
-    body: "No flight provider is connected to the gateway yet, so there are no fares to search. Flight search will appear here when a provider is connected.",
-  },
   hotels: {
     title: "Hotel search isn't available yet",
     body: "No hotel provider is connected to the gateway, and Hotel Inventory isn't served by the gateway yet.",
@@ -54,7 +51,8 @@ export default function InternalSearchPage() {
           </Link>
         ))}
       </nav>
-      {shell ? <NotAvailableNotice title={shell.title}>{shell.body}</NotAvailableNotice> : <GroupTicketingSearch />}
+      {shell ? <NotAvailableNotice title={shell.title}>{shell.body}</NotAvailableNotice>
+        : active === "flights" ? <FlightsSearch /> : <GroupTicketingSearch />}
     </div>
   );
 }
