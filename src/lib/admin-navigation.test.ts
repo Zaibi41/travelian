@@ -82,6 +82,26 @@ describe("internal sidebar: 14 spec menus", () => {
   });
 });
 
+describe("Bookings register (spec 7)", () => {
+  it("opens /admin/bookings from the Bookings menu", () => {
+    expect(getInternalSidebarForRole("super_admin").find((menu) => menu.title === "Bookings")?.items.map((item) => item.url)).toEqual(["/admin/bookings"]);
+    expect(adminPageTitle("staff", "/admin/bookings/flights")).toBe("Bookings");
+    expect(adminPageTitle("staff", "/admin/bookings/TRV-1/fare")).toBe("Bookings");
+  });
+  it("lets internal roles open sub-menus and booking pages, and nobody else", () => {
+    for (const role of ALL_ROLES) {
+      for (const url of ["/admin/bookings/flights", "/admin/bookings/quotations", "/admin/bookings/TRV-1", "/admin/bookings/TRV-1/audit"]) {
+        expect(canAccessAdminPath(role, url), `${role} ${url}`).toBe(isInternalRole(role));
+      }
+    }
+  });
+  it("keeps the old URLs open for agency roles (they redirect to their existing screens)", () => {
+    for (const url of ["/admin/bookings", "/admin/bookings/holds", "/admin/requests"]) {
+      expect(canAccessAdminPath("agency_owner", url), url).toBe(true);
+    }
+  });
+});
+
 describe("agency and customer sidebars are unchanged", () => {
   it("does not treat them as internal roles", () => {
     expect(ALL_ROLES.filter(isInternalRole)).toEqual(["super_admin", "admin", "staff", "qa", "internal_support"]);

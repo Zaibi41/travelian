@@ -62,3 +62,50 @@ The gateway must:
 | Replace without reading | Updating a passport accepts a new number without returning the old one (the Edit form already works this way) |
 
 The portal shows no reveal button until this exists.
+
+## 4. Bookings (`/admin/bookings`) and Booking detail (`/admin/bookings/{id}`)
+
+Built on `GET /v1/admin/bookings` and `GET /v1/admin/bookings/{booking_id}` (back office only; supplier names, supplier cost, margin and the Supplier payment tab are left out of the response without the matching permission, D23). The page hides everything below until its data exists.
+
+### Bookings register (All Bookings and Flights)
+
+| Hidden | Needs |
+| --- | --- |
+| Unknown Issuance card | Issuance attempts table with an `unknown` outcome (same as Dashboard) |
+| Unassigned card, Assign action | Booking owner / assignment (`bookings.owner_user_id`) and an assign endpoint |
+| Add note action | Booking notes table and endpoint |
+| Create manual booking | Manual/offline booking endpoint (spec 19.5, D16) |
+| Supplier status filter and chip | Supplier status on bookings (five-axis model, D5) |
+| Source type (own airline ID or supplier) | `bookings.source_type`; airline IDs table |
+| Branch filter | Branches table; `bookings.branch_id` |
+| Created by filter | `bookings.created_by_user_id` returned with user names (column exists, not populated or returned) |
+| Issued by filter, Ticket number column, Issued today card | Tickets table: ticket number, issue time, issued by |
+| Travel date (Date type) | Travel date on bookings (itinerary) |
+| Search by ticket number, passenger or phone | Tickets and passengers tables; server-side search |
+| Flights: Airline, Route, Travel date, Trip type columns/filters | Itinerary segments on bookings |
+| Flights: TTL filter | Defined TTL buckets (spec doesn't list the options yet) |
+| Flights: Request issuance, Hold payment actions | Issuance request and payment hold endpoints |
+
+### Other sub-menus (shown as "not available yet")
+
+| Sub-menu | Needs |
+| --- | --- |
+| Group Ticketing | Group booking fields: departure, seats, manifest status, name-list deadline, supplier, deposits; actions add passengers, confirm, release hold |
+| Hotels | Hotel booking fields: hotel, rooms, dates, voucher, cancellation date; send voucher |
+| Umrah | Package, travelers, visa status, installments, service status |
+| Inquiries & Requests | Inquiries/requests table in the gateway (status, owner, source, SLA, linked booking); assign, reply, convert. The old `/content/booking-requests` screen is not connected to the new page |
+| Quotations | Quotations table (status, customer or agency, route or package, price, expiry); send, revise, convert after revalidation |
+
+### Booking detail
+
+| Hidden or not available | Needs |
+| --- | --- |
+| Overview: Owner (and Assign), Supplier status | Assignment; supplier status |
+| Itinerary tab | Segments: from, to, departs, arrives, airline/flight, cabin, baggage |
+| Passengers tab | Passengers with masked document and date of birth, and the logged reveal (section 3) |
+| Fare: searched price, booked price, difference, base fare, taxes, fees, service charge, discount | Fare breakdown stored at booking time (spec 19.7) |
+| Payments tab | Customer/agency payments: method, amount, received at, verified by, receipt |
+| Supplier payment: transfer reference, time sent, confirmation, paid from | Supplier payments table |
+| Tickets tab (incl. supplier response, admin only) | Tickets table |
+| Servicing tab | Servicing cases: refund, reissue, void, cancellation |
+| Audit tab | Booking audit log |

@@ -72,6 +72,16 @@ describe("DashboardPage", () => {
     expect(screen.queryByText(/PKR/)).not.toBeInTheDocument();
   });
 
+  it("shows the Provider / source filter only when the gateway sends providers (D23)", () => {
+    setData({ filterOptions: ok({ products: [{ value: "flight", label: "Flights" }] }) });
+    const { unmount } = renderPage();
+    expect(screen.queryByRole("combobox", { name: /Provider \/ source/ })).not.toBeInTheDocument();
+    unmount();
+    setData({ filterOptions: ok({ products: [], providers: [{ value: "airsial", label: "AirSial" }] }) });
+    renderPage();
+    expect(screen.getByRole("combobox", { name: /Provider \/ source/ })).toBeInTheDocument();
+  });
+
   it("hides figures the gateway omits instead of showing 0", () => {
     setData({ summary: ok(summary([0, 0, 0], { total_sales: undefined, gross_profit: undefined })) });
     renderPage();
@@ -90,7 +100,8 @@ describe("DashboardPage", () => {
     expect(screen.queryByRole("columnheader", { name: "Owner" })).not.toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Date: All" })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Product: All" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Provider / source: All" })).toBeInTheDocument();
+    // No provider recorded (empty list): the filter is hidden, like any control without data.
+    expect(screen.queryByRole("combobox", { name: /Provider \/ source/ })).not.toBeInTheDocument();
     expect(screen.getByText("Follows all filters")).toBeInTheDocument();
     expect(screen.getByText("Follows date filter")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /refresh|reload/i })).not.toBeInTheDocument();

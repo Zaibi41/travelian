@@ -227,6 +227,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Bookings */
+        get: operations["list_bookings_v1_admin_bookings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{booking_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Booking Detail */
+        get: operations["booking_detail_v1_admin_bookings__booking_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/dashboard/booking-report": {
         parameters: {
             query?: never;
@@ -993,6 +1027,51 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** BookingDetail */
+        BookingDetail: {
+            amount: components["schemas"]["BookingMoney"];
+            /** Booking Id */
+            booking_id: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Customer Or Agency */
+            customer_or_agency?: string | null;
+            /** Deadline */
+            deadline?: string | null;
+            fare: components["schemas"]["BookingFare"];
+            /** Pnr */
+            pnr?: string | null;
+            /**
+             * Product
+             * @enum {string}
+             */
+            product: "flight" | "group" | "hotel" | "umrah";
+            /**
+             * Provider
+             * @description Omitted without the supplier names permission.
+             */
+            provider?: string | null;
+            /** Sample */
+            sample: boolean;
+            /** Sample Label */
+            sample_label?: "Sample data" | null;
+            /**
+             * Sections Not Available
+             * @description Tabs whose data the gateway doesn't record yet; the page shows them as not available.
+             */
+            sections_not_available: ("itinerary" | "passengers" | "payments" | "tickets" | "servicing" | "audit")[];
+            /**
+             * Source
+             * @default gateway_bookings
+             * @constant
+             */
+            source: "gateway_bookings";
+            statuses: components["schemas"]["BookingStatuses"];
+            /** @description Omitted without the cost and margin permission. */
+            supplier_payment?: components["schemas"]["SupplierPayment"] | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
         /** BookingDetailsData */
         BookingDetailsData: {
             booking: components["schemas"]["BookingRecord"];
@@ -1024,6 +1103,14 @@ export interface components {
             /** Vendors Succeeded */
             vendors_succeeded: string[];
         };
+        /** BookingFare */
+        BookingFare: {
+            billable_price: components["schemas"]["BookingMoney"];
+            /** @description Omitted without the cost and margin permission, or when unknown. */
+            margin?: components["schemas"]["BookingMoney"] | null;
+            /** @description Omitted without the cost and margin permission, or when unknown. */
+            supplier_cost?: components["schemas"]["BookingMoney"] | null;
+        };
         /** BookingGroupDetails */
         BookingGroupDetails: {
             /** Airline */
@@ -1042,6 +1129,116 @@ export interface components {
             }[];
         } & {
             [key: string]: unknown;
+        };
+        /** BookingList */
+        BookingList: {
+            cards: components["schemas"]["BookingListCards"];
+            /** Contains Sample Data */
+            contains_sample_data: boolean;
+            filter_options: components["schemas"]["BookingListFilterOptions"];
+            /** Items */
+            items: components["schemas"]["BookingListItem"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /**
+             * Sample Label
+             * @default Sample data
+             * @constant
+             */
+            sample_label: "Sample data";
+            /**
+             * Source
+             * @default gateway_bookings
+             * @constant
+             */
+            source: "gateway_bookings";
+            /** Total */
+            total: number;
+        };
+        /**
+         * BookingListCards
+         * @description Counts over the selected product tab. A card is omitted when its data doesn't exist yet.
+         */
+        BookingListCards: {
+            /** All Bookings */
+            all_bookings: number;
+            /**
+             * Awaiting Issuance
+             * @description Flights tab only.
+             */
+            awaiting_issuance?: number | null;
+            /** Cancelled */
+            cancelled: number;
+            /** Confirmed */
+            confirmed: number;
+            /** Expiring Soon */
+            expiring_soon: number;
+            /** Expiring Window Hours */
+            expiring_window_hours: number;
+            /**
+             * Hold Deadlines
+             * @description Flights tab only: open holds not yet expired.
+             */
+            hold_deadlines?: number | null;
+            /** On Hold */
+            on_hold: number;
+            /** Unpaid */
+            unpaid: number;
+        };
+        /** BookingListFilterOptions */
+        BookingListFilterOptions: {
+            /** Agencies */
+            agencies: components["schemas"]["FilterOption"][];
+            /**
+             * Providers
+             * @description Omitted without the supplier names permission.
+             */
+            providers?: components["schemas"]["FilterOption"][] | null;
+        };
+        /** BookingListItem */
+        BookingListItem: {
+            amount: components["schemas"]["BookingMoney"];
+            /** Booking Id */
+            booking_id: string;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Customer Or Agency
+             * @description Agency name when known. Customer names are not stored yet.
+             */
+            customer_or_agency?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Pnr */
+            pnr?: string | null;
+            /**
+             * Product
+             * @enum {string}
+             */
+            product: "flight" | "group" | "hotel" | "umrah";
+            /**
+             * Provider
+             * @description Supplier/source. Omitted without the supplier names permission.
+             */
+            provider?: string | null;
+            /**
+             * Sample
+             * @description True for rows from a one-time import (test data).
+             */
+            sample: boolean;
+            statuses: components["schemas"]["BookingStatuses"];
+        };
+        /** BookingMoney */
+        BookingMoney: {
+            /**
+             * Amount Minor
+             * @description Amount in minor units (paisa for PKR).
+             */
+            amount_minor: number;
+            /** Currency */
+            currency: string;
         };
         /** BookingPassenger */
         BookingPassenger: {
@@ -1129,6 +1326,24 @@ export interface components {
             /** Timezone */
             timezone: string;
         };
+        /** BookingStatuses */
+        BookingStatuses: {
+            /**
+             * Booking
+             * @enum {string}
+             */
+            booking: "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired";
+            /**
+             * Issuance
+             * @enum {string}
+             */
+            issuance: "not_issued" | "issued";
+            /**
+             * Payment
+             * @enum {string}
+             */
+            payment: "paid" | "unpaid";
+        };
         /**
          * BusinessResults
          * @description Follows all filters. A field is omitted when it can't be computed exactly.
@@ -1171,8 +1386,11 @@ export interface components {
         DashboardFilterOptions: {
             /** Products */
             products: components["schemas"]["FilterOption"][];
-            /** Providers */
-            providers: components["schemas"]["FilterOption"][];
+            /**
+             * Providers
+             * @description Omitted unless the caller can see supplier names.
+             */
+            providers?: components["schemas"]["FilterOption"][] | null;
         };
         /** DashboardSummary */
         DashboardSummary: {
@@ -1669,6 +1887,15 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * SupplierPayment
+         * @description The Supplier payment tab. Only sent with the cost and margin permission.
+         */
+        SupplierPayment: {
+            amount_due?: components["schemas"]["BookingMoney"] | null;
+            /** Hold Deadline */
+            hold_deadline?: string | null;
+        };
         /** TokenResponse */
         TokenResponse: {
             /** Access Token */
@@ -1732,7 +1959,7 @@ export interface components {
              * Role
              * @enum {string}
              */
-            role: "customer" | "agency_owner" | "super_admin";
+            role: "customer" | "agency_owner" | "super_admin" | "staff";
             /** Role Id */
             role_id: number;
             /** User Id */
@@ -1748,7 +1975,7 @@ export interface components {
              * Role Id
              * @enum {integer}
              */
-            role_id: 1 | 2 | 3;
+            role_id: 1 | 2 | 3 | 4;
         };
         /** UserStatusChange */
         UserStatusChange: {
@@ -2267,7 +2494,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 product?: ("flight" | "hotel" | "umrah") | null;
-                /** @description Provider name, case-insensitive. */
+                /** @description Provider name, case-insensitive. Requires supplier visibility. */
                 provider?: string | null;
             };
             header?: never;
@@ -2285,7 +2512,7 @@ export interface operations {
                     "application/json": components["schemas"]["AttentionQueue"];
                 };
             };
-            /** @description Caller is not a local super_admin. */
+            /** @description Caller is not back office, or asked for a field it may not see. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2302,6 +2529,115 @@ export interface operations {
                 };
             };
             /** @description Dashboard booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_bookings_v1_admin_bookings_get: {
+        parameters: {
+            query?: {
+                product?: ("flight" | "group" | "hotel" | "umrah") | null;
+                period?: "all" | "today" | "yesterday" | "last-week" | "last-two-weeks" | "this-month" | "last-month" | "last-three-months" | "last-six-months" | "this-year" | "last-year";
+                date_type?: "created";
+                /** @description Booking ID or PNR. */
+                q?: string | null;
+                booking_status?: ("held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired") | null;
+                payment_status?: ("paid" | "unpaid") | null;
+                issuance_status?: ("not_issued" | "issued") | null;
+                /** @description Requires the supplier names permission. */
+                provider?: string | null;
+                agency?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingList"];
+                };
+            };
+            /** @description Caller is not back office, or asked for a field it may not see. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    booking_detail_v1_admin_bookings__booking_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingDetail"];
+                };
+            };
+            /** @description Caller is not back office, or asked for a field it may not see. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Booking data is not available. */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -2330,7 +2666,7 @@ export interface operations {
                     "application/json": components["schemas"]["BookingReport"];
                 };
             };
-            /** @description Caller is not a local super_admin. */
+            /** @description Caller is not back office, or asked for a field it may not see. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2373,7 +2709,7 @@ export interface operations {
                     "application/json": components["schemas"]["DashboardFilterOptions"];
                 };
             };
-            /** @description Caller is not a local super_admin. */
+            /** @description Caller is not back office, or asked for a field it may not see. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -2414,7 +2750,7 @@ export interface operations {
             query?: {
                 period?: "all" | "today" | "yesterday" | "last-week" | "last-two-weeks" | "this-month" | "last-month" | "last-three-months" | "last-six-months" | "this-year" | "last-year";
                 product?: ("flight" | "hotel" | "umrah") | null;
-                /** @description Provider name, case-insensitive. */
+                /** @description Provider name, case-insensitive. Requires supplier visibility. */
                 provider?: string | null;
             };
             header?: never;
@@ -2432,7 +2768,7 @@ export interface operations {
                     "application/json": components["schemas"]["DashboardSummary"];
                 };
             };
-            /** @description Caller is not a local super_admin. */
+            /** @description Caller is not back office, or asked for a field it may not see. */
             403: {
                 headers: {
                     [name: string]: unknown;

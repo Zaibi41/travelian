@@ -301,7 +301,7 @@ export interface SidebarMenuEntry {
 const internalSidebarMenus: SidebarMenuEntry[] = [
   { number: "01", title: "Dashboard", icon: LayoutDashboard, items: [item("Dashboard", "/admin", LayoutDashboard, INTERNAL_ROLES)] },
   { number: "02", title: "Search", icon: Search, items: [item("Search", "/admin/search", Search, allSearchRoles)] },
-  { number: "03", title: "Bookings", icon: ClipboardCheck, items: [item("Bookings", "/admin/requests", ClipboardCheck, allSearchRoles)] },
+  { number: "03", title: "Bookings", icon: ClipboardCheck, items: [item("Bookings", "/admin/bookings", ClipboardCheck, INTERNAL_ROLES)] },
   { number: "04", title: "Customers & Travelers", icon: Users, items: [item("Customers", "/admin/customers", Users, [...internalAdminRoles, "staff"])] },
   {
     number: "05", title: "Finance", icon: Wallet, items: [
@@ -374,6 +374,8 @@ export function canAccessAdminPath(role: UserRole, pathname: string) {
   if (normalized === "/admin/flights-search") return allSearchRoles.includes(role);
   if (normalized === "/admin/flight-search") return allSearchRoles.includes(role);
   if (["/admin/bookings", "/admin/bookings/holds", "/admin/tickets"].includes(normalized)) return allSearchRoles.includes(role);
+  // Bookings register sub-menus and Booking detail pages (spec 7): back office only.
+  if (normalized.startsWith("/admin/bookings/")) return isInternalRole(role);
   if (normalized === "/admin/booking-requests") return allSearchRoles.includes(role);
   // Dashboard → Attention Queue placeholder (spec 2.01); same roles as the Dashboard item.
   if (normalized === "/admin/attention-queue") return ["super_admin", "admin", "staff", "qa", "internal_support"].includes(role);

@@ -13,7 +13,7 @@ export type GetQuery<P extends GetPath> = GetOp<P> extends { parameters: { query
   : undefined;
 export type GetResponse<P extends GetPath> = GetOp<P> extends { responses: { 200: { content: { "application/json": infer R } } } } ? R : never;
 
-export type GatewayErrorKind = "not_configured" | "unauthorized" | "forbidden" | "unavailable";
+export type GatewayErrorKind = "not_configured" | "unauthorized" | "forbidden" | "not_found" | "unavailable";
 
 export class GatewayError extends Error {
   constructor(public kind: GatewayErrorKind, message: string) {
@@ -27,6 +27,8 @@ export interface GatewayOptions {
   accessToken?: string;
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
+  /** Values for `{name}` segments in the path, URL-encoded. */
+  pathParams?: Record<string, string>;
 }
 
 function configuredBaseUrl() {
@@ -45,7 +47,7 @@ function toSearchParams(query: Record<string, unknown> | undefined) {
 export async function gatewayGet<P extends GetPath>(path: P, query?: GetQuery<P>, options: GatewayOptions = {}): Promise<GetResponse<P>> {
   const baseUrl = (options.baseUrl ?? configuredBaseUrl()).replace(/\/+$/, "");
   if (!baseUrl) {
-    throw new GatewayError("not_configured", "The dashboard service address isn't set. Add VITE_TRAVELIAN_GATEWAY_BASE_URL to this environment.");
+    throw new GatewayError("not_configured", "The admin service address isn't set. Add VITE_TRAVELIAN_GATEWAY_BASE_URL to this environment.");
   }
   const accessToken = options.accessToken ?? getSession()?.accessToken;
   if (!accessToken) {
@@ -53,7 +55,12 @@ export async function gatewayGet<P extends GetPath>(path: P, query?: GetQuery<P>
   }
 
   const params = toSearchParams(query as Record<string, unknown> | undefined);
-  const url = `${baseUrl}${path}${params.size ? `?${params.toString()}` : ""}`;
+  const resolvedPath = (path as string).replace(/\{(\w+)\}/g, (_, name: string) => {
+    const value = options.pathParams?.[name];
+    if (value === undefined) throw new Error(`Missing path parameter "${name}" for ${path}`);
+    return encodeURIComponent(value);
+  });
+  const url = `${baseUrl}${resolvedPath}${params.size ? `?${params.toString()}` : ""}`;
   let response: Response;
   try {
     response = await (options.fetchImpl ?? fetch)(url, {
@@ -62,12 +69,13 @@ export async function gatewayGet<P extends GetPath>(path: P, query?: GetQuery<P>
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
-    throw new GatewayError("unavailable", "The dashboard service can't be reached. Check that the gateway is running; figures will load when it's back.");
+    throw new GatewayError("unavailable", "The admin service can't be reached. Check that the gateway is running; data will load when it's back.");
   }
 
-  if (response.status === 401) throw new GatewayError("unauthorized", "Your session has expired. Sign in again to load the dashboard.");
-  if (response.status === 403) throw new GatewayError("forbidden", "Your role can't view these dashboard figures. A super admin can grant access.");
-  if (response.status === 503) throw new GatewayError("unavailable", "Dashboard booking data isn't available yet. The gateway's booking source isn't configured or can't be read.");
-  if (!response.ok) throw new GatewayError("unavailable", `The dashboard service returned an error (${response.status}). Figures will load when it recovers.`);
+  if (response.status === 401) throw new GatewayError("unauthorized", "Your session has expired. Sign in again to load this page.");
+  if (response.status === 403) throw new GatewayError("forbidden", "Your role can't view this data. A super admin can grant access.");
+  if (response.status === 404) throw new GatewayError("not_found", "This record wasn't found.");
+  if (response.status === 503) throw new GatewayError("unavailable", "Booking data isn't available yet. The gateway's booking source isn't configured or can't be read.");
+  if (!response.ok) throw new GatewayError("unavailable", `The admin service returned an error (${response.status}). Data will load when it recovers.`);
   return response.json() as Promise<GetResponse<P>>;
 }

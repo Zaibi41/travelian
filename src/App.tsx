@@ -63,7 +63,9 @@ const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const AnnouncementsPage = lazy(() => import("./pages/AnnouncementsPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const BookingRequestsPage = lazy(() => import("./pages/BookingRequestsPage"));
+const BookingsRoute = lazy(() => import("./pages/AdminBookingsRoutes").then(m => ({ default: m.BookingsRoute })));
+const BookingDetailRoute = lazy(() => import("./pages/AdminBookingsRoutes").then(m => ({ default: m.BookingDetailRoute })));
+const LegacyRequestsRoute = lazy(() => import("./pages/AdminBookingsRoutes").then(m => ({ default: m.LegacyRequestsRoute })));
 const ReportsPage = lazy(() => import("./pages/ReportsPage"));
 const RoadmapPlaceholderPage = lazy(() => import("./pages/RoadmapPlaceholderPage"));
 
@@ -116,7 +118,12 @@ const App = () => (
             <Route path="/admin" element={<AdminLayout><DashboardPage /></AdminLayout>} />
             <Route path="/admin/agencies" element={<AdminLayout><AgenciesPage /></AdminLayout>} />
             <Route path="/admin/packages" element={<AdminLayout><PackagesPage /></AdminLayout>} />
-            <Route path="/admin/bookings" element={<AdminLayout><Navigate to="/admin/flight-bookings?tab=all" replace /></AdminLayout>} />
+            <Route path="/admin/bookings" element={<AdminLayout><BookingsRoute /></AdminLayout>} />
+            {["flights", "group-ticketing", "hotels", "umrah", "inquiries-requests", "quotations"].map(tab => (
+              <Route key={tab} path={`/admin/bookings/${tab}`} element={<AdminLayout><BookingsRoute tab={tab} /></AdminLayout>} />
+            ))}
+            <Route path="/admin/bookings/:bookingId" element={<AdminLayout><BookingDetailRoute /></AdminLayout>} />
+            <Route path="/admin/bookings/:bookingId/:tab" element={<AdminLayout><BookingDetailRoute /></AdminLayout>} />
             <Route path="/admin/bookings/holds" element={<AdminLayout><Navigate to="/admin/flight-bookings?tab=held" replace /></AdminLayout>} />
             <Route path="/admin/booking-requests" element={<AdminLayout><Navigate to="/admin/requests?tab=all" replace /></AdminLayout>} />
             <Route path="/admin/reports" element={<AdminLayout><ReportsPage /></AdminLayout>} />
@@ -136,7 +143,7 @@ const App = () => (
             <Route path="/admin/flight-search" element={<AdminLayout><Navigate to="/admin/search?tab=flights" replace /></AdminLayout>} />
             <Route path="/admin/search" element={<AdminLayout><AdminSearchPage /></AdminLayout>} />
             <Route path="/admin/flight-bookings" element={<AdminLayout><FlightBookingsPage /></AdminLayout>} />
-            <Route path="/admin/requests" element={<AdminLayout><BookingRequestsPage /></AdminLayout>} />
+            <Route path="/admin/requests" element={<AdminLayout><LegacyRequestsRoute /></AdminLayout>} />
             <Route path="/admin/booking" element={<AdminLayout><BookingPage /></AdminLayout>} />
             <Route path="/admin/wallet" element={<AdminLayout><WalletPage /></AdminLayout>} />
             <Route path="/admin/payments" element={<AdminLayout><PaymentsPage /></AdminLayout>} />
