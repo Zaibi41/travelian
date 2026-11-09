@@ -27,6 +27,8 @@ export interface GatewayOptions {
   accessToken?: string;
   fetchImpl?: typeof fetch;
   signal?: AbortSignal;
+  /** Message for 503 (the source behind this endpoint is unavailable). */
+  unavailableMessage?: string;
   /** Values for `{name}` segments in the path, URL-encoded. */
   pathParams?: Record<string, string>;
 }
@@ -44,7 +46,12 @@ function toSearchParams(query: Record<string, unknown> | undefined) {
   return params;
 }
 
-export async function gatewayGet<P extends GetPath>(path: P, query?: GetQuery<P>, options: GatewayOptions = {}): Promise<GetResponse<P>> {
+type PostPath = { [P in keyof paths]: paths[P] extends { post: unknown } ? (paths[P]["post"] extends undefined ? never : P) : never }[keyof paths];
+type PostOp<P extends PostPath> = NonNullable<paths[P]["post"]>;
+export type PostBody<P extends PostPath> = PostOp<P> extends { requestBody: { content: { "application/json": infer B } } } ? B : never;
+export type PostResponse<P extends PostPath> = PostOp<P> extends { responses: { 200: { content: { "application/json": infer R } } } } ? R : never;
+
+async function send(path: string, init: { method: "GET" | "POST"; query?: Record<string, unknown>; body?: unknown }, options: GatewayOptions): Promise<unknown> {
   const baseUrl = (options.baseUrl ?? configuredBaseUrl()).replace(/\/+$/, "");
   if (!baseUrl) {
     throw new GatewayError("not_configured", "The admin service address isn't set. Add VITE_TRAVELIAN_GATEWAY_BASE_URL to this environment.");
@@ -54,17 +61,21 @@ export async function gatewayGet<P extends GetPath>(path: P, query?: GetQuery<P>
     throw new GatewayError("unauthorized", "Your session has no access token. Sign out and sign in again.");
   }
 
-  const params = toSearchParams(query as Record<string, unknown> | undefined);
-  const resolvedPath = (path as string).replace(/\{(\w+)\}/g, (_, name: string) => {
+  const params = toSearchParams(init.query);
+  const resolvedPath = path.replace(/\{(\w+)\}/g, (_, name: string) => {
     const value = options.pathParams?.[name];
     if (value === undefined) throw new Error(`Missing path parameter "${name}" for ${path}`);
     return encodeURIComponent(value);
   });
   const url = `${baseUrl}${resolvedPath}${params.size ? `?${params.toString()}` : ""}`;
+  const headers: Record<string, string> = { Accept: "application/json", Authorization: `Bearer ${accessToken}` };
+  if (init.body !== undefined) headers["Content-Type"] = "application/json";
   let response: Response;
   try {
     response = await (options.fetchImpl ?? fetch)(url, {
-      headers: { Accept: "application/json", Authorization: `Bearer ${accessToken}` },
+      method: init.method,
+      headers,
+      body: init.body === undefined ? undefined : JSON.stringify(init.body),
       signal: options.signal,
     });
   } catch (error) {
@@ -75,7 +86,15 @@ export async function gatewayGet<P extends GetPath>(path: P, query?: GetQuery<P>
   if (response.status === 401) throw new GatewayError("unauthorized", "Your session has expired. Sign in again to load this page.");
   if (response.status === 403) throw new GatewayError("forbidden", "Your role can't view this data. A super admin can grant access.");
   if (response.status === 404) throw new GatewayError("not_found", "This record wasn't found.");
-  if (response.status === 503) throw new GatewayError("unavailable", "Booking data isn't available yet. The gateway's booking source isn't configured or can't be read.");
+  if (response.status === 503) throw new GatewayError("unavailable", options.unavailableMessage ?? "Booking data isn't available yet. The gateway's booking source isn't configured or can't be read.");
   if (!response.ok) throw new GatewayError("unavailable", `The admin service returned an error (${response.status}). Data will load when it recovers.`);
-  return response.json() as Promise<GetResponse<P>>;
+  return response.json();
+}
+
+export function gatewayGet<P extends GetPath>(path: P, query?: GetQuery<P>, options: GatewayOptions = {}): Promise<GetResponse<P>> {
+  return send(path, { method: "GET", query: query as Record<string, unknown> | undefined }, options) as Promise<GetResponse<P>>;
+}
+
+export function gatewayPost<P extends PostPath>(path: P, body: PostBody<P>, options: GatewayOptions = {}): Promise<PostResponse<P>> {
+  return send(path, { method: "POST", body }, options) as Promise<PostResponse<P>>;
 }

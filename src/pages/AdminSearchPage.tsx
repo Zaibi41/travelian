@@ -17,6 +17,9 @@ import { useLocale } from "@/contexts/LocaleContext";
 import type { UmrahPackage } from "@/data/models";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { createBookingRequest } from "@/lib/booking-request-api";
+import { useRole } from "@/contexts/RoleContext";
+import { isInternalRole } from "@/lib/admin-navigation";
+import InternalSearchPage from "./InternalSearchPage";
 
 const searchTabs = [
   { id: "flights", label: "Flights", icon: Plane },
@@ -226,7 +229,13 @@ function ServiceSearchPanel({
   );
 }
 
+/** Internal roles get the gateway Search (spec 6); agency and customer roles keep this one. */
 export default function AdminSearchPage() {
+  const { currentRole } = useRole();
+  return isInternalRole(currentRole) ? <InternalSearchPage /> : <LegacyAdminSearchPage />;
+}
+
+function LegacyAdminSearchPage() {
   const [params, setParams] = useSearchParams();
   const { hotels, packages, loadHotelContent } = useAdmin();
   const tabParam = params.get("tab") as SearchTabId | null;

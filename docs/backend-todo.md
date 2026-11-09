@@ -109,3 +109,32 @@ Built on `GET /v1/admin/bookings` and `GET /v1/admin/bookings/{booking_id}` (bac
 | Tickets tab (incl. supplier response, admin only) | Tickets table |
 | Servicing tab | Servicing cases: refund, reissue, void, cancellation |
 | Audit tab | Booking audit log |
+
+## 5. HIGH: `/v1/group-ticketing/*` returns supplier cost and supplier identity (D23)
+
+**Priority: HIGH. Fix before any agency or customer screen uses these endpoints.** Found while building Search > Group Ticketing (9 November 2026).
+
+The gateway removes the `vendor` field, but the endpoints still give the supplier away. They need no sign-in.
+
+| Leak | Where | Fix |
+| --- | --- | --- |
+| Supplier cost | `price` is the supplier's own price; the gateway applies no markup | Return a selling price per passenger type (adult, child, infant) in integer paisa with `currency`; return cost only with the cost and margin permission |
+| Supplier identity | `airline_logo` URLs are hosted on the supplier's domain | Serve logos from Travelian (by airline code) or drop the field |
+| Raw supplier data | `subparts` passes the supplier's records through, including `ticket_airline_id` | Return only normalized segment fields |
+| No authentication | `/inventory`, `/search`, `/tickets/{id}` | Require a session; apply D23 per role |
+
+The admin page shows none of these: no price, no logo, no subparts.
+
+## 6. Search (`/admin/search`, internal roles)
+
+| Hidden or not available | Needs |
+| --- | --- |
+| Flights tab (whole search) | A real flight provider in the gateway live-ticketing search (only the demo vendor exists, disabled). The old admin flight search used the legacy Lambda `/flights/search` and is no longer on this menu for internal roles |
+| Hotels tab | Hotel provider search plus Hotel Inventory served by the gateway, one list (D25) |
+| Umrah tab | Umrah packages served by the gateway |
+| Cards: Available providers, Search expiry, Quotes pending | Provider health endpoint (admin only); fare validity from search results; quotations table |
+| Group Ticketing: Children, Infants | `/v1/group-ticketing/search` accepts adults only |
+| Group Ticketing: Source (Owned / Supplier), Hold rule | `source` and hold rule on each departure; owned stock in the gateway |
+| Group Ticketing: Price per passenger | Selling price per passenger type (section 5) |
+| Group Ticketing: Book, Hold seats, Quote; Results summary (seats available, hold expires) | Booking, hold and quote endpoints wired for staff; hold expiry on results |
+| Group Ticketing: departure time | Normalized segment times (section 5, `subparts`) |
