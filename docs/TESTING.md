@@ -59,4 +59,4 @@ npm run typecheck
 npm test
 ```
 
-Expected on 9 November 2026: typecheck clean, 36 test files and 216 tests passing.
+Expected on 9 November 2026: typecheck clean, 37 test files and 219 tests passing.
