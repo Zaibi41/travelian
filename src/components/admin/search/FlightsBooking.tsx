@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
+import { cn } from "@/lib/utils";
 import { PASSENGER_LABEL, airlineLabel, repriceFlights, type FlightSearch, type FlightSearchView, type RepriceView } from "@/lib/admin-search/flights";
-import { FlightsSearch, type FareSelection } from "./FlightsSearch";
+import { FlightsSearch, REASONS, WithReason, type FareSelection } from "./FlightsSearch";
 
 type Selections = Partial<Record<"outbound" | "return", FareSelection>>;
 
@@ -31,27 +32,62 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
   });
 
   const picksFor = (search: FlightSearchView) => (selected.searchId === search.search_id ? selected.picks : {});
-  const choose = (search: FlightSearchView, pick: FareSelection) => {
+  /** Revalidate on a fare row: select it; once every direction has a fare, reprice them together. */
+  const revalidate = (search: FlightSearchView, pick: FareSelection) => {
     reprice.reset();
-    setSelected({ searchId: search.search_id, picks: { ...picksFor(search), [pick.journey.direction]: pick } });
+    const picks = { ...picksFor(search), [pick.journey.direction]: pick };
+    setSelected({ searchId: search.search_id, picks });
+    const directions = search.journeys.map(journey => journey.direction);
+    if (directions.every(direction => picks[direction])) {
+      reprice.mutate({ searchId: search.search_id, fareIds: directions.map(direction => picks[direction]!.fare.id) });
+    }
   };
 
   return (
     <FlightsSearch
       renderFareAction={(pick, search) => {
         const isSelected = picksFor(search)[pick.journey.direction]?.fare.id === pick.fare.id;
+        const label = `${pick.flight.flight_number ?? ""} ${pick.fare.name}`.trim();
+        const disabledButton = (name: string, reason: string) => (
+          <WithReason reason={reason}>
+            {describedBy => (
+              <Button type="button" size="sm" variant={name === "Book" ? "default" : "outline"} disabled aria-describedby={describedBy}
+                aria-label={`${name} ${label}`} className={cn("h-8 px-3 text-body", name === "Book" && "bg-teal text-teal-foreground")}>
+                {name}
+              </Button>
+            )}
+          </WithReason>
+        );
         return (
-          <Button
-            type="button"
-            size="sm"
-            variant={isSelected ? "default" : "outline"}
-            className="h-8 text-body"
-            aria-pressed={isSelected}
-            disabled={!pick.fare.selling_price}
-            onClick={() => choose(search, pick)}
-          >
-            {isSelected ? "Selected" : "Select"}
-          </Button>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex flex-wrap gap-1.5">
+              {disabledButton("Book", REASONS.booking)}
+              {disabledButton("Hold", REASONS.booking)}
+              {disabledButton("Quote", REASONS.quote)}
+            </div>
+            <div className="flex flex-wrap gap-x-3 gap-y-1">
+              <WithReason reason={REASONS.fareRules}>
+                {describedBy => (
+                  <button type="button" disabled aria-describedby={describedBy} aria-label={`Fare rules ${label}`}
+                    className="cursor-not-allowed text-body font-medium text-muted-foreground">Fare rules</button>
+                )}
+              </WithReason>
+              <button
+                type="button"
+                aria-label={`Revalidate ${label}`}
+                aria-pressed={isSelected}
+                disabled={!pick.fare.selling_price || (isSelected && reprice.isPending)}
+                title={pick.fare.selling_price ? undefined : "Price not available"}
+                onClick={() => revalidate(search, pick)}
+                className={cn(
+                  "text-body font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:text-muted-foreground",
+                  isSelected ? "text-foreground underline" : "text-teal hover:underline",
+                )}
+              >
+                {isSelected && reprice.isPending ? "Revalidating…" : isSelected ? "Selected" : "Revalidate"}
+              </button>
+            </div>
+          </div>
         );
       }}
       renderBelow={(search, request) => {
@@ -96,13 +132,7 @@ function SelectionPanel({ picks, directions, ready, pending, error, quote, onRep
           );
         })}
       </ul>
-      {!quote && (
-        <div>
-          <Button type="button" disabled={!ready || pending} onClick={onReprice} className="h-control bg-teal text-body text-teal-foreground hover:bg-teal/90">
-            {pending ? "Revalidating…" : "Revalidate fare"}
-          </Button>
-        </div>
-      )}
+      {!quote && pending && <p className="text-body text-muted-foreground" aria-live="polite">Revalidating…</p>}
       {Boolean(error) && <DashboardErrorNotice message={errorMessage(error)} />}
       {quote && (
         <div className="flex flex-col gap-2.5">

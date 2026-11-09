@@ -100,10 +100,59 @@ export interface ResultFilters {
   stops: StopsFilter;
   time: TimeFilter;
   refund: RefundFilter;
+  /** "any", a baggage text from the results, or NO_BAGGAGE_INFO. */
+  baggage: string;
+  /** "any" or a PriceBand value ("lo-hi" in minor units). */
+  price: string;
+  /** "any" or a provider name the gateway sent (only to roles that may see it). */
+  provider: string;
   sort: SortOrder;
 }
 
-export const DEFAULT_FILTERS: ResultFilters = { airline: "any", stops: "any", time: "any", refund: "any", sort: "price" };
+export const DEFAULT_FILTERS: ResultFilters = { airline: "any", stops: "any", time: "any", refund: "any", baggage: "any", price: "any", provider: "any", sort: "price" };
+
+export const NO_BAGGAGE_INFO = "__none__";
+
+/** Baggage values present in the results (no invented options). */
+export function baggageOptions(flights: FlightView[]) {
+  const values = new Set<string>();
+  let missing = false;
+  for (const fare of flights.flatMap(flight => flight.fares)) {
+    if (fare.baggage) values.add(fare.baggage);
+    else missing = true;
+  }
+  return [
+    ...[...values].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).map(value => ({ value, label: value })),
+    ...(missing ? [{ value: NO_BAGGAGE_INFO, label: "Baggage info not available" }] : []),
+  ];
+}
+
+export interface PriceBand { value: string; label: string; min: number; max: number }
+
+const rupees = (minor: number) => `Rs ${(minor / 100).toLocaleString("en-PK", { maximumFractionDigits: 0 })}`;
+
+/** Up to three price bands spanning the real selling prices, in whole Rs 1,000 steps. */
+export function priceBands(flights: FlightView[]): PriceBand[] {
+  const prices = flights.flatMap(flight => flight.fares).map(fare => fare.selling_price?.amount_minor).filter((n): n is number => n != null);
+  if (new Set(prices).size < 2) return [];
+  const step = 100_000;  // Rs 1,000
+  const low = Math.floor(Math.min(...prices) / step) * step;
+  const high = Math.ceil((Math.max(...prices) + 1) / step) * step;
+  const width = Math.max(step, Math.ceil((high - low) / 3 / step) * step);
+  const bands: PriceBand[] = [];
+  for (let min = low; min < high; min += width) {
+    const max = Math.min(min + width, high);
+    if (prices.some(price => price >= min && price < max)) bands.push({ value: `${min}-${max}`, label: `${rupees(min)} – ${rupees(max)}`, min, max });
+  }
+  return bands;
+}
+
+const inBand = (band: string, fare: FareView) => {
+  if (band === "any") return true;
+  const [min, max] = band.split("-").map(Number);
+  const price = fare.selling_price?.amount_minor;
+  return price != null && price >= min && price < max;
+};
 
 export const isRefundable = (fare: FareView) => {
   const text = (fare.refund ?? "").toLowerCase();
@@ -142,7 +191,11 @@ export function filterFlights(flights: FlightView[], filters: ResultFilters): Fl
     .filter(flight => inWindow(filters.time, flight.departure_local))
     .map(flight => ({
       ...flight,
-      fares: flight.fares.filter(fare => filters.refund === "any" || isRefundable(fare) === (filters.refund === "refundable")),
+      fares: flight.fares
+        .filter(fare => filters.refund === "any" || isRefundable(fare) === (filters.refund === "refundable"))
+        .filter(fare => filters.baggage === "any" || (filters.baggage === NO_BAGGAGE_INFO ? !fare.baggage : fare.baggage === filters.baggage))
+        .filter(fare => inBand(filters.price, fare))
+        .filter(fare => filters.provider === "any" || fare.supplier === filters.provider),
     }))
     .filter(flight => flight.fares.length > 0);
   const byDeparture = (a: FlightView, b: FlightView) => (a.departure_local ?? "").localeCompare(b.departure_local ?? "");

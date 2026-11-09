@@ -42,9 +42,8 @@ describe("fare selection and reprice", () => {
 
   it("revalidates the selected fare and shows the total to confirm", async () => {
     renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27&adults=2");
-    fireEvent.click(await screen.findByRole("button", { name: "Select" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Revalidate PA-1 Y" }));
     const panel = screen.getByRole("region", { name: "Selected fare" });
-    fireEvent.click(within(panel).getByRole("button", { name: "Revalidate fare" }));
     await waitFor(() => expect(gateway.reprice).toHaveBeenCalledWith("s1", ["fare-out"]));
     expect(await within(panel).findAllByText("Rs 934")).toHaveLength(2);  // adults line and total
     expect(within(panel).getByText("2 Adults × Rs 467")).toBeInTheDocument();
@@ -55,25 +54,50 @@ describe("fare selection and reprice", () => {
   it("flags a price change and shows the gateway's reason when it refuses", async () => {
     gateway.reprice.mockResolvedValueOnce({ ...QUOTE, price_changed: true });
     const { unmount } = renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
-    fireEvent.click(await screen.findByRole("button", { name: "Select" }));
-    fireEvent.click(screen.getByRole("button", { name: "Revalidate fare" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Revalidate PA-1 Y" }));
     expect(await screen.findByText(/The price changed since the search/)).toBeInTheDocument();
     unmount();
     gateway.reprice.mockRejectedValueOnce(new GatewayError("unavailable", "This fare is no longer available. Search again and choose another fare."));
     renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
-    fireEvent.click(await screen.findByRole("button", { name: "Select" }));
-    fireEvent.click(screen.getByRole("button", { name: "Revalidate fare" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Revalidate PA-1 Y" }));
     expect(await screen.findByText("This fare is no longer available. Search again and choose another fare.")).toBeInTheDocument();
   });
 
   it("round trip needs an outbound and a return fare, sent in that order", async () => {
     gateway.search.mockResolvedValue(ROUND);
     renderAt("/admin/search?tab=flights&trip=roundtrip&from=KHI&to=MUX&date=2026-11-27&return=2026-11-30");
-    const [returnSelect, outboundSelect] = [...(await screen.findAllByRole("button", { name: "Select" }))].reverse();
-    fireEvent.click(returnSelect);
-    expect(screen.getByRole("button", { name: "Revalidate fare" })).toBeDisabled();
-    fireEvent.click(outboundSelect);
-    fireEvent.click(screen.getByRole("button", { name: "Revalidate fare" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Revalidate PA-2 Y" }));  // return first
+    expect(gateway.reprice).not.toHaveBeenCalled();
+    expect(screen.getByRole("region", { name: "Selected fare" })).toHaveTextContent("Outbound: choose a fare");
+    fireEvent.click(screen.getByRole("button", { name: "Revalidate PA-1 Y" }));
     await waitFor(() => expect(gateway.reprice).toHaveBeenCalledWith("s1", ["fare-out", "fare-ret"]));
+  });
+});
+
+describe("fare row actions (mockup)", () => {
+  beforeEach(() => {
+    gateway.search.mockReset().mockResolvedValue(ONE_WAY);
+    gateway.reprice.mockReset().mockResolvedValue(QUOTE);
+  });
+
+  it("shows Book, Hold, Quote and Fare rules disabled with the reason; Revalidate works", async () => {
+    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    for (const [name, reason] of [["Book", "Booking isn't available yet"], ["Hold", "Booking isn't available yet"], ["Quote", "Quotes aren't available yet"], ["Fare rules", "Available after you select a fare"]]) {
+      const control = await screen.findByRole("button", { name: `${name} PA-1 Y` });
+      expect(control).toBeDisabled();
+      expect(control).toHaveAccessibleDescription(reason);
+    }
+    expect(screen.queryByRole("button", { name: /^Select/ })).not.toBeInTheDocument();
+    const revalidate = screen.getByRole("button", { name: "Revalidate PA-1 Y" });
+    expect(revalidate).toBeEnabled();
+    fireEvent.click(revalidate);
+    await waitFor(() => expect(gateway.reprice).toHaveBeenCalledWith("s1", ["fare-out"]));
+    expect(revalidate).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("can't revalidate a fare with no price", async () => {
+    gateway.search.mockResolvedValue({ ...ONE_WAY, journeys: [{ ...ONE_WAY.journeys[0], flights: [{ ...flight("1", "fare-out", 0), fares: [{ id: "fare-out", name: "Y" }] }] }] });
+    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    expect(await screen.findByRole("button", { name: "Revalidate PA-1 Y" })).toBeDisabled();
   });
 });

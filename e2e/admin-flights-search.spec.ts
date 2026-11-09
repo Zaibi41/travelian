@@ -1,0 +1,111 @@
+import { expect, test, type Page } from "@playwright/test";
+
+// Admin Search > Flights layout. Nothing reaches a real gateway or supplier: a local-only
+// session (no real token) and intercepted gateway responses shaped like the gateway's output.
+
+// PLAYWRIGHT_CHANNEL=chrome uses the installed Chrome when Playwright's own browser isn't downloaded.
+if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
+// Show classic scrollbars (headless hides them), so a vertical scrollbar takes width as on desktop.
+test.use({ launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } });
+
+const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" });
+const fare = (id: string, name: string, baggage: string | null, price: number) =>
+  ({ id, name, ...(baggage ? { baggage } : {}), selling_price: rs(price), supplier: "southair", supplier_cost: rs(price - 600) });
+
+const SEARCH = {
+  search_id: "s-e2e", expires_at: new Date(Date.now() + 15 * 60_000).toISOString(), status: "complete",
+  providers: [{ name: "southair", status: "responded" }],
+  journeys: [{
+    direction: "outbound", origin: "LHE", destination: "KHI",
+    flights: [
+      { id: "f1", airline_code: "Z8", airline_name: "South Air International Regional Airways Limited", flight_number: "Z8266",
+        departure_local: "2026-11-19T00:25", arrival_local: "2026-11-19T02:35", duration_minutes: 130, stops: 0, stop_cities: [],
+        fares: [fare("a", "EB", "No checked baggage", 13_997), fare("b", "EV", "20KG", 15_671), fare("c", "EP", "30KG", 17_344), fare("d", "EX", "40KG", 19_000)] },
+      { id: "f2", airline_code: "Z8", airline_name: "South Air", flight_number: "Z8270",
+        departure_local: "2026-11-19T18:10", arrival_local: "2026-11-19T21:40", duration_minutes: 210, stops: 1, stop_cities: ["ISB"],
+        fares: [fare("e", "EB", null, 12_500)] },
+    ],
+  }],
+};
+
+const QUOTE = {
+  quote_id: "q-e2e", expires_at: new Date(Date.now() + 10 * 60_000).toISOString(), selling_total: rs(13_997),
+  passengers: [{ type: "ADT", count: 1, selling_each: rs(13_997) }], price_changed: true, booking_enabled: false, supplier_total: rs(13_330),
+};
+
+const ROUND = {
+  ...SEARCH,
+  journeys: [SEARCH.journeys[0], {
+    direction: "return", origin: "KHI", destination: "LHE",
+    flights: [{ id: "r1", airline_code: "Z8", airline_name: "South Air International Regional Airways Limited With A Long Name", flight_number: "Z8267",
+      departure_local: "2026-11-22T06:00", arrival_local: "2026-11-22T08:10", duration_minutes: 130, stops: 2, stop_cities: ["MUX", "ISB"],
+      fares: [fare("r", "EB", "Baggage allowance subject to the operating carrier's published conditions", 13_997)] }],
+  }],
+};
+
+async function openFlights(page: Page, width: number, query = "from=LHE&to=KHI&date=2026-11-19") {
+  await page.setViewportSize({ width, height: 900 });
+  await page.route("**/*", route => {
+    const url = new URL(route.request().url());
+    if (url.port === "8000") {
+      if (url.pathname === "/v1/live-ticketing/flights/search") return route.fulfill({ json: query.includes("roundtrip") ? ROUND : SEARCH });
+      if (url.pathname === "/v1/live-ticketing/flights/reprice") return route.fulfill({ json: QUOTE });
+      return route.fulfill({ status: 404, json: { detail: "Not found." } });
+    }
+    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+  });
+  await page.addInitScript(() => {
+    localStorage.setItem("travelian.session.v1", JSON.stringify({
+      email: "layout-test@travelian.com", name: "Layout Test", createdAt: new Date().toISOString(),
+      accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
+    }));
+  });
+  await page.goto(`/admin/search?tab=flights&${query}`);
+  await expect(page.getByRole("region", { name: "Results" })).toBeVisible();
+}
+
+const noPageScroll = (page: Page) =>
+  page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+
+for (const width of [1920, 1440, 1366, 1280, 1024, 768, 390]) {
+  test(`admin flights: no horizontal page scroll at ${width}px`, async ({ page }) => {
+    await openFlights(page, width);
+    expect(await noPageScroll(page)).toBe(0);
+    // The arrival time stays inside the viewport; wide fare tables scroll inside their card.
+    const box = await page.getByText("02:35", { exact: true }).first().boundingBox();
+    expect(box && box.x + box.width).toBeLessThanOrEqual(width);
+    await page.getByRole("button", { name: "Show 2 more fares" }).click();
+    await page.getByRole("button", { name: "Revalidate Z8266 EB" }).click();
+    await expect(page.getByText("Total to confirm")).toBeVisible();
+    expect(await noPageScroll(page)).toBe(0);
+  });
+
+  test(`admin flights: round trip with long names, no horizontal page scroll at ${width}px`, async ({ page }) => {
+    await openFlights(page, width, "trip=roundtrip&from=LHE&to=KHI&date=2026-11-19&return=2026-11-22");
+    await expect(page.getByText("2 stops via MUX, ISB")).toBeVisible();
+    expect(await noPageScroll(page)).toBe(0);
+  });
+}
+
+test("cabin, provider and flight details open attached, above the page, and close", async ({ page }) => {
+  await openFlights(page, 1440);
+  await page.getByRole("combobox", { name: "Cabin Class" }).click();
+  await expect(page.getByRole("option", { name: "Economy", exact: true })).toBeEnabled();
+  for (const cabin of ["Premium Economy", "Business", "First"]) {
+    await expect(page.getByRole("option", { name: new RegExp(`^${cabin}`) })).toHaveAttribute("aria-disabled", "true");
+  }
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("listbox")).toHaveCount(0);
+
+  await page.getByRole("combobox", { name: "Provider" }).click();
+  await expect(page.getByRole("option", { name: "southair" })).toBeVisible();
+  await page.getByRole("option", { name: "southair" }).click();
+
+  await page.getByRole("button", { name: "Flight details" }).first().click();
+  const dialog = page.getByRole("dialog", { name: "Flight details" });
+  await expect(dialog).toBeVisible();
+  const box = await dialog.boundingBox();
+  expect(box && box.y >= 0 && box.y + box.height <= 900).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+});
