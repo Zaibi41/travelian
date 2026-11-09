@@ -370,6 +370,8 @@ const RENAMED_ADMIN_PATHS: Record<string, string> = {
 export function canAccessAdminPath(role: UserRole, pathname: string) {
   const trimmed = pathname.replace(/\/+$/, "") || "/admin";
   const normalized = RENAMED_ADMIN_PATHS[trimmed] ?? trimmed;
+  // Gateway hold and booking pages: back office only (the gateway refuses holds for other roles).
+  if (normalized.startsWith("/admin/search/flights/")) return isInternalRole(role);
   if (normalized === "/admin/booking") return allSearchRoles.includes(role);
   if (normalized === "/admin/flights-search") return allSearchRoles.includes(role);
   if (normalized === "/admin/flight-search") return allSearchRoles.includes(role);
@@ -413,6 +415,8 @@ const ADMIN_PAGES_OUTSIDE_SIDEBAR: Record<string, string> = {
   "/admin/notifications": "Notifications",
   "/admin/booking": "Booking",
   "/admin/flights-search": "Search",
+  "/admin/search/flights/hold": "Hold flight",
+  "/admin/search/flights/hold/result": "Hold result",
 };
 
 export function adminPageTitle(role: UserRole, pathname: string): string {

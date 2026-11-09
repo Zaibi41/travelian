@@ -2490,8 +2490,14 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+            /** @description Selling total less supplier total. Only with the cost and margin permission. */
+            margin?: components["schemas"]["FlightMoney"] | null;
+            /** @description Selling price per adult now (all legs). Omitted with no adult. */
+            new_price_per_adult?: components["schemas"]["FlightMoney"] | null;
             /** @description The verified selling total now (same as selling_total). */
             new_total: components["schemas"]["FlightMoney"];
+            /** @description Selling price per adult at the search prices (all legs). */
+            old_price_per_adult?: components["schemas"]["FlightMoney"] | null;
             /** @description Selling total at the search prices. Omitted when the search had no price for every passenger type. */
             old_total?: components["schemas"]["FlightMoney"] | null;
             /** Passengers */
@@ -2501,6 +2507,8 @@ export interface components {
              * @description True when the revalidated total differs from the search result. A hold then needs accept_price_change.
              */
             price_changed: boolean;
+            /** @description New less old price per adult; negative when the price fell. */
+            price_difference_per_adult?: components["schemas"]["FlightMoney"] | null;
             /**
              * Quote Id
              * @description Opaque. Valid for 10 minutes, for the user who repriced.

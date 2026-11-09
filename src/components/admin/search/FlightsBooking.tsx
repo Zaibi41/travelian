@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
 import { cn } from "@/lib/utils";
-import { PASSENGER_LABEL, airlineLabel, repriceFlights, type FlightSearch, type FlightSearchView, type RepriceView } from "@/lib/admin-search/flights";
+import { PASSENGER_LABEL, airlineLabel, parseFlightSearch, repriceFlights, type FlightSearch, type FlightSearchView, type RepriceView } from "@/lib/admin-search/flights";
+import { HOLD_PATH, fareCheckFailure, type FareCheckState, type HoldDraft, type HoldMode } from "@/lib/admin-search/hold";
+import { FareCheckDialog } from "./FareCheckDialog";
 import { FlightsSearch, REASONS, WithReason, type FareSelection } from "./FlightsSearch";
 
 type Selections = Partial<Record<"outbound" | "return", FareSelection>>;
@@ -31,7 +34,51 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
     mutationFn: ({ searchId, fareIds }: { searchId: string; fareIds: string[] }) => repriceFlights(searchId, fareIds),
   });
 
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [params] = useSearchParams();
+  const [check, setCheck] = useState<{ state: FareCheckState; mode: HoldMode; search: FlightSearchView; picks: Selections } | null>(null);
+  const checking = useRef<AbortController | null>(null);
+  useEffect(() => () => checking.current?.abort(), []);
+
   const picksFor = (search: FlightSearchView) => (selected.searchId === search.search_id ? selected.picks : {});
+  const directionsOf = (search: FlightSearchView) => search.journeys.map(journey => journey.direction);
+
+  const openHold = (mode: HoldMode, search: FlightSearchView, picks: Selections, quote: RepriceView, acceptPriceChange: boolean) => {
+    const draft: HoldDraft = {
+      mode, searchId: search.search_id, request: parseFlightSearch(params), quote, acceptPriceChange,
+      picks: directionsOf(search).map(direction => picks[direction]!), confirmedAt: new Date().toISOString(),
+    };
+    navigate(`${HOLD_PATH}?mode=${mode}`, { state: draft });
+  };
+
+  /** Fare check (mockup flights-fare-check): reprice; unchanged opens the booking page, anything else shows a dialog. */
+  const startCheck = async (mode: HoldMode, search: FlightSearchView, picks: Selections) => {
+    checking.current?.abort();
+    const controller = new AbortController();
+    checking.current = controller;
+    setCheck({ state: { kind: "checking" }, mode, search, picks });
+    try {
+      const quote = await repriceFlights(search.search_id, directionsOf(search).map(direction => picks[direction]!.fare.id), { signal: controller.signal });
+      if (controller.signal.aborted) return;
+      if (quote.price_changed) setCheck({ state: { kind: "changed", quote }, mode, search, picks });
+      else {
+        setCheck(null);
+        openHold(mode, search, picks, quote, false);
+      }
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setCheck({ state: fareCheckFailure(error), mode, search, picks });
+    }
+  };
+
+  /** Book or Hold on a fare row: select it; once every direction has a fare, check the fare. */
+  const bookOrHold = (mode: HoldMode, search: FlightSearchView, pick: FareSelection) => {
+    reprice.reset();
+    const picks = { ...picksFor(search), [pick.journey.direction]: pick };
+    setSelected({ searchId: search.search_id, picks });
+    if (directionsOf(search).every(direction => picks[direction])) void startCheck(mode, search, picks);
+  };
   /** Revalidate on a fare row: select it; once every direction has a fare, reprice them together. */
   const revalidate = (search: FlightSearchView, pick: FareSelection) => {
     reprice.reset();
@@ -43,9 +90,37 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
     }
   };
 
+  const closeCheck = () => {
+    checking.current?.abort();
+    setCheck(null);
+  };
   return (
+    <>
+    <FareCheckDialog
+      state={check?.state ?? null}
+      onCancel={closeCheck}
+      onBack={closeCheck}
+      onContinue={() => {
+        if (check?.state.kind !== "changed") return;
+        const { mode, search, picks, state } = check;
+        setCheck(null);
+        openHold(mode, search, picks, state.quote, true);
+      }}
+      onTryAgain={() => check && void startCheck(check.mode, check.search, check.picks)}
+      onSearchAgain={() => {
+        closeCheck();
+        setSelected({ searchId: "", picks: {} });
+        void queryClient.invalidateQueries({ queryKey: ["admin-search", "flights"] });
+      }}
+      onEditSearch={() => {
+        closeCheck();
+        const from = document.getElementById("flight-from");
+        from?.scrollIntoView({ block: "center" });
+        from?.focus();
+      }}
+    />
     <FlightsSearch
-      actionNotes={[`Book and Hold: ${REASONS.booking}`, `Quote: ${REASONS.quote}`, `Fare rules: ${REASONS.fareRules}`]}
+      actionNotes={[`Quote: ${REASONS.quote}`, `Fare rules: ${REASONS.fareRules}`]}
       renderFareAction={(pick, search) => {
         const isSelected = picksFor(search)[pick.journey.direction]?.fare.id === pick.fare.id;
         const label = `${pick.flight.flight_number ?? ""} ${pick.fare.name}`.trim();
@@ -59,11 +134,18 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
             )}
           </WithReason>
         );
+        const priced = Boolean(pick.fare.selling_price);
         return (
           <div className="flex flex-col gap-1.5">
             <div className="flex flex-wrap gap-1.5">
-              {disabledButton("Book", REASONS.booking)}
-              {disabledButton("Hold", REASONS.booking)}
+              {(["book", "hold"] as const).map(mode => (
+                <Button key={mode} type="button" size="sm" variant={mode === "book" ? "default" : "outline"} disabled={!priced}
+                  title={priced ? undefined : "Price not available"} aria-label={`${mode === "book" ? "Book" : "Hold"} ${label}`}
+                  onClick={() => bookOrHold(mode, search, pick)}
+                  className={cn("h-8 px-3 text-body", mode === "book" && "bg-teal text-teal-foreground hover:bg-teal/90")}>
+                  {mode === "book" ? "Book" : "Hold"}
+                </Button>
+              ))}
               {disabledButton("Quote", REASONS.quote)}
             </div>
             <div className="flex flex-wrap gap-x-3 gap-y-1">
@@ -110,6 +192,7 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
         );
       }}
     />
+    </>
   );
 }
 

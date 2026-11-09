@@ -15,8 +15,25 @@ export type GetResponse<P extends GetPath> = GetOp<P> extends { responses: { 200
 
 export type GatewayErrorKind = "not_configured" | "unauthorized" | "forbidden" | "not_found" | "unavailable";
 
+/** One validation message from the gateway, with the field path it belongs to (e.g. ["passengers", 0, "first_name"]). */
+export interface GatewayFieldError {
+  path: (string | number)[];
+  message: string;
+}
+
 export class GatewayError extends Error {
-  constructor(public kind: GatewayErrorKind, message: string) {
+  constructor(
+    public kind: GatewayErrorKind,
+    message: string,
+    /** HTTP status, when the gateway answered. */
+    public status?: number,
+    /** The gateway's stable reason code, when it sends one (e.g. "fare_gone"). */
+    public code?: string,
+    /** Field-level validation messages (422). */
+    public fieldErrors: GatewayFieldError[] = [],
+    /** Other structured facts the gateway sent with the error (e.g. pnr, booking_id). */
+    public extra: Record<string, unknown> = {},
+  ) {
     super(message);
     this.name = "GatewayError";
   }
@@ -49,15 +66,33 @@ function toSearchParams(query: Record<string, unknown> | undefined) {
 type PostPath = { [P in keyof paths]: paths[P] extends { post: unknown } ? (paths[P]["post"] extends undefined ? never : P) : never }[keyof paths];
 type PostOp<P extends PostPath> = NonNullable<paths[P]["post"]>;
 export type PostBody<P extends PostPath> = PostOp<P> extends { requestBody: { content: { "application/json": infer B } } } ? B : never;
-export type PostResponse<P extends PostPath> = PostOp<P> extends { responses: { 200: { content: { "application/json": infer R } } } } ? R : never;
+export type PostResponse<P extends PostPath> = PostOp<P> extends { responses: { 200: { content: { "application/json": infer R } } } } ? R
+  : PostOp<P> extends { responses: { 201: { content: { "application/json": infer R } } } } ? R : never;
 
-/** The gateway's own `detail` text, when it's a plain sentence. */
-async function detailOf(response: Response): Promise<string | null> {
+interface ErrorBody {
+  detail: string | null;
+  code?: string;
+  fieldErrors: GatewayFieldError[];
+  extra: Record<string, unknown>;
+}
+
+/** The gateway's own `detail` sentence, code, field errors and extra facts from an error body. */
+async function errorBody(response: Response): Promise<ErrorBody> {
   try {
     const body = await response.json();
-    return typeof body?.detail === "string" && body.detail.length <= 300 ? body.detail : null;
+    const detail = typeof body?.detail === "string" && body.detail.length <= 300 ? body.detail : null;
+    const fieldErrors = Array.isArray(body?.detail)
+      ? body.detail
+        .filter((item: unknown): item is { loc: unknown[]; msg: string } => typeof item === "object" && item !== null && Array.isArray((item as { loc?: unknown }).loc) && typeof (item as { msg?: unknown }).msg === "string")
+        .map((item: { loc: unknown[]; msg: string }) => ({
+          path: item.loc.filter((part): part is string | number => typeof part === "string" || typeof part === "number").filter((part, index) => !(index === 0 && part === "body")),
+          message: item.msg.replace(/^Value error, /, ""),
+        }))
+      : [];
+    const { detail: _detail, code, ...extra } = (body && typeof body === "object" ? body : {}) as Record<string, unknown>;
+    return { detail, code: typeof code === "string" ? code : undefined, fieldErrors, extra };
   } catch {
-    return null;
+    return { detail: null, fieldErrors: [], extra: {} };
   }
 }
 
@@ -95,16 +130,22 @@ async function send(path: string, init: { method: "GET" | "POST"; query?: Record
 
   if (response.status === 401) throw new GatewayError("unauthorized", "Your session has expired. Sign in again to load this page.");
   if (response.status === 403) throw new GatewayError("forbidden", "Your role can't view this data. A super admin can grant access.");
-  if (response.status === 404) throw new GatewayError("not_found", (await detailOf(response)) ?? "This record wasn't found.");
-  if (init.method === "POST" && [409, 422, 502].includes(response.status)) {
-    throw new GatewayError("unavailable", (await detailOf(response)) ?? `The admin service returned an error (${response.status}).`);
+  if (response.status === 404) {
+    const body = await errorBody(response);
+    throw new GatewayError("not_found", body.detail ?? "This record wasn't found.", 404, body.code, [], body.extra);
+  }
+  if (init.method === "POST" && [409, 422, 500, 502].includes(response.status)) {
+    const body = await errorBody(response);
+    const message = body.detail ?? (body.fieldErrors.length ? "Some details need correcting." : `The admin service returned an error (${response.status}).`);
+    throw new GatewayError("unavailable", message, response.status, body.code, body.fieldErrors, body.extra);
   }
   // 503 has several causes (database, sign-in service, supplier, booking source). Show the
   // gateway's own reason so the page names the real one; fall back only when it gave none.
   if (response.status === 503) {
-    throw new GatewayError("unavailable", (await detailOf(response))
+    const body = await errorBody(response);
+    throw new GatewayError("unavailable", body.detail
       ?? options.unavailableMessage
-      ?? "Booking data isn't available yet. The gateway's booking source isn't configured or can't be read.");
+      ?? "Booking data isn't available yet. The gateway's booking source isn't configured or can't be read.", 503, body.code, [], body.extra);
   }
   if (!response.ok) throw new GatewayError("unavailable", `The admin service returned an error (${response.status}). Data will load when it recovers.`);
   return response.json();

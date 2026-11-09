@@ -138,3 +138,14 @@ describe("admin page titles", () => {
     expect(adminPageTitle("super_admin", "/admin/unknown-page")).toBe("Admin");
   });
 });
+
+describe("flight hold pages", () => {
+  it("are for back-office roles only (the gateway refuses holds for others) and keep Search highlighted", () => {
+    for (const role of ["super_admin", "staff"] as const) expect(canAccessAdminPath(role, "/admin/search/flights/hold")).toBe(true);
+    for (const role of ["agency_owner", "agency_staff", "customer"] as const) {
+      expect(canAccessAdminPath(role, "/admin/search/flights/hold")).toBe(false);
+      expect(canAccessAdminPath(role, "/admin/search/flights/hold/result")).toBe(false);
+    }
+    expect(adminPageTitle("super_admin", "/admin/search/flights/hold")).toBe("Hold flight");
+  });
+});

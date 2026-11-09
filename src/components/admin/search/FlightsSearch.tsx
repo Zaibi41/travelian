@@ -26,17 +26,17 @@ import {
 const errorMessage = (error: unknown) =>
   error instanceof GatewayError ? error.message : "Flights couldn't be loaded. Try again in a few minutes.";
 
-function time(local?: string | null) {
+export function time(local?: string | null) {
   return local && local.length >= 16 ? local.slice(11, 16) : "—";
 }
 
-function day(local?: string | null) {
+export function day(local?: string | null) {
   if (!local) return "";
   const date = parseISO(local);
   return Number.isFinite(date.getTime()) ? format(date, "d MMM") : "";
 }
 
-function useCountdown(expiresAt?: string) {
+export function useCountdown(expiresAt?: string) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!expiresAt) return undefined;
@@ -55,7 +55,6 @@ export const REASONS = {
   returnDate: "Choose Round-trip to add a return date.",
   refund: "Not available yet",
   fareRules: "Not available yet",
-  booking: "Booking isn't available yet",
   quote: "Quotes aren't available yet",
 } as const;
 
