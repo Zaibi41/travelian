@@ -59,4 +59,4 @@ npm run typecheck
 npm test
 ```
 
-Expected on 9 November 2026: typecheck clean, 37 test files and 219 tests passing.
+Expected on 9 November 2026: typecheck clean, 37 test files and 238 tests passing. Admin layout specs (`e2e/admin-flights-search.spec.ts`, `e2e/admin-booking-detail.spec.ts`): 19 passing; run with `PLAYWRIGHT_CHANNEL=chrome npx playwright test e2e/admin-*.spec.ts` when Playwright's own browser isn't installed.
