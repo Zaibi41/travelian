@@ -168,3 +168,12 @@ export function stopsLabel(flight: FlightView) {
   const via = flight.stop_cities.length ? ` via ${flight.stop_cities.join(", ")}` : "";
   return `${flight.stops} stop${flight.stops === 1 ? "" : "s"}${via}`;
 }
+
+export type RepriceView = Schemas["RepriceView"];
+
+export const repriceFlights = (searchId: string, fareIds: string[], options?: GatewayOptions) =>
+  gatewayPost("/v1/live-ticketing/flights/reprice", { search_id: searchId, fare_ids: fareIds }, {
+    unavailableMessage: "The fare can't be revalidated right now. Try again in a few minutes.", ...options,
+  });
+
+export const PASSENGER_LABEL: Record<string, [string, string]> = { ADT: ["Adult", "Adults"], CHD: ["Child", "Children"], INF: ["Infant", "Infants"] };

@@ -51,6 +51,16 @@ type PostOp<P extends PostPath> = NonNullable<paths[P]["post"]>;
 export type PostBody<P extends PostPath> = PostOp<P> extends { requestBody: { content: { "application/json": infer B } } } ? B : never;
 export type PostResponse<P extends PostPath> = PostOp<P> extends { responses: { 200: { content: { "application/json": infer R } } } } ? R : never;
 
+/** The gateway's own `detail` text, when it's a plain sentence. */
+async function detailOf(response: Response): Promise<string | null> {
+  try {
+    const body = await response.json();
+    return typeof body?.detail === "string" && body.detail.length <= 300 ? body.detail : null;
+  } catch {
+    return null;
+  }
+}
+
 async function send(path: string, init: { method: "GET" | "POST"; query?: Record<string, unknown>; body?: unknown }, options: GatewayOptions): Promise<unknown> {
   const baseUrl = (options.baseUrl ?? configuredBaseUrl()).replace(/\/+$/, "");
   if (!baseUrl) {
@@ -85,7 +95,10 @@ async function send(path: string, init: { method: "GET" | "POST"; query?: Record
 
   if (response.status === 401) throw new GatewayError("unauthorized", "Your session has expired. Sign in again to load this page.");
   if (response.status === 403) throw new GatewayError("forbidden", "Your role can't view this data. A super admin can grant access.");
-  if (response.status === 404) throw new GatewayError("not_found", "This record wasn't found.");
+  if (response.status === 404) throw new GatewayError("not_found", (await detailOf(response)) ?? "This record wasn't found.");
+  if (init.method === "POST" && [409, 422, 502].includes(response.status)) {
+    throw new GatewayError("unavailable", (await detailOf(response)) ?? `The admin service returned an error (${response.status}).`);
+  }
   if (response.status === 503) throw new GatewayError("unavailable", options.unavailableMessage ?? "Booking data isn't available yet. The gateway's booking source isn't configured or can't be read.");
   if (!response.ok) throw new GatewayError("unavailable", `The admin service returned an error (${response.status}). Data will load when it recovers.`);
   return response.json();

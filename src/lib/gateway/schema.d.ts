@@ -855,6 +855,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/live-ticketing/flights/reprice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reprice Flights
+         * @description Repeat the search for the selected fares and return the total to confirm (valid 10 minutes).
+         */
+        post: operations["reprice_flights_v1_live_ticketing_flights_reprice_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/live-ticketing/flights/search": {
         parameters: {
             query?: never;
@@ -1940,6 +1960,17 @@ export interface components {
             /** Pending Issuance */
             pending_issuance: number;
         };
+        /** PassengerPrice */
+        PassengerPrice: {
+            /** Count */
+            count: number;
+            selling_each: components["schemas"]["FlightMoney"];
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "ADT" | "CHD" | "INF";
+        };
         /** PasswordResetMessage */
         PasswordResetMessage: {
             /** Message */
@@ -1974,6 +2005,45 @@ export interface components {
              * Format: date
              */
             start: string;
+        };
+        /** RepriceRequest */
+        RepriceRequest: {
+            /**
+             * Fare Ids
+             * @description Outbound fare, then the return fare for a round trip.
+             */
+            fare_ids: string[];
+            /** Search Id */
+            search_id: string;
+        };
+        /** RepriceView */
+        RepriceView: {
+            /**
+             * Booking Enabled
+             * @description Whether this gateway may place a hold for this user.
+             */
+            booking_enabled: boolean;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Passengers */
+            passengers: components["schemas"]["PassengerPrice"][];
+            /**
+             * Price Changed
+             * @description True when the adult price differs from the search result.
+             */
+            price_changed: boolean;
+            /**
+             * Quote Id
+             * @description Opaque. Valid for 10 minutes, for the user who repriced.
+             */
+            quote_id: string;
+            /** @description The total the user must confirm before a hold. */
+            selling_total: components["schemas"]["FlightMoney"];
+            /** @description Only with the cost and margin permission. */
+            supplier_total?: components["schemas"]["FlightMoney"] | null;
         };
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
@@ -3934,6 +4004,72 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    reprice_flights_v1_live_ticketing_flights_reprice_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RepriceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RepriceView"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role may not search. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Search expired. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Fare gone or no selling price. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Selection or passenger mix can't be priced. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Supplier failed. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

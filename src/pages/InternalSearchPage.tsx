@@ -2,7 +2,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GroupTicketingSearch } from "@/components/admin/search/GroupTicketingSearch";
-import { FlightsSearch } from "@/components/admin/search/FlightsSearch";
+import { FlightsBooking } from "@/components/admin/search/FlightsBooking";
 
 const TABS = [
   { id: "flights", label: "Flights" },
@@ -52,7 +52,7 @@ export default function InternalSearchPage() {
         ))}
       </nav>
       {shell ? <NotAvailableNotice title={shell.title}>{shell.body}</NotAvailableNotice>
-        : active === "flights" ? <FlightsSearch /> : <GroupTicketingSearch />}
+        : active === "flights" ? <FlightsBooking /> : <GroupTicketingSearch />}
     </div>
   );
 }
