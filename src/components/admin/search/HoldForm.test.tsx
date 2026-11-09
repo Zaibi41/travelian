@@ -14,6 +14,8 @@ import HoldFlightPage from "@/pages/HoldFlightPage";
 import { STAFF_DRAFT } from "@/test/hold-fixtures";
 
 globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+// cmdk scrolls the active option into view; jsdom has no layout.
+Element.prototype.scrollIntoView ??= function scrollIntoView() {};
 
 const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" });
 const result = { state: null as unknown };
@@ -41,6 +43,14 @@ const renderPage = (draft: HoldDraft, mode = "hold") =>
 const type = (label: string, value: string, within_: HTMLElement = document.body) =>
   fireEvent.change(within(within_).getByLabelText(label), { target: { value } });
 
+/** Open a country dropdown on a card, type to search, and pick an option by its name. */
+function chooseCountry(card: HTMLElement, label: string, search: string, option: string) {
+  fireEvent.click(within(card).getByRole("combobox", { name: label }));
+  const input = screen.getByRole("combobox", { name: "Search country" });
+  fireEvent.change(input, { target: { value: search } });
+  fireEvent.click(screen.getByRole("option", { name: option }));
+}
+
 function fillCustomer() {
   const customer = screen.getByRole("region", { name: "Customer" });
   type("First name", "Test", customer);
@@ -63,7 +73,7 @@ describe("Hold flight form (mockup flights-hold-form)", () => {
     const adult = screen.getByRole("group", { name: "Adult 1" });
     const infant = screen.getByRole("group", { name: "Infant 1" });
     for (const card of [adult, infant]) {
-      for (const label of ["First name", "Last name", "Date of birth", "Document number", "Document country", "Document expiry"]) {
+      for (const label of ["First name", "Last name", "Date of birth", "Document number", "Document expiry"]) {
         expect(within(card).getByLabelText(label)).toHaveValue("");
       }
     }
@@ -95,8 +105,7 @@ describe("Hold flight form (mockup flights-hold-form)", () => {
     expect(within(adult).getByLabelText("First name")).toHaveValue("Test");
     type("Date of birth", "1990-01-01", adult);
     type("Document number", "AB1234567", adult);
-    type("Document country", "pak", adult);
-    type("Nationality", "PAK", adult);
+    chooseCountry(adult, "Nationality", "united arab", "United Arab Emirates");
     type("Document expiry", "2031-01-01", adult);
     const infant = screen.getByRole("group", { name: "Infant 1" });
     type("First name", "Baby", infant);
@@ -110,8 +119,8 @@ describe("Hold flight form (mockup flights-hold-form)", () => {
       contact: { first_name: "Test", last_name: "Customer", phone_code: "92", phone: "3001234567", email: "ops@example.invalid" },
     });
     expect(request.passengers[0]).toMatchObject({ type: "ADT", title: "MR", first_name: "Test", last_name: "Customer", date_of_birth: "1990-01-01",
-      id_type: "PSPT", document_number: "AB1234567", document_country: "PAK", nationality: "PAK", document_expiry: "2031-01-01" });
-    expect(request.passengers[1]).toMatchObject({ type: "INF", title: "MASTER", first_name: "Baby", travels_with: 0, nationality: null, document_number: null });
+      id_type: "PSPT", document_number: "AB1234567", document_country: "PAK", nationality: "ARE", document_expiry: "2031-01-01" });
+    expect(request.passengers[1]).toMatchObject({ type: "INF", title: "MASTER", first_name: "Baby", travels_with: 0, document_country: "PAK", nationality: null, document_number: null });
     expect(await screen.findByRole("heading", { name: "Result page" })).toBeInTheDocument();
     expect(result.state).toMatchObject({ kind: "held", hold: { pnr: "5D8242" } });
   });
@@ -186,5 +195,63 @@ describe("Hold flight form (mockup flights-hold-form)", () => {
     gateway.reprice.mockRejectedValue(new GatewayError("unavailable", "This fare is no longer available. Search again and choose another fare.", 409, "fare_gone"));
     renderPage(expired);
     expect(await screen.findByRole("dialog", { name: "This fare is no longer available" })).toBeInTheDocument();
+  });
+});
+
+describe("country dropdowns on the hold form", () => {
+  beforeEach(() => {
+    gateway.hold.mockReset();
+    gateway.reprice.mockReset();
+  });
+
+  it("default to Pakistan on every traveler card (document country; nationality for adults and children)", () => {
+    renderPage({ ...STAFF_DRAFT, request: { ...STAFF_DRAFT.request, adults: 1, children: 1, infants: 1 } });
+    for (const name of ["Adult 1", "Child 1", "Infant 1"]) {
+      const card = screen.getByRole("group", { name });
+      expect(within(card).getByRole("combobox", { name: "Document country" })).toHaveTextContent("Pakistan");
+      if (name !== "Infant 1") expect(within(card).getByRole("combobox", { name: "Nationality" })).toHaveTextContent("Pakistan");
+    }
+    expect(within(screen.getByRole("group", { name: "Infant 1" })).queryByRole("combobox", { name: "Nationality" })).not.toBeInTheDocument();
+  });
+
+  it("search filters by country name and by common names", () => {
+    renderPage(STAFF_DRAFT);
+    fireEvent.click(within(screen.getByRole("group", { name: "Adult 1" })).getByRole("combobox", { name: "Document country" }));
+    const input = screen.getByRole("combobox", { name: "Search country" });
+    fireEvent.change(input, { target: { value: "saudi" } });
+    expect(screen.getAllByRole("option").map(option => option.textContent)).toEqual(["Saudi Arabia"]);
+    fireEvent.change(input, { target: { value: "uae" } });
+    expect(screen.getAllByRole("option").map(option => option.textContent)).toEqual(["United Arab Emirates"]);
+    fireEvent.change(input, { target: { value: "zzz" } });
+    expect(screen.getByText("No country found.")).toBeInTheDocument();
+  });
+
+  it("is keyboard accessible: type to filter, Enter chooses; the selected name shows and its code is sent", async () => {
+    gateway.hold.mockResolvedValue({ booking_id: "TRV-ABC123", pnr: "5D8242", selling_total: STAFF_DRAFT.quote.new_total, label: "UAT test data", warnings: [] });
+    renderPage(STAFF_DRAFT);
+    const infant = screen.getByRole("group", { name: "Infant 1" });
+    const trigger = within(infant).getByRole("combobox", { name: "Document country" });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.click(trigger);
+    const input = screen.getByRole("combobox", { name: "Search country" });
+    fireEvent.change(input, { target: { value: "united kingdom" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(trigger).toHaveTextContent("United Kingdom");
+    fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+    await waitFor(() => expect(gateway.hold).toHaveBeenCalledTimes(1));
+    expect(gateway.hold.mock.calls[0][0].passengers[1]).toMatchObject({ type: "INF", document_country: "GBR" });
+    expect(gateway.hold.mock.calls[0][0].passengers[0]).toMatchObject({ document_country: "PAK", nationality: "PAK" });
+  });
+
+  it("shows the gateway's validation message next to the country field", async () => {
+    gateway.hold.mockRejectedValue(new GatewayError("unavailable", "Some details need correcting.", 422, undefined, [
+      { path: ["passengers", 0, "nationality"], message: "String should match pattern '^[A-Z]{3}$'" },
+    ]));
+    renderPage(STAFF_DRAFT);
+    fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+    const field = await within(screen.getByRole("group", { name: "Adult 1" })).findByRole("combobox", { name: "Nationality" });
+    await waitFor(() => expect(field).toHaveAccessibleDescription("String should match pattern '^[A-Z]{3}$'"));
+    expect(field).toHaveAttribute("aria-invalid", "true");
   });
 });

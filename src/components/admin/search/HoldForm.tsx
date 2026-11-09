@@ -8,6 +8,8 @@ import { GatewayError, type GatewayFieldError } from "@/lib/gateway/client";
 import { cn } from "@/lib/utils";
 import { holdFlight, repriceFlights, writeFlightSearch } from "@/lib/admin-search/flights";
 import { HOLD_RESULT_PATH, fareCheckFailure, type FareCheckState, type HoldDraft, type HoldRequest } from "@/lib/admin-search/hold";
+import { DEFAULT_COUNTRY_CODE } from "@/data/countries";
+import { CountrySelect } from "./CountrySelect";
 import { FareCheckDialog } from "./FareCheckDialog";
 import { useCountdown } from "./FlightsSearch";
 
@@ -43,7 +45,8 @@ const AGE_HINT: Record<PassengerType, string> = {
 
 const blankTraveler = (type: PassengerType, travelsWith = 0): Traveler => ({
   type, title: type === "INF" ? "MASTER" : "MR", first_name: "", last_name: "", date_of_birth: "", id_type: "PSPT",
-  document_number: "", document_country: "", nationality: "", document_expiry: "", travels_with: travelsWith, sameAsCustomer: false,
+  document_number: "", document_country: DEFAULT_COUNTRY_CODE, nationality: DEFAULT_COUNTRY_CODE, document_expiry: "",
+  travels_with: travelsWith, sameAsCustomer: false,
 });
 
 /** One card per traveler from the search counts; identity fields always open empty. */
@@ -198,7 +201,13 @@ export function HoldForm({ draft, mode, onDraft }: { draft: HoldDraft; mode: Hol
           const key = (field: string) => `passengers.${index}.${field}`;
           const id = (field: string) => `traveler-${index}-${field}`;
           const nameFromCustomer = traveler.sameAsCustomer && traveler.type !== "INF";
-          const text = (field: "first_name" | "last_name" | "document_number" | "document_country" | "nationality", label: string, placeholder: string) => (
+          const country = (field: "document_country" | "nationality", label: string) => (
+            <Field id={id(field)} label={label} error={fieldError(key(field))}>
+              <CountrySelect id={id(field)} value={traveler[field]} onChange={code => setTraveler(index, { [field]: code })}
+                invalid={Boolean(fieldError(key(field)))} describedBy={fieldError(key(field)) ? `${id(field)}-error` : undefined} />
+            </Field>
+          );
+          const text = (field: "first_name" | "last_name" | "document_number", label: string, placeholder: string) => (
             <Field id={id(field)} label={label} error={fieldError(key(field))}>
               <Input id={id(field)} value={field === "first_name" && nameFromCustomer ? customer.first_name : field === "last_name" && nameFromCustomer ? customer.last_name : traveler[field]}
                 readOnly={nameFromCustomer && (field === "first_name" || field === "last_name")} placeholder={placeholder} autoComplete="off"
@@ -255,8 +264,8 @@ export function HoldForm({ draft, mode, onDraft }: { draft: HoldDraft; mode: Hol
                   </Select>
                 </Field>
                 {text("document_number", "Document number", "Letters and digits")}
-                {text("document_country", "Document country", "e.g. PAK")}
-                {traveler.type !== "INF" && text("nationality", "Nationality", "e.g. PAK")}
+                {country("document_country", "Document country")}
+                {traveler.type !== "INF" && country("nationality", "Nationality")}
                 {date("document_expiry", "Document expiry")}
               </div>
             </fieldset>

@@ -96,3 +96,27 @@ for (const width of [1280, 1366, 1440, 1920]) {
     expect(await overflow(page)).toBe(0);
   });
 }
+
+test("country dropdown opens attached to its field, stays in view and works with the keyboard", async ({ page }) => {
+  await open(page, 1366);
+  await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
+  const adult = page.getByRole("group", { name: "Adult 1" });
+  const nationality = adult.getByRole("combobox", { name: "Nationality" });
+  await expect(nationality).toHaveText("Pakistan");
+  await nationality.focus();
+  await page.keyboard.press("Enter");
+  const search = page.getByRole("combobox", { name: "Search country" });
+  await expect(search).toBeFocused();
+  const list = page.getByRole("listbox");
+  const field = await nationality.boundingBox();
+  const box = await list.boundingBox();
+  expect(field && box && box.y >= field.y + field.height - 2 && box.y + box.height <= 900).toBe(true);
+  await page.keyboard.type("turkey");
+  await expect(page.getByRole("option")).toHaveText(["Türkiye"]);
+  await page.keyboard.press("Enter");
+  await expect(nationality).toHaveText("Türkiye");
+  expect(await overflow(page)).toBe(0);
+  await nationality.click();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("listbox")).toHaveCount(0);
+});
