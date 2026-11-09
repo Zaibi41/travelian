@@ -144,7 +144,7 @@ const App = () => (
             <Route path="/admin/search" element={<AdminLayout><AdminSearchPage /></AdminLayout>} />
             <Route path="/admin/flight-bookings" element={<AdminLayout><FlightBookingsPage /></AdminLayout>} />
             <Route path="/admin/requests" element={<AdminLayout><LegacyRequestsRoute /></AdminLayout>} />
-            <Route path="/admin/booking" element={<AdminLayout><BookingPage /></AdminLayout>} />
+            <Route path="/admin/booking" element={<AdminLayout><BookingPage adminMode /></AdminLayout>} />
             <Route path="/admin/wallet" element={<AdminLayout><WalletPage /></AdminLayout>} />
             <Route path="/admin/payments" element={<AdminLayout><PaymentsPage /></AdminLayout>} />
             <Route path="/admin/users" element={<AdminLayout><UsersPage /></AdminLayout>} />

@@ -392,6 +392,15 @@ export function canAccessAdminPath(role: UserRole, pathname: string) {
   );
 }
 
+/** Search results and checkout belong to the Search menu (sidebar highlight). */
+const SEARCH_FLOW_PATHS = ["/admin/flights-search", "/admin/flight-search", "/admin/booking"];
+
+/** The sidebar path a page belongs to. */
+export function sidebarPathFor(pathname: string) {
+  const path = pathname.replace(/\/+$/, "") || "/admin";
+  return SEARCH_FLOW_PATHS.includes(path) ? "/admin/search" : path;
+}
+
 export function roleLabel(role: UserRole) {
   return role.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }

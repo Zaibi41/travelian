@@ -3,7 +3,7 @@ import { ChevronRight, Globe } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
-import { getInternalSidebarForRole, getNavigationForRole, isInternalRole, type AdminNavItem } from "@/lib/admin-navigation";
+import { getInternalSidebarForRole, getNavigationForRole, isInternalRole, sidebarPathFor, type AdminNavItem } from "@/lib/admin-navigation";
 
 interface SidebarSection {
   category: string;
@@ -34,8 +34,9 @@ export function AdminSidebar() {
       : getNavigationForRole(currentRole),
     [currentRole, internal],
   );
+  const currentPath = sidebarPathFor(location.pathname);
   const isPathActive = (path: string) =>
-    path === "/admin" ? location.pathname === "/admin" : location.pathname === path || location.pathname.startsWith(`${path}/`);
+    path === "/admin" ? currentPath === "/admin" : currentPath === path || currentPath.startsWith(`${path}/`);
   const activeItemKey = useMemo(() => {
     for (const section of sections) {
       const item = section.items.find((candidate) => isPathActive(candidate.url));

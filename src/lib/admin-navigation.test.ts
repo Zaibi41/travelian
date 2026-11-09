@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { UserRole } from "@/data/models";
-import { INTERNAL_ROLES, adminPageTitle, canAccessAdminPath, getInternalSidebarForRole, getNavigationForRole, isInternalRole } from "./admin-navigation";
+import { INTERNAL_ROLES, adminPageTitle, sidebarPathFor, canAccessAdminPath, getInternalSidebarForRole, getNavigationForRole, isInternalRole } from "./admin-navigation";
 
 const SPEC_MENUS = [
   "Dashboard", "Search", "Bookings", "Customers & Travelers", "Finance", "Flight Operations", "Inventory & Services",
@@ -79,6 +79,14 @@ describe("internal sidebar: 14 spec menus", () => {
     expect(menus["System"]).toEqual(["General Settings", "System Logs & Jobs"]);
     expect(menus["Suppliers & Integrations"]).toEqual(["Suppliers / API Providers", "Payment Providers"]);
     expect(menus["Users & Access"]).toEqual(["Users & Staff", "Roles & Permissions", "Audit Log"]);
+  });
+});
+
+describe("search flow highlights Search", () => {
+  it("maps results and checkout pages to the Search menu", () => {
+    expect(sidebarPathFor("/admin/flights-search")).toBe("/admin/search");
+    expect(sidebarPathFor("/admin/booking/")).toBe("/admin/search");
+    expect(sidebarPathFor("/admin/bookings")).toBe("/admin/bookings");
   });
 });
 

@@ -181,7 +181,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [travelers, setTravelers] = useState<TravelersValue>({
     adults: initAdults, children: initChildren, infants: initInfants, cabin: initCabin,
   });
-  const [priceRange, setPriceRange] = useState([0, 700]);
+  // Admin: no range until results arrive, then the full range of the results (no 0–700 jump).
+  const [priceRangeState, setPriceRange] = useState<number[] | null>(adminMode ? null : [0, 700]);
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [selectedStops, setSelectedStops] = useState<string[]>([]);
   const [selectedDepartureTimes, setSelectedDepartureTimes] = useState<string[]>([]);
@@ -420,7 +421,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         if (flightsOutcome.status === "rejected" && flightsList.length === 0) {
           const err = flightsOutcome.reason;
           setApiFlights([]);
-          setPriceRange([0, 700]);
+          setPriceRange(adminMode ? null : [0, 700]);
           setApiStatus("error");
           setApiMessage(err instanceof Error ? err.message : "Live flight search is unavailable. Please modify your search and try again.");
           setExpirySeconds(0);
@@ -432,7 +433,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         // Render search results immediately with zero background fare overhead
         setApiFlights(consolidated);
         const liveMaxPrice = Math.max(700, ...consolidated.map((f) => f.price));
-        setPriceRange([0, Math.ceil(liveMaxPrice / 1000) * 1000]);
+        setPriceRange(adminMode ? null : [0, Math.ceil(liveMaxPrice / 1000) * 1000]);
         setApiStatus("success");
         setApiMessage(consolidated.length ? "" : "No live bookable fares returned for this search.");
         setExpirySeconds(consolidated.length ? SEARCH_RESULT_TTL_SECONDS : 0);
@@ -440,7 +441,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       .catch((error) => {
         if (controller.signal.aborted) return;
         setApiFlights([]);
-        setPriceRange([0, 700]);
+        setPriceRange(adminMode ? null : [0, 700]);
         setApiStatus("error");
         setApiMessage(error instanceof Error ? error.message : "Live flight search is unavailable. Please modify your search and try again.");
         setExpirySeconds(0);
@@ -469,6 +470,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
   const flights = apiFlights;
   const maxPrice = Math.max(700, ...flights.map(f => f.price));
+  const priceRange = priceRangeState ?? [0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)];
 
   const isSingleAdultOnly = Number(travelers.adults ?? 1) === 1 && Number(travelers.children ?? 0) === 0 && Number(travelers.infants ?? 0) === 0;
 
@@ -714,6 +716,19 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   };
 
   const bookingHref = (flight: TravelianFlight, fare?: { tier: string; price: { base?: number | null; taxes?: number | null; total: number; currency?: string }; amenities?: string[] }) => {
+    if (adminMode) {
+      // Admin checkout never takes a price or supplier flight ID from the URL: the gateway
+      // must reprice the fare (booking is blocked until it can). Itinerary only.
+      const query = new URLSearchParams({
+        type: "flight", airline: flight.airline, flightNo: flight.flightNumber, from: flight.origin, to: flight.destination,
+        date: format(departDate, "MMM dd, yyyy"), cabin: flight.class, trip: tripType,
+        adults: String(travelers.adults), children: String(travelers.children), infants: String(travelers.infants),
+      });
+      if (fare?.tier) query.set("fare", fare.tier);
+      if (flight.segments?.length) query.set("segments", JSON.stringify(flight.segments.map(({ flightNumber, origin, destination, departureTime, arrivalTime }) => ({ flightNumber, origin, destination, departureTime, arrivalTime }))));
+      if (tripType === "roundtrip" && returnDate) query.set("return", format(returnDate, "MMM dd, yyyy"));
+      return `${bookingPath}?${query.toString()}`;
+    }
     const query = new URLSearchParams({
       type: "flight",
       flightId: flight.flightId,
@@ -1064,7 +1079,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <span className="rounded-full bg-primary/5 px-3 py-1 text-xs font-black uppercase tracking-wide text-primary">Flight {index + 1}</span>
                   <div className="flex min-w-0 items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-1.5 text-xs font-bold text-slate-900 ring-1 ring-slate-100">
-                    <AirlineLogo airline={segmentAirline} flightNumber={flightNumber} imageUrl={isSameAsParent ? flight.airlineImage : undefined} className="h-6 w-6 shrink-0 rounded-md border-0 shadow-none ring-0" />
+                    <AirlineLogo airline={segmentAirline} flightNumber={flightNumber} imageUrl={isSameAsParent && !adminMode ? flight.airlineImage : undefined} className="h-6 w-6 shrink-0 rounded-md border-0 shadow-none ring-0" />
                     <span className="truncate">{flightNumber}</span>
                   </div>
                 </div>
@@ -1439,7 +1454,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 </div>
               </CardContent>
             </Card>
-            <Card className="shadow-card border-0">
+            {(!adminMode || flights.length > 0) && <Card className="shadow-card border-0">
               <CardContent className="p-4">
                 <h3 className="font-semibold text-foreground text-sm mb-4">Price Range</h3>
                 <Slider value={priceRange} onValueChange={setPriceRange} min={0} max={Math.max(700, Math.ceil(maxPrice / 1000) * 1000)} step={100} className="mb-3" />
@@ -1448,7 +1463,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   <input value={priceRange[1]} onChange={(event) => setPriceRange([priceRange[0], Number(event.target.value) || priceRange[1]])} className="h-8 rounded-lg border bg-background px-2" aria-label="Maximum price" />
                 </div>
               </CardContent>
-            </Card>
+            </Card>}
             <Card className="shadow-card border-0">
               <CardContent className="p-4">
                 <h3 className="font-semibold text-foreground text-sm mb-3">Departure Time</h3>
@@ -1533,7 +1548,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     <div className="flex flex-col gap-3 sm:gap-4">
                       <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-start">
                         <div className="flex min-w-0 items-center gap-2.5 sm:gap-3 md:w-[11rem] md:shrink-0 md:pt-1">
-                          <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={flight.airlineImage} className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl shrink-0" />
+                          <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={adminMode ? undefined : flight.airlineImage} className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl shrink-0" />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
                               <p className="truncate text-xs sm:text-sm font-semibold text-foreground" title={flight.airline}>{flight.airline}</p>
@@ -2082,7 +2097,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             <>
               <DialogHeader className="sticky top-0 z-10 shrink-0 border-b border-primary/10 bg-white/95 px-4 py-3 text-left backdrop-blur sm:px-5">
                 <div className="flex items-start gap-3 pr-8">
-                  <AirlineLogo airline={fareDetails.flight.airline} flightNumber={fareDetails.flight.flightNumber} imageUrl={fareDetails.flight.airlineImage} className="h-10 w-10 rounded-xl border-slate-200 shadow-sm ring-0" />
+                  <AirlineLogo airline={fareDetails.flight.airline} flightNumber={fareDetails.flight.flightNumber} imageUrl={adminMode ? undefined : fareDetails.flight.airlineImage} className="h-10 w-10 rounded-xl border-slate-200 shadow-sm ring-0" />
                   <div className="min-w-0">
                     <DialogTitle className="sr-only">Flight details</DialogTitle>
                     <p className="truncate text-base font-black text-slate-950" title={`${fareDetails.flight.airline} - ${fareDetails.flight.flightNumber}`}>
