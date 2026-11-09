@@ -4,10 +4,11 @@ Planned work, in order. Do not start a later item unless asked.
 
 1. **Admin: Dashboard home** (in progress)
 2. **Deploy gateway to Lightsail** (HTTPS, managed Postgres, secrets, CORS origin for the production admin). Runs alongside item 3.
-   - Run migration `0008_bookings` as an explicit deploy step on Lightsail (`alembic upgrade head`, after a database snapshot; never on app startup).
+   - Run migrations `0008_bookings` and `0009_staff_role_permissions` as an explicit deploy step on Lightsail (`alembic upgrade head`, after a database snapshot; never on app startup).
 3. **Connect screens to the gateway and shut down the old `/content` endpoints.** Runs alongside item 2, not after it.
    - Order: Bookings and Flight Operations, then Customers, Users, Settings, Flight Pricing.
    - Rule: a screen whose data can't load shows "not connected", never demo or sample data (today several fall back to sample records, e.g. Customers).
+   - Agency Bookings: build the agency roles' bookings screen on the gateway (their own bookings only), then remove `/admin/requests`. Until then `/admin/requests` stays for agency roles; internal roles already go to `/admin/bookings`.
    - Security, do early: lock down the unauthenticated `/content/bookings` routes (and the other `/content/*` admin routes) as each screen moves to the gateway; shut them down once nothing uses them.
 4. **Go live with real data**, only after items 2 and 3.
    - Decide the real bookings source first (read the legacy DynamoDB table, sync it into Postgres, or have the gateway write bookings).
