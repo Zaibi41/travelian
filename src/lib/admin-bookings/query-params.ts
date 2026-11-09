@@ -1,5 +1,5 @@
 import { bookingReportPeriods } from "@/lib/booking-report-period";
-import type { BookingPeriod, BookingStatus, IssuanceStatus, PaymentStatus } from "./types";
+import type { BookingCard, BookingPeriod, BookingStatus, IssuanceStatus, PaymentStatus } from "./types";
 
 export const PAGE_SIZE = 50;
 
@@ -13,12 +13,15 @@ export interface BookingsFilters {
   /** Lower-case provider name. Only sent when the gateway offered provider options. */
   provider?: string;
   agency?: string;
+  /** Lists only the rows this card counts. */
+  card?: BookingCard;
   page: number;
 }
 
 const BOOKING_STATUSES: BookingStatus[] = ["held", "pending_payment", "payment_received", "confirmed", "ticket_issued", "cancelled", "expired"];
 const PAYMENT_STATUSES: PaymentStatus[] = ["paid", "unpaid"];
 const ISSUANCE_STATUSES: IssuanceStatus[] = ["not_issued", "issued"];
+const CARDS: BookingCard[] = ["confirmed", "on_hold", "cancelled", "unpaid", "expiring_soon", "awaiting_issuance", "hold_deadlines"];
 
 const pick = <T extends string>(value: string | null, allowed: T[]) => (allowed.includes(value as T) ? (value as T) : undefined);
 const text = (value: string | null) => value?.trim() || undefined;
@@ -35,6 +38,7 @@ export function parseBookingsFilters(params: URLSearchParams): BookingsFilters {
     issuanceStatus: pick(params.get("issuance_status"), ISSUANCE_STATUSES),
     provider: text(params.get("provider"))?.toLowerCase(),
     agency: text(params.get("agency")),
+    card: pick(params.get("card"), CARDS),
     page: Number.isInteger(page) && page > 1 ? page : 1,
   };
 }
@@ -49,6 +53,7 @@ export function serializeBookingsFilters(filters: BookingsFilters): URLSearchPar
   if (filters.issuanceStatus) params.set("issuance_status", filters.issuanceStatus);
   if (filters.provider) params.set("provider", filters.provider);
   if (filters.agency) params.set("agency", filters.agency);
+  if (filters.card) params.set("card", filters.card);
   if (filters.page > 1) params.set("page", String(filters.page));
   return params;
 }

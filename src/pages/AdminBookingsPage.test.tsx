@@ -66,11 +66,20 @@ describe("Bookings register", () => {
 
   it("shows the cards with data and hides those without (Unknown Issuance, Unassigned)", () => {
     renderPage();
-    expect(screen.getByRole("group", { name: "All Bookings: 18" })).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: /On Hold: 2, Needs action/ })).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: /Unpaid: 0, Fine/ })).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: /Expiring within 2 hours: 1, Needs action/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "All Bookings: 18" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /On Hold: 2, Needs action/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Unpaid: 0, Fine/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Expiring within 2 hours: 1, Needs action/ })).toBeInTheDocument();
     expect(screen.queryByText(/Unknown Issuance|Unassigned/)).not.toBeInTheDocument();
+  });
+
+  it("cards filter the list: each links to its card filter, keeping the other filters", () => {
+    renderPage("", "/admin/bookings?payment_status=unpaid&card=on_hold");
+    expect(screen.getByRole("link", { name: /^Unpaid:/ })).toHaveAttribute("href", "/admin/bookings?payment_status=unpaid&card=unpaid");
+    const selected = screen.getByRole("link", { name: /^On Hold:/ });
+    expect(selected).toHaveAttribute("aria-current", "true");
+    expect(selected).toHaveAttribute("href", "/admin/bookings?payment_status=unpaid");  // clicking again clears it
+    expect(screen.getByRole("link", { name: /^All Bookings:/ })).toHaveAttribute("href", "/admin/bookings?payment_status=unpaid");
   });
 
   it("shows only filters and columns with data, no Create manual booking, Assign or Add note", () => {
@@ -117,8 +126,8 @@ describe("Bookings register", () => {
     expect(list.product).toBe("flight");
     list.current = ok({ ...ADMIN_LIST, cards: { ...ADMIN_LIST.cards, hold_deadlines: 2, awaiting_issuance: 0 } });
     renderPage("flights", "/admin/bookings/flights");
-    expect(screen.getByRole("group", { name: /Hold deadlines: 2, Needs action/ })).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: /Awaiting issuance: 0, Fine/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Hold deadlines: 2, Needs action/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Awaiting issuance: 0, Fine/ })).toBeInTheDocument();
     expect(screen.queryByText("Issued today")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Source")).toBeInTheDocument();
     expect(screen.queryByText(/Request issuance|Hold payment|Airline|Route|Trip type|TTL/)).not.toBeInTheDocument();

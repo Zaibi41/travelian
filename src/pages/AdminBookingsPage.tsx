@@ -23,7 +23,7 @@ import {
 } from "@/lib/admin-bookings/format";
 import { BOOKINGS_TABS, bookingDetailPath, bookingsTabPath, type BookingsTab } from "@/lib/admin-bookings/tabs";
 import { useBookings } from "@/lib/admin-bookings/use-bookings";
-import type { BookingList, BookingPeriod } from "@/lib/admin-bookings/types";
+import type { BookingCard, BookingList, BookingPeriod } from "@/lib/admin-bookings/types";
 
 const ANY = "any";
 
@@ -93,7 +93,7 @@ function BookingsRegister({ tab }: { tab: BookingsTab }) {
         <DashboardErrorNotice message={errorMessage(bookings.error)} />
       ) : (
         <>
-          {data ? <Cards cards={data.cards} flights={flights} /> : <CardGridSkeleton count={flights ? 2 : 6} className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4" />}
+          {data ? <Cards cards={data.cards} flights={flights} filters={filters} /> : <CardGridSkeleton count={flights ? 2 : 6} className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4" />}
           <Filters filters={filters} data={data} flights={flights} onChange={change} />
           {bookings.error && <DashboardErrorNotice message={errorMessage(bookings.error)} />}
           <BookingsTable data={data} loading={bookings.isPending} flights={flights} filters={filters} onPage={page => change({ page })} />
@@ -103,34 +103,40 @@ function BookingsRegister({ tab }: { tab: BookingsTab }) {
   );
 }
 
-function Cards({ cards, flights }: { cards: BookingList["cards"]; flights: boolean }) {
+function Cards({ cards, flights, filters }: { cards: BookingList["cards"]; flights: boolean; filters: BookingsFilters }) {
   const count = (value: number) => formatCount(value);
+  // Clicking a card lists the rows it counts; clicking the selected card (or All Bookings) clears it.
+  const href = (card?: BookingCard) => {
+    const next = serializeBookingsFilters({ ...filters, card: card === filters.card ? undefined : card, page: 1 }).toString();
+    return next ? `?${next}` : "?";
+  };
+  const card = (name: BookingCard, label: string, value: number, severity?: "action") => (
+    <StatusKpiCard
+      label={label}
+      value={count(value)}
+      severity={severity ? severityForCount(value, severity) : undefined}
+      to={href(name)}
+      selected={filters.card === name}
+    />
+  );
   if (flights) {
     // Issued today is hidden: no issue time is recorded yet.
     return (
       <div className="grid grid-cols-1 gap-card-gap sm:grid-cols-2">
-        {cards.hold_deadlines != null && (
-          <StatusKpiCard label="Hold deadlines" value={count(cards.hold_deadlines)} severity={severityForCount(cards.hold_deadlines, "action")} />
-        )}
-        {cards.awaiting_issuance != null && (
-          <StatusKpiCard label="Awaiting issuance" value={count(cards.awaiting_issuance)} severity={severityForCount(cards.awaiting_issuance, "action")} />
-        )}
+        {cards.hold_deadlines != null && card("hold_deadlines", "Hold deadlines", cards.hold_deadlines, "action")}
+        {cards.awaiting_issuance != null && card("awaiting_issuance", "Awaiting issuance", cards.awaiting_issuance, "action")}
       </div>
     );
   }
   // Unknown Issuance and Unassigned are hidden: not recorded yet.
   return (
     <div className="grid grid-cols-1 gap-card-gap sm:grid-cols-2 xl:grid-cols-4">
-      <StatusKpiCard label="All Bookings" value={count(cards.all_bookings)} />
-      <StatusKpiCard label="Confirmed" value={count(cards.confirmed)} />
-      <StatusKpiCard label="On Hold" value={count(cards.on_hold)} severity={severityForCount(cards.on_hold, "action")} />
-      <StatusKpiCard label="Cancelled" value={count(cards.cancelled)} />
-      <StatusKpiCard label="Unpaid" value={count(cards.unpaid)} severity={severityForCount(cards.unpaid, "action")} />
-      <StatusKpiCard
-        label={`Expiring within ${cards.expiring_window_hours} ${cards.expiring_window_hours === 1 ? "hour" : "hours"}`}
-        value={count(cards.expiring_soon)}
-        severity={severityForCount(cards.expiring_soon, "action")}
-      />
+      <StatusKpiCard label="All Bookings" value={count(cards.all_bookings)} to={href(undefined)} selected={!filters.card} />
+      {card("confirmed", "Confirmed", cards.confirmed)}
+      {card("on_hold", "On Hold", cards.on_hold, "action")}
+      {card("cancelled", "Cancelled", cards.cancelled)}
+      {card("unpaid", "Unpaid", cards.unpaid, "action")}
+      {card("expiring_soon", `Expiring within ${cards.expiring_window_hours} ${cards.expiring_window_hours === 1 ? "hour" : "hours"}`, cards.expiring_soon, "action")}
     </div>
   );
 }

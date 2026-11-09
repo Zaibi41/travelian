@@ -12,7 +12,7 @@ describe("bookings URL filters", () => {
     expect(parseBookingsFilters(new URLSearchParams("period=forever&booking_status=lost&page=-2"))).toEqual({ period: "all", page: 1 });
   });
   it("round-trips non-default filters only", () => {
-    const query = "q=ABC123&period=today&booking_status=held&payment_status=unpaid&issuance_status=not_issued&provider=airsial&agency=ag-1&page=2";
+    const query = "q=ABC123&period=today&booking_status=held&payment_status=unpaid&issuance_status=not_issued&provider=airsial&agency=ag-1&card=on_hold&page=2";
     const filters = parseBookingsFilters(new URLSearchParams(query));
     expect(serializeBookingsFilters(filters).toString()).toBe(query);
     expect(serializeBookingsFilters({ period: "all", page: 1 }).toString()).toBe("");

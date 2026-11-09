@@ -1176,7 +1176,7 @@ export interface components {
         };
         /**
          * BookingListCards
-         * @description Counts over the selected product tab. A card is omitted when its data doesn't exist yet.
+         * @description Counts over the rows in the current filters (all but `card`). A card is omitted when its data doesn't exist yet.
          */
         BookingListCards: {
             /** All Bookings */
@@ -2597,6 +2597,8 @@ export interface operations {
                 /** @description Requires the supplier names permission. */
                 provider?: string | null;
                 agency?: string | null;
+                /** @description List only the rows this card counts. */
+                card?: ("confirmed" | "on_hold" | "cancelled" | "unpaid" | "expiring_soon" | "awaiting_issuance" | "hold_deadlines") | null;
                 limit?: number;
                 offset?: number;
             };

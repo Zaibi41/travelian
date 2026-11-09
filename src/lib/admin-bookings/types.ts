@@ -19,3 +19,4 @@ export type PaymentStatus = NonNullable<ListParams["payment_status"]>;
 export type IssuanceStatus = NonNullable<ListParams["issuance_status"]>;
 export type BookingPeriod = NonNullable<ListParams["period"]>;
 export type BookingProduct = NonNullable<ListParams["product"]>;
+export type BookingCard = NonNullable<ListParams["card"]>;

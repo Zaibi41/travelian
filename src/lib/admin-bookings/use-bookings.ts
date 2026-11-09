@@ -15,6 +15,7 @@ export function bookingListParams(product: BookingProduct | undefined, filters: 
     issuance_status: filters.issuanceStatus,
     provider: filters.provider,
     agency: filters.agency,
+    card: filters.card,
     limit: PAGE_SIZE,
     offset: (filters.page - 1) * PAGE_SIZE,
   };
