@@ -293,7 +293,7 @@ function BookingsTable({ data, loading, flights, filters, onPage }: TableProps) 
                   <td className={`${TD} max-w-[12rem]`}>
                     <span className="block truncate font-semibold text-foreground" title={item.pnr ?? undefined}>{item.pnr ?? "—"}</span>
                     {!flights && <span className="block truncate text-label text-muted-foreground" title={item.booking_id}>{item.booking_id}</span>}
-                    {item.sample && <SampleDataBadge className="mt-1" />}
+                    {item.sample && <SampleDataBadge className="mt-1" label={item.data_label} />}
                   </td>
                   {!flights && (
                     <td className={`${TD} max-w-[14rem]`}>

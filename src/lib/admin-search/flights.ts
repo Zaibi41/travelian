@@ -177,3 +177,12 @@ export const repriceFlights = (searchId: string, fareIds: string[], options?: Ga
   });
 
 export const PASSENGER_LABEL: Record<string, [string, string]> = { ADT: ["Adult", "Adults"], CHD: ["Child", "Children"], INF: ["Infant", "Infants"] };
+
+export type HoldRequest = Schemas["HoldRequest"];
+export type HoldPassenger = Schemas["HoldPassenger"];
+export type HoldView = Schemas["HoldView"];
+
+export const holdFlight = (request: HoldRequest, options?: GatewayOptions) =>
+  gatewayPost("/v1/live-ticketing/flights/bookings", request, {
+    unavailableMessage: "The hold couldn't be placed right now. Check the booking list before trying again.", ...options,
+  });

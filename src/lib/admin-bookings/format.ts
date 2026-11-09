@@ -47,6 +47,6 @@ export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
 
 export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = { paid: "Paid", unpaid: "Unpaid" };
 
-export const ISSUANCE_STATUS_LABEL: Record<IssuanceStatus, string> = { issued: "Issued", not_issued: "Not issued" };
+export const ISSUANCE_STATUS_LABEL: Record<IssuanceStatus, string> = { issued: "Issued", not_issued: "Not issued", unknown: "Unknown issuance" };
 
 export const PRODUCT_LABEL: Record<string, string> = { flight: "Flight", group: "Group", hotel: "Hotel", umrah: "Umrah" };

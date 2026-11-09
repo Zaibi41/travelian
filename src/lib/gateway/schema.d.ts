@@ -855,6 +855,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/live-ticketing/flights/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hold Flight
+         * @description Hold only (no ticketing, no payment), behind SOUTHAIR_BOOKING_ENABLED. Saved as UAT test data.
+         */
+        post: operations["hold_flight_v1_live_ticketing_flights_bookings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/live-ticketing/flights/reprice": {
         parameters: {
             query?: never;
@@ -1091,7 +1111,7 @@ export interface components {
             /** Sample */
             sample: boolean;
             /** Sample Label */
-            sample_label?: "Sample data" | null;
+            sample_label?: ("Sample data" | "UAT test data") | null;
             /**
              * Sections Not Available
              * @description Tabs whose data the gateway doesn't record yet; the page shows them as not available.
@@ -1246,6 +1266,11 @@ export interface components {
              * @description Agency name when known. Customer names are not stored yet.
              */
             customer_or_agency?: string | null;
+            /**
+             * Data Label
+             * @description Label for test rows.
+             */
+            data_label?: ("Sample data" | "UAT test data") | null;
             /** Expires At */
             expires_at?: string | null;
             /** Pnr */
@@ -1262,7 +1287,7 @@ export interface components {
             provider?: string | null;
             /**
              * Sample
-             * @description True for rows from a one-time import (test data).
+             * @description True for test rows (one-time import or supplier UAT).
              */
             sample: boolean;
             statuses: components["schemas"]["BookingStatuses"];
@@ -1374,7 +1399,7 @@ export interface components {
              * Issuance
              * @enum {string}
              */
-            issuance: "not_issued" | "issued";
+            issuance: "not_issued" | "issued" | "unknown";
             /**
              * Payment
              * @enum {string}
@@ -1833,6 +1858,82 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HoldContact */
+        HoldContact: {
+            /** Email */
+            email: string;
+            /** Phone */
+            phone: string;
+            /** Phone Code */
+            phone_code: string;
+        };
+        /** HoldPassenger */
+        HoldPassenger: {
+            /**
+             * Date Of Birth
+             * Format: date
+             */
+            date_of_birth: string;
+            /** Document Country */
+            document_country?: string | null;
+            /** Document Expiry */
+            document_expiry?: string | null;
+            /** Document Number */
+            document_number?: string | null;
+            /** First Name */
+            first_name: string;
+            /**
+             * Id Type
+             * @enum {string}
+             */
+            id_type: "PSPT" | "NATI";
+            /** Last Name */
+            last_name: string;
+            /** Nationality */
+            nationality?: string | null;
+            /**
+             * Title
+             * @enum {string}
+             */
+            title: "MR" | "MRS" | "MISS" | "MASTER";
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "ADT" | "CHD" | "INF";
+        };
+        /** HoldRequest */
+        HoldRequest: {
+            /** @description The total the user confirmed. The hold is refused if the supplier's total differs. */
+            confirmed_total: components["schemas"]["FlightMoney"];
+            contact: components["schemas"]["HoldContact"];
+            /** Passengers */
+            passengers: components["schemas"]["HoldPassenger"][];
+            /** Quote Id */
+            quote_id: string;
+        };
+        /** HoldView */
+        HoldView: {
+            /**
+             * Booking Id
+             * @description Travelian reference, e.g. TRV-AB12CD.
+             */
+            booking_id: string;
+            /**
+             * Label
+             * @default UAT test data
+             * @constant
+             */
+            label: "UAT test data";
+            /** Pnr */
+            pnr: string;
+            selling_total: components["schemas"]["FlightMoney"];
+            /**
+             * Time Limit
+             * @description The hold expires then unless ticketed. There is no cancel call.
+             */
+            time_limit?: string | null;
         };
         /** HotelSearchRequest */
         HotelSearchRequest: {
@@ -2727,7 +2828,7 @@ export interface operations {
                 q?: string | null;
                 booking_status?: ("held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired") | null;
                 payment_status?: ("paid" | "unpaid") | null;
-                issuance_status?: ("not_issued" | "issued") | null;
+                issuance_status?: ("not_issued" | "issued" | "unknown") | null;
                 /** @description Requires the supplier names permission. */
                 provider?: string | null;
                 agency?: string | null;
@@ -4004,6 +4105,72 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    hold_flight_v1_live_ticketing_flights_bookings_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HoldRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HoldView"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role may not search. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Quote expired. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking turned off, price changed, or no selling price. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Passengers don't match. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Supplier failed; nothing saved. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -65,7 +65,7 @@ export default function AdminBookingDetailPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">
           <h1 className="min-w-0 break-all font-display text-page-title font-bold text-foreground">Booking {booking.pnr ?? booking.booking_id}</h1>
-          {booking.sample && <SampleDataBadge />}
+          {booking.sample && <SampleDataBadge label={booking.sample_label} />}
         </div>
         <StatusChips statuses={booking.statuses} direction="row" />
       </div>
