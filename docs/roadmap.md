@@ -14,6 +14,7 @@ Planned work, in order. Do not start a later item unless asked.
    - Decide the real bookings source first (read the legacy DynamoDB table, sync it into Postgres, or have the gateway write bookings).
    - Do not deploy the 18 imported test rows (`import_source = 'legacy_test_csv'`, shown on the dashboard as "Sample data"); remove them with `python -m app.cli.import_bookings_csv --remove`.
    - Requires the gateway-side identity masking and logged reveal (docs/backend-todo.md, HIGH).
+   - **Go-live blocker:** Agency flight search still calls the legacy Lambda directly (supplier IDs and logos visible in the network tab; gateway cannot reprice). Must move to the gateway search before deployment.
 5. **Admin: remaining menus**, one at a time, each only after its mockup is approved
 6. **Public website: update to the new brand colors from the logo** (navy and teal). Do as a separate task: first a preview page for approval, then apply. Touches about 47 files. Do not start until the admin work is done and I ask.
 7. **Roles: align the 8 frontend roles with the gateway's roles** to match the Users & Access spec, before any non-super_admin staff role uses the admin.
