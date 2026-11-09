@@ -42,7 +42,16 @@ to customer-facing pages. They do not apply to admin screens unless stated.
   1024, 768 and 390px, and with long names (agency, airline, provider).
 - When a card, filter or widget is hidden because its data doesn't exist yet,
   add it to docs/backend-todo.md with the endpoint or table it needs.
-
+- Field visibility (enforced by the gateway, never by the page):
+  - Super Admin and Admin: see provider/supplier names, supplier cost, margin.
+  - Staff: do not by default. Two grantable permissions, per role or per user:
+    "can see supplier names" and "can see cost and margin".
+  - Agency, sub-agency and customer roles: never, and this cannot be granted.
+    The gateway must not return these fields to them at all.
+  - Staff see the Owned/Supplier label on group stock, without supplier names.
+  - If a provider fails, staff see a general notice ("Some results may be
+    missing") with no provider names.
+    
 ## Travelian Product / UI Rules
 
 These rules apply when the user explicitly asks for UI, layout, styling, frontend behavior, flight results, Modify Search, homepage, footer, navbar, modal, dropdown, or responsive fixes.
