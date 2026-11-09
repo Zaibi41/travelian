@@ -261,6 +261,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{booking_id}/travelers/{position}/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reveal Traveler Identity
+         * @description Full date of birth and document number for one traveler. Logged with the reason (spec 3.2).
+         */
+        post: operations["reveal_traveler_identity_v1_admin_bookings__booking_id__travelers__position__reveal_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/dashboard/booking-report": {
         parameters: {
             query?: never;
@@ -1084,18 +1104,66 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** BookingAuditEntry */
+        BookingAuditEntry: {
+            /** Action */
+            action: string;
+            /** Actor User Id */
+            actor_user_id?: string | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Details
+             * @description Whitelisted, no personal data.
+             */
+            details: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * BookingCustomer
+         * @description Who pays and is contacted (spec 8).
+         */
+        BookingCustomer: {
+            /** Email */
+            email: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Phone
+             * @description With country code, e.g. +92 3001234567.
+             */
+            phone: string;
+        };
         /** BookingDetail */
         BookingDetail: {
             amount: components["schemas"]["BookingMoney"];
+            /**
+             * Audit
+             * @description The Audit tab. Omitted when there are no events.
+             */
+            audit?: components["schemas"]["BookingAuditEntry"][] | null;
             /** Booking Id */
             booking_id: string;
             /** Created At */
             created_at?: string | null;
+            /** @description Omitted when no customer was saved. */
+            customer?: components["schemas"]["BookingCustomer"] | null;
             /** Customer Or Agency */
             customer_or_agency?: string | null;
             /** Deadline */
             deadline?: string | null;
             fare: components["schemas"]["BookingFare"];
+            /**
+             * Passengers
+             * @description The Passengers tab. Omitted when no travelers were saved.
+             */
+            passengers?: components["schemas"]["app__schemas__admin_bookings__BookingPassenger"][] | null;
             /** Pnr */
             pnr?: string | null;
             /**
@@ -1263,7 +1331,7 @@ export interface components {
             created_at?: string | null;
             /**
              * Customer Or Agency
-             * @description Agency name when known. Customer names are not stored yet.
+             * @description Agency name for agency bookings, otherwise the customer's name when saved.
              */
             customer_or_agency?: string | null;
             /**
@@ -1302,31 +1370,6 @@ export interface components {
             /** Currency */
             currency: string;
         };
-        /** BookingPassenger */
-        BookingPassenger: {
-            /** Dob */
-            dob?: string | null;
-            /** Firstname */
-            firstname?: string | null;
-            /** Id */
-            id?: number | null;
-            /** Lastname */
-            lastname?: string | null;
-            /** Passport Expiry Date */
-            passport_expiry_date?: string | null;
-            /** Passport Img */
-            passport_img?: string | null;
-            /** Passport No */
-            passport_no?: string | null;
-            /** Title */
-            title?: string | null;
-            /** Type */
-            type?: string | null;
-            /** Visa Copy */
-            visa_copy?: string | null;
-        } & {
-            [key: string]: unknown;
-        };
         /** BookingRecord */
         BookingRecord: {
             /** Added By */
@@ -1338,7 +1381,7 @@ export interface components {
             /** Booking Date */
             booking_date?: string | null;
             /** Booking Sub */
-            booking_sub?: components["schemas"]["BookingPassenger"][];
+            booking_sub?: components["schemas"]["app__api__routes__group_ticketing__BookingPassenger"][];
             /** Cancel At */
             cancel_at?: string | null;
             /** Cancel By */
@@ -1859,16 +1902,28 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /** HoldContact */
+        /**
+         * HoldContact
+         * @description The customer: who pays and is contacted (spec 8). Saved with the hold.
+         */
         HoldContact: {
             /** Email */
             email: string;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
             /** Phone */
             phone: string;
             /** Phone Code */
             phone_code: string;
         };
-        /** HoldPassenger */
+        /**
+         * HoldPassenger
+         * @description Our checks (the supplier and airline may add their own): passport needs number, issuing
+         *     country and expiry; a Pakistani national ID (CNIC / B-form) is 13 digits. Expiry against the
+         *     travel dates is checked when the hold is placed.
+         */
         HoldPassenger: {
             /**
              * Date Of Birth
@@ -1905,6 +1960,12 @@ export interface components {
         };
         /** HoldRequest */
         HoldRequest: {
+            /**
+             * Accept Price Change
+             * @description Required (true) when the quote's price changed since the search.
+             * @default false
+             */
+            accept_price_change: boolean;
             /** @description The total the user confirmed. The hold is refused if the supplier's total differs. */
             confirmed_total: components["schemas"]["FlightMoney"];
             contact: components["schemas"]["HoldContact"];
@@ -1934,6 +1995,11 @@ export interface components {
              * @description The hold expires then unless ticketed. There is no cancel call.
              */
             time_limit?: string | null;
+            /**
+             * Warnings
+             * @description Not errors: e.g. passport valid for under 6 months on an international route.
+             */
+            warnings?: string[];
         };
         /** HotelSearchRequest */
         HotelSearchRequest: {
@@ -2129,11 +2195,15 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+            /** @description The verified selling total now (same as selling_total). */
+            new_total: components["schemas"]["FlightMoney"];
+            /** @description Selling total at the search prices. Omitted when the search had no price for every passenger type. */
+            old_total?: components["schemas"]["FlightMoney"] | null;
             /** Passengers */
             passengers: components["schemas"]["PassengerPrice"][];
             /**
              * Price Changed
-             * @description True when the adult price differs from the search result.
+             * @description True when the revalidated total differs from the search result. A hold then needs accept_price_change.
              */
             price_changed: boolean;
             /**
@@ -2160,6 +2230,26 @@ export interface components {
             new_password: string;
             /** Username */
             username: string;
+        };
+        /** RevealRequest */
+        RevealRequest: {
+            /**
+             * Reason
+             * @description Why the full values are needed. Logged with the reveal.
+             */
+            reason: string;
+        };
+        /** RevealResponse */
+        RevealResponse: {
+            /**
+             * Date Of Birth
+             * Format: date
+             */
+            date_of_birth: string;
+            /** Document Expiry */
+            document_expiry?: string | null;
+            /** Document Number */
+            document_number?: string | null;
         };
         /** RoleRecord */
         RoleRecord: {
@@ -2307,6 +2397,92 @@ export interface components {
             status: "success" | "failed" | "timeout";
             /** Vendor */
             vendor: string;
+        };
+        /** BookingPassenger */
+        app__api__routes__group_ticketing__BookingPassenger: {
+            /** Dob */
+            dob?: string | null;
+            /** Firstname */
+            firstname?: string | null;
+            /** Id */
+            id?: number | null;
+            /** Lastname */
+            lastname?: string | null;
+            /** Passport Expiry Date */
+            passport_expiry_date?: string | null;
+            /** Passport Img */
+            passport_img?: string | null;
+            /** Passport No */
+            passport_no?: string | null;
+            /** Title */
+            title?: string | null;
+            /** Type */
+            type?: string | null;
+            /** Visa Copy */
+            visa_copy?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * BookingPassenger
+         * @description A traveler. Date of birth and document number are masked; the full values need a logged reveal.
+         */
+        app__schemas__admin_bookings__BookingPassenger: {
+            /**
+             * Date Of Birth Masked
+             * @description Year only, e.g. 1990-••-••.
+             */
+            date_of_birth_masked: string;
+            /** Document Country */
+            document_country?: string | null;
+            /**
+             * Document Expiry Masked
+             * @description Year only, e.g. 2031-••-••. The full date needs a logged reveal.
+             */
+            document_expiry_masked?: string | null;
+            /**
+             * Document Number Masked
+             * @description Last 3 characters only.
+             */
+            document_number_masked?: string | null;
+            /**
+             * Document Validity
+             * @description From the expiry date today: expired, expiring within 6 months, or valid. Omitted without an expiry.
+             */
+            document_validity?: ("valid" | "expiring" | "expired") | null;
+            /** First Name */
+            first_name: string;
+            /**
+             * Id Type
+             * @enum {string}
+             */
+            id_type: "PSPT" | "NATI";
+            /**
+             * Infant Of Position
+             * @description For an infant: the position of the adult it travels with.
+             */
+            infant_of_position?: number | null;
+            /** Last Name */
+            last_name: string;
+            /** Nationality */
+            nationality?: string | null;
+            /**
+             * Position
+             * @description Order in the booking; used by the reveal endpoint.
+             */
+            position: number;
+            /**
+             * Ticket Number
+             * @description Not recorded yet.
+             */
+            ticket_number?: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "ADT" | "CHD" | "INF";
         };
     };
     responses: never;
@@ -2921,6 +3097,63 @@ export interface operations {
                 };
             };
             /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reveal_traveler_identity_v1_admin_bookings__booking_id__travelers__position__reveal_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+                position: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RevealRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevealResponse"];
+                };
+            };
+            /** @description Needs the reveal_identity permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking or traveler. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Identity data can't be decrypted right now. */
             503: {
                 headers: {
                     [name: string]: unknown;
