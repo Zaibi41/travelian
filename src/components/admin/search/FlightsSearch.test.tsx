@@ -67,10 +67,22 @@ describe("admin Flights search", () => {
     expect(await screen.findByRole("group", { name: /Available providers: 1 of 1/ })).toBeInTheDocument();
   });
 
-  it("shows the general notice when the provider fails (D24)", async () => {
+  it("shows 'not available yet', never 'Some results may be missing', when nothing came back", async () => {
+    // Even if an older gateway still sends the notice with no results.
     gateway.search.mockResolvedValue({ ...STAFF, status: "unavailable", notice: "Some results may be missing.", journeys: [] });
     renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
-    expect(await screen.findByRole("alert")).toHaveTextContent("Some results may be missing.");
+    expect(await screen.findByText("Flight search isn't available yet")).toBeInTheDocument();
+    expect(screen.queryByText(/Some results may be missing/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Results" })).not.toBeInTheDocument();
+  });
+
+  it("shows the general notice with the results when some providers failed (D24)", async () => {
+    gateway.search.mockResolvedValue({ ...STAFF, notice: "Some results may be missing." });
+    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    const results = await screen.findByRole("region", { name: "Results" });
+    expect(results).toHaveTextContent("Some results may be missing.");
+    expect(results).toHaveTextContent("MM112");
+    expect(screen.queryByText("Flight search isn't available yet")).not.toBeInTheDocument();
   });
 
   it("waits for a complete search; travelers keep their minimums", () => {

@@ -1574,7 +1574,7 @@ export interface components {
             journeys: components["schemas"]["JourneyView"][];
             /**
              * Notice
-             * @description D24: "Some results may be missing" when a provider fails, no provider names.
+             * @description D24: "Some results may be missing" only when a provider fails and other results are returned; never with status "unavailable". No provider names.
              */
             notice?: string | null;
             /**
@@ -1655,13 +1655,13 @@ export interface components {
              */
             status: "complete" | "unavailable";
             /** Vendor Results */
-            vendor_results: components["schemas"]["VendorResult"][];
+            vendor_results?: components["schemas"]["VendorResult"][] | null;
             /** Vendors Failed */
-            vendors_failed: components["schemas"]["VendorIssue"][];
+            vendors_failed?: components["schemas"]["VendorIssue"][] | null;
             /** Vendors Queried */
-            vendors_queried: string[];
+            vendors_queried?: string[] | null;
             /** Vendors Succeeded */
-            vendors_succeeded: string[];
+            vendors_succeeded?: string[] | null;
         };
         /** GroupBookingRequest */
         GroupBookingRequest: {
@@ -1824,7 +1824,7 @@ export interface components {
             sold?: string | number | null;
             /**
              * Subparts
-             * @description Raw supplier segments. Only with the supplier names permission.
+             * @description Raw supplier segments. Requires both supplier names and cost and margin permissions.
              */
             subparts?: {
                 [key: string]: unknown;

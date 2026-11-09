@@ -12,6 +12,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { StatusKpiCard } from "@/components/admin/StatusKpiCard";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { LabeledSelect } from "@/components/admin/bookings/LabeledSelect";
+import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
 import { cn } from "@/lib/utils";
@@ -255,8 +256,14 @@ function Results({ data, filters, onFilters, renderFareAction }: {
   const airlines = useMemo(() => [...new Set(allFlights.map(airlineLabel))].sort(), [allFlights]);
   const hasRefundInfo = allFlights.some(flight => flight.fares.some(fare => isRefundable(fare) !== null));
 
+  // Nothing came back: say so honestly. "Some results may be missing" (D24) is only for
+  // partial results, shown with them below when the gateway sends that notice.
   if (data.status === "unavailable") {
-    return <DashboardErrorNotice message={data.notice ?? "Some results may be missing."} />;
+    return (
+      <NotAvailableNotice title="Flight search isn't available yet">
+        The flight provider isn't returning results through the gateway yet.
+      </NotAvailableNotice>
+    );
   }
   return (
     <section aria-label="Results" className="flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
