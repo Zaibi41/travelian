@@ -53,8 +53,8 @@ export const REASONS = {
   multiCity: "Multi-city isn't available from the current flight provider.",
   cabin: "Only Economy is searched for now.",
   returnDate: "Choose Round-trip to add a return date.",
-  refund: "Available after you select a fare",
-  fareRules: "Available after you select a fare",
+  refund: "Not available yet",
+  fareRules: "Not available yet",
   booking: "Booking isn't available yet",
   quote: "Quotes aren't available yet",
 } as const;
@@ -89,13 +89,15 @@ interface FlightsSearchProps {
   renderFareAction?: (selection: FareSelection, search: FlightSearchView) => React.ReactNode;
   /** Content below the results (selection and reprice panel). */
   renderBelow?: (search: FlightSearchView, request: FlightSearch) => React.ReactNode;
+  /** Visible reasons for disabled fare actions, shown once under each card's fare table. */
+  actionNotes?: string[];
 }
 
 // Search > Flights (spec 6, D26, mockup search-flights) on the gateway's live search (Southair).
 // Shown but disabled, with the reason (REASONS): Multi-city, cabins other than Economy, Refundable
 // filter without refund data, Fare rules, Book, Hold, Quote. Hidden until there is data
 // (docs/backend-todo.md, Search): Quotes pending card, "Staff fare" tag, airline logos.
-export function FlightsSearch({ renderFareAction, renderBelow }: FlightsSearchProps) {
+export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: FlightsSearchProps) {
   const [params, setParams] = useSearchParams();
   const search = parseFlightSearch(params);
   const [draft, setDraft] = useState<FlightSearch>(search);
@@ -218,7 +220,7 @@ export function FlightsSearch({ renderFareAction, renderBelow }: FlightsSearchPr
           </div>
         ) : results.data ? (
           <>
-            <Results data={results.data} filters={filters} onFilters={setFilters} renderFareAction={renderFareAction} />
+            <Results data={results.data} filters={filters} onFilters={setFilters} renderFareAction={renderFareAction} actionNotes={actionNotes} />
             {renderBelow?.(results.data, search)}
           </>
         ) : null
@@ -325,9 +327,9 @@ function TravelersPicker({ value, onChange }: { value: FlightSearch; onChange: (
   );
 }
 
-function Results({ data, filters, onFilters, renderFareAction }: {
+function Results({ data, filters, onFilters, renderFareAction, actionNotes }: {
   data: FlightSearchView; filters: ResultFilters; onFilters: (next: ResultFilters) => void;
-  renderFareAction?: FlightsSearchProps["renderFareAction"];
+  renderFareAction?: FlightsSearchProps["renderFareAction"]; actionNotes?: string[];
 }) {
   const allFlights = data.journeys.flatMap(journey => journey.flights);
   const airlines = useMemo(() => [...new Set(allFlights.map(airlineLabel))].sort(), [allFlights]);
@@ -412,7 +414,7 @@ function Results({ data, filters, onFilters, renderFareAction }: {
             {flights.length === 0 ? (
               <p className="py-1 text-body text-muted-foreground">No flights match these filters.</p>
             ) : flights.map(flight => (
-              <FlightCard key={flight.id} journey={journey} flight={flight} data={data} renderFareAction={renderFareAction} />
+              <FlightCard key={flight.id} journey={journey} flight={flight} data={data} renderFareAction={renderFareAction} actionNotes={actionNotes} />
             ))}
           </div>
         );
@@ -465,8 +467,8 @@ function FlightDetails({ journey, flight }: { journey: JourneyView; flight: Flig
   );
 }
 
-function FlightCard({ journey, flight, data, renderFareAction }: {
-  journey: JourneyView; flight: FlightView; data: FlightSearchView; renderFareAction?: FlightsSearchProps["renderFareAction"];
+function FlightCard({ journey, flight, data, renderFareAction, actionNotes }: {
+  journey: JourneyView; flight: FlightView; data: FlightSearchView; renderFareAction?: FlightsSearchProps["renderFareAction"]; actionNotes?: string[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const fares = expanded ? flight.fares : flight.fares.slice(0, VISIBLE_FARES);
@@ -534,6 +536,9 @@ function FlightCard({ journey, flight, data, renderFareAction }: {
           </tbody>
         </table>
       </div>
+      {renderFareAction && actionNotes?.length ? (
+        <p className="border-t border-border px-3 py-2 text-label text-muted-foreground">{actionNotes.join(" · ")}</p>
+      ) : null}
       {flight.fares.length > VISIBLE_FARES && (
         <button type="button" onClick={() => setExpanded(!expanded)} className="w-full border-t border-border py-2 text-body font-medium text-teal hover:bg-accent/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           {expanded ? "Show fewer fares" : `Show ${flight.fares.length - VISIBLE_FARES} more fares`}

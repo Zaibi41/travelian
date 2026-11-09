@@ -45,6 +45,7 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
 
   return (
     <FlightsSearch
+      actionNotes={[`Book and Hold: ${REASONS.booking}`, `Quote: ${REASONS.quote}`, `Fare rules: ${REASONS.fareRules}`]}
       renderFareAction={(pick, search) => {
         const isSelected = picksFor(search)[pick.journey.direction]?.fare.id === pick.fare.id;
         const label = `${pick.flight.flight_number ?? ""} ${pick.fare.name}`.trim();

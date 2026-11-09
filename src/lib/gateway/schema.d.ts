@@ -866,7 +866,7 @@ export interface paths {
         put?: never;
         /**
          * Hold Flight
-         * @description Hold only (no ticketing, no payment), behind SOUTHAIR_BOOKING_ENABLED. Saved as UAT test data.
+         * @description Hold only (no ticketing, no payment), when booking is turned on. Saved as UAT test data.
          */
         post: operations["hold_flight_v1_live_ticketing_flights_bookings_post"];
         delete?: never;
@@ -906,7 +906,7 @@ export interface paths {
         put?: never;
         /**
          * Search Flights
-         * @description Search Southair. Fare IDs stay valid for 15 minutes, for the user who searched.
+         * @description Search the flight provider. Fare IDs stay valid for 15 minutes, for the user who searched.
          */
         post: operations["search_flights_v1_live_ticketing_flights_search_post"];
         delete?: never;

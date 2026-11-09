@@ -127,7 +127,7 @@ describe("admin Flights search, live Southair shape", () => {
     expect(rows.map(row => within(row).getAllByRole("cell")[2].textContent)).toEqual(["No checked baggage", "20KG", "30KG"]);
     for (const row of rows) {
       expect(row).toHaveTextContent("Meal info not available");
-      expect(row).toHaveTextContent("Available after you select a fare");  // refund
+      expect(row).toHaveTextContent("Not available yet");  // refund
       expect(row).toHaveTextContent("Hold time not available");
     }
     expect(results).not.toHaveTextContent("Baggage info not available");
@@ -222,7 +222,7 @@ describe("mockup elements (Search > Flights)", () => {
     expect(screen.getByRole("combobox", { name: "Price range" })).toBeEnabled();
     const refund = screen.getByRole("combobox", { name: "Refundable" });
     expect(refund).toBeDisabled();
-    expect(refund).toHaveAccessibleDescription("Available after you select a fare");
+    expect(refund).toHaveAccessibleDescription("Not available yet");
     unmount();
     gateway.search.mockResolvedValue(STAFF);
     renderAt(url);

@@ -82,12 +82,15 @@ describe("fare row actions (mockup)", () => {
 
   it("shows Book, Hold, Quote and Fare rules disabled with the reason; Revalidate works", async () => {
     renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
-    for (const [name, reason] of [["Book", "Booking isn't available yet"], ["Hold", "Booking isn't available yet"], ["Quote", "Quotes aren't available yet"], ["Fare rules", "Available after you select a fare"]]) {
+    for (const [name, reason] of [["Book", "Booking isn't available yet"], ["Hold", "Booking isn't available yet"], ["Quote", "Quotes aren't available yet"], ["Fare rules", "Not available yet"]]) {
       const control = await screen.findByRole("button", { name: `${name} PA-1 Y` });
       expect(control).toBeDisabled();
       expect(control).toHaveAccessibleDescription(reason);
     }
     expect(screen.queryByRole("button", { name: /^Select/ })).not.toBeInTheDocument();
+    // The reasons are visible text on the card, not only tooltips.
+    const card = screen.getByRole("article", { name: /PA-1/ });
+    expect(card).toHaveTextContent("Book and Hold: Booking isn't available yet · Quote: Quotes aren't available yet · Fare rules: Not available yet");
     const revalidate = screen.getByRole("button", { name: "Revalidate PA-1 Y" });
     expect(revalidate).toBeEnabled();
     fireEvent.click(revalidate);
