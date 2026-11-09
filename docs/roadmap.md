@@ -15,6 +15,8 @@ Planned work, in order. Do not start a later item unless asked.
    - Do not deploy the 18 imported test rows (`import_source = 'legacy_test_csv'`, shown on the dashboard as "Sample data"); remove them with `python -m app.cli.import_bookings_csv --remove`.
    - Requires the gateway-side identity masking and logged reveal (docs/backend-todo.md, HIGH).
    - **Go-live blocker:** Agency flight search still calls the legacy Lambda directly (supplier IDs and logos visible in the network tab; gateway cannot reprice). Must move to the gateway search before deployment.
+   - **Go-live blocker:** Live flight search (`/v1/live-ticketing/flights/search`) calls Southair directly. It must go through the multi-provider `FlightSearchService` (`app/services/flight_search.py`): providers called in parallel with per-provider timeouts, results merged, and a provider failure reported without failing the whole search (D24).
+   - **Go-live blocker:** The flight search sessions and quotes (opaque fare IDs mapped to supplier tokens) live in gateway process memory. They must move to shared storage (database or cache) with the same expiry before the gateway runs more than one worker, or restarts lose them.
 5. **Admin: remaining menus**, one at a time, each only after its mockup is approved
 6. **Public website: update to the new brand colors from the logo** (navy and teal). Do as a separate task: first a preview page for approval, then apply. Touches about 47 files. Do not start until the admin work is done and I ask.
 7. **Roles: align the 8 frontend roles with the gateway's roles** to match the Users & Access spec, before any non-super_admin staff role uses the admin.
