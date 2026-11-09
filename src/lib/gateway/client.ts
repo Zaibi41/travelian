@@ -91,6 +91,12 @@ async function send(path: string, init: { method: "GET" | "POST"; query?: Record
   return response.json();
 }
 
+/** Absolute URL for a gateway-served asset path such as /v1/logos/{id}; null if unset. */
+export function gatewayAssetUrl(path?: string | null) {
+  const baseUrl = configuredBaseUrl().replace(/\/+$/, "");
+  return path && path.startsWith("/v1/") && baseUrl ? `${baseUrl}${path}` : null;
+}
+
 export function gatewayGet<P extends GetPath>(path: P, query?: GetQuery<P>, options: GatewayOptions = {}): Promise<GetResponse<P>> {
   return send(path, { method: "GET", query: query as Record<string, unknown> | undefined }, options) as Promise<GetResponse<P>>;
 }

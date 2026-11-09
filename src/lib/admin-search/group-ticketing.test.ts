@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import { inventoryOptions, parseGroupSearch, resultRows, searchGroupFares, sectorCodes, writeGroupSearch, type GroupInventory } from "./group-ticketing";
 
 const ticket = (id: string, overrides: Record<string, unknown> = {}) => ({
-  id, sector: "LHE - DMM", departure_date: "2026-11-13", airline: "Airblue", remaining: 9, baggage: "20 KG", price: "95000",
-  airline_logo: "https://supplier.example/logo.png", subparts: [{ ticket_airline_id: 7 }], ...overrides,
+  id, sector: "LHE - DMM", departure_date: "2026-11-13", departure_time: "09:45", airline: "Airblue", remaining: 9, baggage: "20 KG",
+  logo_url: "/v1/logos/abc", selling_price: { amount_minor: 9_975_000, currency: "PKR" }, ...overrides,
 });
 const GROUPS = [
   { id: "g1", sector: "LAHORE - DAMMAM", airline: "Airblue", tickets: [ticket("t1"), ticket("t2", { departure_date: "2026-11-10", airline: "Serene Air" })] },
@@ -22,10 +22,11 @@ describe("group ticketing search helpers", () => {
     expect(options.sectors).toEqual([{ from: "LHE", to: "DMM", count: 2 }, { from: "KHI", to: "JED", count: 1 }]);
     expect(options.airlines).toEqual(["Airblue", "PIA", "Serene Air"]);
   });
-  it("builds rows without price, logo or supplier data, earliest first, with an airline filter", () => {
+  it("builds rows with the selling price and gateway logo only, earliest first, with an airline filter", () => {
     const rows = resultRows(GROUPS);
     expect(rows.map(row => row.id)).toEqual(["t2", "t1", "t3"]);
-    expect(Object.keys(rows[0]).sort()).toEqual(["airline", "baggage", "departureDate", "id", "seatsLeft", "sector"]);
+    expect(Object.keys(rows[0]).sort()).toEqual(["airline", "baggage", "departureDate", "departureTime", "id", "logoUrl", "price", "seatsLeft", "sector"]);
+    expect(rows[0]).toMatchObject({ logoUrl: "/v1/logos/abc", price: { amount_minor: 9_975_000, currency: "PKR" } });
     expect(rows[2]).toMatchObject({ airline: "PIA", baggage: null });
     expect(resultRows(GROUPS, "Serene Air").map(row => row.id)).toEqual(["t2"]);
   });

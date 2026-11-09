@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { LabeledSelect } from "@/components/admin/bookings/LabeledSelect";
-import { GatewayError } from "@/lib/gateway/client";
+import { GatewayError, gatewayAssetUrl } from "@/lib/gateway/client";
+import { formatMoney } from "@/lib/admin-bookings/format";
 import {
   fetchGroupInventory, inventoryOptions, isCompleteSearch, parseGroupSearch, resultRows, searchGroupFares, writeGroupSearch,
   type GroupSearch,
@@ -17,6 +18,14 @@ import {
 const ANY = "any";
 const errorMessage = (error: unknown) =>
   error instanceof GatewayError ? error.message : "Group fares couldn't be loaded. Try again in a few minutes.";
+
+/** Logo served by the gateway (never the supplier's host); hidden if it fails to load. */
+function AirlineLogo({ path }: { path?: string | null }) {
+  const [failed, setFailed] = useState(false);
+  const src = gatewayAssetUrl(path);
+  if (!src || failed) return null;
+  return <img src={src} alt="" width={24} height={24} loading="lazy" onError={() => setFailed(true)} className="h-6 w-6 shrink-0 rounded-sm border border-border bg-card object-contain" />;
+}
 
 function departure(value?: string | null) {
   if (!value) return "—";
@@ -27,8 +36,8 @@ function departure(value?: string | null) {
 // Search > Group Ticketing (spec 6, mockup search-group-ticketing), on the gateway's real
 // group inventory. Hidden until the gateway provides them (docs/backend-todo.md): the
 // Available providers, Search expiry and Quotes pending cards; Children and Infants
-// (the search takes adults only); Source (owned or supplier); Price per passenger
-// (the gateway only has the supplier's price); Hold rule; Book, Hold seats and Quote.
+// (the search takes adults only, so the price is per adult); Source (owned or supplier);
+// Hold rule; Book, Hold seats and Quote. Price is the gateway's selling price only.
 export function GroupTicketingSearch() {
   const [params, setParams] = useSearchParams();
   const search = parseGroupSearch(params);
@@ -141,10 +150,10 @@ export function GroupTicketingSearch() {
             <p className="py-2 text-body text-muted-foreground">No group fares match this search.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[34rem] border-collapse text-table">
+              <table className="w-full min-w-[42rem] border-collapse text-table">
                 <thead>
                   <tr className="bg-muted text-left">
-                    {["Departure", "Airline", "Seats left", "Baggage"].map(column => (
+                    {["Departure", "Airline", "Seats left", "Baggage", "Price per passenger"].map(column => (
                       <th key={column} scope="col" className="h-table-header px-2.5 font-semibold text-foreground">{column}</th>
                     ))}
                   </tr>
@@ -153,15 +162,23 @@ export function GroupTicketingSearch() {
                   {rows.map(row => (
                     <tr key={row.id} className="border-b border-border last:border-b-0">
                       <td className="px-2.5 py-2 align-top">
-                        <span className="block whitespace-nowrap tabular-nums text-foreground">{departure(row.departureDate)}</span>
+                        <span className="block whitespace-nowrap tabular-nums text-foreground">
+                          {departure(row.departureDate)}{row.departureTime ? ` ${row.departureTime}` : ""}
+                        </span>
                         <span className="block text-label text-muted-foreground">{row.sector ?? "—"}</span>
                       </td>
-                      <td className="max-w-[14rem] px-2.5 py-2 align-top">
-                        <span className="block truncate font-semibold text-foreground" title={row.airline ?? undefined}>{row.airline ?? "—"}</span>
+                      <td className="max-w-[16rem] px-2.5 py-2 align-top">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <AirlineLogo path={row.logoUrl} />
+                          <span className="truncate font-semibold text-foreground" title={row.airline ?? undefined}>{row.airline ?? "—"}</span>
+                        </span>
                       </td>
                       <td className="px-2.5 py-2 align-top tabular-nums text-foreground">{row.seatsLeft ?? "—"}</td>
                       <td className="max-w-[14rem] px-2.5 py-2 align-top">
                         <span className="block truncate text-foreground" title={row.baggage ?? undefined}>{row.baggage ?? "Baggage info not available"}</span>
+                      </td>
+                      <td className="whitespace-nowrap px-2.5 py-2 align-top tabular-nums text-foreground">
+                        {row.price ? <>Adult <span className="font-semibold">{formatMoney(row.price)}</span></> : "Price not available"}
                       </td>
                     </tr>
                   ))}

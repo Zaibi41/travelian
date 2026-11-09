@@ -1,13 +1,14 @@
-// Group Ticketing search on travelian-api-gateway (/v1/group-ticketing). The gateway
-// strips the supplier from these responses. Not shown on the page (docs/backend-todo.md):
-// price (it is the supplier's own price, i.e. cost, until the gateway returns a selling
-// price), airline_logo (hosted on the supplier's domain) and subparts (raw supplier data).
+// Group Ticketing search on travelian-api-gateway (/v1/group-ticketing). The gateway decides
+// what each role receives (D23): everyone gets the selling price and a gateway-served logo;
+// supplier, supplier cost and raw supplier fields only with permission. This page shows
+// only the selling price, never supplier cost.
 
 import { gatewayGet, gatewayPost, type GatewayOptions } from "@/lib/gateway/client";
 import type { components } from "@/lib/gateway/schema";
 
-export type GroupInventory = components["schemas"]["PublicGroupInventory"];
-export type GroupTicket = components["schemas"]["PublicGroupTicket"];
+export type GroupInventory = components["schemas"]["GroupView"];
+export type GroupTicket = components["schemas"]["GroupTicketView"];
+export type GroupMoney = components["schemas"]["GroupMoney"];
 
 const UNAVAILABLE = "Group fares can't be loaded right now. The supplier isn't responding; try again in a few minutes.";
 
@@ -102,6 +103,11 @@ export const isCompleteSearch = (search: GroupSearch): search is GroupSearch & {
 export interface GroupResultRow {
   id: string;
   departureDate?: string | null;
+  departureTime?: string | null;
+  /** Gateway path, e.g. /v1/logos/{id}. */
+  logoUrl?: string | null;
+  /** Per adult, selling price from the gateway. */
+  price?: GroupMoney | null;
   sector?: string | null;
   airline?: string | null;
   seatsLeft?: number | null;
@@ -114,6 +120,9 @@ export function resultRows(groups: GroupInventory[], airline?: string): GroupRes
     .flatMap(group => group.tickets.map(ticket => ({
       id: ticket.id,
       departureDate: ticket.departure_date,
+      departureTime: ticket.departure_time,
+      logoUrl: ticket.logo_url ?? group.logo_url,
+      price: ticket.selling_price ?? null,
       sector: ticket.sector ?? group.sector,
       airline: (ticket.airline ?? group.airline)?.trim() || null,
       seatsLeft: ticket.remaining,

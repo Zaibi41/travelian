@@ -19,11 +19,11 @@ vi.mock("@/lib/admin-search/group-ticketing", async importOriginal => ({
 
 import AdminSearchPage from "./AdminSearchPage";
 
-const LOGO = "https://supplier-host.example/public/uploads/airlines/1.png";
+// What the gateway sends staff (D23): selling price and a gateway logo path, nothing else.
 const INVENTORY = {
   data: [{
-    id: "g1", sector: "LAHORE - DAMMAM", airline: "Airblue", airline_logo: LOGO,
-    tickets: [{ id: "t1", sector: "LHE - DMM", departure_date: "2026-11-13", airline: "Airblue", airline_logo: LOGO, price: "95000", remaining: 9, baggage: "20 KG", subparts: [{ ticket_airline_id: 7 }] }],
+    id: "g1", sector: "LAHORE - DAMMAM", airline: "Airblue", logo_url: "/v1/logos/abc",
+    tickets: [{ id: "t1", sector: "LHE - DMM", departure_date: "2026-11-13", departure_time: "09:45", airline: "Airblue", logo_url: "/v1/logos/abc", selling_price: { amount_minor: 9_975_000, currency: "PKR" }, remaining: 9, baggage: "20 KG" }],
   }],
 };
 
@@ -55,17 +55,16 @@ describe("Search (internal roles)", () => {
     expect(screen.queryByText(/Available providers|Search expiry|Quotes pending/)).not.toBeInTheDocument();
   });
 
-  it("Group Ticketing: real results without price, logo, source, supplier or actions", async () => {
+  it("Group Ticketing: real results with the selling price; no source, supplier or actions", async () => {
     renderAt("/admin/search?tab=group-ticketing&from=LHE&to=DMM&date=2026-11-13");
     const results = await screen.findByRole("region", { name: "Results" });
     await within(results).findByText("Airblue");
-    expect(within(results).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Departure", "Airline", "Seats left", "Baggage"]);
-    expect(within(results).getByText("13 Nov 2026")).toBeInTheDocument();
+    expect(within(results).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Departure", "Airline", "Seats left", "Baggage", "Price per passenger"]);
+    expect(within(results).getByText("13 Nov 2026 09:45")).toBeInTheDocument();
+    expect(within(results).getByText("Rs 99,750")).toBeInTheDocument();
     expect(within(results).getByText("9")).toBeInTheDocument();
     expect(gateway.search).toHaveBeenCalledWith(expect.objectContaining({ from: "LHE", to: "DMM", date: "2026-11-13", adults: 1 }), expect.anything());
-    const page = document.body;
-    expect(page.innerHTML).not.toContain("supplier-host");
-    expect(page.textContent).not.toMatch(/95,?000|Rs |Book|Hold seats|Quote|Owned|Supplier|Children|Infants/);
+    expect(document.body.textContent).not.toMatch(/Book|Hold seats|Quote|Owned|Supplier|Children|Infants/);
     expect(await screen.findByRole("button", { name: /LHE → DMM \(1\)/ })).toBeInTheDocument();
   });
 

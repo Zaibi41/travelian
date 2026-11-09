@@ -875,6 +875,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/logos/{logo_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Logo */
+        get: operations["logo_v1_logos__logo_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ready": {
         parameters: {
             query?: never;
@@ -1612,10 +1629,20 @@ export interface components {
             /** Vendors Succeeded */
             vendors_succeeded: string[];
         };
-        /** GroupInventoryResponse */
-        GroupInventoryResponse: {
+        /** GroupInventoryView */
+        GroupInventoryView: {
             /** Data */
-            data: components["schemas"]["PublicGroupInventory"][];
+            data: components["schemas"]["GroupView"][];
+        };
+        /** GroupMoney */
+        GroupMoney: {
+            /**
+             * Amount Minor
+             * @description Integer minor units (paisa for PKR).
+             */
+            amount_minor: number;
+            /** Currency */
+            currency: string;
         };
         /** GroupQuoteAcknowledgement */
         GroupQuoteAcknowledgement: {
@@ -1674,6 +1701,73 @@ export interface components {
             destination: string;
             /** Origin */
             origin: string;
+        };
+        /** GroupTicketView */
+        GroupTicketView: {
+            /** Airline */
+            airline?: string | null;
+            /** Baggage */
+            baggage?: string | number | null;
+            /** Departure Date */
+            departure_date?: string | null;
+            /**
+             * Departure Time
+             * @description HH:MM of the first segment, when the supplier sends it.
+             */
+            departure_time?: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Logo Url
+             * @description Gateway path for the airline logo.
+             */
+            logo_url?: string | null;
+            /** Meal */
+            meal?: string | number | null;
+            /**
+             * Pnr
+             * @description Supplier PNR. Only with the supplier names permission.
+             */
+            pnr?: string | null;
+            /** Remaining */
+            remaining?: number | null;
+            /** Sector */
+            sector?: string | null;
+            /** @description Per adult. Omitted when no markup is configured or the price is unknown. */
+            selling_price?: components["schemas"]["GroupMoney"] | null;
+            /** Sold */
+            sold?: string | number | null;
+            /**
+             * Subparts
+             * @description Raw supplier segments. Only with the supplier names permission.
+             */
+            subparts?: {
+                [key: string]: unknown;
+            }[] | null;
+            /**
+             * Supplier
+             * @description Only with the supplier names permission.
+             */
+            supplier?: string | null;
+            /** @description Only with the cost and margin permission. */
+            supplier_cost?: components["schemas"]["GroupMoney"] | null;
+            /** Ticket Type */
+            ticket_type?: string | number | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /** GroupView */
+        GroupView: {
+            /** Airline */
+            airline?: string | null;
+            /** Id */
+            id: string;
+            /** Logo Url */
+            logo_url?: string | null;
+            /** Sector */
+            sector: string;
+            /** Tickets */
+            tickets: components["schemas"]["GroupTicketView"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1796,54 +1890,6 @@ export interface components {
         PasswordResetMessage: {
             /** Message */
             message: string;
-        };
-        /** PublicGroupInventory */
-        PublicGroupInventory: {
-            /** Airline */
-            airline?: string | null;
-            /** Airline Logo */
-            airline_logo?: string | null;
-            /** Id */
-            id: string;
-            /** Sector */
-            sector: string;
-            /** Tickets */
-            tickets: components["schemas"]["PublicGroupTicket"][];
-        };
-        /** PublicGroupTicket */
-        PublicGroupTicket: {
-            /** Airline */
-            airline?: string | null;
-            /** Airline Logo */
-            airline_logo?: string | null;
-            /** Baggage */
-            baggage?: string | number | null;
-            /** Currency */
-            currency?: string | null;
-            /** Departure Date */
-            departure_date?: string | null;
-            /** Id */
-            id: string;
-            /** Meal */
-            meal?: string | number | null;
-            /** Pnr */
-            pnr?: string | null;
-            /** Price */
-            price?: string | number | null;
-            /** Remaining */
-            remaining?: number | null;
-            /** Sector */
-            sector?: string | null;
-            /** Sold */
-            sold?: string | number | null;
-            /** Subparts */
-            subparts?: {
-                [key: string]: unknown;
-            }[];
-            /** Ticket Type */
-            ticket_type?: string | number | null;
-            /** Updated At */
-            updated_at?: string | null;
         };
         /** RefreshRequest */
         RefreshRequest: {
@@ -3411,6 +3457,20 @@ export interface operations {
                     "application/json": components["schemas"]["BookingDetailsResponse"];
                 };
             };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role may not search. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -3450,6 +3510,20 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["GroupBookingResponse"];
                 };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role may not search. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -3491,6 +3565,20 @@ export interface operations {
                     "application/json": components["schemas"]["GroupAvailabilityResponse"];
                 };
             };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role may not search. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -3524,6 +3612,20 @@ export interface operations {
                     "application/json": components["schemas"]["GroupQuoteAcknowledgement"];
                 };
             };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role may not search. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -3550,8 +3652,22 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GroupInventoryResponse"];
+                    "application/json": components["schemas"]["GroupInventoryView"];
                 };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role may not search. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -3574,8 +3690,22 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GroupInventoryResponse"];
+                    "application/json": components["schemas"]["GroupInventoryView"];
                 };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role may not search. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -3605,8 +3735,22 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PublicGroupTicket"];
+                    "application/json": components["schemas"]["GroupTicketView"];
                 };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role may not search. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -3689,7 +3833,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GroupInventoryResponse"];
+                    "application/json": components["schemas"]["GroupInventoryView"];
                 };
             };
         };
@@ -3713,7 +3857,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GroupInventoryResponse"];
+                    "application/json": components["schemas"]["GroupInventoryView"];
                 };
             };
             /** @description Validation Error */
@@ -3748,6 +3892,44 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["FlightSearchResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logo_v1_logos__logo_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                logo_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": unknown;
+                };
+            };
+            /** @description Unknown logo. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
