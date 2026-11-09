@@ -11,7 +11,7 @@ vi.mock("@/lib/admin-search/flights", async importOriginal => ({
 }));
 
 import HoldFlightPage from "@/pages/HoldFlightPage";
-import { STAFF_DRAFT } from "@/pages/HoldFlightPage.test";
+import { STAFF_DRAFT } from "@/test/hold-fixtures";
 
 globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
 
