@@ -45,8 +45,10 @@ export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
   expired: "Expired",
 };
 
-export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = { paid: "Paid", unpaid: "Unpaid" };
+export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = { paid: "Paid", unpaid: "Unpaid", part_paid: "Part-paid" };
 
-export const ISSUANCE_STATUS_LABEL: Record<IssuanceStatus, string> = { issued: "Issued", not_issued: "Not issued", unknown: "Unknown issuance" };
+export const ISSUANCE_STATUS_LABEL: Record<IssuanceStatus, string> = {
+  issued: "Issued", not_issued: "Not issued", requested: "Awaiting approval", processing: "Processing", unknown: "Unknown issuance",
+};
 
 export const PRODUCT_LABEL: Record<string, string> = { flight: "Flight", group: "Group", hotel: "Hotel", umrah: "Umrah" };

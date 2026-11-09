@@ -54,3 +54,15 @@ describe("bookings gateway calls", () => {
     await expect(fetchBookingDetail("X", { baseUrl: "http://gw", accessToken: "t", fetchImpl: missing })).rejects.toMatchObject({ kind: "not_found" });
   });
 });
+
+describe("payment and issuance statuses from the gateway", () => {
+  it("keeps part-paid, awaiting approval and processing in the URL filters, with labels", async () => {
+    const { ISSUANCE_STATUS_LABEL, PAYMENT_STATUS_LABEL } = await import("./format");
+    const filters = parseBookingsFilters(new URLSearchParams("payment_status=part_paid&issuance_status=requested"));
+    expect(filters.paymentStatus).toBe("part_paid");
+    expect(filters.issuanceStatus).toBe("requested");
+    expect(parseBookingsFilters(new URLSearchParams("issuance_status=processing")).issuanceStatus).toBe("processing");
+    expect(PAYMENT_STATUS_LABEL.part_paid).toBe("Part-paid");
+    expect([ISSUANCE_STATUS_LABEL.requested, ISSUANCE_STATUS_LABEL.processing]).toEqual(["Awaiting approval", "Processing"]);
+  });
+});

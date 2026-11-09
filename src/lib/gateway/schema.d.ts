@@ -261,6 +261,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{booking_id}/issuance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Issuance Checklist
+         * @description The checks before issuing. Supplier amount, balance and margin only with the cost and margin permission.
+         */
+        get: operations["issuance_checklist_v1_admin_bookings__booking_id__issuance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{booking_id}/issuance/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue Ticket
+         * @description Issue the ticket once (never retried). The result is decided from the supplier's PNR: issued, not_issued or unknown.
+         */
+        post: operations["issue_ticket_v1_admin_bookings__booking_id__issuance_issue_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{booking_id}/issuance/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Issuance
+         * @description Ask an approver to issue: needs full payment recorded and a valid hold.
+         */
+        post: operations["request_issuance_v1_admin_bookings__booking_id__issuance_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{booking_id}/issuance/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Issuance
+         * @description Mark an unknown issuance as issued (ticket number for every traveler) or not issued, with a reason.
+         */
+        post: operations["resolve_issuance_v1_admin_bookings__booking_id__issuance_resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{booking_id}/issuance/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify Issuance
+         * @description For an unknown issuance: check the PNR with the supplier again (read-only) and settle it if clear.
+         */
+        post: operations["verify_issuance_v1_admin_bookings__booking_id__issuance_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{booking_id}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Payment
+         * @description Record a customer payment (bank transfer, JazzCash or 1Link). Updates paid / part-paid / unpaid; logged.
+         */
+        post: operations["record_payment_v1_admin_bookings__booking_id__payments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/bookings/{booking_id}/travelers/{position}/reveal": {
         parameters: {
             query?: never;
@@ -1148,6 +1268,10 @@ export interface components {
         /** BookingDetail */
         BookingDetail: {
             amount: components["schemas"]["BookingMoney"];
+            /** @description Total less recorded payments. */
+            amount_due?: components["schemas"]["BookingMoney"] | null;
+            /** @description Sum of recorded payments. */
+            amount_paid?: components["schemas"]["BookingMoney"] | null;
             /**
              * Audit
              * @description The Audit tab. Omitted when there are no events.
@@ -1155,6 +1279,18 @@ export interface components {
             audit?: components["schemas"]["BookingAuditEntry"][] | null;
             /** Booking Id */
             booking_id: string;
+            /**
+             * Can Issue Tickets
+             * @description Whether this viewer may issue, verify and resolve (the endpoints still check).
+             * @default false
+             */
+            can_issue_tickets: boolean;
+            /**
+             * Can Record Payments
+             * @description Whether this viewer may record a payment (the endpoint still checks).
+             * @default false
+             */
+            can_record_payments: boolean;
             /**
              * Can Reveal Identity
              * @description Whether this viewer may call the reveal endpoint (the endpoint still checks).
@@ -1175,6 +1311,11 @@ export interface components {
              * @description The Passengers tab. Omitted when no travelers were saved.
              */
             passengers?: components["schemas"]["app__schemas__admin_bookings__BookingPassenger"][] | null;
+            /**
+             * Payments
+             * @description The Payments tab. Omitted when no payment is recorded.
+             */
+            payments?: components["schemas"]["BookingPayment"][] | null;
             /** Pnr */
             pnr?: string | null;
             /**
@@ -1381,6 +1522,44 @@ export interface components {
             /** Currency */
             currency: string;
         };
+        /**
+         * BookingPayment
+         * @description A customer payment (Payments tab).
+         */
+        BookingPayment: {
+            amount: components["schemas"]["BookingMoney"];
+            /** Id */
+            id: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "bank_transfer" | "jazzcash" | "1link";
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /**
+             * Received Into
+             * @description The Travelian account the money was received into.
+             */
+            received_into: string;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Recorded By Role */
+            recorded_by_role?: string | null;
+            /** Recorded By User Id */
+            recorded_by_user_id?: string | null;
+            /**
+             * Reference
+             * @description The payer's transaction reference.
+             */
+            reference: string;
+        };
         /** BookingRecord */
         BookingRecord: {
             /** Added By */
@@ -1453,12 +1632,12 @@ export interface components {
              * Issuance
              * @enum {string}
              */
-            issuance: "not_issued" | "issued" | "unknown";
+            issuance: "not_issued" | "requested" | "processing" | "issued" | "unknown";
             /**
              * Payment
              * @enum {string}
              */
-            payment: "paid" | "unpaid";
+            payment: "paid" | "unpaid" | "part_paid";
         };
         /**
          * BusinessResults
@@ -2086,6 +2265,83 @@ export interface components {
             /** Scopes */
             scopes: string[];
         };
+        /**
+         * IssuanceChecklist
+         * @description What stands between this booking and a ticket. Supplier fields only with the cost and margin permission.
+         */
+        IssuanceChecklist: {
+            amount_due: components["schemas"]["BookingMoney"];
+            amount_paid: components["schemas"]["BookingMoney"];
+            /**
+             * Blockers
+             * @description Why issuing (or requesting) isn't possible now; empty when it is.
+             */
+            blockers: string[];
+            /**
+             * Can Issue
+             * @description This viewer may issue now: permission, ticketing on, no blockers.
+             */
+            can_issue: boolean;
+            /** Can Request */
+            can_request: boolean;
+            /** Full Payment Recorded */
+            full_payment_recorded: boolean;
+            /** Hold Expires At */
+            hold_expires_at?: string | null;
+            /**
+             * Issuance Status
+             * @enum {string}
+             */
+            issuance_status: "not_issued" | "requested" | "processing" | "issued" | "unknown";
+            /** @description Only with the cost and margin permission. */
+            margin?: components["schemas"]["BookingMoney"] | null;
+            /** @description Only with the cost and margin permission. */
+            supplier_amount?: components["schemas"]["BookingMoney"] | null;
+            /** @description Only with the cost and margin permission; omitted if the supplier didn't answer. */
+            supplier_balance?: components["schemas"]["BookingMoney"] | null;
+            /** Ticketing Enabled */
+            ticketing_enabled: boolean;
+        };
+        /** IssuanceRequest */
+        IssuanceRequest: {
+            /** Note */
+            note?: string | null;
+        };
+        /** IssuanceResolveRequest */
+        IssuanceResolveRequest: {
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "issued" | "not_issued";
+            /** Reason */
+            reason: string;
+            /**
+             * Ticket Numbers
+             * @description Required for every traveler when outcome is issued.
+             */
+            ticket_numbers?: components["schemas"]["TicketNumber"][];
+        };
+        /** IssuanceResult */
+        IssuanceResult: {
+            /**
+             * Issuance Status
+             * @enum {string}
+             */
+            issuance_status: "not_issued" | "requested" | "processing" | "issued" | "unknown";
+            /** Message */
+            message: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "issued" | "not_issued" | "unknown" | "requested";
+            /**
+             * Tickets
+             * @default []
+             */
+            tickets: components["schemas"]["TicketNumber"][];
+        };
         /** JourneyView */
         JourneyView: {
             /** Destination */
@@ -2163,6 +2419,34 @@ export interface components {
              * @enum {string}
              */
             status: "responded" | "failed" | "not_configured";
+        };
+        /** RecordPaymentRequest */
+        RecordPaymentRequest: {
+            amount: components["schemas"]["BookingMoney"];
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "bank_transfer" | "jazzcash" | "1link";
+            /**
+             * Received At
+             * Format: date-time
+             * @description When the money was received. Not in the future.
+             */
+            received_at: string;
+            /** Received Into */
+            received_into: string;
+            /** Reference */
+            reference: string;
+        };
+        /** RecordPaymentResponse */
+        RecordPaymentResponse: {
+            payment: components["schemas"]["BookingPayment"];
+            /**
+             * Payment Status
+             * @enum {string}
+             */
+            payment_status: "paid" | "unpaid" | "part_paid";
         };
         /** RefreshRequest */
         RefreshRequest: {
@@ -2277,6 +2561,13 @@ export interface components {
             amount_due?: components["schemas"]["BookingMoney"] | null;
             /** Hold Deadline */
             hold_deadline?: string | null;
+        };
+        /** TicketNumber */
+        TicketNumber: {
+            /** Position */
+            position: number;
+            /** Ticket Number */
+            ticket_number: string;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -2484,7 +2775,7 @@ export interface components {
             position: number;
             /**
              * Ticket Number
-             * @description Not recorded yet.
+             * @description Set when the ticket is issued.
              */
             ticket_number?: string | null;
             /** Title */
@@ -3014,8 +3305,8 @@ export interface operations {
                 /** @description Booking ID or PNR. */
                 q?: string | null;
                 booking_status?: ("held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired") | null;
-                payment_status?: ("paid" | "unpaid") | null;
-                issuance_status?: ("not_issued" | "issued" | "unknown") | null;
+                payment_status?: ("paid" | "unpaid" | "part_paid") | null;
+                issuance_status?: ("not_issued" | "requested" | "processing" | "issued" | "unknown") | null;
                 /** @description Requires the supplier names permission. */
                 provider?: string | null;
                 agency?: string | null;
@@ -3106,6 +3397,403 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    issuance_checklist_v1_admin_bookings__booking_id__issuance_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuanceChecklist"];
+                };
+            };
+            /** @description Needs the issue_tickets permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not issuable now (payment, hold, status, ticketing off, supplier total or balance). Nothing was issued. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The supplier couldn't be checked before sending. Nothing was issued. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    issue_ticket_v1_admin_bookings__booking_id__issuance_issue_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuanceResult"];
+                };
+            };
+            /** @description Needs the issue_tickets permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not issuable now (payment, hold, status, ticketing off, supplier total or balance). Nothing was issued. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The supplier couldn't be checked before sending. Nothing was issued. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    request_issuance_v1_admin_bookings__booking_id__issuance_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssuanceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuanceResult"];
+                };
+            };
+            /** @description Needs the issue_tickets permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not issuable now (payment, hold, status, ticketing off, supplier total or balance). Nothing was issued. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The supplier couldn't be checked before sending. Nothing was issued. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    resolve_issuance_v1_admin_bookings__booking_id__issuance_resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IssuanceResolveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuanceResult"];
+                };
+            };
+            /** @description Needs the issue_tickets permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not issuable now (payment, hold, status, ticketing off, supplier total or balance). Nothing was issued. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing ticket numbers or reason. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The supplier couldn't be checked before sending. Nothing was issued. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    verify_issuance_v1_admin_bookings__booking_id__issuance_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuanceResult"];
+                };
+            };
+            /** @description Needs the issue_tickets permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not issuable now (payment, hold, status, ticketing off, supplier total or balance). Nothing was issued. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The supplier couldn't be checked before sending. Nothing was issued. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    record_payment_v1_admin_bookings__booking_id__payments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordPaymentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordPaymentResponse"];
+                };
+            };
+            /** @description Needs the record_payments permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed booking, more than the amount due, or the reference is already recorded. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid payment or wrong currency. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Booking data is not available. */
             503: {

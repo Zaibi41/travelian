@@ -23,7 +23,7 @@ const STAFF_VIEW: BookingDetail = {
   amount: rs(12_500), deadline: "2099-11-05T09:00:00Z", created_at: "2026-11-05T07:00:00Z",
   fare: { billable_price: rs(12_500) },
   sections_not_available: ["itinerary", "passengers", "payments", "tickets", "servicing", "audit"],
-  can_reveal_identity: false,
+  can_reveal_identity: false, can_record_payments: false, can_issue_tickets: false,
 };
 const ADMIN_VIEW: BookingDetail = {
   ...STAFF_VIEW, provider: "AirSial",
