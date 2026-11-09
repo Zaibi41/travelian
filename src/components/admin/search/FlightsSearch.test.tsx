@@ -95,6 +95,55 @@ describe("admin Flights search", () => {
   });
 });
 
+// Sanitized gateway response for a real Southair UAT search, LHE-KHI 19 Nov 2026, as staff
+// with a 5% markup: opaque IDs only, no supplier fields.
+const LIVE_UAT: FlightSearchView = {
+  search_id: "s-live", expires_at: new Date(Date.now() + 10 * 60_000).toISOString(), status: "complete",
+  journeys: [{
+    direction: "outbound", origin: "LHE", destination: "KHI",
+    flights: [{
+      id: "f-live", airline_code: "Z8", airline_name: "South Air", flight_number: "Z8266",
+      departure_local: "2026-11-19T00:25", arrival_local: "2026-11-19T02:35", duration_minutes: 130, stops: 0, stop_cities: [],
+      fares: [
+        { id: "x1", name: "EB", baggage: "No checked baggage", selling_price: rs(13_997) },
+        { id: "x2", name: "EV", baggage: "20KG", selling_price: rs(15_671) },
+        { id: "x3", name: "EP", baggage: "30KG", selling_price: rs(17_344) },
+      ],
+    }],
+  }],
+};
+
+describe("admin Flights search, live Southair shape", () => {
+  it("shows times, duration, stops and per-fare baggage; meal, refund and hold time say not available", async () => {
+    gateway.search.mockReset().mockResolvedValue(LIVE_UAT);
+    renderAt("/admin/search?tab=flights&from=LHE&to=KHI&date=2026-11-19");
+    const results = await screen.findByRole("region", { name: "Results" });
+    expect(results).toHaveTextContent("00:25");
+    expect(results).toHaveTextContent("02:35");
+    expect(results).toHaveTextContent("02h 10m");
+    expect(results).toHaveTextContent("Non-stop");
+    const rows = within(results).getAllByRole("row").slice(1);
+    expect(rows.map(row => within(row).getAllByRole("cell")[2].textContent)).toEqual(["No checked baggage", "20KG", "30KG"]);
+    for (const row of rows) {
+      expect(row).toHaveTextContent("Meal info not available");
+      expect(row).toHaveTextContent("Refund info not available");
+      expect(row).toHaveTextContent("Hold time not available");
+    }
+    expect(results).not.toHaveTextContent("Baggage info not available");
+    expect(document.body.innerHTML).not.toMatch(/southair/i);
+    expect(document.body.innerHTML).not.toMatch(/Nill Baggage|HIGHLIGHT|\bACC\b|\bHASH\b|\bNLD\b|feature_code|Validity/);
+  });
+
+  it("says the price is not available when the gateway sends no selling price (no markup)", async () => {
+    const noMarkup = structuredClone(LIVE_UAT);
+    noMarkup.journeys[0].flights[0].fares.forEach(fare => { delete fare.selling_price; });
+    gateway.search.mockReset().mockResolvedValue(noMarkup);
+    renderAt("/admin/search?tab=flights&from=LHE&to=KHI&date=2026-11-19");
+    const results = await screen.findByRole("region", { name: "Results" });
+    expect(within(results).getAllByText("Price not available")).toHaveLength(3);
+  });
+});
+
 describe("flight search helpers", () => {
   it("keeps the search in the URL and validates it", () => {
     const search = parseFlightSearch(new URLSearchParams("trip=roundtrip&from=khi&to=MUX&date=2026-11-27&return=2026-11-30&adults=2&infants=1"));

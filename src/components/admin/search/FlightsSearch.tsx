@@ -359,16 +359,16 @@ function FlightCard({ journey, flight, data, renderFareAction }: {
               return (
                 <tr key={fare.id} className="border-t border-border">
                   <td className="px-2.5 py-2 font-semibold text-foreground">{fare.name}</td>
-                  <td className="max-w-[10rem] px-2.5 py-2"><span className="block truncate" title={fare.meal ?? undefined}>{fare.meal ?? "Meal info not available"}</span></td>
-                  <td className="max-w-[10rem] px-2.5 py-2"><span className="block truncate" title={fare.baggage ?? undefined}>{fare.baggage ?? "Baggage info not available"}</span></td>
-                  <td className="px-2.5 py-2">
-                    {refundable === null ? <span className="text-muted-foreground">{fare.refund ?? "—"}</span>
+                  <td className="max-w-[10rem] px-2.5 py-2"><span className={cn("block truncate", !fare.meal && "text-muted-foreground")} title={fare.meal ?? undefined}>{fare.meal ?? "Meal info not available"}</span></td>
+                  <td className="max-w-[10rem] px-2.5 py-2"><span className={cn("block truncate", !fare.baggage && "text-muted-foreground")} title={fare.baggage ?? undefined}>{fare.baggage ?? "Baggage info not available"}</span></td>
+                  <td className="max-w-[10rem] px-2.5 py-2">
+                    {refundable === null ? <span className="block truncate text-muted-foreground" title={fare.refund ?? undefined}>{fare.refund ?? "Refund info not available"}</span>
                       : <StatusBadge severity={refundable ? "fine" : "critical"}>{refundable ? "Refundable" : "Non-refundable"}</StatusBadge>}
                   </td>
                   <td className="whitespace-nowrap px-2.5 py-2 tabular-nums">
                     {fare.selling_price ? <><span className="font-semibold text-foreground">{formatMoney(fare.selling_price)}</span> <span className="text-label text-muted-foreground">per adult</span></> : <span className="text-muted-foreground">Price not available</span>}
                   </td>
-                  <td className="max-w-[12rem] px-2.5 py-2"><span className="block truncate" title={fare.time_limit ?? undefined}>{fare.time_limit ?? "—"}</span></td>
+                  <td className="max-w-[12rem] px-2.5 py-2"><span className={cn("block truncate", !fare.time_limit && "text-muted-foreground")} title={fare.time_limit ?? undefined}>{fare.time_limit ?? "Hold time not available"}</span></td>
                   {renderFareAction && <td className="whitespace-nowrap px-2.5 py-2">{renderFareAction({ journey, flight, fare }, data)}</td>}
                 </tr>
               );
