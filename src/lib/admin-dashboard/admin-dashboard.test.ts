@@ -92,6 +92,14 @@ describe("gateway client", () => {
     await expect(call(status(401))).rejects.toMatchObject({ kind: "unauthorized" });
     await expect(call(status(403))).rejects.toMatchObject({ kind: "forbidden" });
     await expect(call(status(503))).rejects.toMatchObject({ kind: "unavailable", message: expect.stringMatching(/booking source/) });
+    // A 503 shows the gateway's own reason when it gives one.
+    const detail = (text: string) => vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: text }), { status: 503 }));
+    for (const reason of ["Agency service unavailable.", "Authentication is not configured.", "Identity verification is temporarily unavailable."]) {
+      await expect(call(detail(reason))).rejects.toMatchObject({ kind: "unavailable", message: reason });
+    }
+    // Non-text or oversized details are ignored.
+    await expect(call(vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: [{ msg: "x" }] }), { status: 503 }))))
+      .rejects.toMatchObject({ message: expect.stringMatching(/booking source/) });
     await expect(call(status(500))).rejects.toBeInstanceOf(GatewayError);
     await expect(call(vi.fn().mockRejectedValue(new TypeError("Failed to fetch")))).rejects.toMatchObject({ kind: "unavailable" });
   });

@@ -99,7 +99,13 @@ async function send(path: string, init: { method: "GET" | "POST"; query?: Record
   if (init.method === "POST" && [409, 422, 502].includes(response.status)) {
     throw new GatewayError("unavailable", (await detailOf(response)) ?? `The admin service returned an error (${response.status}).`);
   }
-  if (response.status === 503) throw new GatewayError("unavailable", options.unavailableMessage ?? "Booking data isn't available yet. The gateway's booking source isn't configured or can't be read.");
+  // 503 has several causes (database, sign-in service, supplier, booking source). Show the
+  // gateway's own reason so the page names the real one; fall back only when it gave none.
+  if (response.status === 503) {
+    throw new GatewayError("unavailable", (await detailOf(response))
+      ?? options.unavailableMessage
+      ?? "Booking data isn't available yet. The gateway's booking source isn't configured or can't be read.");
+  }
   if (!response.ok) throw new GatewayError("unavailable", `The admin service returned an error (${response.status}). Data will load when it recovers.`);
   return response.json();
 }
