@@ -866,3 +866,20 @@ These are not assumed. Each needs an answer before the related screen is built.
 8. Agency owner view (same UI, fewer menus)
 9. B2C customer view (no wallet; refund status)
 10. Remaining submenu screens, built from the screen standard in section 4
+
+## 23. Decisions added on 6 November 2026
+
+**D23 Field visibility.** The gateway decides what each role receives; hiding a field on the page is never the protection.
+
+- Super Admin and Admin see provider and supplier names, supplier cost and margin.
+- Staff do not see them by default. Two permissions can be granted per role or per user: "can see supplier names" and "can see cost and margin".
+- Agency, sub-agency and customer roles never see them, and this cannot be granted. The gateway does not return these fields to them at all.
+- This applies to Search (Flights, Group Ticketing, Hotels, Umrah), the Dashboard Provider / source filter and the Attention Queue.
+- Staff see the Owned or Supplier label on group stock, without the supplier name. Space is kept for owned stock.
+- Where this document says "Provider (staff only)", read "Provider (Admin and Super Admin only)".
+
+**D24 Provider failure.** If a provider does not answer, staff see a general notice ("Some results may be missing") with no provider names. Admins receive an integration alert.
+
+**D25 Hotels in Search.** Hotels stays in Search because Travelian also sells manually entered hotels from Hotel Inventory. Provider hotels and manual hotels appear in one list, and the source is shown to Admin and Super Admin only.
+
+**D26 Search results layout.** Flights are shown as one card per flight with several fare options under it, each with fare name, meal, cabin and checked baggage, refund status, price and hold time left. Baggage shows cabin and checked separately.
