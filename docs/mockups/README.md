@@ -11,9 +11,9 @@ Status as of 2026-11-09. All 28 listed mockups are in this folder.
 | `mockup-search-group-ticketing.png` | §6 Menu 02: Search | Approved | Present |
 | `mockup-search-hotels.png` | §6 Menu 02: Search | Approved | Present |
 | `mockup-search-umrah.png` | §6 Menu 02: Search | Approved | Present |
-| `mockup-flights-fare-check.png` | §6 Menu 02: Search | Pending | Present |
-| `mockup-flights-hold-form.png` | §6 Menu 02: Search | Pending | Present |
-| `mockup-flights-hold-result.png` | §6 Menu 02: Search | Pending | Present |
+| `mockup-flights-fare-check.png` | §6 Menu 02: Search | Approved | Present |
+| `mockup-flights-hold-form.png` | §6 Menu 02: Search | Approved | Present |
+| `mockup-flights-hold-result.png` | §6 Menu 02: Search | Approved | Present |
 | `mockup-bookings-all.png` | §7 Menu 03: Bookings | Approved | Present |
 | `mockup-bookings-flights.png` | §7 Menu 03: Bookings | Approved | Present |
 | `mockup-bookings-group-ticketing.png` | §7 Menu 03: Bookings | Approved | Present |
@@ -35,4 +35,4 @@ Status as of 2026-11-09. All 28 listed mockups are in this folder.
 | `mockup-customers-travelers.png` | §8 Menu 04: Customers & Travelers | Pending | Present |
 | `mockup-customers-communications.png` | §8 Menu 04: Customers & Travelers | Pending | Present |
 
-28 mockups listed, all present. The expected set is 29; the other 1 is not named yet.
+28 mockups listed, all present. An expected total of 29 was noted when the first 24 were added, but the remaining mockup is not named anywhere in the repo.
