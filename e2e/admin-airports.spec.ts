@@ -151,6 +151,26 @@ for (const width of [1280, 1440, 390]) {
     const to = (await page.getByRole("button", { name: /^To KHI/ }).boundingBox())!;
     if (width >= 900) expect(Math.abs(from.y - to.y)).toBeLessThan(2);   // side by side
     else expect(to.y).toBeGreaterThan(from.y + from.height);             // stacked, Swap between
+
+    // Round swap button (Wego style): icon only, centred on the line between the two cards.
+    const swap = page.getByRole("button", { name: "Swap origin and destination" });
+    await expect(swap).toHaveText("");
+    const fromCard = (await page.locator("#flight-from").locator("..").boundingBox())!;
+    const toCard = (await page.locator("#flight-to").locator("..").boundingBox())!;
+    const button = (await swap.boundingBox())!;
+    const cx = button.x + button.width / 2;
+    const cy = button.y + button.height / 2;
+    expect(Math.abs(button.width - button.height)).toBeLessThan(1);
+    if (width >= 900) {
+      expect(Math.abs(cx - (fromCard.x + fromCard.width + toCard.x) / 2)).toBeLessThan(2);
+      expect(Math.abs(cy - (fromCard.y + fromCard.height / 2))).toBeLessThan(3);
+      expect(Math.abs(fromCard.width - toCard.width)).toBeLessThan(2);              // each half the row
+    } else {
+      expect(Math.abs(cy - (fromCard.y + fromCard.height + toCard.y) / 2)).toBeLessThan(14); // between, under the To label
+      expect(cy).toBeGreaterThan(fromCard.y + fromCard.height);
+      expect(cy).toBeLessThan(toCard.y);
+      expect(Math.abs(cx - (fromCard.x + fromCard.width / 2))).toBeLessThan(2);
+    }
     expect(await overflow(page)).toBe(0);
 
     await page.getByRole("button", { name: "Clear to airport" }).click();
@@ -172,3 +192,16 @@ for (const width of [1280, 1440, 390]) {
     expect(await overflow(page)).toBe(0);
   });
 }
+
+test("swap: tooltip, keyboard, and empty fields are harmless", async ({ page }) => {
+  await open(page, 1440, "&from=LHE&date=2026-11-24");
+  const swap = page.getByRole("button", { name: "Swap origin and destination" });
+  await swap.focus();
+  await expect(page.getByRole("tooltip")).toContainText("Swap origin and destination");
+  await page.keyboard.press("Enter");                                   // LHE moves to To; From is empty
+  await expect(page.getByRole("button", { name: /^To LHE - Lahore/ })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "From" })).toBeVisible();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: /^From LHE - Lahore/ })).toBeVisible();
+});
+

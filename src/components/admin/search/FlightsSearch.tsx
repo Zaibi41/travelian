@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { ArrowLeftRight, Minus, Plane, Plus } from "lucide-react";
+import { ArrowLeftRight, ArrowUpDown, Minus, Plane, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { StatusBadge } from "@/components/admin/StatusBadge";
 import { StatusKpiCard } from "@/components/admin/StatusKpiCard";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
@@ -191,13 +192,11 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
             if (canSearch) commit(draft);
           }}
         >
-          {/* Row 1: From, Swap, To (each airport half the row, so names have room; stacked below ~900px). */}
-          <div className="grid grid-cols-1 items-end gap-3 min-[900px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+          {/* Row 1: From and To, each half the row, with a round swap button centred on the line
+              between them (Wego style). Stacked below ~900px, with the button on a horizontal line. */}
+          <div className="grid grid-cols-1 min-[900px]:grid-cols-[minmax(0,1fr)_3.5rem_minmax(0,1fr)]">
             <AirportCombobox id="flight-from" label="From" placeholder="City, airport or code" value={draft.from} onChange={from => setDraft({ ...draft, from })} />
-            <Button type="button" variant="outline" className={cn(TARGET, "w-full text-body min-[900px]:mb-2 min-[900px]:w-auto")} aria-label="Swap origin and destination"
-              onClick={() => setDraft({ ...draft, from: draft.to, to: draft.from })}>
-              <ArrowLeftRight className="h-4 w-4" aria-hidden="true" /> Swap
-            </Button>
+            <SwapButton onSwap={() => setDraft({ ...draft, from: draft.to, to: draft.from })} />
             <AirportCombobox id="flight-to" label="To" placeholder="City, airport or code" value={draft.to} onChange={to => setDraft({ ...draft, to })} />
           </div>
           {/* Row 2: dates, provider (admin only) and Search flights. */}
@@ -239,6 +238,42 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
           </>
         ) : null
       )}
+    </div>
+  );
+}
+
+/** Round icon-only swap button on the dividing line between From and To. Swapping empty
+ *  fields just swaps nothing for nothing. */
+function SwapButton({ onSwap }: { onSwap: () => void }) {
+  const label = "Swap origin and destination";
+  return (
+    <div className="relative flex h-14 items-center justify-center min-[900px]:h-auto min-[900px]:flex-col min-[900px]:justify-start min-[900px]:gap-1">
+      {/* Same height as the field labels, so the button centres on the cards, not on the labels. */}
+      <span aria-hidden="true" className="invisible hidden text-label font-medium min-[900px]:block">From</span>
+      <div className="relative flex w-full flex-1 items-center justify-center self-stretch">
+        <span aria-hidden="true" className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2 bg-border min-[900px]:inset-x-auto min-[900px]:inset-y-0 min-[900px]:left-1/2 min-[900px]:top-0 min-[900px]:h-auto min-[900px]:w-px min-[900px]:-translate-x-1/2 min-[900px]:translate-y-0" />
+        <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-label={label}
+              data-swap-button
+              onClick={onSwap}
+              className={cn(
+                "relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-card text-primary shadow-sm",
+                "[@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11",
+                "hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+              )}
+            >
+              <ArrowLeftRight className="hidden h-4 w-4 min-[900px]:block" aria-hidden="true" />
+              <ArrowUpDown className="h-4 w-4 min-[900px]:hidden" aria-hidden="true" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>{label}</TooltipContent>
+        </Tooltip>
+        </TooltipProvider>
+      </div>
     </div>
   );
 }

@@ -52,6 +52,11 @@ Status as of 2026-11-10. All 28 listed mockups are in this folder.
   below about 900px) and the second row holds Departure date, Return date, Provider and Search
   flights. The selected airport shows two lines ("LHE - Lahore", then the airport name and country).
   The trip type, traveler and cabin controls stay on the top row. Nothing was removed.
+- **Search > Flights: swap button (Wego style, approved by Zohaib, 10 November 2026).** The mockup
+  still shows a text "Swap" button between From and To. It is now a round icon-only button (two
+  arrows) centred on a thin line between the From and To cards, with the accessible name and tooltip
+  "Swap origin and destination". When the fields stack (below about 900px) it sits on a horizontal
+  line between them with the arrows pointing up and down.
 - **Search > Flights: Search expiry card.** As in the mockup, it carries no warning tag; a running
   timer is neutral and an expired search turns the card critical with the word "Expired".
 
