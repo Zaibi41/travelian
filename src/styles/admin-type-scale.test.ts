@@ -1,11 +1,14 @@
 /// <reference types="node" />
-// Guard: the admin uses one type scale (src/styles/theme.css, tailwind fontSize: page-title, kpi,
-// kpi-sm, section, nav, body, table, label, helper). No arbitrary pixel sizes, inline font sizes
-// or Tailwind's default size classes in the admin source; nothing below 12px in the scale.
+// Guard: the admin design system (docs/design-system.md). Admin files use the admin tokens
+// (src/styles/admin-tokens.css) only: one type scale (tailwind fontSize: page-title, kpi, kpi-sm,
+// section, nav, body, table, label, helper), no arbitrary pixel sizes, inline font sizes or
+// Tailwind's default size classes, no hard-coded colours (hex, rgb/hsl, Tailwind palette colours)
+// and no arbitrary radii. Nothing below 12px in the scale; the admin colours stay as they are.
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
-// theme.css read from disk (Vitest turns CSS imports into empty stylesheets, even with ?raw).
+// Token files read from disk (Vitest turns CSS imports into empty stylesheets, even with ?raw).
+const tokensCss = readFileSync(`${process.cwd()}/src/styles/admin-tokens.css`, "utf8");
 const themeCss = readFileSync(`${process.cwd()}/src/styles/theme.css`, "utf8");
 
 // Raw source of every admin file (Vite reads them at test time).
@@ -24,6 +27,10 @@ const RULES: [string, RegExp][] = [
   ["arbitrary font size (text-[Npx])", /\btext-\[\d[^\]]*\]/],
   ["inline font size", /\bfontSize\b|font-size\s*:/],
   ["Tailwind default size instead of the admin scale", /(^|[\s"'`:])text-(xs|sm|base|lg|xl|[2-9]xl)(?=[\s"'`]|$)/],
+  ["hard-coded hex colour (use a colour token)", /#[0-9a-fA-F]{3,8}\b(?![\w-])/],
+  ["hard-coded rgb/hsl colour (use a colour token)", /\b(rgb|hsl)a?\(\s*\d/],
+  ["Tailwind palette colour (use a colour token)", /\b(bg|text|border|ring|fill|stroke|from|via|to|outline|divide|decoration|accent|caret)-(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/],
+  ["arbitrary radius (use a radius token)", /\brounded(-[a-z]{1,2})?-\[[^\]]+\]|border-?[Rr]adius/],
 ];
 
 describe("admin type scale", () => {
@@ -38,12 +45,44 @@ describe("admin type scale", () => {
   });
 
   it("the scale: nothing below 12px; body 14px; labels and tables 13px; headings from the public site", () => {
-    const css = themeCss;
+    const css = tokensCss;
     const size = (token: string) => Number(css.match(new RegExp(`--text-${token}:\\s*(\\d+)px`))?.[1]);
     expect({ body: size("body"), label: size("label"), table: size("table"), helper: size("helper"), section: size("section"), title: size("page-title"), kpi: size("kpi") })
       .toEqual({ body: 14, label: 13, table: 13, helper: 12, section: 18, title: 24, kpi: 24 });
     const all = [...css.matchAll(/--text-[a-z-]+:\s*(\d+(?:\.\d+)?)px/g)].map(match => Number(match[1]));
     expect(Math.min(...all)).toBeGreaterThanOrEqual(12);
+  });
+});
+
+// Admin colours are not unified with the public site (Zohaib, 2026-11-11). A change here must be
+// a deliberate decision, not a side effect of a token or component change.
+describe("admin colours stay as they are", () => {
+  const value = (token: string) => tokensCss.match(new RegExp(`--${token}:\\s*([^;]+);`))?.[1].trim();
+
+  it("primary action buttons stay the current admin teal", () => {
+    expect(value("brand-teal")).toBe("184.8 98.4% 24.9%");
+    expect(value("action-primary")).toBe("var(--brand-teal)");
+    expect(value("action-primary-foreground")).toBe("0 0% 100%");
+    expect(value("teal")).toBe("var(--brand-teal)");
+  });
+
+  it("navy, surfaces, borders and status colours are unchanged", () => {
+    expect({
+      navy: value("brand-navy"), primary: value("primary"), sidebar: value("sidebar-background"), background: value("background"),
+      foreground: value("foreground"), border: value("border"), muted: value("muted-foreground"), ring: value("ring"),
+      critical: value("status-critical-text"), criticalSoft: value("status-critical-soft"), action: value("status-action-text"),
+      actionSoft: value("status-action-soft"), fine: value("status-fine-text"), fineSoft: value("status-fine-soft"),
+    }).toEqual({
+      navy: "216.8 100% 18.2%", primary: "var(--brand-navy)", sidebar: "var(--brand-navy)", background: "217 33% 97%",
+      foreground: "222 47% 11%", border: "217 30% 90%", muted: "217 12% 42%", ring: "var(--brand-navy)",
+      critical: "0 72% 42%", criticalSoft: "0 86% 96%", action: "38 90% 28%", actionSoft: "38 92% 92%", fine: "152 60% 28%", fineSoft: "152 50% 93%",
+    });
+  });
+
+  it("tokens are admin-scoped; the layout layer holds no colour", () => {
+    expect(tokensCss).not.toMatch(/^:root\s*\{/m);
+    expect(themeCss).toContain("@import './admin-tokens.css'");
+    expect(themeCss.replace(/\/\*[\s\S]*?\*\//g, "")).not.toMatch(/\d+(\.\d+)?%|#[0-9a-f]{3,8}\b|hsl\(/i);
   });
 });
 

@@ -23,7 +23,8 @@ to customer-facing pages. They do not apply to admin screens unless stated.
   page with the menu name.
 - Do not add any card, filter, widget or label that is not in the spec.
   If something seems missing, ask first.
-- Theme: src/styles/theme.css, active under data-app-theme="admin".
+- Theme: src/styles/admin-tokens.css (all admin tokens) and src/styles/theme.css
+  (admin layout layer), active under data-app-theme="admin". See docs/design-system.md.
   Use theme tokens only, never hard-coded colors. Status colors (critical,
   action, fine) always come with a text label.
 - Type: 13px body, 12px labels, nothing below 12px. Headings use

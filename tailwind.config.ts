@@ -82,6 +82,11 @@ export default {
           navy: "hsl(var(--brand-navy))",
           teal: "hsl(var(--brand-teal))",
         },
+        // Admin primary action (src/styles/admin-tokens.css): the filled teal button.
+        action: {
+          DEFAULT: "hsl(var(--action-primary))",
+          foreground: "hsl(var(--action-primary-foreground))",
+        },
         status: {
           critical: {
             DEFAULT: "hsl(var(--status-critical))",
@@ -120,6 +125,8 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
         pill: "9999px",
+        // Admin search-form fields and search button (src/styles/admin-tokens.css).
+        field: "var(--radius-field)",
       },
       // Admin-only type scale and sizes (src/styles/theme.css).
       fontSize: {
@@ -139,6 +146,8 @@ export default {
         "card-gap": "var(--card-gap)",
         "section-gap": "var(--section-gap)",
         "control": "var(--control-height)",
+        "control-lg": "var(--control-height-lg)",
+        "badge-x": "var(--badge-padding-x)",
         "nav-item": "var(--nav-item-height)",
         "table-header": "var(--table-header-height)",
         "table-row": "var(--table-row-height)",

@@ -1,162 +1,24 @@
 /*
- * Travelian design tokens: the single source for colors, type, spacing and radius.
+ * Admin theme: the admin design tokens plus the admin-only LAYOUT layer.
  *
- * Sources
- *   Brand colors: measured from public/travelian-brand-logo.png
- *     navy #00245D (wordmark), teal #01747E (plane and rule).
- *   Layout, spacing, radius, type scale: docs/mockup-dashboard-home.png
- *     (2x render of a 1400px layout; values below are CSS px). Mockup hex values are
- *     approximations and are NOT used.
- *   Status colors and fonts: carried over from src/index.css.
+ * - src/styles/admin-tokens.css: every colour, type size, control height, radius, shadow,
+ *   spacing step, focus ring and motion value the admin uses (the single source).
+ * - This file: only layout values the public site has no equivalent for (sidebar, header,
+ *   dense table rows, page padding). They are built from the tokens where they can be.
  *
- * Rules
- *   - Screens use these tokens only (via Tailwind classes mapped in tailwind.config.ts).
- *     No hard-coded hex/rgb/hsl values in components.
- *   - Status colors: red = critical, amber = needs action, green = fine.
- *     A status color is never the only signal: always pair it with a text label
- *     (badge text, card label, or an aria-label for icon-only markers).
- *   - Text on a status color uses the *-text shade on the *-soft background.
- *     The solid status colors are for borders, stripes, dots and icons.
- *
- * Colors are HSL triples (no hsl() wrapper) so Tailwind can apply opacity:
- *   hsl(var(--primary)) / hsl(var(--primary) / 0.5)
- *
- * Scope: admin area only (approved 2026-11-05). AdminLayout sets
- * <html data-app-theme="admin"> while it is mounted, so portals (dropdowns,
- * dialogs, toasts) rendered into <body> also get these values. The public site
- * keeps the original values from src/index.css. The selector's higher
- * specificity (:root + attribute) lets these override src/index.css regardless
- * of import order.
- *
- * Status: APPROVED 2026-11-05.
+ * Scope: admin only (:root[data-app-theme="admin"], set by AdminLayout). The public site keeps
+ * its own values in src/index.css and is not affected. See docs/design-system.md.
  */
+@import './admin-tokens.css';
 
 :root[data-app-theme="admin"] {
-  /* ---------- Brand (from logo) ---------- */
-  --brand-navy: 216.8 100% 18.2%;      /* #00245D */
-  --brand-teal: 184.8 98.4% 24.9%;     /* #01747E */
-
-  /* ---------- Surfaces and text ---------- */
-  --background: 217 33% 97%;           /* #F5F7FA  was 220 20% 97% */
-  --foreground: 222 47% 11%;           /* #0F1729  unchanged */
-
-  --card: 0 0% 100%;
-  --card-foreground: 222 47% 11%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 47% 11%;
-
-  --primary: var(--brand-navy);        /* was 217 91% 30% */
-  --primary-foreground: 0 0% 100%;     /* 14.91:1 */
-  --primary-hover: 217 100% 13%;       /* #001942  was 217 91% 24% */
-
-  --secondary: 217 33% 95%;            /* #EEF1F6  was 220 14% 96% */
-  --secondary-foreground: 222 47% 11%;
-
-  --muted: 217 33% 95%;                /* #EEF1F6  table header, was 220 14% 96% */
-  --muted-foreground: 217 12% 42%;     /* #5E6878  was 220 9% 46% (failed 4.29:1 on new muted) */
-
-  --accent: 217 60% 95%;               /* #EBF0FA  was 217 91% 95% */
-  --accent-foreground: var(--brand-navy); /* was 217 91% 25% */
-
-  --teal: var(--brand-teal);           /* was 184 70% 34% */
-  --teal-foreground: 0 0% 100%;        /* 5.53:1 */
-  --teal-soft: 185 60% 94%;            /* #E7F7F9  was 184 55% 94% */
-
-  --border: 217 30% 90%;               /* #DEE4ED  was 220 13% 91% */
-  --input: 217 30% 90%;
-  --ring: var(--brand-navy);           /* was 217 91% 30% */
-
-  /* ---------- Status (base colors unchanged) ---------- */
-  --destructive: 0 72% 51%;            /* #DC2828 critical */
-  --destructive-foreground: 0 0% 100%; /* 4.80:1 */
-  --warning: 38 92% 50%;               /* #F59F0A needs action */
-  --warning-foreground: 38 90% 12%;    /* #3A2603  was white (2.14:1, failed) */
-  --success: 152 60% 38%;              /* #279B65 fine */
-  --success-foreground: 152 60% 8%;    /* #082115  was white (3.52:1, failed) */
-  --info: 210 80% 52%;
-  --info-foreground: 0 0% 100%;
-
-  /* Status roles used by dashboard screens */
-  --status-critical: var(--destructive);
-  --status-critical-text: 0 72% 42%;   /* #B81E1E  5.67:1 on soft, 6.47:1 on white */
-  --status-critical-soft: 0 86% 96%;   /* #FEECEC */
-  --status-action: var(--warning);
-  --status-action-text: 38 90% 28%;    /* #885907  5.38:1 on soft, 6.07:1 on white */
-  --status-action-soft: 38 92% 92%;    /* #FDF0D8 */
-  --status-fine: var(--success);
-  --status-fine-text: 152 60% 28%;     /* #1D724A  5.25:1 on soft, 5.89:1 on white */
-  --status-fine-soft: 152 50% 93%;     /* #E4F6EE */
-
-  /* ---------- Unchanged product colors ---------- */
-  --gold: 42 78% 55%;
-  --gold-foreground: 42 78% 15%;
-  --gold-light: 42 60% 92%;
-  --whatsapp: 142 70% 49%;
-  --whatsapp-foreground: 0 0% 100%;
-  --whatsapp-hover: 142 71% 43%;
-  --deal: 0 72% 51%;
-  --deal-foreground: 0 0% 100%;
-
-  /* ---------- Sidebar ---------- */
-  --sidebar-background: var(--brand-navy);       /* was 222 47% 11% */
-  --sidebar-foreground: 213 31% 91%;             /* unchanged, 12.11:1 */
-  --sidebar-primary: var(--brand-teal);          /* active item, was 217 91% 50% */
-  --sidebar-primary-foreground: 0 0% 100%;       /* 5.53:1 */
-  --sidebar-accent: 217 70% 25%;                 /* #13356C hover + number chip, was 217 33% 17% */
-  --sidebar-accent-foreground: 210 40% 98%;
-  --sidebar-border: 217 70% 25%;                 /* was 217 33% 17% */
-  --sidebar-ring: 185 70% 50%;                   /* #26CAD9 focus on navy 7.53:1, was 217 91% 50% */
-  --sidebar-muted: 215 20% 65%;                  /* unchanged, 5.85:1 on navy */
-
-  /* ---------- Charts ---------- */
-  --chart-1: var(--brand-teal);        /* Bookings */
-  --chart-2: var(--brand-navy);        /* Issued */
-
-  /* ---------- Gradients and shadows (rebuilt from logo navy) ---------- */
-  --gradient-primary: linear-gradient(135deg, hsl(216.8 100% 18.2%), hsl(217 80% 28%));
-  --gradient-hero: linear-gradient(135deg, hsl(217 100% 10%), hsl(216.8 100% 18.2%));
-  --gradient-sidebar: linear-gradient(180deg, hsl(216.8 100% 18.2%), hsl(217 100% 14%));
-  --gradient-deal: linear-gradient(135deg, hsl(0, 72%, 51%), hsl(340, 80%, 45%));   /* unchanged */
-  --gradient-gold: linear-gradient(135deg, hsl(42, 78%, 55%), hsl(38, 92%, 50%));   /* unchanged */
-  --shadow-card: 0 1px 3px 0 hsl(216.8 100% 18.2% / 0.05), 0 1px 2px -1px hsl(216.8 100% 18.2% / 0.04);
-  --shadow-elevated: 0 10px 30px -8px hsl(216.8 100% 18.2% / 0.09), 0 4px 6px -2px hsl(216.8 100% 18.2% / 0.05);
-  --shadow-hover: 0 20px 50px -12px hsl(216.8 100% 18.2% / 0.13);
-  --shadow-premium: 0 4px 20px -4px hsl(42 78% 55% / 0.15);                          /* unchanged */
-
-  /* ---------- Typography ---------- */
-  --font-display: 'Plus Jakarta Sans', sans-serif;   /* headings, kept (approved) */
-  --font-body: 'Inter', sans-serif;                  /* unchanged */
-
-  /* One admin type scale, based on the public website (Tailwind defaults it uses):
-   * page title 24px (public h1 text-2xl), section headings 18px (public h2 text-lg),
-   * numbers 24px / 20px, body 14px (text-sm), labels and tables 13px, helper text and
-   * tags 12px (text-xs). Nothing in the admin is smaller than 12px. */
-  --text-page-title: 24px;   /* page titles, Plus Jakarta Sans 700 */
-  --text-kpi: 24px;          /* KPI values, 700, tabular numbers */
-  --text-kpi-sm: 20px;       /* smaller numbers (Business today) */
-  --text-section: 18px;      /* section + panel titles, Plus Jakarta Sans 600 */
-  --text-nav: 14px;          /* sidebar items */
-  --text-body: 14px;         /* body text, buttons, fields, filter chips */
-  --text-table: 13px;        /* table cells */
-  --text-label: 13px;        /* field labels, card labels, secondary text */
-  --text-helper: 12px;       /* helper text, hints, timestamps, tags and badges (minimum) */
-
-  /* ---------- Spacing and sizes (from mockup) ---------- */
+  /* ---------- Admin layout ---------- */
   --admin-sidebar-width: 248px;   /* not --sidebar-width: ui/sidebar.tsx owns that name (16rem) */
-  --content-padding: 24px;   /* mockup 26px, rounded to the 4px grid */
-  --section-gap: 12px;
-  --card-gap: 12px;
-  --card-padding: 16px;
-  --status-stripe: 4px;      /* left border on KPI cards */
-  --control-height: 28px;    /* filter chips */
-  --nav-item-height: 36px;
+  --nav-item-height: 36px;        /* sidebar rows */
+  --content-padding: var(--space-6);
+  --status-stripe: 4px;           /* left border on KPI cards */
+
+  /* Dense tables: the one place the admin is denser than the public site. */
   --table-header-height: 28px;
   --table-row-height: 30px;
-  --badge-height: 18px;
-
-  /* ---------- Radius (from mockup) ---------- */
-  --radius: 0.625rem;        /* 10px cards and panels, unchanged */
-  --radius-md: 8px;          /* sidebar items */
-  --radius-sm: 6px;          /* filter chips, inputs */
-  --radius-pill: 9999px;     /* status badges, count bubbles */
 }

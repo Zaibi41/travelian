@@ -67,9 +67,13 @@ Search flow dates and empty results: `src/lib/admin-search/date-display.test.ts`
 
 Sign-in and expired sessions: `src/lib/auth-guard.test.ts` (session state; the return path after sign-in accepts only a relative path inside /admin, refusing full URLs, `//host`, `javascript:`, backslash tricks and non-admin paths), `src/lib/gateway/client-session.test.ts` (401: one refresh, a read is sent again once, an action is never re-sent; 403 stays in the page), `src/components/AdminLayout.guard.test.tsx` (no session or an expired one renders no admin shell), `src/pages/public/SignInPage.test.tsx` (return to the remembered page; other-site redirects ignored; someone already signed in never sees the form: a valid session goes to /admin or a safe remembered page, an expired one with a refresh token is refreshed once, a failed refresh clears it and shows the form, with the expired message only when sent from an expired admin page). `e2e/admin-session.spec.ts` mocks the gateway and Cognito: no session goes to sign-in with no menu and returns to /admin/customers after sign-in; a 401 mid-session lands on sign-in with "Your session expired. Sign in again."; a redirect to another site is ignored; with a valid session, Sign In on the public site lands on /admin and the form never appears; an expired-session redirect from /admin/customers shows the form and the message.
 
-The public-site specs (`e2e/` files not named `admin-*`) need Playwright's own Chromium (`npx playwright install chromium`); they don't use `PLAYWRIGHT_CHANNEL`.
+All specs, public and admin, run on the system Google Chrome (`/usr/bin/google-chrome`): `playwright.config.ts` sets `channel: "chrome"` (override with `PLAYWRIGHT_CHANNEL`), so Playwright's own browser download is not needed. Run everything with `npx playwright test`.
 
-Admin type scale (one scale for the whole admin, based on the public site; `src/styles/theme.css`):
+Known on 11 November 2026: 42 public-site specs fail on the unchanged public site because the specs are older than the current public copy and layout (e.g. they expect the heading "Book Flights, Hotels & Umrah with Travelian"; the page says "Book Flights, Group Tickets, Hotels & Umrah"). Failing files: flight-trip-height, homepage-top, popular-route-date, public-header, unified-search. The admin work does not change the public site, so this set must stay the same (43 passing, 42 failing) until the public specs are updated.
+
+Visual regression (`e2e/visual.spec.ts`, baselines in `e2e/__screenshots__/`): full-page screenshots of the public home page (Flights, Group Ticketing, Hotels and Umrah tabs), Sign In and Register, and the admin Dashboard, Search (all four tabs), Bookings and Customers & Travelers, at 1280, 1440 and 390px; zero pixel difference allowed. Fixed clock, animations off, made-up gateway answers, web fonts blocked (fallback fonts, the same on every run). After an intended change, run `npx playwright test e2e/visual.spec.ts --update-snapshots` and review the new images before committing. A public image must never change in admin work.
+
+Admin type scale (one scale for the whole admin, based on the public site; `src/styles/admin-tokens.css`):
 `src/styles/admin-type-scale.test.ts` fails if an admin source file (`src/components/admin`, the
 admin layout, sidebar and admin pages) uses an arbitrary pixel size (`text-[13px]`), an inline font
 size, or a Tailwind default size class instead of the scale, and checks the scale itself (body 14px,
@@ -77,7 +81,11 @@ labels and tables 13px, helper text and tags 12px, section headings 18px, page t
 24px; nothing below 12px). `e2e/admin-type-scale.spec.ts` and the shared check in
 `e2e/support/type-scale.ts` (also called from the customers, booking detail and hold specs) fail if
 any visible admin text is under 12px, a field label or table text under 13px (tags may be 12px), or
-the page scrolls sideways, at 1280 and 1440px.
+the page scrolls sideways, at 1280 and 1440px. The same guard test also fails on a hard-coded colour
+(hex, `rgb()`/`hsl()`, a Tailwind palette colour such as `bg-amber-500`) or an arbitrary radius
+(`rounded-[6px]`, `borderRadius`) in those files, and pins the admin colours: the primary action
+teal (`--action-primary` = `--brand-teal` = `184.8 98.4% 24.9%`), navy, surfaces, borders and the
+status colours, so a later change cannot recolour the admin by accident.
 
 Search forms (shared parts, `src/components/admin/search/SearchFormParts.tsx`, `SectorAirportSelect.tsx`):
 `SearchFormParts.test.tsx` covers the two-line airport card (a code not in the airport list shows
