@@ -381,6 +381,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{booking_id}/saved-people/{role}/{position}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Booking Person
+         * @description Resolve a hold's needs_choice. The values come from the booking's own customer or traveler row (the
+         *     customer is position 0); the browser sends only the choice. Links the booking row and is logged.
+         */
+        post: operations["resolve_booking_person_v1_admin_bookings__booking_id__saved_people__role___position__resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/bookings/{booking_id}/travelers/{position}/reveal": {
         parameters: {
             query?: never;
@@ -514,26 +535,6 @@ export interface paths {
          * @description Merge this person into another: documents and booking links move; this record is marked merged. Logged.
          */
         post: operations["merge_person_v1_admin_customers__person_id__merge_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/admin/customers/{person_id}/reveal": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Reveal Person
-         * @description Full date of birth and document numbers. Needs reveal_identity and a reason; logged without values.
-         */
-        post: operations["reveal_person_v1_admin_customers__person_id__reveal_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1871,9 +1872,9 @@ export interface components {
             choice: "add_to_existing" | "keep_separate";
             /**
              * Person Id
-             * @description The possible duplicate the choice is about.
+             * @description The possible duplicate the choice is about (required for add_to_existing).
              */
-            person_id: string;
+            person_id?: string | null;
         };
         /** FareView */
         FareView: {
@@ -2763,15 +2764,6 @@ export interface components {
             /** Document Number */
             document_number?: string | null;
         };
-        /** RevealedDocument */
-        RevealedDocument: {
-            /** Document Expiry */
-            document_expiry?: string | null;
-            /** Document Number */
-            document_number: string;
-            /** Id */
-            id: string;
-        };
         /** RoleRecord */
         RoleRecord: {
             /** Id */
@@ -2901,11 +2893,6 @@ export interface components {
              * @default false
              */
             can_merge: boolean;
-            /**
-             * Can Reveal Identity
-             * @default false
-             */
-            can_reveal_identity: boolean;
             /** Date Of Birth Masked */
             date_of_birth_masked?: string | null;
             /**
@@ -2956,23 +2943,20 @@ export interface components {
                 [key: string]: unknown;
             };
         };
-        /** SavedPersonReveal */
-        SavedPersonReveal: {
-            /** Date Of Birth */
-            date_of_birth?: string | null;
-            /**
-             * Documents
-             * @default []
-             */
-            documents: components["schemas"]["RevealedDocument"][];
-        };
-        /** SavedPersonRevealRequest */
-        SavedPersonRevealRequest: {
-            /** Reason */
-            reason: string;
-        };
         /** SavedPersonSearch */
         SavedPersonSearch: {
+            /**
+             * Can Manage
+             * @description The caller may create, edit and change documents (manage_people).
+             * @default false
+             */
+            can_manage: boolean;
+            /**
+             * Can Merge
+             * @description The caller may merge people (merge_people).
+             * @default false
+             */
+            can_merge: boolean;
             /** Results */
             results: components["schemas"]["SavedPersonSummary"][];
         };
@@ -4277,6 +4261,62 @@ export interface operations {
             };
         };
     };
+    resolve_booking_person_v1_admin_bookings__booking_id__saved_people__role___position__resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role: "customer" | "traveler";
+                booking_id: string;
+                position: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DuplicateChoice"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPersonCreated"];
+                };
+            };
+            /** @description Not back office, or missing manage_people. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking (or not in the caller's scope), or no such customer or traveler. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description already_linked, document_belongs_to_another_person or person_merged. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description person_required (add_to_existing without person_id) or booking_values_invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     reveal_traveler_identity_v1_admin_bookings__booking_id__travelers__position__reveal_post: {
         parameters: {
             query?: never;
@@ -4689,55 +4729,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SavedPersonDetail"];
-                };
-            };
-            /** @description Not back office, or missing the permission. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No such person or document. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    reveal_person_v1_admin_customers__person_id__reveal_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                person_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SavedPersonRevealRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SavedPersonReveal"];
                 };
             };
             /** @description Not back office, or missing the permission. */

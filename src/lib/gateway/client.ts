@@ -96,7 +96,9 @@ async function errorBody(response: Response): Promise<ErrorBody> {
   }
 }
 
-async function send(path: string, init: { method: "GET" | "POST"; query?: Record<string, unknown>; body?: unknown }, options: GatewayOptions): Promise<unknown> {
+type Method = "GET" | "POST" | "PATCH" | "DELETE";
+
+async function send(path: string, init: { method: Method; query?: Record<string, unknown>; body?: unknown }, options: GatewayOptions): Promise<unknown> {
   const baseUrl = (options.baseUrl ?? configuredBaseUrl()).replace(/\/+$/, "");
   if (!baseUrl) {
     throw new GatewayError("not_configured", "The admin service address isn't set. Add VITE_TRAVELIAN_GATEWAY_BASE_URL to this environment.");
@@ -129,12 +131,15 @@ async function send(path: string, init: { method: "GET" | "POST"; query?: Record
   }
 
   if (response.status === 401) throw new GatewayError("unauthorized", "Your session has expired. Sign in again to load this page.");
-  if (response.status === 403) throw new GatewayError("forbidden", "Your role can't view this data. A super admin can grant access.");
+  if (response.status === 403) {
+    const body = await errorBody(response);
+    throw new GatewayError("forbidden", "Your role can't view this data. A super admin can grant access.", 403, body.code);
+  }
   if (response.status === 404) {
     const body = await errorBody(response);
     throw new GatewayError("not_found", body.detail ?? "This record wasn't found.", 404, body.code, [], body.extra);
   }
-  if (init.method === "POST" && [409, 422, 500, 502].includes(response.status)) {
+  if (init.method !== "GET" && [409, 422, 500, 502].includes(response.status)) {
     const body = await errorBody(response);
     const message = body.detail ?? (body.fieldErrors.length ? "Some details need correcting." : `The admin service returned an error (${response.status}).`);
     throw new GatewayError("unavailable", message, response.status, body.code, body.fieldErrors, body.extra);
@@ -163,4 +168,21 @@ export function gatewayGet<P extends GetPath>(path: P, query?: GetQuery<P>, opti
 
 export function gatewayPost<P extends PostPath>(path: P, body: PostBody<P>, options: GatewayOptions = {}): Promise<PostResponse<P>> {
   return send(path, { method: "POST", body }, options) as Promise<PostResponse<P>>;
+}
+
+type PatchPath = { [P in keyof paths]: paths[P] extends { patch: unknown } ? (paths[P]["patch"] extends undefined ? never : P) : never }[keyof paths];
+type PatchOp<P extends PatchPath> = NonNullable<paths[P]["patch"]>;
+export type PatchBody<P extends PatchPath> = PatchOp<P> extends { requestBody: { content: { "application/json": infer B } } } ? B : never;
+export type PatchResponse<P extends PatchPath> = PatchOp<P> extends { responses: { 200: { content: { "application/json": infer R } } } } ? R : never;
+
+type DeletePath = { [P in keyof paths]: paths[P] extends { delete: unknown } ? (paths[P]["delete"] extends undefined ? never : P) : never }[keyof paths];
+type DeleteOp<P extends DeletePath> = NonNullable<paths[P]["delete"]>;
+export type DeleteResponse<P extends DeletePath> = DeleteOp<P> extends { responses: { 200: { content: { "application/json": infer R } } } } ? R : never;
+
+export function gatewayPatch<P extends PatchPath>(path: P, body: PatchBody<P>, options: GatewayOptions = {}): Promise<PatchResponse<P>> {
+  return send(path, { method: "PATCH", body }, options) as Promise<PatchResponse<P>>;
+}
+
+export function gatewayDelete<P extends DeletePath>(path: P, options: GatewayOptions = {}): Promise<DeleteResponse<P>> {
+  return send(path, { method: "DELETE" }, options) as Promise<DeleteResponse<P>>;
 }

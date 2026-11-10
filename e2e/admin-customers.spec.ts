@@ -1,0 +1,136 @@
+import { expect, test, type Page, type Request } from "@playwright/test";
+
+// Customers & Travelers: search, detail, add person, duplicate choice, merge, permissions and
+// no horizontal page scroll. Local-only session and intercepted gateway answers (made-up,
+// already-masked values); nothing reaches a real gateway.
+if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
+test.use({ launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } });
+
+const LONG = { first_name: "Muhammad Abdullah Rehman", last_name: "Rehmanullah Khan Durrani" };
+const DOCS = [
+  { id: "d-1", id_type: "PSPT", document_country: "PAK", document_number_masked: "••••••567", document_expiry_masked: "2031", document_validity: "valid" },
+  { id: "d-2", id_type: "NATI", document_country: "PAK", document_number_masked: "••••••••••671" },
+];
+const ONE = { id: "p-00000001", title: "MR", ...LONG, birth_year: 1990, nationality: "PAK", phone_masked: "+92 •••••••567",
+  email_masked: "a•••@a-very-long-company-domain-name.example.invalid", documents: DOCS, last_booking_at: "2026-11-09T13:28:58Z", match: "name" };
+const TWO = { id: "p-00000002", title: "MR", first_name: "Muhammad", last_name: "Durrani", birth_year: 1990, phone_masked: "+92 •••••••111", documents: [], match: "name" };
+const DETAIL = { ...ONE, match: undefined, date_of_birth_masked: "1990-••-••", can_manage: true, can_merge: true,
+  bookings: [{ booking_id: "TRV-PE49ZP", created_at: "2026-11-09T13:28:58Z", role: "traveler" }] };
+
+interface Options { canManage?: boolean; canMerge?: boolean; forbidden?: boolean }
+
+async function open(page: Page, width: number, path: string, { canManage = true, canMerge = true, forbidden = false }: Options = {}) {
+  const posts: Request[] = [];
+  await page.setViewportSize({ width, height: 900 });
+  await page.route("**/*", route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (url.port === "8000") {
+      if (forbidden) return route.fulfill({ status: 403, json: { detail: "Back office only.", code: "not_allowed" } });
+      if (request.method() === "POST") posts.push(request);
+      if (url.pathname === "/v1/admin/customers" && request.method() === "GET") {
+        return route.fulfill({ json: { results: [ONE, TWO], can_manage: canManage, can_merge: canMerge } });
+      }
+      if (url.pathname === "/v1/admin/customers" && request.method() === "POST") {
+        const body = request.postDataJSON();
+        if (!body.duplicate_choice) {
+          return route.fulfill({ status: 409, json: { detail: "A saved person looks like the same person.", code: "possible_duplicate", possible_duplicate: TWO, reason: "same_phone" } });
+        }
+        return route.fulfill({ status: 201, json: { person: { ...DETAIL, id: "p-00000003", first_name: "New", last_name: "Person" }, outcome: "created" } });
+      }
+      if (url.pathname === "/v1/admin/customers/p-00000001/merge") return route.fulfill({ json: { ...DETAIL, id: "p-00000002" } });
+      const detail = url.pathname.match(/^\/v1\/admin\/customers\/(p-\d+)$/);
+      if (detail) return route.fulfill({ json: { ...DETAIL, id: detail[1], can_manage: canManage, can_merge: canMerge, ...(detail[1] === "p-00000003" ? { first_name: "New", last_name: "Person" } : {}) } });
+      return route.fulfill({ status: 404, json: { detail: "Not found." } });
+    }
+    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+  });
+  await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
+    email: "layout-test@travelian.com", name: "Layout Test", createdAt: new Date().toISOString(),
+    accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
+  })));
+  await page.goto(path);
+  return posts;
+}
+
+const overflow = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+
+for (const width of [390, 768, 1024, 1440]) {
+  test(`search, travelers and detail fit at ${width}px`, async ({ page }) => {
+    await open(page, width, "/admin/customers");
+    await page.getByLabel("Search", { exact: true }).fill("durrani");
+    await page.getByRole("button", { name: "Search", exact: true }).click();
+    const table = page.getByRole("region", { name: "Customers" });
+    await expect(table).toContainText("+92 •••••••567");
+    await expect(page).toHaveURL(/q=durrani/);
+    expect(await overflow(page)).toBe(0);
+
+    await page.getByRole("link", { name: "Travelers", exact: true }).click();
+    await expect(page.getByRole("region", { name: "Travelers" })).toContainText("1990-••-••");
+    await expect(page.getByRole("region", { name: "Travelers" })).toContainText("Passport ••••••567");
+    expect(await overflow(page)).toBe(0);
+
+    await page.getByRole("link", { name: `${LONG.first_name} ${LONG.last_name}` }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(`${LONG.first_name} ${LONG.last_name}`);
+    await expect(page.getByRole("region", { name: "Documents" })).toContainText("••••••••••671");
+    await expect(page.getByRole("region", { name: "Bookings" })).toContainText("TRV-PE49ZP");
+    await expect(page.getByText(/reveal/i)).toHaveCount(0);
+    expect(await overflow(page)).toBe(0);
+  });
+}
+
+test("add a person, see the possible duplicate, keep separate", async ({ page }) => {
+  const posts = await open(page, 1440, "/admin/customers");
+  await page.getByRole("button", { name: "Add Customer" }).click();
+  const dialog = page.getByRole("dialog", { name: "Add Customer" });
+  await dialog.getByLabel("First name").fill("New");
+  await dialog.getByLabel("Last name").fill("Person");
+  await dialog.getByLabel("Phone", { exact: true }).fill("3001234567");
+  await dialog.getByRole("button", { name: "Save" }).click();
+  const notice = dialog.getByRole("region", { name: "Possible duplicate" });
+  await expect(notice).toContainText("Possible duplicate: Same phone");
+  await expect(notice).toContainText("+92 •••••••111");
+  await expect(dialog).not.toContainText("possible_duplicate");
+  await notice.getByRole("button", { name: "Keep separate" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "New Person" })).toBeVisible();
+  const bodies = posts.filter(r => r.url().endsWith("/v1/admin/customers")).map(r => r.postDataJSON());
+  expect(bodies[0].duplicate_choice).toBeUndefined();
+  expect(bodies[1].duplicate_choice).toEqual({ choice: "keep_separate", person_id: "p-00000002" });
+  expect(bodies[1].phone).toBe("3001234567");
+});
+
+test("merge needs a person and a reason, then opens the kept record", async ({ page }) => {
+  const posts = await open(page, 1024, "/admin/customers?q=durrani");
+  await page.getByRole("button", { name: `Merge duplicates of ${LONG.first_name} ${LONG.last_name}` }).click();
+  const dialog = page.getByRole("dialog", { name: "Merge duplicates" });
+  await expect(dialog.getByRole("button", { name: "Merge", exact: true })).toBeDisabled();
+  await dialog.getByLabel("Person to keep").first().fill("muhammad");
+  await dialog.getByRole("button", { name: "Search" }).click();
+  await dialog.getByRole("radio").first().check();                         // the source itself is not offered
+  await expect(dialog.getByRole("radio")).toHaveCount(1);
+  await dialog.getByLabel("Reason").fill("Same person, two records");
+  const box = await dialog.boundingBox();
+  expect(box && box.y >= 0 && box.y + box.height <= 900).toBe(true);
+  await dialog.getByRole("button", { name: "Merge", exact: true }).click();
+  await expect(page).toHaveURL(/\/admin\/customers\/people\/p-00000002$/);
+  const merge = posts.find(r => r.url().endsWith("/merge"));
+  expect(merge?.postDataJSON()).toEqual({ merge_into_person_id: "p-00000002", reason: "Same person, two records" });
+});
+
+test("a role without manage_people or merge_people sees no edit or merge buttons", async ({ page }) => {
+  await open(page, 1440, "/admin/customers?q=durrani", { canManage: false, canMerge: false });
+  await expect(page.getByRole("region", { name: "Customers" })).toContainText("+92 •••••••567");
+  await expect(page.getByRole("button", { name: /^Edit/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Merge/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Add Customer" })).toHaveCount(0);
+  await page.getByRole("link", { name: "View bookings of Muhammad Durrani" }).click();
+  await expect(page.getByRole("region", { name: "Documents" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^(Edit|Merge duplicates|Attach document|Remove)/ })).toHaveCount(0);
+});
+
+test("agency roles get a plain notice, not data", async ({ page }) => {
+  await open(page, 768, "/admin/customers?q=durrani", { forbidden: true });
+  await expect(page.getByText("Not available for your role")).toBeVisible();
+  await expect(page.getByText("not_allowed")).toHaveCount(0);
+  expect(await overflow(page)).toBe(0);
+});

@@ -45,23 +45,13 @@ The gateway also needs CORS for the portal origins.
 | Channel filter (B2C / B2B) | Bookings have no channel. | `bookings.channel` |
 | Agency filter | Bookings have no reliable agency owner. | `bookings.agency_id` populated from authenticated ownership |
 
-## 3. HIGH: mask identity data in the gateway, with a logged reveal
+## 3. Identity masking in the gateway: done on 10 November 2026
 
-**Priority: HIGH. Must be done before real customer data is used (roadmap item 4).**
-
-**Masking in the page is not protection.** The Customers screen masks passport numbers (last 4 shown) and dates of birth (hidden), and the Edit form never shows the full passport. But the browser still receives the full values from the API, so anyone can read them with the browser's developer tools or by calling the API directly. Today that API is the legacy `GET /content/customers`, which needs no sign-in (see item 1).
-
-The gateway must:
-
-| Needs | Detail |
-| --- | --- |
-| Masked values by default | Customer and traveler responses return passport/CNIC as last 4 only and no date of birth, unless the caller has the reveal permission |
-| Reveal permission | Users & Access > Roles & Permissions; spec v3.0: "Granted staff only, every reveal logged" |
-| Reveal endpoint, logged | Returns one full value to a granted role and writes an Audit Log entry: who, when, which customer, which field |
-| Server-side full-number search | Search by full passport number runs in the gateway for granted roles only |
-| Replace without reading | Updating a passport accepts a new number without returning the old one (the Edit form already works this way) |
-
-The portal shows no reveal button until this exists.
+Bookings and saved customers and travelers return masked values only (document last 3 characters,
+date of birth and expiry year only, masked phone and email). The booking traveler reveal needs the
+reveal permission and a reason and is logged. Saved people have no reveal (Zohaib's decision).
+The admin no longer calls `/content/customers`. Still open: database protection for the plain-text
+identity values (roadmap go-live blocker).
 
 ## 4. Bookings (`/admin/bookings`) and Booking detail (`/admin/bookings/{id}`)
 
@@ -136,3 +126,17 @@ Still open:
 | Group Ticketing: Source (Owned / Supplier), Hold rule | `source` and hold rule on each departure; owned stock in the gateway |
 | Group Ticketing: child and infant prices | Price per passenger type (section 5) |
 | Group Ticketing: Book, Hold seats, Quote; Results summary (seats available, hold expires) | Booking, hold and quote endpoints wired for staff; hold expiry on results |
+
+## 7. Customers & Travelers (`/admin/customers`)
+
+Built on `/v1/admin/customers` (search, detail, add, edit, documents, merge) and
+`/v1/admin/bookings/{id}/saved-people/{role}/{position}/resolve`. Hidden until the backend has them:
+
+| Hidden | Needs |
+| --- | --- |
+| Customers cards: Total Customers, New Customers, Saved Travelers, Duplicate Profiles, Documents expiring, Flagged customers | A counts endpoint for saved people (totals, new in period, possible duplicates, documents expiring within 6 months, flagged) |
+| Travelers cards: Saved, Expiring documents, Missing details | The same counts endpoint |
+| Filters: Source, Agency, Branch, Last booking, Document validity, Flag, Nationality, Document expiry, Customer (owner) | Filter parameters on `GET /v1/admin/customers`, and a list without a search term (today the search needs 3 characters) |
+| Columns: Bookings (count), Flag, Notes; action Flag with reason | A bookings count on the search result; flags with reasons and notes on `saved_people` (table, endpoints, audit) |
+| Communications (P3) tab | Message history from the notification service |
+

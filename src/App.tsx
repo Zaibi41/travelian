@@ -57,7 +57,8 @@ const HoldResultPage = lazy(() => import("./pages/HoldResultPage"));
 const FlightBookingsPage = lazy(() => import("./pages/FlightBookingsPage"));
 const CustomerPortalPage = lazy(() => import("./pages/CustomerPortalPage"));
 const UsersPage = lazy(() => import("./pages/UsersPage"));
-const CustomersPage = lazy(() => import("./pages/CustomersPage"));
+const CustomersTravelersPage = lazy(() => import("./pages/CustomersTravelersPage"));
+const SavedPersonPage = lazy(() => import("./pages/SavedPersonPage"));
 const RBACPage = lazy(() => import("./pages/RBACPage"));
 const CouponsPage = lazy(() => import("./pages/CouponsPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
@@ -152,7 +153,10 @@ const App = () => (
             <Route path="/admin/wallet" element={<AdminLayout><WalletPage /></AdminLayout>} />
             <Route path="/admin/payments" element={<AdminLayout><PaymentsPage /></AdminLayout>} />
             <Route path="/admin/users" element={<AdminLayout><UsersPage /></AdminLayout>} />
-            <Route path="/admin/customers" element={<AdminLayout><CustomersPage /></AdminLayout>} />
+            <Route path="/admin/customers" element={<AdminLayout><CustomersTravelersPage /></AdminLayout>} />
+            <Route path="/admin/customers/travelers" element={<AdminLayout><CustomersTravelersPage tab="travelers" /></AdminLayout>} />
+            <Route path="/admin/customers/communications" element={<AdminLayout><CustomersTravelersPage tab="communications" /></AdminLayout>} />
+            <Route path="/admin/customers/people/:personId" element={<AdminLayout><SavedPersonPage /></AdminLayout>} />
             <Route path="/admin/rbac" element={<AdminLayout><RBACPage /></AdminLayout>} />
             <Route path="/admin/provider-systems" element={<AdminLayout><ProviderSystemsPage /></AdminLayout>} />
             <Route path="/admin/group-ticketing" element={<AdminLayout><GroupTicketingCollectionsPage /></AdminLayout>} />

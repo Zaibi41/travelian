@@ -7,13 +7,14 @@ Planned work, in order. Do not start a later item unless asked.
    - Run migrations `0008_bookings` and `0009_staff_role_permissions` as an explicit deploy step on Lightsail (`alembic upgrade head`, after a database snapshot; never on app startup).
 3. **Connect screens to the gateway and shut down the old `/content` endpoints.** Runs alongside item 2, not after it.
    - Order: Bookings and Flight Operations, then Customers, Users, Settings, Flight Pricing.
-   - Rule: a screen whose data can't load shows "not connected", never demo or sample data (today several fall back to sample records, e.g. Customers).
+   - Rule: a screen whose data can't load shows "not connected", never demo or sample data (today several still fall back to sample records).
+   - Customers & Travelers: done on 10 November 2026 (gateway `/v1/admin/customers`, masked, no reveal); the legacy `/content/customers` page and client are removed. The `/content/customers` routes can be shut down once nothing else calls them.
    - Agency Bookings: build the agency roles' bookings screen on the gateway (their own bookings only), then remove `/admin/requests`. Until then `/admin/requests` stays for agency roles; internal roles already go to `/admin/bookings`.
    - Security, do early: lock down the unauthenticated `/content/bookings` routes (and the other `/content/*` admin routes) as each screen moves to the gateway; shut them down once nothing uses them.
 4. **Go live with real data**, only after items 2 and 3.
    - Decide the real bookings source first (read the legacy DynamoDB table, sync it into Postgres, or have the gateway write bookings).
    - Do not deploy the 18 imported test rows (`import_source = 'legacy_test_csv'`, shown on the dashboard as "Sample data"); remove them with `python -m app.cli.import_bookings_csv --remove`.
-   - Requires the gateway-side identity masking and logged reveal (docs/backend-todo.md, HIGH).
+   - Requires the gateway-side identity masking (done for bookings and saved people; docs/backend-todo.md, section 3).
    - **Go-live blocker:** Agency flight search still calls the legacy Lambda directly (supplier IDs and logos visible in the network tab; gateway cannot reprice). Must move to the gateway search before deployment.
    - **Go-live blocker:** Live flight search (`/v1/live-ticketing/flights/search`) calls Southair directly. It must go through the multi-provider `FlightSearchService` (`app/services/flight_search.py`): providers called in parallel with per-provider timeouts, results merged, and a provider failure reported without failing the whole search (D24).
    - **Go-live blocker:** Passenger passport/ID numbers and dates of birth are stored as plain text, in the booking copies and in the saved customers and travelers (`saved_people`, `saved_person_documents`). Decide and apply database protection before any real customer data. (Gateway `docs/pii-storage.md`; the earlier encryption and its key re-encryption item were removed for the sandbox phase.)
