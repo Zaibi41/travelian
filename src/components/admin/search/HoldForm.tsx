@@ -68,6 +68,7 @@ export function holdRequestFrom(draft: HoldDraft, customer: Customer, travelers:
     contact: {
       first_name: customer.first_name.trim(), last_name: customer.last_name.trim(), email: customer.email.trim(),
       phone_code: customer.phone_code.trim(), phone: customer.phone.trim(),
+      save_for_next_time: true, // the gateway's default: save or link the customer after the hold
     },
     passengers: travelers.map(traveler => {
       const first = traveler.sameAsCustomer ? customer.first_name : traveler.first_name;
@@ -79,6 +80,7 @@ export function holdRequestFrom(draft: HoldDraft, customer: Customer, travelers:
         nationality: traveler.type === "INF" ? null : optional(traveler.nationality.toUpperCase()),
         document_expiry: optional(traveler.document_expiry),
         ...(traveler.type === "INF" ? { travels_with: traveler.travels_with } : {}),
+        save_for_next_time: true, // the gateway's default
       } as HoldRequest["passengers"][number];
     }),
   };

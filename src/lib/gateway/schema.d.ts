@@ -401,6 +401,145 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search People
+         * @description Exact full document number first, then phone or email, then name prefix. Masked values only.
+         */
+        get: operations["search_people_v1_admin_customers_get"];
+        put?: never;
+        /** Create Person */
+        post: operations["create_person_v1_admin_customers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/customers/{person_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Person */
+        get: operations["get_person_v1_admin_customers__person_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit Person
+         * @description Edit a saved person. Past bookings keep their own copy and never change.
+         */
+        patch: operations["edit_person_v1_admin_customers__person_id__patch"];
+        trace?: never;
+    };
+    "/v1/admin/customers/{person_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Document */
+        post: operations["add_document_v1_admin_customers__person_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/customers/{person_id}/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove Document
+         * @description Remove a document from the person (kept for past booking links, no longer used or matched).
+         */
+        delete: operations["remove_document_v1_admin_customers__person_id__documents__document_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/customers/{person_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Person Events
+         * @description Audit trail for a saved person (ids and field names only).
+         */
+        get: operations["person_events_v1_admin_customers__person_id__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/customers/{person_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge Person
+         * @description Merge this person into another: documents and booking links move; this record is marked merged. Logged.
+         */
+        post: operations["merge_person_v1_admin_customers__person_id__merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/customers/{person_id}/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reveal Person
+         * @description Full date of birth and document numbers. Needs reveal_identity and a reason; logged without values.
+         */
+        post: operations["reveal_person_v1_admin_customers__person_id__reveal_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/dashboard/booking-report": {
         parameters: {
             query?: never;
@@ -1709,6 +1848,33 @@ export interface components {
              */
             source: "gateway_bookings";
         };
+        /** DocumentInput */
+        DocumentInput: {
+            /** Document Country */
+            document_country: string;
+            /** Document Expiry */
+            document_expiry?: string | null;
+            /** Document Number */
+            document_number: string;
+            /**
+             * Id Type
+             * @enum {string}
+             */
+            id_type: "PSPT" | "NATI";
+        };
+        /** DuplicateChoice */
+        DuplicateChoice: {
+            /**
+             * Choice
+             * @enum {string}
+             */
+            choice: "add_to_existing" | "keep_separate";
+            /**
+             * Person Id
+             * @description The possible duplicate the choice is about.
+             */
+            person_id: string;
+        };
         /** FareView */
         FareView: {
             /** Baggage */
@@ -2095,53 +2261,84 @@ export interface components {
         /**
          * HoldContact
          * @description The customer: who pays and is contacted (spec 8). Saved with the hold.
+         *
+         *     With customer_id (a saved person) the fields may be left out and are loaded by the gateway;
+         *     fields sent override them for this booking, and a changed phone or email also updates the
+         *     saved person.
          */
         HoldContact: {
+            /**
+             * Customer Id
+             * @description A saved person to use as the customer.
+             */
+            customer_id?: string | null;
             /** Email */
-            email: string;
+            email?: string | null;
             /** First Name */
-            first_name: string;
+            first_name?: string | null;
             /** Last Name */
-            last_name: string;
+            last_name?: string | null;
             /** Phone */
-            phone: string;
+            phone?: string | null;
             /** Phone Code */
-            phone_code: string;
+            phone_code?: string | null;
+            /**
+             * Save For Next Time
+             * @description Create or update the saved customer after the hold. Never blocks the hold.
+             * @default true
+             */
+            save_for_next_time: boolean;
         };
         /**
          * HoldPassenger
          * @description Our checks (the supplier and airline may add their own): passport needs number, issuing
          *     country and expiry; a Pakistani national ID (CNIC / B-form) is 13 digits. Expiry against the
          *     travel dates is checked when the hold is placed.
+         *
+         *     With traveler_id (a saved person) the identity fields are left out: the gateway loads them on
+         *     the server, checks the caller's scope and runs the same checks. Identity values sent together
+         *     with traveler_id are refused (identity_with_traveler_id).
          */
         HoldPassenger: {
-            /**
-             * Date Of Birth
-             * Format: date
-             */
-            date_of_birth: string;
+            /** Date Of Birth */
+            date_of_birth?: string | null;
             /** Document Country */
             document_country?: string | null;
             /** Document Expiry */
             document_expiry?: string | null;
+            /**
+             * Document Id
+             * @description With traveler_id: which saved document (needed when the person has several).
+             */
+            document_id?: string | null;
             /** Document Number */
             document_number?: string | null;
             /** First Name */
-            first_name: string;
-            /**
-             * Id Type
-             * @enum {string}
-             */
-            id_type: "PSPT" | "NATI";
+            first_name?: string | null;
+            /** Id Type */
+            id_type?: ("PSPT" | "NATI") | null;
             /** Last Name */
-            last_name: string;
+            last_name?: string | null;
             /** Nationality */
             nationality?: string | null;
             /**
-             * Title
-             * @enum {string}
+             * Save For Next Time
+             * @description Create or update the saved person after the hold. Never blocks the hold.
+             * @default true
              */
-            title: "MR" | "MRS" | "MISS" | "MASTER";
+            save_for_next_time: boolean;
+            /** Title */
+            title?: ("MR" | "MRS" | "MISS" | "MASTER") | null;
+            /**
+             * Traveler Id
+             * @description A saved person; identity fields are then loaded by the gateway.
+             */
+            traveler_id?: string | null;
+            /**
+             * Travels With
+             * @description Infants only: the adult it travels with, counted among adults from 0 (Adult 1 = 0). Default: infant n with adult n.
+             */
+            travels_with?: number | null;
             /**
              * Type
              * @enum {string}
@@ -2179,6 +2376,11 @@ export interface components {
             label: "UAT test data";
             /** Pnr */
             pnr: string;
+            /**
+             * Saved People
+             * @description What happened to the saved customer and travelers (never blocks the hold).
+             */
+            saved_people?: components["schemas"]["SaveOutcomeView"][];
             selling_total: components["schemas"]["FlightMoney"];
             /**
              * Time Limit
@@ -2365,6 +2567,13 @@ export interface components {
             password: string;
             /** Username */
             username: string;
+        };
+        /** MergeRequest */
+        MergeRequest: {
+            /** Merge Into Person Id */
+            merge_into_person_id: string;
+            /** Reason */
+            reason: string;
         };
         /** Money */
         Money: {
@@ -2554,12 +2763,268 @@ export interface components {
             /** Document Number */
             document_number?: string | null;
         };
+        /** RevealedDocument */
+        RevealedDocument: {
+            /** Document Expiry */
+            document_expiry?: string | null;
+            /** Document Number */
+            document_number: string;
+            /** Id */
+            id: string;
+        };
         /** RoleRecord */
         RoleRecord: {
             /** Id */
             id: number;
             /** Name */
             name: string;
+        };
+        /**
+         * SaveOutcomeView
+         * @description What a hold did with saved people. Saving never fails the hold.
+         */
+        SaveOutcomeView: {
+            /** Code */
+            code?: string | null;
+            /** Document Id */
+            document_id?: string | null;
+            /** Person Id */
+            person_id?: string | null;
+            /**
+             * Position
+             * @description Traveler position in the request.
+             */
+            position?: number | null;
+            /** @description needs_choice: the saved person this may be (masked). */
+            possible_duplicate?: components["schemas"]["SavedPersonSummary"] | null;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "customer" | "traveler";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "saved" | "linked" | "updated" | "needs_choice" | "conflict" | "not_saved" | "skipped";
+        };
+        /** SavedDocument */
+        SavedDocument: {
+            /** Document Country */
+            document_country: string;
+            /**
+             * Document Expiry Masked
+             * @description Year only.
+             */
+            document_expiry_masked?: string | null;
+            /**
+             * Document Number Masked
+             * @description Last 3 characters only.
+             */
+            document_number_masked: string;
+            /** Document Validity */
+            document_validity?: ("valid" | "expiring" | "expired") | null;
+            /** Id */
+            id: string;
+            /**
+             * Id Type
+             * @enum {string}
+             */
+            id_type: "PSPT" | "NATI";
+        };
+        /** SavedPersonBooking */
+        SavedPersonBooking: {
+            /** Booking Id */
+            booking_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "customer" | "traveler";
+        };
+        /** SavedPersonCreate */
+        SavedPersonCreate: {
+            /** Date Of Birth */
+            date_of_birth?: string | null;
+            document?: components["schemas"]["DocumentInput"] | null;
+            /** @description Send after a possible_duplicate answer. */
+            duplicate_choice?: components["schemas"]["DuplicateChoice"] | null;
+            /** Email */
+            email?: string | null;
+            /** First Name */
+            first_name: string;
+            /** Last Name */
+            last_name: string;
+            /** Nationality */
+            nationality?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Phone Code */
+            phone_code?: string | null;
+            /** Title */
+            title?: ("MR" | "MRS" | "MISS" | "MASTER") | null;
+        };
+        /** SavedPersonCreated */
+        SavedPersonCreated: {
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "created" | "existing" | "added_to_existing";
+            person: components["schemas"]["SavedPersonDetail"];
+        };
+        /** SavedPersonDetail */
+        SavedPersonDetail: {
+            /** Birth Year */
+            birth_year?: number | null;
+            /**
+             * Bookings
+             * @default []
+             */
+            bookings: components["schemas"]["SavedPersonBooking"][];
+            /**
+             * Can Manage
+             * @description May create, edit and change documents (manage_people).
+             * @default false
+             */
+            can_manage: boolean;
+            /**
+             * Can Merge
+             * @description May merge people (merge_people).
+             * @default false
+             */
+            can_merge: boolean;
+            /**
+             * Can Reveal Identity
+             * @default false
+             */
+            can_reveal_identity: boolean;
+            /** Date Of Birth Masked */
+            date_of_birth_masked?: string | null;
+            /**
+             * Documents
+             * @default []
+             */
+            documents: components["schemas"]["SavedDocument"][];
+            /** Email Masked */
+            email_masked?: string | null;
+            /** First Name */
+            first_name: string;
+            /** Id */
+            id: string;
+            /** Last Booking At */
+            last_booking_at?: string | null;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Match
+             * @description Search only: what matched.
+             */
+            match?: ("document" | "contact" | "name") | null;
+            /** Merged Into Id */
+            merged_into_id?: string | null;
+            /** Nationality */
+            nationality?: string | null;
+            /** Phone Masked */
+            phone_masked?: string | null;
+            /** Title */
+            title?: ("MR" | "MRS" | "MISS" | "MASTER") | null;
+        };
+        /** SavedPersonEvent */
+        SavedPersonEvent: {
+            /** Action */
+            action: string;
+            /** Actor User Id */
+            actor_user_id?: string | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Details
+             * @description Ids and field names only.
+             */
+            details: {
+                [key: string]: unknown;
+            };
+        };
+        /** SavedPersonReveal */
+        SavedPersonReveal: {
+            /** Date Of Birth */
+            date_of_birth?: string | null;
+            /**
+             * Documents
+             * @default []
+             */
+            documents: components["schemas"]["RevealedDocument"][];
+        };
+        /** SavedPersonRevealRequest */
+        SavedPersonRevealRequest: {
+            /** Reason */
+            reason: string;
+        };
+        /** SavedPersonSearch */
+        SavedPersonSearch: {
+            /** Results */
+            results: components["schemas"]["SavedPersonSummary"][];
+        };
+        /** SavedPersonSummary */
+        SavedPersonSummary: {
+            /** Birth Year */
+            birth_year?: number | null;
+            /**
+             * Documents
+             * @default []
+             */
+            documents: components["schemas"]["SavedDocument"][];
+            /** Email Masked */
+            email_masked?: string | null;
+            /** First Name */
+            first_name: string;
+            /** Id */
+            id: string;
+            /** Last Booking At */
+            last_booking_at?: string | null;
+            /** Last Name */
+            last_name: string;
+            /**
+             * Match
+             * @description Search only: what matched.
+             */
+            match?: ("document" | "contact" | "name") | null;
+            /** Nationality */
+            nationality?: string | null;
+            /** Phone Masked */
+            phone_masked?: string | null;
+            /** Title */
+            title?: ("MR" | "MRS" | "MISS" | "MASTER") | null;
+        };
+        /** SavedPersonUpdate */
+        SavedPersonUpdate: {
+            /** Date Of Birth */
+            date_of_birth?: string | null;
+            /** Email */
+            email?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Nationality */
+            nationality?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Phone Code */
+            phone_code?: string | null;
+            /** Title */
+            title?: ("MR" | "MRS" | "MISS" | "MASTER") | null;
         };
         /**
          * SupplierPayment
@@ -3860,12 +4325,443 @@ export interface operations {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
-            /** @description Identity data can't be decrypted right now. */
+            /** @description Booking data is not available. */
             503: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    search_people_v1_admin_customers_get: {
+        parameters: {
+            query: {
+                /** @description Full document number, phone, email, or name prefix. */
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPersonSearch"];
+                };
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such person or document. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Search needs at least 3 characters. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_person_v1_admin_customers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedPersonCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPersonCreated"];
+                };
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such person or document. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description possible_duplicate (choose with duplicate_choice) or document_belongs_to_another_person. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_person_v1_admin_customers__person_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPersonDetail"];
+                };
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such person or document. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_person_v1_admin_customers__person_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedPersonUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPersonDetail"];
+                };
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such person or document. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_document_v1_admin_customers__person_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPersonDetail"];
+                };
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such person or document. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_document_v1_admin_customers__person_id__documents__document_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPersonDetail"];
+                };
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such person or document. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    person_events_v1_admin_customers__person_id__events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPersonEvent"][];
+                };
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such person or document. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    merge_person_v1_admin_customers__person_id__merge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MergeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPersonDetail"];
+                };
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such person or document. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reveal_person_v1_admin_customers__person_id__reveal_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SavedPersonRevealRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPersonReveal"];
+                };
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such person or document. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
