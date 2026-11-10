@@ -59,6 +59,10 @@ npm run typecheck
 npm test
 ```
 
-Expected on 10 November 2026: typecheck clean, 43 test files and 311 tests passing. Admin layout specs (`e2e/admin-*.spec.ts`: flights search, booking detail, flights hold, customers, airports): 47 passing; run with `PLAYWRIGHT_CHANNEL=chrome npx playwright test e2e/admin-*.spec.ts` when Playwright's own browser isn't installed.
+Expected on 10 November 2026: typecheck clean, 46 test files and 338 tests passing. Admin layout specs (`e2e/admin-*.spec.ts`: flights search, booking detail, flights hold, customers, airports, session): 51 passing; run with `PLAYWRIGHT_CHANNEL=chrome npx playwright test e2e/admin-*.spec.ts` when Playwright's own browser isn't installed.
 
 Airport suggestions (Search > Flights From/To): `src/lib/admin-search/airports.test.ts` covers the ranking (exact IATA code, city prefix, IATA prefix, airport name, country; larger airports first), accents, case, the 8-result limit and no match; `e2e/admin-airports.spec.ts` covers picking, clearing, swap, same airport, keyboard, the 3-letter codes in the request, and that typing makes no request once the Search page has loaded. Data source: `docs/airports-data.md`.
+
+Sign-in and expired sessions: `src/lib/auth-guard.test.ts` (session state; the return path after sign-in accepts only a relative path inside /admin, refusing full URLs, `//host`, `javascript:`, backslash tricks and non-admin paths), `src/lib/gateway/client-session.test.ts` (401: one refresh, a read is sent again once, an action is never re-sent; 403 stays in the page), `src/components/AdminLayout.guard.test.tsx` (no session or an expired one renders no admin shell), `src/pages/public/SignInPage.test.tsx` (return to the remembered page; other-site redirects ignored). `e2e/admin-session.spec.ts` mocks the gateway and Cognito: no session goes to sign-in with no menu and returns to /admin/customers after sign-in; a 401 mid-session lands on sign-in with "Your session expired. Sign in again."; a redirect to another site is ignored.
+
+The public-site specs (`e2e/` files not named `admin-*`) need Playwright's own Chromium (`npx playwright install chromium`); they don't use `PLAYWRIGHT_CHANNEL`.

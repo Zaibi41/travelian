@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SignInPage from "./SignInPage";
 import { signInWithPassword } from "@/lib/cognito-auth";
@@ -59,5 +59,34 @@ describe("Sign In presentation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Hide password" }));
     expect(screen.getByLabelText("Password")).toHaveAttribute("type", "password");
     expect(screen.getByRole("link", { name: "Create an account" })).toHaveAttribute("href", "/register");
+  });
+
+  const Landed = () => <p>Landed on {useLocation().pathname}</p>;
+  const signInAt = (url: string) => render(
+    <MemoryRouter initialEntries={[url]}>
+      <Routes>
+        <Route path="/signin" element={<SignInPage />} />
+        <Route path="*" element={<Landed />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  const session = { email: "staff@travelian.com", name: "Staff", createdAt: "", groups: ["super_admin"] };
+
+  it("returns to the remembered admin page after sign-in", async () => {
+    vi.mocked(signInWithPassword).mockResolvedValue(session);
+    signInAt("/signin?redirect=%2Fadmin%2Fcustomers&reason=expired");
+    expect(screen.getByRole("status")).toHaveTextContent("Your session expired. Sign in again.");
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Sign In" }));
+    expect(await screen.findByText("Landed on /admin/customers")).toBeInTheDocument();
+  });
+
+  it.each(["https://evil.example/admin", "//evil.example/admin", "javascript:alert(1)", "/signup"])("ignores the redirect %s and goes to the dashboard", async redirect => {
+    vi.mocked(signInWithPassword).mockResolvedValue(session);
+    signInAt(`/signin?redirect=${encodeURIComponent(redirect)}`);
+    expect(screen.queryByRole("status")).toBeNull();
+    fill();
+    fireEvent.click(screen.getByRole("button", { name: "Sign In" }));
+    expect(await screen.findByText("Landed on /admin")).toBeInTheDocument();
   });
 });

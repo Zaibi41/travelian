@@ -4,6 +4,8 @@
 // The server decides scope and visibility from the access token.
 
 import { getSession } from "@/lib/auth-session";
+import { EXPIRED_MESSAGE } from "@/lib/auth-guard";
+import { expireSession, renewSession } from "@/lib/session-renewal";
 import type { paths } from "./schema";
 
 type GetPath = { [P in keyof paths]: paths[P] extends { get: unknown } ? (paths[P]["get"] extends undefined ? never : P) : never }[keyof paths];
@@ -98,11 +100,12 @@ async function errorBody(response: Response): Promise<ErrorBody> {
 
 type Method = "GET" | "POST" | "PATCH" | "DELETE";
 
-async function send(path: string, init: { method: Method; query?: Record<string, unknown>; body?: unknown }, options: GatewayOptions): Promise<unknown> {
+async function send(path: string, init: { method: Method; query?: Record<string, unknown>; body?: unknown }, options: GatewayOptions, renewed = false): Promise<unknown> {
   const baseUrl = (options.baseUrl ?? configuredBaseUrl()).replace(/\/+$/, "");
   if (!baseUrl) {
     throw new GatewayError("not_configured", "The admin service address isn't set. Add VITE_TRAVELIAN_GATEWAY_BASE_URL to this environment.");
   }
+  const fromSession = options.accessToken === undefined;
   const accessToken = options.accessToken ?? getSession()?.accessToken;
   if (!accessToken) {
     throw new GatewayError("unauthorized", "Your session has no access token. Sign out and sign in again.");
@@ -130,7 +133,17 @@ async function send(path: string, init: { method: Method; query?: Record<string,
     throw new GatewayError("unavailable", "The admin service can't be reached. Check that the gateway is running; data will load when it's back.");
   }
 
-  if (response.status === 401) throw new GatewayError("unauthorized", "Your session has expired. Sign in again to load this page.");
+  if (response.status === 401) {
+    // The session ended (expired, or signed out elsewhere). Try the normal refresh once.
+    // A read is sent again once with the new token; an action (POST, PATCH, DELETE: holds,
+    // payments, ticketing...) is never re-sent automatically.
+    if (fromSession && !renewed && await renewSession()) {
+      if (init.method === "GET") return send(path, init, options, true);
+      throw new GatewayError("unauthorized", "Your session was renewed. Nothing was sent; please try again.", 401, "session_renewed");
+    }
+    if (fromSession) expireSession();
+    throw new GatewayError("unauthorized", EXPIRED_MESSAGE, 401);
+  }
   if (response.status === 403) {
     const body = await errorBody(response);
     throw new GatewayError("forbidden", "Your role can't view this data. A super admin can grant access.", 403, body.code);

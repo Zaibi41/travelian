@@ -23,6 +23,7 @@ Planned work, in order. Do not start a later item unless asked.
 6. **Public website: update to the new brand colors from the logo** (navy and teal). Do as a separate task: first a preview page for approval, then apply. Touches about 47 files. Do not start until the admin work is done and I ask.
 7. **Roles: align the 8 frontend roles with the gateway's roles** to match the Users & Access spec, before any non-super_admin staff role uses the admin.
 8. **Auth: move login through the gateway and decide token storage.**
+   - Done on 10 November 2026: admin route guard (no admin shell without a valid session; sign-in returns to the page asked for, only relative paths inside /admin, which closes the open redirect); a 401 tries Cognito's refresh once, then signs out with "Your session expired. Sign in again."; actions are never re-sent. The refresh runs from the browser against Cognito until login moves to the gateway.
 
 **Spec decisions needed:** Blog/News still needs a home in the 14 menus (kept under Website & CMS for now; your decision).
 

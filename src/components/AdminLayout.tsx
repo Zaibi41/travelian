@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-import { clearSession, getSession } from "@/lib/auth-session";
+import { clearSession, getSession, useSessionEvent } from "@/lib/auth-session";
+import { sessionState, signInUrl } from "@/lib/auth-guard";
+import { isUserSignOut, markUserSignOut, renewSession } from "@/lib/session-renewal";
 import { cognitoLogoutUrl } from "@/lib/cognito-auth";
 import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
@@ -22,7 +24,54 @@ import { AdminProfileDialog, type ProfileAction } from "@/components/AdminProfil
 import { formatPkr, getWalletSummary } from "@/lib/wallet-summary";
 import { ANNOUNCEMENTS_CHANGED, listAdminAnnouncements } from "@/lib/admin-announcements";
 
+/** Admin route guard: with no session, or one known to be expired, no admin page, menu or header
+ *  renders. An expired session with a refresh token gets one refresh attempt first; otherwise the
+ *  person goes to sign-in, which brings them back to the page they asked for. A session that ends
+ *  while the app is open (401, or signed out in another tab) goes to sign-in with the expired message. */
+export function useAdminSession(): boolean {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [session, setSessionState] = useState(getSession);
+  const state = sessionState(session);
+  const hadValid = useRef(state === "valid");
+  const triedRefresh = useRef(false);
+  const redirected = useRef(false);
+  const [renewing, setRenewing] = useState(false);
+
+  useEffect(() => useSessionEvent(() => setSessionState(getSession())), []);
+
+  useEffect(() => {
+    if (state === "valid") {
+      hadValid.current = true;
+      redirected.current = false;
+      return;
+    }
+    if (renewing || redirected.current) return;
+    if (state === "expired" && session?.refreshToken && !triedRefresh.current) {
+      triedRefresh.current = true;
+      setRenewing(true);
+      void renewSession().then(ok => {
+        setRenewing(false);
+        if (!ok) clearSession();
+        setSessionState(getSession());
+      });
+      return;
+    }
+    if (isUserSignOut()) return;                        // Sign out navigates on its own
+    redirected.current = true;
+    const expired = state === "expired" || hadValid.current;
+    if (state === "expired") clearSession();
+    navigate(signInUrl(`${location.pathname}${location.search}${location.hash}`, expired), { replace: true });
+  }, [state, renewing, session, location.pathname, location.search, location.hash, navigate]);
+
+  return state === "valid";
+}
+
 export function AdminLayout({ children }: { children: React.ReactNode }) {
+  return useAdminSession() ? <AdminShell>{children}</AdminShell> : null;
+}
+
+function AdminShell({ children }: { children: React.ReactNode }) {
   const { notifications, agencies, walletLedger, walletDeposits } = useAdmin();
   const unreadCount = notifications.filter(notification => !notification.read).length;
   const [announcements, setAnnouncements] = useState(listAdminAnnouncements);
@@ -66,11 +115,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      const redirect = encodeURIComponent(`${location.pathname}${location.search}`);
-      navigate(`/signin?redirect=${redirect}`, { replace: true });
-      return;
-    }
+    if (!isAuthenticated) return;                       // useAdminSession redirects
     if (currentRole === "customer" && location.pathname === "/admin") {
       navigate("/admin/customer", { replace: true });
     }
@@ -82,6 +127,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   };
 
   const handleLogout = () => {
+    markUserSignOut();
     clearSession();
     toast.success("Signed out");
     if (session?.provider === "Cognito") {

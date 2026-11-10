@@ -11,6 +11,7 @@ import { isAdminPortalRole, roleForSession } from "@/lib/role-mapping";
 import { useRole } from "@/contexts/RoleContext";
 import { PasswordInput } from "@/components/PasswordInput";
 import { AuthAside } from "@/components/public/AuthAside";
+import { EXPIRED_MESSAGE, EXPIRED_REASON, safeReturnPath } from "@/lib/auth-guard";
 
 
 export default function SignInPage() {
@@ -47,9 +48,9 @@ export default function SignInPage() {
       const role = roleForSession(session);
       if (role) setCurrentRole(role);
       toast.success("Welcome back");
-      const redirect = searchParams.get("redirect");
+      // Only a relative path inside /admin is followed (no other site, //host or javascript:).
       const fallback = isAdminPortalRole(role) ? "/admin" : "/admin/customer";
-      navigate(redirect && redirect.startsWith("/") ? redirect : fallback);
+      navigate(safeReturnPath(searchParams.get("redirect")) ?? fallback, { replace: true });
     } catch (error) {
       setLoading(false);
       const message = error instanceof Error ? error.message : "Sign in failed. Please try again.";
@@ -69,6 +70,9 @@ export default function SignInPage() {
             <div className="px-6 py-8 sm:px-10 sm:py-10">
               <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">Sign in to Travelian</h1>
               <p className="mt-2 text-sm text-muted-foreground">Access your bookings and account.</p>
+              {searchParams.get("reason") === EXPIRED_REASON && (
+                <p role="status" className="mt-4 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-sm text-foreground">{EXPIRED_MESSAGE}</p>
+              )}
 
               <form onSubmit={signIn} noValidate aria-busy={loading} className="mt-7">
                 <div>
