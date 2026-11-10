@@ -57,6 +57,16 @@ Status as of 2026-11-10. All 28 listed mockups are in this folder.
   arrows) centred on a thin line between the From and To cards, with the accessible name and tooltip
   "Swap origin and destination". When the fields stack (below about 900px) it sits on a horizontal
   line between them with the arrows pointing up and down.
+- **Search > Group Ticketing: restyled to match Flights (Zohaib's request, 11 November 2026).** The
+  original `mockup-search-group-ticketing.png` shows one small row with a text Swap button and a
+  plain date field. Group Ticketing now uses the same shared form parts as Flights: Suggested routes
+  (the 4 available sectors with the most departures, from the gateway's data) and Select available
+  sector on the top row; From, round swap, To (two-line airport cards, limited to the available
+  sectors) on the next; Departure Date (day first), Airline, Adults and Search group fares below.
+- **Search tabs and fields follow the public website's search form (Zohaib's request).** Tabs carry
+  the public icons and active style; fields have the public rounded look with leading icons
+  (take-off, landing, calendar), the outlined round swap button and the filled search button with a
+  magnifier. Sizes stay on the admin type scale.
 - **Search > Flights: Search expiry card.** As in the mockup, it carries no warning tag; a running
   timer is neutral and an expired search turns the card critical with the word "Expired".
 

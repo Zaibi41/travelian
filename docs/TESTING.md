@@ -59,7 +59,7 @@ npm run typecheck
 npm test
 ```
 
-Expected on 10 November 2026: typecheck clean, 48 test files and 399 tests passing. Admin layout specs (`e2e/admin-*.spec.ts`: flights search, booking detail, flights hold, customers, airports, session, type scale): 74 passing; run with `PLAYWRIGHT_CHANNEL=chrome npx playwright test e2e/admin-*.spec.ts` when Playwright's own browser isn't installed.
+Expected on 10 November 2026: typecheck clean, 49 test files and 409 tests passing. Admin layout specs (`e2e/admin-*.spec.ts`: flights search, booking detail, flights hold, customers, airports, group ticketing, session, type scale): 83 passing; run with `PLAYWRIGHT_CHANNEL=chrome npx playwright test e2e/admin-*.spec.ts` when Playwright's own browser isn't installed.
 
 Airport suggestions (Search > Flights From/To): `src/lib/admin-search/airports.test.ts` covers the ranking (exact code of a large or medium airport, then city prefix with a small airport's exact code after larger airports, IATA prefix, airport name, country; larger airports first; "kar" gives Karachi first), accents, case, the 8-result limit and no match; `e2e/admin-airports.spec.ts` covers picking, clearing, swap, same airport, keyboard, the 3-letter codes in the request, and that typing makes no request once the Search page has loaded. Data source: `docs/airports-data.md`.
 
@@ -78,4 +78,15 @@ labels and tables 13px, helper text and tags 12px, section headings 18px, page t
 `e2e/support/type-scale.ts` (also called from the customers, booking detail and hold specs) fail if
 any visible admin text is under 12px, a field label or table text under 13px (tags may be 12px), or
 the page scrolls sideways, at 1280 and 1440px.
+
+Search forms (shared parts, `src/components/admin/search/SearchFormParts.tsx`, `SectorAirportSelect.tsx`):
+`SearchFormParts.test.tsx` covers the two-line airport card (a code not in the airport list shows
+alone), the round swap button and From/To row, the search button, the icon tabs, the sector-limited
+From/To picker (only the given codes, keyboard choice, card with x) and the search-look date field.
+`e2e/admin-group-ticketing.spec.ts` checks, at 1280, 1440 and 390px, the Flights layout (From and To
+side by side then stacked, round swap centred and named, names not clipped, leading take-off,
+landing and calendar icons, list at least 360px, no sideways scroll, minimum text sizes), plus the
+tab icons, Suggested routes (the 4 busiest real sectors; hidden without sector data; a chip fills
+From and To and doesn't search), From/To listing only available sectors with the keyboard, swap to
+a reverse pair with no sector (allowed, searches and finds nothing, as before) and the day-first date.
 

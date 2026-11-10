@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { ArrowLeftRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Compass } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { LabeledSelect } from "@/components/admin/bookings/LabeledSelect";
+import { DayFirstDateField } from "@/components/admin/DayFirstDateField";
+import { FieldLabel, RouteRow, SEARCH_FIELD, SearchSubmitButton } from "./SearchFormParts";
+import { SectorAirportSelect } from "./SectorAirportSelect";
+import { cn } from "@/lib/utils";
 import { GatewayError, gatewayAssetUrl } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
 import {
@@ -61,8 +64,9 @@ export function GroupTicketingSearch() {
   });
 
   const options = inventoryOptions(inventory.data?.data ?? []);
-  const airports = (side: "from" | "to") =>
-    [...new Set(options.sectors.map(sector => sector[side]))].sort().map(code => ({ value: code, label: code }));
+  const airports = (side: "from" | "to") => [...new Set(options.sectors.map(sector => sector[side]))].sort();
+  // Suggested routes: real sectors only, the 4 with the most departures (inventoryOptions sorts by count).
+  const suggested = options.sectors.slice(0, 4);
   const commit = (next: GroupSearch) => setParams(writeGroupSearch(params, next), { replace: true });
   const rows = results.data ? resultRows(results.data.data, search.airline) : [];
   const canSearch = isCompleteSearch(draft);
@@ -73,25 +77,43 @@ export function GroupTicketingSearch() {
         {inventory.error ? (
           <DashboardErrorNotice message={errorMessage(inventory.error)} />
         ) : (
+          /* Row 1: Suggested routes (the 4 sectors with most departures) and Select available sector. */
           <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(12rem,18rem)]">
             <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-              <span className="text-body text-muted-foreground">Available sectors:</span>
-              {inventory.isPending && <Skeleton className="h-badge w-40 rounded-pill" />}
-              {options.sectors.slice(0, 6).map(sector => (
-                <button
-                  key={`${sector.from}-${sector.to}`}
-                  type="button"
-                  onClick={() => setDraft({ ...draft, from: sector.from, to: sector.to })}
-                  className="inline-flex h-badge items-center rounded-pill border border-brand-navy/20 bg-accent px-2 text-helper font-semibold text-brand-navy hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  {sector.from} → {sector.to} ({sector.count})
-                </button>
-              ))}
+              {inventory.isPending && <Skeleton className="h-8 w-56 rounded-md" />}
+              {suggested.length > 0 && (
+                <>
+                  <span className="flex items-center gap-1.5 whitespace-nowrap text-label font-medium text-muted-foreground">
+                    <Compass className="h-4 w-4" aria-hidden="true" /> Suggested routes:
+                  </span>
+                  {suggested.map(sector => {
+                    const selected = draft.from === sector.from && draft.to === sector.to;
+                    return (
+                      <button
+                        key={`${sector.from}-${sector.to}`}
+                        type="button"
+                        data-route-chip
+                        aria-pressed={selected}
+                        onClick={() => setDraft({ ...draft, from: sector.from, to: sector.to })}
+                        className={cn(
+                          "min-h-8 shrink-0 whitespace-nowrap rounded-md border px-2.5 py-1 text-helper font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                          selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted/30 text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-primary",
+                        )}
+                      >
+                        {sector.from} → {sector.to} <span className="font-normal opacity-80">({sector.count})</span>
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+              {inventory.data && options.sectors.length === 0 && (
+                <p className="text-body text-muted-foreground">No group sectors are available right now.</p>
+              )}
             </div>
             <LabeledSelect
               id="group-sector"
               label="Select available sector"
-              value={draft.from && draft.to ? `${draft.from}-${draft.to}` : ANY}
+              value={draft.from && draft.to && options.sectors.some(sector => sector.from === draft.from && sector.to === draft.to) ? `${draft.from}-${draft.to}` : ANY}
               options={[
                 { value: ANY, label: "All available sectors" },
                 ...options.sectors.map(sector => ({ value: `${sector.from}-${sector.to}`, label: `${sector.from} → ${sector.to} (${sector.count})` })),
@@ -105,35 +127,37 @@ export function GroupTicketingSearch() {
         )}
 
         <form
-          className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,7rem)_auto]"
+          className="flex min-w-0 flex-col gap-3"
           onSubmit={event => {
             event.preventDefault();
             if (canSearch) commit(draft);
           }}
         >
-          <LabeledSelect id="group-from" label="From" value={draft.from ?? ANY} options={[{ value: ANY, label: "Origin" }, ...airports("from")]}
-            onChange={value => setDraft({ ...draft, from: value === ANY ? undefined : value })} />
-          <Button type="button" variant="outline" className="h-control text-body" aria-label="Swap origin and destination"
-            onClick={() => setDraft({ ...draft, from: draft.to, to: draft.from })}>
-            <ArrowLeftRight className="h-4 w-4" aria-hidden="true" /> Swap
-          </Button>
-          <LabeledSelect id="group-to" label="To" value={draft.to ?? ANY} options={[{ value: ANY, label: "Destination" }, ...airports("to")]}
-            onChange={value => setDraft({ ...draft, to: value === ANY ? undefined : value })} />
-          <div className="flex min-w-0 flex-col gap-1">
-            <label htmlFor="group-date" className="text-label font-medium text-muted-foreground">Date</label>
-            <Input id="group-date" type="date" value={draft.date ?? ""} onChange={event => setDraft({ ...draft, date: event.target.value || undefined })}
-              className="h-control rounded-sm text-body" />
+          {/* Row 2: From and To, limited to the available sectors, with the shared round swap. */}
+          <RouteRow
+            from={<SectorAirportSelect id="group-from" label="From" placeholder="Origin" icon="departure" codes={airports("from")} value={draft.from}
+              onChange={from => setDraft({ ...draft, from })} />}
+            to={<SectorAirportSelect id="group-to" label="To" placeholder="Destination" icon="arrival" codes={airports("to")} value={draft.to}
+              onChange={to => setDraft({ ...draft, to })} />}
+            onSwap={() => setDraft({ ...draft, from: draft.to, to: draft.from })}
+          />
+          {/* Row 3: date, airline, adults and the search button. */}
+          <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,8rem)_auto]">
+            <div className="flex min-w-0 flex-col gap-1">
+              <FieldLabel htmlFor="group-date">Departure Date</FieldLabel>
+              <DayFirstDateField id="group-date" variant="search" value={draft.date} onChange={date => setDraft({ ...draft, date })} />
+            </div>
+            <LabeledSelect id="group-airline" label="Airline" value={draft.airline ?? ANY} triggerClassName={SEARCH_FIELD}
+              options={[{ value: ANY, label: "All airlines" }, ...options.airlines.map(airline => ({ value: airline, label: airline }))]}
+              onChange={value => setDraft({ ...draft, airline: value === ANY ? undefined : value })} />
+            <div className="flex min-w-0 flex-col gap-1">
+              <FieldLabel htmlFor="group-adults">Adults</FieldLabel>
+              <Input id="group-adults" type="number" min={1} max={9} value={draft.adults}
+                onChange={event => setDraft({ ...draft, adults: Math.min(9, Math.max(1, Number(event.target.value) || 1)) })}
+                className={cn(SEARCH_FIELD, "px-3")} />
+            </div>
+            <SearchSubmitButton label="Search group fares" disabled={!canSearch} />
           </div>
-          <LabeledSelect id="group-airline" label="Airline" value={draft.airline ?? ANY}
-            options={[{ value: ANY, label: "All airlines" }, ...options.airlines.map(airline => ({ value: airline, label: airline }))]}
-            onChange={value => setDraft({ ...draft, airline: value === ANY ? undefined : value })} />
-          <div className="flex min-w-0 flex-col gap-1">
-            <label htmlFor="group-adults" className="text-label font-medium text-muted-foreground">Adults</label>
-            <Input id="group-adults" type="number" min={1} max={9} value={draft.adults}
-              onChange={event => setDraft({ ...draft, adults: Math.min(9, Math.max(1, Number(event.target.value) || 1)) })}
-              className="h-control rounded-sm text-body" />
-          </div>
-          <Button type="submit" disabled={!canSearch} className="h-control bg-teal text-body text-teal-foreground hover:bg-teal/90">Search group fares</Button>
         </form>
       </section>
 

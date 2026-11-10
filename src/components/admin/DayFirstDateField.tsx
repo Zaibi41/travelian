@@ -23,13 +23,16 @@ interface DayFirstDateFieldProps {
   className?: string;
   /** Height override for the text field (the search form uses 40px / 44px on touch). */
   inputClassName?: string;
+  /** "search": the public search-form look, with the calendar icon leading the field. */
+  variant?: "default" | "search";
+  placeholder?: string;
 }
 
 const iso = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 /** A date shown day first ("24 Nov 2026") whatever the browser language. Type it (24/11/2026,
  *  24 Nov 2026) or pick it from the calendar; the value stays ISO. */
-export function DayFirstDateField({ id, value, onChange, min, max, disabled, invalid, describedBy, fromYear = 2024, toYear = 2035, className, inputClassName }: DayFirstDateFieldProps) {
+export function DayFirstDateField({ id, value, onChange, min, max, disabled, invalid, describedBy, fromYear = 2024, toYear = 2035, className, inputClassName, variant = "default", placeholder = "e.g. 24 Nov 2026" }: DayFirstDateFieldProps) {
   const [text, setText] = useState(formatDay(value));
   const [unreadable, setUnreadable] = useState(false);
   const [open, setOpen] = useState(false);
@@ -53,6 +56,7 @@ export function DayFirstDateField({ id, value, onChange, min, max, disabled, inv
     }
   };
   const errorId = `${id}-format`;
+  const search = variant === "search";
 
   return (
     <div className={cn("flex min-w-0 flex-col gap-1", className)}>
@@ -65,7 +69,7 @@ export function DayFirstDateField({ id, value, onChange, min, max, disabled, inv
               disabled={disabled}
               inputMode="text"
               autoComplete="off"
-              placeholder="e.g. 24 Nov 2026"
+              placeholder={placeholder}
               aria-invalid={invalid || unreadable || undefined}
               aria-describedby={[describedBy, unreadable ? errorId : undefined].filter(Boolean).join(" ") || undefined}
               onChange={event => {
@@ -84,11 +88,14 @@ export function DayFirstDateField({ id, value, onChange, min, max, disabled, inv
               onKeyDown={event => {
                 if (event.key === "Enter") commit(text);
               }}
-              className={cn("flex w-full min-w-0 rounded-sm border border-input bg-background py-1 pl-3 pr-10 text-body placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-status-critical", inputClassName ?? "h-control")}
+              className={cn("flex w-full min-w-0 py-1 text-body placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-status-critical",
+                search ? "rounded-xl border border-muted-foreground/80 bg-muted/30 pl-11 pr-3" : "rounded-sm border border-input bg-background pl-3 pr-10",
+                inputClassName ?? (search ? "h-12" : "h-control"))}
             />
             <PopoverTrigger asChild>
               <button type="button" disabled={disabled} aria-label="Choose from calendar"
-                className="absolute right-0.5 top-1/2 inline-flex h-8 w-9 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed">
+                className={cn("absolute top-1/2 inline-flex h-8 w-9 -translate-y-1/2 items-center justify-center rounded-sm text-muted-foreground", search ? "left-1" : "right-0.5",
+                  "hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed")}>
                 <CalendarDays className="h-4 w-4" aria-hidden="true" />
               </button>
             </PopoverTrigger>

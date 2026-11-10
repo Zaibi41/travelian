@@ -1,8 +1,8 @@
-import { Link, useSearchParams } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { useSearchParams } from "react-router-dom";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GroupTicketingSearch } from "@/components/admin/search/GroupTicketingSearch";
 import { FlightsBooking } from "@/components/admin/search/FlightsBooking";
+import { SearchProductTabs } from "@/components/admin/search/SearchFormParts";
 import { loadAirports } from "@/lib/admin-search/airports";
 
 // Airport suggestions start loading as soon as this page's module loads, so the list is ready
@@ -41,21 +41,7 @@ export default function InternalSearchPage() {
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
       <h1 className="font-display text-page-title font-bold text-foreground">Search</h1>
-      <nav aria-label="Search products" className="flex flex-wrap gap-2">
-        {TABS.map(tab => (
-          <Link
-            key={tab.id}
-            to={`/admin/search?tab=${tab.id}`}
-            aria-current={tab.id === active ? "page" : undefined}
-            className={cn(
-              "inline-flex h-control items-center rounded-sm border px-3.5 text-body font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              tab.id === active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-brand-navy hover:bg-accent",
-            )}
-          >
-            {tab.label}
-          </Link>
-        ))}
-      </nav>
+      <SearchProductTabs active={active} />
       {shell ? <NotAvailableNotice title={shell.title}>{shell.body}</NotAvailableNotice>
         : active === "flights" ? <FlightsBooking /> : <GroupTicketingSearch />}
     </div>

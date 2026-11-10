@@ -122,6 +122,7 @@ Still open:
 | Hotels tab | Hotel provider search plus Hotel Inventory served by the gateway, one list (D25) |
 | Umrah tab | Umrah packages served by the gateway |
 | Cards: Available providers, Search expiry, Quotes pending | Provider health endpoint (admin only); fare validity from search results; quotations table |
+| Group Ticketing: "Departure Date (Optional)" / "All departure dates" (public site wording) | `POST /v1/group-ticketing/search` requires `departure_date` and filters by that exact date (and by seats left). Make it optional (all dates) in the gateway; until then the admin date stays required |
 | Group Ticketing: Children, Infants | `/v1/group-ticketing/search` accepts adults only |
 | Group Ticketing: Source (Owned / Supplier), Hold rule | `source` and hold rule on each departure; owned stock in the gateway |
 | Group Ticketing: child and infant prices | Price per passenger type (section 5) |

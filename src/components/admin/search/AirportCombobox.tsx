@@ -1,9 +1,11 @@
 import { useId, useMemo, useRef, useState } from "react";
-import { Plane, X } from "lucide-react";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { useAirports } from "@/hooks/use-airports";
 import { MIN_QUERY, searchAirports, type Airport } from "@/lib/admin-search/airports";
 import { cn } from "@/lib/utils";
+import {
+  AIRPORT_FIELD, AIRPORT_LIST_PANEL, AirportIcon, AirportLines, FieldLabel, SelectedAirportCard, airportOptionClass, type AirportIconKind,
+} from "./SearchFormParts";
 
 interface AirportComboboxProps {
   id: string;
@@ -12,28 +14,14 @@ interface AirportComboboxProps {
   /** The 3-letter IATA code sent to the gateway (unchanged from the plain code field). */
   value?: string;
   onChange: (code?: string) => void;
-}
-
-/** Line 1 "LHE - Lahore" (bold, 14px); line 2 airport name and country (13px), wrapping to at
- *  most two lines. The full text stays in a hover title only as a fallback. */
-function AirportLines({ code, airport }: { code: string; airport?: Airport }) {
-  const first = airport ? `${airport.iata} - ${airport.city}` : code;
-  const second = airport ? `${airport.name}, ${airport.country}` : "";
-  return (
-    <span className="flex min-w-0 flex-1 items-center gap-2.5" title={second ? `${first}, ${second}` : first}>
-      <Plane className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-      <span className="flex min-w-0 flex-col gap-0.5 text-left">
-        <span data-airport-line="1" className="truncate text-body font-semibold leading-5 text-foreground">{first}</span>
-        {second && <span data-airport-line="2" className="line-clamp-2 break-words text-label leading-[1.15rem] text-muted-foreground">{second}</span>}
-      </span>
-    </span>
-  );
+  /** Leading field icon: take-off for From, landing for To (public site). */
+  icon?: AirportIconKind;
 }
 
 /** Origin or destination: type a code, city, airport or country and choose from at most 8
  *  suggestions (searched in memory, no request). Arrow keys, Enter, Escape; Tab leaves.
  *  After a choice the field shows the airport with an x to clear it. */
-export function AirportCombobox({ id, label, placeholder, value, onChange }: AirportComboboxProps) {
+export function AirportCombobox({ id, label, placeholder, value, onChange, icon = "departure" }: AirportComboboxProps) {
   const index = useAirports();
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -57,30 +45,18 @@ export function AirportCombobox({ id, label, placeholder, value, onChange }: Air
   };
 
   if (value && !editing) {
-    const name = selected ? `${selected.iata} - ${selected.city}, ${selected.name}, ${selected.country}` : value;
-    return (
-      <div className="flex min-w-0 flex-col gap-1">
-        <span id={`${id}-label`} className="text-label font-medium text-muted-foreground">{label}</span>
-        <div className="flex min-h-14 min-w-0 items-center gap-1 rounded-sm border border-input bg-background py-1.5 pl-3 pr-1">
-          <button id={id} type="button" aria-labelledby={`${id}-label ${id}`} onClick={startEditing}
-            className="flex min-h-10 min-w-0 flex-1 items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title={name}>
-            <AirportLines code={value} airport={selected} />
-          </button>
-          <button type="button" aria-label={`Clear ${label.toLowerCase()} airport`} onClick={() => { onChange(undefined); startEditing(); }}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm text-muted-foreground [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
-        </div>
-      </div>
-    );
+    return <SelectedAirportCard id={id} label={label} code={value} airport={selected} icon={icon} onOpen={startEditing}
+      onClear={() => { onChange(undefined); startEditing(); }} />;
   }
 
   const activeId = open && results[active] ? `${listId}-${results[active].iata}` : undefined;
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <label htmlFor={id} className="text-label font-medium text-muted-foreground">{label}</label>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Popover open={open} onOpenChange={next => !next && setEditing(false)}>
         <PopoverAnchor asChild>
+          <div className="relative min-w-0">
+          <AirportIcon kind={icon} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             ref={inputRef}
             id={id}
@@ -122,12 +98,13 @@ export function AirportCombobox({ id, label, placeholder, value, onChange }: Air
                 setText("");
               }
             }}
-            className="flex h-14 w-full min-w-0 rounded-sm border border-input bg-background px-3 text-body placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className={cn(AIRPORT_FIELD, "flex h-14 w-full min-w-0 pl-10 pr-3 text-body placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}
           />
+          </div>
         </PopoverAnchor>
         <PopoverContent
           align="start"
-          className="w-[max(var(--radix-popper-anchor-width),360px)] max-w-[calc(100vw-1.5rem)] p-1.5"
+          className={AIRPORT_LIST_PANEL}
           onOpenAutoFocus={event => event.preventDefault()}
           onCloseAutoFocus={event => event.preventDefault()}
           onInteractOutside={event => {
@@ -146,8 +123,7 @@ export function AirportCombobox({ id, label, placeholder, value, onChange }: Air
                 onPointerDown={event => event.preventDefault()}
                 onPointerEnter={() => setActive(position)}
                 onClick={() => choose(airport)}
-                className={cn("flex min-h-12 min-w-0 cursor-pointer items-center rounded-md px-3 py-2",
-                  position === active ? "bg-accent ring-1 ring-inset ring-primary/40" : "hover:bg-muted/60")}
+                className={airportOptionClass(position === active)}
               >
                 <AirportLines code={airport.iata} airport={airport} />
               </li>
