@@ -17,13 +17,13 @@ const index = buildIndex(LIST);
 const codes = (query: string) => searchAirports(index, query).map(airport => airport.iata);
 
 describe("airport search", () => {
-  it("ranks an exact IATA code first", () => {
-    expect(codes("kar")[0]).toBe("KAR");
+  it("ranks an exact code first for large and medium airports, not for small ones", () => {
     expect(codes("LHE")[0]).toBe("LHE");
+    expect(codes("kar")[0]).toBe("KHI");                                 // KAR is small: after the Karachi city match
   });
 
   it("then city prefix, then IATA prefix, then airport name, then country", () => {
-    expect(codes("kar")).toEqual(["KAR", "KHI", "KRL", "ZZM", "ZZK"]);   // exact code, city, then names (larger first)
+    expect(codes("kar")).toEqual(["KHI", "KAR", "KRL", "ZZM", "ZZK"]);   // city, small exact code, then names (larger first)
     expect(codes("lh")).toEqual(["LHE", "LHR", "GRU"]);                  // codes from 2 characters, then "Guarulhos"
     expect(codes("guarulhos")).toEqual(["GRU"]);
     expect(codes("chin")).toEqual(["PKX", "KRL"]);                        // country, larger airport first
@@ -44,6 +44,17 @@ describe("airport search", () => {
 
   it("returns nothing when nothing matches", () => {
     expect(codes("xyzzy")).toEqual([]);
+  });
+
+  it("the real list: Karachi, KHI, LHE, DXB and Islamabad first; Multan found", async () => {
+    const real = buildIndex((await import("@/data/airports.json")).default as Airport[]);
+    const top = (query: string) => searchAirports(real, query).map(x => x.iata);
+    expect(top("kar")[0]).toBe("KHI");
+    expect(top("khi")[0]).toBe("KHI");
+    expect(top("lhe")[0]).toBe("LHE");
+    expect(top("dxb")[0]).toBe("DXB");
+    expect(top("isb")[0]).toBe("ISB");
+    expect(top("mux")).toContain("MUX");
   });
 
   it("the real list keeps only the six fields and finds Lahore and Karachi", async () => {

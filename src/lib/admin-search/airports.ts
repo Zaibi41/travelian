@@ -49,7 +49,8 @@ export function buildIndex(airports: Airport[]): AirportIndex {
 
 /** Match tier (lower is better), or -1 for no match. */
 function tier(entry: Entry, q: string) {
-  if (entry.iata === q) return 0;                                   // exact IATA code
+  if (entry.iata === q && entry.size <= 1) return 0;                // exact code of a large or medium airport
+  if (entry.iata === q) return 2;                                   // a small airport's exact code: with the city matches, after larger airports
   if (entry.city.startsWith(q)) return 2;                           // city starts with the text
   if (entry.iata.startsWith(q)) return 3;                           // IATA code from 2 letters ("lh" -> LHE)
   if (entry.name.includes(q)) return 4;                             // airport name contains the text
@@ -57,7 +58,8 @@ function tier(entry: Entry, q: string) {
   return -1;
 }
 
-/** At most 8 airports: exact IATA, then city, then IATA prefix, airport name, country; larger airports first within a tier. */
+/** At most 8 airports: exact code (large or medium airport), then city prefix (a small airport's exact code
+ *  sits here, after larger airports), IATA prefix, airport name, country; larger airports first within a tier. */
 export function searchAirports(index: AirportIndex, query: string, limit = MAX_RESULTS): Airport[] {
   const q = normalize(query);
   if (q.length < MIN_QUERY) return [];
@@ -66,7 +68,9 @@ export function searchAirports(index: AirportIndex, query: string, limit = MAX_R
     const rank = tier(entry, q);
     if (rank >= 0) found.push({ entry, tier: rank });
   }
-  found.sort((a, b) => a.tier - b.tier || a.entry.size - b.entry.size || a.entry.city.localeCompare(b.entry.city) || a.entry.iata.localeCompare(b.entry.iata));
+  const exact = (entry: Entry) => (entry.iata === q ? 0 : 1);
+  found.sort((a, b) => a.tier - b.tier || a.entry.size - b.entry.size || exact(a.entry) - exact(b.entry)
+    || a.entry.city.localeCompare(b.entry.city) || a.entry.iata.localeCompare(b.entry.iata));
   return found.slice(0, limit).map(item => item.entry.airport);
 }
 
