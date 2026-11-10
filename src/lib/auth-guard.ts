@@ -41,3 +41,16 @@ export function signInUrl(returnTo: string, expired = false): string {
   const query = params.toString();
   return query ? `${SIGN_IN_PATH}?${query}` : SIGN_IN_PATH;
 }
+
+/** What the sign-in page does before it renders anything: a valid session goes straight to the
+ *  admin (or a safe page inside /admin); an expired session with a refresh token tries the
+ *  refresh once first; otherwise the form. Roles are not decided here (the gateway and the
+ *  admin's "no access" state do that). */
+export type SignInDecision = { kind: "go"; to: string } | { kind: "refresh" } | { kind: "form" };
+
+export function signInDecision(session: AuthSession | null, redirect: string | null | undefined, now = Date.now()): SignInDecision {
+  const state = sessionState(session, now);
+  if (state === "valid") return { kind: "go", to: safeReturnPath(redirect) ?? "/admin" };
+  if (state === "expired" && session?.refreshToken) return { kind: "refresh" };
+  return { kind: "form" };
+}

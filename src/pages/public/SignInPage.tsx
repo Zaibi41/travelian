@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,9 @@ import { isAdminPortalRole, roleForSession } from "@/lib/role-mapping";
 import { useRole } from "@/contexts/RoleContext";
 import { PasswordInput } from "@/components/PasswordInput";
 import { AuthAside } from "@/components/public/AuthAside";
-import { EXPIRED_MESSAGE, EXPIRED_REASON, safeReturnPath } from "@/lib/auth-guard";
+import { EXPIRED_MESSAGE, EXPIRED_REASON, safeReturnPath, signInDecision, type SignInDecision } from "@/lib/auth-guard";
+import { clearSession, getSession } from "@/lib/auth-session";
+import { renewSession } from "@/lib/session-renewal";
 
 
 export default function SignInPage() {
@@ -22,6 +24,27 @@ export default function SignInPage() {
   const submitting = useRef(false);
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [serverError, setServerError] = useState("");
+  // Decided before the first render, so the form never flashes for someone already signed in.
+  const [gate, setGate] = useState<SignInDecision>(() => signInDecision(getSession(), searchParams.get("redirect")));
+
+  useEffect(() => {
+    if (gate.kind === "form") {
+      const stale = getSession();
+      if (stale) clearSession();                    // expired, no refresh token: nothing to keep
+      return undefined;
+    }
+    if (gate.kind !== "refresh") return undefined;
+    let live = true;
+    void renewSession().then(ok => {
+      if (!live) return;
+      if (!ok) clearSession();
+      setGate(ok ? signInDecision(getSession(), searchParams.get("redirect")) : { kind: "form" });
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- decided once per visit
+  }, [gate.kind]);
 
   const signIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -60,6 +83,9 @@ export default function SignInPage() {
       submitting.current = false;
     }
   };
+
+  if (gate.kind === "go") return <Navigate to={gate.to} replace />;
+  if (gate.kind === "refresh") return <p role="status" className="sr-only">Checking your session…</p>;
 
   return (
     <div data-public-page-scroll className="h-full min-h-0 overflow-y-auto travelian-hero-background">

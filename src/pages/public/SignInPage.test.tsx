@@ -6,6 +6,8 @@ import SignInPage from "./SignInPage";
 import { signInWithPassword } from "@/lib/cognito-auth";
 
 vi.mock("@/lib/cognito-auth", () => ({ signInWithPassword: vi.fn() }));
+const renewSession = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/session-renewal", () => ({ renewSession: () => renewSession() }));
 vi.mock("@/contexts/RoleContext", () => ({ useRole: () => ({ setCurrentRole: vi.fn() }) }));
 
 const renderPage = () => render(<MemoryRouter><SignInPage /></MemoryRouter>);
@@ -14,7 +16,7 @@ const fill = () => {
   fireEvent.change(screen.getByLabelText("Password"), { target: { value: "test-password" } });
 };
 
-beforeEach(() => { vi.mocked(signInWithPassword).mockReset(); });
+beforeEach(() => { vi.mocked(signInWithPassword).mockReset(); renewSession.mockReset(); localStorage.clear(); });
 
 describe("Sign In presentation", () => {
   it("shows field errors and focuses the first invalid field without authenticating", () => {
@@ -89,4 +91,58 @@ describe("Sign In presentation", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sign In" }));
     expect(await screen.findByText("Landed on /admin")).toBeInTheDocument();
   });
+
+  describe("already signed in", () => {
+    const KEY = "travelian.session.v1";
+    const store = (extra: Record<string, unknown>) => localStorage.setItem(KEY, JSON.stringify({ email: "staff@travelian.com", name: "Staff", createdAt: "", accessToken: "a", ...extra }));
+
+    it("a valid session never shows the form and goes to /admin", () => {
+      store({ expiresAt: Date.now() + 60_000 });
+      signInAt("/signin");
+      expect(screen.getByText("Landed on /admin")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Email")).toBeNull();
+    });
+
+    it("a valid session goes to a safe remembered page; an unsafe one is ignored", () => {
+      store({ expiresAt: Date.now() + 60_000 });
+      const { unmount } = signInAt("/signin?redirect=%2Fadmin%2Fcustomers");
+      expect(screen.getByText("Landed on /admin/customers")).toBeInTheDocument();
+      unmount();
+      signInAt(`/signin?redirect=${encodeURIComponent("//evil.example/admin")}`);
+      expect(screen.getByText("Landed on /admin")).toBeInTheDocument();
+    });
+
+    it("expired with a refresh token that works: refresh once, then the admin, no form", async () => {
+      store({ expiresAt: Date.now() - 1000, refreshToken: "r" });
+      renewSession.mockImplementation(async () => {
+        store({ expiresAt: Date.now() + 60_000, refreshToken: "r" });
+        return true;
+      });
+      signInAt("/signin");
+      expect(screen.queryByLabelText("Email")).toBeNull();
+      expect(await screen.findByText("Landed on /admin")).toBeInTheDocument();
+      expect(renewSession).toHaveBeenCalledTimes(1);
+    });
+
+    it("expired with a refresh that fails: session cleared, form shown, no message unless sent from an expired admin page", async () => {
+      store({ expiresAt: Date.now() - 1000, refreshToken: "r" });
+      renewSession.mockResolvedValue(false);
+      const { unmount } = signInAt("/signin");
+      expect(await screen.findByLabelText("Email")).toBeInTheDocument();
+      expect(localStorage.getItem(KEY)).toBeNull();
+      expect(screen.queryByRole("status")).toBeNull();
+      unmount();
+      store({ expiresAt: Date.now() - 1000, refreshToken: "r" });
+      signInAt("/signin?redirect=%2Fadmin%2Fcustomers&reason=expired");
+      expect(await screen.findByLabelText("Email")).toBeInTheDocument();
+      expect(screen.getByRole("status")).toHaveTextContent("Your session expired. Sign in again.");
+    });
+
+    it("no session: the form, as before", () => {
+      signInAt("/signin");
+      expect(screen.getByLabelText("Email")).toBeInTheDocument();
+      expect(renewSession).not.toHaveBeenCalled();
+    });
+  });
 });
+

@@ -104,3 +104,34 @@ test("a redirect to another site is ignored after sign-in", async ({ page }) => 
   await expect(page).toHaveURL(/\/admin$/);
   expect(new URL(page.url()).host).toBe("localhost:8080");
 });
+
+test("already signed in: Sign In on the public site lands on /admin and the form never appears", async ({ page }) => {
+  await mock(page);
+  await signedIn(page);
+  // Record if the sign-in form is ever put on the page, even for a moment.
+  await page.addInitScript(() => {
+    (window as unknown as { formSeen: boolean }).formSeen = false;
+    new MutationObserver(() => {
+      if (document.querySelector("#email") || [...document.querySelectorAll("h1")].some(h => h.textContent?.includes("Sign in to Travelian"))) {
+        (window as unknown as { formSeen: boolean }).formSeen = true;
+      }
+    }).observe(document, { childList: true, subtree: true });
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/");
+  await page.getByRole("link", { name: "Sign In", exact: true }).first().click();
+  await expect(page).toHaveURL(/\/admin$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { formSeen: boolean }).formSeen)).toBe(false);
+});
+
+test("expired-session redirect from /admin/customers: the form and the message show", async ({ page }) => {
+  await mock(page);
+  await page.addInitScript(key => localStorage.setItem(key, JSON.stringify({
+    email: "staff@travelian.com", name: "Session Test", createdAt: new Date().toISOString(), accessToken: "old", expiresAt: Date.now() - 60_000,
+  })), KEY);
+  await page.goto("/admin/customers");
+  await expect(page.getByLabel("Email")).toBeVisible();
+  await expect(page.getByText("Your session expired. Sign in again.")).toBeVisible();
+  expect(new URL(page.url()).searchParams.get("redirect")).toBe("/admin/customers");
+});

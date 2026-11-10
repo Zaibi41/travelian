@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { safeReturnPath, sessionState, signInUrl } from "./auth-guard";
+import { safeReturnPath, sessionState, signInDecision, signInUrl } from "./auth-guard";
 
 const session = (expiresAt?: number) => ({ email: "test@example.invalid", name: "Test", createdAt: "2026-11-10T00:00:00Z", accessToken: "t", expiresAt });
 
@@ -41,5 +41,25 @@ describe("sign-in URL", () => {
     expect(signInUrl("/admin/customers?q=khan")).toBe("/signin?redirect=%2Fadmin%2Fcustomers%3Fq%3Dkhan");
     expect(signInUrl("/admin/customers", true)).toBe("/signin?redirect=%2Fadmin%2Fcustomers&reason=expired");
     expect(signInUrl("//evil.example")).toBe("/signin");
+  });
+});
+
+describe("sign-in page decision (before anything renders)", () => {
+  const now = 2_000;
+  it("a valid session goes to /admin, or to a safe page inside /admin", () => {
+    expect(signInDecision(session(3_000), null, now)).toEqual({ kind: "go", to: "/admin" });
+    expect(signInDecision(session(3_000), "/admin/customers?q=khan", now)).toEqual({ kind: "go", to: "/admin/customers?q=khan" });
+  });
+  it("an unsafe return path is ignored", () => {
+    for (const unsafe of ["https://evil.example/admin", "//evil.example", "javascript:alert(1)", "/signup"]) {
+      expect(signInDecision(session(3_000), unsafe, now)).toEqual({ kind: "go", to: "/admin" });
+    }
+  });
+  it("an expired session with a refresh token tries the refresh; without one, the form", () => {
+    expect(signInDecision({ ...session(1_000), refreshToken: "r" }, null, now)).toEqual({ kind: "refresh" });
+    expect(signInDecision(session(1_000), null, now)).toEqual({ kind: "form" });
+  });
+  it("no session: the form", () => {
+    expect(signInDecision(null, "/admin/customers", now)).toEqual({ kind: "form" });
   });
 });
