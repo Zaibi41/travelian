@@ -82,7 +82,7 @@ export function GroupTicketingSearch() {
                   key={`${sector.from}-${sector.to}`}
                   type="button"
                   onClick={() => setDraft({ ...draft, from: sector.from, to: sector.to })}
-                  className="inline-flex h-badge items-center rounded-pill border border-brand-navy/20 bg-accent px-2 text-label font-semibold text-brand-navy hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="inline-flex h-badge items-center rounded-pill border border-brand-navy/20 bg-accent px-2 text-helper font-semibold text-brand-navy hover:bg-accent/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {sector.from} → {sector.to} ({sector.count})
                 </button>

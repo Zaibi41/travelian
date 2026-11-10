@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { expectReadableText } from "./support/type-scale";
 
 // Flights booking flow pages (fare check, hold form, hold result): no horizontal page scroll.
 // Local-only session and intercepted gateway answers; nothing reaches a real gateway or supplier.
@@ -69,10 +70,12 @@ for (const width of [1280, 1366, 1440, 1920]) {
     await expect(page.getByRole("heading", { name: "Hold flight", level: 1 })).toBeVisible();
     await expect(page.getByRole("region", { name: "Selected fare" })).toContainText("Rs 15,316");
     expect(await overflow(page)).toBe(0);
+    await expectReadableText(page, `hold form at ${width}px`);
     await page.getByRole("button", { name: "Hold seats" }).click();
     await expect(page.getByRole("heading", { name: "Hold result" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Travelers" })).toContainText("••••••567");
     expect(await overflow(page)).toBe(0);
+    await expectReadableText(page, `hold result at ${width}px`);
   });
 
   test(`price-changed dialog stays in view at ${width}px`, async ({ page }) => {
@@ -83,6 +86,7 @@ for (const width of [1280, 1366, 1440, 1920]) {
     const box = await dialog.boundingBox();
     expect(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= 900).toBe(true);
     expect(await overflow(page)).toBe(0);
+    await expectReadableText(page, `price-changed dialog at ${width}px`);
     await dialog.getByRole("button", { name: "Continue at new price" }).click();
     await expect(page.getByRole("heading", { name: "Book flight", level: 1 })).toBeVisible();
     expect(await overflow(page)).toBe(0);

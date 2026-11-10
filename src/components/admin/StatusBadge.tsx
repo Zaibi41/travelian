@@ -11,7 +11,7 @@ const TONE: Record<Severity, string> = {
 /** Status pill. Color is never the only signal: the text names the status. */
 export function StatusBadge({ severity, children, className }: { severity: Severity; children?: React.ReactNode; className?: string }) {
   return (
-    <span className={cn("inline-flex h-badge max-w-full items-center whitespace-nowrap rounded-pill px-2 text-label font-medium", TONE[severity], className)}>
+    <span className={cn("inline-flex h-badge max-w-full items-center whitespace-nowrap rounded-pill px-2 text-helper font-medium", TONE[severity], className)}>
       <span className="truncate">{children ?? SEVERITY_LABEL[severity]}</span>
     </span>
   );

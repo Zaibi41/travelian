@@ -131,6 +131,7 @@ export default {
         body: ["var(--text-body)", { lineHeight: "1.5" }],
         table: ["var(--text-table)", { lineHeight: "1.4" }],
         label: ["var(--text-label)", { lineHeight: "1.4" }],
+        helper: ["var(--text-helper)", { lineHeight: "1.4" }],
       },
       spacing: {
         "content": "var(--content-padding)",

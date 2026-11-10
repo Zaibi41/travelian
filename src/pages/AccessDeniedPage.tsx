@@ -9,8 +9,8 @@ export default function AccessDeniedPage() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
           <ShieldAlert className="h-7 w-7" />
         </div>
-        <h1 className="mt-5 text-2xl font-bold text-foreground">Access Denied</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <h1 className="mt-5 font-display text-page-title font-bold text-foreground">Access Denied</h1>
+        <p className="mt-2 text-body text-muted-foreground">
           Your role does not have permission to open this workspace page.
         </p>
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">

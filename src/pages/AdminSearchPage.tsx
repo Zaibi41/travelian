@@ -84,13 +84,13 @@ function RequestDialog({
         {submitted ? (
           <div className="space-y-4 py-4 text-center">
             <CheckCircle2 className="mx-auto h-12 w-12 text-success" />
-            <p className="text-sm text-muted-foreground">The request for <strong>{item?.name}</strong> is saved in the Requests module. Admin notification email will be handled by the configured backend notification settings.</p>
+            <p className="text-body text-muted-foreground">The request for <strong>{item?.name}</strong> is saved in the Requests module. Admin notification email will be handled by the configured backend notification settings.</p>
             <Button className="w-full" onClick={onClose}>Done</Button>
           </div>
         ) : (
           <form className="space-y-4" onSubmit={submit}>
             <div className="rounded-xl border bg-muted/30 p-3">
-              <p className="text-xs font-bold uppercase text-muted-foreground">Selected {label}</p>
+              <p className="text-helper font-bold uppercase text-muted-foreground">Selected {label}</p>
               <p className="font-semibold">{item?.name}</p>
             </div>
             <div className="space-y-2">
@@ -152,33 +152,33 @@ function ServiceSearchPanel({
       <Card className="shadow-card">
         <CardContent className="space-y-5 p-5">
           <div>
-            <h2 className="text-xl font-bold font-display">{title}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+            <h2 className="text-section font-bold font-display">{title}</h2>
+            <p className="mt-1 text-body text-muted-foreground">{description}</p>
           </div>
           <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr_auto]">
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-muted-foreground">Search</Label>
+              <Label className="text-label font-bold text-muted-foreground">Search</Label>
               <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input value={query} onChange={event => setQuery(event.target.value)} className="h-12 rounded-xl pl-9" placeholder={placeholder} />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-muted-foreground">Departure city</Label>
+              <Label className="text-label font-bold text-muted-foreground">Departure city</Label>
               <Select value={primary} onValueChange={setPrimary}>
                 <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Departure city" /></SelectTrigger>
                 <SelectContent><SelectItem value="all">All</SelectItem>{primaryOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">Hotel category</Label>
+                <Label className="text-label font-bold text-muted-foreground">Hotel category</Label>
                 <Select value={secondary} onValueChange={setSecondary}>
                   <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Hotel category" /></SelectTrigger>
                   <SelectContent><SelectItem value="all">All</SelectItem>{secondaryOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
                 </Select>
             </div>
             <div className="space-y-1.5">
-                <Label className="text-xs font-bold text-muted-foreground">Duration</Label>
+                <Label className="text-label font-bold text-muted-foreground">Duration</Label>
                 <Select value={duration} onValueChange={setDuration}>
                   <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Duration" /></SelectTrigger>
                   <SelectContent><SelectItem value="all">All</SelectItem>{durationOptions.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent>
@@ -204,16 +204,16 @@ function ServiceSearchPanel({
                       <h3 className="font-bold">{item.name}</h3>
                       <Badge variant="secondary" className="capitalize">{item.packageType || "umrah"}</Badge>
                     </div>
-                    <p className="mt-1 text-sm text-muted-foreground">{[item.duration || item.processingTime, item.departureCity || item.city, item.travelDates].filter(Boolean).join(" / ") || "Details available on request"}</p>
+                    <p className="mt-1 text-body text-muted-foreground">{[item.duration || item.processingTime, item.departureCity || item.city, item.travelDates].filter(Boolean).join(" / ") || "Details available on request"}</p>
                   </div>
                 </div>
-                <div className="grid gap-2 rounded-2xl border bg-muted/30 p-3 text-sm">
+                <div className="grid gap-2 rounded-2xl border bg-muted/30 p-3 text-body">
                     <p><span className="font-bold">Makkah:</span> {item.makkahHotel || item.hotelOptions?.[0]?.makkahHotel || "On request"}</p>
                     <p><span className="font-bold">Madinah:</span> {item.madinahHotel || item.hotelOptions?.[0]?.madinahHotel || "On request"}</p>
                     <p className="text-muted-foreground">{item.transportIncluded ? "Transport included" : "Transport on request"}</p>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-                  <p className="text-xl font-black text-primary">{formatPrice(item.basePrice || 0)}</p>
+                  <p className="text-kpi-sm font-black text-primary">{formatPrice(item.basePrice || 0)}</p>
                   <div className="flex gap-2">
                     <Button asChild variant="outline" className="rounded-xl"><Link to={`/umrah/${item.packageId}`}>View Package</Link></Button>
                     <Button className="rounded-xl" onClick={() => setRequestItem(item)}>Request Package</Button>
@@ -259,8 +259,8 @@ function LegacyAdminSearchPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold font-display">Search</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Search live fares and published Travelian services. Inventory, pricing and supplier settings stay in their own admin modules.</p>
+        <h1 className="text-page-title font-bold font-display">Search</h1>
+        <p className="mt-1 text-body text-muted-foreground">Search live fares and published Travelian services. Inventory, pricing and supplier settings stay in their own admin modules.</p>
       </div>
 
       <div className="flex gap-2 overflow-x-auto rounded-2xl border bg-card p-2 shadow-card">
@@ -269,7 +269,7 @@ function LegacyAdminSearchPage() {
             key={tab.id}
             type="button"
             onClick={() => setTab(tab.id)}
-            className={`inline-flex min-w-max items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors ${
+            className={`inline-flex min-w-max items-center gap-2 rounded-xl px-4 py-2.5 text-body font-bold transition-colors ${
               activeTab === tab.id ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >

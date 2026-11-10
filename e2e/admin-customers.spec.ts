@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
+import { expectReadableText } from "./support/type-scale";
 
 // Customers & Travelers: search, detail, add person, duplicate choice, merge, permissions and
 // no horizontal page scroll. Local-only session and intercepted gateway answers (made-up,
@@ -64,11 +65,13 @@ for (const width of [390, 768, 1024, 1440]) {
     await expect(table).toContainText("+92 •••••••567");
     await expect(page).toHaveURL(/q=durrani/);
     expect(await overflow(page)).toBe(0);
+    await expectReadableText(page, `customers at ${width}px`);
 
     await page.getByRole("link", { name: "Travelers", exact: true }).click();
     await expect(page.getByRole("region", { name: "Travelers" })).toContainText("1990-••-••");
     await expect(page.getByRole("region", { name: "Travelers" })).toContainText("Passport ••••••567");
     expect(await overflow(page)).toBe(0);
+    await expectReadableText(page, `travelers at ${width}px`);
 
     await page.getByRole("link", { name: `${LONG.first_name} ${LONG.last_name}` }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(`${LONG.first_name} ${LONG.last_name}`);
@@ -76,6 +79,7 @@ for (const width of [390, 768, 1024, 1440]) {
     await expect(page.getByRole("region", { name: "Bookings" })).toContainText("TRV-PE49ZP");
     await expect(page.getByText(/reveal/i)).toHaveCount(0);
     expect(await overflow(page)).toBe(0);
+    await expectReadableText(page, `person detail at ${width}px`);
   });
 }
 

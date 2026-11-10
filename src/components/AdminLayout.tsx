@@ -148,7 +148,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
             <div className="flex shrink-0 items-center gap-2">
               <SidebarTrigger />
             </div>
-            {!isSuperAdmin && announcements.length > 0 && <div className="mx-2 flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-xs text-primary sm:mx-4" role="region" aria-label="Announcements">
+            {!isSuperAdmin && announcements.length > 0 && <div className="mx-2 flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-label text-primary sm:mx-4" role="region" aria-label="Announcements">
               <Megaphone aria-hidden="true" className="h-4 w-4 shrink-0" />
               <div className="min-w-0 flex-1 overflow-hidden">
                 <div className="admin-announcement-scroll flex w-max items-center whitespace-nowrap font-medium motion-reduce:!animate-none" style={{ animationDuration: `${Math.max(18, announcements.length * 10)}s` }}>
@@ -163,7 +163,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
             </div>}
             <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
               {walletSummary && (
-                <Link to="/admin/wallet" aria-label={`Wallet balance ${formatPkr(walletSummary.available)}`} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-2 py-1.5 text-sm font-bold text-primary transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-3">
+                <Link to="/admin/wallet" aria-label={`Wallet balance ${formatPkr(walletSummary.available)}`} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-2 py-1.5 text-body font-bold text-primary transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-3">
                   <Wallet aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
                   <span className="hidden font-semibold text-primary/80 lg:inline">Wallet</span>
                   <span className="truncate">{formatPkr(walletSummary.available)}</span>
@@ -180,17 +180,17 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                     {unreadCount > 0 && canAccessAdminPath(currentRole, "/admin/notifications") && <span aria-hidden="true" className="absolute right-0 top-0 h-2 w-2 rounded-full bg-primary ring-2 ring-card" />}
                   </span>
                   <span className="hidden text-left sm:block">
-                    <span className="block whitespace-nowrap text-sm font-medium">{currentUser.name}</span>
-                    <span className="block whitespace-nowrap text-xs text-muted-foreground">{roleLabel(currentRole)}</span>
+                    <span className="block whitespace-nowrap text-body font-medium">{currentUser.name}</span>
+                    <span className="block whitespace-nowrap text-label text-muted-foreground">{roleLabel(currentRole)}</span>
                   </span>
                   <ChevronDown aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent onCloseAutoFocus={event => { if (pendingProfileAction) { event.preventDefault(); setProfileAction(pendingProfileAction); setPendingProfileAction(null); } }} align="end" sideOffset={8} className="w-64 max-w-[calc(100vw-2rem)] rounded-xl p-1.5 motion-reduce:!animate-none">
                 <DropdownMenuLabel className="px-2 py-2 font-normal">
-                  <p className="break-words text-sm font-semibold">{currentUser.name}</p>
-                  <p className="text-xs text-muted-foreground">{roleLabel(currentRole)}</p>
-                  {currentUser.email && <p className="break-all text-xs text-muted-foreground">{currentUser.email}</p>}
+                  <p className="break-words text-body font-semibold">{currentUser.name}</p>
+                  <p className="text-label text-muted-foreground">{roleLabel(currentRole)}</p>
+                  {currentUser.email && <p className="break-all text-label text-muted-foreground">{currentUser.email}</p>}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => openProfileAction("view")} className="min-h-10 gap-2 rounded-lg"><UserRound aria-hidden="true" className="h-4 w-4" /> View profile</DropdownMenuItem>
@@ -198,7 +198,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
                 <DropdownMenuItem onSelect={() => openProfileAction("password")} className="min-h-10 gap-2 rounded-lg"><KeyRound aria-hidden="true" className="h-4 w-4" /> Change password</DropdownMenuItem>
                 {canAccessAdminPath(currentRole, "/admin/notifications") && (
                   <DropdownMenuItem asChild className="min-h-10 gap-2 rounded-lg">
-                    <Link to="/admin/notifications"><Bell aria-hidden="true" className="h-4 w-4" /> Notifications {unreadCount > 0 && <span className="ml-auto rounded-full bg-primary/10 px-2 text-xs font-semibold text-primary">{unreadCount} unread</span>}</Link>
+                    <Link to="/admin/notifications"><Bell aria-hidden="true" className="h-4 w-4" /> Notifications {unreadCount > 0 && <span className="ml-auto rounded-full bg-primary/10 px-2 text-helper font-semibold text-primary">{unreadCount} unread</span>}</Link>
                   </DropdownMenuItem>
                 )}
                 {/* Internal roles: moved here from the sidebar. Agency/customer sidebars keep their link. */}

@@ -3,7 +3,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { BOOKING_STATUS_LABEL, ISSUANCE_STATUS_LABEL, PAYMENT_STATUS_LABEL } from "@/lib/admin-bookings/format";
 import type { BookingStatuses, PaymentStatus } from "@/lib/admin-bookings/types";
 
-const CHIP = "inline-flex h-badge max-w-full items-center whitespace-nowrap rounded-pill px-2 text-label font-medium";
+const CHIP = "inline-flex h-badge max-w-full items-center whitespace-nowrap rounded-pill px-2 text-helper font-medium";
 
 /** Test rows (imported sample data, supplier UAT holds) are labelled so they're never mistaken for live bookings. */
 export function SampleDataBadge({ className, label = "Sample data" }: { className?: string; label?: string | null }) {

@@ -66,7 +66,7 @@ export default function SignInPage() {
       <div className="flex min-h-full items-center justify-center px-4 py-6 sm:px-6 sm:py-8">
         <Card className="my-auto w-full max-w-[880px] shrink-0 overflow-hidden rounded-xl border border-border/60 bg-white shadow-md">
           <CardContent className="grid p-0 lg:grid-cols-[44fr_56fr]">
-            <AuthAside variant="minimal" eyebrow="Member access" title="Welcome back" description="Manage your trips, bookings and account from one place." />
+            <AuthAside variant="minimal" eyebrowSize="text-xs" eyebrow="Member access" title="Welcome back" description="Manage your trips, bookings and account from one place." />
             <div className="px-6 py-8 sm:px-10 sm:py-10">
               <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">Sign in to Travelian</h1>
               <p className="mt-2 text-sm text-muted-foreground">Access your bookings and account.</p>

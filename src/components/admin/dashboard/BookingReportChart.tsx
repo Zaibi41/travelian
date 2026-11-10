@@ -31,8 +31,8 @@ export function BookingReportChart({ data: report, loading }: { data?: BookingRe
           <ChartContainer config={chartConfig} className="aspect-auto h-60 w-full">
             <BarChart data={data.buckets} margin={{ top: 8, right: 4, left: -18, bottom: 0 }} accessibilityLayer>
               <CartesianGrid vertical={false} stroke="hsl(var(--border))" />
-              <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} minTickGap={16} />
-              <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} width={40} />
+              <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ className: "text-helper", fill: "hsl(var(--muted-foreground))" }} minTickGap={16} />
+              <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ className: "text-helper", fill: "hsl(var(--muted-foreground))" }} width={40} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Bar dataKey="bookings" fill="var(--color-bookings)" radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false} />
               <Bar dataKey="issued" fill="var(--color-issued)" radius={[3, 3, 0, 0]} maxBarSize={28} isAnimationActive={false} />

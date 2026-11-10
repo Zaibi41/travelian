@@ -121,7 +121,7 @@ export function AdminSidebar() {
                       <SidebarMenuButton
                         asChild
                         isActive={isActive(section.category, item.url, item.title)}
-                        className="h-10 rounded-xl px-2.5 text-[14px] font-bold data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                        className="h-10 rounded-xl px-2.5 text-nav font-bold data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                       >
                         <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground font-bold">
                           {!internal && <item.icon className="h-5 w-5 shrink-0" />}
@@ -141,8 +141,8 @@ export function AdminSidebar() {
                 >
                   <CollapsibleTrigger
                     className={internal
-                      ? "group flex h-10 w-full items-center justify-between gap-2 rounded-xl px-2.5 text-[14px] font-bold text-sidebar-foreground transition-colors hover:bg-sidebar-accent/80 data-[state=open]:bg-sidebar-accent/60"
-                      : "group flex h-9 w-full items-center justify-between rounded-lg px-2.5 text-[12px] font-bold uppercase tracking-[0.04em] text-sidebar-muted transition-colors hover:bg-sidebar-accent/55 hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent/80 data-[state=open]:text-sidebar-accent-foreground"}
+                      ? "group flex h-10 w-full items-center justify-between gap-2 rounded-xl px-2.5 text-nav font-bold text-sidebar-foreground transition-colors hover:bg-sidebar-accent/80 data-[state=open]:bg-sidebar-accent/60"
+                      : "group flex h-9 w-full items-center justify-between rounded-lg px-2.5 text-label font-bold uppercase tracking-[0.04em] text-sidebar-muted transition-colors hover:bg-sidebar-accent/55 hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent/80 data-[state=open]:text-sidebar-accent-foreground"}
                   >
                     {internal
                       ? <span className="min-w-0 break-words text-left">{section.category}</span>
@@ -156,7 +156,7 @@ export function AdminSidebar() {
                           <SidebarMenuButton
                             asChild
                             isActive={isActive(section.category, item.url, item.title)}
-                            className="h-9 rounded-xl px-2.5 text-[13.5px] font-semibold data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                            className="h-9 rounded-xl px-2.5 text-nav font-semibold data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                           >
                             <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground font-semibold">
                               {!internal && <item.icon className="h-5 w-5 shrink-0" />}
@@ -175,7 +175,7 @@ export function AdminSidebar() {
               <div className="mt-2 border-t border-sidebar-border/60 pt-2">
                 <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild className="h-8 rounded-xl px-2.5 text-[12.5px]">
+                    <SidebarMenuButton asChild className="h-8 rounded-xl px-2.5 text-label">
                       <Link to="/" className="flex items-center gap-2 text-sidebar-muted hover:text-sidebar-accent-foreground">
                         <Globe className="h-4 w-4 shrink-0" />
                         <span>View Public Site</span>

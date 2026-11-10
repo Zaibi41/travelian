@@ -23,8 +23,8 @@ function AirportLines({ code, airport }: { code: string; airport?: Airport }) {
     <span className="flex min-w-0 flex-1 items-center gap-2.5" title={second ? `${first}, ${second}` : first}>
       <Plane className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
       <span className="flex min-w-0 flex-col gap-0.5 text-left">
-        <span data-airport-line="1" className="truncate text-[14px] font-semibold leading-5 text-foreground">{first}</span>
-        {second && <span data-airport-line="2" className="line-clamp-2 break-words text-[13px] leading-[1.15rem] text-muted-foreground">{second}</span>}
+        <span data-airport-line="1" className="truncate text-body font-semibold leading-5 text-foreground">{first}</span>
+        {second && <span data-airport-line="2" className="line-clamp-2 break-words text-label leading-[1.15rem] text-muted-foreground">{second}</span>}
       </span>
     </span>
   );
@@ -122,7 +122,7 @@ export function AirportCombobox({ id, label, placeholder, value, onChange }: Air
                 setText("");
               }
             }}
-            className="flex h-14 w-full min-w-0 rounded-sm border border-input bg-background px-3 text-[14px] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex h-14 w-full min-w-0 rounded-sm border border-input bg-background px-3 text-body placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </PopoverAnchor>
         <PopoverContent

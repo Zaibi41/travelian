@@ -127,16 +127,19 @@
   --font-display: 'Plus Jakarta Sans', sans-serif;   /* headings, kept (approved) */
   --font-body: 'Inter', sans-serif;                  /* unchanged */
 
-  /* Type scale: sizes from the mockup, raised for readability (approved).
-     Minimum size is 12px; nothing smaller. */
-  --text-page-title: 22px;   /* "Dashboard", 700 */
+  /* One admin type scale, based on the public website (Tailwind defaults it uses):
+   * page title 24px (public h1 text-2xl), section headings 18px (public h2 text-lg),
+   * numbers 24px / 20px, body 14px (text-sm), labels and tables 13px, helper text and
+   * tags 12px (text-xs). Nothing in the admin is smaller than 12px. */
+  --text-page-title: 24px;   /* page titles, Plus Jakarta Sans 700 */
   --text-kpi: 24px;          /* KPI values, 700, tabular numbers */
-  --text-kpi-sm: 22px;       /* Business-today values */
-  --text-section: 14px;      /* section + panel titles, 600 */
+  --text-kpi-sm: 20px;       /* smaller numbers (Business today) */
+  --text-section: 18px;      /* section + panel titles, Plus Jakarta Sans 600 */
   --text-nav: 14px;          /* sidebar items */
-  --text-body: 13px;         /* body text, filter chips */
-  --text-table: 13px;        /* table cells; 14px allowed where a table needs it */
-  --text-label: 12px;        /* secondary labels: KPI labels, hints, timestamps, badges */
+  --text-body: 14px;         /* body text, buttons, fields, filter chips */
+  --text-table: 13px;        /* table cells */
+  --text-label: 13px;        /* field labels, card labels, secondary text */
+  --text-helper: 12px;       /* helper text, hints, timestamps, tags and badges (minimum) */
 
   /* ---------- Spacing and sizes (from mockup) ---------- */
   --admin-sidebar-width: 248px;   /* not --sidebar-width: ui/sidebar.tsx owns that name (16rem) */

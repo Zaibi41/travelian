@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { expectReadableText } from "./support/type-scale";
 
 // Booking detail Passengers and Audit tabs. Local-only session and intercepted gateway responses.
 if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
@@ -44,6 +45,7 @@ for (const width of [1440, 1024, 768, 390]) {
     await open(page, width, "passengers");
     await expect(page.getByRole("region", { name: "Passengers" })).toBeVisible();
     expect(await overflow(page)).toBe(0);
+    await expectReadableText(page, `booking detail at ${width}px`);
     await page.getByRole("button", { name: /Reveal \(logged\) MR Muhammad/ }).click();
     const dialog = page.getByRole("dialog", { name: "Reveal identity details" });
     await expect(dialog).toBeVisible();
@@ -54,5 +56,6 @@ for (const width of [1440, 1024, 768, 390]) {
     await open(page, width, "audit");
     await expect(page.getByRole("region", { name: "Audit" })).toBeVisible();
     expect(await overflow(page)).toBe(0);
+    await expectReadableText(page, `booking detail audit at ${width}px`);
   });
 }
