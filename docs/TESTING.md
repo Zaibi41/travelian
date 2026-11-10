@@ -28,7 +28,7 @@ Fill it in privately:
 
 | Variable | What it is |
 | --- | --- |
-| `VITE_TRAVELIAN_GATEWAY_BASE_URL` | Your gateway, e.g. `http://localhost:8000`. All admin data comes from here. Add this page's origin (`http://localhost:8080`) to the gateway's `CORS_ALLOWED_ORIGINS`. |
+| `VITE_TRAVELIAN_GATEWAY_BASE_URL` | Your gateway, e.g. `http://localhost:8000`. During development Vite forwards requests to it through `/__gateway` on the frontend origin. Builds and preview use this URL directly, so their origin must be in the gateway's `CORS_ALLOWED_ORIGINS`. |
 | `VITE_COGNITO_REGION`, `VITE_COGNITO_USER_POOL_ID`, `VITE_COGNITO_CLIENT_ID`, `VITE_COGNITO_DOMAIN` | The Cognito user pool and app client used to sign in. They must match the gateway's `COGNITO_ISSUER` and `COGNITO_APP_CLIENT_ID`. |
 | `VITE_TRAVELIAN_API_BASE_URL` | The legacy API used by the public website and the agency roles' legacy search. The new admin screens don't use it. |
 
@@ -41,6 +41,16 @@ npm run dev        # http://localhost:8080
 ```
 
 Open `http://localhost:8080/admin` and sign in with **your own** account. The first sign-in creates your profile on the gateway with the default role. To see the admin, your user must be made super admin (or staff) on the gateway; see section 6 of the gateway's `docs/TESTING.md`.
+
+### Another computer on the same network
+
+Open `http://<server-LAN-IP>:8080/admin` on the other computer, with port 8080 allowed
+through the server's firewall for that computer. Keep the frontend and gateway running.
+Vite forwards gateway requests (including authentication headers and gateway logos)
+through `/__gateway`, using the gateway address already configured on the server.
+The gateway can keep listening on `127.0.0.1:8000`; port 8000 does not need to be opened
+to the network. No `.env` change is needed for this access. Production builds and
+`vite preview` do not use this development proxy.
 
 ## 5. What to expect with a fresh database
 
