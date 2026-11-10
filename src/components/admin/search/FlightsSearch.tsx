@@ -14,6 +14,8 @@ import { StatusKpiCard } from "@/components/admin/StatusKpiCard";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { LabeledSelect } from "@/components/admin/bookings/LabeledSelect";
 import { AirportCombobox } from "@/components/admin/search/AirportCombobox";
+import { DayFirstDateField } from "@/components/admin/DayFirstDateField";
+import { formatDay } from "@/lib/admin-search/date-display";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
@@ -34,7 +36,7 @@ export function time(local?: string | null) {
 export function day(local?: string | null) {
   if (!local) return "";
   const date = parseISO(local);
-  return Number.isFinite(date.getTime()) ? format(date, "d MMM") : "";
+  return Number.isFinite(date.getTime()) ? format(date, "d MMM yyyy") : "";
 }
 
 export function useCountdown(expiresAt?: string) {
@@ -139,7 +141,10 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
             <StatusKpiCard
               label="Search expiry"
               value={countdown.seconds > 0 ? countdown.label : "Expired"}
-              severity={countdown.seconds > 0 ? "action" : "critical"}
+              // Mockup search-flights: a running timer carries no warning tag. Once expired the card
+              // turns critical; the value "Expired" is its text label, so no separate tag is shown.
+              severity={countdown.seconds > 0 ? undefined : "critical"}
+              showBadge={false}
               hint={countdown.seconds > 0 ? "Fares must be revalidated before booking" : "Search again for current fares"}
             />
           )}
@@ -222,7 +227,7 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
           </div>
         ) : results.data ? (
           <>
-            <Results data={results.data} filters={filters} onFilters={setFilters} renderFareAction={renderFareAction} actionNotes={actionNotes} />
+            <Results data={results.data} search={search} filters={filters} onFilters={setFilters} renderFareAction={renderFareAction} actionNotes={actionNotes} />
             {renderBelow?.(results.data, search)}
           </>
         ) : null
@@ -237,9 +242,8 @@ function DateInput({ id, label, value, min, disabledReason, onChange }: {
   return (
     <div className="relative flex min-w-0 flex-col gap-1" title={disabledReason}>
       <label htmlFor={id} className="text-label font-medium text-muted-foreground">{label}</label>
-      <Input id={id} type="date" value={value ?? ""} min={min} disabled={Boolean(disabledReason)}
-        aria-describedby={disabledReason ? `${id}-reason` : undefined}
-        onChange={event => onChange(event.target.value || undefined)} className="h-control rounded-sm text-body" />
+      <DayFirstDateField id={id} value={value} min={min} disabled={Boolean(disabledReason)}
+        describedBy={disabledReason ? `${id}-reason` : undefined} onChange={onChange} />
       {disabledReason && <span id={`${id}-reason`} className="sr-only">{disabledReason}</span>}
     </div>
   );
@@ -312,8 +316,17 @@ function TravelersPicker({ value, onChange }: { value: FlightSearch; onChange: (
   );
 }
 
-function Results({ data, filters, onFilters, renderFareAction, actionNotes }: {
-  data: FlightSearchView; filters: ResultFilters; onFilters: (next: ResultFilters) => void;
+/** "No flights found for LHE to KHI on 24 Nov 2026. Try another date." */
+export function noFlightsMessage(from: string, to: string, date?: string) {
+  return `No flights found for ${from} to ${to}${date ? ` on ${formatDay(date)}` : ""}. Try another date.`;
+}
+
+/** Any result filter other than the sort order is applied. */
+export const filtersApplied = (filters: ResultFilters) =>
+  (Object.keys(DEFAULT_FILTERS) as (keyof ResultFilters)[]).some(key => key !== "sort" && filters[key] !== DEFAULT_FILTERS[key]);
+
+function Results({ data, search, filters, onFilters, renderFareAction, actionNotes }: {
+  data: FlightSearchView; search: FlightSearch; filters: ResultFilters; onFilters: (next: ResultFilters) => void;
   renderFareAction?: FlightsSearchProps["renderFareAction"]; actionNotes?: string[];
 }) {
   const allFlights = data.journeys.flatMap(journey => journey.flights);
@@ -323,6 +336,9 @@ function Results({ data, filters, onFilters, renderFareAction, actionNotes }: {
   const bands = useMemo(() => priceBands(allFlights), [allFlights]);
   const responding = data.providers ? `${data.providers.filter(p => p.status === "responded").length} of ${data.providers.length}` : null;
   const validUntil = clock(data.expires_at);
+  // D24: a provider failed or timed out. Its notice replaces the "no flights" message.
+  const providerFailed = Boolean(data.notice) || Boolean(data.providers?.some(provider => provider.status === "failed"));
+  const partialNotice = "Some results may be missing.";       // shown here only when the header has no notice
 
   // Nothing came back: say so honestly. "Some results may be missing" (D24) is only for
   // partial results, shown with them below when the gateway sends that notice.
@@ -386,9 +402,19 @@ function Results({ data, filters, onFilters, renderFareAction, actionNotes }: {
             onChange={price => onFilters({ ...filters, price })} />
         </div>
       )}
-      {data.journeys.length === 0 && <p className="py-2 text-body text-muted-foreground">No flights found for this search.</p>}
+      {data.journeys.length === 0 && (
+        providerFailed ? (data.notice ? null : <p className="py-2 text-body text-status-action-text">{partialNotice}</p>)
+          : <p className="py-2 text-body text-muted-foreground">{noFlightsMessage(search.from ?? "", search.to ?? "", search.date)}</p>
+      )}
       {data.journeys.map(journey => {
         const flights = filterFlights(journey.flights, filters);
+        const journeyDate = journey.direction === "outbound" ? search.date : search.returnDate;
+        // Nothing came back for this journey: the date message, unless a provider failed (then the
+        // partial-failure notice stays). Filters only explain an empty list when there were flights.
+        const empty = journey.flights.length === 0
+          ? (providerFailed ? (data.notice ? null : <p className="py-1 text-body text-status-action-text">{partialNotice}</p>)
+            : <p className="py-1 text-body text-muted-foreground">{noFlightsMessage(journey.origin, journey.destination, journeyDate)}</p>)
+          : <p className="py-1 text-body text-muted-foreground">No flights match these filters.</p>;
         return (
           <div key={journey.direction} className="flex flex-col gap-2.5">
             {data.journeys.length > 1 && (
@@ -396,9 +422,7 @@ function Results({ data, filters, onFilters, renderFareAction, actionNotes }: {
                 {journey.direction === "outbound" ? "Outbound" : "Return"} · {journey.origin} → {journey.destination}
               </h3>
             )}
-            {flights.length === 0 ? (
-              <p className="py-1 text-body text-muted-foreground">No flights match these filters.</p>
-            ) : flights.map(flight => (
+            {flights.length === 0 ? empty : flights.map(flight => (
               <FlightCard key={flight.id} journey={journey} flight={flight} data={data} renderFareAction={renderFareAction} actionNotes={actionNotes} />
             ))}
           </div>

@@ -280,3 +280,72 @@ describe("filter helpers (real data only)", () => {
     expect(filterFlights(tagged, { ...DEFAULT_FILTERS, provider: "southair" })[0].fares.map(f => f.name)).toEqual(["EB"]);
   });
 });
+
+describe("Search > Flights small fixes (item 3)", () => {
+  beforeEach(() => gateway.search.mockReset());
+  const empty = (extra: Partial<FlightSearchView> = {}) => ({ ...STAFF, journeys: [{ ...STAFF.journeys[0], flights: [] }], ...extra });
+
+  it("a) zero flights without filters names the route and date", async () => {
+    gateway.search.mockResolvedValue(empty());
+    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-24");
+    expect(await screen.findByText("No flights found for KHI to MUX on 24 Nov 2026. Try another date.")).toBeInTheDocument();
+    expect(screen.queryByText("No flights match these filters.")).not.toBeInTheDocument();
+  });
+
+  it("a) the date message also covers a reply with no journeys", async () => {
+    gateway.search.mockResolvedValue({ ...STAFF, journeys: [] });
+    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-24");
+    expect(await screen.findByText("No flights found for KHI to MUX on 24 Nov 2026. Try another date.")).toBeInTheDocument();
+  });
+
+  it("a) a provider failure keeps the partial-failure notice instead of the empty message", async () => {
+    gateway.search.mockResolvedValue(empty({ notice: "Some results may be missing." }));
+    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-24");
+    expect(await screen.findByText("Some results may be missing.")).toBeInTheDocument();
+    expect(screen.queryByText(/No flights found/)).not.toBeInTheDocument();
+  });
+
+  it("a) a failed provider without a notice still shows the general notice, not the empty message", async () => {
+    gateway.search.mockResolvedValue(empty({ providers: [{ name: "southair", status: "failed" }] }));
+    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-24");
+    expect(await screen.findByText("Some results may be missing.")).toBeInTheDocument();
+    expect(screen.queryByText(/No flights found/)).not.toBeInTheDocument();
+  });
+
+  it("b) dates show day first with the year; times in 24-hour form; the fields show the same", async () => {
+    gateway.search.mockResolvedValue(STAFF);
+    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27&trip=roundtrip&return=2026-12-03");
+    const results = await screen.findByRole("region", { name: "Results" });
+    expect(within(results).getAllByText(/27 Nov 2026 · KHI/).length).toBeGreaterThan(0);
+    expect(within(results).getAllByText("23:00").length).toBeGreaterThan(0);
+    expect(screen.getByLabelText("Departure date")).toHaveValue("27 Nov 2026");
+    expect(screen.getByLabelText("Return date")).toHaveValue("3 Dec 2026");
+    expect(gateway.search).toHaveBeenCalledWith(expect.objectContaining({ date: "2026-11-27", returnDate: "2026-12-03" }), expect.anything());
+  });
+
+  it("b) a typed day-first date is kept as ISO for the request", async () => {
+    gateway.search.mockResolvedValue(STAFF);
+    renderAt("/admin/search?tab=flights&from=KHI&to=MUX");
+    const field = screen.getByLabelText("Departure date");
+    fireEvent.change(field, { target: { value: "5/1/2027" } });
+    fireEvent.blur(field);
+    expect(field).toHaveValue("5 Jan 2027");
+    fireEvent.click(screen.getByRole("button", { name: "Search flights" }));
+    expect(await screen.findByRole("region", { name: "Results" })).toBeInTheDocument();
+    expect(gateway.search).toHaveBeenCalledWith(expect.objectContaining({ date: "2027-01-05" }), expect.anything());
+  });
+
+  it("c) a running timer has no warning tag; an expired one turns critical with the word Expired", async () => {
+    gateway.search.mockResolvedValue(STAFF);
+    const { unmount } = renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    const card = await screen.findByRole("group", { name: /Search expiry/ });
+    expect(card).not.toHaveTextContent("Needs action");
+    expect(card.getAttribute("aria-label")).not.toMatch(/Needs action|Critical/);
+    unmount();
+    gateway.search.mockResolvedValue({ ...STAFF, expires_at: new Date(Date.now() - 1000).toISOString() });
+    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-28");
+    const expired = await screen.findByRole("group", { name: /Search expiry: Expired/ });
+    expect(expired).toHaveTextContent("Expired");
+    expect(expired).not.toHaveTextContent("Needs action");
+  });
+});

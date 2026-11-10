@@ -28,9 +28,11 @@ interface StatusKpiCardProps {
   size?: "default" | "sm";
   /** The card's filter is applied (shown with an outline and aria-current). */
   selected?: boolean;
+  /** Show the severity tag ("Needs action"...). Off only where the mockup shows none and the value is itself the label. */
+  showBadge?: boolean;
 }
 
-export function StatusKpiCard({ label, value, severity, hint, fullValue, to, size = "default", selected = false }: StatusKpiCardProps) {
+export function StatusKpiCard({ label, value, severity, hint, fullValue, to, size = "default", selected = false, showBadge = true }: StatusKpiCardProps) {
   const body = (
     <div
       className={cn(
@@ -42,7 +44,7 @@ export function StatusKpiCard({ label, value, severity, hint, fullValue, to, siz
     >
       <div className="flex min-w-0 items-start justify-between gap-2">
         <span className="min-w-0 text-label text-muted-foreground">{label}</span>
-        {severity && <StatusBadge severity={severity} className="shrink-0" />}
+        {severity && showBadge && <StatusBadge severity={severity} className="shrink-0" />}
       </div>
       <span
         title={fullValue}

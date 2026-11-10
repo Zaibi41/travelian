@@ -10,6 +10,7 @@ import { holdFlight, repriceFlights, writeFlightSearch } from "@/lib/admin-searc
 import { HOLD_RESULT_PATH, fareCheckFailure, type FareCheckState, type HoldDraft, type HoldRequest } from "@/lib/admin-search/hold";
 import { DEFAULT_COUNTRY_CODE } from "@/data/countries";
 import { CountrySelect } from "./CountrySelect";
+import { DayFirstDateField } from "@/components/admin/DayFirstDateField";
 import { FareCheckDialog } from "./FareCheckDialog";
 import { useCountdown } from "./FlightsSearch";
 
@@ -219,9 +220,10 @@ export function HoldForm({ draft, mode, onDraft }: { draft: HoldDraft; mode: Hol
           );
           const date = (field: "date_of_birth" | "document_expiry", label: string, hint?: string) => (
             <Field id={id(field)} label={label} error={fieldError(key(field))} hint={hint}>
-              <Input id={id(field)} type="date" value={traveler[field]} aria-invalid={Boolean(fieldError(key(field)))}
-                aria-describedby={fieldError(key(field)) ? `${id(field)}-error` : undefined}
-                onChange={event => setTraveler(index, { [field]: event.target.value })} className="h-control text-body" />
+              <DayFirstDateField id={id(field)} value={traveler[field] || undefined} invalid={Boolean(fieldError(key(field)))}
+                describedBy={fieldError(key(field)) ? `${id(field)}-error` : undefined}
+                fromYear={field === "date_of_birth" ? 1900 : 2024} toYear={field === "date_of_birth" ? new Date().getFullYear() : 2060}
+                onChange={value => setTraveler(index, { [field]: value ?? "" })} />
             </Field>
           );
           return (
