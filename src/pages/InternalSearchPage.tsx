@@ -3,6 +3,11 @@ import { cn } from "@/lib/utils";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GroupTicketingSearch } from "@/components/admin/search/GroupTicketingSearch";
 import { FlightsBooking } from "@/components/admin/search/FlightsBooking";
+import { loadAirports } from "@/lib/admin-search/airports";
+
+// Airport suggestions start loading as soon as this page's module loads, so the list is ready
+// before anyone reaches the From field (its own chunk; not in the main bundle).
+void loadAirports().catch(() => undefined);
 
 const TABS = [
   { id: "flights", label: "Flights" },

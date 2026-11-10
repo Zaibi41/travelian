@@ -13,6 +13,7 @@ import { StatusBadge } from "@/components/admin/StatusBadge";
 import { StatusKpiCard } from "@/components/admin/StatusKpiCard";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { LabeledSelect } from "@/components/admin/bookings/LabeledSelect";
+import { AirportCombobox } from "@/components/admin/search/AirportCombobox";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
@@ -118,6 +119,7 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
   // Provider names come only to roles the gateway allows (D23); nothing is shown otherwise.
   const providerNames = (results.data?.providers ?? []).map(provider => provider.name);
   const canSearch = isCompleteFlightSearch(draft);
+  const sameAirport = Boolean(draft.from && draft.from === draft.to);
   const commit = (next: FlightSearch) => {
     setFilters(DEFAULT_FILTERS);
     setParams(writeFlightSearch(params, next), { replace: true });
@@ -186,12 +188,12 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
             if (canSearch) commit(draft);
           }}
         >
-          <CodeInput id="flight-from" label="From" placeholder="Origin (e.g. KHI)" value={draft.from} onChange={from => setDraft({ ...draft, from })} />
+          <AirportCombobox id="flight-from" label="From" placeholder="City, airport or code" value={draft.from} onChange={from => setDraft({ ...draft, from })} />
           <Button type="button" variant="outline" className="h-control text-body" aria-label="Swap origin and destination"
             onClick={() => setDraft({ ...draft, from: draft.to, to: draft.from })}>
             <ArrowLeftRight className="h-4 w-4" aria-hidden="true" /> Swap
           </Button>
-          <CodeInput id="flight-to" label="To" placeholder="Destination (e.g. DXB)" value={draft.to} onChange={to => setDraft({ ...draft, to })} />
+          <AirportCombobox id="flight-to" label="To" placeholder="City, airport or code" value={draft.to} onChange={to => setDraft({ ...draft, to })} />
           <DateInput id="flight-date" label="Departure date" value={draft.date} onChange={date => setDraft({ ...draft, date })} />
           <DateInput id="flight-return" label="Return date" value={draft.trip === "roundtrip" ? draft.returnDate : undefined} min={draft.date}
             disabledReason={draft.trip === "roundtrip" ? undefined : REASONS.returnDate} onChange={returnDate => setDraft({ ...draft, returnDate })} />
@@ -202,6 +204,7 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
           )}
           <Button type="submit" disabled={!canSearch} className="h-control bg-teal text-body text-teal-foreground hover:bg-teal/90">Search flights</Button>
         </form>
+        {sameAirport && <p role="alert" className="text-body text-status-critical-text">Origin and destination are the same airport. Choose a different destination.</p>}
       </section>
 
       {complete && (
@@ -224,23 +227,6 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
           </>
         ) : null
       )}
-    </div>
-  );
-}
-
-function CodeInput({ id, label, placeholder, value, onChange }: { id: string; label: string; placeholder: string; value?: string; onChange: (value?: string) => void }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <label htmlFor={id} className="text-label font-medium text-muted-foreground">{label}</label>
-      <Input
-        id={id}
-        value={value ?? ""}
-        maxLength={3}
-        placeholder={placeholder}
-        autoComplete="off"
-        onChange={event => onChange(event.target.value.toUpperCase().replace(/[^A-Z]/g, "") || undefined)}
-        className="h-control rounded-sm text-body uppercase placeholder:normal-case"
-      />
     </div>
   );
 }

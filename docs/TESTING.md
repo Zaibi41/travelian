@@ -59,4 +59,6 @@ npm run typecheck
 npm test
 ```
 
-Expected on 10 November 2026: typecheck clean, 42 test files and 305 tests passing. Admin layout specs (`e2e/admin-flights-search.spec.ts`, `e2e/admin-booking-detail.spec.ts`, `e2e/admin-flights-hold.spec.ts`, `e2e/admin-customers.spec.ts`): 40 passing; run with `PLAYWRIGHT_CHANNEL=chrome npx playwright test e2e/admin-*.spec.ts` when Playwright's own browser isn't installed.
+Expected on 10 November 2026: typecheck clean, 43 test files and 311 tests passing. Admin layout specs (`e2e/admin-*.spec.ts`: flights search, booking detail, flights hold, customers, airports): 47 passing; run with `PLAYWRIGHT_CHANNEL=chrome npx playwright test e2e/admin-*.spec.ts` when Playwright's own browser isn't installed.
+
+Airport suggestions (Search > Flights From/To): `src/lib/admin-search/airports.test.ts` covers the ranking (exact IATA code, city prefix, IATA prefix, airport name, country; larger airports first), accents, case, the 8-result limit and no match; `e2e/admin-airports.spec.ts` covers picking, clearing, swap, same airport, keyboard, the 3-letter codes in the request, and that typing makes no request once the Search page has loaded. Data source: `docs/airports-data.md`.
