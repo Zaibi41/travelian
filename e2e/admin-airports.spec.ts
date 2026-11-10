@@ -129,3 +129,46 @@ test.describe("dates in a month-first browser language", () => {
     expect(searches.at(-1)?.postDataJSON()?.return_date).toBe("2026-12-03");
   });
 });
+
+// Item 4: readable airport fields.
+const notClipped = (page: Page, code: string) => page.getByRole("button", { name: new RegExp(`^(From|To) ${code} - `) }).evaluate(button =>
+  [...button.querySelectorAll<HTMLElement>("[data-airport-line]")].every(line =>
+    line.scrollWidth <= line.clientWidth + 1 && line.scrollHeight <= line.clientHeight + 1));
+
+for (const width of [1280, 1440, 390]) {
+  test(`airport names are readable at ${width}px`, async ({ page }) => {
+    await open(page, width, "&from=LHE&to=KHI&date=2026-11-24");
+    for (const code of ["LHE", "KHI"]) {
+      const card = page.getByRole("button", { name: new RegExp(`^(From|To) ${code} - `) });
+      await expect(card).toContainText(code === "LHE" ? "Allama Iqbal International Airport, Pakistan" : "Jinnah International Airport, Pakistan");
+      expect(await notClipped(page, code)).toBe(true);
+    }
+    for (const control of [page.getByRole("button", { name: "Clear from airport" }), page.getByRole("button", { name: "Swap origin and destination" }),
+      page.getByLabel("Departure date"), page.getByRole("button", { name: "Search flights" })]) {
+      expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(40);
+    }
+    const from = (await page.getByRole("button", { name: /^From LHE/ }).boundingBox())!;
+    const to = (await page.getByRole("button", { name: /^To KHI/ }).boundingBox())!;
+    if (width >= 900) expect(Math.abs(from.y - to.y)).toBeLessThan(2);   // side by side
+    else expect(to.y).toBeGreaterThan(from.y + from.height);             // stacked, Swap between
+    expect(await overflow(page)).toBe(0);
+
+    await page.getByRole("button", { name: "Clear to airport" }).click();
+    await page.getByRole("combobox", { name: "To" }).fill("international");
+    const dropdown = page.locator("[data-radix-popper-content-wrapper] > *").filter({ has: page.getByRole("listbox") });
+    const field = (await page.getByRole("combobox", { name: "To" }).boundingBox())!;
+    // Wait out the opening zoom animation, then measure.
+    await expect.poll(async () => (await dropdown.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(Math.max(360, field.width) - 1);
+    const list = (await dropdown.boundingBox())!;
+    expect(list.x >= 0 && list.x + list.width <= width).toBe(true);
+    const row = (await page.getByRole("option").first().boundingBox())!;
+    expect(row.height).toBeGreaterThanOrEqual(48);
+    await page.mouse.move(0, 0);                                        // keyboard only from here
+    await page.keyboard.press("ArrowDown");
+    const highlighted = page.locator('[role="option"][aria-selected="true"]');
+    const code = (await highlighted.innerText()).slice(0, 3);
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("button", { name: new RegExp(`^To ${code} - `) })).toBeVisible();
+    expect(await overflow(page)).toBe(0);
+  });
+}

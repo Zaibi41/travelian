@@ -26,6 +26,9 @@ import {
   type FareView, type FlightSearch, type FlightSearchView, type FlightView, type JourneyView, type ResultFilters,
 } from "@/lib/admin-search/flights";
 
+/** Search form fields and buttons: at least 40px high, 44px on touch screens. */
+export const TARGET = "h-10 [@media(pointer:coarse)]:h-11";
+
 const errorMessage = (error: unknown) =>
   error instanceof GatewayError ? error.message : "Flights couldn't be loaded. Try again in a few minutes.";
 
@@ -182,32 +185,36 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
           <CabinPicker />
         </div>
         <form
-          className={cn(
-            "grid grid-cols-1 items-end gap-3 sm:grid-cols-2",
-            providerNames.length
-              ? "xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
-              : "lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]",
-          )}
+          className="flex min-w-0 flex-col gap-3"
           onSubmit={event => {
             event.preventDefault();
             if (canSearch) commit(draft);
           }}
         >
-          <AirportCombobox id="flight-from" label="From" placeholder="City, airport or code" value={draft.from} onChange={from => setDraft({ ...draft, from })} />
-          <Button type="button" variant="outline" className="h-control text-body" aria-label="Swap origin and destination"
-            onClick={() => setDraft({ ...draft, from: draft.to, to: draft.from })}>
-            <ArrowLeftRight className="h-4 w-4" aria-hidden="true" /> Swap
-          </Button>
-          <AirportCombobox id="flight-to" label="To" placeholder="City, airport or code" value={draft.to} onChange={to => setDraft({ ...draft, to })} />
-          <DateInput id="flight-date" label="Departure date" value={draft.date} onChange={date => setDraft({ ...draft, date })} />
-          <DateInput id="flight-return" label="Return date" value={draft.trip === "roundtrip" ? draft.returnDate : undefined} min={draft.date}
-            disabledReason={draft.trip === "roundtrip" ? undefined : REASONS.returnDate} onChange={returnDate => setDraft({ ...draft, returnDate })} />
-          {providerNames.length > 0 && (
-            <LabeledSelect id="flight-provider" label="Provider" value={filters.provider}
-              options={[{ value: "any", label: "All providers" }, ...providerNames.map(name => ({ value: name, label: name }))]}
-              onChange={provider => setFilters({ ...filters, provider })} />
-          )}
-          <Button type="submit" disabled={!canSearch} className="h-control bg-teal text-body text-teal-foreground hover:bg-teal/90">Search flights</Button>
+          {/* Row 1: From, Swap, To (each airport half the row, so names have room; stacked below ~900px). */}
+          <div className="grid grid-cols-1 items-end gap-3 min-[900px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+            <AirportCombobox id="flight-from" label="From" placeholder="City, airport or code" value={draft.from} onChange={from => setDraft({ ...draft, from })} />
+            <Button type="button" variant="outline" className={cn(TARGET, "w-full text-body min-[900px]:mb-2 min-[900px]:w-auto")} aria-label="Swap origin and destination"
+              onClick={() => setDraft({ ...draft, from: draft.to, to: draft.from })}>
+              <ArrowLeftRight className="h-4 w-4" aria-hidden="true" /> Swap
+            </Button>
+            <AirportCombobox id="flight-to" label="To" placeholder="City, airport or code" value={draft.to} onChange={to => setDraft({ ...draft, to })} />
+          </div>
+          {/* Row 2: dates, provider (admin only) and Search flights. */}
+          <div className={cn(
+            "grid grid-cols-1 items-end gap-3 sm:grid-cols-2",
+            providerNames.length ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]" : "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]",
+          )}>
+            <DateInput id="flight-date" label="Departure date" value={draft.date} onChange={date => setDraft({ ...draft, date })} />
+            <DateInput id="flight-return" label="Return date" value={draft.trip === "roundtrip" ? draft.returnDate : undefined} min={draft.date}
+              disabledReason={draft.trip === "roundtrip" ? undefined : REASONS.returnDate} onChange={returnDate => setDraft({ ...draft, returnDate })} />
+            {providerNames.length > 0 && (
+              <LabeledSelect id="flight-provider" label="Provider" value={filters.provider} triggerClassName={TARGET}
+                options={[{ value: "any", label: "All providers" }, ...providerNames.map(name => ({ value: name, label: name }))]}
+                onChange={provider => setFilters({ ...filters, provider })} />
+            )}
+            <Button type="submit" disabled={!canSearch} className={cn(TARGET, "bg-teal px-5 text-body text-teal-foreground hover:bg-teal/90")}>Search flights</Button>
+          </div>
         </form>
         {sameAirport && <p role="alert" className="text-body text-status-critical-text">Origin and destination are the same airport. Choose a different destination.</p>}
       </section>
@@ -242,7 +249,7 @@ function DateInput({ id, label, value, min, disabledReason, onChange }: {
   return (
     <div className="relative flex min-w-0 flex-col gap-1" title={disabledReason}>
       <label htmlFor={id} className="text-label font-medium text-muted-foreground">{label}</label>
-      <DayFirstDateField id={id} value={value} min={min} disabled={Boolean(disabledReason)}
+      <DayFirstDateField id={id} value={value} min={min} disabled={Boolean(disabledReason)} inputClassName={TARGET}
         describedBy={disabledReason ? `${id}-reason` : undefined} onChange={onChange} />
       {disabledReason && <span id={`${id}-reason`} className="sr-only">{disabledReason}</span>}
     </div>

@@ -14,15 +14,17 @@ interface AirportComboboxProps {
   onChange: (code?: string) => void;
 }
 
+/** Line 1 "LHE - Lahore" (bold, 14px); line 2 airport name and country (13px), wrapping to at
+ *  most two lines. The full text stays in a hover title only as a fallback. */
 function AirportLines({ code, airport }: { code: string; airport?: Airport }) {
   const first = airport ? `${airport.iata} - ${airport.city}` : code;
   const second = airport ? `${airport.name}, ${airport.country}` : "";
   return (
-    <span className="flex min-w-0 flex-1 items-center gap-2">
+    <span className="flex min-w-0 flex-1 items-center gap-2.5" title={second ? `${first}, ${second}` : first}>
       <Plane className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-      <span className="flex min-w-0 flex-col text-left leading-tight">
-        <span className="truncate text-body font-semibold text-foreground" title={first}>{first}</span>
-        {second && <span className="truncate text-label text-muted-foreground" title={second}>{second}</span>}
+      <span className="flex min-w-0 flex-col gap-0.5 text-left">
+        <span data-airport-line="1" className="truncate text-[14px] font-semibold leading-5 text-foreground">{first}</span>
+        {second && <span data-airport-line="2" className="line-clamp-2 break-words text-[13px] leading-[1.15rem] text-muted-foreground">{second}</span>}
       </span>
     </span>
   );
@@ -59,13 +61,13 @@ export function AirportCombobox({ id, label, placeholder, value, onChange }: Air
     return (
       <div className="flex min-w-0 flex-col gap-1">
         <span id={`${id}-label`} className="text-label font-medium text-muted-foreground">{label}</span>
-        <div className="flex min-h-control min-w-0 items-center gap-1 rounded-sm border border-input bg-background py-1 pl-2.5 pr-1">
+        <div className="flex min-h-14 min-w-0 items-center gap-1 rounded-sm border border-input bg-background py-1.5 pl-3 pr-1">
           <button id={id} type="button" aria-labelledby={`${id}-label ${id}`} onClick={startEditing}
-            className="flex min-w-0 flex-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title={name}>
+            className="flex min-h-10 min-w-0 flex-1 items-center rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" title={name}>
             <AirportLines code={value} airport={selected} />
           </button>
           <button type="button" aria-label={`Clear ${label.toLowerCase()} airport`} onClick={() => { onChange(undefined); startEditing(); }}
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm text-muted-foreground [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
@@ -120,21 +122,21 @@ export function AirportCombobox({ id, label, placeholder, value, onChange }: Air
                 setText("");
               }
             }}
-            className="flex h-control w-full min-w-0 rounded-sm border border-input bg-background px-3 text-body placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex h-14 w-full min-w-0 rounded-sm border border-input bg-background px-3 text-[14px] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </PopoverAnchor>
         <PopoverContent
           align="start"
-          className="w-[var(--radix-popper-anchor-width)] min-w-[16rem] max-w-[calc(100vw-2rem)] p-1"
+          className="w-[max(var(--radix-popper-anchor-width),360px)] max-w-[calc(100vw-1.5rem)] p-1.5"
           onOpenAutoFocus={event => event.preventDefault()}
           onCloseAutoFocus={event => event.preventDefault()}
           onInteractOutside={event => {
             if (event.target === inputRef.current) event.preventDefault();
           }}
         >
-          <ul id={listId} role="listbox" aria-label={`${label} airports`} className="flex flex-col">
-            {!index && <li role="option" aria-selected={false} aria-disabled className="px-2.5 py-2 text-body text-muted-foreground">Loading airports…</li>}
-            {index && results.length === 0 && <li role="option" aria-selected={false} aria-disabled className="px-2.5 py-2 text-body text-muted-foreground">No airports found</li>}
+          <ul id={listId} role="listbox" aria-label={`${label} airports`} className="flex flex-col gap-0.5">
+            {!index && <li role="option" aria-selected={false} aria-disabled className="px-3 py-3 text-body text-muted-foreground">Loading airports…</li>}
+            {index && results.length === 0 && <li role="option" aria-selected={false} aria-disabled className="px-3 py-3 text-body text-muted-foreground">No airports found</li>}
             {results.map((airport, position) => (
               <li
                 key={airport.iata}
@@ -144,7 +146,8 @@ export function AirportCombobox({ id, label, placeholder, value, onChange }: Air
                 onPointerDown={event => event.preventDefault()}
                 onPointerEnter={() => setActive(position)}
                 onClick={() => choose(airport)}
-                className={cn("flex min-w-0 cursor-pointer rounded-sm px-2 py-1.5", position === active && "bg-accent")}
+                className={cn("flex min-h-12 min-w-0 cursor-pointer items-center rounded-md px-3 py-2",
+                  position === active ? "bg-accent ring-1 ring-inset ring-primary/40" : "hover:bg-muted/60")}
               >
                 <AirportLines code={airport.iata} airport={airport} />
               </li>

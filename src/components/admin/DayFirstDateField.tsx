@@ -21,13 +21,15 @@ interface DayFirstDateFieldProps {
   fromYear?: number;
   toYear?: number;
   className?: string;
+  /** Height override for the text field (the search form uses 40px / 44px on touch). */
+  inputClassName?: string;
 }
 
 const iso = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 /** A date shown day first ("24 Nov 2026") whatever the browser language. Type it (24/11/2026,
  *  24 Nov 2026) or pick it from the calendar; the value stays ISO. */
-export function DayFirstDateField({ id, value, onChange, min, max, disabled, invalid, describedBy, fromYear = 2024, toYear = 2035, className }: DayFirstDateFieldProps) {
+export function DayFirstDateField({ id, value, onChange, min, max, disabled, invalid, describedBy, fromYear = 2024, toYear = 2035, className, inputClassName }: DayFirstDateFieldProps) {
   const [text, setText] = useState(formatDay(value));
   const [unreadable, setUnreadable] = useState(false);
   const [open, setOpen] = useState(false);
@@ -82,7 +84,7 @@ export function DayFirstDateField({ id, value, onChange, min, max, disabled, inv
               onKeyDown={event => {
                 if (event.key === "Enter") commit(text);
               }}
-              className="flex h-control w-full min-w-0 rounded-sm border border-input bg-background py-1 pl-3 pr-10 text-body placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-status-critical"
+              className={cn("flex w-full min-w-0 rounded-sm border border-input bg-background py-1 pl-3 pr-10 text-body placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-status-critical", inputClassName ?? "h-control")}
             />
             <PopoverTrigger asChild>
               <button type="button" disabled={disabled} aria-label="Choose from calendar"

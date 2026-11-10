@@ -46,3 +46,12 @@ Status as of 2026-11-10. All 28 listed mockups are in this folder.
 - **Customers & Travelers: hidden for lack of data** (docs/backend-todo.md, section 7): all summary
   cards on both tabs; every filter except Search; the Bookings, Flag and Notes columns; Flag with
   reason. Communications (P3) shows "not available yet" with the mockup's own note.
+- **Search > Flights: From/To row (changed by Zohaib's request for readability, 10 November 2026).**
+  The original `mockup-search-flights.png` puts From, Swap, To, the dates, Provider and Search
+  flights on one row. Now From, Swap and To have their own row (each airport half the width, stacked
+  below about 900px) and the second row holds Departure date, Return date, Provider and Search
+  flights. The selected airport shows two lines ("LHE - Lahore", then the airport name and country).
+  The trip type, traveler and cabin controls stay on the top row. Nothing was removed.
+- **Search > Flights: Search expiry card.** As in the mockup, it carries no warning tag; a running
+  timer is neutral and an expired search turns the card critical with the word "Expired".
+
