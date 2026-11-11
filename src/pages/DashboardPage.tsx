@@ -1,4 +1,5 @@
 import { useSearchParams } from "react-router-dom";
+import { Tag } from "@/components/admin/ui/StatusBadge";
 import { useRole } from "@/contexts/RoleContext";
 import { GatewayError } from "@/lib/gateway/client";
 import { parseDashboardQuery, serializeDashboardQuery } from "@/lib/admin-dashboard/query-params";
@@ -39,9 +40,7 @@ export default function DashboardPage() {
         <h1 className="font-display text-page-title font-bold text-foreground">{isAgency ? "Agency Dashboard" : "Dashboard"}</h1>
         {/* Gateway flags imported (test) bookings so they're never mistaken for live figures. */}
         {summary.data?.contains_sample_data && (
-          <span className="inline-flex h-badge items-center rounded-pill border border-border bg-muted px-2 text-helper font-semibold text-foreground">
-            Sample data
-          </span>
+          <Tag>Sample data</Tag>
         )}
       </div>
 

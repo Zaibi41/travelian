@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Lock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { AirlineLogo } from "@/components/public/AirlineLogo";
+import { Button } from "@/components/admin/ui/button";
+import { AirlineLogo } from "@/components/admin/ui/AirlineLogo";
 
 interface Segment {
   flightNumber?: string | null;
@@ -57,7 +57,7 @@ export function AdminFlightCheckout({ params }: { params: URLSearchParams }) {
           and no booking can be made. A fare must be repriced before any booking.
         </p>
       </div>
-      <section aria-label="Selected flight" className="flex flex-col gap-3 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+      <section aria-label="Selected flight" className="flex flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
         <div className="flex min-w-0 items-center gap-2.5">
           <AirlineLogo airline={airline} flightNumber={flightNo} className="h-8 w-8 rounded-md" />
           <h2 className="min-w-0 truncate text-section font-semibold text-foreground" title={airline}>{airline || "Selected flight"}</h2>
@@ -94,8 +94,8 @@ export function AdminFlightCheckout({ params }: { params: URLSearchParams }) {
         )}
       </section>
       <div className="flex flex-wrap gap-2">
-        <Button disabled className="h-control text-body">Book flight</Button>
-        <Button asChild variant="outline" className="h-control text-body"><Link to="/admin/search?tab=flights">Back to search</Link></Button>
+        <Button disabled>Book flight</Button>
+        <Button asChild variant="outline"><Link to="/admin/search?tab=flights">Back to search</Link></Button>
       </div>
     </div>
   );

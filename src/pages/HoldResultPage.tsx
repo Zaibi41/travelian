@@ -1,8 +1,8 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/admin/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatusBadge } from "@/components/admin/StatusBadge";
+import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { useCountdown } from "@/components/admin/search/FlightsSearch";
 import { formatMoney } from "@/lib/admin-bookings/format";
@@ -58,7 +58,7 @@ function Held({ hold }: { hold: HoldView }) {
   const until = hold.time_limit ? new Date(hold.time_limit) : null;
   return (
     <>
-      <section aria-label="Hold confirmed" className="flex flex-col gap-3 rounded-lg border border-border border-l-4 border-l-status-fine bg-card px-card py-3.5 shadow-card">
+      <section aria-label="Hold confirmed" className="flex flex-col gap-3 rounded-xl border border-border border-l-4 border-l-status-fine bg-card px-card py-3.5 shadow-card">
         <div className="flex flex-wrap gap-1.5">
           <StatusBadge severity="fine">Hold confirmed</StatusBadge>
           {hold.label && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-label font-medium text-primary">{hold.label}</span>}
@@ -83,8 +83,8 @@ function Held({ hold }: { hold: HoldView }) {
           </ul>
         )}
         <div className="flex flex-wrap gap-2">
-          <Button asChild className="h-control bg-teal text-body text-teal-foreground hover:bg-teal/90"><Link to={bookingDetailPath(hold.booking_id)}>View booking</Link></Button>
-          <Button asChild variant="outline" className="h-control text-body"><Link to={SEARCH}>Back to search</Link></Button>
+          <Button asChild variant="primary"><Link to={bookingDetailPath(hold.booking_id)}>View booking</Link></Button>
+          <Button asChild variant="outline"><Link to={SEARCH}>Back to search</Link></Button>
         </div>
       </section>
       <People bookingId={hold.booking_id} />
@@ -101,12 +101,12 @@ const TYPE: Record<BookingPassenger["type"], string> = { ADT: "Adult", CHD: "Chi
 function People({ bookingId }: { bookingId: string }) {
   const detail = useBookingDetail(bookingId);
   const booking = detail.data;
-  if (detail.isPending) return <Skeleton className="h-40 rounded-lg" aria-label="Loading customer and travelers" />;
+  if (detail.isPending) return <Skeleton className="h-40 rounded-xl" aria-label="Loading customer and travelers" />;
   if (!booking) return <NotAvailableNotice title="Customer and travelers can't be shown right now">Open the booking to see them.</NotAvailableNotice>;
   const customer = booking.customer;
   return (
     <div className="grid min-w-0 grid-cols-1 gap-section-gap lg:grid-cols-2">
-      <section aria-label="Customer" className="min-w-0 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+      <section aria-label="Customer" className="min-w-0 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
         <h2 className="mb-2 text-section font-semibold text-foreground">Customer</h2>
         <dl className="grid grid-cols-[minmax(5rem,8rem)_minmax(0,1fr)] text-body">
           {([["Name", customer ? `${customer.first_name} ${customer.last_name}` : "—"], ["Phone", customer?.phone ?? "—"], ["Email", customer?.email ?? "—"]] as const).map(([label, value]) => (
@@ -117,7 +117,7 @@ function People({ bookingId }: { bookingId: string }) {
           ))}
         </dl>
       </section>
-      <section aria-label="Travelers" className="min-w-0 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+      <section aria-label="Travelers" className="min-w-0 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
         <h2 className="mb-2 text-section font-semibold text-foreground">Travelers</h2>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[26rem] border-collapse text-table">
@@ -173,7 +173,7 @@ function Problem({ state }: { state: Extract<HoldResultState, { kind: "problem" 
   };
   const border = problem.severity === "action" ? "border-l-status-action" : problem.severity === "critical" ? "border-l-status-critical" : "border-l-border";
   return (
-    <section aria-label={problem.title} className={`flex flex-col gap-3 rounded-lg border border-border border-l-4 ${border} bg-card px-card py-3.5 shadow-card`}>
+    <section aria-label={problem.title} className={`flex flex-col gap-3 rounded-xl border border-border border-l-4 ${border} bg-card px-card py-3.5 shadow-card`}>
       <div>
         {problem.severity === "neutral"
           ? <span className="inline-flex rounded-full bg-muted px-2 py-0.5 text-label font-semibold text-foreground">{problem.badge}</span>
@@ -185,17 +185,17 @@ function Problem({ state }: { state: Extract<HoldResultState, { kind: "problem" 
       </div>
       <div className="flex flex-wrap gap-2">
         {state.code === "total_unverified" && bookingId && (
-          <Button asChild className="h-control bg-teal text-body text-teal-foreground hover:bg-teal/90"><Link to={bookingDetailPath(bookingId)}>View booking</Link></Button>
+          <Button asChild variant="primary"><Link to={bookingDetailPath(bookingId)}>View booking</Link></Button>
         )}
         {(state.code === "total_unverified" || state.code === "not_saved") && pnr && (
-          <Button type="button" variant="outline" className="h-control text-body" onClick={() => void copyPnr()}>Copy PNR</Button>
+          <Button type="button" variant="outline" onClick={() => void copyPnr()}>Copy PNR</Button>
         )}
         {state.code === "not_confirmed_hold" && state.draft && (
-          <Button type="button" variant="outline" className="h-control text-body" onClick={() => navigate(`${HOLD_PATH}?mode=${state.mode}`, { state: state.draft })}>Back to the hold form</Button>
+          <Button type="button" variant="outline" onClick={() => navigate(`${HOLD_PATH}?mode=${state.mode}`, { state: state.draft })}>Back to the hold form</Button>
         )}
         {state.code === "booking_off"
-          ? <Button asChild variant="outline" className="h-control text-body"><Link to={results}>Back to results</Link></Button>
-          : state.code !== "total_unverified" && <Button asChild variant="outline" className="h-control text-body"><Link to={SEARCH}>Back to search</Link></Button>}
+          ? <Button asChild variant="outline"><Link to={results}>Back to results</Link></Button>
+          : state.code !== "total_unverified" && <Button asChild variant="outline"><Link to={SEARCH}>Back to search</Link></Button>}
       </div>
     </section>
   );

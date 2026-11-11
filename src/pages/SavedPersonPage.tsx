@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/admin/ui/button";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -47,7 +47,7 @@ export default function SavedPersonPage() {
       <div className="flex min-w-0 flex-col gap-section-gap" aria-busy="true" aria-label="Loading person">
         {back}
         <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-40 w-full rounded-lg" />
+        <Skeleton className="h-40 w-full rounded-xl" />
       </div>
     );
   }
@@ -90,7 +90,7 @@ export default function SavedPersonPage() {
         </NotAvailableNotice>
       )}
 
-      <section aria-label="Details" className="rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+      <section aria-label="Details" className="rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
         <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-body sm:grid-cols-2 lg:grid-cols-3">
           {[
             ["Title", data.title ? TITLE_LABEL[data.title] ?? data.title : "—"],
@@ -108,10 +108,10 @@ export default function SavedPersonPage() {
         </dl>
       </section>
 
-      <section aria-label="Documents" className="flex min-w-0 flex-col gap-2.5 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+      <section aria-label="Documents" className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-display text-section font-semibold text-foreground">Documents</h2>
-          {data.can_manage && !merged && <Button variant="outline" size="sm" className="h-8 text-body" onClick={() => setAttaching(true)}>Attach document</Button>}
+          {data.can_manage && !merged && <Button variant="outline" size="sm" onClick={() => setAttaching(true)}>Attach document</Button>}
         </div>
         {documents.length === 0 ? (
           <p className="text-body text-muted-foreground">No documents saved.</p>
@@ -138,7 +138,7 @@ export default function SavedPersonPage() {
                     </td>
                     {data.can_manage && !merged && (
                       <td className="px-2.5 py-2">
-                        <Button variant="outline" size="sm" className="h-8 text-body" aria-label={`Remove ${ID_TYPE_LABEL[document.id_type]} ${document.document_number_masked}`}
+                        <Button variant="outline" size="sm" aria-label={`Remove ${ID_TYPE_LABEL[document.id_type]} ${document.document_number_masked}`}
                           onClick={() => setRemoving(document)}>Remove</Button>
                       </td>
                     )}
@@ -150,7 +150,7 @@ export default function SavedPersonPage() {
         )}
       </section>
 
-      <section aria-label="Bookings" className="flex min-w-0 flex-col gap-2.5 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+      <section aria-label="Bookings" className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
         <h2 className="font-display text-section font-semibold text-foreground">Bookings</h2>
         {bookings.length === 0 ? (
           <p className="text-body text-muted-foreground">No bookings linked yet.</p>

@@ -33,7 +33,7 @@ export function CountrySelect({ id, value, onChange, invalid, describedBy }: Cou
           aria-describedby={describedBy}
           className={cn(
             "flex h-control w-full min-w-0 items-center justify-between gap-2 rounded-md border border-input bg-background px-3 text-left text-body",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             !selected && "text-muted-foreground",
           )}
         >

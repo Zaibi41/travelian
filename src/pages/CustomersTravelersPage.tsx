@@ -3,10 +3,10 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/admin/ui/button";
+import { Input } from "@/components/admin/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TabLinks } from "@/components/admin/bookings/TabLinks";
+import { TabLinks } from "@/components/admin/ui/TabLinks";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { DocumentDialog, MergeDialog, PersonFormDialog } from "@/components/admin/people/PersonDialogs";
@@ -153,7 +153,7 @@ function SearchBox({ q, placeholder, onSearch }: { q: string; placeholder: strin
   const [value, setValue] = useState(q);
   useEffect(() => setValue(q), [q]);
   return (
-    <section aria-label="Filters" className="rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+    <section aria-label="Filters" className="rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
       <form
         role="search"
         className="flex min-w-0 flex-col gap-1"
@@ -165,11 +165,11 @@ function SearchBox({ q, placeholder, onSearch }: { q: string; placeholder: strin
         <label htmlFor="people-search" className="text-label font-medium text-muted-foreground">Search</label>
         <div className="flex gap-2">
           <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input id="people-search" value={value} maxLength={64} onChange={event => setValue(event.target.value)} placeholder={placeholder}
-              className="h-control rounded-sm pl-8 text-body" />
+              className="pl-9" />
           </div>
-          <Button type="submit" variant="outline" className="h-control">Search</Button>
+          <Button type="submit" variant="outline">Search</Button>
         </div>
       </form>
     </section>
@@ -194,7 +194,7 @@ function PeopleTable({ customers, searching, loading, data, onEdit, onMerge, onA
   const label = customers ? "Customers" : "Travelers";
   if (loading && !data) {
     return (
-      <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-card px-card py-3.5 shadow-card" aria-busy="true" aria-label={`Loading ${label.toLowerCase()}`}>
+      <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-card px-card py-3.5 shadow-card" aria-busy="true" aria-label={`Loading ${label.toLowerCase()}`}>
         {Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-table-row rounded-sm" />)}
       </div>
     );
@@ -204,13 +204,13 @@ function PeopleTable({ customers, searching, loading, data, onEdit, onMerge, onA
     : data && data.results.length === 0 ? "No saved person matches this search." : null;
   if (message || !data) {
     return (
-      <section aria-label={label} className="rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+      <section aria-label={label} className="rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
         <p className="text-body text-muted-foreground">{message}</p>
       </section>
     );
   }
   return (
-    <section aria-label={label} className="min-w-0 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+    <section aria-label={label} className="min-w-0 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[48rem] border-collapse text-table">
           <thead>

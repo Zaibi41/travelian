@@ -1,7 +1,7 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Bell, ChevronDown, Globe, KeyRound, LogOut, Megaphone, Pencil, UserRound, Wallet } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/admin/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 

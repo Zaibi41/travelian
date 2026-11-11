@@ -107,6 +107,12 @@
   --sidebar-ring: 185 70% 50%;                   /* #26CAD9 focus on navy 7.53:1 */
   --sidebar-muted: 215 20% 65%;                  /* 5.85:1 on navy */
 
+  /* Airline logo tile (same values as the public tile: Tailwind slate-200, slate-50, slate-900) */
+  --logo-tile-border: 214.3 31.8% 91.4%;
+  --logo-tile-fade: 210 40% 98%;
+  --logo-tile-ink: 222.2 47.4% 11.2%;
+  --logo-tile-shadow: 0 6px 18px hsl(222.2 47.4% 11.2% / 0.08);
+
   /* Charts */
   --chart-1: var(--brand-teal);        /* Bookings */
   --chart-2: var(--brand-navy);        /* Issued */

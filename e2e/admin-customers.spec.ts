@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
+import { gatewayView } from "./support/gateway";
 import { expectReadableText } from "./support/type-scale";
 
 // Customers & Travelers: search, detail, add person, duplicate choice, merge, permissions and
@@ -25,7 +26,7 @@ async function open(page: Page, width: number, path: string, { canManage = true,
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
     const request = route.request();
-    const url = new URL(request.url());
+    const url = gatewayView(request.url());
     if (url.port === "8000") {
       if (forbidden) return route.fulfill({ status: 403, json: { detail: "Back office only.", code: "not_allowed" } });
       if (request.method() === "POST") posts.push(request);

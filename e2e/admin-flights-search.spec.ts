@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { gatewayView } from "./support/gateway";
 
 // Admin Search > Flights layout. Nothing reaches a real gateway or supplier: a local-only
 // session (no real token) and intercepted gateway responses shaped like the gateway's output.
@@ -46,7 +47,7 @@ const ROUND = {
 async function openFlights(page: Page, width: number, query = "from=LHE&to=KHI&date=2026-11-19") {
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
-    const url = new URL(route.request().url());
+    const url = gatewayView(route.request().url());
     if (url.port === "8000") {
       if (url.pathname === "/v1/live-ticketing/flights/search") return route.fulfill({ json: query.includes("roundtrip") ? ROUND : SEARCH });
       if (url.pathname === "/v1/live-ticketing/flights/reprice") return route.fulfill({ json: QUOTE });

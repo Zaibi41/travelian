@@ -97,8 +97,20 @@ the page scrolls sideways, at 1280 and 1440px. The same guard test also fails on
 teal (`--action-primary` = `--brand-teal` = `184.8 98.4% 24.9%`), navy, surfaces, borders and the
 status colours, so a later change cannot recolour the admin by accident.
 
-Search forms (shared parts, `src/components/admin/search/SearchFormParts.tsx`, `SectorAirportSelect.tsx`):
-`SearchFormParts.test.tsx` covers the two-line airport card (a code not in the airport list shows
+Admin design system (docs/design-system.md): `src/components/admin/ui/admin-ui.test.tsx` covers the
+shared components (button variants and sizes from the tokens, a size override replacing the token
+size, fields with label, icon, hint and error, badges and tags always with text, notices, panels,
+empty and loading states, the chip toggle, the dialog's 85% height and inner scroll, the admin's own
+product tabs). The guard test also fails if an admin file imports from `src/components/public` or
+`src/pages/public` (one documented exception: the legacy agency search, `AdminSearchPage.tsx`).
+
+Gateway calls in specs: the dev server may send gateway calls through its `/__gateway` proxy
+(`vite.config.ts`) instead of straight to port 8000. `e2e/support/gateway.ts` (`gatewayView`) makes
+both look the same, so the specs' made-up gateway answers are used either way and nothing reaches a
+real gateway.
+
+Search forms (shared parts, `src/components/admin/ui/search-form.tsx`, `SectorAirportSelect.tsx`):
+`search-form.test.tsx` covers the two-line airport card (a code not in the airport list shows
 alone), the round swap button and From/To row, the search button, the icon tabs, the sector-limited
 From/To picker (only the given codes, keyboard choice, card with x) and the search-look date field.
 `e2e/admin-group-ticketing.spec.ts` checks, at 1280, 1440 and 390px, the Flights layout (From and To

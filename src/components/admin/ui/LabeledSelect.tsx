@@ -1,5 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { FilterOption } from "@/components/admin/FilterSelect";
+import type { FilterOption } from "./FilterSelect";
 import { cn } from "@/lib/utils";
 
 interface LabeledSelectProps {
@@ -22,7 +22,7 @@ export function LabeledSelect({ id, label, value, options, onChange, disabled, n
     <div className="flex min-w-0 flex-col gap-1">
       <label htmlFor={id} className="text-label font-medium text-muted-foreground">{label}</label>
       <Select value={value} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger id={id} aria-describedby={note ? `${id}-note` : undefined} className={cn("w-full min-w-0 rounded-sm border-border bg-card px-2.5 text-body shadow-none", triggerClassName ?? "h-control")}>
+        <SelectTrigger id={id} aria-describedby={note ? `${id}-note` : undefined} className={cn("w-full min-w-0 rounded-md border-border bg-card px-3 text-body shadow-none", triggerClassName ?? "h-control")}>
           <span className="truncate"><SelectValue /></span>
         </SelectTrigger>
         <SelectContent className="max-h-72">

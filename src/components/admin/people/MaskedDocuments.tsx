@@ -1,4 +1,4 @@
-import { StatusBadge } from "@/components/admin/StatusBadge";
+import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import type { SavedDocument } from "@/lib/saved-people/api";
 import { ID_TYPE_LABEL, VALIDITY_LABEL } from "@/lib/saved-people/states";
 

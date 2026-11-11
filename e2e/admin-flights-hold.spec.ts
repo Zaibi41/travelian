@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { gatewayView } from "./support/gateway";
 import { expectReadableText } from "./support/type-scale";
 
 // Flights booking flow pages (fare check, hold form, hold result): no horizontal page scroll.
@@ -37,7 +38,7 @@ const DETAIL = {
 async function open(page: Page, width: number, { changed = false, holdError = false } = {}) {
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
-    const url = new URL(route.request().url());
+    const url = gatewayView(route.request().url());
     if (url.port === "8000") {
       if (url.pathname === "/v1/live-ticketing/flights/search") return route.fulfill({ json: SEARCH });
       if (url.pathname === "/v1/live-ticketing/flights/reprice") {

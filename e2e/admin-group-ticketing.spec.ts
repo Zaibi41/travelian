@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
+import { gatewayView } from "./support/gateway";
 import { expectReadableText } from "./support/type-scale";
 
 // Search > Group Ticketing: same form as Flights (shared parts), From/To limited to available
@@ -19,7 +20,7 @@ async function open(page: Page, width = 1440, { empty = false, query = "" } = {}
   const searches: Request[] = [];
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
-    const url = new URL(route.request().url());
+    const url = gatewayView(route.request().url());
     if (url.port === "8000") {
       if (url.pathname === "/v1/group-ticketing/inventory") return route.fulfill({ json: empty ? { data: [] } : INVENTORY });
       if (url.pathname === "/v1/group-ticketing/search") {

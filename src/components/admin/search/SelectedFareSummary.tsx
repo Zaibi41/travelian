@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { StatusBadge } from "@/components/admin/StatusBadge";
+import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { formatMoney } from "@/lib/admin-bookings/format";
 import { airlineLabel, formatDuration, stopsLabel } from "@/lib/admin-search/flights";
 import { travelerCount, type HoldDraft } from "@/lib/admin-search/hold";
@@ -14,7 +14,7 @@ export function SelectedFareSummary({ draft }: { draft: HoldDraft }) {
   const adminOnly = providers.length > 0 || quote.supplier_total || quote.margin;
   const count = travelerCount(quote);
   return (
-    <section aria-label="Selected fare" className="flex flex-col gap-3 rounded-lg border border-border bg-card px-card py-3.5 shadow-card lg:sticky lg:top-4">
+    <section aria-label="Selected fare" className="flex flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card lg:sticky lg:top-4">
       <h2 className="text-section font-semibold text-foreground">Selected fare</h2>
       {draft.picks.map(({ journey, flight }) => (
         <div key={journey.direction} className="flex min-w-0 flex-col gap-1">

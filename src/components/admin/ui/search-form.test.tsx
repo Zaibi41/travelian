@@ -17,9 +17,9 @@ const AIRPORTS: Airport[] = [
 const index = buildIndex(AIRPORTS);
 vi.mock("@/hooks/use-airports", () => ({ useAirports: () => index }));
 
-import { AirportLines, RouteRow, SearchProductTabs, SearchSubmitButton, SwapButton } from "./SearchFormParts";
+import { AirportLines, RouteRow, SearchProductTabs, SearchSubmitButton, SwapButton } from "./search-form";
 import { SectorAirportSelect } from "./SectorAirportSelect";
-import { DayFirstDateField } from "@/components/admin/DayFirstDateField";
+import { DayFirstDateField } from "@/components/admin/ui/DayFirstDateField";
 
 describe("shared search form parts", () => {
   it("AirportLines: IATA - City, then name and country; a code not in the list shows alone", () => {

@@ -3,19 +3,19 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { Minus, Plane, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/admin/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/admin/ui/dialog";
+import { Input } from "@/components/admin/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatusBadge } from "@/components/admin/StatusBadge";
+import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { StatusKpiCard } from "@/components/admin/StatusKpiCard";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
-import { LabeledSelect } from "@/components/admin/bookings/LabeledSelect";
-import { AirportCombobox } from "@/components/admin/search/AirportCombobox";
-import { RouteRow, SEARCH_FIELD, SearchSubmitButton } from "@/components/admin/search/SearchFormParts";
-import { DayFirstDateField } from "@/components/admin/DayFirstDateField";
+import { LabeledSelect } from "@/components/admin/ui/LabeledSelect";
+import { AirportCombobox } from "@/components/admin/ui/AirportCombobox";
+import { RouteRow, SEARCH_FIELD, SearchSubmitButton } from "@/components/admin/ui/search-form";
+import { DayFirstDateField } from "@/components/admin/ui/DayFirstDateField";
 import { formatDay } from "@/lib/admin-search/date-display";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GatewayError } from "@/lib/gateway/client";
@@ -152,7 +152,7 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
         </div>
       )}
 
-      <section aria-label="Search flights" className="flex flex-col gap-3 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+      <section aria-label="Search flights" className="flex flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
         <div className="flex flex-wrap items-center gap-2">
           <div role="radiogroup" aria-label="Trip type" className="inline-flex rounded-sm border border-border bg-muted p-0.5">
             {(["oneway", "roundtrip"] as const).map(trip => (
@@ -224,7 +224,7 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
         results.error ? (
           <DashboardErrorNotice message={errorMessage(results.error)} />
         ) : results.isPending ? (
-          <div className="flex flex-col gap-2 rounded-lg border border-border bg-card px-card py-3.5 shadow-card" aria-busy="true" aria-label="Loading flights">
+          <div className="flex flex-col gap-2 rounded-xl border border-border bg-card px-card py-3.5 shadow-card" aria-busy="true" aria-label="Loading flights">
             {Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-24 rounded-md" />)}
           </div>
         ) : results.data ? (
@@ -284,7 +284,7 @@ function TravelersPicker({ value, onChange }: { value: FlightSearch; onChange: (
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" className="h-8 text-body">{total} {total === 1 ? "Traveler" : "Travelers"}</Button>
+        <Button type="button" variant="outline" size="sm">{total} {total === 1 ? "Traveler" : "Travelers"}</Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-72 p-3">
         <div className="flex flex-col gap-2.5">
@@ -298,12 +298,12 @@ function TravelersPicker({ value, onChange }: { value: FlightSearch; onChange: (
                   <p className="text-label text-muted-foreground">{row.hint}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button type="button" size="icon" variant="outline" className="h-8 w-8" aria-label={`Fewer ${row.label.toLowerCase()}`}
+                  <Button type="button" size="icon" variant="outline" className="h-9 w-9" aria-label={`Fewer ${row.label.toLowerCase()}`}
                     disabled={current <= row.min} onClick={() => onChange({ [row.key]: current - 1, ...(row.key === "adults" && value.infants > current - 1 ? { infants: current - 1 } : {}) })}>
                     <Minus className="h-3.5 w-3.5" />
                   </Button>
                   <span className="w-5 text-center text-body tabular-nums" aria-live="polite">{current}</span>
-                  <Button type="button" size="icon" variant="outline" className="h-8 w-8" aria-label={`More ${row.label.toLowerCase()}`}
+                  <Button type="button" size="icon" variant="outline" className="h-9 w-9" aria-label={`More ${row.label.toLowerCase()}`}
                     disabled={current >= max} onClick={() => onChange({ [row.key]: current + 1 })}>
                     <Plus className="h-3.5 w-3.5" />
                   </Button>
@@ -311,7 +311,7 @@ function TravelersPicker({ value, onChange }: { value: FlightSearch; onChange: (
               </div>
             );
           })}
-          <Button type="button" className="mt-1 h-8 text-body" onClick={() => setOpen(false)}>Done</Button>
+          <Button type="button" size="sm" className="mt-1" onClick={() => setOpen(false)}>Done</Button>
         </div>
       </PopoverContent>
     </Popover>
@@ -352,7 +352,7 @@ function Results({ data, search, filters, onFilters, renderFareAction, actionNot
     );
   }
   return (
-    <section aria-label="Results" className="flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+    <section aria-label="Results" className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
           <h2 className="text-section font-semibold text-foreground">Results</h2>
@@ -367,7 +367,7 @@ function Results({ data, search, filters, onFilters, renderFareAction, actionNot
               <span aria-hidden="true">·</span>
               <label htmlFor="flight-sort">Sort by</label>
               <Select value={filters.sort} onValueChange={sort => onFilters({ ...filters, sort: sort as ResultFilters["sort"] })}>
-                <SelectTrigger id="flight-sort" className="h-8 w-auto min-w-[10rem] rounded-sm border-border bg-card px-2.5 text-body text-foreground shadow-none">
+                <SelectTrigger id="flight-sort" className="h-control w-auto min-w-[10rem] rounded-md border-border bg-card px-3 text-body text-foreground shadow-none">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -459,7 +459,7 @@ function FlightDetails({ journey, flight }: { journey: JourneyView; flight: Flig
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" className="h-8 shrink-0 text-body">Flight details</Button>
+        <Button type="button" variant="outline" size="sm" className="shrink-0">Flight details</Button>
       </DialogTrigger>
       <DialogContent className="flex max-h-[85vh] w-[calc(100%-2rem)] max-w-lg flex-col gap-3 overflow-hidden">
         <DialogHeader>

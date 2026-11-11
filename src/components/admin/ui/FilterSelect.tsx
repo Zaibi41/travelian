@@ -22,7 +22,7 @@ export function FilterSelect({ id, label, value, options, onChange }: FilterSele
       <SelectTrigger
         id={id}
         aria-label={`${label}: ${selected?.label ?? ""}`}
-        className="h-control w-auto max-w-full gap-1.5 rounded-sm border-border bg-card px-2.5 text-body shadow-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+        className="h-control w-auto max-w-full gap-1.5 rounded-md border-border bg-card px-3 text-body shadow-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
       >
         <span className="text-muted-foreground">{label}</span>
         <span className="truncate font-medium text-foreground">{selected?.label}</span>

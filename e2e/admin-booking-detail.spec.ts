@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { gatewayView } from "./support/gateway";
 import { expectReadableText } from "./support/type-scale";
 
 // Booking detail Passengers and Audit tabs. Local-only session and intercepted gateway responses.
@@ -24,7 +25,7 @@ const DETAIL = {
 async function open(page: Page, width: number, tab: string) {
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
-    const url = new URL(route.request().url());
+    const url = gatewayView(route.request().url());
     if (url.port === "8000") {
       if (url.pathname === "/v1/admin/bookings/TRV-PE49ZP") return route.fulfill({ json: DETAIL });
       return route.fulfill({ status: 404, json: { detail: "Not found." } });

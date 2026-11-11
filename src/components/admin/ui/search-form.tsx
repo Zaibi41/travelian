@@ -6,9 +6,9 @@
 
 import { Link } from "react-router-dom";
 import { ArrowLeftRight, ArrowUpDown, Plane, PlaneLanding, PlaneTakeoff, Search, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/admin/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { PRODUCT_TABS } from "@/components/public/product-navigation";
+import { ADMIN_PRODUCT_TABS } from "@/components/admin/ui/product-tabs";
 import type { Airport } from "@/lib/admin-search/airports";
 import { cn } from "@/lib/utils";
 
@@ -124,8 +124,8 @@ export function RouteRow({ from, to, onSwap }: { from: React.ReactNode; to: Reac
 /** Filled search button with the magnifier (public site style); the admin keeps its own label. */
 export function SearchSubmitButton({ label, disabled }: { label: string; disabled?: boolean }) {
   return (
-    <Button type="submit" disabled={disabled} className="h-12 whitespace-nowrap rounded-xl bg-primary px-6 text-body font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-      <Search className="mr-2 h-4 w-4" aria-hidden="true" /> {label}
+    <Button type="submit" size="lg" disabled={disabled}>
+      <Search aria-hidden="true" /> {label}
     </Button>
   );
 }
@@ -135,7 +135,7 @@ export function SearchProductTabs({ active, label = "Search products" }: { activ
   return (
     <nav aria-label={label}>
       <div className="grid grid-cols-2 overflow-hidden rounded-t-xl border-b border-border bg-muted/40 sm:grid-cols-4">
-        {PRODUCT_TABS.map(tab => (
+        {ADMIN_PRODUCT_TABS.map(tab => (
           <Link
             key={tab.id}
             to={`/admin/search?tab=${tab.id}`}

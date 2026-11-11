@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/admin/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/admin/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GatewayError, type GatewayFieldError } from "@/lib/gateway/client";
 import { cn } from "@/lib/utils";
@@ -10,7 +10,7 @@ import { holdFlight, repriceFlights, writeFlightSearch } from "@/lib/admin-searc
 import { HOLD_RESULT_PATH, fareCheckFailure, type FareCheckState, type HoldDraft, type HoldRequest } from "@/lib/admin-search/hold";
 import { DEFAULT_COUNTRY_CODE } from "@/data/countries";
 import { CountrySelect } from "./CountrySelect";
-import { DayFirstDateField } from "@/components/admin/DayFirstDateField";
+import { DayFirstDateField } from "@/components/admin/ui/DayFirstDateField";
 import { FareCheckDialog } from "./FareCheckDialog";
 import { useCountdown } from "./FlightsSearch";
 
@@ -175,7 +175,7 @@ export function HoldForm({ draft, mode, onDraft }: { draft: HoldDraft; mode: Hol
 
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
-      <section aria-label="Customer" className="flex flex-col gap-3 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+      <section aria-label="Customer" className="flex flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
         <div>
           <h2 className="text-section font-semibold text-foreground">Customer</h2>
           <p className="text-body text-muted-foreground">The person who pays and is contacted. Typed in for each booking. The customer may or may not be one of the travelers.</p>
@@ -189,7 +189,7 @@ export function HoldForm({ draft, mode, onDraft }: { draft: HoldDraft; mode: Hol
         </div>
       </section>
 
-      <section aria-label="Travelers" className="flex flex-col gap-3 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+      <section aria-label="Travelers" className="flex flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
         <div>
           <h2 className="flex flex-wrap items-center gap-2 text-section font-semibold text-foreground">
             Travelers <span className="rounded-full bg-primary/10 px-2 py-0.5 text-label font-medium text-primary">{typeCounts}</span>
@@ -280,10 +280,10 @@ export function HoldForm({ draft, mode, onDraft }: { draft: HoldDraft; mode: Hol
       {errors.message && <p role="alert" className="rounded-md border border-status-critical/40 bg-status-critical-soft px-3 py-2 text-body text-status-critical-text">{errors.message}</p>}
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => void submit()} disabled={pending || check !== null} className="h-control bg-teal text-body text-teal-foreground hover:bg-teal/90">
+          <Button type="button" onClick={() => void submit()} disabled={pending || check !== null} variant="primary">
             {pending ? "Holding seats…" : "Hold seats"}
           </Button>
-          <Button type="button" variant="outline" className="h-control text-body" onClick={() => navigate(searchUrl)}>Back to results</Button>
+          <Button type="button" variant="outline" onClick={() => navigate(searchUrl)}>Back to results</Button>
         </div>
         <p className="text-body text-muted-foreground">
           {mode === "book"

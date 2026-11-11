@@ -3,13 +3,14 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { Compass } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/admin/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
-import { LabeledSelect } from "@/components/admin/bookings/LabeledSelect";
-import { DayFirstDateField } from "@/components/admin/DayFirstDateField";
-import { FieldLabel, RouteRow, SEARCH_FIELD, SearchSubmitButton } from "./SearchFormParts";
-import { SectorAirportSelect } from "./SectorAirportSelect";
+import { LabeledSelect } from "@/components/admin/ui/LabeledSelect";
+import { DayFirstDateField } from "@/components/admin/ui/DayFirstDateField";
+import { FieldLabel, RouteRow, SEARCH_FIELD, SearchSubmitButton } from "@/components/admin/ui/search-form";
+import { SectorAirportSelect } from "@/components/admin/ui/SectorAirportSelect";
+import { Chip } from "@/components/admin/ui/feedback";
 import { cn } from "@/lib/utils";
 import { GatewayError, gatewayAssetUrl } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
@@ -73,7 +74,7 @@ export function GroupTicketingSearch() {
 
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
-      <section aria-label="Search group fares" className="flex flex-col gap-3 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+      <section aria-label="Search group fares" className="flex flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
         {inventory.error ? (
           <DashboardErrorNotice message={errorMessage(inventory.error)} />
         ) : (
@@ -89,19 +90,14 @@ export function GroupTicketingSearch() {
                   {suggested.map(sector => {
                     const selected = draft.from === sector.from && draft.to === sector.to;
                     return (
-                      <button
+                      <Chip
                         key={`${sector.from}-${sector.to}`}
-                        type="button"
                         data-route-chip
-                        aria-pressed={selected}
+                        pressed={selected}
                         onClick={() => setDraft({ ...draft, from: sector.from, to: sector.to })}
-                        className={cn(
-                          "min-h-8 shrink-0 whitespace-nowrap rounded-md border px-2.5 py-1 text-helper font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                          selected ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted/30 text-muted-foreground hover:border-primary/30 hover:bg-muted hover:text-primary",
-                        )}
                       >
                         {sector.from} → {sector.to} <span className="font-normal opacity-80">({sector.count})</span>
-                      </button>
+                      </Chip>
                     );
                   })}
                 </>
@@ -162,7 +158,7 @@ export function GroupTicketingSearch() {
       </section>
 
       {isCompleteSearch(search) && (
-        <section aria-label="Results" className="flex min-w-0 flex-col gap-2.5 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+        <section aria-label="Results" className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
           <h2 className="text-section font-semibold text-foreground">Results</h2>
           {results.error ? (
             <DashboardErrorNotice message={errorMessage(results.error)} />

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/admin/ui/button";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
@@ -127,8 +127,8 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
         const disabledButton = (name: string, reason: string) => (
           <WithReason reason={reason}>
             {describedBy => (
-              <Button type="button" size="sm" variant={name === "Book" ? "default" : "outline"} disabled aria-describedby={describedBy}
-                aria-label={`${name} ${label}`} className={cn("h-8 px-3 text-body", name === "Book" && "bg-teal text-teal-foreground")}>
+              <Button type="button" size="sm" variant={name === "Book" ? "primary" : "outline"} disabled aria-describedby={describedBy}
+                aria-label={`${name} ${label}`}>
                 {name}
               </Button>
             )}
@@ -139,10 +139,9 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
           <div className="flex flex-col gap-1.5">
             <div className="flex flex-wrap gap-1.5">
               {(["book", "hold"] as const).map(mode => (
-                <Button key={mode} type="button" size="sm" variant={mode === "book" ? "default" : "outline"} disabled={!priced}
+                <Button key={mode} type="button" size="sm" variant={mode === "book" ? "primary" : "outline"} disabled={!priced}
                   title={priced ? undefined : "Price not available"} aria-label={`${mode === "book" ? "Book" : "Hold"} ${label}`}
-                  onClick={() => bookOrHold(mode, search, pick)}
-                  className={cn("h-8 px-3 text-body", mode === "book" && "bg-teal text-teal-foreground hover:bg-teal/90")}>
+                  onClick={() => bookOrHold(mode, search, pick)}>
                   {mode === "book" ? "Book" : "Hold"}
                 </Button>
               ))}
@@ -203,7 +202,7 @@ function SelectionPanel({ picks, directions, ready, pending, error, quote, onRep
   const secondsLeft = useSecondsLeft(quote?.expires_at);
   const expired = Boolean(quote) && secondsLeft === 0;
   return (
-    <section aria-label="Selected fare" className="flex flex-col gap-3 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+    <section aria-label="Selected fare" className="flex flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
       <h2 className="text-section font-semibold text-foreground">Selected fare</h2>
       <ul className="flex flex-col gap-1 text-body text-foreground">
         {directions.map(direction => {
@@ -239,7 +238,7 @@ function SelectionPanel({ picks, directions, ready, pending, error, quote, onRep
             {expired ? "This revalidated fare has expired. Revalidate again." : `Revalidated fare valid for ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}.`}
           </p>
           {expired ? (
-            <div><Button type="button" variant="outline" className="h-control text-body" onClick={onReprice}>Revalidate again</Button></div>
+            <div><Button type="button" variant="outline" onClick={onReprice}>Revalidate again</Button></div>
           ) : hold}
         </div>
       )}

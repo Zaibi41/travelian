@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/admin/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/admin/ui/field";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
-import { TabLinks } from "@/components/admin/bookings/TabLinks";
+import { TabLinks } from "@/components/admin/ui/TabLinks";
 import { NotAvailableTable } from "@/components/admin/bookings/NotAvailable";
 import { SampleDataBadge, StatusChips } from "@/components/admin/bookings/BookingChips";
 import { GatewayError } from "@/lib/gateway/client";
@@ -59,7 +59,7 @@ export default function AdminBookingDetailPage() {
       <div className="flex flex-col gap-section-gap" aria-busy="true" aria-label="Loading booking">
         <Skeleton className="h-8 w-56 rounded-sm" />
         <Skeleton className="h-control w-full rounded-sm" />
-        <Skeleton className="h-64 w-full rounded-lg" />
+        <Skeleton className="h-64 w-full rounded-xl" />
       </div>
     );
   }
@@ -89,7 +89,7 @@ export default function AdminBookingDetailPage() {
 
 function FieldTable({ rows, label }: { rows: [string, React.ReactNode][]; label: string }) {
   return (
-    <section aria-label={label} className="rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+    <section aria-label={label} className="rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
       <dl className="grid grid-cols-1 sm:grid-cols-[minmax(10rem,16rem)_minmax(0,1fr)]">
         {rows.map(([name, value]) => (
           <div key={name} className="contents">
@@ -134,7 +134,7 @@ function Fare({ booking }: { booking: BookingDetail }) {
   if (booking.fare.supplier_cost) rows.push(["Supplier cost", formatMoney(booking.fare.supplier_cost)]);
   if (booking.fare.margin) rows.push(["Margin", formatMoney(booking.fare.margin)]);
   return (
-    <section aria-label="Fare" className="overflow-x-auto rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+    <section aria-label="Fare" className="overflow-x-auto rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
       <table className="w-full min-w-[20rem] border-collapse text-table">
         <thead>
           <tr className="bg-muted text-left">
@@ -184,7 +184,7 @@ function Passengers({ booking }: { booking: BookingDetail }) {
   const columns = ["Passenger name", "Type", "Document (masked)", "Date of birth (masked)", "Nationality", "Ticket number", ...(booking.can_reveal_identity ? ["Actions"] : [])];
   return (
     <section aria-label="Passengers" className="flex flex-col gap-2">
-      <div className="overflow-x-auto rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+      <div className="overflow-x-auto rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
         <table className="w-full min-w-[44rem] border-collapse text-table">
           <thead>
             <tr className="bg-muted text-left">
@@ -205,7 +205,7 @@ function Passengers({ booking }: { booking: BookingDetail }) {
                   <Cell muted={!passenger.ticket_number}>{passenger.ticket_number ?? "—"}</Cell>
                   {booking.can_reveal_identity && (
                     <td className="h-table-row px-2.5">
-                      <Button type="button" variant="outline" size="sm" className="h-8 text-body" aria-label={`Reveal (logged) ${name}`} onClick={() => setRevealing(passenger)}>
+                      <Button type="button" variant="outline" size="sm" aria-label={`Reveal (logged) ${name}`} onClick={() => setRevealing(passenger)}>
                         Reveal (logged)
                       </Button>
                     </td>
@@ -255,9 +255,9 @@ function RevealDialog({ bookingId, passenger, onClose }: { bookingId: string; pa
           )}
         </div>
         <DialogFooter className="gap-2">
-          <Button type="button" variant="outline" className="h-control text-body" onClick={onClose}>{values ? "Done" : "Cancel"}</Button>
+          <Button type="button" variant="outline" onClick={onClose}>{values ? "Done" : "Cancel"}</Button>
           {!values && (
-            <Button type="button" className="h-control text-body" disabled={reason.trim().length < REASON_MIN || reveal.isPending} onClick={() => reveal.mutate()}>
+            <Button type="button" disabled={reason.trim().length < REASON_MIN || reveal.isPending} onClick={() => reveal.mutate()}>
               {reveal.isPending ? "Revealing…" : "Reveal"}
             </Button>
           )}
@@ -294,7 +294,7 @@ function who(entry: BookingAuditEntry) {
 // stored in the gateway yet, so Who is the role and a short user reference.
 function Audit({ entries }: { entries: BookingAuditEntry[] }) {
   return (
-    <section aria-label="Audit" className="overflow-x-auto rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+    <section aria-label="Audit" className="overflow-x-auto rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
       <table className="w-full min-w-[40rem] border-collapse text-table">
         <thead>
           <tr className="bg-muted text-left">

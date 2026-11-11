@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { StatusBadge } from "@/components/admin/StatusBadge";
+import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { SEVERITY_LABEL } from "@/lib/admin-dashboard/severity";
 import type { Severity } from "@/lib/admin-dashboard/types";
 
@@ -36,7 +36,7 @@ export function StatusKpiCard({ label, value, severity, hint, fullValue, to, siz
   const body = (
     <div
       className={cn(
-        "flex h-full min-w-0 flex-col gap-1 rounded-lg border border-border bg-card px-card py-3 shadow-card",
+        "flex h-full min-w-0 flex-col gap-1 rounded-xl border border-border bg-card px-card py-3 shadow-card",
         severity && ["border-l-[length:var(--status-stripe)]", STRIPE[severity]],
         to && "transition-colors group-hover:border-brand-navy/30 group-hover:bg-accent/40",
         selected && "ring-2 ring-brand-navy ring-offset-1",
@@ -62,7 +62,7 @@ export function StatusKpiCard({ label, value, severity, hint, fullValue, to, siz
 
   const accessibleName = `${label}: ${fullValue ?? value}${severity ? `, ${SEVERITY_LABEL[severity]}` : ""}${hint ? `. ${hint}` : ""}`;
   return to ? (
-    <Link to={to} aria-label={accessibleName} aria-current={selected ? "true" : undefined} className="group block min-w-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+    <Link to={to} aria-label={accessibleName} aria-current={selected ? "true" : undefined} className="group block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
       {body}
     </Link>
   ) : (

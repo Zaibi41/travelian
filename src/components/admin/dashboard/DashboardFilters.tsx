@@ -1,4 +1,4 @@
-import { FilterSelect } from "@/components/admin/FilterSelect";
+import { FilterSelect } from "@/components/admin/ui/FilterSelect";
 import { bookingReportPeriods } from "@/lib/booking-report-period";
 import type { DashboardFilterOptions, DashboardPeriod, DashboardProduct, DashboardQuery } from "@/lib/admin-dashboard/types";
 

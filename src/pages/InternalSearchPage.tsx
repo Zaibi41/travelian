@@ -2,7 +2,7 @@ import { useSearchParams } from "react-router-dom";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GroupTicketingSearch } from "@/components/admin/search/GroupTicketingSearch";
 import { FlightsBooking } from "@/components/admin/search/FlightsBooking";
-import { SearchProductTabs } from "@/components/admin/search/SearchFormParts";
+import { SearchProductTabs } from "@/components/admin/ui/search-form";
 import { loadAirports } from "@/lib/admin-search/airports";
 
 // Airport suggestions start loading as soon as this page's module loads, so the list is ready

@@ -1,28 +1,20 @@
-import { Info } from "lucide-react";
+import { Notice } from "@/components/admin/ui/feedback";
+import { TABLE } from "@/components/admin/ui/classes";
+import { cn } from "@/lib/utils";
 
 /** Honest placeholder for a section whose data the gateway doesn't record yet. */
 export function NotAvailableNotice({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div role="status" className="flex items-start gap-2.5 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
-      <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <p className="text-body font-semibold text-foreground">{title}</p>
-        <p className="text-body text-muted-foreground">{children}</p>
-      </div>
-    </div>
-  );
+  return <Notice title={title}>{children}</Notice>;
 }
 
 /** Table with the mockup's columns and one row saying the data isn't recorded yet. */
 export function NotAvailableTable({ columns, message }: { columns: string[]; message: string }) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
-      <table className="w-full min-w-[36rem] border-collapse text-table">
+    <div className={cn(TABLE.wrap, "px-card py-3.5")}>
+      <table className={cn(TABLE.table, "min-w-[36rem]")}>
         <thead>
-          <tr className="bg-muted text-left">
-            {columns.map(column => (
-              <th key={column} scope="col" className="h-table-header px-2.5 font-semibold text-foreground">{column}</th>
-            ))}
+          <tr className={TABLE.headRow}>
+            {columns.map(column => <th key={column} scope="col" className={TABLE.th}>{column}</th>)}
           </tr>
         </thead>
         <tbody>

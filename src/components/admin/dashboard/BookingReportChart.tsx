@@ -16,7 +16,7 @@ export function BookingReportChart({ data: report, loading }: { data?: BookingRe
   };
   const empty = !!data && data.buckets.every(bucket => bucket.bookings === 0 && bucket.issued === 0);
   return (
-    <section aria-labelledby="dashboard-report" className="flex min-w-0 flex-col gap-3 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+    <section aria-labelledby="dashboard-report" className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <h2 id="dashboard-report" className="text-section font-semibold text-foreground">Booking report</h2>
         <p className="text-label text-muted-foreground">Follows date filter</p>

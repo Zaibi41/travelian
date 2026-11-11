@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatusBadge } from "@/components/admin/StatusBadge";
+import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { formatDue } from "@/lib/admin-dashboard/format";
 import { ATTENTION_QUEUE_PLACEHOLDER, attentionRowHref } from "@/lib/admin-dashboard/links";
 import type { AttentionItem, AttentionQueue } from "@/lib/admin-dashboard/types";
@@ -14,7 +14,7 @@ const TYPE_LABEL: Record<AttentionItem["type"], string> = {
 // Owner column is hidden: no case ownership is recorded yet (docs/backend-todo.md).
 export function AttentionQueuePanel({ data, loading }: { data?: AttentionQueue; loading: boolean }) {
   return (
-    <section aria-labelledby="dashboard-attention" className="flex min-w-0 flex-col gap-2.5 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+    <section aria-labelledby="dashboard-attention" className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
       <div className="flex items-baseline justify-between gap-3">
         <h2 id="dashboard-attention" className="text-section font-semibold text-foreground">Attention Queue</h2>
         <Link to={ATTENTION_QUEUE_PLACEHOLDER} className="shrink-0 rounded-sm text-body font-medium text-teal hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">

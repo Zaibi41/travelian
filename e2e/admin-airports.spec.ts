@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
+import { gatewayView } from "./support/gateway";
 
 // Search > Flights origin and destination suggestions: the airport list is in the frontend,
 // so typing makes no request. Local-only session and intercepted gateway answers.
@@ -11,7 +12,7 @@ async function open(page: Page, width = 1440, query = "") {
   const searches: Request[] = [];
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
-    const url = new URL(route.request().url());
+    const url = gatewayView(route.request().url());
     if (url.port === "8000") {
       if (url.pathname === "/v1/live-ticketing/flights/search") {
         searches.push(route.request());

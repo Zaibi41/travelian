@@ -18,7 +18,7 @@ export function TabLinks({ tabs, label }: { tabs: TabLink[]; label: string }) {
               end
               className={({ isActive }) =>
                 cn(
-                  "-mb-px inline-flex h-control items-center whitespace-nowrap border-b-2 px-3 text-body font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "-mb-px inline-flex h-control items-center whitespace-nowrap border-b-2 px-3 text-body font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   isActive ? "border-teal text-brand-navy" : "border-transparent text-muted-foreground hover:text-foreground",
                 )
               }

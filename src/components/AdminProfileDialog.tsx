@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
+import { Button } from "@/components/admin/ui/button";
+import { Input } from "@/components/admin/ui/field";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useRole } from "@/contexts/RoleContext";

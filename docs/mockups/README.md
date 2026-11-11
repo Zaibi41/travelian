@@ -69,4 +69,11 @@ Status as of 2026-11-10. All 28 listed mockups are in this folder.
   magnifier. Sizes stay on the admin type scale.
 - **Search > Flights: Search expiry card.** As in the mockup, it carries no warning tag; a running
   timer is neutral and an expired search turns the card critical with the word "Expired".
-
+- **Whole admin: public site's look, admin colours (Zohaib, 11 November 2026).** Every admin screen
+  now uses the admin design system (docs/design-system.md), built from the public website's sizes and
+  shapes; where a mockup looks different, the public style wins and the mockup's layout and content
+  stay. Differences from the mockups: buttons, selects and filter chips are 40px (mockup 28px);
+  badges and tags are 22px pills with semibold text (mockup 18px, medium); cards are rounded-xl with
+  20px sides (mockup 10px radius, 16px sides); page tabs are semibold; row action buttons are 36px.
+  Colours are unchanged. The Search forms were restyled at Zohaib's request to match the public
+  site's search form, differing from the original Search mockups (see the entries above).

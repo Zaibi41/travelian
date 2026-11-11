@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { gatewayView } from "./support/gateway";
 
 // Sign-in guard and expired sessions. Intercepted gateway and Cognito answers only (made-up
 // tokens); nothing reaches a real gateway or Cognito.
@@ -11,7 +12,7 @@ const jwt = (payload: object) => `${b64({ alg: "none", typ: "JWT" })}.${b64(payl
 async function mock(page: Page, { searchStatus = 200 } = {}) {
   await page.route("**/*", route => {
     const request = route.request();
-    const url = new URL(request.url());
+    const url = gatewayView(request.url());
     if (url.hostname.startsWith("cognito-idp.")) {
       const target = request.headers()["x-amz-target"] ?? "";
       const now = Math.floor(Date.now() / 1000);

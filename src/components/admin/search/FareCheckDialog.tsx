@@ -1,8 +1,8 @@
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/admin/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatusBadge } from "@/components/admin/StatusBadge";
+import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { formatMoney } from "@/lib/admin-bookings/format";
 import { travelerCount, type FareCheckState } from "@/lib/admin-search/hold";
 
@@ -37,23 +37,23 @@ export function FareCheckDialog({ state, onCancel, onBack, onContinue, onSearchA
               <Skeleton className="h-2.5 w-2/3 rounded-full" />
               <Skeleton className="h-2.5 w-2/5 rounded-full" />
             </div>
-            <DialogFooter><Button type="button" variant="outline" className="h-control text-body" onClick={onCancel}>Cancel</Button></DialogFooter>
+            <DialogFooter><Button type="button" variant="outline" onClick={onCancel}>Cancel</Button></DialogFooter>
           </>
         )}
         {state.kind === "changed" && <PriceChanged state={state} onContinue={onContinue} onBack={onBack} />}
         {state.kind === "gone" && (
           <Problem title="This fare is no longer available" message={state.message}
-            primary={<Button type="button" className="h-control bg-teal text-body text-teal-foreground hover:bg-teal/90" onClick={onSearchAgain}>Search again</Button>}
+            primary={<Button type="button" variant="primary" onClick={onSearchAgain}>Search again</Button>}
             onBack={onBack} />
         )}
         {state.kind === "unconfirmed" && (
           <Problem title="We couldn't confirm this fare" message={state.message}
-            primary={<Button type="button" className="h-control bg-teal text-body text-teal-foreground hover:bg-teal/90" onClick={onTryAgain}>Try again</Button>}
+            primary={<Button type="button" variant="primary" onClick={onTryAgain}>Try again</Button>}
             onBack={onBack} />
         )}
         {state.kind === "adults_only" && (
           <Problem title="Child and infant fares can't be confirmed yet" message={state.message}
-            primary={<Button type="button" className="h-control bg-teal text-body text-teal-foreground hover:bg-teal/90" onClick={onEditSearch}>Edit search</Button>}
+            primary={<Button type="button" variant="primary" onClick={onEditSearch}>Edit search</Button>}
             onBack={onBack} />
         )}
       </DialogContent>
@@ -70,7 +70,7 @@ function Problem({ title, message, primary, onBack }: { title: string; message: 
       </DialogHeader>
       <DialogFooter className="gap-2 sm:justify-start">
         {primary}
-        <Button type="button" variant="outline" className="h-control text-body" onClick={onBack}>Back to results</Button>
+        <Button type="button" variant="outline" onClick={onBack}>Back to results</Button>
       </DialogFooter>
     </>
   );
@@ -112,8 +112,8 @@ function PriceChanged({ state, onContinue, onBack }: { state: Extract<FareCheckS
         <dd className="border-t border-border py-2 text-right text-section font-semibold tabular-nums text-foreground">{formatMoney(quote.new_total)}</dd>
       </dl>
       <DialogFooter className="gap-2 sm:justify-start">
-        <Button type="button" className="h-control bg-teal text-body text-teal-foreground hover:bg-teal/90" onClick={onContinue}>Continue at new price</Button>
-        <Button type="button" variant="outline" className="h-control text-body" onClick={onBack}>Back to results</Button>
+        <Button type="button" variant="primary" onClick={onContinue}>Continue at new price</Button>
+        <Button type="button" variant="outline" onClick={onBack}>Back to results</Button>
       </DialogFooter>
     </>
   );

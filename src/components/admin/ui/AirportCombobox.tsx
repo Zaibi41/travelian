@@ -5,7 +5,7 @@ import { MIN_QUERY, searchAirports, type Airport } from "@/lib/admin-search/airp
 import { cn } from "@/lib/utils";
 import {
   AIRPORT_FIELD, AIRPORT_LIST_PANEL, AirportIcon, AirportLines, FieldLabel, SelectedAirportCard, airportOptionClass, type AirportIconKind,
-} from "./SearchFormParts";
+} from "./search-form";
 
 interface AirportComboboxProps {
   id: string;

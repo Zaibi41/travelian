@@ -30,8 +30,14 @@ const RULES: [string, RegExp][] = [
   ["hard-coded hex colour (use a colour token)", /#[0-9a-fA-F]{3,8}\b(?![\w-])/],
   ["hard-coded rgb/hsl colour (use a colour token)", /\b(rgb|hsl)a?\(\s*\d/],
   ["Tailwind palette colour (use a colour token)", /\b(bg|text|border|ring|fill|stroke|from|via|to|outline|divide|decoration|accent|caret)-(slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/],
+  ["import from the public site (copy the look into src/components/admin/ui instead)", /from\s+["']@\/(components|pages)\/public\//],
   ["arbitrary radius (use a radius token)", /\brounded(-[a-z]{1,2})?-\[[^\]]+\]|border-?[Rr]adius/],
 ];
+
+// Known exception (docs/roadmap.md): the legacy agency-role search on /admin/search renders the
+// public site's whole search form. Every other admin file must not import from public folders.
+const PUBLIC_IMPORT_EXCEPTIONS = new Set(["/src/pages/AdminSearchPage.tsx"]);
+const rulesFor = (file: string) => RULES.filter(([rule]) => !(PUBLIC_IMPORT_EXCEPTIONS.has(file) && rule.startsWith("import from the public site")));
 
 describe("admin type scale", () => {
   it("covers the admin files", () => {
@@ -40,7 +46,7 @@ describe("admin type scale", () => {
 
   it.each(files)("%s uses only the shared scale", file => {
     const problems = sources[file].split("\n").flatMap((line, index) =>
-      RULES.filter(([, pattern]) => pattern.test(line)).map(([rule]) => `${file}:${index + 1} ${rule}`));
+      rulesFor(file).filter(([, pattern]) => pattern.test(line)).map(([rule]) => `${file}:${index + 1} ${rule}`));
     expect(problems).toEqual([]);
   });
 

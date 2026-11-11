@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/admin/ui/button";
+import { Input } from "@/components/admin/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusKpiCard } from "@/components/admin/StatusKpiCard";
 import { DashboardErrorNotice, CardGridSkeleton } from "@/components/admin/dashboard/DashboardStates";
-import { LabeledSelect } from "@/components/admin/bookings/LabeledSelect";
-import { TabLinks } from "@/components/admin/bookings/TabLinks";
+import { LabeledSelect } from "@/components/admin/ui/LabeledSelect";
+import { TabLinks } from "@/components/admin/ui/TabLinks";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { PaidChip, SampleDataBadge, StatusChips } from "@/components/admin/bookings/BookingChips";
 import { GatewayError } from "@/lib/gateway/client";
@@ -165,7 +165,7 @@ function Filters({ filters, data, flights, onChange }: FiltersProps) {
   if (flights) {
     // Airline, Route, Trip type and TTL are hidden until the backend records them.
     return sourceSelect ? (
-      <section aria-label="Filters" className="grid grid-cols-1 gap-3 rounded-lg border border-border bg-card px-card py-3.5 shadow-card sm:grid-cols-2 lg:grid-cols-5">
+      <section aria-label="Filters" className="grid grid-cols-1 gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card sm:grid-cols-2 lg:grid-cols-5">
         {sourceSelect}
       </section>
     ) : null;
@@ -174,7 +174,7 @@ function Filters({ filters, data, flights, onChange }: FiltersProps) {
   const anyOption = { value: ANY, label: "Any" };
   const agencies = data?.filter_options.agencies ?? [];
   return (
-    <section aria-label="Filters" className="flex flex-col gap-3 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+    <section aria-label="Filters" className="flex flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <form
           role="search"
@@ -186,7 +186,7 @@ function Filters({ filters, data, flights, onChange }: FiltersProps) {
         >
           <label htmlFor="bookings-search" className="text-label font-medium text-muted-foreground">Search</label>
           <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input
               id="bookings-search"
               value={search}
@@ -194,7 +194,7 @@ function Filters({ filters, data, flights, onChange }: FiltersProps) {
               onChange={event => setSearch(event.target.value)}
               onBlur={() => (search.trim() || undefined) !== filters.q && onChange({ q: search.trim() || undefined })}
               placeholder="Booking ID or PNR"
-              className="h-control rounded-sm pl-8 text-body"
+              className="pl-9"
             />
           </div>
         </form>
@@ -257,7 +257,7 @@ const TD = "px-2.5 py-2 align-top";
 function BookingsTable({ data, loading, flights, filters, onPage }: TableProps) {
   if (loading && !data) {
     return (
-      <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-card px-card py-3.5 shadow-card" aria-busy="true" aria-label="Loading bookings">
+      <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-card px-card py-3.5 shadow-card" aria-busy="true" aria-label="Loading bookings">
         {Array.from({ length: 5 }, (_, index) => <Skeleton key={index} className="h-table-row rounded-sm" />)}
       </div>
     );
@@ -268,7 +268,7 @@ function BookingsTable({ data, loading, flights, filters, onPage }: TableProps) 
   const pages = Math.max(1, Math.ceil(data.total / PAGE_SIZE));
 
   return (
-    <section aria-label="Bookings" className="flex min-w-0 flex-col gap-2.5 rounded-lg border border-border bg-card px-card py-3.5 shadow-card">
+    <section aria-label="Bookings" className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
       {data.items.length === 0 ? (
         <p className="py-2 text-body text-muted-foreground">No bookings match these filters.</p>
       ) : (
@@ -316,7 +316,7 @@ function BookingsTable({ data, loading, flights, filters, onPage }: TableProps) 
                   {!flights && <td className={`${TD} whitespace-nowrap tabular-nums text-foreground`}>{formatDateTime(item.expires_at)}</td>}
                   {flights && <td className={`${TD} whitespace-nowrap tabular-nums text-foreground`}>{isOpenHold(item.statuses.booking) ? formatTimeLeft(item.expires_at) : "—"}</td>}
                   <td className={TD}>
-                    <Button asChild variant="outline" size="sm" className="h-8 text-body">
+                    <Button asChild variant="outline" size="sm">
                       <Link to={bookingDetailPath(item.booking_id)} aria-label={`${flights ? "Open" : "View"} booking ${item.pnr ?? item.booking_id}`}>
                         {flights ? "Open" : "View"}
                       </Link>
@@ -330,9 +330,9 @@ function BookingsTable({ data, loading, flights, filters, onPage }: TableProps) 
       )}
       {pages > 1 && (
         <nav aria-label="Pages" className="flex items-center justify-end gap-2 text-body text-muted-foreground">
-          <Button variant="outline" size="sm" className="h-8" disabled={filters.page <= 1} onClick={() => onPage(filters.page - 1)}>Previous</Button>
+          <Button variant="outline" size="sm" disabled={filters.page <= 1} onClick={() => onPage(filters.page - 1)}>Previous</Button>
           <span className="tabular-nums">Page {filters.page} of {pages}</span>
-          <Button variant="outline" size="sm" className="h-8" disabled={filters.page >= pages} onClick={() => onPage(filters.page + 1)}>Next</Button>
+          <Button variant="outline" size="sm" disabled={filters.page >= pages} onClick={() => onPage(filters.page + 1)}>Next</Button>
         </nav>
       )}
     </section>

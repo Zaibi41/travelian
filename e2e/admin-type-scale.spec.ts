@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { gatewayView } from "./support/gateway";
 import { expectReadableText } from "./support/type-scale";
 
 // One type scale across the admin: no text under 12px, labels and tables at least 13px, no
@@ -27,7 +28,7 @@ const LIST = {
 async function open(page: Page, width: number, path: string) {
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
-    const url = new URL(route.request().url());
+    const url = gatewayView(route.request().url());
     if (url.port === "8000") {
       if (url.pathname === "/v1/live-ticketing/flights/search") return route.fulfill({ json: SEARCH });
       if (url.pathname === "/v1/admin/bookings") return route.fulfill({ json: LIST });

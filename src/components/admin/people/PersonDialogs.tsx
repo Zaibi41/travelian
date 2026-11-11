@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/admin/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
+import { Input } from "@/components/admin/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/admin/ui/field";
 import { CountrySelect } from "@/components/admin/search/CountrySelect";
 import { DEFAULT_COUNTRY_CODE } from "@/data/countries";
 import { cn } from "@/lib/utils";
@@ -94,7 +94,7 @@ export function DuplicateNotice({ state, busy, onChoose, onBack }: {
   const person = state.person;
   return (
     <section aria-label="Possible duplicate" className="flex flex-col gap-3">
-      <div role="status" className="flex flex-col gap-2 rounded-lg border border-border border-l-[length:var(--status-stripe)] border-l-status-action bg-card px-card py-3">
+      <div role="status" className="flex flex-col gap-2 rounded-xl border border-border border-l-[length:var(--status-stripe)] border-l-status-action bg-card px-card py-3">
         <p className="text-body font-semibold text-foreground">Possible duplicate: {state.reason}</p>
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-body">
           <dt className="text-muted-foreground">Name</dt><dd className="truncate text-foreground" title={fullName(person)}>{fullName(person)}</dd>
