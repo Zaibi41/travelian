@@ -86,6 +86,13 @@ Where the public site uses a different colour for the same role (not unified; Zo
 | Sidebar | `222 47% 11%`, active `217 91% 50%` | navy, active teal | sidebar |
 | Shadows, gradients | tinted `222 47% 11%` | tinted navy | cards, hero |
 
+Palette colours kept on older pages (not unified; the guard lists them by file and class, so a new
+one fails): Flight Operations status chips (`bg-amber-500/10 text-amber-700`,
+`bg-emerald-500/10 text-emerald-700`), Wallet "Pending verification" (`text-amber-600`), Provider
+Systems "Group Ticketing" badge (`border-blue-200 bg-blue-50 text-blue-700`, icon `text-blue-600`),
+Booking Requests age badge (`bg-amber-500 text-white`). Moving them to the status tokens would shift
+their shade slightly, so it waits for the colour decision.
+
 Inside the admin itself, filled buttons are still of two colours: teal for the main actions
 (Hold, Continue at new price, Search again, View booking, Book) and navy for the rest (Save, Add
 Customer, Search flights / Search group fares). Unifying them is a colour decision, so it is left
@@ -108,9 +115,22 @@ as it is.
 | `Notice` (info, critical, action, fine), `Panel`, `PanelHeader`, `EmptyState`, `LoadingCards` | `feedback.tsx` | notices, cards, empty and loading states |
 | Class builders: `adminButtonVariants`, `chipClass`, `TABLE` (dense table classes), `describedBy` | `classes.ts` | custom buttons, chips, tables, field descriptions |
 | `Dialog` … `DialogContent` (max 85% of the viewport, scrolls inside, rounded-xl) | `dialog.tsx` | every admin dialog |
+| `Pagination` (Previous, "Page 2 of 5", Next) | `pagination.tsx` | paged lists |
+| `Checkbox`, `Switch`, `RadioGroup` (the shared Radix primitives the public site also uses) | `choice.tsx` | choices and toggles |
+| `Card`, `CardHeader`, `CardTitle` (18px), `CardDescription`, `CardContent`, `CardFooter` (rounded-xl), `Label` (13px, in `field.tsx`) | `card.tsx` | drop-ins for the older pages that used the shared ui/card and ui/label |
 | `AirlineLogo` (admin copy of the public tile) | `AirlineLogo.tsx` | flight results |
 
 Cards are `rounded-xl border border-border bg-card px-card py-3.5 shadow-card` (or `Panel`).
+Select, badge, tabs, table, tooltip, popover and dropdown menus are the shared Radix primitives in
+`src/components/ui` (the same components the public site uses, so the same look); admin pieces
+wrap them where the admin needs its own size or label (`FilterSelect`, `LabeledSelect`, `Tag`).
+
+Every admin screen uses this system: the main screens (sign-in is the public page; Dashboard,
+Search, Bookings list and detail, hold form and result, Customers & Travelers, header, sidebar,
+profile dialog, access denied) and the older pages (Agencies, Packages, Users, RBAC, Hotels and
+Flights inventory, Flight Operations, Booking Requests, Wallet, Payments, Coupons, Blog,
+Notifications, Announcements, Settings, Provider Systems, Group Ticketing collections, Reports,
+Customer portal, roadmap placeholders).
 Header and sidebar are structural and keep their own layout.
 
 ## Rules

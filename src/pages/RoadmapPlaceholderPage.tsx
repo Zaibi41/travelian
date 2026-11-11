@@ -9,8 +9,8 @@ interface RoadmapPlaceholderPageProps {
 export function RoadmapPlaceholderPage({ title, description }: RoadmapPlaceholderPageProps) {
   return (
     <div className="space-y-1">
-      <h1 className="text-2xl font-bold font-display">{title}</h1>
-      {description && <p className="text-sm text-muted-foreground">{description}</p>}
+      <h1 className="text-page-title font-bold font-display">{title}</h1>
+      {description && <p className="text-body text-muted-foreground">{description}</p>}
     </div>
   );
 }

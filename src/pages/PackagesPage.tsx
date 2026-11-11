@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Archive, Edit, ImageIcon, Package, Plus, Search, Trash2, Upload } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card";
+import { Button } from "@/components/admin/ui/button";
+import { Input } from "@/components/admin/ui/field";
+import { Label } from "@/components/admin/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/admin/ui/field";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { EmptyState } from "@/components/EmptyState";
 import { useAdmin } from "@/contexts/AdminStore";
@@ -222,8 +222,8 @@ export default function PackagesPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display">Umrah Package Management</h1>
-          <p className="text-sm text-muted-foreground">Manage Umrah packages with edit, archive and soft delete controls.</p>
+          <h1 className="text-page-title font-bold font-display">Umrah Package Management</h1>
+          <p className="text-body text-muted-foreground">Manage Umrah packages with edit, archive and soft delete controls.</p>
         </div>
         <Button onClick={openNew} className="gradient-primary text-primary-foreground gap-2"><Plus className="h-4 w-4" /> Add New Umrah Package</Button>
       </div>
@@ -234,8 +234,8 @@ export default function PackagesPage() {
         <Card className="shadow-card">
           <CardHeader className="gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <CardTitle className="text-base font-display">Umrah packages</CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">Search by package name, hotel, city or package ID from the WhatsApp URL.</p>
+              <CardTitle className="text-body font-display">Umrah packages</CardTitle>
+              <p className="mt-1 text-helper text-muted-foreground">Search by package name, hotel, city or package ID from the WhatsApp URL.</p>
             </div>
             <div className="relative w-full lg:max-w-md">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -252,7 +252,7 @@ export default function PackagesPage() {
               <div className="rounded-xl border border-dashed p-8 text-center">
                 <Search className="mx-auto h-8 w-8 text-muted-foreground" />
                 <h2 className="mt-3 font-semibold">No package found</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Try searching by exact package ID from the public Umrah URL or by package name.</p>
+                <p className="mt-1 text-body text-muted-foreground">Try searching by exact package ID from the public Umrah URL or by package name.</p>
               </div>
             ) : filteredPackages.map((item) => (
               <div key={item.packageId} className="flex flex-col gap-4 rounded-xl border p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -263,9 +263,9 @@ export default function PackagesPage() {
                       {item.archivedAt ? "Archived" : isPackageExpired(item) ? "Expired" : item.status === "active" ? "Published" : "Draft"}
                     </Badge>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{item.duration || "Duration not set"} | {item.hotel || "Hotels not set"} | {item.city || "Departure city not set"}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Expires: {item.expiresAt || "Not set"}</p>
-                  <p className="mt-1 max-w-full break-all text-xs text-muted-foreground">ID: <span className="font-mono">{item.packageId}</span></p>
+                  <p className="mt-1 text-body text-muted-foreground">{item.duration || "Duration not set"} | {item.hotel || "Hotels not set"} | {item.city || "Departure city not set"}</p>
+                  <p className="mt-1 text-helper text-muted-foreground">Expires: {item.expiresAt || "Not set"}</p>
+                  <p className="mt-1 max-w-full break-all text-helper text-muted-foreground">ID: <span className="font-mono">{item.packageId}</span></p>
                   <p className="mt-1 font-bold text-primary">Rs {item.basePrice.toLocaleString()}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -311,7 +311,7 @@ export default function PackagesPage() {
               </div>
               <div className="grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
                 <Input type="file" accept="image/*" onChange={(event) => setSelectedImageFile(event.target.files?.[0] || null)} />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-helper text-muted-foreground">
                   Blank image fields auto-select from the S3 folder <span className="font-medium">package-images/umrah</span>.
                 </p>
               </div>
@@ -319,12 +319,12 @@ export default function PackagesPage() {
                 <div className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
                   <img src={form.image} alt="Umrah package preview" className="h-16 w-24 rounded-lg object-cover" />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium">Current package image</p>
-                    <p className="truncate text-xs text-muted-foreground">{form.image}</p>
+                    <p className="text-body font-medium">Current package image</p>
+                    <p className="truncate text-helper text-muted-foreground">{form.image}</p>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 rounded-xl border border-dashed p-3 text-body text-muted-foreground">
                   <ImageIcon className="h-4 w-4" /> No image selected. Travelian will choose a random Umrah image during save if the S3 folder has images.
                 </div>
               )}

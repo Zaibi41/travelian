@@ -19,6 +19,13 @@ const sources = {
     "/src/pages/DashboardPage.tsx", "/src/pages/AccessDeniedPage.tsx", "/src/pages/AdminSearchPage.tsx", "/src/pages/InternalSearchPage.tsx",
     "/src/pages/AdminBookingsPage.tsx", "/src/pages/AdminBookingDetailPage.tsx", "/src/pages/HoldFlightPage.tsx", "/src/pages/HoldResultPage.tsx",
     "/src/pages/CustomersTravelersPage.tsx", "/src/pages/SavedPersonPage.tsx",
+    // Older admin pages (moved to the admin components and the type scale on 11 November 2026).
+    "/src/pages/AgenciesPage.tsx", "/src/pages/PackagesPage.tsx", "/src/pages/UsersPage.tsx", "/src/pages/RBACPage.tsx",
+    "/src/pages/HotelsPage.tsx", "/src/pages/FlightsPage.tsx", "/src/pages/FlightBookingsPage.tsx", "/src/pages/BookingRequestsPage.tsx",
+    "/src/pages/WalletPage.tsx", "/src/pages/PaymentsPage.tsx", "/src/pages/CouponsPage.tsx", "/src/pages/BlogPage.tsx",
+    "/src/pages/NotificationsPage.tsx", "/src/pages/AnnouncementsPage.tsx", "/src/pages/SettingsPage.tsx", "/src/pages/ProviderSystemsPage.tsx",
+    "/src/pages/GroupTicketingCollectionsPage.tsx", "/src/pages/ReportsPage.tsx", "/src/pages/CustomerPortalPage.tsx",
+    "/src/pages/RoadmapPlaceholderPage.tsx", "/src/pages/AdminBookingsRoutes.tsx", "/src/components/AdminHotelSearchPanel.tsx",
   ], { query: "?raw", import: "default", eager: true }),
 } as Record<string, string>;
 const files = Object.keys(sources).filter(file => !/\.test\./.test(file)).sort();
@@ -36,7 +43,20 @@ const RULES: [string, RegExp][] = [
 
 // Known exception (docs/roadmap.md): the legacy agency-role search on /admin/search renders the
 // public site's whole search form. Every other admin file must not import from public folders.
-const PUBLIC_IMPORT_EXCEPTIONS = new Set(["/src/pages/AdminSearchPage.tsx"]);
+const PUBLIC_IMPORT_EXCEPTIONS = new Set(["/src/pages/AdminSearchPage.tsx", "/src/components/AdminHotelSearchPanel.tsx"]);
+
+// Known exception (docs/design-system.md, "Colours"): Tailwind palette colours in older pages. They
+// are kept exactly as they are because the admin's colours are not changed without Zohaib's
+// decision; moving them to the status tokens would shift their shade. Listed by file and exact
+// class list, so any new palette colour still fails.
+const PALETTE_EXCEPTIONS: Record<string, string[]> = {
+  "/src/pages/FlightBookingsPage.tsx": ["bg-amber-500/10 text-amber-700", "bg-emerald-500/10 text-emerald-700"],
+  "/src/pages/WalletPage.tsx": ["text-amber-600"],
+  "/src/pages/ProviderSystemsPage.tsx": ["border-blue-200 bg-blue-50 text-blue-700", "text-blue-600"],
+  "/src/pages/BookingRequestsPage.tsx": ["bg-amber-500 text-white hover:bg-amber-500/90"],
+};
+const PALETTE_RULE = "Tailwind palette colour (use a colour token)";
+const allowedPalette = (file: string, line: string) => (PALETTE_EXCEPTIONS[file] ?? []).some(classes => line.includes(classes));
 const rulesFor = (file: string) => RULES.filter(([rule]) => !(PUBLIC_IMPORT_EXCEPTIONS.has(file) && rule.startsWith("import from the public site")));
 
 describe("admin type scale", () => {
@@ -46,7 +66,7 @@ describe("admin type scale", () => {
 
   it.each(files)("%s uses only the shared scale", file => {
     const problems = sources[file].split("\n").flatMap((line, index) =>
-      rulesFor(file).filter(([, pattern]) => pattern.test(line)).map(([rule]) => `${file}:${index + 1} ${rule}`));
+      rulesFor(file).filter(([rule, pattern]) => pattern.test(line) && !(rule === PALETTE_RULE && allowedPalette(file, line))).map(([rule]) => `${file}:${index + 1} ${rule}`));
     expect(problems).toEqual([]);
   });
 

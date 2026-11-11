@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAdmin } from "@/contexts/AdminStore";
 import { useRole } from "@/contexts/RoleContext";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/admin/ui/card";
+import { Button } from "@/components/admin/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/admin/ui/field";
+import { Label } from "@/components/admin/ui/field";
+import { Switch } from "@/components/admin/ui/choice";
+import { Textarea } from "@/components/admin/ui/field";
 import { Bell, Building2, Wallet, CalendarCheck, CheckCheck, AlertTriangle, Send, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -101,8 +101,8 @@ export default function NotificationsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold font-display">Notifications</h1>
-          <p className="text-sm text-muted-foreground">{unreadCount} unread notifications</p>
+          <h1 className="text-page-title font-bold font-display">Notifications</h1>
+          <p className="text-body text-muted-foreground">{unreadCount} unread notifications</p>
         </div>
         {unreadCount > 0 && (
           <Button variant="outline" onClick={markAllRead} className="gap-2">
@@ -133,9 +133,9 @@ export default function NotificationsPage() {
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium">{n.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                    <p className="text-body font-medium">{n.title}</p>
+                    <p className="text-helper text-muted-foreground mt-0.5">{n.message}</p>
+                    <p className="text-helper text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString()}</p>
                   </div>
                   {!n.read && <div className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5" />}
                 </CardContent>
@@ -149,14 +149,14 @@ export default function NotificationsPage() {
 
         <TabsContent value="logs" className="space-y-3">
           {deliveryLogs.length === 0 ? (
-            <p className="rounded-xl border border-dashed p-6 text-sm text-muted-foreground">No notification delivery logs yet.</p>
+            <p className="rounded-xl border border-dashed p-6 text-body text-muted-foreground">No notification delivery logs yet.</p>
           ) : deliveryLogs.map(log => (
             <Card key={log.logId} className="shadow-card">
               <CardContent className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-semibold">{log.purpose.replace(/_/g, " ")} | {log.channel}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">{log.recipient || "No configured recipient"} | {new Date(log.createdAt).toLocaleString()}</p>
-                  {log.error && <p className="mt-1 text-xs text-destructive">{log.error}</p>}
+                  <p className="text-body font-semibold">{log.purpose.replace(/_/g, " ")} | {log.channel}</p>
+                  <p className="mt-1 text-helper text-muted-foreground">{log.recipient || "No configured recipient"} | {new Date(log.createdAt).toLocaleString()}</p>
+                  {log.error && <p className="mt-1 text-helper text-destructive">{log.error}</p>}
                 </div>
                 <Badge variant={log.status === "sent" ? "default" : "destructive"}>{log.status}</Badge>
               </CardContent>
@@ -168,7 +168,7 @@ export default function NotificationsPage() {
           <TabsContent value="settings" className="space-y-6">
             <Card className="shadow-card">
               <CardContent className="p-5 space-y-4">
-                <h2 className="font-display text-base font-bold">Recipients</h2>
+                <h2 className="font-display text-body font-bold">Recipients</h2>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>Admin notification email</Label>
@@ -184,14 +184,14 @@ export default function NotificationsPage() {
 
             <Card className="shadow-card">
               <CardContent className="p-5 space-y-4">
-                <h2 className="font-display text-base font-bold">Channels</h2>
+                <h2 className="font-display text-body font-bold">Channels</h2>
                 <ChannelToggle label="WhatsApp notifications" checked={settings.whatsappEnabled} onChange={v => update("whatsappEnabled", v)} status={providerStatus.whatsapp} />
                 <ChannelToggle label="SMS notifications" checked={settings.smsEnabled} onChange={v => update("smsEnabled", v)} status={providerStatus.sms} />
                 <ChannelToggle label="Email notifications" checked={settings.emailEnabled} onChange={v => update("emailEnabled", v)} status={providerStatus.email} />
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium">Safe journey reminder</p>
-                    <p className="text-xs text-muted-foreground">Send a reminder before departure</p>
+                    <p className="text-body font-medium">Safe journey reminder</p>
+                    <p className="text-helper text-muted-foreground">Send a reminder before departure</p>
                   </div>
                   <Switch checked={settings.safeJourneyEnabled} onCheckedChange={v => update("safeJourneyEnabled", v)} />
                 </div>
@@ -204,8 +204,8 @@ export default function NotificationsPage() {
 
             <Card className="shadow-card">
               <CardContent className="p-5 space-y-4">
-                <h2 className="font-display text-base font-bold">Templates</h2>
-                <p className="text-xs text-muted-foreground">
+                <h2 className="font-display text-body font-bold">Templates</h2>
+                <p className="text-helper text-muted-foreground">
                   Variables: <code>{"{{customerName}}"}</code> <code>{"{{bookingRef}}"}</code> <code>{"{{pnr}}"}</code> <code>{"{{flightNo}}"}</code> <code>{"{{departureDate}}"}</code> <code>{"{{amount}}"}</code> <code>{"{{paymentStatus}}"}</code>
                 </p>
                 <TemplateField label="Booking confirmation" value={settings.tplBookingConfirmation} onChange={v => update("tplBookingConfirmation", v)} />
@@ -219,7 +219,7 @@ export default function NotificationsPage() {
 
             <div className="rounded-lg border bg-accent/40 p-4 flex items-start gap-3">
               <ShieldCheck className="h-5 w-5 text-success shrink-0 mt-0.5" />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-helper text-muted-foreground">
                 Provider credentials (SMTP, SMS gateway, WhatsApp API) are stored in the secrets manager and are never displayed here. Toggle channels above to enable or disable delivery.
               </p>
             </div>
@@ -239,8 +239,8 @@ function ChannelToggle({ label, checked, onChange, status }: { label: string; ch
   return (
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-sm font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground">Provider: {status}</p>
+        <p className="text-body font-medium">{label}</p>
+        <p className="text-helper text-muted-foreground">Provider: {status}</p>
       </div>
       <Switch checked={checked} onCheckedChange={onChange} />
     </div>

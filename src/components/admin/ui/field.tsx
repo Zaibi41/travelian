@@ -1,4 +1,5 @@
 import * as React from "react";
+import * as LabelPrimitive from "@radix-ui/react-label";
 import { cn } from "@/lib/utils";
 
 
@@ -18,6 +19,12 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentPro
   <textarea ref={ref} className={cn(FIELD_CONTROL, "h-auto min-h-20 py-2", className)} {...props} />
 ));
 Textarea.displayName = "AdminTextarea";
+
+/** Drop-in for the shared ui/label on the admin scale (13px medium). */
+export const Label = React.forwardRef<React.ElementRef<typeof LabelPrimitive.Root>, React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>>(({ className, ...props }, ref) => (
+  <LabelPrimitive.Root ref={ref} className={cn("text-label font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", className)} {...props} />
+));
+Label.displayName = "AdminLabel";
 
 export function FieldLabel({ htmlFor, id, children, className }: { htmlFor?: string; id?: string; children: React.ReactNode; className?: string }) {
   const classes = cn("text-label font-medium text-muted-foreground", className);

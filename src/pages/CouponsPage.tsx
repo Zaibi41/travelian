@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Coupon } from "@/data/models";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/admin/ui/card";
+import { Button } from "@/components/admin/ui/button";
+import { Input } from "@/components/admin/ui/field";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Plus, Search, Pencil, Trash2, Tag, Percent, DollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
+import { Label } from "@/components/admin/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { useRole } from "@/contexts/RoleContext";
@@ -43,8 +43,8 @@ export default function CouponsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold font-display">Coupons & Deals</h1>
-          <p className="text-sm text-muted-foreground">Manage promotional offers and discount codes</p>
+          <h1 className="text-page-title font-bold font-display">Coupons & Deals</h1>
+          <p className="text-body text-muted-foreground">Manage promotional offers and discount codes</p>
         </div>
         {canEdit && <Button onClick={openAdd} className="gradient-primary text-primary-foreground gap-2"><Plus className="h-4 w-4" /> Create Coupon</Button>}
       </div>
@@ -64,30 +64,30 @@ export default function CouponsPage() {
                     <Tag className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-mono font-bold text-sm">{coupon.code}</p>
-                    <p className="text-xs text-muted-foreground">{coupon.description}</p>
+                    <p className="font-mono font-bold text-body">{coupon.code}</p>
+                    <p className="text-helper text-muted-foreground">{coupon.description}</p>
                   </div>
                 </div>
                 <StatusBadge status={coupon.status} />
               </div>
               <div className="flex items-center gap-2">
                 {coupon.discountType === 'percentage' ? <Percent className="h-4 w-4 text-primary" /> : <DollarSign className="h-4 w-4 text-primary" />}
-                <span className="text-lg font-bold font-display text-primary">
+                <span className="text-section font-bold font-display text-primary">
                   {coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `$${coupon.discountValue}`} OFF
                 </span>
               </div>
               <div className="space-y-1">
-                <div className="flex justify-between text-xs text-muted-foreground">
+                <div className="flex justify-between text-helper text-muted-foreground">
                   <span>Usage: {coupon.usedCount}/{coupon.maxUses}</span>
                   <span>{Math.round((coupon.usedCount / coupon.maxUses) * 100)}%</span>
                 </div>
                 <Progress value={(coupon.usedCount / coupon.maxUses) * 100} className="h-1.5" />
               </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex items-center justify-between text-helper text-muted-foreground">
                 <span>{coupon.validFrom} - {coupon.validUntil}</span>
-                <Badge variant="secondary" className="text-[10px] capitalize">{coupon.applicableTo}</Badge>
+                <Badge variant="secondary" className="text-helper capitalize">{coupon.applicableTo}</Badge>
               </div>
-              <p className="text-xs text-muted-foreground">Min order: ${coupon.minOrder}</p>
+              <p className="text-helper text-muted-foreground">Min order: ${coupon.minOrder}</p>
               {canEdit && (
                 <div className="flex gap-1 pt-2 border-t">
                   <Button variant="outline" size="sm" className="flex-1" onClick={() => openEdit(coupon)}><Pencil className="h-3 w-3 mr-1" /> Edit</Button>

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { BedDouble, Building2, Image, MapPin, Plus, Tags, ToggleLeft } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card";
+import { Button } from "@/components/admin/ui/button";
+import { Input } from "@/components/admin/ui/field";
+import { Label } from "@/components/admin/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/admin/ui/field";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/EmptyState";
 import { PricingBreakdownCard } from "@/components/PricingBreakdownCard";
@@ -22,8 +22,8 @@ export default function HotelsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display">Hotel Inventory & Pricing</h1>
-          <p className="text-sm text-muted-foreground">Manage API hotels, manual hotels, room types, availability, status and margin rules.</p>
+          <h1 className="text-page-title font-bold font-display">Hotel Inventory & Pricing</h1>
+          <p className="text-body text-muted-foreground">Manage API hotels, manual hotels, room types, availability, status and margin rules.</p>
         </div>
         <Button className="gradient-primary text-primary-foreground gap-2"><Plus className="h-4 w-4" /> Add Manual Hotel</Button>
       </div>
@@ -34,10 +34,10 @@ export default function HotelsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <Building2 className="h-5 w-5 text-primary" />
-                <span className="text-xs font-semibold text-muted-foreground">Not configured</span>
+                <span className="text-helper font-semibold text-muted-foreground">Not configured</span>
               </div>
               <h3 className="mt-4 font-bold">{source}</h3>
-              <p className="mt-1 text-xs text-muted-foreground">No live hotel feed connected yet.</p>
+              <p className="mt-1 text-helper text-muted-foreground">No live hotel feed connected yet.</p>
             </CardContent>
           </Card>
         ))}
@@ -59,7 +59,7 @@ export default function HotelsPage() {
 
         <TabsContent value="manual" className="grid gap-5 xl:grid-cols-[1fr_360px]">
           <Card className="shadow-card">
-            <CardHeader><CardTitle className="text-base font-display">Manual hotel/package setup</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-body font-display">Manual hotel/package setup</CardTitle></CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2"><Label>Hotel name</Label><Input placeholder="Hotel name" /></div>
               <div className="space-y-2"><Label>City / location</Label><Input placeholder="Makkah, Madinah, Dubai" /></div>
@@ -76,7 +76,7 @@ export default function HotelsPage() {
 
         <TabsContent value="markup" className="grid gap-5 xl:grid-cols-[1fr_420px]">
           <Card className="shadow-card">
-            <CardHeader><CardTitle className="text-base font-display">Hotel markup rule</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-body font-display">Hotel markup rule</CardTitle></CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2"><Label>Rule type</Label><Select defaultValue="city"><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="global">Global</SelectItem><SelectItem value="city">City-based</SelectItem><SelectItem value="supplier">Supplier-based</SelectItem><SelectItem value="seasonal">Seasonal</SelectItem></SelectContent></Select></div>
               <div className="space-y-2"><Label>Target</Label><Input placeholder="Makkah, Hotelbeds, Ramadan" /></div>

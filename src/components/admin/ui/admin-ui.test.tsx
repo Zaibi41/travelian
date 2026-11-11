@@ -7,6 +7,9 @@ import { StatusBadge, Tag } from "./StatusBadge";
 import { Chip, EmptyState, LoadingCards, Notice, Panel } from "./feedback";
 import { Dialog, DialogContent, DialogTitle } from "./dialog";
 import { ADMIN_PRODUCT_TABS } from "./product-tabs";
+import { Pagination } from "./pagination";
+import { Card, CardTitle } from "./card";
+import { Label } from "./field";
 
 // The admin design system's shared components (docs/design-system.md): public-site shapes and
 // sizes, admin colours, text always next to a status colour.
@@ -107,5 +110,35 @@ describe("product tabs", () => {
   it("the admin's own list: same order and labels as the public tabs, each with an icon", () => {
     expect(ADMIN_PRODUCT_TABS.map(tab => tab.label)).toEqual(["Flights", "Group Ticketing", "Hotels", "Umrah"]);
     expect(ADMIN_PRODUCT_TABS.every(tab => tab.icon)).toBe(true);
+  });
+});
+
+describe("Pagination", () => {
+  it("hidden for one page; Previous and Next move a page and stop at the ends", () => {
+    const onPage = vi.fn();
+    const { rerender, container } = render(<Pagination page={1} pages={1} onPage={onPage} />);
+    expect(container).toBeEmptyDOMElement();
+    rerender(<Pagination page={1} pages={3} onPage={onPage} />);
+    expect(screen.getByRole("navigation", { name: "Pages" })).toHaveTextContent("Page 1 of 3");
+    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    expect(onPage).toHaveBeenCalledWith(2);
+    rerender(<Pagination page={3} pages={3} onPage={onPage} />);
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+  });
+});
+
+describe("older-page drop-ins", () => {
+  it("Card is rounded-xl with an 18px title; Label is 13px", () => {
+    render(<Card data-testid="card"><CardTitle>Wallet</CardTitle><Label htmlFor="x">Amount</Label><input id="x" /></Card>);
+    expect(screen.getByTestId("card").className).toMatch(/\brounded-xl\b/);
+    expect(screen.getByRole("heading", { name: "Wallet" }).className).toMatch(/\btext-section\b/);
+    expect(screen.getByText("Amount").className).toMatch(/\btext-label\b/);
+    expect(screen.getByLabelText("Amount")).toBeInTheDocument();
+  });
+
+  it("the destructive variant (older pages) is the danger red", () => {
+    render(<Button variant="destructive">Delete</Button>);
+    expect(screen.getByRole("button", { name: "Delete" }).className).toMatch(/\bbg-destructive\b/);
   });
 });

@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { BlogPost } from "@/data/models";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/admin/ui/card";
+import { Button } from "@/components/admin/ui/button";
+import { Input } from "@/components/admin/ui/field";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Plus, Search, Pencil, Trash2, PenTool, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
+import { Label } from "@/components/admin/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/admin/ui/field";
 import { useRole } from "@/contexts/RoleContext";
 import { toast } from "sonner";
 import { deleteBlogPost, listBlogPosts, saveBlogPost } from "@/lib/content-api";
@@ -62,8 +62,8 @@ export default function BlogPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold font-display">Blog Management</h1>
-          <p className="text-sm text-muted-foreground">Manage blog posts and articles for the website</p>
+          <h1 className="text-page-title font-bold font-display">Blog Management</h1>
+          <p className="text-body text-muted-foreground">Manage blog posts and articles for the website</p>
         </div>
         {canEdit && <Button onClick={openAdd} className="gradient-primary text-primary-foreground gap-2"><Plus className="h-4 w-4" /> New Post</Button>}
       </div>
@@ -83,20 +83,20 @@ export default function BlogPage() {
                     <PenTool className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-display font-bold text-sm">{post.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{post.excerpt}</p>
+                    <p className="font-display font-bold text-body">{post.title}</p>
+                    <p className="text-helper text-muted-foreground mt-0.5">{post.excerpt}</p>
                   </div>
                 </div>
                 <StatusBadge status={post.status} />
               </div>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex items-center justify-between text-helper text-muted-foreground">
                 <span>By {post.author}</span>
                 <span>{post.publishedAt || 'Not published'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex flex-wrap gap-1">
-                  <Badge variant="outline" className="text-[10px]">{post.category}</Badge>
-                  {post.tags.slice(0, 2).map(t => <Badge key={t} variant="secondary" className="text-[10px]">{t}</Badge>)}
+                  <Badge variant="outline" className="text-helper">{post.category}</Badge>
+                  {post.tags.slice(0, 2).map(t => <Badge key={t} variant="secondary" className="text-helper">{t}</Badge>)}
                 </div>
                 {canEdit && (
                   <div className="flex gap-1">

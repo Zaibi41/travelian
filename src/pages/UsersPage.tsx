@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/admin/ui/card";
+import { Button } from "@/components/admin/ui/button";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Plus, Building2, Pencil, Search, Shield, Users, UserCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Input } from "@/components/admin/ui/field";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
+import { Label } from "@/components/admin/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAdmin } from "@/contexts/AdminStore";
 import { useRole } from "@/contexts/RoleContext";
@@ -138,8 +138,8 @@ export default function UsersPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold font-display">{isAgencyOwner ? "Agency Users" : "User Management"}</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-page-title font-bold font-display">{isAgencyOwner ? "Agency Users" : "User Management"}</h1>
+          <p className="text-body text-muted-foreground">
             {isAgencyOwner ? "Create staff users for your agency and sub agencies." : "Manage super admin, admin, staff, agency owner, and agency staff users."}
           </p>
         </div>
@@ -164,7 +164,7 @@ export default function UsersPage() {
       <Card className="shadow-card">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-body">
               <thead>
                 <tr className="border-b text-left text-muted-foreground bg-muted/50">
                   <th className="p-3 font-medium">Name</th>
@@ -185,13 +185,13 @@ export default function UsersPage() {
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
-                            <span className="text-xs font-bold text-accent-foreground">{initials(user.name)}</span>
+                            <span className="text-helper font-bold text-accent-foreground">{initials(user.name)}</span>
                           </div>
                           <span className="font-medium whitespace-nowrap">{user.name}</span>
                         </div>
                       </td>
                       <td className="p-3 text-muted-foreground">{user.email}</td>
-                      <td className="p-3"><Badge variant="outline" className={`text-xs ${role.color}`}>{role.label}</Badge></td>
+                      <td className="p-3"><Badge variant="outline" className={`text-helper ${role.color}`}>{role.label}</Badge></td>
                       <td className="p-3 text-muted-foreground">
                         {user.agencyId ? (
                           <span className="flex items-center gap-1 whitespace-nowrap">
@@ -264,7 +264,7 @@ export default function UsersPage() {
                 </Select>
               </Field>
             </div>
-            <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+            <div className="rounded-lg border bg-muted/30 p-3 text-helper text-muted-foreground">
               <Shield className="h-3.5 w-3.5 inline mr-1" />
               Agency owners can only create staff users inside their own agency network. Super admins can create platform users and agency owners.
             </div>
@@ -289,8 +289,8 @@ function Summary({ title, value, icon: Icon }: { title: string; value: number; i
           <Icon className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">{title}</p>
-          <p className="text-xl font-bold font-display">{value}</p>
+          <p className="text-helper text-muted-foreground">{title}</p>
+          <p className="text-kpi-sm font-bold font-display">{value}</p>
         </div>
       </CardContent>
     </Card>

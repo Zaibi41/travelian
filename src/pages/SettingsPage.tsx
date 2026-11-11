@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Loader2, Save, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card";
+import { Button } from "@/components/admin/ui/button";
+import { Input } from "@/components/admin/ui/field";
+import { Label } from "@/components/admin/ui/field";
+import { Switch } from "@/components/admin/ui/choice";
+import { Textarea } from "@/components/admin/ui/field";
 import type { NotificationSettings } from "@/data/models";
 import { getNotificationSettings, saveNotificationSettings } from "@/lib/notification-api";
 
@@ -58,12 +58,12 @@ export default function SettingsPage() {
   return (
     <div className="max-w-3xl space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold font-display">General Settings</h1>
-        <p className="text-sm text-muted-foreground">Configure booking request alerts and passenger journey reminders.</p>
+        <h1 className="text-page-title font-bold font-display">General Settings</h1>
+        <p className="text-body text-muted-foreground">Configure booking request alerts and passenger journey reminders.</p>
       </div>
 
       <Card className="shadow-card">
-        <CardHeader><CardTitle className="text-base font-display">Travelian notification recipients</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-body font-display">Travelian notification recipients</CardTitle></CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2"><Label>Admin notification email</Label><Input type="email" value={settings.adminNotificationEmail} onChange={event => setField("adminNotificationEmail", event.target.value)} placeholder="Configured Travelian operations email" /></div>
           <div className="space-y-2"><Label>Admin notification phone</Label><Input value={settings.adminNotificationPhone} onChange={event => setField("adminNotificationPhone", event.target.value)} placeholder="+92..." /></div>
@@ -71,7 +71,7 @@ export default function SettingsPage() {
       </Card>
 
       <Card className="shadow-card">
-        <CardHeader><CardTitle className="text-base font-display">Delivery channels</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-body font-display">Delivery channels</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <Toggle label="Email notifications" description="Send booking request and journey reminder email when a recipient address is available." checked={settings.emailNotificationsEnabled} onCheckedChange={value => setField("emailNotificationsEnabled", value)} />
           <Toggle label="SMS notifications" description="Send configured Twilio SMS notifications when a phone number is available." checked={settings.smsNotificationsEnabled} onCheckedChange={value => setField("smsNotificationsEnabled", value)} />
@@ -80,16 +80,16 @@ export default function SettingsPage() {
       </Card>
 
       <Card className="shadow-card">
-        <CardHeader><CardTitle className="text-base font-display">Safe journey reminders</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-body font-display">Safe journey reminders</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <Toggle label="Enable reminders" description="Send each passenger one safe journey message for a flight scheduled tomorrow." checked={settings.journeyReminderEnabled} onCheckedChange={value => setField("journeyReminderEnabled", value)} />
           <div className="space-y-2"><Label>Reminder lead time (hours)</Label><Input inputMode="numeric" value={settings.journeyReminderHoursBefore} onChange={event => setField("journeyReminderHoursBefore", Number(event.target.value) || 24)} /></div>
-          <div className="space-y-2"><Label>Message template</Label><Textarea rows={5} value={settings.journeyReminderTemplate} onChange={event => setField("journeyReminderTemplate", event.target.value)} /><p className="text-xs text-muted-foreground">Supported placeholders: [Passenger Name], [Flight No.], [Origin], [Destination], [Date/Time]</p></div>
+          <div className="space-y-2"><Label>Message template</Label><Textarea rows={5} value={settings.journeyReminderTemplate} onChange={event => setField("journeyReminderTemplate", event.target.value)} /><p className="text-helper text-muted-foreground">Supported placeholders: [Passenger Name], [Flight No.], [Origin], [Destination], [Date/Time]</p></div>
         </CardContent>
       </Card>
 
       <Card className="border-primary/20 bg-primary/5 shadow-card">
-        <CardContent className="flex gap-3 p-4 text-sm text-muted-foreground">
+        <CardContent className="flex gap-3 p-4 text-body text-muted-foreground">
           <ShieldCheck className="h-5 w-5 shrink-0 text-primary" />
           <p>Provider credentials are not stored in this page. Email is delivered through AWS SES using the Lambda sender configuration. Twilio values belong in AWS Secrets Manager under the Lambda notification provider secret.</p>
         </CardContent>
@@ -101,5 +101,5 @@ export default function SettingsPage() {
 }
 
 function Toggle({ label, description, checked, onCheckedChange }: { label: string; description: string; checked: boolean; onCheckedChange: (checked: boolean) => void }) {
-  return <div className="flex items-center justify-between gap-4 border-b pb-4 last:border-0 last:pb-0"><div><p className="text-sm font-medium">{label}</p><p className="text-xs text-muted-foreground">{description}</p></div><Switch checked={checked} onCheckedChange={onCheckedChange} /></div>;
+  return <div className="flex items-center justify-between gap-4 border-b pb-4 last:border-0 last:pb-0"><div><p className="text-body font-medium">{label}</p><p className="text-helper text-muted-foreground">{description}</p></div><Switch checked={checked} onCheckedChange={onCheckedChange} /></div>;
 }

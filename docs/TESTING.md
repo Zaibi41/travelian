@@ -104,6 +104,13 @@ empty and loading states, the chip toggle, the dialog's 85% height and inner scr
 product tabs). The guard test also fails if an admin file imports from `src/components/public` or
 `src/pages/public` (one documented exception: the legacy agency search, `AdminSearchPage.tsx`).
 
+Older admin pages (`e2e/admin-older-pages.spec.ts`): Agencies, Packages, Reports, Hotels, Flights,
+Flight Operations, Booking Requests, Wallet, Payments, Users, RBAC, Provider Systems, Group Ticketing
+collections, Coupons, Blog, Notifications, Announcements and the Attention Queue placeholder, at 1280
+and 390px: heading shown, no page error, no visible text under 12px, no sideways scroll. Settings is
+left out (it crashes on an empty legacy settings answer; docs/roadmap.md). The guard test covers
+these pages too; palette colours they still use are listed there by file and class.
+
 Gateway calls in specs: the dev server may send gateway calls through its `/__gateway` proxy
 (`vite.config.ts`) instead of straight to port 8000. `e2e/support/gateway.ts` (`gatewayView`) makes
 both look the same, so the specs' made-up gateway answers are used either way and nothing reaches a

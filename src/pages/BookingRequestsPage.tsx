@@ -5,18 +5,18 @@ import { Bell, CalendarDays, ClipboardCheck, Download, Eye, FileText, Loader2, M
 import type { DateRange } from "react-day-picker";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/admin/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/admin/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/EmptyState";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Input } from "@/components/admin/ui/field";
+import { Label } from "@/components/admin/ui/field";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
+import { Textarea } from "@/components/admin/ui/field";
 import type { BookingRequest, BookingRequestStatus, TravelTicket } from "@/data/models";
 import { listBookingRequests, updateBookingRequest } from "@/lib/booking-request-api";
 import type { BookingRecord } from "@/lib/booking-store";
@@ -284,8 +284,8 @@ function AgingBadge({ createdAt }: { createdAt: string }) {
 function BookingDetailField({ label, children, className = "" }: { label: string; children: ReactNode; className?: string }) {
   return (
     <div className={`min-w-0 rounded-lg border bg-background px-4 py-3.5 shadow-sm ${className}`}>
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
-      <div className="mt-1.5 min-w-0 break-words text-[15px] font-semibold leading-6 text-foreground">{children}</div>
+      <div className="text-helper font-semibold uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-1.5 min-w-0 break-words text-body font-semibold leading-6 text-foreground">{children}</div>
     </div>
   );
 }
@@ -293,7 +293,7 @@ function BookingDetailField({ label, children, className = "" }: { label: string
 function BookingDetailsSectionHeading({ children }: { children: ReactNode }) {
   return (
     <div className="border-b pb-2 sm:col-span-2">
-      <h3 className="text-sm font-bold text-foreground">{children}</h3>
+      <h3 className="text-body font-bold text-foreground">{children}</h3>
     </div>
   );
 }
@@ -508,10 +508,10 @@ export default function BookingRequestsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold font-display">Bookings</h1>
+            <h1 className="text-page-title font-bold font-display">Bookings</h1>
             {hasDemoData && <Badge variant="secondary">Demo data</Badge>}
           </div>
-          <p className="text-sm text-muted-foreground">Manage flight, group ticketing, hotel, and Umrah booking activity.</p>
+          <p className="text-body text-muted-foreground">Manage flight, group ticketing, hotel, and Umrah booking activity.</p>
         </div>
       </div>
 
@@ -524,12 +524,12 @@ export default function BookingRequestsPage() {
               key={opt.value}
               type="button"
               onClick={() => setParams({ tab: opt.value })}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-sm font-bold transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-body font-bold transition-colors ${
                 active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-muted"
               }`}
             >
               {opt.label}
-              <Badge variant={active ? "secondary" : "outline"} className="h-5 px-1.5 text-[10px]">{count}</Badge>
+              <Badge variant={active ? "secondary" : "outline"} className="h-5 px-1.5 text-helper">{count}</Badge>
             </button>
           );
         })}
@@ -538,7 +538,7 @@ export default function BookingRequestsPage() {
       <div className="rounded-2xl border bg-card p-3 shadow-card sm:p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
         <div className="min-w-0 flex-1 space-y-1.5">
-          <Label htmlFor="request-search" className="text-xs text-muted-foreground">Search</Label>
+          <Label htmlFor="request-search" className="text-helper text-muted-foreground">Search</Label>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input id="request-search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Request, customer, phone, package, or status" className="pl-9 pr-9" />
@@ -565,7 +565,7 @@ export default function BookingRequestsPage() {
           className={`${filtersOpen ? "grid" : "hidden"} gap-3 sm:grid-cols-2 lg:flex lg:items-end`}
         >
         {supportsProviderFilter && <div className="space-y-1.5 lg:w-44">
-          <Label htmlFor="request-provider" className="text-xs text-muted-foreground">Provider</Label>
+          <Label htmlFor="request-provider" className="text-helper text-muted-foreground">Provider</Label>
           <Select value={provider} onValueChange={setProvider}>
             <SelectTrigger id="request-provider" aria-label={provider === "all" ? "Provider, all providers" : undefined}>
               {provider === "all" ? <span className="sr-only">All providers</span> : <SelectValue />}
@@ -577,7 +577,7 @@ export default function BookingRequestsPage() {
           </Select>
         </div>}
         <div className="space-y-1.5 lg:w-44">
-          <Label htmlFor="request-period" className="text-xs text-muted-foreground">Request date</Label>
+          <Label htmlFor="request-period" className="text-helper text-muted-foreground">Request date</Label>
           <Select value={period} onValueChange={value => setPeriod(value as RequestPeriod)}>
             <SelectTrigger id="request-period" aria-label={period === "all" ? "Request date, all requests" : undefined}>
               {period === "all" ? <span className="sr-only">All request dates</span> : <SelectValue />}
@@ -591,7 +591,7 @@ export default function BookingRequestsPage() {
         </div>
         {period === "custom" && (
           <div className="space-y-1.5 lg:w-60">
-            <Label className="text-xs text-muted-foreground">Custom dates</Label>
+            <Label className="text-helper text-muted-foreground">Custom dates</Label>
             <Popover open={customCalendarOpen} onOpenChange={setCustomCalendarOpen}>
               <PopoverTrigger asChild>
                 <Button type="button" variant="outline" className="w-full justify-start gap-2 px-3 font-normal">
@@ -615,7 +615,7 @@ export default function BookingRequestsPage() {
           </div>
         )}
         <div className="space-y-1.5 lg:w-48">
-          <Label htmlFor="request-status" className="text-xs text-muted-foreground">Status</Label>
+          <Label htmlFor="request-status" className="text-helper text-muted-foreground">Status</Label>
           <Select value={statusFilter} onValueChange={value => setStatusFilter(value as BookingRequestStatus | "all")}>
             <SelectTrigger id="request-status" aria-label={statusFilter === "all" ? "Status, all statuses" : undefined}>
               {statusFilter === "all" ? <span className="sr-only">All statuses</span> : <SelectValue />}
@@ -692,10 +692,10 @@ export default function BookingRequestsPage() {
               <TableBody>
                 {filtered.map(item => (
                   <TableRow key={item.requestId}>
-                    <TableCell className={`text-sm ${activeTab === "hotels" ? "font-mono font-semibold" : "font-bold text-foreground [font-family:Arial,sans-serif]"}`}>
+                    <TableCell className={`text-body ${activeTab === "hotels" ? "font-mono font-semibold" : "font-bold text-foreground [font-family:Arial,sans-serif]"}`}>
                       {activeTab === "hotels" ? item.requestId : item.pnr || "—"}
                     </TableCell>
-                    <TableCell className="text-sm">
+                    <TableCell className="text-body">
                       <Link
                         to={customerHref(item)}
                         className="font-semibold text-primary underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -703,10 +703,10 @@ export default function BookingRequestsPage() {
                         {item.customerName}
                       </Link>
                     </TableCell>
-                    <TableCell className="max-w-[150px] truncate text-sm" title={supplierLabel(item.provider)}>{supplierLabel(item.provider)}</TableCell>
+                    <TableCell className="max-w-[150px] truncate text-body" title={supplierLabel(item.provider)}>{supplierLabel(item.provider)}</TableCell>
                     <TableCell><Badge variant="outline">{statusLabel(item.status)}</Badge></TableCell>
                     {activeTab !== "umrah" && (
-                      <TableCell className="whitespace-nowrap text-sm">
+                      <TableCell className="whitespace-nowrap text-body">
                         <div className="font-semibold">{formatBookingAmount(item)}</div>
                         {bookingPaymentStatus(item) && (
                           <Badge variant={bookingPaymentStatus(item) === "paid" ? "secondary" : "outline"} className="mt-1 capitalize">
@@ -715,12 +715,12 @@ export default function BookingRequestsPage() {
                         )}
                       </TableCell>
                     )}
-                    <TableCell className="text-xs">
+                    <TableCell className="text-helper">
                       <div>{new Date(item.createdAt).toLocaleString()}</div>
                       <div className="mt-1"><AgingBadge createdAt={item.createdAt} /></div>
                     </TableCell>
                     {activeTab !== "umrah" && (
-                      <TableCell className="whitespace-nowrap text-xs font-medium">
+                      <TableCell className="whitespace-nowrap text-helper font-medium">
                         {item.expiresAt ? new Date(item.expiresAt).toLocaleString() : "—"}
                       </TableCell>
                     )}
@@ -765,8 +765,8 @@ export default function BookingRequestsPage() {
               <Card key={item.requestId} className="shadow-card"><CardContent className="p-4 space-y-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
-                    {activeTab === "hotels" && <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Booking ID</div>}
-                    <span className={`block truncate ${activeTab === "hotels" ? "font-mono text-xs font-semibold" : "text-sm font-bold text-foreground [font-family:Arial,sans-serif]"}`}>
+                    {activeTab === "hotels" && <div className="text-helper font-semibold uppercase tracking-wide text-muted-foreground">Booking ID</div>}
+                    <span className={`block truncate ${activeTab === "hotels" ? "font-mono text-helper font-semibold" : "text-body font-bold text-foreground [font-family:Arial,sans-serif]"}`}>
                       {activeTab === "hotels" ? item.requestId : item.pnr || item.requestId}
                     </span>
                   </div>
@@ -807,19 +807,19 @@ export default function BookingRequestsPage() {
                     {item.customerName}
                   </Link>
                 </div>
-                <div className="text-xs text-muted-foreground">Supplier: <span className="text-foreground">{supplierLabel(item.provider)}</span></div>
+                <div className="text-helper text-muted-foreground">Supplier: <span className="text-foreground">{supplierLabel(item.provider)}</span></div>
                 {activeTab !== "umrah" && (
                   <>
-                    <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center justify-between gap-2 text-helper text-muted-foreground">
                       <span>Amount: <span className="font-semibold text-foreground">{formatBookingAmount(item)}</span></span>
                       {bookingPaymentStatus(item) && <Badge variant={bookingPaymentStatus(item) === "paid" ? "secondary" : "outline"} className="capitalize">{bookingPaymentStatus(item)}</Badge>}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-helper text-muted-foreground">
                       Expiry At: <span className="font-medium text-foreground">{item.expiresAt ? new Date(item.expiresAt).toLocaleString() : "—"}</span>
                     </div>
                   </>
                 )}
-                <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center justify-between text-helper">
                   <span>{new Date(item.createdAt).toLocaleString()}</span>
                   <Badge variant="outline">{statusLabel(item.status)}</Badge>
                 </div>
@@ -838,8 +838,8 @@ export default function BookingRequestsPage() {
                 <DialogDescription className="pt-1">
                   {viewing.pnr ? (
                     <span className="inline-flex w-fit items-center gap-3 rounded-xl border border-primary/20 bg-primary/10 px-4 py-2 text-primary">
-                      <span className="text-xs font-bold uppercase tracking-wider">PNR</span>
-                      <span className="font-mono text-xl font-bold tracking-wide">{viewing.pnr}</span>
+                      <span className="text-helper font-bold uppercase tracking-wider">PNR</span>
+                      <span className="font-mono text-kpi-sm font-bold tracking-wide">{viewing.pnr}</span>
                     </span>
                   ) : "Booking overview"}
                 </DialogDescription>
@@ -860,7 +860,7 @@ export default function BookingRequestsPage() {
                       <BookingDetailsSectionHeading>Flight</BookingDetailsSectionHeading>
                       <BookingDetailField label="Route" className="sm:col-span-2">
                         <span className="font-mono">{viewing.flightDetails.originCode || "—"} → {viewing.flightDetails.destinationCode || "—"}</span>
-                        <span className="mt-0.5 block text-sm font-normal text-muted-foreground">{viewing.flightDetails.originCity || "—"} to {viewing.flightDetails.destinationCity || "—"}</span>
+                        <span className="mt-0.5 block text-body font-normal text-muted-foreground">{viewing.flightDetails.originCity || "—"} to {viewing.flightDetails.destinationCity || "—"}</span>
                       </BookingDetailField>
                       <BookingDetailField label="Trip type">{viewing.flightDetails.tripType || "—"}</BookingDetailField>
                       <BookingDetailField label="Airline">{viewing.flightDetails.airline || "—"}</BookingDetailField>
@@ -882,7 +882,7 @@ export default function BookingRequestsPage() {
                   {viewing.travelers?.length ? (
                     <div className="min-w-0 sm:col-span-2">
                       <div className="mb-3 flex items-center justify-between gap-3 border-b pb-2">
-                        <h3 className="text-sm font-bold text-foreground">Travelers</h3>
+                        <h3 className="text-body font-bold text-foreground">Travelers</h3>
                         <Badge variant="secondary">{viewing.travelers.length}</Badge>
                       </div>
                       <div className="space-y-3">
@@ -891,22 +891,22 @@ export default function BookingRequestsPage() {
                             <div className="flex flex-wrap items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <div className="font-semibold">
-                                  <span className="mr-2 text-xs font-normal text-muted-foreground">{index + 1}.</span>
+                                  <span className="mr-2 text-helper font-normal text-muted-foreground">{index + 1}.</span>
                                   {[traveler.title, traveler.firstName, traveler.lastName].filter(Boolean).join(" ")}
                                 </div>
-                                {traveler.ticketNumber && <div className="mt-0.5 truncate font-mono text-xs text-muted-foreground">Ticket {traveler.ticketNumber}</div>}
+                                {traveler.ticketNumber && <div className="mt-0.5 truncate font-mono text-helper text-muted-foreground">Ticket {traveler.ticketNumber}</div>}
                               </div>
                               <div className="flex shrink-0 flex-wrap items-center gap-2">
                                 <Badge variant="secondary" className="capitalize">{traveler.passengerType}</Badge>
                               </div>
                             </div>
-                            <dl className="mt-3 grid gap-x-5 gap-y-4 border-t pt-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                              <div><dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">First name</dt><dd className="mt-1 text-sm font-semibold text-foreground">{traveler.firstName}</dd></div>
-                              <div><dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Last name</dt><dd className="mt-1 text-sm font-semibold text-foreground">{traveler.lastName}</dd></div>
-                              <div><dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Date of birth</dt><dd className="mt-1 text-sm font-semibold text-foreground">{traveler.dateOfBirth ? new Date(`${traveler.dateOfBirth}T00:00:00`).toLocaleDateString() : "—"}</dd></div>
-                              <div className="sm:col-span-1 lg:col-span-2"><dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Passport / ID Card Number</dt><dd className="mt-1 break-all font-mono text-sm font-semibold text-foreground">{traveler.identityDocumentNumber || "—"}</dd></div>
-                              <div className="sm:col-span-1"><dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Passport / ID Card Issuance Date</dt><dd className="mt-1 text-sm font-semibold text-foreground">{traveler.passportOrIdCardIssuanceDate || demoTravelerIssuanceDates[traveler.travelerId] ? new Date(`${traveler.passportOrIdCardIssuanceDate || demoTravelerIssuanceDates[traveler.travelerId]}T00:00:00`).toLocaleDateString() : "—"}</dd></div>
-                              <div className="sm:col-span-1 lg:col-span-2"><dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Passport / ID Card Expiry</dt><dd className="mt-1 text-sm font-semibold text-foreground">{traveler.identityDocumentExpiry ? new Date(`${traveler.identityDocumentExpiry}T00:00:00`).toLocaleDateString() : "—"}</dd></div>
+                            <dl className="mt-3 grid gap-x-5 gap-y-4 border-t pt-3 text-body sm:grid-cols-2 lg:grid-cols-4">
+                              <div><dt className="text-helper font-semibold uppercase tracking-wide text-muted-foreground">First name</dt><dd className="mt-1 text-body font-semibold text-foreground">{traveler.firstName}</dd></div>
+                              <div><dt className="text-helper font-semibold uppercase tracking-wide text-muted-foreground">Last name</dt><dd className="mt-1 text-body font-semibold text-foreground">{traveler.lastName}</dd></div>
+                              <div><dt className="text-helper font-semibold uppercase tracking-wide text-muted-foreground">Date of birth</dt><dd className="mt-1 text-body font-semibold text-foreground">{traveler.dateOfBirth ? new Date(`${traveler.dateOfBirth}T00:00:00`).toLocaleDateString() : "—"}</dd></div>
+                              <div className="sm:col-span-1 lg:col-span-2"><dt className="text-helper font-semibold uppercase tracking-wide text-muted-foreground">Passport / ID Card Number</dt><dd className="mt-1 break-all font-mono text-body font-semibold text-foreground">{traveler.identityDocumentNumber || "—"}</dd></div>
+                              <div className="sm:col-span-1"><dt className="text-helper font-semibold uppercase tracking-wide text-muted-foreground">Passport / ID Card Issuance Date</dt><dd className="mt-1 text-body font-semibold text-foreground">{traveler.passportOrIdCardIssuanceDate || demoTravelerIssuanceDates[traveler.travelerId] ? new Date(`${traveler.passportOrIdCardIssuanceDate || demoTravelerIssuanceDates[traveler.travelerId]}T00:00:00`).toLocaleDateString() : "—"}</dd></div>
+                              <div className="sm:col-span-1 lg:col-span-2"><dt className="text-helper font-semibold uppercase tracking-wide text-muted-foreground">Passport / ID Card Expiry</dt><dd className="mt-1 text-body font-semibold text-foreground">{traveler.identityDocumentExpiry ? new Date(`${traveler.identityDocumentExpiry}T00:00:00`).toLocaleDateString() : "—"}</dd></div>
                             </dl>
                           </div>
                         ))}
@@ -936,7 +936,7 @@ export default function BookingRequestsPage() {
             <>
               <DialogHeader className="shrink-0 border-b px-5 py-4 pr-16 sm:px-6">
                 <DialogTitle>Manage booking</DialogTitle>
-                <DialogDescription className="font-mono text-xs">{editing.requestId}</DialogDescription>
+                <DialogDescription className="font-mono text-helper">{editing.requestId}</DialogDescription>
               </DialogHeader>
 
               <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto px-5 py-5 sm:grid-cols-2 sm:px-6">
@@ -944,7 +944,7 @@ export default function BookingRequestsPage() {
                   <div className="space-y-2 sm:col-span-2">
                     <div>
                       <Label>Booking action</Label>
-                      <p className="text-xs text-muted-foreground">Choose the next workflow state, then save the booking.</p>
+                      <p className="text-helper text-muted-foreground">Choose the next workflow state, then save the booking.</p>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                       {bookingActions.map(action => (
@@ -961,7 +961,7 @@ export default function BookingRequestsPage() {
                       ))}
                     </div>
                     {editing.status === "refund" && (
-                      <p className="rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-xs text-warning">
+                      <p className="rounded-lg border border-warning/20 bg-warning/10 px-3 py-2 text-helper text-warning">
                         Refund review records the workflow status only. Complete the payment reversal from the finance workflow.
                       </p>
                     )}
@@ -978,8 +978,8 @@ export default function BookingRequestsPage() {
                 {(editing.type === "manual_flight" || editing.type === "group") && (
                   <div className="space-y-2 rounded-lg border bg-muted/30 px-3 py-2.5">
                     <Label>Airline-issued PNR</Label>
-                    <div className="font-mono text-base font-bold uppercase tracking-wide">{editing.pnr || "Not issued"}</div>
-                    <p className="text-xs text-muted-foreground">The PNR is issued by the airline and cannot be changed.</p>
+                    <div className="font-mono text-body font-bold uppercase tracking-wide">{editing.pnr || "Not issued"}</div>
+                    <p className="text-helper text-muted-foreground">The PNR is issued by the airline and cannot be changed.</p>
                   </div>
                 )}
                 <div className="space-y-2">

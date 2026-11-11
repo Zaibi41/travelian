@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Pagination } from "@/components/admin/ui/pagination";
 import { Link, useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
@@ -328,13 +329,7 @@ function BookingsTable({ data, loading, flights, filters, onPage }: TableProps) 
           </table>
         </div>
       )}
-      {pages > 1 && (
-        <nav aria-label="Pages" className="flex items-center justify-end gap-2 text-body text-muted-foreground">
-          <Button variant="outline" size="sm" disabled={filters.page <= 1} onClick={() => onPage(filters.page - 1)}>Previous</Button>
-          <span className="tabular-nums">Page {filters.page} of {pages}</span>
-          <Button variant="outline" size="sm" disabled={filters.page >= pages} onClick={() => onPage(filters.page + 1)}>Next</Button>
-        </nav>
-      )}
+      <Pagination page={filters.page} pages={pages} onPage={onPage} />
     </section>
   );
 }

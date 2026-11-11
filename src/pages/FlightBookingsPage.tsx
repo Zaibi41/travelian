@@ -3,13 +3,13 @@ import { useSearchParams } from "react-router-dom";
 import { CalendarCheck, Clock3, Download, Eye, Plane, RotateCcw, Ticket, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/admin/ui/button";
+import { Card, CardContent } from "@/components/admin/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
 import { EmptyState } from "@/components/EmptyState";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/admin/ui/field";
+import { Label } from "@/components/admin/ui/field";
+import { Textarea } from "@/components/admin/ui/field";
 import { listServerBookings, updateServerBooking } from "@/lib/booking-api";
 import { downloadETicket } from "@/lib/eticket-pdf";
 import { downloadTicketInvoice } from "@/lib/ticket-invoice-pdf";
@@ -274,8 +274,8 @@ export default function FlightBookingsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display">Flight Operations</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Review approvals, pending payments, expiring holds, issued tickets, and cancellations.</p>
+          <h1 className="text-page-title font-bold font-display">Flight Operations</h1>
+          <p className="mt-1 text-body text-muted-foreground">Review approvals, pending payments, expiring holds, issued tickets, and cancellations.</p>
         </div>
       </div>
 
@@ -285,12 +285,12 @@ export default function FlightBookingsPage() {
             key={tab.id}
             type="button"
             onClick={() => setParams({ tab: tab.id })}
-            className={`inline-flex min-w-max items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-colors ${
+            className={`inline-flex min-w-max items-center gap-2 rounded-xl px-4 py-2.5 text-body font-bold transition-colors ${
               activeTab === tab.id ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
             {tab.label}
-            <Badge variant={activeTab === tab.id ? "secondary" : "outline"} className="h-5 px-1.5 text-[10px]">{counts[tab.id]}</Badge>
+            <Badge variant={activeTab === tab.id ? "secondary" : "outline"} className="h-5 px-1.5 text-helper">{counts[tab.id]}</Badge>
           </button>
         ))}
       </div>
@@ -305,7 +305,7 @@ export default function FlightBookingsPage() {
       </Card>
 
       {loading ? (
-        <Card className="shadow-card"><CardContent className="p-8 text-center text-sm text-muted-foreground">Loading flight bookings...</CardContent></Card>
+        <Card className="shadow-card"><CardContent className="p-8 text-center text-body text-muted-foreground">Loading flight bookings...</CardContent></Card>
       ) : error ? (
         <EmptyState icon={CalendarCheck} title="Flight bookings are unavailable" description={error} />
       ) : filtered.length === 0 ? (
@@ -313,8 +313,8 @@ export default function FlightBookingsPage() {
       ) : (
         <Card className="shadow-card">
           <CardContent className="overflow-x-auto p-0">
-            <table className="w-full min-w-[900px] text-sm">
-              <thead className="border-b bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+            <table className="w-full min-w-[900px] text-body">
+              <thead className="border-b bg-muted/50 text-helper uppercase tracking-wide text-muted-foreground">
                 <tr>
                   <th className="p-4 text-left">Passenger</th>
                   <th className="p-4 text-left">PNR</th>
@@ -329,23 +329,23 @@ export default function FlightBookingsPage() {
                   <tr key={booking.id} className="border-b last:border-0">
                     <td className="p-4">
                       <p className="font-semibold text-foreground">{customerName(booking)}</p>
-                      <p className="text-xs text-muted-foreground">{booking.contact?.phone || "-"}</p>
+                      <p className="text-helper text-muted-foreground">{booking.contact?.phone || "-"}</p>
                     </td>
                     <td className="p-4">
                       <p className="font-mono font-semibold">{booking.pnr || "-"}</p>
-                      <p className="text-xs text-muted-foreground">{booking.id}</p>
+                      <p className="text-helper text-muted-foreground">{booking.id}</p>
                     </td>
                     <td className="p-4">
                       <p className="font-semibold">{booking.flight?.from || "-"} → {booking.flight?.to || "-"}</p>
-                      <p className="text-xs text-muted-foreground">{booking.flight?.airline || ""} {booking.flight?.flightNumber || ""} {booking.flight?.date ? `- ${booking.flight.date}` : ""}</p>
+                      <p className="text-helper text-muted-foreground">{booking.flight?.airline || ""} {booking.flight?.flightNumber || ""} {booking.flight?.date ? `- ${booking.flight.date}` : ""}</p>
                     </td>
                     <td className="p-4">
                       <Badge className={`capitalize ${statusClass(booking.status)}`}>{statusLabel(booking)}</Badge>
-                      <p className="mt-1 text-xs capitalize text-muted-foreground">{booking.paymentStatus || "unpaid"} / {booking.ticketStatus || "not issued"}</p>
+                      <p className="mt-1 text-helper capitalize text-muted-foreground">{booking.paymentStatus || "unpaid"} / {booking.ticketStatus || "not issued"}</p>
                     </td>
                     <td className="p-4">
                       <p className="font-bold">{timeLimitLabel(booking)}</p>
-                      {booking.holdExpiresAt && <p className="mt-1 text-xs text-muted-foreground">Hold until {new Date(booking.holdExpiresAt).toLocaleString()}</p>}
+                      {booking.holdExpiresAt && <p className="mt-1 text-helper text-muted-foreground">Hold until {new Date(booking.holdExpiresAt).toLocaleString()}</p>}
                     </td>
                     <td className="p-4 text-right">
                       <Button size="sm" className="gap-1 rounded-lg" onClick={() => openBooking(booking)}>
@@ -372,32 +372,32 @@ export default function FlightBookingsPage() {
             <div className="space-y-5">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border bg-muted/30 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Passenger</p>
+                  <p className="text-helper font-bold uppercase tracking-wide text-muted-foreground">Passenger</p>
                   <p className="mt-1 font-bold">{customerName(selected)}</p>
-                  <p className="text-sm text-muted-foreground">{selected.contact?.phone || "-"}</p>
-                  {selected.contact?.email && <p className="text-sm text-muted-foreground">{selected.contact.email}</p>}
+                  <p className="text-body text-muted-foreground">{selected.contact?.phone || "-"}</p>
+                  {selected.contact?.email && <p className="text-body text-muted-foreground">{selected.contact.email}</p>}
                 </div>
                 <div className="rounded-2xl border bg-muted/30 p-4">
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">PNR / Status</p>
-                  <p className="mt-1 font-mono text-lg font-bold">{selected.pnr || "-"}</p>
+                  <p className="text-helper font-bold uppercase tracking-wide text-muted-foreground">PNR / Status</p>
+                  <p className="mt-1 font-mono text-section font-bold">{selected.pnr || "-"}</p>
                   <Badge className={`mt-2 capitalize ${statusClass(selected.status)}`}>{statusLabel(selected)}</Badge>
                 </div>
               </div>
               <div className="rounded-2xl border p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Flight</p>
-                <p className="mt-1 text-lg font-bold">{selectedFlight?.from || "-"} → {selectedFlight?.to || "-"}</p>
-                <p className="text-sm text-muted-foreground">{selectedFlight?.airline || ""} {selectedFlight?.flightNumber || ""} {selectedFlight?.date ? `- ${selectedFlight.date}` : ""}</p>
-                <p className="text-sm text-muted-foreground">{selectedFlight?.departTime || "-"} → {selectedFlight?.arriveTime || "-"} {selectedFlight?.duration ? `- ${selectedFlight.duration}` : ""}</p>
+                <p className="text-helper font-bold uppercase tracking-wide text-muted-foreground">Flight</p>
+                <p className="mt-1 text-section font-bold">{selectedFlight?.from || "-"} → {selectedFlight?.to || "-"}</p>
+                <p className="text-body text-muted-foreground">{selectedFlight?.airline || ""} {selectedFlight?.flightNumber || ""} {selectedFlight?.date ? `- ${selectedFlight.date}` : ""}</p>
+                <p className="text-body text-muted-foreground">{selectedFlight?.departTime || "-"} → {selectedFlight?.arriveTime || "-"} {selectedFlight?.duration ? `- ${selectedFlight.duration}` : ""}</p>
               </div>
               <div className="rounded-2xl border p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Payment</p>
+                <p className="text-helper font-bold uppercase tracking-wide text-muted-foreground">Payment</p>
                 <div className="mt-2 flex items-center justify-between gap-4">
-                  <span className="text-sm capitalize text-muted-foreground">{selected.paymentStatus || "unpaid"} via {selected.paymentMethod || "manual"}</span>
-                  <span className="text-xl font-bold text-primary">{amountLabel(selected)}</span>
+                  <span className="text-body capitalize text-muted-foreground">{selected.paymentStatus || "unpaid"} via {selected.paymentMethod || "manual"}</span>
+                  <span className="text-kpi-sm font-bold text-primary">{amountLabel(selected)}</span>
                 </div>
               </div>
               <div className="space-y-2 rounded-2xl border p-4">
-                <Label htmlFor="booking-remarks" className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Remarks</Label>
+                <Label htmlFor="booking-remarks" className="text-helper font-bold uppercase tracking-wide text-muted-foreground">Remarks</Label>
                 <Textarea id="booking-remarks" value={remarks} onChange={event => setRemarks(event.target.value)} rows={3} placeholder="Internal remarks for ticketing, refund, payment, or customer follow-up" />
                 <Button variant="outline" size="sm" className="rounded-xl" disabled={!!savingAction} onClick={() => void updateBooking({ remarks }, "Remarks saved")}>Save Remarks</Button>
               </div>

@@ -1,14 +1,14 @@
 import { useState } from "react";
 import { useAdmin, PaymentLink } from "@/contexts/AdminStore";
 import { useRole } from "@/contexts/RoleContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card";
+import { Button } from "@/components/admin/ui/button";
+import { Input } from "@/components/admin/ui/field";
+import { Label } from "@/components/admin/ui/field";
+import { Switch } from "@/components/admin/ui/choice";
 import { StatusBadge } from "@/components/StatusBadge";
 import { StatCard } from "@/components/StatCard";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
@@ -71,8 +71,8 @@ export default function PaymentsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display">Payment Management</h1>
-          <p className="text-sm text-muted-foreground">Manage payment links, gateway switches, bank transfer status, and payment follow-up.</p>
+          <h1 className="text-page-title font-bold font-display">Payment Management</h1>
+          <p className="text-body text-muted-foreground">Manage payment links, gateway switches, bank transfer status, and payment follow-up.</p>
         </div>
         {canEdit && (
           <Button onClick={() => setLinkDialogOpen(true)} className="gradient-primary text-primary-foreground gap-2">
@@ -99,7 +99,7 @@ export default function PaymentsPage() {
           <button
             key={t.v}
             onClick={() => setTab(t.v)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === t.v ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            className={`px-4 py-2 text-body font-medium border-b-2 transition-colors ${tab === t.v ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
           >
             {t.label}
           </button>
@@ -129,22 +129,22 @@ export default function PaymentsPage() {
                         {pl.status === "paid" ? <CheckCircle className="h-5 w-5 text-success" /> : <CreditCard className="h-5 w-5 text-warning" />}
                       </div>
                       <div>
-                        <p className="font-medium text-sm">{pl.customerName}</p>
-                        <p className="text-xs text-muted-foreground">{pl.customerEmail || "No email"} - Booking #{pl.bookingId || "manual"}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">Created: {pl.createdAt} - Expires: {pl.expiresAt}</p>
+                        <p className="font-medium text-body">{pl.customerName}</p>
+                        <p className="text-helper text-muted-foreground">{pl.customerEmail || "No email"} - Booking #{pl.bookingId || "manual"}</p>
+                        <p className="mt-0.5 text-helper text-muted-foreground">Created: {pl.createdAt} - Expires: {pl.expiresAt}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
-                        <p className="text-lg font-bold font-display text-primary">{formatPkr(pl.amount)}</p>
+                        <p className="text-section font-bold font-display text-primary">{formatPkr(pl.amount)}</p>
                         <StatusBadge status={pl.status} />
                       </div>
                       <div className="flex flex-col gap-1">
-                        <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => copyLink(pl.link)}>
+                        <Button variant="outline" size="sm" className="gap-1 text-helper" onClick={() => copyLink(pl.link)}>
                           <Copy className="h-3 w-3" /> Copy Link
                         </Button>
                         {pl.status === "pending" && canEdit && (
-                          <Button variant="outline" size="sm" className="gap-1 text-xs text-success" onClick={() => markAsPaid(pl.id)}>
+                          <Button variant="outline" size="sm" className="gap-1 text-helper text-success" onClick={() => markAsPaid(pl.id)}>
                             <CheckCircle className="h-3 w-3" /> Mark Paid
                           </Button>
                         )}
@@ -154,7 +154,7 @@ export default function PaymentsPage() {
                   {pl.status === "paid" && pl.paymentMethod && (
                     <div className="mt-2 flex items-center gap-2 border-t pt-2">
                       <ShieldCheck className="h-3 w-3 text-success" />
-                      <span className="text-xs font-medium text-success">Paid via {pl.paymentMethod.toUpperCase()}</span>
+                      <span className="text-helper font-medium text-success">Paid via {pl.paymentMethod.toUpperCase()}</span>
                     </div>
                   )}
                 </CardContent>
@@ -167,7 +167,7 @@ export default function PaymentsPage() {
       {tab === "config" && canEdit && (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card className="shadow-card">
-            <CardHeader><CardTitle className="text-base font-display">Payment Methods</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-body font-display">Payment Methods</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <MethodToggle label="Visa" description="Accept Visa cards" checked={paymentConfig.visaEnabled} onChange={v => updatePaymentConfig({ visaEnabled: v })} />
               <Separator />
@@ -176,7 +176,7 @@ export default function PaymentsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Wallet className="h-5 w-5 text-primary" />
-                  <div><p className="text-sm font-medium">Wallet</p><p className="text-xs text-muted-foreground">Agency wallet payments</p></div>
+                  <div><p className="text-body font-medium">Wallet</p><p className="text-helper text-muted-foreground">Agency wallet payments</p></div>
                 </div>
                 <Switch checked={paymentConfig.walletEnabled} onCheckedChange={v => updatePaymentConfig({ walletEnabled: v })} />
               </div>
@@ -184,7 +184,7 @@ export default function PaymentsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Building2 className="h-5 w-5 text-primary" />
-                  <div><p className="text-sm font-medium">Bank Transfer</p><p className="text-xs text-muted-foreground">Direct bank transfers</p></div>
+                  <div><p className="text-body font-medium">Bank Transfer</p><p className="text-helper text-muted-foreground">Direct bank transfers</p></div>
                 </div>
                 <Switch checked={paymentConfig.bankTransferEnabled} onCheckedChange={v => updatePaymentConfig({ bankTransferEnabled: v })} />
               </div>
@@ -192,22 +192,22 @@ export default function PaymentsPage() {
           </Card>
 
           <Card className="shadow-card">
-            <CardHeader><CardTitle className="text-base font-display">Payment Security</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-body font-display">Payment Security</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-lg border bg-accent/50 p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-success" />
-                  <span className="text-sm font-semibold">Secure Payment Processing</span>
+                  <span className="text-body font-semibold">Secure Payment Processing</span>
                 </div>
-                <p className="text-xs text-muted-foreground">Enable payment methods only after the configured provider has been verified for production use.</p>
+                <p className="text-helper text-muted-foreground">Enable payment methods only after the configured provider has been verified for production use.</p>
               </div>
               <div className="flex items-center justify-between">
-                <div><p className="text-sm font-medium">Test Mode</p><p className="text-xs text-muted-foreground">Use sandbox environment</p></div>
+                <div><p className="text-body font-medium">Test Mode</p><p className="text-helper text-muted-foreground">Use sandbox environment</p></div>
                 <Switch checked={paymentConfig.testMode} onCheckedChange={v => updatePaymentConfig({ testMode: v })} />
               </div>
               {paymentConfig.testMode && (
                 <div className="rounded border border-warning/20 bg-warning/10 p-3">
-                  <p className="text-xs font-medium text-warning">Test mode is enabled. No real charges will be processed.</p>
+                  <p className="text-helper font-medium text-warning">Test mode is enabled. No real charges will be processed.</p>
                 </div>
               )}
             </CardContent>
@@ -253,8 +253,8 @@ function MethodToggle({ label, description, checked, onChange }: { label: string
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="flex h-8 w-12 items-center justify-center rounded bg-primary text-[9px] font-bold text-primary-foreground">{label.slice(0, 4).toUpperCase()}</div>
-        <div><p className="text-sm font-medium">{label}</p><p className="text-xs text-muted-foreground">{description}</p></div>
+        <div className="flex h-8 w-12 items-center justify-center rounded bg-primary text-helper font-bold text-primary-foreground">{label.slice(0, 4).toUpperCase()}</div>
+        <div><p className="text-body font-medium">{label}</p><p className="text-helper text-muted-foreground">{description}</p></div>
       </div>
       <Switch checked={checked} onCheckedChange={onChange} />
     </div>
