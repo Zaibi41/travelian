@@ -35,11 +35,22 @@ const DETAIL = {
   ],
 };
 
+// Saved people (made-up, already masked, as the gateway returns them).
+const savedDoc = (id: string, masked: string) => ({ id, id_type: "PSPT", document_country: "PAK", document_number_masked: masked, document_expiry_masked: "2031", document_validity: "valid" });
+const PEOPLE = [
+  { id: "p-00000001", title: "MR", first_name: "Muhammad Abdullah", last_name: "Rehmanullah Khan Durrani", birth_year: 1990, nationality: "PAK",
+    phone_masked: "+92 •••••••567", email_masked: "a•••@a-very-long-company-domain-name.example.invalid", documents: [savedDoc("d-00000001", "••••••567")], match: "phone" },
+  { id: "p-00000002", title: "MISS", first_name: "Baby", last_name: "Durrani", birth_year: 2026, phone_masked: "+92 •••••••567", documents: [savedDoc("d-00000002", "••••••321")], match: "phone" },
+];
+const holdBodies: unknown[] = [];
+
 async function open(page: Page, width: number, { changed = false, holdError = false } = {}) {
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
     const url = gatewayView(route.request().url());
     if (url.port === "8000") {
+      if (url.pathname === "/v1/admin/customers") return route.fulfill({ json: { results: PEOPLE, can_manage: true, can_merge: false } });
+      if (url.pathname === "/v1/live-ticketing/flights/bookings") holdBodies.push(route.request().postDataJSON());
       if (url.pathname === "/v1/live-ticketing/flights/search") return route.fulfill({ json: SEARCH });
       if (url.pathname === "/v1/live-ticketing/flights/reprice") {
         return route.fulfill({ json: changed ? { ...QUOTE, price_changed: true, new_total: rs(16_000), new_price_per_adult: rs(14_281), price_difference_per_adult: rs(684) } : QUOTE });
@@ -99,6 +110,51 @@ for (const width of [1280, 1366, 1440, 1920]) {
     await page.getByRole("button", { name: "Hold seats" }).click();
     await expect(page.getByRole("region", { name: "Hold created, but its total couldn't be verified" })).toBeVisible();
     expect(await overflow(page)).toBe(0);
+  });
+}
+
+for (const width of [1280, 390]) {
+  test(`saved customer and travelers by mobile number at ${width}px: the hold sends only their ids`, async ({ page }) => {
+    holdBodies.length = 0;
+    await open(page, width);
+    await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
+    await page.getByRole("region", { name: "Customer" }).getByRole("button", { name: "Find saved customer" }).click();
+    const dialog = page.getByRole("dialog", { name: "Find a saved customer" });
+    await dialog.getByLabel("Mobile number, CNIC, passport, email or name").fill("3001234567");
+    await dialog.getByRole("button", { name: "Search" }).click();
+    await expect(dialog.getByRole("button", { name: /^Use / })).toHaveCount(2);
+    const box = (await dialog.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(900);
+    expect(box.x + box.width).toBeLessThanOrEqual(width);
+    await expectReadableText(page, `saved people search at ${width}px`);
+    await dialog.getByRole("button", { name: "Use Muhammad Abdullah Rehmanullah Khan Durrani" }).click();
+    await expect(dialog).toBeHidden();
+
+    const adult = page.getByRole("group", { name: "Adult 1" });
+    await adult.getByRole("checkbox", { name: "Same as customer, Adult 1" }).click();
+    await expect(adult.getByLabel("Saved traveler", { exact: true })).toContainText("••••••567");
+    const infant = page.getByRole("group", { name: "Infant 1" });
+    await infant.getByRole("button", { name: "Use a saved traveler, Infant 1" }).click();
+    const travelerDialog = page.getByRole("dialog", { name: "Use a saved traveler" });
+    await travelerDialog.getByLabel("Mobile number, CNIC, passport, email or name").fill("3001234567");
+    await travelerDialog.getByRole("button", { name: "Search" }).click();
+    await travelerDialog.getByRole("button", { name: "Use Baby Durrani" }).click();
+    await expect(infant.getByLabel("Saved traveler", { exact: true })).toContainText("••••••321");
+    expect(await overflow(page)).toBe(0);
+    await expectReadableText(page, `hold form with saved people at ${width}px`);
+
+    await page.getByRole("button", { name: "Hold seats" }).click();
+    await expect(page.getByRole("heading", { name: "Hold result" })).toBeVisible();
+    expect(holdBodies).toHaveLength(1);
+    expect(holdBodies[0]).toMatchObject({
+      contact: { customer_id: "p-00000001" },
+      passengers: [
+        { type: "ADT", traveler_id: "p-00000001", document_id: "d-00000001" },
+        { type: "INF", traveler_id: "p-00000002", document_id: "d-00000002", travels_with: 0 },
+      ],
+    });
+    expect(JSON.stringify(holdBodies[0])).not.toMatch(/document_number|date_of_birth|first_name/);
   });
 }
 

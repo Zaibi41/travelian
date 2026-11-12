@@ -124,6 +124,15 @@ ticket numbers on the result and the Tickets tab; at 1280, 1440 and 390px readab
 scroll, the confirm dialog in view and closed by Escape. To issue for real, the gateway's ticketing
 must be on and the user needs the issue tickets permission (gateway `docs/TESTING.md`).
 
+Saved customers and travelers on the hold form: `HoldForm.test.tsx` (find a saved customer by mobile
+number, every match listed; Use fills the customer; Same as customer makes the saved customer the
+traveler; a saved traveler with several documents must have one chosen; the hold sends only
+`customer_id`, `traveler_id` and `document_id`, never a name, date of birth or document number;
+fewer than 3 characters and no match; Type details instead; a saved customer without phone or email
+gets the fields back from the gateway's errors and the typed values are sent). `e2e/admin-flights-hold.spec.ts`
+does the same in Chrome at 1280 and 390px: the search dialog in view, readable, no sideways scroll,
+and the request carrying only the ids.
+
 Gateway calls in specs: the dev server may send gateway calls through its `/__gateway` proxy
 (`vite.config.ts`) instead of straight to port 8000. `e2e/support/gateway.ts` (`gatewayView`) makes
 both look the same, so the specs' made-up gateway answers are used either way and nothing reaches a

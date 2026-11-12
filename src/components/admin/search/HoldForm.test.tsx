@@ -5,7 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GatewayError } from "@/lib/gateway/client";
 import type { HoldDraft } from "@/lib/admin-search/hold";
 
-const gateway = vi.hoisted(() => ({ hold: vi.fn(), reprice: vi.fn() }));
+const gateway = vi.hoisted(() => ({ hold: vi.fn(), reprice: vi.fn(), people: vi.fn() }));
+vi.mock("@/lib/saved-people/api", async importOriginal => ({ ...(await importOriginal<object>()), searchPeople: gateway.people }));
 vi.mock("@/lib/admin-search/flights", async importOriginal => ({
   ...(await importOriginal<object>()), holdFlight: gateway.hold, repriceFlights: gateway.reprice,
 }));
@@ -64,6 +65,7 @@ describe("Hold flight form (mockup flights-hold-form)", () => {
   beforeEach(() => {
     gateway.hold.mockReset();
     gateway.reprice.mockReset();
+    gateway.people.mockReset();
     result.state = null;
   });
 
@@ -85,7 +87,7 @@ describe("Hold flight form (mockup flights-hold-form)", () => {
     expect(within(infant).getByLabelText("Travels with")).toHaveTextContent("Adult 1");
     expect(within(infant).queryByLabelText("Nationality")).not.toBeInTheDocument();
     expect(within(infant).queryByRole("checkbox")).not.toBeInTheDocument();
-    expect(screen.getByText(/Passport, ID number and date of birth open empty/)).toBeInTheDocument();
+    expect(screen.getByText(/Passport, ID number and date of birth are never shown in full here/)).toBeInTheDocument();
     expect(screen.getByText("Holding reserves the seats until the time limit. No payment is taken.")).toBeInTheDocument();
   });
 
@@ -254,4 +256,108 @@ describe("country dropdowns on the hold form", () => {
     await waitFor(() => expect(field).toHaveAccessibleDescription("String should match pattern '^[A-Z]{3}$'"));
     expect(field).toHaveAttribute("aria-invalid", "true");
   });
+
+  describe("saved customers and travelers", () => {
+    // Made-up, already-masked search results, as the gateway returns them.
+    const doc = (id: string, masked: string) => ({ id, id_type: "PSPT" as const, document_country: "PAK", document_number_masked: masked, document_expiry_masked: "2031", document_validity: "valid" as const });
+    const ALI = { id: "p-00000001", title: "MR" as const, first_name: "Ali", last_name: "Khan", birth_year: 1990, nationality: "PAK",
+      phone_masked: "+92 •••••••567", email_masked: "a•••@example.invalid", documents: [doc("d-00000001", "••••••567")], match: "phone" };
+    const SARA = { id: "p-00000002", title: "MRS" as const, first_name: "Sara", last_name: "Khan", birth_year: 1993, phone_masked: "+92 •••••••567",
+      documents: [doc("d-00000002", "••••••111"), doc("d-00000003", "••••••222")], match: "phone" };
+
+    async function pick(button: HTMLElement, query: string, who: string) {
+      fireEvent.click(button);
+      const dialog = await screen.findByRole("dialog");
+      fireEvent.change(within(dialog).getByLabelText("Mobile number, CNIC, passport, email or name"), { target: { value: query } });
+      fireEvent.click(within(dialog).getByRole("button", { name: "Search" }));
+      fireEvent.click(await within(dialog).findByRole("button", { name: `Use ${who}` }));
+    }
+
+    it("finds customers by mobile number, lists every match and sends only the saved ids; the gateway fills the details", async () => {
+      gateway.people.mockResolvedValue({ results: [ALI, SARA], can_manage: true, can_merge: false });
+      gateway.hold.mockResolvedValue({ booking_id: "TRV-1", pnr: "ABC123", selling_total: rs(15_316) });
+      renderPage(STAFF_DRAFT);
+      const customer = screen.getByRole("region", { name: "Customer" });
+      fireEvent.click(within(customer).getByRole("button", { name: "Find saved customer" }));
+      const dialog = await screen.findByRole("dialog", { name: "Find a saved customer" });
+      fireEvent.change(within(dialog).getByLabelText("Mobile number, CNIC, passport, email or name"), { target: { value: "3001234567" } });
+      fireEvent.click(within(dialog).getByRole("button", { name: "Search" }));
+      const list = await within(dialog).findByRole("list", { name: "Saved people" });
+      expect(gateway.people).toHaveBeenCalledWith("3001234567", expect.anything());
+      expect(within(list).getAllByRole("button", { name: /^Use / })).toHaveLength(2);
+      expect(list).toHaveTextContent("Ali Khan");
+      expect(list).toHaveTextContent("+92 •••••••567");
+      fireEvent.click(within(list).getByRole("button", { name: "Use Ali Khan" }));
+
+      expect(within(customer).getByLabelText("Saved customer")).toHaveTextContent("Ali Khan");
+      expect(within(customer).queryByLabelText("Email")).not.toBeInTheDocument();
+      // The adult is the customer: the saved customer becomes the saved traveler (one document, chosen automatically).
+      const adult = screen.getByRole("group", { name: "Adult 1" });
+      fireEvent.click(within(adult).getByRole("checkbox", { name: "Same as customer, Adult 1" }));
+      expect(within(adult).getByLabelText("Saved traveler")).toHaveTextContent("Ali Khan");
+      expect(within(adult).queryByLabelText("Document number")).not.toBeInTheDocument();
+      // The infant: a saved traveler with two documents; one must be chosen.
+      const infant = screen.getByRole("group", { name: "Infant 1" });
+      gateway.people.mockResolvedValue({ results: [SARA], can_manage: true, can_merge: false });
+      await pick(within(infant).getByRole("button", { name: "Use a saved traveler, Infant 1" }), "Sara", "Sara Khan");
+      fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+      expect(await within(infant).findByRole("alert")).toHaveTextContent("Choose which saved document travels.");
+      expect(gateway.hold).not.toHaveBeenCalled();
+      fireEvent.click(within(infant).getByRole("radio", { name: "Passport ••••••222" }));
+      fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+
+      await waitFor(() => expect(gateway.hold).toHaveBeenCalledOnce());
+      const body = gateway.hold.mock.calls[0][0];
+      expect(body.contact).toEqual({ customer_id: "p-00000001", save_for_next_time: true });
+      expect(body.passengers[0]).toEqual({ type: "ADT", title: "MR", traveler_id: "p-00000001", document_id: "d-00000001", save_for_next_time: true });
+      expect(body.passengers[1]).toMatchObject({ type: "INF", traveler_id: "p-00000002", document_id: "d-00000003", travels_with: 0 });
+      // No identity value is ever sent with a saved person.
+      for (const passenger of body.passengers) for (const field of ["first_name", "last_name", "date_of_birth", "document_number", "document_expiry", "nationality"]) {
+        expect(passenger).not.toHaveProperty(field);
+      }
+    });
+
+    it("Type details instead goes back to the typed form; no match says to type the details", async () => {
+      gateway.people.mockResolvedValue({ results: [], can_manage: true, can_merge: false });
+      renderPage(STAFF_DRAFT);
+      const customer = screen.getByRole("region", { name: "Customer" });
+      fireEvent.click(within(customer).getByRole("button", { name: "Find saved customer" }));
+      const dialog = await screen.findByRole("dialog", { name: "Find a saved customer" });
+      fireEvent.change(within(dialog).getByLabelText("Mobile number, CNIC, passport, email or name"), { target: { value: "ab" } });
+      fireEvent.click(within(dialog).getByRole("button", { name: "Search" }));
+      expect(within(dialog).getByRole("alert")).toHaveTextContent("Type at least 3 characters.");
+      expect(gateway.people).not.toHaveBeenCalled();
+      fireEvent.change(within(dialog).getByLabelText("Mobile number, CNIC, passport, email or name"), { target: { value: "3009999999" } });
+      fireEvent.click(within(dialog).getByRole("button", { name: "Search" }));
+      expect(await within(dialog).findByRole("status")).toHaveTextContent("No saved person matches");
+
+      gateway.people.mockResolvedValue({ results: [ALI], can_manage: true, can_merge: false });
+      fireEvent.change(within(dialog).getByLabelText("Mobile number, CNIC, passport, email or name"), { target: { value: "Ali" } });
+      fireEvent.click(within(dialog).getByRole("button", { name: "Search" }));
+      fireEvent.click(await within(dialog).findByRole("button", { name: "Use Ali Khan" }));
+      fireEvent.click(within(customer).getByRole("button", { name: "Type details instead" }));
+      expect(within(customer).getByLabelText("Email")).toBeInTheDocument();
+      expect(within(customer).queryByLabelText("Saved customer")).not.toBeInTheDocument();
+    });
+
+    it("a saved customer without phone or email: the gateway's field errors bring those fields back, typed values are sent", async () => {
+      gateway.people.mockResolvedValue({ results: [{ ...ALI, phone_masked: undefined, email_masked: undefined }], can_manage: true, can_merge: false });
+      gateway.hold.mockRejectedValueOnce(new GatewayError("unavailable", "The saved customer has no phone or email. Add them for this booking.", 422, "contact_incomplete",
+        [{ path: ["contact", "phone"], message: "Required." }, { path: ["contact", "email"], message: "Required." }]));
+      renderPage(STAFF_DRAFT);
+      const customer = screen.getByRole("region", { name: "Customer" });
+      await pick(within(customer).getByRole("button", { name: "Find saved customer" }), "Ali", "Ali Khan");
+      expect(within(customer).getByLabelText("Saved customer")).toHaveTextContent("No phone or email saved");
+      fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+      expect(await within(customer).findByLabelText("Phone")).toBeInTheDocument();
+      type("Phone code", "92", customer);
+      type("Phone", "3001234567", customer);
+      type("Email", "ali@example.invalid", customer);
+      gateway.hold.mockResolvedValue({ booking_id: "TRV-1", pnr: "ABC123", selling_total: rs(15_316) });
+      fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+      await waitFor(() => expect(gateway.hold).toHaveBeenCalledTimes(2));
+      expect(gateway.hold.mock.calls[1][0].contact).toEqual({ customer_id: "p-00000001", phone_code: "92", phone: "3001234567", email: "ali@example.invalid", save_for_next_time: true });
+    });
+  });
 });
+

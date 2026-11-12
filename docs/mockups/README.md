@@ -92,3 +92,9 @@ Status as of 2026-11-10. All 28 listed mockups are in this folder.
   permission) or "Request issuance", not both. The "Checking" card shows when another issue is in
   progress; "Open Payments" on the hold-expired card is left out (it is the same tab). Tickets tab:
   Passenger, Ticket number, Status (issue time is not recorded yet).
+- **Hold flight form: saved customers and travelers (Zohaib, 12 November 2026).** The mockup's form
+  is typed in only. The Customer card now has "Find saved customer" and each traveler card "Use saved
+  traveler": search by mobile number, CNIC, passport, email or name, every match is listed (masked),
+  and Use fills the card. The browser never receives or sends the saved identity values: the hold
+  carries only the saved ids and the gateway fills in name, date of birth and document. A person with
+  several documents needs one chosen. "Type details instead" returns to the typed form.
