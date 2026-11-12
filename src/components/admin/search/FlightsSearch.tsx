@@ -183,23 +183,23 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
           <CabinPicker />
         </div>
         <form
-          className="flex min-w-0 flex-col gap-3"
+          className="admin-search-form flex min-w-0 flex-col gap-3"
           onSubmit={event => {
             event.preventDefault();
             if (canSearch) commit(draft);
           }}
         >
-          {/* Row 1: From and To with the round swap between them (shared RouteRow; stacked below ~900px). */}
-          <RouteRow
-            from={<AirportCombobox id="flight-from" label="From" placeholder="Origin" icon="departure" value={draft.from} onChange={from => setDraft({ ...draft, from })} />}
-            to={<AirportCombobox id="flight-to" label="To" placeholder="Destination" icon="arrival" value={draft.to} onChange={to => setDraft({ ...draft, to })} />}
-            onSwap={() => setDraft({ ...draft, from: draft.to, to: draft.from })}
-          />
-          {/* Row 2: dates, provider (admin only) and Search flights. */}
-          <div className={cn(
-            "grid grid-cols-1 items-end gap-3 sm:grid-cols-2",
-            providerNames.length ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]" : "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]",
-          )}>
+          {/* One line like the public site when the form is wide enough (theme.css, .admin-search-fields):
+              From, round swap, To, dates, provider (admin only) and Search flights. Narrower: From/To
+              on their own row, the rest below; stacked on phones. */}
+          <div className="admin-search-fields" data-fields={providerNames.length ? "flights-provider" : "flights"}>
+            <div className="admin-search-route min-w-0">
+              <RouteRow
+                from={<AirportCombobox id="flight-from" label="From" placeholder="Origin" icon="departure" value={draft.from} onChange={from => setDraft({ ...draft, from })} />}
+                to={<AirportCombobox id="flight-to" label="To" placeholder="Destination" icon="arrival" value={draft.to} onChange={to => setDraft({ ...draft, to })} />}
+                onSwap={() => setDraft({ ...draft, from: draft.to, to: draft.from })}
+              />
+            </div>
             <DateInput id="flight-date" label="Departure date" value={draft.date} onChange={date => setDraft({ ...draft, date })} />
             <DateInput id="flight-return" label="Return date" value={draft.trip === "roundtrip" ? draft.returnDate : undefined} min={draft.date}
               disabledReason={draft.trip === "roundtrip" ? undefined : REASONS.returnDate} onChange={returnDate => setDraft({ ...draft, returnDate })} />

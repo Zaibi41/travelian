@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
+import { SEARCH_FIELD } from "@/components/admin/ui/search-form";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search } from "lucide-react";
@@ -167,9 +169,9 @@ function SearchBox({ q, placeholder, onSearch }: { q: string; placeholder: strin
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
             <Input id="people-search" value={value} maxLength={64} onChange={event => setValue(event.target.value)} placeholder={placeholder}
-              className="pl-9" />
+              className={cn(SEARCH_FIELD, "pl-9")} />
           </div>
-          <Button type="submit" variant="outline">Search</Button>
+          <Button type="submit" variant="outline" className="h-14 rounded-xl px-5"><Search aria-hidden="true" />Search</Button>
         </div>
       </form>
     </section>

@@ -121,6 +121,16 @@ as it is.
 | `AirlineLogo` (admin copy of the public tile) | `AirlineLogo.tsx` | flight results |
 
 Cards are `rounded-xl border border-border bg-card px-card py-3.5 shadow-card` (or `Panel`).
+
+Search and filter fields share one look across the admin (`SEARCH_FIELD`: 56px, rounded-xl, soft
+fill, darker border): the Search forms, the Bookings filters and the Customers & Travelers search.
+The Search forms put every field and the button on one line when the form is wide enough
+(`.admin-search-fields` in `theme.css`, a container query on the form's own width): dates and the
+button have compact fixed widths and From / To take the rest. One line only while From and To stay
+about 260px each, so a chosen airport's full name still fits in two lines: Group Ticketing (From,
+swap, To, Departure Date, search; Airline and Adults sit on the top row) from 930px of form, which
+is a 1280px screen; Flights from 1080px of form (a 1440px screen, or 1280px with the sidebar
+collapsed); below that, From / To on one row and the rest under them.
 Select, badge, tabs, table, tooltip, popover and dropdown menus are the shared Radix primitives in
 `src/components/ui` (the same components the public site uses, so the same look); admin pieces
 wrap them where the admin needs its own size or label (`FilterSelect`, `LabeledSelect`, `Tag`).

@@ -75,82 +75,96 @@ export function GroupTicketingSearch() {
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
       <section aria-label="Search group fares" className="flex flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
-        {inventory.error ? (
-          <DashboardErrorNotice message={errorMessage(inventory.error)} />
-        ) : (
-          /* Row 1: Suggested routes (the 4 sectors with most departures) and Select available sector. */
-          <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(12rem,18rem)]">
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-              {inventory.isPending && <Skeleton className="h-8 w-56 rounded-md" />}
-              {suggested.length > 0 && (
-                <>
-                  <span className="flex items-center gap-1.5 whitespace-nowrap text-label font-medium text-muted-foreground">
-                    <Compass className="h-4 w-4" aria-hidden="true" /> Suggested routes:
-                  </span>
-                  {suggested.map(sector => {
-                    const selected = draft.from === sector.from && draft.to === sector.to;
-                    return (
-                      <Chip
-                        key={`${sector.from}-${sector.to}`}
-                        data-route-chip
-                        pressed={selected}
-                        onClick={() => setDraft({ ...draft, from: sector.from, to: sector.to })}
-                      >
-                        {sector.from} → {sector.to} <span className="font-normal opacity-80">({sector.count})</span>
-                      </Chip>
-                    );
-                  })}
-                </>
-              )}
-              {inventory.data && options.sectors.length === 0 && (
-                <p className="text-body text-muted-foreground">No group sectors are available right now.</p>
-              )}
-            </div>
-            <LabeledSelect
-              id="group-sector"
-              label="Select available sector"
-              value={draft.from && draft.to && options.sectors.some(sector => sector.from === draft.from && sector.to === draft.to) ? `${draft.from}-${draft.to}` : ANY}
-              options={[
-                { value: ANY, label: "All available sectors" },
-                ...options.sectors.map(sector => ({ value: `${sector.from}-${sector.to}`, label: `${sector.from} → ${sector.to} (${sector.count})` })),
-              ]}
-              onChange={value => {
-                const [from, to] = value === ANY ? [undefined, undefined] : value.split("-");
-                setDraft({ ...draft, from, to });
-              }}
-            />
+        {/* Row 1: Suggested routes (the 4 sectors with most departures), then Select available sector,
+            Airline and Adults (moved up from the field row so that row matches the public site:
+            From, swap, To, date, search). */}
+        <div className="flex flex-wrap items-end gap-3">
+          {inventory.error ? (
+            <div className="min-w-0 flex-[1_1_20rem]"><DashboardErrorNotice message={errorMessage(inventory.error)} /></div>
+          ) : (
+            <>
+              <div className="min-w-0 flex-[1_1_20rem]">
+                <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                  {inventory.isPending && <Skeleton className="h-8 w-56 rounded-md" />}
+                  {suggested.length > 0 && (
+                    <>
+                      <span className="flex items-center gap-1.5 whitespace-nowrap text-label font-medium text-muted-foreground">
+                        <Compass className="h-4 w-4" aria-hidden="true" /> Suggested routes:
+                      </span>
+                      {suggested.map(sector => {
+                        const selected = draft.from === sector.from && draft.to === sector.to;
+                        return (
+                          <Chip
+                            key={`${sector.from}-${sector.to}`}
+                            data-route-chip
+                            pressed={selected}
+                            onClick={() => setDraft({ ...draft, from: sector.from, to: sector.to })}
+                          >
+                            {sector.from} → {sector.to} <span className="font-normal opacity-80">({sector.count})</span>
+                          </Chip>
+                        );
+                      })}
+                    </>
+                  )}
+                  {inventory.data && options.sectors.length === 0 && (
+                    <p className="text-body text-muted-foreground">No group sectors are available right now.</p>
+                  )}
+                </div>
+              </div>
+              <div className="w-full min-w-0 sm:w-56">
+                <LabeledSelect
+                  id="group-sector"
+                  label="Select available sector"
+                  value={draft.from && draft.to && options.sectors.some(sector => sector.from === draft.from && sector.to === draft.to) ? `${draft.from}-${draft.to}` : ANY}
+                  options={[
+                    { value: ANY, label: "All available sectors" },
+                    ...options.sectors.map(sector => ({ value: `${sector.from}-${sector.to}`, label: `${sector.from} → ${sector.to} (${sector.count})` })),
+                  ]}
+                  onChange={value => {
+                    const [from, to] = value === ANY ? [undefined, undefined] : value.split("-");
+                    setDraft({ ...draft, from, to });
+                  }}
+                />
+              </div>
+            </>
+          )}
+          <div className="w-full min-w-0 sm:w-44">
+            <LabeledSelect id="group-airline" label="Airline" value={draft.airline ?? ANY}
+              options={[{ value: ANY, label: "All airlines" }, ...options.airlines.map(airline => ({ value: airline, label: airline }))]}
+              onChange={value => setDraft({ ...draft, airline: value === ANY ? undefined : value })} />
           </div>
-        )}
+          <div className="flex w-full min-w-0 flex-col gap-1 sm:w-24">
+            <FieldLabel htmlFor="group-adults">Adults</FieldLabel>
+            <Input id="group-adults" form="group-search-form" type="number" min={1} max={9} value={draft.adults}
+              onChange={event => setDraft({ ...draft, adults: Math.min(9, Math.max(1, Number(event.target.value) || 1)) })}
+              className="bg-card" />
+          </div>
+        </div>
 
         <form
-          className="flex min-w-0 flex-col gap-3"
+          id="group-search-form"
+          className="admin-search-form flex min-w-0 flex-col gap-3"
           onSubmit={event => {
             event.preventDefault();
             if (canSearch) commit(draft);
           }}
         >
-          {/* Row 2: From and To, limited to the available sectors, with the shared round swap. */}
-          <RouteRow
-            from={<SectorAirportSelect id="group-from" label="From" placeholder="Origin" icon="departure" codes={airports("from")} value={draft.from}
-              onChange={from => setDraft({ ...draft, from })} />}
-            to={<SectorAirportSelect id="group-to" label="To" placeholder="Destination" icon="arrival" codes={airports("to")} value={draft.to}
-              onChange={to => setDraft({ ...draft, to })} />}
-            onSwap={() => setDraft({ ...draft, from: draft.to, to: draft.from })}
-          />
-          {/* Row 3: date, airline, adults and the search button. */}
-          <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,8rem)_auto]">
+          {/* One line like the public site's group form when wide enough (theme.css, .admin-search-fields):
+              From and To (limited to the available sectors) with the round swap, Departure Date and the
+              search button. Narrower: From/To on their own row, the rest below. */}
+          <div className="admin-search-fields" data-fields="group">
+            <div className="admin-search-route min-w-0">
+              <RouteRow
+                from={<SectorAirportSelect id="group-from" label="From" placeholder="Origin" icon="departure" codes={airports("from")} value={draft.from}
+                  onChange={from => setDraft({ ...draft, from })} />}
+                to={<SectorAirportSelect id="group-to" label="To" placeholder="Destination" icon="arrival" codes={airports("to")} value={draft.to}
+                  onChange={to => setDraft({ ...draft, to })} />}
+                onSwap={() => setDraft({ ...draft, from: draft.to, to: draft.from })}
+              />
+            </div>
             <div className="flex min-w-0 flex-col gap-1">
               <FieldLabel htmlFor="group-date">Departure Date</FieldLabel>
               <DayFirstDateField id="group-date" variant="search" value={draft.date} onChange={date => setDraft({ ...draft, date })} />
-            </div>
-            <LabeledSelect id="group-airline" label="Airline" value={draft.airline ?? ANY} triggerClassName={SEARCH_FIELD}
-              options={[{ value: ANY, label: "All airlines" }, ...options.airlines.map(airline => ({ value: airline, label: airline }))]}
-              onChange={value => setDraft({ ...draft, airline: value === ANY ? undefined : value })} />
-            <div className="flex min-w-0 flex-col gap-1">
-              <FieldLabel htmlFor="group-adults">Adults</FieldLabel>
-              <Input id="group-adults" type="number" min={1} max={9} value={draft.adults}
-                onChange={event => setDraft({ ...draft, adults: Math.min(9, Math.max(1, Number(event.target.value) || 1)) })}
-                className={cn(SEARCH_FIELD, "px-3")} />
             </div>
             <SearchSubmitButton label="Search group fares" disabled={!canSearch} />
           </div>

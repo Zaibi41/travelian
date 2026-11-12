@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
+import { SEARCH_FIELD } from "@/components/admin/ui/search-form";
 import { Pagination } from "@/components/admin/ui/pagination";
 import { Link, useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
@@ -154,7 +156,7 @@ function Filters({ filters, data, flights, onChange }: FiltersProps) {
   useEffect(() => setSearch(filters.q ?? ""), [filters.q]);
   const providers = data?.filter_options.providers;
   const sourceSelect = providers && providers.length > 0 && (
-    <LabeledSelect
+    <LabeledSelect triggerClassName={SEARCH_FIELD}
       id="bookings-filter-source"
       label={flights ? "Source" : "Supplier or source"}
       value={filters.provider ?? ANY}
@@ -195,11 +197,11 @@ function Filters({ filters, data, flights, onChange }: FiltersProps) {
               onChange={event => setSearch(event.target.value)}
               onBlur={() => (search.trim() || undefined) !== filters.q && onChange({ q: search.trim() || undefined })}
               placeholder="Booking ID or PNR"
-              className="pl-9"
+              className={cn(SEARCH_FIELD, "pl-9")}
             />
           </div>
         </form>
-        <LabeledSelect
+        <LabeledSelect triggerClassName={SEARCH_FIELD}
           id="bookings-filter-date"
           label="Date range"
           value={filters.period}
@@ -207,24 +209,24 @@ function Filters({ filters, data, flights, onChange }: FiltersProps) {
           onChange={value => onChange({ period: value as BookingPeriod })}
         />
         {/* Travel date isn't recorded yet, so Created date is the only date type. */}
-        <LabeledSelect id="bookings-filter-date-type" label="Date type" value="created" options={[{ value: "created", label: "Created date" }]} onChange={() => undefined} />
+        <LabeledSelect triggerClassName={SEARCH_FIELD} id="bookings-filter-date-type" label="Date type" value="created" options={[{ value: "created", label: "Created date" }]} onChange={() => undefined} />
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <LabeledSelect
+        <LabeledSelect triggerClassName={SEARCH_FIELD}
           id="bookings-filter-booking-status"
           label="Booking status"
           value={filters.bookingStatus ?? ANY}
           options={[anyOption, ...BOOKING_STATUS_OPTIONS.map(value => ({ value, label: BOOKING_STATUS_LABEL[value] }))]}
           onChange={value => onChange({ bookingStatus: value === ANY ? undefined : (value as BookingsFilters["bookingStatus"]) })}
         />
-        <LabeledSelect
+        <LabeledSelect triggerClassName={SEARCH_FIELD}
           id="bookings-filter-payment-status"
           label="Payment status"
           value={filters.paymentStatus ?? ANY}
           options={[anyOption, ...PAYMENT_STATUS_OPTIONS.map(value => ({ value, label: PAYMENT_STATUS_LABEL[value] }))]}
           onChange={value => onChange({ paymentStatus: value === ANY ? undefined : (value as BookingsFilters["paymentStatus"]) })}
         />
-        <LabeledSelect
+        <LabeledSelect triggerClassName={SEARCH_FIELD}
           id="bookings-filter-issuance-status"
           label="Issuance status"
           value={filters.issuanceStatus ?? ANY}
@@ -232,7 +234,7 @@ function Filters({ filters, data, flights, onChange }: FiltersProps) {
           onChange={value => onChange({ issuanceStatus: value === ANY ? undefined : (value as BookingsFilters["issuanceStatus"]) })}
         />
         {sourceSelect}
-        <LabeledSelect
+        <LabeledSelect triggerClassName={SEARCH_FIELD}
           id="bookings-filter-agency"
           label="Agency"
           value={filters.agency ?? ANY}

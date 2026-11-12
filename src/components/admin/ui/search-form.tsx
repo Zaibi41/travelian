@@ -12,8 +12,9 @@ import { ADMIN_PRODUCT_TABS } from "@/components/admin/ui/product-tabs";
 import type { Airport } from "@/lib/admin-search/airports";
 import { cn } from "@/lib/utils";
 
-/** Field shell: public search field look (48px, rounded, soft fill), on the admin scale. */
-export const SEARCH_FIELD = "h-12 rounded-xl border border-muted-foreground/80 bg-muted/30 text-body";
+/** Field shell: public search field look (rounded, soft fill), on the admin scale. 56px, the same
+ *  height as the two-line airport fields, so a one-line search form lines up. */
+export const SEARCH_FIELD = "h-14 rounded-xl border border-muted-foreground/80 bg-muted/30 text-body";
 /** Airport fields are taller: two lines ("LHE - Lahore", then the airport name and country). */
 export const AIRPORT_FIELD = "min-h-14 rounded-xl border border-muted-foreground/80 bg-muted/30";
 
@@ -124,7 +125,7 @@ export function RouteRow({ from, to, onSwap }: { from: React.ReactNode; to: Reac
 /** Filled search button with the magnifier (public site style); the admin keeps its own label. */
 export function SearchSubmitButton({ label, disabled }: { label: string; disabled?: boolean }) {
   return (
-    <Button type="submit" size="lg" disabled={disabled}>
+    <Button type="submit" size="lg" disabled={disabled} className="h-14">
       <Search aria-hidden="true" /> {label}
     </Button>
   );

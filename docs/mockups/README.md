@@ -77,3 +77,9 @@ Status as of 2026-11-10. All 28 listed mockups are in this folder.
   20px sides (mockup 10px radius, 16px sides); page tabs are semibold; row action buttons are 36px.
   Colours are unchanged. The Search forms were restyled at Zohaib's request to match the public
   site's search form, differing from the original Search mockups (see the entries above).
+- **Search forms on one line, like the public site (Zohaib, 12 November 2026).** Flights and Group
+  Ticketing show From, round swap, To, the dates and the search button on one line when the form is
+  wide enough (Group Ticketing at 1280px, Flights at 1440px or with the sidebar collapsed); dates
+  are compact and From / To take the remaining width. Group Ticketing's Airline and Adults moved to
+  the top row next to Select available sector. All search fields, the Bookings filters and the
+  Customers search share the same 56px rounded field look.

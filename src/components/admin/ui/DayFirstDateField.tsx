@@ -32,7 +32,7 @@ const iso = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1)
 
 /** A date shown day first ("24 Nov 2026") whatever the browser language. Type it (24/11/2026,
  *  24 Nov 2026) or pick it from the calendar; the value stays ISO. */
-export function DayFirstDateField({ id, value, onChange, min, max, disabled, invalid, describedBy, fromYear = 2024, toYear = 2035, className, inputClassName, variant = "default", placeholder = "e.g. 24 Nov 2026" }: DayFirstDateFieldProps) {
+export function DayFirstDateField({ id, value, onChange, min, max, disabled, invalid, describedBy, fromYear = 2024, toYear = 2035, className, inputClassName, variant = "default", placeholder }: DayFirstDateFieldProps) {
   const [text, setText] = useState(formatDay(value));
   const [unreadable, setUnreadable] = useState(false);
   const [open, setOpen] = useState(false);
@@ -69,7 +69,7 @@ export function DayFirstDateField({ id, value, onChange, min, max, disabled, inv
               disabled={disabled}
               inputMode="text"
               autoComplete="off"
-              placeholder={placeholder}
+              placeholder={placeholder ?? (variant === "search" ? "24 Nov 2026" : "e.g. 24 Nov 2026")}
               aria-invalid={invalid || unreadable || undefined}
               aria-describedby={[describedBy, unreadable ? errorId : undefined].filter(Boolean).join(" ") || undefined}
               onChange={event => {
@@ -90,7 +90,7 @@ export function DayFirstDateField({ id, value, onChange, min, max, disabled, inv
               }}
               className={cn("flex w-full min-w-0 py-1 text-body placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-status-critical",
                 search ? "rounded-xl border border-muted-foreground/80 bg-muted/30 pl-11 pr-3" : "rounded-sm border border-input bg-background pl-3 pr-10",
-                inputClassName ?? (search ? "h-12" : "h-control"))}
+                inputClassName ?? (search ? "h-14" : "h-control"))}
             />
             <PopoverTrigger asChild>
               <button type="button" disabled={disabled} aria-label="Choose from calendar"

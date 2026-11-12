@@ -22,3 +22,51 @@
   --table-header-height: 28px;
   --table-row-height: 30px;
 }
+
+/* ---------- Search forms (Flights, Group Ticketing) ----------
+ * Like the public site's search form: every field and the search button on ONE line when the
+ * form is wide enough; otherwise From / swap / To on their own row and the rest below (two per
+ * row from 560px, stacked below). Measured on the form's own width (container query), so it also
+ * follows the sidebar being open or collapsed. Dates, provider and the button have compact fixed
+ * widths and From / To take the rest (Zohaib, 12 November 2026). One line only from the width at
+ * which From and To are about 260px each: a chosen airport's second line ("Allama Iqbal
+ * International Airport, Pakistan") then still fits in two lines instead of being cut.
+ *   Flights, no provider: one line from 1080px of form (1440px screen, or 1280px with the sidebar
+ *   collapsed). With the provider filter: from 1260px. Group Ticketing (From, swap, To, date,
+ *   button, as on the public site): from 930px (1280px screen with the sidebar open).
+ */
+.admin-search-form {
+  container: admin-search / inline-size;
+}
+.admin-search-fields {
+  display: grid;
+  align-items: end;
+  gap: var(--space-3);
+  grid-template-columns: minmax(0, 1fr);
+}
+.admin-search-fields > .admin-search-route {
+  grid-column: 1 / -1;
+}
+@container admin-search (min-width: 560px) {
+  .admin-search-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container admin-search (min-width: 930px) {
+  .admin-search-fields[data-fields="group"] {
+    grid-template-columns: minmax(0, 1fr) 9.5rem auto;
+  }
+  .admin-search-fields[data-fields="group"] > .admin-search-route { grid-column: auto; }
+}
+@container admin-search (min-width: 1080px) {
+  .admin-search-fields[data-fields="flights"] {
+    grid-template-columns: minmax(0, 1fr) repeat(2, 9.5rem) auto;
+  }
+  .admin-search-fields[data-fields="flights"] > .admin-search-route { grid-column: auto; }
+}
+@container admin-search (min-width: 1260px) {
+  .admin-search-fields[data-fields="flights-provider"] {
+    grid-template-columns: minmax(0, 1fr) repeat(2, 9.5rem) 10rem auto;
+  }
+  .admin-search-fields[data-fields="flights-provider"] > .admin-search-route { grid-column: auto; }
+}
