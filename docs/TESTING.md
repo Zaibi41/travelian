@@ -111,6 +111,19 @@ and 390px: heading shown, no page error, no visible text under 12px, no sideways
 left out (it crashes on an empty legacy settings answer; docs/roadmap.md). The guard test covers
 these pages too; palette colours they still use are listed there by file and class.
 
+Payments and issuing (booking detail > Payments, Tickets): `src/lib/admin-bookings/payments.test.ts`
+(rupees to paisa exactly, refusing bad amounts; 24-hour time; local date and time to one instant),
+`src/components/admin/bookings/PaymentsAndIssuing.test.tsx` (totals from the gateway; the payment
+sent in paisa with method, account, reference and time; checks before sending and the gateway's
+refusal shown; no form without the permission or when paid in full; payments listed; the checklist,
+blockers and ticketing off; confirm then issue once with ticket numbers; Request issuance without
+the issue permission; supplier amount, balance and margin only when sent; hold expired offers Search
+again; unknown issuance: Check PNR again, Mark as issued with every ticket number and a reason, Mark
+as not issued; Tickets tab). `e2e/admin-booking-payments.spec.ts`: record the payment, issue once,
+ticket numbers on the result and the Tickets tab; at 1280, 1440 and 390px readable text, no sideways
+scroll, the confirm dialog in view and closed by Escape. To issue for real, the gateway's ticketing
+must be on and the user needs the issue tickets permission (gateway `docs/TESTING.md`).
+
 Gateway calls in specs: the dev server may send gateway calls through its `/__gateway` proxy
 (`vite.config.ts`) instead of straight to port 8000. `e2e/support/gateway.ts` (`gatewayView`) makes
 both look the same, so the specs' made-up gateway answers are used either way and nothing reaches a

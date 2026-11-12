@@ -108,9 +108,10 @@ describe("Booking detail", () => {
     expect(table).toHaveTextContent("Not available yet. The gateway doesn't record passengers for bookings yet.");
   });
 
-  it("tickets shell leaves out the supplier response column", () => {
+  it("tickets: no supplier response column; before issuing it says no tickets yet", () => {
     renderAt("/admin/bookings/TRV-1/tickets");
     expect(screen.queryByRole("columnheader", { name: /Supplier response/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("No tickets yet");
   });
 
   it("labels sample bookings and reports missing ones", () => {

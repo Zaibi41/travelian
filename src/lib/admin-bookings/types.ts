@@ -23,3 +23,11 @@ export type IssuanceStatus = NonNullable<ListParams["issuance_status"]>;
 export type BookingPeriod = NonNullable<ListParams["period"]>;
 export type BookingProduct = NonNullable<ListParams["product"]>;
 export type BookingCard = NonNullable<ListParams["card"]>;
+
+export type BookingPayment = Schemas["BookingPayment"];
+export type PaymentMethod = BookingPayment["method"];
+export type RecordPaymentBody = Schemas["RecordPaymentRequest"];
+export type IssuanceChecklist = Schemas["IssuanceChecklist"];
+export type IssuanceResult = Schemas["IssuanceResult"];
+export type ResolveIssuanceBody = Schemas["IssuanceResolveRequest"];
+export type TicketNumber = Schemas["TicketNumber"];

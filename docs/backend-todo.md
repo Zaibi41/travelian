@@ -74,7 +74,8 @@ Built on `GET /v1/admin/bookings` and `GET /v1/admin/bookings/{booking_id}` (bac
 | Search by ticket number, passenger or phone | Tickets and passengers tables; server-side search |
 | Flights: Airline, Route, Travel date, Trip type columns/filters | Itinerary segments on bookings |
 | Flights: TTL filter | Defined TTL buckets (spec doesn't list the options yet) |
-| Flights: Request issuance, Hold payment actions | Issuance request and payment hold endpoints |
+| Payments: "Received into" as a list of Travelian accounts (mockup shows a dropdown) | `received_into` is free text (2-120 characters). A list of receiving accounts (bank, JazzCash, 1Link) to choose from |
+| Tickets tab: Issue time, Issued by | Passengers carry `ticket_number` only. Issue time and who issued per ticket (the Audit tab has the issuing event) |
 
 ### Other sub-menus (shown as "not available yet")
 

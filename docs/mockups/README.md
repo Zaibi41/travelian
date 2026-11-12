@@ -83,3 +83,12 @@ Status as of 2026-11-10. All 28 listed mockups are in this folder.
   are compact and From / To take the remaining width. Group Ticketing's Airline and Adults moved to
   the top row next to Select available sector. All search fields, the Bookings filters and the
   Customers search share the same 56px rounded field look.
+- **Booking detail > Payments: record payment and issue the ticket (built 12 November 2026, mockup
+  `booking-payment-issue`).** Differences: "Received into" is a text field (the gateway takes the
+  account as text; no list of accounts yet), and the form adds "Received on" and "Time (24-hour)"
+  because the gateway needs when the money arrived. "Total matches the held fare" says "Checked when
+  issuing": the gateway checks the supplier total at the moment of issuing, not before. Recorded by
+  shows the role (the gateway sends no name). A viewer sees either "Issue ticket" (issue tickets
+  permission) or "Request issuance", not both. The "Checking" card shows when another issue is in
+  progress; "Open Payments" on the hold-expired card is left out (it is the same tab). Tickets tab:
+  Passenger, Ticket number, Status (issue time is not recorded yet).
