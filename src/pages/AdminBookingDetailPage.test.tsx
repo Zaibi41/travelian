@@ -130,7 +130,7 @@ describe("Booking detail", () => {
     unmount();
     detail.current = ok(ADMIN_VIEW);
     renderAt("/admin/bookings/TRV-1/itinerary");
-    expect(screen.getByRole("table")).toHaveTextContent("Not recorded for this booking. Flights are saved with holds placed from 12 November 2026.");
+    expect(screen.getByRole("table")).toHaveTextContent("Not recorded for this booking. Flights are saved with holds placed from 14 November 2026.");
   });
 
   it("tickets: no supplier response column; before issuing it says no tickets yet", () => {

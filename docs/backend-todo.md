@@ -92,7 +92,7 @@ Built on `GET /v1/admin/bookings` and `GET /v1/admin/bookings/{booking_id}` (bac
 | Hidden or not available | Needs |
 | --- | --- |
 | Overview: Owner (and Assign), Supplier status | Assignment; supplier status |
-| Itinerary tab: cabin, and the flights of bookings held before 12 Nov 2026 | Done for new holds: `bookings.itinerary` (migration 0018) holds each flight as held (no cabin; the fare name instead). Older holds have none; a documented supplier PNR segment lookup would be needed to fill them |
+| Itinerary tab: cabin, and the flights of bookings held before 14 Nov 2026 | Done for new holds: `bookings.itinerary` (migration 0018) holds each flight as held (no cabin; the fare name instead). Older holds have none; a documented supplier PNR segment lookup would be needed to fill them |
 | Passengers tab | Passengers with masked document and date of birth, and the logged reveal (section 3) |
 | Fare: searched price, booked price, difference, base fare, taxes, fees, service charge, discount | Fare breakdown stored at booking time (spec 19.7) |
 | Payments tab | Customer/agency payments: method, amount, received at, verified by, receipt |

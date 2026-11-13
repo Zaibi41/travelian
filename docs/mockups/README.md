@@ -98,7 +98,7 @@ Status as of 2026-11-10. All 28 listed mockups are in this folder.
   and Use fills the card. The browser never receives or sends the saved identity values: the hold
   carries only the saved ids and the gateway fills in name, date of birth and document. A person with
   several documents needs one chosen. "Type details instead" returns to the typed form.
-- **Booking detail > Itinerary (12 November 2026).** The flights as the gateway saved them when the
+- **Booking detail > Itinerary (14 November 2026).** The flights as the gateway saved them when the
   booking was held: Segment (Outbound / Return, stops and duration), From and To (code and city),
   Departs and Arrives (day first, local time), Airline / flight, Fare, Baggage. The mockup's "Cabin"
   column is "Fare": the gateway records the fare name, not the cabin. Bookings held before this

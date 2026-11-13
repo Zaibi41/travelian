@@ -1448,7 +1448,7 @@ export interface components {
             fare: components["schemas"]["BookingFare"];
             /**
              * Itinerary
-             * @description The Itinerary tab: the flights as held, in travel order. Omitted when not recorded (bookings held before 12 Nov 2026).
+             * @description The Itinerary tab: the flights as held, in travel order. Omitted when not recorded (bookings held before 14 Nov 2026).
              */
             itinerary?: components["schemas"]["BookingSegment"][] | null;
             /**

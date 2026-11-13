@@ -86,7 +86,7 @@ export default function AdminBookingDetailPage() {
         : tab === "passengers" && booking.passengers?.length ? <Passengers booking={booking} />
         : tab === "audit" && booking.audit?.length ? <Audit entries={booking.audit} />
         : shell && <NotAvailableTable columns={shell.columns} message={tab === "itinerary"
-          ? "Not recorded for this booking. Flights are saved with holds placed from 12 November 2026."
+          ? "Not recorded for this booking. Flights are saved with holds placed from 14 November 2026."
           : `Not available yet. The gateway doesn't record ${shell.what} for bookings yet.`} />}
     </div>
   );
