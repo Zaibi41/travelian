@@ -139,6 +139,12 @@ close button, two months side by side, stacked on phones), in view at 1440, 1280
 day fills the field, Escape and Close close it; past days are disabled; tabbing into the field does
 not open it, so the date can still be typed day first.
 
+Itinerary (booking detail > Itinerary): `AdminBookingDetailPage.test.tsx` shows the gateway's
+`itinerary` (columns as the mockup with Fare for Cabin, day-first local times, stops and duration,
+"Baggage info not available" when missing) and, without one, "Not recorded for this booking". The
+gateway saves the itinerary with each new hold (migration `0018_booking_itinerary`: run
+`alembic upgrade head` on the gateway after pulling).
+
 Gateway calls in specs: the dev server may send gateway calls through its `/__gateway` proxy
 (`vite.config.ts`) instead of straight to port 8000. `e2e/support/gateway.ts` (`gatewayView`) makes
 both look the same, so the specs' made-up gateway answers are used either way and nothing reaches a

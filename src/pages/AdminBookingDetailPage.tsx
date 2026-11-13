@@ -9,6 +9,7 @@ import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStat
 import { TabLinks } from "@/components/admin/ui/TabLinks";
 import { NotAvailableTable } from "@/components/admin/bookings/NotAvailable";
 import { PaymentsAndIssuing, TicketsTab } from "@/components/admin/bookings/PaymentsAndIssuing";
+import { ItineraryTab } from "@/components/admin/bookings/ItineraryTab";
 import { SampleDataBadge, StatusChips } from "@/components/admin/bookings/BookingChips";
 import { GatewayError } from "@/lib/gateway/client";
 import {
@@ -22,7 +23,7 @@ import type { BookingAuditEntry, BookingDetail, BookingPassenger, RevealResponse
 // Tabs the gateway doesn't record yet: the mockup's columns with a not-available row
 // (docs/backend-todo.md, Booking detail). No "Edit booking" (decided 2026-11-09).
 const SHELL_TABS: Partial<Record<DetailTabSlug, { columns: string[]; what: string }>> = {
-  itinerary: { columns: ["Segment", "From", "To", "Departs", "Arrives", "Airline / flight", "Cabin", "Baggage"], what: "itinerary segments" },
+  itinerary: { columns: ["Segment", "From", "To", "Departs", "Arrives", "Airline / flight", "Fare", "Baggage"], what: "itinerary segments" },
   passengers: { columns: ["Passenger name", "Type", "Document (masked)", "Date of birth (masked)", "Nationality", "Ticket number"], what: "passengers" },
   servicing: { columns: ["Case", "Type (refund, reissue, void, cancellation)", "Opened", "Status", "Amount (Rs)", "Owner"], what: "refund, reissue, void or cancellation cases" },
   audit: { columns: ["When", "Who", "Action", "Details"], what: "an audit trail" },
@@ -80,9 +81,13 @@ export default function AdminBookingDetailPage() {
       {tab === "supplier-payment" && booking.supplier_payment && <SupplierPaymentTab booking={booking} />}
       {tab === "payments" && <PaymentsAndIssuing booking={booking} />}
       {tab === "tickets" && <TicketsTab booking={booking} />}
-      {tab === "passengers" && booking.passengers?.length ? <Passengers booking={booking} />
+      {tab === "itinerary" && booking.itinerary?.length ? <ItineraryTab segments={booking.itinerary} /> : null}
+      {tab === "itinerary" && booking.itinerary?.length ? null
+        : tab === "passengers" && booking.passengers?.length ? <Passengers booking={booking} />
         : tab === "audit" && booking.audit?.length ? <Audit entries={booking.audit} />
-        : shell && <NotAvailableTable columns={shell.columns} message={`Not available yet. The gateway doesn't record ${shell.what} for bookings yet.`} />}
+        : shell && <NotAvailableTable columns={shell.columns} message={tab === "itinerary"
+          ? "Not recorded for this booking. Flights are saved with holds placed from 12 November 2026."
+          : `Not available yet. The gateway doesn't record ${shell.what} for bookings yet.`} />}
     </div>
   );
 }

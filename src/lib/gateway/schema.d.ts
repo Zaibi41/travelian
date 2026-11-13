@@ -1447,6 +1447,11 @@ export interface components {
             deadline?: string | null;
             fare: components["schemas"]["BookingFare"];
             /**
+             * Itinerary
+             * @description The Itinerary tab: the flights as held, in travel order. Omitted when not recorded (bookings held before 12 Nov 2026).
+             */
+            itinerary?: components["schemas"]["BookingSegment"][] | null;
+            /**
              * Passengers
              * @description The Passengers tab. Omitted when no travelers were saved.
              */
@@ -1760,6 +1765,49 @@ export interface components {
             granularity: "day" | "week" | "month";
             /** Timezone */
             timezone: string;
+        };
+        /**
+         * BookingSegment
+         * @description One flight of the Itinerary tab, as the supplier described it when the booking was held.
+         */
+        BookingSegment: {
+            /** Airline Code */
+            airline_code?: string | null;
+            /** Airline Name */
+            airline_name?: string | null;
+            /**
+             * Arrival Local
+             * @description Local time at the destination.
+             */
+            arrival_local?: string | null;
+            /** Baggage */
+            baggage?: string | null;
+            /**
+             * Departure Local
+             * @description Local time at the origin, e.g. 2026-11-19T00:25.
+             */
+            departure_local?: string | null;
+            /** Destination */
+            destination: string;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "outbound" | "return";
+            /** Duration Minutes */
+            duration_minutes?: number | null;
+            /** Fare Name */
+            fare_name?: string | null;
+            /** Flight Number */
+            flight_number?: string | null;
+            /** Meal */
+            meal?: string | null;
+            /** Origin */
+            origin: string;
+            /** Stop Cities */
+            stop_cities?: string[];
+            /** Stops */
+            stops?: number | null;
         };
         /** BookingStatuses */
         BookingStatuses: {

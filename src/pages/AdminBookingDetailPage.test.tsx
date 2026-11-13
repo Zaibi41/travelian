@@ -108,6 +108,31 @@ describe("Booking detail", () => {
     expect(table).toHaveTextContent("Not available yet. The gateway doesn't record passengers for bookings yet.");
   });
 
+  it("itinerary: the flights as held, day-first local times, Fare instead of Cabin; older bookings say they weren't recorded", () => {
+    detail.current = ok({ ...ADMIN_VIEW, sections_not_available: ["passengers", "payments", "tickets", "servicing", "audit"], itinerary: [
+      { direction: "outbound", origin: "LHE", destination: "KHI", airline_code: "Z8", airline_name: "South Air International Regional Airways Limited", flight_number: "Z8266",
+        departure_local: "2026-11-19T00:25", arrival_local: "2026-11-19T02:35", duration_minutes: 130, stops: 0, stop_cities: [], fare_name: "EB", baggage: "20 kg", meal: null },
+      { direction: "return", origin: "KHI", destination: "LHE", airline_code: "Z8", airline_name: null, flight_number: "Z8267",
+        departure_local: "2026-11-25T18:05", arrival_local: "2026-11-25T21:10", duration_minutes: 185, stops: 1, stop_cities: ["ISB"], fare_name: "EB", baggage: null, meal: null },
+    ] });
+    const { unmount } = renderAt("/admin/bookings/TRV-1/itinerary");
+    const table = screen.getByRole("region", { name: "Itinerary" });
+    expect(within(table).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Segment", "From", "To", "Departs", "Arrives", "Airline / flight", "Fare", "Baggage"]);
+    const [outbound, back] = within(table).getAllByRole("row").slice(1);
+    expect(outbound).toHaveTextContent("OutboundNon-stop · 2h 10m");
+    expect(outbound).toHaveTextContent("19 Nov 2026, 00:25");
+    expect(outbound).toHaveTextContent("19 Nov 2026, 02:35");
+    expect(outbound).toHaveTextContent("South Air International Regional Airways Limited · Z8266");
+    expect(outbound).toHaveTextContent("20 kg");
+    expect(back).toHaveTextContent("Return1 stop via ISB · 3h 05m");
+    expect(back).toHaveTextContent("Z8 · Z8267");
+    expect(back).toHaveTextContent("Baggage info not available");
+    unmount();
+    detail.current = ok(ADMIN_VIEW);
+    renderAt("/admin/bookings/TRV-1/itinerary");
+    expect(screen.getByRole("table")).toHaveTextContent("Not recorded for this booking. Flights are saved with holds placed from 12 November 2026.");
+  });
+
   it("tickets: no supplier response column; before issuing it says no tickets yet", () => {
     renderAt("/admin/bookings/TRV-1/tickets");
     expect(screen.queryByRole("columnheader", { name: /Supplier response/ })).not.toBeInTheDocument();

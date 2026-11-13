@@ -70,9 +70,9 @@ Built on `GET /v1/admin/bookings` and `GET /v1/admin/bookings/{booking_id}` (bac
 | Branch filter | Branches table; `bookings.branch_id` |
 | Created by filter | `bookings.created_by_user_id` returned with user names (column exists, not populated or returned) |
 | Issued by filter, Ticket number column, Issued today card | Tickets table: ticket number, issue time, issued by |
-| Travel date (Date type) | Travel date on bookings (itinerary) |
+| Travel date (Date type) | Travel date on bookings (itinerary) (now stored per booking in `bookings.itinerary` for new holds; list filters not built) |
 | Search by ticket number, passenger or phone | Tickets and passengers tables; server-side search |
-| Flights: Airline, Route, Travel date, Trip type columns/filters | Itinerary segments on bookings |
+| Flights: Airline, Route, Travel date, Trip type columns/filters | Itinerary segments on bookings (now stored per booking in `bookings.itinerary` for new holds; list filters not built) |
 | Flights: TTL filter | Defined TTL buckets (spec doesn't list the options yet) |
 | Payments: "Received into" as a list of Travelian accounts (mockup shows a dropdown) | `received_into` is free text (2-120 characters). A list of receiving accounts (bank, JazzCash, 1Link) to choose from |
 | Tickets tab: Issue time, Issued by | Passengers carry `ticket_number` only. Issue time and who issued per ticket (the Audit tab has the issuing event) |
@@ -92,7 +92,7 @@ Built on `GET /v1/admin/bookings` and `GET /v1/admin/bookings/{booking_id}` (bac
 | Hidden or not available | Needs |
 | --- | --- |
 | Overview: Owner (and Assign), Supplier status | Assignment; supplier status |
-| Itinerary tab | Segments: from, to, departs, arrives, airline/flight, cabin, baggage |
+| Itinerary tab: cabin, and the flights of bookings held before 12 Nov 2026 | Done for new holds: `bookings.itinerary` (migration 0018) holds each flight as held (no cabin; the fare name instead). Older holds have none; a documented supplier PNR segment lookup would be needed to fill them |
 | Passengers tab | Passengers with masked document and date of birth, and the logged reveal (section 3) |
 | Fare: searched price, booked price, difference, base fare, taxes, fees, service charge, discount | Fare breakdown stored at booking time (spec 19.7) |
 | Payments tab | Customer/agency payments: method, amount, received at, verified by, receipt |
