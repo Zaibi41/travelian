@@ -105,7 +105,7 @@ test.describe("month-first browser language", () => {
   test.use({ locale: "en-US" });
   test("day-first date; the request keeps the ISO date", async ({ page }) => {
   const searches = await open(page, 1440, { query: "&from=LHE&to=JED" });
-  const date = page.getByLabel("Departure Date");
+  const date = page.getByLabel("Departure Date", { exact: true });
   await date.fill("24/11/2026");
   await date.blur();
   await expect(date).toHaveValue("24 Nov 2026");

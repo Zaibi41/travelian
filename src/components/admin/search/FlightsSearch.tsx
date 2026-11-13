@@ -16,7 +16,7 @@ import { LabeledSelect } from "@/components/admin/ui/LabeledSelect";
 import { AirportCombobox } from "@/components/admin/ui/AirportCombobox";
 import { RouteRow, SEARCH_FIELD, SearchSubmitButton } from "@/components/admin/ui/search-form";
 import { DayFirstDateField } from "@/components/admin/ui/DayFirstDateField";
-import { formatDay } from "@/lib/admin-search/date-display";
+import { formatDay, todayIso } from "@/lib/admin-search/date-display";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
@@ -200,7 +200,7 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
                 onSwap={() => setDraft({ ...draft, from: draft.to, to: draft.from })}
               />
             </div>
-            <DateInput id="flight-date" label="Departure date" value={draft.date} onChange={date => setDraft({ ...draft, date })} />
+            <DateInput id="flight-date" label="Departure date" value={draft.date} min={todayIso()} onChange={date => setDraft({ ...draft, date })} />
             <DateInput id="flight-return" label="Return date" value={draft.trip === "roundtrip" ? draft.returnDate : undefined} min={draft.date}
               disabledReason={draft.trip === "roundtrip" ? undefined : REASONS.returnDate} onChange={returnDate => setDraft({ ...draft, returnDate })} />
             {providerNames.length > 0 && (
@@ -244,7 +244,7 @@ function DateInput({ id, label, value, min, disabledReason, onChange }: {
   return (
     <div className="relative flex min-w-0 flex-col gap-1" title={disabledReason}>
       <label htmlFor={id} className="text-label font-medium text-muted-foreground">{label}</label>
-      <DayFirstDateField id={id} value={value} min={min} disabled={Boolean(disabledReason)} variant="search"
+      <DayFirstDateField id={id} value={value} min={min} disabled={Boolean(disabledReason)} variant="search" calendarTitle={`Select ${label.toLowerCase()}`}
         describedBy={disabledReason ? `${id}-reason` : undefined} onChange={onChange} />
       {disabledReason && <span id={`${id}-reason`} className="sr-only">{disabledReason}</span>}
     </div>

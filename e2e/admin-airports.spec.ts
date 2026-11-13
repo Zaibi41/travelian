@@ -120,11 +120,11 @@ test.describe("dates in a month-first browser language", () => {
   test.use({ locale: "en-US" });
   test("departure and return show day first; the request keeps ISO dates", async ({ page }) => {
     const searches = await open(page, 1440, "&from=LHE&to=KHI&date=2026-11-24&trip=roundtrip&return=2026-12-03");
-    await expect(page.getByLabel("Departure date")).toHaveValue("24 Nov 2026");
-    await expect(page.getByLabel("Return date")).toHaveValue("3 Dec 2026");
+    await expect(page.getByLabel("Departure date", { exact: true })).toHaveValue("24 Nov 2026");
+    await expect(page.getByLabel("Return date", { exact: true })).toHaveValue("3 Dec 2026");
     await page.getByRole("button", { name: "Choose from calendar" }).first().click();
     await page.getByRole("gridcell", { name: "26" }).first().click();
-    await expect(page.getByLabel("Departure date")).toHaveValue("26 Nov 2026");
+    await expect(page.getByLabel("Departure date", { exact: true })).toHaveValue("26 Nov 2026");
     await page.getByRole("button", { name: "Search flights" }).click();
     await expect.poll(() => searches.at(-1)?.postDataJSON()?.departure_date).toBe("2026-11-26");
     expect(searches.at(-1)?.postDataJSON()?.return_date).toBe("2026-12-03");
@@ -145,7 +145,7 @@ for (const width of [1280, 1440, 390]) {
       expect(await notClipped(page, code)).toBe(true);
     }
     for (const control of [page.getByRole("button", { name: "Clear from airport" }), page.getByRole("button", { name: "Swap origin and destination" }),
-      page.getByLabel("Departure date"), page.getByRole("button", { name: "Search flights" })]) {
+      page.getByLabel("Departure date", { exact: true }), page.getByRole("button", { name: "Search flights" })]) {
       expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(40);
     }
     const from = (await page.getByRole("button", { name: /^From LHE/ }).boundingBox())!;

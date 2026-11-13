@@ -1,3 +1,4 @@
+import { todayIso } from "@/lib/admin-search/date-display";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -164,7 +165,7 @@ export function GroupTicketingSearch() {
             </div>
             <div className="flex min-w-0 flex-col gap-1">
               <FieldLabel htmlFor="group-date">Departure Date</FieldLabel>
-              <DayFirstDateField id="group-date" variant="search" value={draft.date} onChange={date => setDraft({ ...draft, date })} />
+              <DayFirstDateField id="group-date" variant="search" calendarTitle="Select departure date" min={todayIso()} value={draft.date} onChange={date => setDraft({ ...draft, date })} />
             </div>
             <SearchSubmitButton label="Search group fares" disabled={!canSearch} />
           </div>

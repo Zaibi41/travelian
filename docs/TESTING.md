@@ -133,6 +133,12 @@ gets the fields back from the gateway's errors and the typed values are sent). `
 does the same in Chrome at 1280 and 390px: the search dialog in view, readable, no sideways scroll,
 and the request carrying only the ids.
 
+Search date fields (`e2e/admin-search-calendar.spec.ts`): clicking Departure date, Return date or
+Group Ticketing's Departure Date opens the calendar as a centred popup like the public site (title,
+close button, two months side by side, stacked on phones), in view at 1440, 1280 and 390px; picking a
+day fills the field, Escape and Close close it; past days are disabled; tabbing into the field does
+not open it, so the date can still be typed day first.
+
 Gateway calls in specs: the dev server may send gateway calls through its `/__gateway` proxy
 (`vite.config.ts`) instead of straight to port 8000. `e2e/support/gateway.ts` (`gatewayView`) makes
 both look the same, so the specs' made-up gateway answers are used either way and nothing reaches a

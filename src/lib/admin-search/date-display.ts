@@ -35,3 +35,8 @@ export function parseDayFirst(text: string): string | null {
   }
   return null;
 }
+
+/** Today's local date, ISO (yyyy-MM-dd): the earliest departure a search date field offers. */
+export function todayIso(now: Date = new Date()) {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
