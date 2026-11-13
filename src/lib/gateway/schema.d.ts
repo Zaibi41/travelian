@@ -610,6 +610,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/payment-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List All Payment Accounts
+         * @description Every receiving account, active and inactive, by method then name.
+         */
+        get: operations["list_all_payment_accounts_v1_admin_finance_payment_accounts_get"];
+        put?: never;
+        /**
+         * Add Payment Account
+         * @description Add an active receiving account. Extra spaces in the name are removed.
+         */
+        post: operations["add_payment_account_v1_admin_finance_payment_accounts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/payment-accounts/{account_id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Deactivate Payment Account
+         * @description Stop offering the account for new payments. Payments already recorded keep it.
+         */
+        post: operations["deactivate_payment_account_v1_admin_finance_payment_accounts__account_id__deactivate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/payment-accounts": {
         parameters: {
             query?: never;
@@ -1254,6 +1298,19 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AddReceivingAccountRequest */
+        AddReceivingAccountRequest: {
+            /**
+             * Label
+             * @description The account's name staff see: 2 to 120 characters after extra spaces are removed. Not the full account number.
+             */
+            label: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "bank_transfer" | "jazzcash" | "1link";
+        };
         /** AdminOverview */
         AdminOverview: {
             /** Active Agencies */
@@ -2721,6 +2778,31 @@ export interface components {
              * @enum {string}
              */
             status: "responded" | "failed" | "not_configured";
+        };
+        /**
+         * ReceivingAccount
+         * @description A receiving account as Finance > Accounts & Ledgers manages it (active and inactive).
+         */
+        ReceivingAccount: {
+            /** Active */
+            active: boolean;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "bank_transfer" | "jazzcash" | "1link";
+        };
+        /** ReceivingAccountList */
+        ReceivingAccountList: {
+            /**
+             * Accounts
+             * @description Every receiving account, active and inactive, by method then name.
+             */
+            accounts: components["schemas"]["ReceivingAccount"][];
         };
         /** RecordPaymentRequest */
         RecordPaymentRequest: {
@@ -4990,6 +5072,144 @@ export interface operations {
                 };
             };
             /** @description Dashboard booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_all_payment_accounts_v1_admin_finance_payment_accounts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceivingAccountList"];
+                };
+            };
+            /** @description Caller is not Super Admin (or Finance, once that role exists). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    add_payment_account_v1_admin_finance_payment_accounts_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddReceivingAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceivingAccount"];
+                };
+            };
+            /** @description Caller is not Super Admin (or Finance, once that role exists). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description An active account with this name and method already exists. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The account name must be 2 to 120 characters. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    deactivate_payment_account_v1_admin_finance_payment_accounts__account_id__deactivate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceivingAccount"];
+                };
+            };
+            /** @description Caller is not Super Admin (or Finance, once that role exists). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No active account with that id. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
             503: {
                 headers: {
                     [name: string]: unknown;

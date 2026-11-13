@@ -37,6 +37,10 @@ Status as of 2026-11-10. All 28 listed mockups are in this folder.
 
 28 mockups listed, all present. An expected total of 29 was noted when the first 24 were added, but the remaining mockup is not named anywhere in the repo.
 
+Finance > Accounts & Ledgers ("Bank and cash book", receiving accounts) was built from the written
+screen brief Zohaib approved on 14 November 2026 (layout, texts, colours and states spelled out);
+no image is in this folder yet. Add it as `mockup-finance-receiving-accounts.png` when available.
+
 ## Approved deviations
 
 - **Customers & Travelers: no reveal (approved by Zohaib, 10 November 2026).** The Customers and

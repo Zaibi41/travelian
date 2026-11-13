@@ -81,6 +81,8 @@ const agencyRoles: UserRole[] = ["agency_owner", "agency_staff"];
 const agencyOwnerRoles: UserRole[] = ["agency_owner"];
 const agencyStaffRoles: UserRole[] = ["agency_staff"];
 const customerRoles: UserRole[] = ["customer"];
+/** Finance > Accounts & Ledgers: the gateway's FINANCE_ACCOUNT_ROLES (Super Admin; Finance once that role exists). */
+const financeAccountRoles: UserRole[] = ["super_admin"];
 
 function item(title: string, url: string, icon: AdminNavItem["icon"], roles: UserRole[]): AdminNavItem {
   return { title, url, icon, roles };
@@ -150,6 +152,7 @@ export const adminNavigation: AdminNavSection[] = [
       item("Payments", "/admin/payments", CreditCard, internalAdminRoles),
       item("Transactions Ledger", "/admin/wallet", Receipt, internalAdminRoles),
       item("Refunds", "/admin/flight-bookings?tab=refund", RefreshCw, internalAdminRoles),
+      item("Accounts & Ledgers", "/admin/finance/accounts-ledgers", BookOpen, financeAccountRoles),
     ],
   },
   {
@@ -308,6 +311,7 @@ const internalSidebarMenus: SidebarMenuEntry[] = [
       item("Wallets", "/admin/wallet", Wallet, internalAdminRoles),
       item("Payments", "/admin/payments", CreditCard, [...internalAdminRoles, "staff"]),
       item("Reconciliation", "/admin/roadmap/reconciliation", Receipt, platformOwnerRoles),
+      item("Accounts & Ledgers", "/admin/finance/accounts-ledgers", BookOpen, financeAccountRoles),
     ],
   },
   { number: "06", title: "Flight Operations", icon: CalendarCheck, items: [item("Flight Operations", "/admin/flight-bookings", CalendarCheck, allSearchRoles)] },

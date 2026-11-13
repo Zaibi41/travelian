@@ -152,6 +152,15 @@ gateway with `.venv/bin/python -m app.cli.payment_accounts add --method bank_tra
 accounts being offered, the choice clearing when the method changes, a method with no account
 (disabled, says why) and the payment sending `account_id`.
 
+Finance > Accounts & Ledgers (`/admin/finance/accounts-ledgers`, "Bank and cash book" tab) lists,
+adds and deactivates the receiving accounts (gateway `/v1/admin/finance/payment-accounts`, Super
+Admin only; other roles get 403 and see "Not available for your role"). The method filter is in the
+URL (`?method=jazzcash`). `AccountsLedgersPage.test.tsx` covers the tabs, counts (inactive
+included), the long-name ellipsis, the empty state per method, Add (method preselected, the
+gateway's error under the name) and Deactivate; `e2e/admin-accounts-ledgers.spec.ts` checks 1440,
+1024, 768 and 390px (no sideways scroll, one-line names, dialogs inside the viewport, cards below
+640px) and that Finance ends with Accounts & Ledgers.
+
 Customers & Travelers opens with the 50 most recent saved people (gateway
 `GET /v1/admin/customers` without `q`); searching works as before.
 

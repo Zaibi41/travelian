@@ -74,7 +74,9 @@ Built on `GET /v1/admin/bookings` and `GET /v1/admin/bookings/{booking_id}` (bac
 | Search by ticket number, passenger or phone | Tickets and passengers tables; server-side search |
 | Flights: Airline, Route, Travel date, Trip type columns/filters | Itinerary segments on bookings (now stored per booking in `bookings.itinerary` for new holds; list filters not built) |
 | Flights: TTL filter | Defined TTL buckets (spec doesn't list the options yet) |
-| Receiving accounts: an admin screen to add and deactivate them | Accounts exist (gateway `payment_accounts`, migration 0019) and are managed with `python -m app.cli.payment_accounts`; a Finance settings screen needs a mockup and write endpoints |
+| Accounts & Ledgers for a Finance role | Finance > Accounts & Ledgers (receiving accounts) is Super Admin only because there is no `finance` role yet. Add the role, then add it to the gateway's `FINANCE_ACCOUNT_ROLES` and the portal's `financeAccountRoles` |
+| Audit of receiving-account changes | `payment_accounts` keeps who added an account and when one was deactivated, but not who deactivated it; there is no general audit log to write to (spec: Audit Log) |
+| Accounts & Ledgers: Chart of accounts, Provider accounts, General ledger, Manual journals tabs | Ledger tables and endpoints (spec §5); shown disabled with "Not built" |
 | Tickets tab: Issue time, Issued by | Passengers carry `ticket_number` only. Issue time and who issued per ticket (the Audit tab has the issuing event) |
 
 ### Other sub-menus (shown as "not available yet")

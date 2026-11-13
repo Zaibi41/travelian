@@ -34,6 +34,16 @@ describe("internal sidebar: 14 spec menus", () => {
     }
   });
 
+  it("Finance ends with Accounts & Ledgers, for Super Admin only", () => {
+    const finance = (role: UserRole) => getInternalSidebarForRole(role).find((menu) => menu.title === "Finance")?.items.map((item) => item.title) ?? [];
+    expect(finance("super_admin")).toEqual(["Wallets", "Payments", "Reconciliation", "Accounts & Ledgers"]);
+    for (const role of ALL_ROLES) {
+      expect(canAccessAdminPath(role, "/admin/finance/accounts-ledgers"), role).toBe(role === "super_admin");
+      if (role !== "super_admin") expect(finance(role)).not.toContain("Accounts & Ledgers");
+    }
+    expect(adminPageTitle("super_admin", "/admin/finance/accounts-ledgers")).toBe("Accounts & Ledgers");
+  });
+
   it("leaves Notifications and View Public Site out of the sidebar, but reachable", () => {
     const urls = getInternalSidebarForRole("super_admin").flatMap((menu) => menu.items.map((item) => item.url));
     expect(urls).not.toContain("/admin/notifications");
