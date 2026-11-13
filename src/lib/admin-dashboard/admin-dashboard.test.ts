@@ -53,20 +53,23 @@ describe("URL filters", () => {
 });
 
 describe("card links: only to lists whose counts match", () => {
-  it("links to Flight Operations queues when unfiltered or flights only", () => {
+  it("opens Bookings > Flights with the matching card picked", () => {
     expect(needsActionLinks({ period: "all" })).toEqual({
-      pendingIssuance: "/admin/flight-bookings?tab=approval",
-      paymentPending: "/admin/flight-bookings?tab=payment",
-      expiringHolds: ATTENTION_QUEUE_PLACEHOLDER, // window differs from the 24-hour tab
+      pendingIssuance: "/admin/bookings/flights?card=awaiting_issuance",
+      paymentPending: "/admin/bookings/flights?card=payment_pending",
+      expiringHolds: "/admin/bookings/flights?card=expiring_soon",
     });
-    expect(needsActionLinks({ period: "today", product: "flight" }).pendingIssuance).toBe("/admin/flight-bookings?tab=approval");
+    // Needs-action cards ignore the date filter; the list defaults to all dates.
+    expect(needsActionLinks({ period: "today", product: "flight" }).pendingIssuance).toBe("/admin/bookings/flights?card=awaiting_issuance");
+    expect(needsActionLinks({ period: "all", provider: "airsial" }).pendingIssuance).toBe("/admin/bookings/flights?card=awaiting_issuance&provider=airsial");
   });
-  it("falls back to the placeholder when the list can't apply the same filter", () => {
-    expect(needsActionLinks({ period: "all", provider: "airsial" }).paymentPending).toBe(ATTENTION_QUEUE_PLACEHOLDER);
-    expect(needsActionLinks({ period: "all", product: "hotel" }).pendingIssuance).toBe(ATTENTION_QUEUE_PLACEHOLDER);
+  it("falls back to the placeholder for another product", () => {
+    expect(needsActionLinks({ period: "all", product: "hotel" })).toEqual({
+      pendingIssuance: ATTENTION_QUEUE_PLACEHOLDER, paymentPending: ATTENTION_QUEUE_PLACEHOLDER, expiringHolds: ATTENTION_QUEUE_PLACEHOLDER,
+    });
   });
-  it("opens the tab that lists the row's booking", () => {
-    expect(attentionRowHref({ booking_id: "b", reference: "TR7K2P", type: "hold_expiring" })).toBe("/admin/flight-bookings?tab=expiring");
+  it("opens the row's booking", () => {
+    expect(attentionRowHref({ booking_id: "b 1", reference: "TR7K2P", type: "hold_expiring" })).toBe("/admin/bookings/b%201");
   });
 });
 

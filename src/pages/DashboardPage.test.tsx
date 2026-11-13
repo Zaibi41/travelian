@@ -51,16 +51,16 @@ describe("DashboardPage", () => {
 
   it("shows needs-action cards with status text, green Fine at zero, and matching links", () => {
     renderPage();
-    expect(screen.getByRole("link", { name: /Pending issuance: 2, Needs action/ })).toHaveAttribute("href", "/admin/flight-bookings?tab=approval");
+    expect(screen.getByRole("link", { name: /Pending issuance: 2, Needs action/ })).toHaveAttribute("href", "/admin/bookings/flights?card=awaiting_issuance");
     const payment = screen.getByRole("link", { name: /Payment pending: 0, Fine/ });
     expect(within(payment).getByText("Fine")).toBeInTheDocument();
-    expect(payment).toHaveAttribute("href", "/admin/flight-bookings?tab=payment");
-    expect(screen.getByRole("link", { name: /Expiring holds: 1, Needs action\. Within 2 hours/ })).toHaveAttribute("href", "/admin/attention-queue");
+    expect(payment).toHaveAttribute("href", "/admin/bookings/flights?card=payment_pending");
+    expect(screen.getByRole("link", { name: /Expiring holds: 1, Needs action\. Within 2 hours/ })).toHaveAttribute("href", "/admin/bookings/flights?card=expiring_soon");
   });
 
-  it("links cards to the placeholder when a provider filter is set", () => {
+  it("keeps the provider filter on the Pending issuance list", () => {
     renderPage("/admin?provider=airsial");
-    expect(screen.getByRole("link", { name: /Pending issuance/ })).toHaveAttribute("href", "/admin/attention-queue");
+    expect(screen.getByRole("link", { name: /Pending issuance/ })).toHaveAttribute("href", "/admin/bookings/flights?card=awaiting_issuance&provider=airsial");
   });
 
   it("shows Business results as neutral cards with Rs amounts", () => {

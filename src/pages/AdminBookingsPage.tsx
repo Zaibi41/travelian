@@ -96,7 +96,7 @@ function BookingsRegister({ tab }: { tab: BookingsTab }) {
         <DashboardErrorNotice message={errorMessage(bookings.error)} />
       ) : (
         <>
-          {data ? <Cards cards={data.cards} flights={flights} filters={filters} /> : <CardGridSkeleton count={flights ? 2 : 6} className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4" />}
+          {data ? <Cards cards={data.cards} flights={flights} filters={filters} /> : <CardGridSkeleton count={flights ? 4 : 6} className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4" />}
           <Filters filters={filters} data={data} flights={flights} onChange={change} />
           {bookings.error && <DashboardErrorNotice message={errorMessage(bookings.error)} />}
           <BookingsTable data={data} loading={bookings.isPending} flights={flights} filters={filters} onPage={page => change({ page })} />
@@ -122,12 +122,17 @@ function Cards({ cards, flights, filters }: { cards: BookingList["cards"]; fligh
       selected={filters.card === name}
     />
   );
+  const expiringLabel = `Expiring within ${cards.expiring_window_hours} ${cards.expiring_window_hours === 1 ? "hour" : "hours"}`;
   if (flights) {
-    // Issued today is hidden: no issue time is recorded yet.
+    // Issued today is hidden: no issue time is recorded yet. Payment pending and
+    // Expiring are added (not in the mockup) so each dashboard needs-action card
+    // opens here with its card picked and the same count (docs/mockups/README.md).
     return (
-      <div className="grid grid-cols-1 gap-card-gap sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-card-gap sm:grid-cols-2 xl:grid-cols-4">
         {cards.hold_deadlines != null && card("hold_deadlines", "Hold deadlines", cards.hold_deadlines, "action")}
         {cards.awaiting_issuance != null && card("awaiting_issuance", "Awaiting issuance", cards.awaiting_issuance, "action")}
+        {cards.payment_pending != null && card("payment_pending", "Payment pending", cards.payment_pending, "action")}
+        {card("expiring_soon", expiringLabel, cards.expiring_soon, "action")}
       </div>
     );
   }
@@ -139,7 +144,7 @@ function Cards({ cards, flights, filters }: { cards: BookingList["cards"]; fligh
       {card("on_hold", "On Hold", cards.on_hold, "action")}
       {card("cancelled", "Cancelled", cards.cancelled)}
       {card("unpaid", "Unpaid", cards.unpaid, "action")}
-      {card("expiring_soon", `Expiring within ${cards.expiring_window_hours} ${cards.expiring_window_hours === 1 ? "hour" : "hours"}`, cards.expiring_soon, "action")}
+      {card("expiring_soon", expiringLabel, cards.expiring_soon, "action")}
     </div>
   );
 }

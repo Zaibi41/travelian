@@ -110,3 +110,11 @@ no image is in this folder yet. Add it as `mockup-finance-receiving-accounts.png
 - **Customers & Travelers: the 50 most recent people on open (14 November 2026).** The page lists
   the 50 most recent saved people when it opens (latest booking first, then the most recently
   saved); searching narrows it as before.
+- **Bookings > Flights: Payment pending and Expiring cards (Zohaib, 14 November 2026).** The
+  mockup shows Issued today (hidden, no issue time yet), Hold deadlines and Awaiting issuance. Two
+  cards are added: "Payment pending" (open holds not fully paid and still within their deadline)
+  and "Expiring within N hours" (the same card as All Bookings, flights only on this tab). This is
+  so each Dashboard needs-action card opens Bookings > Flights with its own card picked and the same
+  count, as the dashboard mockup says ("Click opens Bookings, already filtered"): Pending issuance
+  opens Awaiting issuance, Payment pending opens Payment pending, Expiring holds opens Expiring.
+  The gateway counts each pair with the same rule; the dashboard's provider filter is carried over.

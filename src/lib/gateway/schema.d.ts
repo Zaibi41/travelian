@@ -1684,6 +1684,11 @@ export interface components {
             hold_deadlines?: number | null;
             /** On Hold */
             on_hold: number;
+            /**
+             * Payment Pending
+             * @description Flights tab only: open holds not fully paid and not past their deadline (the dashboard's Payment pending).
+             */
+            payment_pending?: number | null;
             /** Unpaid */
             unpaid: number;
         };
@@ -3945,7 +3950,7 @@ export interface operations {
                 provider?: string | null;
                 agency?: string | null;
                 /** @description List only the rows this card counts. */
-                card?: ("confirmed" | "on_hold" | "cancelled" | "unpaid" | "expiring_soon" | "awaiting_issuance" | "hold_deadlines") | null;
+                card?: ("confirmed" | "on_hold" | "cancelled" | "unpaid" | "expiring_soon" | "awaiting_issuance" | "hold_deadlines" | "payment_pending") | null;
                 limit?: number;
                 offset?: number;
             };

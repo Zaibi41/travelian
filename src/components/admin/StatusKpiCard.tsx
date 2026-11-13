@@ -39,7 +39,8 @@ export function StatusKpiCard({ label, value, severity, hint, fullValue, to, siz
         "flex h-full min-w-0 flex-col gap-1 rounded-xl border border-border bg-card px-card py-3 shadow-card",
         severity && ["border-l-[length:var(--status-stripe)]", STRIPE[severity]],
         to && "transition-colors group-hover:border-brand-navy/30 group-hover:bg-accent/40",
-        selected && "ring-2 ring-brand-navy ring-offset-1",
+        // An outline, not a ring: .shadow-card sets box-shadow and would hide a ring.
+        selected && "outline outline-2 outline-offset-1 outline-brand-navy",
       )}
     >
       <div className="flex min-w-0 items-start justify-between gap-2">

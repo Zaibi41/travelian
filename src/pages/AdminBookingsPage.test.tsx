@@ -126,14 +126,24 @@ describe("Bookings register", () => {
   it("Flights tab: its own cards, Source only when sent, time left and Open", () => {
     renderPage("flights", "/admin/bookings/flights");
     expect(list.product).toBe("flight");
-    list.current = ok({ ...ADMIN_LIST, cards: { ...ADMIN_LIST.cards, hold_deadlines: 2, awaiting_issuance: 0 } });
+    list.current = ok({ ...ADMIN_LIST, cards: { ...ADMIN_LIST.cards, hold_deadlines: 2, awaiting_issuance: 0, payment_pending: 3 } });
     renderPage("flights", "/admin/bookings/flights");
     expect(screen.getByRole("link", { name: /Hold deadlines: 2, Needs action/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Awaiting issuance: 0, Fine/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Payment pending: 3, Needs action/ })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /Expiring within 2 hours: 1, Needs action/ }).at(-1)).toHaveAttribute("href", "/admin/bookings/flights?card=expiring_soon");
     expect(screen.queryByText("Issued today")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Source")).toBeInTheDocument();
     expect(screen.queryByText(/Request issuance|Hold payment|Airline|Route|Trip type|TTL/)).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /Open booking/ })[0]).toHaveAttribute("href", "/admin/bookings/1");
+  });
+
+  it("Flights tab: a dashboard link opens with its card picked", () => {
+    list.current = ok({ ...ADMIN_LIST, cards: { ...ADMIN_LIST.cards, hold_deadlines: 2, awaiting_issuance: 0, payment_pending: 3 } });
+    renderPage("flights", "/admin/bookings/flights?card=payment_pending");
+    const picked = screen.getByRole("link", { name: /^Payment pending:/ });
+    expect(picked).toHaveAttribute("aria-current", "true");
+    expect(picked).toHaveAttribute("href", "/admin/bookings/flights");  // clicking again clears it
   });
 
   it("tabs without recorded data say so instead of showing empty tables", () => {

@@ -2,36 +2,40 @@
 // when that list shows the same count (same records, same rule, same filters);
 // otherwise it links to the Attention Queue placeholder (spec 2.01).
 //
-// Flight Operations (/admin/flight-bookings) uses the same queue rules as the
-// gateway for "approval" and "payment", but it is flight-only, has no provider
-// filter, and its "Expiring Soon" tab uses 24 hours (the card uses the gateway's
-// expiring window), so those cases go to the placeholder.
+// The needs-action cards open Bookings > Flights with their card picked
+// ("Click opens Bookings, already filtered", dashboard mockup). The gateway
+// counts each pair with the same rule: Pending issuance = Awaiting issuance,
+// Payment pending = Payment pending, Expiring holds = Expiring within N hours
+// (same window setting). The list defaults to all dates (needs-action cards
+// ignore the date filter) and applies the same provider filter. These rules
+// are flight-only, so another product filter goes to the placeholder.
+//
+// The old Flight Operations page (/admin/flight-bookings) reads the legacy
+// /content data, not the gateway, so its counts can't match.
 
+import { BOOKINGS_BASE, bookingDetailPath } from "@/lib/admin-bookings/tabs";
 import type { AttentionItem, DashboardQuery } from "./types";
 
 export const ATTENTION_QUEUE_PLACEHOLDER = "/admin/attention-queue";
-const FLIGHT_OPERATIONS = "/admin/flight-bookings";
 
-function flightOperationsMatches(query: DashboardQuery) {
-  return !query.provider && (!query.product || query.product === "flight");
+type FlightsCard = "awaiting_issuance" | "payment_pending" | "expiring_soon";
+
+function flightsCardList(card: FlightsCard, query: DashboardQuery) {
+  if (query.product && query.product !== "flight") return ATTENTION_QUEUE_PLACEHOLDER;
+  const params = new URLSearchParams({ card });
+  if (query.provider) params.set("provider", query.provider);
+  return `${BOOKINGS_BASE}/flights?${params}`;
 }
 
 export function needsActionLinks(query: DashboardQuery) {
-  const matches = flightOperationsMatches(query);
   return {
-    pendingIssuance: matches ? `${FLIGHT_OPERATIONS}?tab=approval` : ATTENTION_QUEUE_PLACEHOLDER,
-    paymentPending: matches ? `${FLIGHT_OPERATIONS}?tab=payment` : ATTENTION_QUEUE_PLACEHOLDER,
-    expiringHolds: ATTENTION_QUEUE_PLACEHOLDER,
+    pendingIssuance: flightsCardList("awaiting_issuance", query),
+    paymentPending: flightsCardList("payment_pending", query),
+    expiringHolds: flightsCardList("expiring_soon", query),
   };
 }
 
-const ROW_TAB: Record<AttentionItem["type"], string> = {
-  pending_issuance: "approval",
-  payment_pending: "payment",
-  hold_expiring: "expiring", // the 24-hour tab contains every hold in the shorter window
-};
-
-/** A row opens the Flight Operations tab that lists that booking. */
+/** A row opens its booking. */
 export function attentionRowHref(item: AttentionItem) {
-  return `${FLIGHT_OPERATIONS}?tab=${ROW_TAB[item.type]}`;
+  return bookingDetailPath(item.booking_id);
 }
