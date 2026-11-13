@@ -96,6 +96,8 @@ describe("Bookings register", () => {
     ]);
     expect(within(table).getAllByText("Rs 12,500")).toHaveLength(2);
     expect(within(table).getAllByRole("link", { name: /View booking/ })[0]).toHaveAttribute("href", "/admin/bookings/1");
+    // The PNR is a link to the same booking page as View.
+    expect(within(table).getByRole("link", { name: "PNR1" })).toHaveAttribute("href", "/admin/bookings/1");
   });
 
   it("labels sample rows and truncates long agency names", () => {

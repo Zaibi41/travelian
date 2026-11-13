@@ -294,7 +294,10 @@ function BookingsTable({ data, loading, flights, filters, onPage }: TableProps) 
               {data.items.map(item => (
                 <tr key={item.booking_id} className="border-b border-border last:border-b-0">
                   <td className={`${TD} max-w-[12rem]`}>
-                    <span className="block truncate font-semibold text-foreground" title={item.pnr ?? undefined}>{item.pnr ?? "—"}</span>
+                    <Link to={bookingDetailPath(item.booking_id)} title={item.pnr ?? item.booking_id}
+                      className="block truncate rounded-sm font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
+                      {item.pnr ?? item.booking_id}
+                    </Link>
                     {!flights && <span className="block truncate text-label text-muted-foreground" title={item.booking_id}>{item.booking_id}</span>}
                     {item.sample && <SampleDataBadge className="mt-1" label={item.data_label} />}
                   </td>

@@ -88,9 +88,12 @@ async function open(page: Page, width: number, path: string, signedIn: boolean) 
 
 async function snap(page: Page, name: string) {
   await expect(page).toHaveScreenshot(name, {
-    fullPage: true, animations: "disabled", caret: "hide", maxDiffPixels: 0, timeout: 15_000,
+    fullPage: true, animations: "disabled", caret: "hide", maxDiffPixels: 0, threshold: 0, timeout: 15_000,
     // Running marquees and the live expiry countdown move on their own; they are not layout.
+    // threshold 0: any colour change counts (the default 0.2 lets small shifts through).
     mask: [page.locator(".animate-route-marquee"), page.locator(".admin-announcement-scroll")],
+    // The floating WhatsApp bubble (pulse, shadow, blur over moving content) is hidden.
+    stylePath: "e2e/support/visual.css",
   });
 }
 

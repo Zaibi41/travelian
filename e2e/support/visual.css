@@ -1,0 +1,4 @@
+/* Applied only while e2e/visual.spec.ts takes screenshots (toHaveScreenshot stylePath).
+   The floating WhatsApp bubble pulses and its shadow and blur depend on what it floats over,
+   so it is hidden; it is not part of any page's layout. */
+a[aria-label="Chat with Travelian on WhatsApp"] { visibility: hidden !important; }
