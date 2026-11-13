@@ -9,11 +9,34 @@ import type { BookingDetail, IssuanceChecklist } from "@/lib/admin-bookings/type
 // (confirm, once), request issuance without the permission, and the unknown-issuance actions.
 // Gateway calls are mocked; made-up values.
 const api = vi.hoisted(() => ({
+  fetchPaymentAccounts: vi.fn(),
   fetchIssuance: vi.fn(), recordPayment: vi.fn(), requestIssuance: vi.fn(), issueTicket: vi.fn(), verifyIssuance: vi.fn(), resolveIssuance: vi.fn(),
 }));
 vi.mock("@/lib/admin-bookings/api", () => api);
 
 import { PaymentsAndIssuing, TicketsTab } from "./PaymentsAndIssuing";
+
+// Radix Select uses pointer capture and scrollIntoView, which jsdom doesn't have.
+globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+Element.prototype.hasPointerCapture ??= () => false;
+Element.prototype.releasePointerCapture ??= () => {};
+Element.prototype.scrollIntoView ??= function scrollIntoView() {};
+
+const ACCOUNTS = { accounts: [
+  { id: "acct-0001", method: "bank_transfer", label: "Meezan Bank, Travelian current account" },
+  { id: "acct-0002", method: "bank_transfer", label: "HBL collections" },
+  { id: "acct-0003", method: "jazzcash", label: "JazzCash business wallet" },
+] };
+
+/** Open a Select by its label and choose an option with the keyboard. */
+async function choose(label: string, option: string) {
+  const trigger = await screen.findByRole("combobox", { name: label });
+  await waitFor(() => expect(trigger).toBeEnabled());
+  fireEvent.keyDown(trigger, { key: "Enter" });
+  const item = await screen.findByRole("option", { name: option });
+  fireEvent.keyDown(item, { key: "Enter" });
+  await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+}
 
 const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" });
 const SOON = new Date(Date.now() + 3 * 3_600_000).toISOString();
@@ -44,6 +67,7 @@ function renderTab(booking: BookingDetail = BOOKING) {
 beforeEach(() => {
   for (const mock of Object.values(api)) mock.mockReset();
   api.fetchIssuance.mockResolvedValue(READY);
+  api.fetchPaymentAccounts.mockResolvedValue(ACCOUNTS);
 });
 
 describe("1 · Record the customer's payment", () => {
@@ -55,14 +79,15 @@ describe("1 · Record the customer's payment", () => {
     expect(card).toHaveTextContent("Booking totalRs 15,316");
     expect(card).toHaveTextContent("Still to receiveRs 15,316");
     expect(screen.getByLabelText("Amount received")).toHaveValue("15316");
-    fireEvent.change(screen.getByLabelText("Received into"), { target: { value: "Meezan current account" } });
+    await choose("Received into", "HBL collections");
     fireEvent.change(screen.getByLabelText("Reference or transaction ID"), { target: { value: "JC-778899" } });
     fireEvent.change(screen.getByLabelText("Amount received"), { target: { value: "15,316.50" } });
     fireEvent.click(screen.getByRole("button", { name: "Record payment" }));
     await waitFor(() => expect(api.recordPayment).toHaveBeenCalledOnce());
     const [bookingId, body] = api.recordPayment.mock.calls[0];
     expect(bookingId).toBe("TRV-O5QZB5");
-    expect(body).toMatchObject({ amount: { amount_minor: 1_531_650, currency: "PKR" }, method: "bank_transfer", received_into: "Meezan current account", reference: "JC-778899" });
+    expect(body).toMatchObject({ amount: { amount_minor: 1_531_650, currency: "PKR" }, method: "bank_transfer", account_id: "acct-0002", reference: "JC-778899" });
+    expect(body).not.toHaveProperty("received_into");
     expect(new Date(body.received_at).getTime()).toBeLessThanOrEqual(Date.now());
     expect(await screen.findByText("Payment of Rs 15,316 recorded.")).toBeInTheDocument();
   });
@@ -75,8 +100,8 @@ describe("1 · Record the customer's payment", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Enter the amount received in Rs");
     fireEvent.change(screen.getByLabelText("Amount received"), { target: { value: "100" } });
     fireEvent.click(screen.getByRole("button", { name: "Record payment" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("Enter the account");
-    fireEvent.change(screen.getByLabelText("Received into"), { target: { value: "HBL" } });
+    expect(screen.getByRole("alert")).toHaveTextContent("Choose the account");
+    await choose("Received into", "HBL collections");
     fireEvent.change(screen.getByLabelText("Reference or transaction ID"), { target: { value: "X-1" } });
     fireEvent.change(screen.getByLabelText("Time (24-hour)"), { target: { value: "2 PM" } });
     fireEvent.click(screen.getByRole("button", { name: "Record payment" }));
@@ -101,6 +126,31 @@ describe("1 · Record the customer's payment", () => {
     expect(row).toHaveTextContent("1L-42");
     expect(row).toHaveTextContent("Rs 15,316");
     expect(row).toHaveTextContent("Super Admin");
+  });
+});
+
+describe("Received into: Travelian's receiving accounts", () => {
+  it("offers only the chosen method's accounts; changing the method clears the choice", async () => {
+    renderTab();
+    const trigger = await screen.findByRole("combobox", { name: "Received into" });
+    await waitFor(() => expect(trigger).toBeEnabled());
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    expect((await screen.findAllByRole("option")).map(option => option.textContent)).toEqual([
+      "Choose the account", "Meezan Bank, Travelian current account", "HBL collections",
+    ]);
+    fireEvent.keyDown(screen.getByRole("option", { name: "HBL collections" }), { key: "Enter" });
+    await waitFor(() => expect(trigger).toHaveTextContent("HBL collections"));
+    await choose("Method", "JazzCash");
+    expect(screen.getByRole("combobox", { name: "Received into" })).toHaveTextContent("Choose the account");
+    await choose("Received into", "JazzCash business wallet");
+  });
+
+  it("no account for a method: the choice is disabled and says why", async () => {
+    api.fetchPaymentAccounts.mockResolvedValue({ accounts: [] });
+    renderTab();
+    const trigger = await screen.findByRole("combobox", { name: "Received into" });
+    expect(await screen.findByText("No Bank transfer account is set up yet. An administrator adds the receiving accounts.")).toBeInTheDocument();
+    expect(trigger).toBeDisabled();
   });
 });
 

@@ -66,7 +66,7 @@ export function SelectedAirportCard({ id, label, code, airport, icon, onOpen, on
 }
 
 /** Dropdown list panel and rows shared by the airport fields (at least 360px wide, 48px rows). */
-export const AIRPORT_LIST_PANEL = "w-[max(var(--radix-popper-anchor-width),360px)] max-w-[calc(100vw-1.5rem)] p-1.5";
+export const AIRPORT_LIST_PANEL = "w-[max(var(--radix-popper-anchor-width),360px)] max-w-[calc(100vw-1.5rem)] max-h-[min(24rem,var(--radix-popover-content-available-height))] overflow-y-auto overscroll-contain p-1.5";
 export const airportOptionClass = (active: boolean) => cn("flex min-h-12 min-w-0 cursor-pointer items-center rounded-md px-3 py-2",
   active ? "bg-accent ring-1 ring-inset ring-primary/40" : "hover:bg-muted/60");
 

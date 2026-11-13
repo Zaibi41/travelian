@@ -45,3 +45,7 @@ export const verifyIssuance = (bookingId: string, options?: GatewayOptions) =>
 /** Unknown issuance: mark issued (a ticket number for every traveler) or not issued, with a reason. */
 export const resolveIssuance = (bookingId: string, body: ResolveIssuanceBody, options?: GatewayOptions) =>
   gatewayPost("/v1/admin/bookings/{booking_id}/issuance/resolve", body, issuancePath(bookingId, options));
+
+/** Travelian's active receiving accounts (where customer payments arrive), for "Received into". */
+export const fetchPaymentAccounts = (options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/payment-accounts", undefined, { ...options, unavailableMessage: "The receiving accounts couldn't be loaded." });

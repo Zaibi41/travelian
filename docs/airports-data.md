@@ -15,3 +15,5 @@
 - **To refresh:** replace the file with the same six fields per airport (compact JSON), then run
   `npx vitest run src/lib/admin-search` and `PLAYWRIGHT_CHANNEL=chrome npx playwright test e2e/admin-airports.spec.ts`.
 - The value sent to the gateway is still the 3-letter IATA code.
+- Clicking or focusing From/To before typing lists the popular airports (`POPULAR_AIRPORT_CODES`,
+  the same 21 as the public site, in the same order); from 2 characters the full list is searched.

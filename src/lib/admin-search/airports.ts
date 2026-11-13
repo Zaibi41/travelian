@@ -74,6 +74,17 @@ export function searchAirports(index: AirportIndex, query: string, limit = MAX_R
   return found.slice(0, limit).map(item => item.entry.airport);
 }
 
+/** Shown when the field is opened before typing: the same airports, in the same order, as the
+ *  public site's From and To list. Codes missing from the list are skipped. */
+export const POPULAR_AIRPORT_CODES = [
+  "LHE", "KHI", "ISB", "SKT", "PEW", "MUX", "DXB", "JED", "MED", "RUH", "IST", "DOH",
+  "AUH", "ATH", "LHR", "MAN", "JFK", "YYZ", "KUL", "BKK", "SIN",
+];
+
+export function popularAirports(index: AirportIndex): Airport[] {
+  return POPULAR_AIRPORT_CODES.flatMap(code => index.byCode.get(code) ?? []);
+}
+
 let ready: AirportIndex | null = null;
 let loading: Promise<AirportIndex> | null = null;
 

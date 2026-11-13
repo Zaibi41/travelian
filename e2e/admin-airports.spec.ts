@@ -46,6 +46,24 @@ test("suggestions appear on the first keystroke with no request", async ({ page 
   expect(requests).toEqual([]);
 });
 
+test("clicking From lists popular airports before typing; one can be picked", async ({ page }) => {
+  await open(page);
+  await from(page).click();
+  const options = page.getByRole("option");
+  await expect(options.first()).toContainText("LHE - Lahore");
+  await expect(options.nth(1)).toContainText("KHI - Karachi");
+  await expect(options).toHaveCount(21);
+  const panel = page.locator("[data-radix-popper-content-wrapper]");
+  const box = await panel.boundingBox();
+  expect(box!.y + box!.height).toBeLessThanOrEqual(900);            // stays inside the viewport, scrolls inside
+  await page.getByRole("option", { name: /DXB - Dubai/ }).click();
+  await expect(page.getByRole("button", { name: /^From DXB - Dubai/ })).toBeVisible();
+  await to(page).click();
+  await expect(page.getByRole("option").first()).toContainText("LHE - Lahore");
+  await to(page).press("Escape");
+  await expect(page.getByRole("listbox")).toHaveCount(0);
+});
+
 test("type lhe and pick Lahore; type kar and see Karachi; clear with the x", async ({ page }) => {
   await open(page);
   await from(page).fill("lhe");

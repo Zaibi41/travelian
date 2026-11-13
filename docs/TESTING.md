@@ -145,6 +145,16 @@ Itinerary (booking detail > Itinerary): `AdminBookingDetailPage.test.tsx` shows 
 gateway saves the itinerary with each new hold (migration `0018_booking_itinerary`: run
 `alembic upgrade head` on the gateway after pulling).
 
+Receiving accounts ("Received into" on the Payments tab): the accounts come from the gateway
+(`GET /v1/admin/payment-accounts`), one list per method; there are none until they are added on the
+gateway with `.venv/bin/python -m app.cli.payment_accounts add --method bank_transfer --label "…"`
+(also `list`, `deactivate --id`). `PaymentsAndIssuing.test.tsx` covers only the chosen method's
+accounts being offered, the choice clearing when the method changes, a method with no account
+(disabled, says why) and the payment sending `account_id`.
+
+Customers & Travelers opens with the 50 most recent saved people (gateway
+`GET /v1/admin/customers` without `q`); searching works as before.
+
 Gateway calls in specs: the dev server may send gateway calls through its `/__gateway` proxy
 (`vite.config.ts`) instead of straight to port 8000. `e2e/support/gateway.ts` (`gatewayView`) makes
 both look the same, so the specs' made-up gateway answers are used either way and nothing reaches a

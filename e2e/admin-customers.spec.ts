@@ -139,3 +139,17 @@ test("agency roles get a plain notice, not data", async ({ page }) => {
   await expect(page.getByText("not_allowed")).toHaveCount(0);
   expect(await overflow(page)).toBe(0);
 });
+
+test("opens with the 50 most recent people, before any search", async ({ page }) => {
+  const asked: URL[] = [];
+  page.on("request", request => {
+    const url = gatewayView(request.url());
+    if (url.port === "8000" && url.pathname === "/v1/admin/customers") asked.push(url);
+  });
+  await open(page, 1440, "/admin/customers");
+  const list = page.getByRole("region", { name: "Customers" });
+  await expect(list).toContainText("The 50 most recent people");
+  await expect(list.getByRole("row")).toHaveCount(3); // header + the two people the gateway returned
+  expect(asked[0].searchParams.get("q")).toBeNull();
+  expect(asked[0].searchParams.get("limit")).toBe("50");
+});

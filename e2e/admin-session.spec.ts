@@ -33,7 +33,8 @@ async function mock(page: Page, { searchStatus = 200 } = {}) {
     }
     if (url.port === "8000") {
       if (url.pathname === "/v1/admin/customers") {
-        return searchStatus === 401
+        // The 401 answers the search; the list the page loads on open (no q) still works.
+        return searchStatus === 401 && url.searchParams.has("q")
           ? route.fulfill({ status: 401, json: { detail: "Token expired." } })
           : route.fulfill({ json: { results: [], can_manage: true, can_merge: true } });
       }

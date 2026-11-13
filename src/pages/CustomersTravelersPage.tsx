@@ -15,7 +15,7 @@ import { DocumentDialog, MergeDialog, PersonFormDialog } from "@/components/admi
 import { ValidityBadge } from "@/components/admin/people/MaskedDocuments";
 import { formatDateTime } from "@/lib/admin-bookings/format";
 import { GatewayError } from "@/lib/gateway/client";
-import { MIN_SEARCH_LENGTH, searchPeople, type PersonSearch, type PersonSummary } from "@/lib/saved-people/api";
+import { MIN_SEARCH_LENGTH, RECENT_LIMIT, listRecentPeople, searchPeople, type PersonSearch, type PersonSummary } from "@/lib/saved-people/api";
 import { ID_TYPE_LABEL, fullName, peopleErrorMessage } from "@/lib/saved-people/states";
 import { CUSTOMERS_TABS, customersTabPath, personPath, type CustomersTab } from "@/lib/saved-people/routes";
 
@@ -52,10 +52,10 @@ function PeopleRegister({ tab, q }: { tab: CustomersTab; q: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const searching = q.trim().length >= MIN_SEARCH_LENGTH;
+  // Before a search: the most recent people; with a search: the gateway's matches.
   const people = useQuery({
-    queryKey: ["saved-people", "search", q.trim()],
-    queryFn: ({ signal }) => searchPeople(q, { signal }),
-    enabled: searching,
+    queryKey: searching ? ["saved-people", "search", q.trim()] : ["saved-people", "recent"],
+    queryFn: ({ signal }) => (searching ? searchPeople(q, { signal }) : listRecentPeople({ signal })),
     placeholderData: keepPreviousData,
     retry: (count, error) => !(error instanceof GatewayError && ["forbidden", "unauthorized"].includes(error.kind)) && count < 1,
   });
@@ -63,7 +63,7 @@ function PeopleRegister({ tab, q }: { tab: CustomersTab; q: string }) {
   const [editing, setEditing] = useState<PersonSummary | null>(null);
   const [merging, setMerging] = useState<PersonSummary | null>(null);
   const [attaching, setAttaching] = useState<PersonSummary | null>(null);
-  const data = searching ? people.data : undefined;
+  const data = people.data;
   const forbidden = people.error instanceof GatewayError && people.error.kind === "forbidden";
   // Unknown until the first answer; hidden only when the gateway says no.
   const canManage = data?.can_manage ?? true;
@@ -92,7 +92,7 @@ function PeopleRegister({ tab, q }: { tab: CustomersTab; q: string }) {
           <PeopleTable
             customers={customers}
             searching={searching}
-            loading={people.isPending && searching}
+            loading={people.isPending}
             data={data}
             onEdit={setEditing}
             onMerge={setMerging}
@@ -201,9 +201,9 @@ function PeopleTable({ customers, searching, loading, data, onEdit, onMerge, onA
       </div>
     );
   }
-  const message = !searching
-    ? `Search by CNIC, passport number, phone, email or name (at least ${MIN_SEARCH_LENGTH} characters).`
-    : data && data.results.length === 0 ? "No saved person matches this search." : null;
+  const message = data && data.results.length === 0
+    ? (searching ? "No saved person matches this search." : "No saved people yet. They are added from bookings, or with Add Customer.")
+    : null;
   if (message || !data) {
     return (
       <section aria-label={label} className="rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
@@ -212,7 +212,12 @@ function PeopleTable({ customers, searching, loading, data, onEdit, onMerge, onA
     );
   }
   return (
-    <section aria-label={label} className="min-w-0 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
+    <section aria-label={label} className="flex min-w-0 flex-col gap-2 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
+      {!searching && (
+        <p className="text-label text-muted-foreground">
+          The {RECENT_LIMIT} most recent people (latest booking first). Search by CNIC, passport number, phone, email or name (at least {MIN_SEARCH_LENGTH} characters) to find anyone else.
+        </p>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[48rem] border-collapse text-table">
           <thead>

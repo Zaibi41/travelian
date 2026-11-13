@@ -84,8 +84,8 @@ Status as of 2026-11-10. All 28 listed mockups are in this folder.
   the top row next to Select available sector. All search fields, the Bookings filters and the
   Customers search share the same 56px rounded field look.
 - **Booking detail > Payments: record payment and issue the ticket (built 12 November 2026, mockup
-  `booking-payment-issue`).** Differences: "Received into" is a text field (the gateway takes the
-  account as text; no list of accounts yet), and the form adds "Received on" and "Time (24-hour)"
+  `booking-payment-issue`).** Differences: "Received into" lists Travelian's receiving accounts for the chosen method (from
+  the gateway, 14 November 2026; until then it was a text field), and the form adds "Received on" and "Time (24-hour)"
   because the gateway needs when the money arrived. "Total matches the held fare" says "Checked when
   issuing": the gateway checks the supplier total at the moment of issuing, not before. Recorded by
   shows the role (the gateway sends no name). A viewer sees either "Issue ticket" (issue tickets
@@ -103,3 +103,6 @@ Status as of 2026-11-10. All 28 listed mockups are in this folder.
   Departs and Arrives (day first, local time), Airline / flight, Fare, Baggage. The mockup's "Cabin"
   column is "Fare": the gateway records the fare name, not the cabin. Bookings held before this
   change say the flights weren't recorded.
+- **Customers & Travelers: the 50 most recent people on open (14 November 2026).** The page lists
+  the 50 most recent saved people when it opens (latest booking first, then the most recently
+  saved); searching narrows it as before.

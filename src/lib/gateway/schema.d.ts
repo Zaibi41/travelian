@@ -431,7 +431,8 @@ export interface paths {
         };
         /**
          * Search People
-         * @description Exact full document number first, then phone or email, then name prefix. Masked values only.
+         * @description With q: exact full document number first, then phone or email, then name prefix. Without q:
+         *     the most recent people (latest booking first, then the most recently saved). Masked values only.
          */
         get: operations["search_people_v1_admin_customers_get"];
         put?: never;
@@ -601,6 +602,26 @@ export interface paths {
         };
         /** Dashboard Summary */
         get: operations["dashboard_summary_v1_admin_dashboard_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/payment-accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Payment Accounts
+         * @description The active receiving accounts, by method then name.
+         */
+        get: operations["list_payment_accounts_v1_admin_payment_accounts_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2668,6 +2689,29 @@ export interface components {
             /** Message */
             message: string;
         };
+        /**
+         * PaymentAccount
+         * @description One of Travelian's receiving accounts (where customer payments arrive).
+         */
+        PaymentAccount: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "bank_transfer" | "jazzcash" | "1link";
+        };
+        /** PaymentAccountList */
+        PaymentAccountList: {
+            /**
+             * Accounts
+             * @description Active accounts, by method then name. Empty until an administrator adds them.
+             */
+            accounts: components["schemas"]["PaymentAccount"][];
+        };
         /** ProviderStatus */
         ProviderStatus: {
             /** Name */
@@ -2680,6 +2724,11 @@ export interface components {
         };
         /** RecordPaymentRequest */
         RecordPaymentRequest: {
+            /**
+             * Account Id
+             * @description The receiving account (GET /v1/admin/payment-accounts); active and of this method.
+             */
+            account_id: string;
             amount: components["schemas"]["BookingMoney"];
             /**
              * Method
@@ -2692,8 +2741,6 @@ export interface components {
              * @description When the money was received. Not in the future.
              */
             received_at: string;
-            /** Received Into */
-            received_into: string;
             /** Reference */
             reference: string;
         };
@@ -4293,7 +4340,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Invalid payment or wrong currency. */
+            /** @description Invalid payment, wrong currency, or not an active receiving account of this method. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -4424,9 +4471,9 @@ export interface operations {
     };
     search_people_v1_admin_customers_get: {
         parameters: {
-            query: {
-                /** @description Full document number, phone, email, or name prefix. */
-                q: string;
+            query?: {
+                /** @description Full document number, phone, email, or name prefix. Leave out to list the most recent people. */
+                q?: string | null;
                 limit?: number;
             };
             header?: never;
@@ -4943,6 +4990,40 @@ export interface operations {
                 };
             };
             /** @description Dashboard booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_payment_accounts_v1_admin_payment_accounts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentAccountList"];
+                };
+            };
+            /** @description Caller is not back office. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
             503: {
                 headers: {
                     [name: string]: unknown;

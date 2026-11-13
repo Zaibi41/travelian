@@ -45,12 +45,18 @@ async function open(page: Page, width: number, tab = "payments") {
     const url = gatewayView(request.url());
     if (url.port === "8000") {
       if (request.method() === "POST") posts.push(request);
+      if (url.pathname === "/v1/admin/payment-accounts") {
+        return route.fulfill({ json: { accounts: [
+          { id: "acct-0001", method: "bank_transfer", label: "Meezan Bank, Travelian current account" },
+          { id: "acct-0002", method: "jazzcash", label: "JazzCash business wallet" },
+        ] } });
+      }
       if (url.pathname === "/v1/admin/bookings/TRV-O5QZB5") return route.fulfill({ json: detail(state.paid, state.issued) });
       if (url.pathname === "/v1/admin/bookings/TRV-O5QZB5/issuance") return route.fulfill({ json: checklist(state.paid, state.issued) });
       if (url.pathname === "/v1/admin/bookings/TRV-O5QZB5/payments") {
         state.paid = true;
         const body = request.postDataJSON();
-        return route.fulfill({ status: 201, json: { payment: { id: "p1", ...body, recorded_at: new Date().toISOString() }, payment_status: "paid" } });
+        return route.fulfill({ status: 201, json: { payment: { id: "p1", ...body, received_into: "Meezan Bank, Travelian current account", recorded_at: new Date().toISOString() }, payment_status: "paid" } });
       }
       if (url.pathname === "/v1/admin/bookings/TRV-O5QZB5/issuance/issue") {
         state.issued = true;
@@ -76,12 +82,14 @@ test("record the payment, then issue once: ticket numbers on the result and the 
   await expect(issue.getByRole("button", { name: "Issue ticket" })).toBeDisabled();
   await expect(issue).toContainText("Full payment isn't recorded yet.");
 
-  await record.getByLabel("Received into").fill("Meezan current account");
+  await record.getByRole("combobox", { name: "Received into" }).click();
+  await expect(page.getByRole("option")).toHaveText(["Choose the account", "Meezan Bank, Travelian current account"]);
+  await page.getByRole("option", { name: "Meezan Bank, Travelian current account" }).click();
   await record.getByLabel("Reference or transaction ID").fill("IBFT-778899");
   await record.getByRole("button", { name: "Record payment" }).click();
   await expect(record).toContainText("Paid in full. Nothing more to record.");
   const payment = posts.find(post => post.url().endsWith("/payments"))!.postDataJSON();
-  expect(payment).toMatchObject({ amount: { amount_minor: 1_531_600, currency: "PKR" }, method: "bank_transfer", received_into: "Meezan current account", reference: "IBFT-778899" });
+  expect(payment).toMatchObject({ amount: { amount_minor: 1_531_600, currency: "PKR" }, method: "bank_transfer", account_id: "acct-0001", reference: "IBFT-778899" });
   await expect(record.getByRole("table", { name: "Payments recorded" })).toContainText("IBFT-778899");
 
   await expect(issue.getByRole("button", { name: "Issue ticket" })).toBeEnabled();

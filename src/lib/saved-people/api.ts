@@ -24,6 +24,13 @@ const person = (personId: string, options?: GatewayOptions): GatewayOptions => (
 export const searchPeople = (q: string, options?: GatewayOptions) =>
   gatewayGet("/v1/admin/customers", { q: q.trim(), limit: 20 }, options);
 
+/** How many people the register shows before any search. */
+export const RECENT_LIMIT = 50;
+
+/** The most recent saved people (latest booking first, then the most recently saved). */
+export const listRecentPeople = (options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/customers", { limit: RECENT_LIMIT }, options);
+
 export const fetchPerson = (personId: string, options?: GatewayOptions) =>
   gatewayGet("/v1/admin/customers/{person_id}", undefined, person(personId, options));
 

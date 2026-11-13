@@ -11,7 +11,7 @@ import { TABLE } from "@/components/admin/ui/classes";
 import { StatusBadge, Tag } from "@/components/admin/ui/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GatewayError } from "@/lib/gateway/client";
-import { fetchIssuance, issueTicket, recordPayment, requestIssuance, resolveIssuance, verifyIssuance } from "@/lib/admin-bookings/api";
+import { fetchIssuance, fetchPaymentAccounts, issueTicket, recordPayment, requestIssuance, resolveIssuance, verifyIssuance } from "@/lib/admin-bookings/api";
 import { formatDateTime, formatMoney, formatTimeLeft } from "@/lib/admin-bookings/format";
 import { bookingDetailPath } from "@/lib/admin-bookings/tabs";
 import {
@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils";
 // whether issuing is allowed, the outcome); the page shows what it says and offers only the
 // actions the booking detail allows (can_record_payments, can_issue_tickets).
 
+const NO_ACCOUNT = "none";
 const CARD = "flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card";
 const issuanceKey = (bookingId: string) => ["admin-bookings", "issuance", bookingId];
 
@@ -75,7 +76,14 @@ function RecordPayment({ booking }: { booking: BookingDetail }) {
   const currency = booking.amount.currency;
   const [amount, setAmount] = useState(() => (due && due.amount_minor > 0 ? paisaToInput(due.amount_minor) : ""));
   const [method, setMethod] = useState<PaymentMethod>("bank_transfer");
-  const [receivedInto, setReceivedInto] = useState("");
+  const [accountId, setAccountId] = useState("");
+  const accounts = useQuery({
+    queryKey: ["admin-bookings", "payment-accounts"],
+    queryFn: ({ signal }) => fetchPaymentAccounts({ signal }),
+    enabled: booking.can_record_payments,
+    staleTime: 5 * 60_000,
+  });
+  const forMethod = (accounts.data?.accounts ?? []).filter(account => account.method === method);
   const [reference, setReference] = useState("");
   const [date, setDate] = useState<string | undefined>(today);
   const [time, setTime] = useState(nowClock);
@@ -87,7 +95,7 @@ function RecordPayment({ booking }: { booking: BookingDetail }) {
       const minor = rupeesToPaisa(amount);
       const receivedAt = receivedAtIso(date, time);
       return recordPayment(booking.booking_id, {
-        amount: { amount_minor: minor ?? 0, currency }, method, received_into: receivedInto.trim(), reference: reference.trim(), received_at: receivedAt ?? "",
+        amount: { amount_minor: minor ?? 0, currency }, method, account_id: accountId, reference: reference.trim(), received_at: receivedAt ?? "",
       });
     },
     onSuccess: response => {
@@ -104,7 +112,7 @@ function RecordPayment({ booking }: { booking: BookingDetail }) {
     const minor = rupeesToPaisa(amount);
     const receivedAt = receivedAtIso(date, time);
     if (minor === null) return setProblem("Enter the amount received in Rs, e.g. 15,316.");
-    if (receivedInto.trim().length < 2) return setProblem("Enter the account the money was received into.");
+    if (!forMethod.some(account => account.id === accountId)) return setProblem("Choose the account the money was received into.");
     if (!reference.trim()) return setProblem("Enter the payer's reference or transaction ID.");
     if (!receivedAt || !isClockTime(time)) return setProblem("Enter the date and time the money was received (time as 24-hour, e.g. 14:05).");
     if (new Date(receivedAt) > new Date()) return setProblem("The time received can't be in the future.");
@@ -154,11 +162,16 @@ function RecordPayment({ booking }: { booking: BookingDetail }) {
               </div>
             </div>
             <LabeledSelect id="payment-method" label="Method" value={method} options={PAYMENT_METHODS}
-              onChange={value => setMethod(value as PaymentMethod)} />
-            <div className="flex min-w-0 flex-col gap-1">
-              <FieldLabel htmlFor="payment-into">Received into</FieldLabel>
-              <Input id="payment-into" maxLength={120} value={receivedInto} onChange={event => setReceivedInto(event.target.value)} placeholder="Account name" />
-            </div>
+              onChange={value => { setMethod(value as PaymentMethod); setAccountId(""); }} />
+            {/* Travelian's receiving accounts for this method, from the gateway. */}
+            <LabeledSelect id="payment-into" label="Received into" value={accountId || NO_ACCOUNT}
+              disabled={accounts.isPending || forMethod.length === 0}
+              note={accounts.error ? "The receiving accounts couldn't be loaded. Try again in a moment."
+                : !accounts.isPending && forMethod.length === 0
+                  ? `No ${PAYMENT_METHOD_LABEL[method]} account is set up yet. An administrator adds the receiving accounts.` : undefined}
+              options={[{ value: NO_ACCOUNT, label: accounts.isPending ? "Loading accounts…" : "Choose the account" },
+                ...forMethod.map(account => ({ value: account.id, label: account.label }))]}
+              onChange={value => setAccountId(value === NO_ACCOUNT ? "" : value)} />
             <div className="flex min-w-0 flex-col gap-1">
               <FieldLabel htmlFor="payment-reference">Reference or transaction ID</FieldLabel>
               <Input id="payment-reference" maxLength={120} value={reference} onChange={event => setReference(event.target.value)} placeholder="Reference" />

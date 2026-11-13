@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_RESULTS, buildIndex, normalize, searchAirports, type Airport } from "./airports";
+import { MAX_RESULTS, POPULAR_AIRPORT_CODES, buildIndex, normalize, popularAirports, searchAirports, type Airport } from "./airports";
 
 const a = (iata: string, city: string, name: string, country: string, type = "large"): Airport => ({ iata, city, name, country, countryCode: "XX", type });
 const LIST = [
@@ -40,6 +40,15 @@ describe("airport search", () => {
     expect(codes("k")).toEqual([]);
     const many = buildIndex(Array.from({ length: 20 }, (_, i) => a(`Q${String.fromCharCode(65 + i)}A`, `Quetta ${i}`, "Airport", "Pakistan")));
     expect(searchAirports(many, "quetta")).toHaveLength(MAX_RESULTS);
+  });
+
+  it("popular airports: in the set order, skipping codes not in the list", () => {
+    expect(popularAirports(index).map(airport => airport.iata)).toEqual(["LHE", "KHI", "LHR"]);
+  });
+
+  it("the real list has every popular airport", async () => {
+    const { loadAirports } = await import("./airports");
+    expect(popularAirports(await loadAirports())).toHaveLength(POPULAR_AIRPORT_CODES.length);
   });
 
   it("returns nothing when nothing matches", () => {

@@ -74,7 +74,7 @@ Built on `GET /v1/admin/bookings` and `GET /v1/admin/bookings/{booking_id}` (bac
 | Search by ticket number, passenger or phone | Tickets and passengers tables; server-side search |
 | Flights: Airline, Route, Travel date, Trip type columns/filters | Itinerary segments on bookings (now stored per booking in `bookings.itinerary` for new holds; list filters not built) |
 | Flights: TTL filter | Defined TTL buckets (spec doesn't list the options yet) |
-| Payments: "Received into" as a list of Travelian accounts (mockup shows a dropdown) | `received_into` is free text (2-120 characters). A list of receiving accounts (bank, JazzCash, 1Link) to choose from |
+| Receiving accounts: an admin screen to add and deactivate them | Accounts exist (gateway `payment_accounts`, migration 0019) and are managed with `python -m app.cli.payment_accounts`; a Finance settings screen needs a mockup and write endpoints |
 | Tickets tab: Issue time, Issued by | Passengers carry `ticket_number` only. Issue time and who issued per ticket (the Audit tab has the issuing event) |
 
 ### Other sub-menus (shown as "not available yet")
@@ -124,7 +124,6 @@ Still open:
 | Umrah tab | Umrah packages served by the gateway |
 | Cards: Available providers, Search expiry, Quotes pending | Provider health endpoint (admin only); fare validity from search results; quotations table |
 | Group Ticketing: "Departure Date (Optional)" / "All departure dates" (public site wording) | `POST /v1/group-ticketing/search` requires `departure_date` and filters by that exact date (and by seats left). Make it optional (all dates) in the gateway; until then the admin date stays required |
-| Customers & Travelers: list saved customers when the page opens (newest first, paged) | `GET /v1/admin/customers` requires `q` (at least 3 characters). Needs a list mode without `q` (or a separate list endpoint): newest first, paged, same masking and permissions |
 | Group Ticketing: Children, Infants | `/v1/group-ticketing/search` accepts adults only |
 | Group Ticketing: Source (Owned / Supplier), Hold rule | `source` and hold rule on each departure; owned stock in the gateway |
 | Group Ticketing: child and infant prices | Price per passenger type (section 5) |

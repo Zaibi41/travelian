@@ -1,7 +1,7 @@
 import { useId, useMemo, useRef, useState } from "react";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { useAirports } from "@/hooks/use-airports";
-import { MIN_QUERY, searchAirports, type Airport } from "@/lib/admin-search/airports";
+import { MIN_QUERY, popularAirports, searchAirports, type Airport } from "@/lib/admin-search/airports";
 import { cn } from "@/lib/utils";
 import {
   AIRPORT_FIELD, AIRPORT_LIST_PANEL, AirportIcon, AirportLines, FieldLabel, SelectedAirportCard, airportOptionClass, type AirportIconKind,
@@ -18,8 +18,8 @@ interface AirportComboboxProps {
   icon?: AirportIconKind;
 }
 
-/** Origin or destination: type a code, city, airport or country and choose from at most 8
- *  suggestions (searched in memory, no request). Arrow keys, Enter, Escape; Tab leaves.
+/** Origin or destination: opening the field lists popular airports; typing a code, city, airport
+ *  or country lists at most 8 matches (searched in memory, no request). Arrow keys, Enter, Escape; Tab leaves.
  *  After a choice the field shows the airport with an x to clear it. */
 export function AirportCombobox({ id, label, placeholder, value, onChange, icon = "departure" }: AirportComboboxProps) {
   const index = useAirports();
@@ -28,8 +28,9 @@ export function AirportCombobox({ id, label, placeholder, value, onChange, icon 
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState("");
   const [active, setActive] = useState(0);
-  const results = useMemo(() => (index ? searchAirports(index, text) : []), [index, text]);
-  const open = editing && text.trim().length >= MIN_QUERY;
+  const typed = text.trim().length >= MIN_QUERY;
+  const results = useMemo(() => (index ? (typed ? searchAirports(index, text) : popularAirports(index)) : []), [index, text, typed]);
+  const open = editing;
   const selected = value ? index?.byCode.get(value) : undefined;
 
   const choose = (airport: Airport) => {
@@ -96,6 +97,7 @@ export function AirportCombobox({ id, label, placeholder, value, onChange, icon 
               } else if (event.key === "Escape" && open) {
                 event.preventDefault();
                 setText("");
+                setEditing(false);
               }
             }}
             className={cn(AIRPORT_FIELD, "flex h-14 w-full min-w-0 pl-10 pr-3 text-body placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}
