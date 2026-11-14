@@ -1999,7 +1999,7 @@ export interface components {
              * Booking
              * @enum {string}
              */
-            booking: "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired";
+            booking: "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded";
             /**
              * Issuance
              * @enum {string}
@@ -2553,6 +2553,12 @@ export interface components {
              * @default false
              */
             can_record_payments: boolean;
+            /**
+             * Can Release
+             * @description Release hold can be used now: held, and the provider has a release call (the endpoint still checks).
+             * @default false
+             */
+            can_release: boolean;
             customer?: components["schemas"]["GroupHoldCustomer"] | null;
             flight: components["schemas"]["GroupHoldFlight"];
             /** @description Provider, supplier PNR, group and ticket IDs, as copied from the listing when the hold was created. Only with the supplier names permission. */
@@ -2588,10 +2594,10 @@ export interface components {
             saved_people?: components["schemas"]["SaveOutcomeView"][] | null;
             /**
              * Status
-             * @description held; expired (time limit passed, can't be held again: search again); released; processing (issuing); issued; unknown (issuing outcome unclear).
+             * @description held; expired (time limit passed, can't be held again: search again); released; processing (issuing); issued; unknown (issuing outcome unclear); not_recorded (the supplier held but the booking couldn't be completed; only viewers with supplier access can open it).
              * @enum {string}
              */
-            status: "held" | "expired" | "released" | "processing" | "issued" | "unknown";
+            status: "held" | "expired" | "released" | "processing" | "issued" | "unknown" | "not_recorded";
             /**
              * Stock
              * @enum {string}
@@ -2602,6 +2608,11 @@ export interface components {
              * @description Only with the supplier names permission.
              */
             supplier?: string | null;
+            /**
+             * Supplier Notice
+             * @description What happens to the seats at the supplier, e.g. 'Supplier hold not recorded, it expires by itself after 1 hour'. Only with the supplier names permission.
+             */
+            supplier_notice?: string | null;
             /**
              * Supplier Release Failed
              * @description The seats could not be released at the supplier after the hold ended (being retried, or given up). Only with the supplier names permission.
@@ -4434,7 +4445,7 @@ export interface operations {
                 date_type?: "created";
                 /** @description Booking ID or PNR. */
                 q?: string | null;
-                booking_status?: ("held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired") | null;
+                booking_status?: ("held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded") | null;
                 payment_status?: ("paid" | "unpaid" | "part_paid") | null;
                 issuance_status?: ("not_issued" | "requested" | "processing" | "issued" | "unknown") | null;
                 /** @description Requires the supplier names permission. */

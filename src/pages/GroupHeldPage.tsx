@@ -68,6 +68,13 @@ export function ReleaseFailedNotice() {
   );
 }
 
+/** What happens to the seats at the supplier, e.g. "Supplier hold ends by itself after 1 hour". The gateway sends
+ *  supplier_notice only to viewers with supplier access (Super Admin, or staff granted it). */
+export function SupplierNotice({ view }: { view: GroupHoldView }) {
+  if (!view.supplier_notice) return null;
+  return <Notice tone={view.status === "not_recorded" ? "critical" : "info"} title={view.supplier_notice} />;
+}
+
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2 text-label">
@@ -94,6 +101,7 @@ function Held({ view }: { view: GroupHoldView }) {
   return (
     <>
       {view.supplier_release_failed && <ReleaseFailedNotice />}
+      {!view.supplier_release_failed && <SupplierNotice view={view} />}
       {held ? (
         <section aria-label="Seats held" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-status-fine/40 bg-status-fine-soft px-card py-3">
           <span className="flex items-center gap-2.5 text-body font-semibold text-status-fine-text">
@@ -103,9 +111,11 @@ function Held({ view }: { view: GroupHoldView }) {
           <HoldCountdown expiresAt={view.hold_expires_at} />
         </section>
       ) : (
-        <Notice tone={expired ? "critical" : "info"} title={
-          expired ? "This hold has expired" : view.status === "released" ? "This hold was released" : view.status === "issued" ? "Tickets issued" : "Issuing in progress"}>
-          {expired ? <>The seats were not kept and this booking can't be held again. <Link to={SEARCH} className="font-medium text-teal hover:underline">Search again</Link> and hold new seats.</>
+        <Notice tone={expired || view.status === "not_recorded" ? "critical" : "info"} title={
+          expired ? "This hold has expired" : view.status === "released" ? "This hold was released" : view.status === "issued" ? "Tickets issued"
+            : view.status === "not_recorded" ? "This hold was not recorded" : "Issuing in progress"}>
+          {view.status === "not_recorded" ? <>The supplier held the seats but the booking couldn't be saved. <Link to={SEARCH} className="font-medium text-teal hover:underline">Search again</Link> to hold new seats.</>
+            : expired ? <>The seats were not kept and this booking can't be held again. <Link to={SEARCH} className="font-medium text-teal hover:underline">Search again</Link> and hold new seats.</>
             : view.status === "released" ? "The seats went back to the supplier. Search again to hold new seats."
             : "Open the booking for the details."}
         </Notice>
@@ -125,7 +135,7 @@ function Held({ view }: { view: GroupHoldView }) {
             </div>
             <Row label="Stock" value={view.stock === "owned" ? "Owned" : "Supplier"} />
             {source && <Row label="Source" value={<span title={source}>{source}</span>} />}
-            {view.status !== "held" && <Row label="Status" value={<StatusBadge severity={view.status === "issued" ? "fine" : "critical"}>{view.status === "issued" ? "Issued" : view.status === "released" ? "Released" : view.status === "expired" ? "Expired" : view.status === "unknown" ? "Unknown" : "Processing"}</StatusBadge>} />}
+            {view.status !== "held" && <Row label="Status" value={<StatusBadge severity={view.status === "issued" ? "fine" : "critical"}>{view.status === "issued" ? "Issued" : view.status === "released" ? "Released" : view.status === "expired" ? "Expired" : view.status === "unknown" ? "Unknown" : view.status === "not_recorded" ? "Not recorded" : "Processing"}</StatusBadge>} />}
           </dl>
           <dl className="mt-2 flex flex-col border-t border-border pt-2">
             <Row label="Customer" value={view.customer?.name ?? "—"} />
@@ -146,7 +156,7 @@ function Held({ view }: { view: GroupHoldView }) {
           {problem && <p role="alert" className="mt-2 text-helper text-status-critical-text">{problem}</p>}
           <div className="mt-3 flex flex-col gap-2">
             <Button type="button" variant="primary" className="w-full" disabled={!held} onClick={() => navigate(groupBookingPath(view.booking_id))}>Continue to payment</Button>
-            <Button type="button" variant="outline" className="w-full" disabled={!held || release.isPending} onClick={() => { setProblem(null); release.mutate(); }}>
+            <Button type="button" variant="outline" className="w-full" disabled={!held || !view.can_release || release.isPending} onClick={() => { setProblem(null); release.mutate(); }}>
               {release.isPending ? "Releasing…" : "Release hold"}
             </Button>
           </div>

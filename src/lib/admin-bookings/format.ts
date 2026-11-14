@@ -43,6 +43,8 @@ export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
   ticket_issued: "Ticket issued",
   cancelled: "Cancelled",
   expired: "Expired",
+  // Supplier access only (the gateway leaves it out for everyone else): the supplier held seats Travelian couldn't record.
+  hold_unrecorded: "Hold not recorded",
 };
 
 export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = { paid: "Paid", unpaid: "Unpaid", part_paid: "Part-paid" };

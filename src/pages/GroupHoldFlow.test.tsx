@@ -37,7 +37,7 @@ const HELD: GroupHoldView = {
     { position: 0, title: "MR", first_name: "Ali", last_name: "Raza", id_type: "PSPT", document_number_masked: "AB•••4567", date_of_birth_masked: "1988-••-••" },
     { position: 1, title: "MRS", first_name: "Sana", last_name: "Raza", id_type: "PSPT", document_number_masked: "AB•••4567", date_of_birth_masked: "1990-••-••" },
   ],
-  payments: [], can_record_payments: true, can_issue_tickets: true,
+  payments: [], can_record_payments: true, can_issue_tickets: true, can_release: true,
 };
 const PAID: GroupHoldView = {
   ...HELD, amount_paid: rs(237_000), amount_due: rs(0), payment_status: "paid",
@@ -283,6 +283,41 @@ describe("Group identity (Source line)", () => {
     const booking = await screen.findByRole("region", { name: "Details" });
     expect(booking).not.toHaveTextContent(/Source|Dhillu|41SDS4|3056/);
     expect(booking).toHaveTextContent("StockSupplier");
+  });
+});
+
+describe("Dhillu & Sahi hold and unrecorded supplier holds", () => {
+  const DS_HELD: GroupHoldView = { ...HELD, pnr: "4FMUAF - 4KOCE5", supplier: "dhillu_sahi", can_release: false, supplier_notice: "Supplier hold ends by itself after 1 hour" };
+
+  it("supplier access: the notice shows on the held page and the booking page; Release hold is off (no release call)", async () => {
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", DS_HELD);
+    expect(await screen.findByText("Supplier hold ends by itself after 1 hour")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Release hold" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Continue to payment" })).toBeEnabled();
+    gateway.fetchGroupHold.mockResolvedValue(DS_HELD);
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
+    await screen.findByRole("region", { name: "Details" });
+    expect(screen.getAllByText("Supplier hold ends by itself after 1 hour")).toHaveLength(2);
+  });
+
+  it("staff (no supplier_notice sent): no notice", async () => {
+    gateway.fetchGroupHold.mockResolvedValue({ ...DS_HELD, pnr: undefined, supplier: undefined, supplier_notice: undefined });
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123");
+    await screen.findByRole("region", { name: "Booking details" });
+    expect(document.body.textContent).not.toMatch(/Supplier hold|dhillu/i);
+  });
+
+  it("a hold the supplier made but Travelian couldn't record: Not recorded, the notice, both actions off", async () => {
+    gateway.fetchGroupHold.mockResolvedValue({ ...HELD, status: "not_recorded", can_record_payments: false, can_issue_tickets: false, can_release: false,
+      supplier_notice: "Supplier hold not recorded, it expires by itself after 1 hour" });
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123");
+    expect(await screen.findByText("This hold was not recorded")).toBeInTheDocument();
+    expect(screen.getByText("Supplier hold not recorded, it expires by itself after 1 hour")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue to payment" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Release hold" })).toBeDisabled();
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
+    await screen.findByRole("region", { name: "Details" });
+    expect(screen.getAllByText("Not recorded").length).toBeGreaterThan(1);
   });
 });
 

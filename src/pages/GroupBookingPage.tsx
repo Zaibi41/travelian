@@ -6,7 +6,7 @@ import { TabLinks } from "@/components/admin/ui/TabLinks";
 import { StatusBadge, Tag } from "@/components/admin/ui/StatusBadge";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GroupBookingSteps } from "@/components/admin/search/GroupBookingSteps";
-import { ReleaseFailedNotice } from "./GroupHeldPage";
+import { ReleaseFailedNotice, SupplierNotice } from "./GroupHeldPage";
 import { GroupPaymentsTab, groupHoldKey } from "@/components/admin/search/GroupPaymentsTab";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
@@ -17,6 +17,7 @@ const BOOKINGS = "/admin/bookings/group-ticketing";
 const STATUS: Record<GroupHoldView["status"], { label: string; severity: "fine" | "action" | "critical" }> = {
   held: { label: "Held", severity: "action" }, expired: { label: "Expired", severity: "critical" }, released: { label: "Released", severity: "critical" },
   processing: { label: "Issuing", severity: "action" }, issued: { label: "Issued", severity: "fine" }, unknown: { label: "Unknown", severity: "critical" },
+  not_recorded: { label: "Not recorded", severity: "critical" },
 };
 
 // Payment and issue tickets, step 4 of 4 (mockup pages 12 and 13): the group booking with
@@ -49,6 +50,7 @@ export default function GroupBookingPage() {
         <GroupBookingSteps current={4} />
       </div>
       {view?.supplier_release_failed && <ReleaseFailedNotice />}
+      {view?.supplier_notice && !view.supplier_release_failed && <SupplierNotice view={view} />}
       <TabLinks label="Booking" tabs={GROUP_BOOKING_TABS.map(entry => ({ to: groupBookingPath(bookingId, entry.slug), label: entry.label }))} />
       {hold.error && !view ? (
         <NotAvailableNotice title="This booking can't be shown">
