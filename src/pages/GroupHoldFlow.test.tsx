@@ -287,17 +287,17 @@ describe("Group identity (Source line)", () => {
 });
 
 describe("Dhillu & Sahi hold and unrecorded supplier holds", () => {
-  const DS_HELD: GroupHoldView = { ...HELD, pnr: "4FMUAF - 4KOCE5", supplier: "dhillu_sahi", can_release: false, supplier_notice: "Supplier hold ends by itself after 1 hour" };
+  const DS_HELD: GroupHoldView = { ...HELD, pnr: "4FMUAF - 4KOCE5", supplier: "dhillu_sahi", can_release: false, supplier_notice: "Cancelled at the supplier" };
 
   it("supplier access: the notice shows on the held page and the booking page; Release hold is off (no release call)", async () => {
     renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", DS_HELD);
-    expect(await screen.findByText("Supplier hold ends by itself after 1 hour")).toBeInTheDocument();
+    expect(await screen.findByText("Cancelled at the supplier")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Release hold" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Continue to payment" })).toBeEnabled();
     gateway.fetchGroupHold.mockResolvedValue(DS_HELD);
     renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
     await screen.findByRole("region", { name: "Details" });
-    expect(screen.getAllByText("Supplier hold ends by itself after 1 hour")).toHaveLength(2);
+    expect(screen.getAllByText("Cancelled at the supplier")).toHaveLength(2);
   });
 
   it("staff (no supplier_notice sent): no notice", async () => {
@@ -364,6 +364,25 @@ describe("Dhillu & Sahi held at a different price", () => {
     expect(await screen.findByText("This hold has expired")).toBeInTheDocument();
     expect(screen.getByText("Cancelled at the supplier")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continue to payment" })).toBeDisabled();
+  });
+});
+
+describe("Dhillu & Sahi hold time note", () => {
+  it("supplier access: the note under the countdown on the held page and the booking page", async () => {
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", { ...HELD, hold_time_note: "Hold time from supplier" });
+    const held = await screen.findByRole("region", { name: "Seats held" });
+    expect(held).toHaveTextContent("Hold time from supplier");
+    expect(within(held).getByRole("timer")).toHaveTextContent(/Hold expires/);
+    gateway.fetchGroupHold.mockResolvedValue({ ...HELD, hold_time_note: "Hold time estimated (45 min default)" });
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
+    expect(await screen.findByText("Hold time estimated (45 min default)")).toBeInTheDocument();
+  });
+
+  it("everyone else (no note sent): only the countdown, and no old '1 hour' line", async () => {
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", HELD);
+    const held = await screen.findByRole("region", { name: "Seats held" });
+    expect(within(held).getByRole("timer")).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/Hold time (from supplier|estimated)|after 1 hour/);
   });
 });
 

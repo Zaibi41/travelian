@@ -35,17 +35,26 @@ export function GroupBookingSteps({ current }: { current: 2 | 3 | 4 }) {
 }
 
 /** Amber "Hold expires, 28:14 left" (red "Hold expired" once over). The time limit comes from the gateway. */
-export function HoldCountdown({ expiresAt, expired }: { expiresAt?: string | null; expired?: boolean }) {
+/** `note`: the gateway's hold_time_note ("Hold time from supplier" / "Hold time estimated (45 min default)"), sent only
+ *  to viewers with supplier access; shown under the countdown. */
+export function HoldCountdown({ expiresAt, expired, note }: { expiresAt?: string | null; expired?: boolean; note?: string | null }) {
   const countdown = useCountdown(expiresAt ?? undefined);
   const over = expired || (countdown !== null && countdown.seconds === 0);
   if (!expiresAt && !expired) return null;
-  return (
+  const badge = (
     <span role="timer" aria-live="off" className={cn(
       "inline-flex h-badge max-w-full items-center gap-1.5 whitespace-nowrap rounded-pill px-badge-x text-helper font-semibold",
       over ? "bg-status-critical-soft text-status-critical-text" : "bg-status-action-soft text-status-action-text",
     )}>
       <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
       {over ? "Hold expired" : `Hold expires, ${countdownLabel(countdown?.seconds ?? 0)} left`}
+    </span>
+  );
+  if (!note) return badge;
+  return (
+    <span className="inline-flex min-w-0 max-w-full flex-col items-start gap-1 sm:items-end">
+      {badge}
+      <span className="max-w-full truncate text-label text-muted-foreground" title={note}>{note}</span>
     </span>
   );
 }

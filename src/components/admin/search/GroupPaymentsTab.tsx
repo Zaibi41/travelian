@@ -211,7 +211,7 @@ function IssueTickets({ view, held, onChange }: { view: GroupHoldView; held: boo
         {problem && <p role="alert" className="mt-1 text-body text-status-critical-text">{problem}</p>}
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-3">
-        {view.status === "held" && <HoldCountdown expiresAt={view.hold_expires_at} expired={!held} />}
+        {view.status === "held" && <HoldCountdown expiresAt={view.hold_expires_at} expired={!held} note={view.hold_time_note} />}
         <Button type="button" variant="primary" disabled={!canIssue || issue.isPending} title={view.issue_unavailable_reason ?? undefined}
           onClick={() => { setProblem(null); setResult(null); issue.mutate(undefined); }}>
           {issue.isPending ? "Issuing…" : "Issue tickets"}

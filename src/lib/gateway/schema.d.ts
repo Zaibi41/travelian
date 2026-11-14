@@ -2601,6 +2601,11 @@ export interface components {
              */
             hold_expires_at?: string | null;
             /**
+             * Hold Time Note
+             * @description Under the countdown: 'Hold time estimated (45 min default)' or 'Hold time from supplier'. Only with the supplier names permission.
+             */
+            hold_time_note?: string | null;
+            /**
              * Issue Unavailable Reason
              * @description Why Issue tickets is off for this booking's provider, when it is.
              */

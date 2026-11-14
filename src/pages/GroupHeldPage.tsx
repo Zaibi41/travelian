@@ -69,7 +69,7 @@ export function ReleaseFailedNotice() {
   );
 }
 
-/** What happens to the seats at the supplier, e.g. "Supplier hold ends by itself after 1 hour". The gateway sends
+/** What happens to the seats at the supplier, e.g. "Cancelled at the supplier". The gateway sends
  *  supplier_notice only to viewers with supplier access (Super Admin, or staff granted it). */
 export function SupplierNotice({ view }: { view: GroupHoldView }) {
   if (!view.supplier_notice) return null;
@@ -142,7 +142,7 @@ function Held({ view }: { view: GroupHoldView }) {
             <span aria-hidden="true" className="flex h-6 w-6 items-center justify-center rounded-full bg-card"><Check className="h-3.5 w-3.5" /></span>
             Seats held for {adults}
           </span>
-          <HoldCountdown expiresAt={view.hold_expires_at} />
+          <HoldCountdown expiresAt={view.hold_expires_at} note={view.hold_time_note} />
         </section>
       ) : (
         <Notice tone={expired || view.status === "not_recorded" ? "critical" : "info"} title={
