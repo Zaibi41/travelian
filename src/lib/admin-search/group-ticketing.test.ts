@@ -60,6 +60,17 @@ describe("group ticketing search helpers", () => {
     expect(resultRows(GROUPS).every(row => row.source === null)).toBe(true);
   });
 
+  it("suggested routes and sector counts come from the merged listing: Kuwait (Dhillu & Sahi id 29) and Al Haider's connecting sectors", () => {
+    const merged = [
+      { id: "ds-9", sector: "LAHORE - DAMMAM", tickets: [ticket("a", { sector: "LHE - DMM" }), ticket("b", { sector: "LHE - DMM" })] },
+      { id: "ds-29", sector: "LAHORE - KUWAIT", tickets: [ticket("c", { sector: "LHE - KWI" })] },
+      { id: "ah-1", sector: "ISB - MCT - JED", tickets: [ticket("d", { sector: "ISB - MCT - JED", airline: "SALAM AIR" })] },
+    ] as unknown as GroupInventory[];
+    expect(inventoryOptions(merged).sectors).toEqual([
+      { from: "LHE", to: "DMM", count: 2 }, { from: "ISB", to: "JED", count: 1 }, { from: "LHE", to: "KWI", count: 1 },
+    ]);
+  });
+
   it("keeps the search in the URL", () => {
     const search = parseGroupSearch(new URLSearchParams("tab=group-ticketing&from=lhe&to=DMM&date=2026-11-13&adults=3&airline=PIA"));
     expect(search).toEqual({ from: "LHE", to: "DMM", date: "2026-11-13", adults: 3, airline: "PIA" });
