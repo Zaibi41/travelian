@@ -103,6 +103,9 @@ function Details({ view }: { view: GroupHoldView }) {
       ["Adults", view.adults],
       ["Price per adult", formatMoney(view.price_per_adult)],
       ["Total", formatMoney(view.total)],
+      // Cost and profit: only when the gateway sends them (cost and margin access).
+      ...(view.supplier_cost ? [["Supplier cost", formatMoney(view.supplier_cost)] as [string, React.ReactNode]] : []),
+      ...(view.profit ? [["Profit", formatMoney(view.profit)] as [string, React.ReactNode]] : []),
       ["Customer", view.customer ? [view.customer.name, view.customer.phone, view.customer.email].filter(Boolean).join(", ") : "—"],
     ]} />
   );

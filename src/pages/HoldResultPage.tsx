@@ -74,6 +74,9 @@ function Held({ hold }: { hold: HoldView }) {
           <Fact label="Airline PNR" value={hold.pnr} />
           <Fact label="Time left" value={timeLeft} />
           <Fact label="Total" value={formatMoney(hold.selling_total)} />
+          {/* Cost and profit only when the gateway sends them (cost and margin access); they reflect the airline's price at the hold. */}
+          {hold.supplier_cost && <Fact label="Supplier cost" value={formatMoney(hold.supplier_cost)} />}
+          {hold.profit && <Fact label="Profit" value={formatMoney(hold.profit)} />}
         </div>
         {hold.warnings && hold.warnings.length > 0 && (
           <ul aria-label="Warnings" className="flex flex-col gap-1">

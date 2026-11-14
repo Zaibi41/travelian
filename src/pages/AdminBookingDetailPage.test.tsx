@@ -9,7 +9,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 const detail = { current: {} as Record<string, unknown> };
 vi.mock("@/lib/admin-bookings/use-bookings", () => ({ useBookingDetail: () => detail.current }));
 const reveal = vi.hoisted(() => vi.fn());
-vi.mock("@/lib/admin-bookings/api", () => ({ revealTraveler: reveal }));
+const gateway = vi.hoisted(() => ({ setSellingPrice: vi.fn() }));
+vi.mock("@/lib/admin-bookings/api", () => ({ revealTraveler: reveal, setSellingPrice: gateway.setSellingPrice }));
 
 import AdminBookingDetailPage from "./AdminBookingDetailPage";
 
@@ -23,7 +24,7 @@ const STAFF_VIEW: BookingDetail = {
   amount: rs(12_500), deadline: "2099-11-05T09:00:00Z", created_at: "2026-11-05T07:00:00Z",
   fare: { billable_price: rs(12_500) },
   sections_not_available: ["itinerary", "passengers", "payments", "tickets", "servicing", "audit"],
-  can_reveal_identity: false, can_record_payments: false, can_issue_tickets: false,
+  can_reveal_identity: false, can_record_payments: false, can_issue_tickets: false, can_set_selling_price: false,
 };
 const ADMIN_VIEW: BookingDetail = {
   ...STAFF_VIEW, provider: "AirSial",
@@ -74,16 +75,37 @@ describe("Booking detail", () => {
     expect(screen.queryByText(/left\)$/)).not.toBeInTheDocument();
   });
 
-  it("Fare shows supplier cost and margin only when the gateway sends them", () => {
+  it("Fare shows supplier cost and profit only when the gateway sends them", () => {
     const { unmount } = renderAt("/admin/bookings/TRV-1/fare");
     const fare = screen.getByRole("region", { name: "Fare" });
     expect(within(fare).getAllByRole("row").map(row => row.textContent)).toEqual([
-      "ItemAmount", "Billable priceRs 12,500", "Supplier costRs 11,000", "MarginRs 1,500",
+      "ItemAmount", "Billable priceRs 12,500", "Supplier costRs 11,000", "ProfitRs 1,500",
     ]);
     unmount();
     detail.current = ok(STAFF_VIEW);
     renderAt("/admin/bookings/TRV-1/fare");
-    expect(screen.queryByText(/Supplier cost|Margin|11,000|1,500/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Supplier cost|Profit|11,000|1,500/)).not.toBeInTheDocument();
+  });
+
+  it("Fare: the selling price per passenger type, cost each only with access, and the selling price form before payment", async () => {
+    const per = [{ passenger_type: "ADT" as const, count: 2, selling_each: rs(6_000), supplier_cost_each: rs(5_500) },
+      { passenger_type: "INF" as const, count: 1, selling_each: rs(500), supplier_cost_each: rs(450) }];
+    detail.current = ok({ ...ADMIN_VIEW, can_set_selling_price: true, fare: { ...ADMIN_VIEW.fare, per_passenger: per } });
+    gateway.setSellingPrice.mockResolvedValue({ total: rs(13_000) });
+    const { unmount } = renderAt("/admin/bookings/TRV-1/fare");
+    const fare = screen.getByRole("region", { name: "Fare" });
+    expect(fare).toHaveTextContent("Adult × 2, selling price eachRs 6,000");
+    expect(fare).toHaveTextContent("Adult, supplier cost eachRs 5,500");
+    const form = screen.getByRole("region", { name: "Selling price" });
+    fireEvent.change(within(form).getByLabelText("Adult (Rs each)"), { target: { value: "6250" } });
+    fireEvent.click(within(form).getByRole("button", { name: "Save selling price" }));
+    await waitFor(() => expect(gateway.setSellingPrice).toHaveBeenCalledWith("TRV-1", [
+      { passenger_type: "ADT", selling_each: rs(6_250) }, { passenger_type: "INF", selling_each: rs(500) }]));
+    unmount();
+    detail.current = ok({ ...STAFF_VIEW, fare: { billable_price: rs(12_500), per_passenger: per.map(({ supplier_cost_each: _, ...item }) => item) } });
+    renderAt("/admin/bookings/TRV-1/fare");
+    expect(screen.getByRole("region", { name: "Fare" })).not.toHaveTextContent("supplier cost");
+    expect(screen.queryByRole("region", { name: "Selling price" })).not.toBeInTheDocument();
   });
 
   it("plain staff: no Supplier payment tab, and its URL goes back to Overview", () => {

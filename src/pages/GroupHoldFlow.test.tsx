@@ -11,7 +11,7 @@ const gateway = vi.hoisted(() => ({
   fetchGroupTicket: vi.fn(), holdGroupSeats: vi.fn(), fetchGroupHold: vi.fn(), issueGroupTickets: vi.fn(), releaseGroupHold: vi.fn(), acceptHeldPrice: vi.fn(),
 }));
 vi.mock("@/lib/admin-search/group-holds", async importOriginal => ({ ...(await importOriginal<object>()), ...gateway }));
-const bookings = vi.hoisted(() => ({ fetchPaymentAccounts: vi.fn(), recordPayment: vi.fn() }));
+const bookings = vi.hoisted(() => ({ fetchPaymentAccounts: vi.fn(), recordPayment: vi.fn(), setSellingPrice: vi.fn() }));
 vi.mock("@/lib/admin-bookings/api", () => bookings);
 const people = vi.hoisted(() => ({ searchPeople: vi.fn() }));
 vi.mock("@/lib/saved-people/api", async importOriginal => ({ ...(await importOriginal<object>()), searchPeople: people.searchPeople }));
@@ -37,7 +37,7 @@ const HELD: GroupHoldView = {
     { position: 0, title: "MR", first_name: "Ali", last_name: "Raza", id_type: "PSPT", document_number_masked: "AB•••4567", date_of_birth_masked: "1988-••-••" },
     { position: 1, title: "MRS", first_name: "Sana", last_name: "Raza", id_type: "PSPT", document_number_masked: "AB•••4567", date_of_birth_masked: "1990-••-••" },
   ],
-  payments: [], can_record_payments: true, can_issue_tickets: true, can_release: true,
+  payments: [], can_record_payments: true, can_issue_tickets: true, can_release: true, can_set_selling_price: true,
 };
 const PAID: GroupHoldView = {
   ...HELD, amount_paid: rs(237_000), amount_due: rs(0), payment_status: "paid",
@@ -135,6 +135,31 @@ describe("Hold group seats (step 2)", () => {
     expect(screen.getByText("Rs 237,000")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Booking details" })).toHaveTextContent("Sana Raza, Passport AB•••4567");
     expect(document.body.textContent).not.toMatch(/Reveal|dhillu|skypass/i);
+  });
+
+  it("selling price per adult: starts at the fare's price, is sent with the hold, whole rupees only; the gateway's below-cost error shows on it", async () => {
+    gateway.fetchGroupTicket.mockResolvedValue({ ...TICKET, selling_price: rs(88_000) });
+    gateway.holdGroupSeats.mockRejectedValueOnce(new GatewayError("unavailable", "The selling price can't be below the supplier cost.", 422, "below_cost",
+      [{ path: ["selling_price_per_adult"], message: "The selling price can't be below the supplier cost." }]));
+    renderAt(HOLD_URL);
+    const field = await screen.findByLabelText("Selling price per adult (Rs)");
+    expect(field).toHaveValue("88000");
+    await fillTravelers();
+    const fare = screen.getByRole("complementary", { name: "Selected group fare" });
+    fireEvent.change(field, { target: { value: "" } });
+    fireEvent.click(within(fare).getByRole("button", { name: "Hold seats" }));
+    expect(await screen.findByText("Enter the selling price in whole rupees.")).toBeInTheDocument();
+    expect(gateway.holdGroupSeats).not.toHaveBeenCalled();
+    fireEvent.change(field, { target: { value: "87000" } });
+    fireEvent.click(within(fare).getByRole("button", { name: "Hold seats" }));
+    await waitFor(() => expect(gateway.holdGroupSeats).toHaveBeenCalledOnce());
+    expect(gateway.holdGroupSeats.mock.calls[0][0].selling_price_per_adult).toEqual(rs(87_000));
+    expect(await screen.findAllByText("The selling price can't be below the supplier cost.")).not.toHaveLength(0);
+    gateway.holdGroupSeats.mockResolvedValue(HELD);
+    fireEvent.change(field, { target: { value: "88200" } });
+    fireEvent.click(within(fare).getByRole("button", { name: "Hold seats" }));
+    await waitFor(() => expect(gateway.holdGroupSeats).toHaveBeenCalledTimes(2));
+    expect(gateway.holdGroupSeats.mock.calls[1][0].selling_price_per_adult).toEqual(rs(88_200));
   });
 
   it("hold failure: shows the gateway's sentence, stays on the form, and the fields keep their values", async () => {
@@ -321,42 +346,75 @@ describe("Dhillu & Sahi hold and unrecorded supplier holds", () => {
   });
 });
 
-describe("Dhillu & Sahi held at a different price", () => {
-  const CHANGED: GroupHoldView = { ...HELD, can_record_payments: false, can_release: false,
-    price_change: { shown_total: rs(170_000), held_total: rs(180_000), difference: rs(10_000) } };
+describe("Supplier price changed at the hold: the selling price stays", () => {
+  const CHANGED: GroupHoldView = { ...HELD, can_record_payments: false, can_release: false, supplier_cost: rs(180_000), profit: rs(57_000),
+    price_change: { selling_total: rs(237_000), below_cost: false, shown_cost: rs(170_000), held_cost: rs(180_000), difference: rs(10_000), profit: rs(57_000) } };
 
-  it("the dialog shows the price shown, the held price and the difference; Continue to payment waits for the customer", async () => {
+  it("cost access: shown and held supplier price, difference, selling price and the new profit; Continue confirms", async () => {
     gateway.acceptHeldPrice.mockResolvedValue({ ...CHANGED, price_change: undefined, can_record_payments: true });
     renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", CHANGED);
-    const dialog = await screen.findByRole("dialog", { name: "The price has changed" });
-    expect(dialog).toHaveTextContent("Price shownRs 170,000");
-    expect(dialog).toHaveTextContent("Held priceRs 180,000");
+    const dialog = await screen.findByRole("dialog", { name: "The supplier price has changed" });
+    expect(dialog).toHaveTextContent("Supplier price shownRs 170,000");
+    expect(dialog).toHaveTextContent("Supplier price heldRs 180,000");
     expect(dialog).toHaveTextContent("Difference+ Rs 10,000");
-    // The page behind the open dialog is hidden from assistive tech (modal).
+    expect(dialog).toHaveTextContent("Selling priceRs 237,000");
+    expect(dialog).toHaveTextContent("Profit+ Rs 57,000");
     expect(screen.getByRole("button", { name: "Continue to payment", hidden: true })).toBeDisabled();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Customer agrees, continue" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Continue" }));
     await waitFor(() => expect(gateway.acceptHeldPrice).toHaveBeenCalledWith("TRV-GRP-000123"));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(screen.getByRole("button", { name: "Continue to payment" })).toBeEnabled();
   });
 
-  it("closing the dialog leaves a notice to review the price; Search again leaves the hold alone", async () => {
+  it("no cost access: only the selling price", async () => {
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", { ...CHANGED, supplier_cost: undefined, profit: undefined,
+      price_change: { selling_total: rs(237_000), below_cost: false } });
+    const dialog = await screen.findByRole("dialog", { name: "The supplier price has changed" });
+    expect(dialog).toHaveTextContent("Selling priceRs 237,000");
+    expect(dialog).not.toHaveTextContent(/Supplier price (shown|held)|Profit/);
+  });
+
+  it("below the new cost: Continue is off until a higher selling price is saved", async () => {
+    const below: GroupHoldView = { ...CHANGED, price_change: { ...CHANGED.price_change!, below_cost: true, profit: rs(-3_000) } };
+    bookings.setSellingPrice.mockResolvedValue({ total: rs(240_000) });
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", below);
+    const dialog = await screen.findByRole("dialog", { name: "The supplier price has changed" });
+    expect(within(dialog).getByRole("button", { name: "Continue" })).toBeDisabled();
+    expect(dialog).toHaveTextContent("The selling price is below the new supplier price.");
+    fireEvent.change(within(dialog).getByLabelText("Selling price per adult (Rs)"), { target: { value: "120000" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save price" }));
+    await waitFor(() => expect(bookings.setSellingPrice).toHaveBeenCalledWith("TRV-GRP-000123",
+      [{ passenger_type: "ADT", selling_each: { amount_minor: 120_000_00, currency: "PKR" } }]));
+    expect(gateway.acceptHeldPrice).not.toHaveBeenCalled();
+  });
+
+  it("closing leaves a notice; Search again leaves the hold alone; the booking page shows the same dialog", async () => {
     renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", CHANGED);
-    const dialog = await screen.findByRole("dialog", { name: "The price has changed" });
+    const dialog = await screen.findByRole("dialog", { name: "The supplier price has changed" });
     fireEvent.keyDown(dialog, { key: "Escape" });
-    expect(await screen.findByText("Confirm the new price with the customer before taking payment.", { exact: false })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Review the price" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Review it" }));
     fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Search again" }));
     await waitFor(() => expect(location.current).toBe("/admin/search?tab=group-ticketing"));
     expect(gateway.releaseGroupHold).not.toHaveBeenCalled();
-  });
-
-  it("the booking page shows the same dialog until the customer agrees", async () => {
     gateway.fetchGroupHold.mockResolvedValue(CHANGED);
     renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
-    expect(await screen.findByRole("dialog", { name: "The price has changed" })).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "The supplier price has changed" })).toBeInTheDocument();
   });
 
+  it("booking details: supplier cost and profit only when the gateway sends them", async () => {
+    gateway.fetchGroupHold.mockResolvedValue({ ...HELD, supplier_cost: rs(176_000), profit: rs(61_000) });
+    const first = renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
+    const details = await screen.findByRole("region", { name: "Details" });
+    expect(details).toHaveTextContent("Supplier costRs 176,000");
+    expect(details).toHaveTextContent("ProfitRs 61,000");
+    first.unmount();
+    gateway.fetchGroupHold.mockResolvedValue(HELD);
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000124/details");
+    expect(await screen.findByRole("region", { name: "Details" })).not.toHaveTextContent(/Supplier cost|Profit/);
+  });
+});
+
+describe("Dhillu & Sahi cancelled at the supplier", () => {
   it("cancelled at the supplier: Expired, the notice for supplier access, both actions off", async () => {
     gateway.fetchGroupHold.mockResolvedValue({ ...HELD, status: "expired", can_record_payments: false, can_issue_tickets: false, can_release: false,
       supplier_notice: "Cancelled at the supplier" });

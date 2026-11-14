@@ -47,7 +47,7 @@ const traveler = (position: number, first: string, ticket?: string) => ({
 const BOOKING: BookingDetail = {
   source: "gateway_bookings", sample: false, booking_id: "TRV-O5QZB5", pnr: "CAEDEC", product: "flight", customer_or_agency: "Ali Khan",
   statuses: { booking: "held", payment: "unpaid", issuance: "not_issued" }, amount: rs(15_316), amount_paid: rs(0), amount_due: rs(15_316),
-  deadline: SOON, fare: { billable_price: rs(15_316) }, sections_not_available: ["payments", "tickets"],
+  deadline: SOON, fare: { billable_price: rs(15_316) }, sections_not_available: ["payments", "tickets"], can_set_selling_price: false,
   can_reveal_identity: false, can_record_payments: true, can_issue_tickets: true,
   passengers: [traveler(1, "Ali"), traveler(2, "Sara")],
 };
@@ -175,6 +175,41 @@ describe("2 · Issue the ticket", () => {
     expect(within(issued).getByRole("link", { name: "View tickets" })).toHaveAttribute("href", "/admin/bookings/TRV-O5QZB5/tickets");
   });
 
+  it("the airline's price changed: the selling price stays, the new cost and profit show, and Confirm and issue sends it", async () => {
+    api.issueTicket
+      .mockRejectedValueOnce(new GatewayError("unavailable", "The airline's price has changed.", 409, "supplier_cost_changed", [], {
+        accepted_supplier_cost: rs(14_900), new_supplier_cost: rs(14_900), previous_supplier_cost: rs(14_500), profit: rs(416) }))
+      .mockResolvedValueOnce({ result: "issued", issuance_status: "issued", message: "Issued.", tickets: [{ position: 1, ticket_number: "214-0000000001" }, { position: 2, ticket_number: "214-0000000002" }] });
+    renderTab();
+    const card = screen.getByRole("region", { name: "2 · Issue the ticket" });
+    await waitFor(() => expect(card).toHaveTextContent("Payment recorded in fullDone"));
+    fireEvent.click(within(card).getByRole("button", { name: "Issue ticket" }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Issue ticket now?" })).getByRole("button", { name: "Issue now" }));
+    const change = await screen.findByRole("dialog", { name: "The airline's price has changed" });
+    expect(change).toHaveTextContent("The customer's price stays Rs 15,316");
+    expect(change).toHaveTextContent("Supplier cost beforeRs 14,500");
+    expect(change).toHaveTextContent("Supplier cost nowRs 14,900");
+    expect(change).toHaveTextContent("ProfitRs 416");
+    fireEvent.click(within(change).getByRole("button", { name: "Confirm and issue" }));
+    await screen.findByRole("region", { name: "Tickets issued" });
+    expect(api.issueTicket).toHaveBeenLastCalledWith("TRV-O5QZB5", undefined, rs(14_900));
+  });
+
+  it("the airline's price changed, no cost access: no amounts, still confirmable; above the selling price: the gateway's refusal", async () => {
+    api.issueTicket.mockRejectedValueOnce(new GatewayError("unavailable", "The airline's price has changed.", 409, "supplier_cost_changed", [], {
+      accepted_supplier_cost: rs(14_900) }));
+    renderTab();
+    const card = screen.getByRole("region", { name: "2 · Issue the ticket" });
+    await waitFor(() => expect(card).toHaveTextContent("Payment recorded in fullDone"));
+    fireEvent.click(within(card).getByRole("button", { name: "Issue ticket" }));
+    fireEvent.click(within(screen.getByRole("dialog", { name: "Issue ticket now?" })).getByRole("button", { name: "Issue now" }));
+    const change = await screen.findByRole("dialog", { name: "The airline's price has changed" });
+    expect(change).not.toHaveTextContent(/Supplier cost|Profit/);
+    api.issueTicket.mockRejectedValueOnce(new GatewayError("unavailable", "The airline's price is now above the selling price. Nothing was issued.", 409, "below_cost"));
+    fireEvent.click(within(change).getByRole("button", { name: "Confirm and issue" }));
+    expect(await within(card).findByRole("alert")).toHaveTextContent("The airline's price is now above the selling price. Nothing was issued.");
+  });
+
   it("stays disabled with the gateway's blockers; ticketing off is explained", async () => {
     api.fetchIssuance.mockResolvedValue({ ...READY, full_payment_recorded: false, amount_due: rs(5_000), blockers: ["Full payment isn't recorded yet."], can_issue: false, can_request: false, ticketing_enabled: false });
     renderTab();
@@ -202,7 +237,7 @@ describe("2 · Issue the ticket", () => {
     unmount();
     api.fetchIssuance.mockResolvedValue({ ...READY, supplier_amount: rs(14_000), supplier_balance: rs(500_000), margin: rs(1_316) });
     renderTab();
-    expect(await screen.findByLabelText("Admin only")).toHaveTextContent("Amount charged by the supplier: Rs 14,000 · Supplier balance: Rs 500,000 · Margin Rs 1,316");
+    expect(await screen.findByLabelText("Admin only")).toHaveTextContent("Amount charged by the supplier: Rs 14,000 · Supplier balance: Rs 500,000 · Profit Rs 1,316");
   });
 
   it("a hold that ran out offers Search again", async () => {

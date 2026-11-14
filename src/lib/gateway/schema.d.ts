@@ -293,6 +293,8 @@ export interface paths {
         /**
          * Issue Ticket
          * @description Issue the ticket once (never retried). The result is decided from the supplier's PNR: issued, not_issued or unknown.
+         *     If the airline's price changed, the answer is 409 supplier_cost_changed (or below_cost); send accepted_supplier_cost
+         *     from it to issue at the new cost (the selling price stays).
          */
         post: operations["issue_ticket_v1_admin_bookings__booking_id__issuance_issue_post"];
         delete?: never;
@@ -396,6 +398,26 @@ export interface paths {
          *     customer is position 0); the browser sends only the choice. Links the booking row and is logged.
          */
         post: operations["resolve_booking_person_v1_admin_bookings__booking_id__saved_people__role___position__resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{booking_id}/selling-price": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set Selling Price
+         * @description Set what the customer pays (Group Ticketing and Flights): per passenger type, whole rupees, not below cost. Logged.
+         */
+        post: operations["set_selling_price_v1_admin_bookings__booking_id__selling_price_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1636,6 +1658,12 @@ export interface components {
              * @default false
              */
             can_reveal_identity: boolean;
+            /**
+             * Can Set Selling Price
+             * @description Whether this viewer may change the selling price now: on hold, not issued, nothing paid, Super Admin or record payments (the endpoint still checks).
+             * @default false
+             */
+            can_set_selling_price: boolean;
             /** Created At */
             created_at?: string | null;
             /** @description Omitted when no customer was saved. */
@@ -1729,6 +1757,11 @@ export interface components {
             billable_price: components["schemas"]["BookingMoney"];
             /** @description Omitted without the cost and margin permission, or when unknown. */
             margin?: components["schemas"]["BookingMoney"] | null;
+            /**
+             * Per Passenger
+             * @description Selling price (and cost, with access) per passenger type. Omitted when no travelers were saved.
+             */
+            per_passenger?: components["schemas"]["FarePerPassenger"][] | null;
             /** @description Omitted without the cost and margin permission, or when unknown. */
             supplier_cost?: components["schemas"]["BookingMoney"] | null;
         };
@@ -2128,6 +2161,20 @@ export interface components {
              */
             person_id?: string | null;
         };
+        /** FarePerPassenger */
+        FarePerPassenger: {
+            /** Count */
+            count: number;
+            /**
+             * Passenger Type
+             * @enum {string}
+             */
+            passenger_type: "ADT" | "CHD" | "INF";
+            /** @description What the customer pays per traveler of this type. */
+            selling_each: components["schemas"]["BookingMoney"];
+            /** @description Only with the cost and margin permission. */
+            supplier_cost_each?: components["schemas"]["BookingMoney"] | null;
+        };
         /** FareView */
         FareView: {
             /** Baggage */
@@ -2368,15 +2415,25 @@ export interface components {
         };
         /**
          * GroupHeldPriceChange
-         * @description The supplier held the seats at a different price than shown before the hold. Payments wait until the customer agrees.
+         * @description The supplier held the seats at a different cost than shown before the hold. The selling price stays the staff's;
+         *     payments wait until the change is confirmed, which is refused while the selling price is below the new cost.
          */
         GroupHeldPriceChange: {
-            /** @description held_total - shown_total; negative when the price went down. */
-            difference: components["schemas"]["GroupMoney"];
-            /** @description The selling total for the price the supplier held at (this booking's total). */
-            held_total: components["schemas"]["GroupMoney"];
-            /** @description The selling total shown before the hold. */
-            shown_total: components["schemas"]["GroupMoney"];
+            /**
+             * Below Cost
+             * @description The selling price is below the new supplier cost: set a higher selling price before confirming.
+             */
+            below_cost: boolean;
+            /** @description held_cost - shown_cost. Only with the cost and margin permission. */
+            difference?: components["schemas"]["GroupMoney"] | null;
+            /** @description Supplier cost held at. Only with the cost and margin permission. */
+            held_cost?: components["schemas"]["GroupMoney"] | null;
+            /** @description selling_total - held_cost. Only with the cost and margin permission. */
+            profit?: components["schemas"]["GroupMoney"] | null;
+            /** @description What the customer pays (unchanged by the supplier's change). */
+            selling_total: components["schemas"]["GroupMoney"];
+            /** @description Supplier cost shown before the hold. Only with the cost and margin permission. */
+            shown_cost?: components["schemas"]["GroupMoney"] | null;
         };
         /**
          * GroupHoldContact
@@ -2538,6 +2595,8 @@ export interface components {
              * @description One adult (ADT) per seat.
              */
             passengers: components["schemas"]["GroupHoldPassenger"][];
+            /** @description What the customer pays per adult, in whole rupees, not below the supplier cost. Default: supplier price + the group markup (0 when unset). Changing it needs the record payments permission. */
+            selling_price_per_adult?: components["schemas"]["GroupMoney"] | null;
             /**
              * Ticket Id
              * Format: uuid
@@ -2599,6 +2658,12 @@ export interface components {
              * @default false
              */
             can_release: boolean;
+            /**
+             * Can Set Selling Price
+             * @description This viewer may change the selling price now: on hold, nothing paid, Super Admin or record payments (the endpoint still checks).
+             * @default false
+             */
+            can_set_selling_price: boolean;
             customer?: components["schemas"]["GroupHoldCustomer"] | null;
             flight: components["schemas"]["GroupHoldFlight"];
             /** @description Provider, supplier PNR, group and ticket IDs, as copied from the listing when the hold was created. Only with the supplier names permission. */
@@ -2634,6 +2699,8 @@ export interface components {
             price_change?: components["schemas"]["GroupHeldPriceChange"] | null;
             /** @description Selling price per adult, from the hold (or the accepted new price). */
             price_per_adult: components["schemas"]["GroupMoney"];
+            /** @description Total minus supplier cost. Only with the cost and margin permission. */
+            profit?: components["schemas"]["GroupMoney"] | null;
             /**
              * Saved People
              * @description Only in the hold answer: what happened to the saved customer and travelers.
@@ -2655,6 +2722,8 @@ export interface components {
              * @description Only with the supplier names permission.
              */
             supplier?: string | null;
+            /** @description Supplier cost total. Only with the cost and margin permission. */
+            supplier_cost?: components["schemas"]["GroupMoney"] | null;
             /**
              * Supplier Notice
              * @description What happens to the seats at the supplier, e.g. 'Cancelled at the supplier'. Only with the supplier names permission.
@@ -3055,12 +3124,16 @@ export interface components {
             label: "UAT test data";
             /** Pnr */
             pnr: string;
+            /** @description selling_total - supplier_cost. Only with the cost and margin permission. */
+            profit?: components["schemas"]["FlightMoney"] | null;
             /**
              * Saved People
              * @description What happened to the saved customer and travelers (never blocks the hold).
              */
             saved_people?: components["schemas"]["SaveOutcomeView"][];
             selling_total: components["schemas"]["FlightMoney"];
+            /** @description The airline's cost total. Only with the cost and margin permission. */
+            supplier_cost?: components["schemas"]["FlightMoney"] | null;
             /**
              * Time Limit
              * @description The hold expires then unless ticketed. There is no cancel call.
@@ -3222,6 +3295,11 @@ export interface components {
              * @default []
              */
             tickets: components["schemas"]["TicketNumber"][];
+        };
+        /** IssueTicketRequest */
+        IssueTicketRequest: {
+            /** @description After 409 supplier_cost_changed: the airline's new cost, confirmed. */
+            accepted_supplier_cost?: components["schemas"]["BookingMoney"] | null;
         };
         /** JourneyView */
         JourneyView: {
@@ -3740,6 +3818,33 @@ export interface components {
             phone_code?: string | null;
             /** Title */
             title?: ("MR" | "MRS" | "MISS" | "MASTER") | null;
+        };
+        /** SellingPriceItem */
+        SellingPriceItem: {
+            /**
+             * Passenger Type
+             * @enum {string}
+             */
+            passenger_type: "ADT" | "CHD" | "INF";
+            /** @description What the customer pays per traveler of this type: whole rupees, not below that traveler's supplier cost. */
+            selling_each: components["schemas"]["BookingMoney"];
+        };
+        /** SellingPriceResult */
+        SellingPriceResult: {
+            /** @description total - supplier_cost. Only with the cost and margin permission. */
+            profit?: components["schemas"]["BookingMoney"] | null;
+            /** @description Only with the cost and margin permission. */
+            supplier_cost?: components["schemas"]["BookingMoney"] | null;
+            /** @description The new selling total: what payments are capped at. */
+            total: components["schemas"]["BookingMoney"];
+        };
+        /**
+         * SetSellingPriceRequest
+         * @description The selling price (Group Ticketing and Flights): before any payment, while the booking is on hold and not issued.
+         */
+        SetSellingPriceRequest: {
+            /** Prices */
+            prices: components["schemas"]["SellingPriceItem"][];
         };
         /**
          * SupplierPayment
@@ -4670,7 +4775,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["IssueTicketRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -5041,6 +5150,67 @@ export interface operations {
             };
             /** @description person_required (add_to_existing without person_id) or booking_values_invalid. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_selling_price_v1_admin_bookings__booking_id__selling_price_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetSellingPriceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SellingPriceResult"];
+                };
+            };
+            /** @description Needs the record_payments permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not on hold, issued, or a payment is already recorded. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not whole rupees, below the supplier cost, a different currency, or a passenger type not on the booking. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

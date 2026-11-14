@@ -248,10 +248,25 @@ function IssueTicket({ booking, checklist, loading, error, onResult }: {
     onSuccess: result => { setProblem(null); onResult(result); refresh(); },
     onError: failure => setProblem(gatewayMessage(failure, "Issuance couldn't be requested. Nothing was changed.")),
   });
+  // The airline's price moved since the hold: the selling price stays; the issuer confirms the new cost (shown with
+  // the new profit to cost and margin users only) and issues again with it.
+  const [costChange, setCostChange] = useState<{ accepted: Money; previous?: Money; next?: Money; profit?: Money } | null>(null);
   const issue = useMutation({
-    mutationFn: () => issueTicket(booking.booking_id),
-    onSuccess: result => { setConfirming(false); setProblem(null); onResult(result); refresh(); },
-    onError: failure => { setConfirming(false); setProblem(gatewayMessage(failure, "Issuing didn't start. Nothing was issued.")); refresh(); },
+    mutationFn: (accepted?: Money) => issueTicket(booking.booking_id, undefined, accepted ?? null),
+    onSuccess: result => { setConfirming(false); setCostChange(null); setProblem(null); onResult(result); refresh(); },
+    onError: failure => {
+      setConfirming(false);
+      const extra = failure instanceof GatewayError ? failure.extra : {};
+      if (failure instanceof GatewayError && failure.code === "supplier_cost_changed" && isMoney(extra.accepted_supplier_cost)) {
+        setProblem(null);
+        setCostChange({ accepted: extra.accepted_supplier_cost, previous: isMoney(extra.previous_supplier_cost) ? extra.previous_supplier_cost : undefined,
+          next: isMoney(extra.new_supplier_cost) ? extra.new_supplier_cost : undefined, profit: isMoney(extra.profit) ? extra.profit : undefined });
+      } else {
+        setCostChange(null);
+        setProblem(gatewayMessage(failure, "Issuing didn't start. Nothing was issued."));
+      }
+      refresh();
+    },
   });
 
   const status = checklist?.issuance_status;
@@ -311,7 +326,7 @@ function IssueTicket({ booking, checklist, loading, error, onResult }: {
                 {[
                   checklist.supplier_amount && `Amount charged by the supplier: ${formatMoney(checklist.supplier_amount)}`,
                   checklist.supplier_balance && `Supplier balance: ${formatMoney(checklist.supplier_balance)}`,
-                  checklist.margin && `Margin ${formatMoney(checklist.margin)}`,
+                  checklist.margin && `Profit ${formatMoney(checklist.margin)}`,
                 ].filter(Boolean).join(" · ")}
               </p>
             </div>
@@ -359,13 +374,43 @@ function IssueTicket({ booking, checklist, loading, error, onResult }: {
           )}
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" disabled={issue.isPending} onClick={() => setConfirming(false)}>Cancel</Button>
-            <Button type="button" variant="primary" disabled={issue.isPending} onClick={() => issue.mutate()}>Issue now</Button>
+            <Button type="button" variant="primary" disabled={issue.isPending} onClick={() => issue.mutate(undefined)}>Issue now</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={costChange !== null} onOpenChange={open => { if (!open && !issue.isPending) setCostChange(null); }}>
+        <DialogContent className="max-w-md" aria-busy={issue.isPending}>
+          <DialogHeader>
+            <DialogTitle>The airline's price has changed</DialogTitle>
+            <DialogDescription>The customer's price stays {formatMoney(booking.amount)}. Confirm the new cost to issue the ticket.</DialogDescription>
+          </DialogHeader>
+          {costChange && (costChange.previous || costChange.next || costChange.profit) && (
+            <dl className="flex flex-col rounded-lg border border-border bg-muted/40 px-3 py-1 text-label">
+              {([["Supplier cost before", costChange.previous], ["Supplier cost now", costChange.next], ["Profit", costChange.profit]] as const)
+                .filter(([, value]) => value).map(([label, value]) => (
+                  <div key={label} className="flex items-baseline justify-between gap-3 py-1.5">
+                    <dt className="text-muted-foreground">{label}</dt>
+                    <dd className="font-semibold tabular-nums text-foreground">{formatMoney(value as Money)}</dd>
+                  </div>
+                ))}
+            </dl>
+          )}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" disabled={issue.isPending} onClick={() => setCostChange(null)}>Cancel</Button>
+            <Button type="button" variant="primary" disabled={issue.isPending} onClick={() => costChange && issue.mutate(costChange.accepted)}>
+              {issue.isPending ? "Issuing…" : "Confirm and issue"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </section>
   );
 }
+
+type Money = { amount_minor: number; currency: string };
+const isMoney = (value: unknown): value is Money =>
+  typeof value === "object" && value !== null && typeof (value as Money).amount_minor === "number" && typeof (value as Money).currency === "string";
 
 // ---------- Results ----------
 

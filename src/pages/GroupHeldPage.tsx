@@ -11,7 +11,10 @@ import { GroupBookingSteps, HoldCountdown, useHoldOver } from "@/components/admi
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
 import { sourceLine } from "@/lib/admin-search/group-ticketing";
-import { PriceChangedDialog } from "@/components/admin/search/GroupPaymentsTab";
+import { signedMoney } from "@/components/admin/search/GroupPaymentsTab";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
+import { FieldLabel, Input } from "@/components/admin/ui/field";
+import { setSellingPrice } from "@/lib/admin-bookings/api";
 import { acceptHeldPrice, departureText, fetchGroupHold, returnFlightText, gatewayMessage, groupBookingPath, releaseGroupHold, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
 
 const SEARCH = "/admin/search?tab=group-ticketing";
@@ -83,27 +86,71 @@ export function HeldPriceDialog({ view }: { view: GroupHoldView }) {
   const queryClient = useQueryClient();
   const [dismissed, setDismissed] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  const [selling, setSelling] = useState("");
+  const refresh = () => queryClient.invalidateQueries({ queryKey: groupHoldKey(view.booking_id) });
   const accept = useMutation({
     mutationFn: () => acceptHeldPrice(view.booking_id),
     onSuccess: next => { queryClient.setQueryData(groupHoldKey(view.booking_id), next); void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] }); },
-    onError: error => setProblem(gatewayMessage(error, "The new price couldn't be confirmed. Nothing was changed.")),
+    onError: error => setProblem(gatewayMessage(error, "The change couldn't be confirmed. Nothing was changed.")),
+  });
+  const reprice = useMutation({
+    mutationFn: () => setSellingPrice(view.booking_id, [{ passenger_type: "ADT", selling_each: { amount_minor: Number(selling) * 100, currency: view.total.currency } }]),
+    onSuccess: () => { setSelling(""); setProblem(null); void refresh(); },
+    onError: error => setProblem(gatewayMessage(error, "The selling price couldn't be saved. Nothing was changed.")),
   });
   const change = view.price_change;
   if (!change) return null;
+  const busy = accept.isPending || reprice.isPending;
+  const rows: [string, string][] = [
+    ...(change.shown_cost && change.held_cost && change.difference ? [
+      ["Supplier price shown", formatMoney(change.shown_cost)], ["Supplier price held", formatMoney(change.held_cost)],
+      ["Difference", signedMoney(change.difference)]] as [string, string][] : []),
+    ["Selling price", formatMoney(change.selling_total)],
+    ...(change.profit ? [["Profit", signedMoney(change.profit)]] as [string, string][] : []),
+  ];
   return (
     <>
-      {problem && <p role="alert" className="text-helper text-status-critical-text">{problem}</p>}
       {dismissed && (
-        <Notice tone="action" title="The price has changed">
-          Confirm the new price with the customer before taking payment.{" "}
-          <button type="button" className="font-medium text-teal hover:underline" onClick={() => setDismissed(false)}>Review the price</button>
+        <Notice tone="action" title="The supplier price has changed">
+          Confirm it before taking payment.{" "}
+          <button type="button" className="font-medium text-teal hover:underline" onClick={() => setDismissed(false)}>Review it</button>
         </Notice>
       )}
-      <PriceChangedDialog
-        change={dismissed ? null : { heldTotal: change.shown_total, newTotal: change.held_total, difference: change.difference }}
-        busy={accept.isPending} labels={["Price shown", "Held price"]} releaseLabel="Search again"
-        description="The supplier held the seats at a different price than shown. Tell the customer, and continue only if they agree."
-        onClose={() => setDismissed(true)} onRelease={() => navigate(SEARCH)} onContinue={() => { setProblem(null); accept.mutate(); }} />
+      <Dialog open={!dismissed} onOpenChange={next => { if (!next && !busy) setDismissed(true); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-section text-brand-navy">The supplier price has changed</DialogTitle>
+            <DialogDescription>The supplier held the seats at a different price than shown. The customer's price stays the same.</DialogDescription>
+          </DialogHeader>
+          <dl className="flex flex-col rounded-lg border border-border bg-muted/40 px-3 py-1 text-label">
+            {rows.map(([label, value]) => (
+              <div key={label} className="flex items-baseline justify-between gap-3 py-1.5">
+                <dt className="text-muted-foreground">{label}</dt>
+                <dd className="font-semibold tabular-nums text-foreground">{value}</dd>
+              </div>
+            ))}
+          </dl>
+          {change.below_cost && (
+            <div className="flex flex-col gap-2">
+              <p role="alert" className="text-helper text-status-critical-text">The selling price is below the new supplier price. Set a higher selling price to continue.</p>
+              {view.can_set_selling_price && (
+                <form className="flex items-end gap-2" onSubmit={event => { event.preventDefault(); if (/^[1-9]\d*$/.test(selling)) reprice.mutate(); }}>
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <FieldLabel htmlFor="new-selling">Selling price per adult (Rs)</FieldLabel>
+                    <Input id="new-selling" inputMode="numeric" value={selling} maxLength={9} onChange={event => setSelling(event.target.value.replace(/[^\d]/g, ""))} />
+                  </div>
+                  <Button type="submit" variant="outline" disabled={busy || !/^[1-9]\d*$/.test(selling)}>Save price</Button>
+                </form>
+              )}
+            </div>
+          )}
+          {problem && <p role="alert" className="text-helper text-status-critical-text">{problem}</p>}
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button type="button" variant="outline" disabled={busy} onClick={() => navigate(SEARCH)}>Search again</Button>
+            <Button type="button" variant="primary" disabled={busy || change.below_cost} onClick={() => { setProblem(null); accept.mutate(); }}>Continue</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/admin/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/admin/ui/field";
+import { Input, Textarea } from "@/components/admin/ui/field";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { TabLinks } from "@/components/admin/ui/TabLinks";
 import { NotAvailableTable } from "@/components/admin/bookings/NotAvailable";
@@ -17,7 +17,7 @@ import {
 } from "@/lib/admin-bookings/format";
 import { DETAIL_TABS, bookingDetailPath, type DetailTabSlug } from "@/lib/admin-bookings/tabs";
 import { useBookingDetail } from "@/lib/admin-bookings/use-bookings";
-import { revealTraveler } from "@/lib/admin-bookings/api";
+import { revealTraveler, setSellingPrice } from "@/lib/admin-bookings/api";
 import type { BookingAuditEntry, BookingDetail, BookingPassenger, RevealResponse } from "@/lib/admin-bookings/types";
 
 // Tabs the gateway doesn't record yet: the mockup's columns with a not-available row
@@ -134,28 +134,73 @@ function Overview({ booking }: { booking: BookingDetail }) {
 // Searched price, booked price, difference, base fare, taxes, fees, service charge and
 // discount are hidden: not recorded yet. Supplier cost and margin arrive only with the
 // cost and margin permission.
+const TYPE_LABEL = { ADT: "Adult", CHD: "Child", INF: "Infant" } as const;
+
 function Fare({ booking }: { booking: BookingDetail }) {
   const rows: [string, string, boolean?][] = [["Billable price", formatMoney(booking.fare.billable_price), true]];
+  for (const item of booking.fare.per_passenger ?? []) {
+    rows.push([`${TYPE_LABEL[item.passenger_type]} × ${item.count}, selling price each`, formatMoney(item.selling_each)]);
+    if (item.supplier_cost_each) rows.push([`${TYPE_LABEL[item.passenger_type]}, supplier cost each`, formatMoney(item.supplier_cost_each)]);
+  }
   if (booking.fare.supplier_cost) rows.push(["Supplier cost", formatMoney(booking.fare.supplier_cost)]);
-  if (booking.fare.margin) rows.push(["Margin", formatMoney(booking.fare.margin)]);
+  if (booking.fare.margin) rows.push(["Profit", formatMoney(booking.fare.margin)]);
   return (
-    <section aria-label="Fare" className="overflow-x-auto rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
-      <table className="w-full min-w-[20rem] border-collapse text-table">
-        <thead>
-          <tr className="bg-muted text-left">
-            <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Item</th>
-            <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(([item, amount, strong]) => (
-            <tr key={item} className="border-b border-border last:border-b-0">
-              <td className={`h-table-row px-2.5 ${strong ? "font-semibold" : ""} text-foreground`}>{item}</td>
-              <td className={`h-table-row whitespace-nowrap px-2.5 tabular-nums ${strong ? "font-semibold" : ""} text-foreground`}>{amount}</td>
+    <div className="flex min-w-0 flex-col gap-section-gap">
+      <section aria-label="Fare" className="overflow-x-auto rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
+        <table className="w-full min-w-[20rem] border-collapse text-table">
+          <thead>
+            <tr className="bg-muted text-left">
+              <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Item</th>
+              <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Amount</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map(([item, amount, strong]) => (
+              <tr key={item} className="border-b border-border last:border-b-0">
+                <td className={`h-table-row px-2.5 ${strong ? "font-semibold" : ""} text-foreground`}>{item}</td>
+                <td className={`h-table-row whitespace-nowrap px-2.5 tabular-nums ${strong ? "font-semibold" : ""} text-foreground`}>{amount}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+      {booking.can_set_selling_price && booking.fare.per_passenger && <SellingPriceForm booking={booking} />}
+    </div>
+  );
+}
+
+/** What the customer pays per traveler, per passenger type (before any payment). Whole rupees, not below the
+ *  supplier cost: the gateway checks it. */
+function SellingPriceForm({ booking }: { booking: BookingDetail }) {
+  const queryClient = useQueryClient();
+  const items = booking.fare.per_passenger ?? [];
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(items.map(item => [item.passenger_type, String(Math.round(item.selling_each.amount_minor / 100))])));
+  const [problem, setProblem] = useState<string | null>(null);
+  const save = useMutation({
+    mutationFn: () => setSellingPrice(booking.booking_id, items.map(item => ({
+      passenger_type: item.passenger_type, selling_each: { amount_minor: Number(values[item.passenger_type]) * 100, currency: item.selling_each.currency } }))),
+    onSuccess: () => { setProblem(null); void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] }); },
+    onError: error => setProblem(error instanceof GatewayError ? error.message : "The selling price couldn't be saved. Nothing was changed."),
+  });
+  const valid = items.every(item => /^[1-9]\d*$/.test(values[item.passenger_type] ?? ""));
+  return (
+    <section aria-labelledby="selling-price-title" className="flex flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
+      <div>
+        <h2 id="selling-price-title" className="text-section font-semibold text-foreground">Selling price</h2>
+        <p className="text-body text-muted-foreground">What the customer pays. It can't be below the supplier cost, and can't change once a payment is recorded.</p>
+      </div>
+      <form className="flex flex-wrap items-end gap-3" onSubmit={event => { event.preventDefault(); if (valid) save.mutate(); }}>
+        {items.map(item => (
+          <div key={item.passenger_type} className="flex w-full min-w-0 flex-col gap-1 sm:w-48">
+            <label htmlFor={`selling-${item.passenger_type}`} className="text-label font-medium text-foreground">{TYPE_LABEL[item.passenger_type]} (Rs each)</label>
+            <Input id={`selling-${item.passenger_type}`} inputMode="numeric" maxLength={9} value={values[item.passenger_type] ?? ""}
+              onChange={event => setValues({ ...values, [item.passenger_type]: event.target.value.replace(/[^\d]/g, "") })} />
+          </div>
+        ))}
+        <Button type="submit" variant="outline" disabled={!valid || save.isPending}>{save.isPending ? "Saving…" : "Save selling price"}</Button>
+      </form>
+      {problem && <p role="alert" className="text-helper text-status-critical-text">{problem}</p>}
     </section>
   );
 }

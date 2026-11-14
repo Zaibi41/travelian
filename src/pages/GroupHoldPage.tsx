@@ -62,7 +62,7 @@ export default function GroupHoldPage() {
       ) : (
         <div className="grid min-w-0 grid-cols-1 items-start gap-section-gap lg:grid-cols-[minmax(0,1fr)_minmax(16rem,15.5rem)]">
           <div className="min-w-0 lg:order-1">
-            <GroupHoldForm ticketId={ticketId} adults={adults} canHold={canHold} onPendingChange={setPending} formId={FORM_ID} />
+            <GroupHoldForm ticketId={ticketId} adults={adults} canHold={canHold} onPendingChange={setPending} formId={FORM_ID} defaultSelling={fare?.selling_price ?? null} />
           </div>
           <aside aria-labelledby="selected-fare-title" className="min-w-0 rounded-xl border border-border bg-card px-card py-4 shadow-card lg:order-2 lg:sticky lg:top-4">
             <h2 id="selected-fare-title" className="font-display text-section font-semibold text-brand-navy">Selected group fare</h2>

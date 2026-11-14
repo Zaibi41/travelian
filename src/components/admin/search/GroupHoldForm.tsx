@@ -14,7 +14,7 @@ import { DEFAULT_COUNTRY_CODE } from "@/data/countries";
 import { GatewayError, type GatewayFieldError } from "@/lib/gateway/client";
 import type { PersonSummary } from "@/lib/saved-people/api";
 import { fullName, ID_TYPE_LABEL } from "@/lib/saved-people/states";
-import { gatewayMessage, groupHeldPath, holdGroupSeats, type GroupHoldRequest } from "@/lib/admin-search/group-holds";
+import { gatewayMessage, groupHeldPath, holdGroupSeats, type GroupHoldRequest, type GroupMoney } from "@/lib/admin-search/group-holds";
 import { cn } from "@/lib/utils";
 
 type Title = "MR" | "MRS" | "MISS";
@@ -73,7 +73,7 @@ const documentFor = (traveler: GroupTraveler, person: PersonSummary) =>
 const optional = (value: string) => value.trim() || null;
 
 /** The hold request the gateway expects. Saved people go by id only: their details stay on the server. */
-export function groupHoldRequest(ticketId: string, customer: GroupCustomer, travelers: GroupTraveler[]): GroupHoldRequest {
+export function groupHoldRequest(ticketId: string, customer: GroupCustomer, travelers: GroupTraveler[], sellingPerAdult?: GroupMoney | null): GroupHoldRequest {
   const contact: GroupHoldRequest["contact"] = customer.saved
     ? { customer_id: customer.saved.id, save_for_next_time: true }
     : {
@@ -84,6 +84,7 @@ export function groupHoldRequest(ticketId: string, customer: GroupCustomer, trav
     ticket_id: ticketId,
     adults: travelers.length,
     contact,
+    ...(sellingPerAdult ? { selling_price_per_adult: sellingPerAdult } : {}),
     passengers: travelers.map((traveler, index) => {
       const saved = savedFor(index, traveler, customer);
       if (saved) {
@@ -155,9 +156,13 @@ function SavedCard({ person, label, documentId, onDocument }: {
 
 // Traveler details (mockup page 10): the customer card, then one card per adult. Saved
 // customers and travelers show masked values only; the gateway fills their details in.
-export function GroupHoldForm({ ticketId, adults, canHold, onPendingChange, formId }: {
+export function GroupHoldForm({ ticketId, adults, canHold, onPendingChange, formId, defaultSelling }: {
   ticketId: string; adults: number; canHold: boolean; onPendingChange: (pending: boolean) => void; formId: string;
+  /** The fare's selling price per adult (supplier price + markup): the field's starting value. */
+  defaultSelling?: GroupMoney | null;
 }) {
+  const [selling, setSelling] = useState<string | null>(null);
+  const sellingText = selling ?? (defaultSelling ? String(Math.round(defaultSelling.amount_minor / 100)) : "");
   const navigate = useNavigate();
   const [customer, setCustomer] = useState<GroupCustomer>(blankCustomer);
   const [travelers, setTravelers] = useState<GroupTraveler[]>(() => Array.from({ length: adults }, blankTraveler));
@@ -177,10 +182,16 @@ export function GroupHoldForm({ ticketId, adults, canHold, onPendingChange, form
       setErrors({ fields: { [`passengers.${noDocument}`]: ["Choose which saved passport travels."] }, message: "Choose which saved passport each saved traveler uses." });
       return;
     }
+    const rupees = sellingText.trim();
+    if (defaultSelling && !/^[1-9]\d*$/.test(rupees)) {
+      setErrors({ fields: { selling_price_per_adult: ["Enter the selling price in whole rupees."] }, message: "Check the selling price." });
+      return;
+    }
+    const sellingPerAdult = defaultSelling ? { amount_minor: Number(rupees) * 100, currency: defaultSelling.currency } : null;
     onPendingChange(true);
     setErrors({ fields: {}, message: null });
     try {
-      const view = await holdGroupSeats(groupHoldRequest(ticketId, customer, travelers));
+      const view = await holdGroupSeats(groupHoldRequest(ticketId, customer, travelers, sellingPerAdult));
       navigate(groupHeldPath(view.booking_id), { state: view });
     } catch (error) {
       setErrors({
@@ -348,6 +359,23 @@ export function GroupHoldForm({ ticketId, adults, canHold, onPendingChange, form
           </section>
         );
       })}
+
+      {defaultSelling && (
+        <section aria-labelledby="selling-title" className={CARD}>
+          <div>
+            <h2 id="selling-title" className="font-display text-section font-semibold text-brand-navy">Selling price</h2>
+            <p className="text-body text-muted-foreground">What the customer pays. It can't be below the supplier price.</p>
+          </div>
+          <div className="w-full max-w-[16rem]">
+            <Field id="selling_price_per_adult" label="Selling price per adult (Rs)" error={fieldError("selling_price_per_adult")}>
+              <Input id="selling_price_per_adult" inputMode="numeric" value={sellingText} autoComplete="off" maxLength={9}
+                aria-invalid={Boolean(fieldError("selling_price_per_adult"))}
+                aria-describedby={fieldError("selling_price_per_adult") ? "selling_price_per_adult-error" : undefined}
+                onChange={event => setSelling(event.target.value.replace(/[^\d]/g, ""))} />
+            </Field>
+          </div>
+        </section>
+      )}
 
       {errors.message && <Notice tone="critical">{errors.message}</Notice>}
 

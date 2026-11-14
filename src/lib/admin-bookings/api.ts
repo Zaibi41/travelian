@@ -34,9 +34,20 @@ export const recordPayment = (bookingId: string, body: RecordPaymentBody, option
 export const requestIssuance = (bookingId: string, note?: string, options?: GatewayOptions) =>
   gatewayPost("/v1/admin/bookings/{booking_id}/issuance/request", { note: note?.trim() || null }, issuancePath(bookingId, options));
 
-/** Issue once, never retried; the gateway decides issued / not issued / unknown from the PNR. */
-export const issueTicket = (bookingId: string, options?: GatewayOptions) =>
-  gatewayPost("/v1/admin/bookings/{booking_id}/issuance/issue", undefined as never, issuancePath(bookingId, options));
+/** Issue once, never retried; the gateway decides issued / not issued / unknown from the PNR. After a 409
+ *  "supplier_cost_changed", send the airline's new cost back as `acceptedSupplierCost` to issue at it. */
+export const issueTicket = (bookingId: string, options?: GatewayOptions, acceptedSupplierCost?: Money | null) =>
+  gatewayPost("/v1/admin/bookings/{booking_id}/issuance/issue",
+    (acceptedSupplierCost ? { accepted_supplier_cost: acceptedSupplierCost } : undefined) as never, issuancePath(bookingId, options));
+
+type Money = { amount_minor: number; currency: string };
+
+/** What the customer pays, per passenger type (Group Ticketing and Flights): whole rupees, not below cost, before any
+ *  payment. Needs record_payments; logged. */
+export const setSellingPrice = (bookingId: string, prices: { passenger_type: "ADT" | "CHD" | "INF"; selling_each: Money }[], options?: GatewayOptions) =>
+  gatewayPost("/v1/admin/bookings/{booking_id}/selling-price", { prices }, {
+    ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "The selling price couldn't be saved right now. Nothing was changed.",
+  });
 
 /** Unknown issuance: check the PNR again (read-only) and settle it if clear. */
 export const verifyIssuance = (bookingId: string, options?: GatewayOptions) =>
