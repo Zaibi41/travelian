@@ -100,7 +100,7 @@ async function errorBody(response: Response): Promise<ErrorBody> {
 
 type Method = "GET" | "POST" | "PATCH" | "DELETE";
 
-async function send(path: string, init: { method: Method; query?: Record<string, unknown>; body?: unknown }, options: GatewayOptions, renewed = false): Promise<unknown> {
+async function send(path: string, init: { method: Method; query?: Record<string, unknown>; body?: unknown; accept?: string }, options: GatewayOptions, renewed = false): Promise<unknown> {
   const baseUrl = (options.baseUrl ?? configuredBaseUrl()).replace(/\/+$/, "");
   if (!baseUrl) {
     throw new GatewayError("not_configured", "The admin service address isn't set. Add VITE_TRAVELIAN_GATEWAY_BASE_URL to this environment.");
@@ -118,7 +118,7 @@ async function send(path: string, init: { method: Method; query?: Record<string,
     return encodeURIComponent(value);
   });
   const url = `${baseUrl}${resolvedPath}${params.size ? `?${params.toString()}` : ""}`;
-  const headers: Record<string, string> = { Accept: "application/json", Authorization: `Bearer ${accessToken}` };
+  const headers: Record<string, string> = { Accept: init.accept ?? "application/json", Authorization: `Bearer ${accessToken}` };
   if (init.body !== undefined) headers["Content-Type"] = "application/json";
   let response: Response;
   try {
@@ -166,7 +166,7 @@ async function send(path: string, init: { method: Method; query?: Record<string,
       ?? "Booking data isn't available yet. The gateway's booking source isn't configured or can't be read.", 503, body.code, [], body.extra);
   }
   if (!response.ok) throw new GatewayError("unavailable", `The admin service returned an error (${response.status}). Data will load when it recovers.`);
-  return response.json();
+  return init.accept && init.accept !== "application/json" ? response.blob() : response.json();
 }
 
 /** Absolute URL for a gateway-served asset path such as /v1/logos/{id}; null if unset. */
@@ -177,6 +177,11 @@ export function gatewayAssetUrl(path?: string | null) {
 
 export function gatewayGet<P extends GetPath>(path: P, query?: GetQuery<P>, options: GatewayOptions = {}): Promise<GetResponse<P>> {
   return send(path, { method: "GET", query: query as Record<string, unknown> | undefined }, options) as Promise<GetResponse<P>>;
+}
+
+/** A file from the gateway (e.g. a PDF), sent with the user's token like every other call; returned as a Blob. */
+export function gatewayGetFile<P extends GetPath>(path: P, accept: string, options: GatewayOptions = {}): Promise<Blob> {
+  return send(path, { method: "GET", accept }, options) as Promise<Blob>;
 }
 
 export function gatewayPost<P extends PostPath>(path: P, body: PostBody<P>, options: GatewayOptions = {}): Promise<PostResponse<P>> {

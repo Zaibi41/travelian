@@ -363,6 +363,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{booking_id}/itinerary.pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Itinerary Pdf
+         * @description The booking's itinerary as a PDF (Flights and Group Ticketing): reference, PNR, status, customer, travelers, every
+         *     flight (outbound then return) and the selling price, paid and due. Never a supplier name, group id, cost or profit;
+         *     a group booking's PNR (the supplier's) only with the supplier names permission.
+         */
+        get: operations["itinerary_pdf_v1_admin_bookings__booking_id__itinerary_pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/bookings/{booking_id}/payments": {
         parameters: {
             query?: never;
@@ -5030,6 +5052,58 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    itinerary_pdf_v1_admin_bookings__booking_id__itinerary_pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The itinerary, named after the booking reference. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Back-office users only. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
             /** @description Booking data is not available. */
             503: {

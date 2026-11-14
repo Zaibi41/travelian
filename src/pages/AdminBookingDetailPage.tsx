@@ -10,6 +10,7 @@ import { TabLinks } from "@/components/admin/ui/TabLinks";
 import { NotAvailableTable } from "@/components/admin/bookings/NotAvailable";
 import { PaymentsAndIssuing, TicketsTab } from "@/components/admin/bookings/PaymentsAndIssuing";
 import { ItineraryTab } from "@/components/admin/bookings/ItineraryTab";
+import { DownloadItineraryButton } from "@/components/admin/bookings/DownloadItineraryButton";
 import { SampleDataBadge, StatusChips } from "@/components/admin/bookings/BookingChips";
 import { GatewayError } from "@/lib/gateway/client";
 import {
@@ -72,7 +73,10 @@ export default function AdminBookingDetailPage() {
           <h1 className="min-w-0 break-all font-display text-page-title font-bold text-foreground">Booking {booking.pnr ?? booking.booking_id}</h1>
           {booking.sample && <SampleDataBadge label={booking.sample_label} />}
         </div>
-        <StatusChips statuses={booking.statuses} direction="row" />
+        <div className="flex flex-wrap items-center gap-3">
+          <StatusChips statuses={booking.statuses} direction="row" />
+          <DownloadItineraryButton bookingId={booking.booking_id} />
+        </div>
       </div>
       <TabLinks label="Booking" tabs={visibleTabs.map(entry => ({ to: bookingDetailPath(booking.booking_id, entry.slug), label: entry.label }))} />
       {detail.error && <DashboardErrorNotice message={errorMessage(detail.error)} />}

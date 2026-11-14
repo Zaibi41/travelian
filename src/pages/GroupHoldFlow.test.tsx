@@ -11,7 +11,7 @@ const gateway = vi.hoisted(() => ({
   fetchGroupTicket: vi.fn(), holdGroupSeats: vi.fn(), fetchGroupHold: vi.fn(), issueGroupTickets: vi.fn(), releaseGroupHold: vi.fn(), acceptHeldPrice: vi.fn(),
 }));
 vi.mock("@/lib/admin-search/group-holds", async importOriginal => ({ ...(await importOriginal<object>()), ...gateway }));
-const bookings = vi.hoisted(() => ({ fetchPaymentAccounts: vi.fn(), recordPayment: vi.fn(), setSellingPrice: vi.fn() }));
+const bookings = vi.hoisted(() => ({ fetchPaymentAccounts: vi.fn(), recordPayment: vi.fn(), setSellingPrice: vi.fn(), downloadItinerary: vi.fn() }));
 vi.mock("@/lib/admin-bookings/api", () => bookings);
 const people = vi.hoisted(() => ({ searchPeople: vi.fn() }));
 vi.mock("@/lib/saved-people/api", async importOriginal => ({ ...(await importOriginal<object>()), searchPeople: people.searchPeople }));
@@ -441,6 +441,15 @@ describe("Dhillu & Sahi hold time note", () => {
     const held = await screen.findByRole("region", { name: "Seats held" });
     expect(within(held).getByRole("timer")).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/Hold time (from supplier|estimated)|after 1 hour/);
+  });
+});
+
+describe("Group booking itinerary download", () => {
+  it("the booking page offers Download itinerary (PDF) for this booking", async () => {
+    bookings.downloadItinerary.mockResolvedValue(undefined);
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
+    fireEvent.click(await screen.findByRole("button", { name: "Download itinerary (PDF)" }));
+    await waitFor(() => expect(bookings.downloadItinerary).toHaveBeenCalledWith("TRV-GRP-000123"));
   });
 });
 

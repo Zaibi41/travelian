@@ -1,4 +1,4 @@
-import { gatewayGet, gatewayPost, type GatewayOptions } from "@/lib/gateway/client";
+import { gatewayGet, gatewayGetFile, gatewayPost, type GatewayOptions } from "@/lib/gateway/client";
 import type { BookingListParams, RecordPaymentBody, ResolveIssuanceBody } from "./types";
 
 export const fetchBookings = (params: BookingListParams, options?: GatewayOptions) =>
@@ -6,6 +6,26 @@ export const fetchBookings = (params: BookingListParams, options?: GatewayOption
 
 export const fetchBookingDetail = (bookingId: string, options?: GatewayOptions) =>
   gatewayGet("/v1/admin/bookings/{booking_id}", undefined, { ...options, pathParams: { booking_id: bookingId } });
+
+/** The booking's itinerary PDF (Flights and Group Ticketing), fetched with the user's token, then saved as
+ *  "<booking reference>.pdf". The gateway leaves supplier names, group ids, cost and profit out. */
+export async function downloadItinerary(bookingId: string, options?: GatewayOptions) {
+  const pdf = await gatewayGetFile("/v1/admin/bookings/{booking_id}/itinerary.pdf", "application/pdf", {
+    ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "The itinerary can't be downloaded right now.",
+  });
+  saveFile(pdf, `${bookingId.replace(/[^A-Za-z0-9._-]/g, "_")}.pdf`);
+}
+
+export function saveFile(file: Blob, name: string) {
+  const url = URL.createObjectURL(file);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1_000);
+}
 
 /** Full date of birth, document number and expiry for one traveler. Needs reveal_identity; logged with the reason. */
 export const revealTraveler = (bookingId: string, position: number, reason: string, options?: GatewayOptions) =>

@@ -6,6 +6,7 @@ import { TabLinks } from "@/components/admin/ui/TabLinks";
 import { StatusBadge, Tag } from "@/components/admin/ui/StatusBadge";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GroupBookingSteps } from "@/components/admin/search/GroupBookingSteps";
+import { DownloadItineraryButton } from "@/components/admin/bookings/DownloadItineraryButton";
 import { HeldPriceDialog, ReleaseFailedNotice, SupplierNotice } from "./GroupHeldPage";
 import { GroupPaymentsTab, groupHoldKey } from "@/components/admin/search/GroupPaymentsTab";
 import { GatewayError } from "@/lib/gateway/client";
@@ -45,7 +46,10 @@ export default function GroupBookingPage() {
             <h1 className="min-w-0 break-all font-display text-page-title font-bold text-brand-navy">Booking {bookingId}</h1>
             {subtitle ? <p className="truncate text-body text-muted-foreground" title={subtitle}>{subtitle}</p> : <Skeleton className="mt-1 h-4 w-64 rounded-sm" />}
           </div>
-          {view && view.status !== "held" && <StatusBadge severity={STATUS[view.status].severity}>{STATUS[view.status].label}</StatusBadge>}
+          <div className="flex flex-wrap items-center gap-3">
+            {view && view.status !== "held" && <StatusBadge severity={STATUS[view.status].severity}>{STATUS[view.status].label}</StatusBadge>}
+            {view && <DownloadItineraryButton bookingId={bookingId} />}
+          </div>
         </div>
         <GroupBookingSteps current={4} />
       </div>

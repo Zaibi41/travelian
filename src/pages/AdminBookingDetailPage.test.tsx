@@ -9,8 +9,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 const detail = { current: {} as Record<string, unknown> };
 vi.mock("@/lib/admin-bookings/use-bookings", () => ({ useBookingDetail: () => detail.current }));
 const reveal = vi.hoisted(() => vi.fn());
-const gateway = vi.hoisted(() => ({ setSellingPrice: vi.fn() }));
-vi.mock("@/lib/admin-bookings/api", () => ({ revealTraveler: reveal, setSellingPrice: gateway.setSellingPrice }));
+const gateway = vi.hoisted(() => ({ setSellingPrice: vi.fn(), downloadItinerary: vi.fn() }));
+vi.mock("@/lib/admin-bookings/api", () => ({ revealTraveler: reveal, setSellingPrice: gateway.setSellingPrice, downloadItinerary: gateway.downloadItinerary }));
 
 import AdminBookingDetailPage from "./AdminBookingDetailPage";
 
@@ -106,6 +106,15 @@ describe("Booking detail", () => {
     renderAt("/admin/bookings/TRV-1/fare");
     expect(screen.getByRole("region", { name: "Fare" })).not.toHaveTextContent("supplier cost");
     expect(screen.queryByRole("region", { name: "Selling price" })).not.toBeInTheDocument();
+  });
+
+  it("Download itinerary (PDF) asks for this booking's PDF; a failure shows the gateway's reason", async () => {
+    gateway.downloadItinerary.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new GatewayError("unavailable", "The itinerary can't be downloaded right now.", 503));
+    renderAt("/admin/bookings/TRV-1/overview");
+    fireEvent.click(screen.getByRole("button", { name: "Download itinerary (PDF)" }));
+    await waitFor(() => expect(gateway.downloadItinerary).toHaveBeenCalledWith("TRV-1"));
+    fireEvent.click(await screen.findByRole("button", { name: "Download itinerary (PDF)" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("The itinerary can't be downloaded right now.");
   });
 
   it("plain staff: no Supplier payment tab, and its URL goes back to Overview", () => {
