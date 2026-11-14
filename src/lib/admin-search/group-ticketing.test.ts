@@ -22,12 +22,13 @@ describe("group ticketing search helpers", () => {
     expect(options.sectors).toEqual([{ from: "LHE", to: "DMM", count: 2 }, { from: "KHI", to: "JED", count: 1 }]);
     expect(options.airlines).toEqual(["Airblue", "PIA", "Serene Air"]);
   });
-  it("baggage rule: empty or 0 with hand carry 7 -> 7 kg; 20 and 7 -> 20+7 kg; nothing -> null", () => {
+  it("baggage rule, hand carry first: empty or 0 with hand carry 7 -> 7 kg; checked 20 and hand carry 7 -> 7+20 kg; nothing -> null", () => {
     expect(baggageText("", "7")).toBe("7 kg");
     expect(baggageText("0", "7")).toBe("7 kg");
     expect(baggageText(0, 7)).toBe("7 kg");
     expect(baggageText(null, "7")).toBe("7 kg");
-    expect(baggageText("20", "7")).toBe("20+7 kg");
+    expect(baggageText("20", "7")).toBe("7+20 kg");
+    expect(baggageText("30", "10")).toBe("10+30 kg");
     expect(baggageText("20 KG", null)).toBe("20 kg");
     expect(baggageText("", "")).toBeNull();
     expect(baggageText(null, null)).toBeNull();
@@ -45,8 +46,8 @@ describe("group ticketing search helpers", () => {
       legs: [{ direction: "outbound", flight_number: "9P700", baggage: "20", hand_carry: "7" },
         { direction: "return", flight_number: "9P701", origin: "JED", destination: "ISB", departure_date: "2026-12-06", departure_time: "11:05", baggage: "30", hand_carry: "10", meal: "No" }],
     })] }] as unknown as GroupInventory[])[0];
-    expect(twoWay).toMatchObject({ flightNumber: "9P700", meal: "No", baggage: "20+7 kg", canHold: true, stock: "supplier",
-      returnLeg: { flightNumber: "9P701", route: "JED - ISB", departureTime: "11:05", baggage: "30+10 kg", meal: "No" } });
+    expect(twoWay).toMatchObject({ flightNumber: "9P700", meal: "No", baggage: "7+20 kg", canHold: true, stock: "supplier",
+      returnLeg: { flightNumber: "9P701", route: "JED - ISB", departureTime: "11:05", baggage: "10+30 kg", meal: "No" } });
     expect(resultRows(GROUPS, "Serene Air").map(row => row.id)).toEqual(["t2"]);
   });
   it("keeps the search in the URL", () => {

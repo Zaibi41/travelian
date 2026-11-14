@@ -107,13 +107,13 @@ function kilos(value: unknown): number | null {
   return Number(text);
 }
 
-/** Baggage as shown in results: checked 0 or empty with hand carry 7 -> "7 kg"; 20 and 7 -> "20+7 kg";
- *  20 alone -> "20 kg". Null when the provider sends neither. Display only. */
+/** Baggage as shown in results, hand carry first: hand carry 7 and checked 20 -> "7+20 kg";
+ *  checked 0 or empty with hand carry 7 -> "7 kg"; 20 alone -> "20 kg". Null when the provider sends neither. Display only. */
 export function baggageText(checked: unknown, handCarry: unknown): string | null {
   const bag = kilos(checked);
   const hand = kilos(handCarry);
   if ((bag === null || bag === 0) && hand) return `${hand} kg`;
-  if (bag && hand) return `${bag}+${hand} kg`;
+  if (bag && hand) return `${hand}+${bag} kg`;
   if (bag) return `${bag} kg`;
   return null;
 }
@@ -145,7 +145,7 @@ export interface GroupResultRow {
   returnLeg?: GroupResultLeg | null;
   stock?: "supplier" | "owned";
   canHold: boolean;
-  /** The gateway's reason when Hold seats is off (provider can't hold, no selling price, ...). */
+  /** The gateway's reason when Hold seats is off (provider can't hold, no price from the provider, ...). */
   holdUnavailableReason?: string | null;
 }
 

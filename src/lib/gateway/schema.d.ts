@@ -2756,7 +2756,7 @@ export interface components {
             baggage?: string | number | null;
             /**
              * Can Hold
-             * @description Whether Hold seats can be used on this fare: its source holds seats and a selling price exists.
+             * @description Whether Hold seats can be used on this fare: its source holds seats and it has a price.
              * @default false
              */
             can_hold: boolean;
@@ -2805,7 +2805,7 @@ export interface components {
             remaining?: number | null;
             /** Sector */
             sector?: string | null;
-            /** @description Per adult. Omitted when no markup is configured or the price is unknown. */
+            /** @description Per adult: listing price + markup (0 when none is set). Omitted only when the provider sent no usable price. */
             selling_price?: components["schemas"]["GroupMoney"] | null;
             /** Sold */
             sold?: string | number | null;

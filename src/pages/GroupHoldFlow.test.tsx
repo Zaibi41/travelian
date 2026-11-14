@@ -178,12 +178,21 @@ describe("Hold group seats (step 2)", () => {
     expect(again).toHaveTextContent("Holding isn't available for this provider");
   });
 
-  it("no selling price configured: the gateway's reason shows before any details are typed, and Hold seats is off", async () => {
-    gateway.fetchGroupTicket.mockResolvedValue({ ...TICKET, can_hold: false, hold_unavailable_reason: "No selling price is configured for group fares" });
+  it("the listing price per adult shows in Rs before the hold", async () => {
+    gateway.fetchGroupTicket.mockResolvedValue({ ...TICKET, selling_price: { amount_minor: 16_000_000, currency: "PKR" } });
     renderAt(HOLD_URL);
     const fare = await screen.findByRole("complementary", { name: "Selected group fare" });
     await within(fare).findByText("Fly Jinnah");
-    expect(fare).toHaveTextContent("No selling price is configured for group fares.");
+    expect(fare).toHaveTextContent("Rs 160,000 per adult");
+    expect(within(fare).getByRole("button", { name: "Hold seats" })).toBeEnabled();
+  });
+
+  it("a provider with no hold API: the gateway's reason shows before any details are typed, and Hold seats is off", async () => {
+    gateway.fetchGroupTicket.mockResolvedValue({ ...TICKET, can_hold: false, hold_unavailable_reason: "Dhillu & Sahi has no hold API" });
+    renderAt(HOLD_URL);
+    const fare = await screen.findByRole("complementary", { name: "Selected group fare" });
+    await within(fare).findByText("Fly Jinnah");
+    expect(fare).toHaveTextContent("Dhillu & Sahi has no hold API.");
     expect(within(fare).getByRole("button", { name: "Hold seats" })).toBeDisabled();
     expect(gateway.holdGroupSeats).not.toHaveBeenCalled();
   });

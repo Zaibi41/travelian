@@ -76,7 +76,7 @@ describe("Search (internal roles)", () => {
     const [first, second] = within(results).getAllByRole("row").slice(1);
     expect(first).toHaveTextContent("13 Nov 2026 09:45");
     expect(first).toHaveTextContent("PA470");
-    expect(first).toHaveTextContent("20+7 kg");
+    expect(first).toHaveTextContent("7+20 kg");
     expect(first).toHaveTextContent("Meal");
     expect(first).toHaveTextContent("Rs 99,750");
     expect(within(first).getByRole("button", { name: /^Hold seats/ })).toBeEnabled();

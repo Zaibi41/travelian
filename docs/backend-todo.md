@@ -105,7 +105,7 @@ Built on `GET /v1/admin/bookings` and `GET /v1/admin/bookings/{booking_id}` (bac
 
 ## 5. Group Ticketing D23: fixed on 9 November 2026
 
-`/v1/group-ticketing/*` now requires sign-in (internal or agency role), returns a selling price (supplier price + `GROUP_TICKETING_MARKUP_PERCENT` + `GROUP_TICKETING_MARKUP_FIXED_MINOR`), serves logos from `/v1/logos/{id}`, and returns supplier name, supplier PNR, raw segments and supplier cost only with the matching permission.
+`/v1/group-ticketing/*` now requires sign-in (internal or agency role), returns a selling price per adult (listing price + `GROUP_TICKETING_MARKUP_PERCENT` + `GROUP_TICKETING_MARKUP_FIXED_MINOR`; unset counts as 0, so the listing price), serves logos from `/v1/logos/{id}`, and returns supplier name, supplier PNR, raw segments and supplier cost only with the matching permission.
 
 Still open:
 

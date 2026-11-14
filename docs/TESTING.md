@@ -57,7 +57,7 @@ to the network. No `.env` change is needed for this access. Production builds an
 Sample bookings are **not** in git. They came from a private CSV export containing passenger data. On a fresh gateway database:
 
 - Dashboard and Bookings show zeros and empty tables, with no "Sample data" label.
-- Search > Group Ticketing and Flights only return results when the gateway has supplier credentials, and only show prices when a markup is configured.
+- Search > Group Ticketing and Flights only return results when the gateway has supplier credentials. Group fares show the listing price per adult when no group markup is set.
 - Hotels and Umrah show "not available yet".
 
 If a page shows an error, it now quotes the gateway's own reason, e.g. "Agency service unavailable." (run `alembic upgrade head` on the gateway) or "Authentication is not configured." (set the gateway's Cognito variables).
