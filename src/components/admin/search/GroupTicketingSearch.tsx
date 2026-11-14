@@ -36,6 +36,12 @@ function AirlineLogo({ path }: { path?: string | null }) {
   return <img src={src} alt="" width={24} height={24} loading="lazy" onError={() => setFailed(true)} className="h-6 w-6 shrink-0 rounded-sm border border-border bg-card object-contain" />;
 }
 
+/** " 06:40–10:05", " 06:40", or "" when the provider sent no time. */
+function times(departs?: string | null, arrives?: string | null) {
+  if (!departs) return "";
+  return arrives ? ` ${departs}–${arrives}` : ` ${departs}`;
+}
+
 function departure(value?: string | null) {
   if (!value) return "—";
   const date = parseISO(value);
@@ -213,12 +219,15 @@ export function GroupTicketingSearch() {
                       <tr className={cn("border-border", row.source ? "" : "border-b last:border-b-0")}>
                         <td className="px-2.5 py-2 align-top">
                           <span className="block whitespace-nowrap tabular-nums text-foreground">
-                            {departure(row.departureDate)}{row.departureTime ? ` ${row.departureTime}` : ""}
+                            {departure(row.departureDate)}{times(row.departureTime, row.arrivalTime)}
                           </span>
-                          <span className="block text-label text-muted-foreground">{row.sector ?? "—"}</span>
+                          <span className="block text-label text-muted-foreground">{[row.sector ?? "—", back ? row.flightNumber : null].filter(Boolean).join(" · ")}</span>
                           {back && (
-                            <span className="mt-1 block whitespace-nowrap text-label text-muted-foreground">
-                              Return {departure(back.departureDate)}{back.departureTime ? ` ${back.departureTime}` : ""}{back.route ? `, ${back.route}` : ""}
+                            <span data-return-leg className="mt-1.5 block border-t border-border pt-1.5">
+                              <span className="block whitespace-nowrap tabular-nums text-foreground">
+                                Return {departure(back.departureDate)}{times(back.departureTime, back.arrivalTime)}
+                              </span>
+                              <span className="block text-label text-muted-foreground">{[back.route ?? "—", back.flightNumber].filter(Boolean).join(" · ")}</span>
                             </span>
                           )}
                         </td>

@@ -2423,7 +2423,10 @@ export interface components {
             /** Phone */
             phone?: string | null;
         };
-        /** GroupHoldFlight */
+        /**
+         * GroupHoldFlight
+         * @description The first flight's summary, plus every flight as held (outbound, then return) in `legs`.
+         */
         GroupHoldFlight: {
             /** Airline */
             airline?: string | null;
@@ -2435,6 +2438,11 @@ export interface components {
             departure_time?: string | null;
             /** Destination */
             destination?: string | null;
+            /**
+             * Legs
+             * @description Every flight as held, outbound then return.
+             */
+            legs?: components["schemas"]["GroupLegView"][];
             /** Logo Url */
             logo_url?: string | null;
             /** Origin */
@@ -2780,22 +2788,22 @@ export interface components {
             /** Return Date */
             return_date?: string | null;
         };
-        /** GroupSearchRequest */
+        /**
+         * GroupSearchRequest
+         * @description Any one of origin, destination or departure date is enough; the others may be left out (or null).
+         */
         GroupSearchRequest: {
             /**
              * Adults
              * @default 1
              */
             adults: number;
-            /**
-             * Departure Date
-             * Format: date
-             */
-            departure_date: string;
+            /** Departure Date */
+            departure_date?: string | null;
             /** Destination */
-            destination: string;
+            destination?: string | null;
             /** Origin */
-            origin: string;
+            origin?: string | null;
         };
         /**
          * GroupSource

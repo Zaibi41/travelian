@@ -12,7 +12,7 @@ import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
 import { sourceLine } from "@/lib/admin-search/group-ticketing";
 import { PriceChangedDialog } from "@/components/admin/search/GroupPaymentsTab";
-import { acceptHeldPrice, departureText, fetchGroupHold, gatewayMessage, groupBookingPath, releaseGroupHold, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
+import { acceptHeldPrice, departureText, fetchGroupHold, returnFlightText, gatewayMessage, groupBookingPath, releaseGroupHold, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
 
 const SEARCH = "/admin/search?tab=group-ticketing";
 export const groupHoldKey = (bookingId: string) => ["group-holds", bookingId];
@@ -165,6 +165,7 @@ function Held({ view }: { view: GroupHoldView }) {
               <dd className="min-w-0 text-right font-medium text-foreground">
                 <span className="block truncate" title={view.flight.airline ?? undefined}>{view.flight.airline ?? "—"}</span>
                 <span className="block truncate">{flightText(view)}</span>
+                {returnFlightText(view.flight) && <span className="block truncate" title={returnFlightText(view.flight) ?? undefined}>Return {returnFlightText(view.flight)}</span>}
               </dd>
             </div>
             <Row label="Stock" value={view.stock === "owned" ? "Owned" : "Supplier"} />

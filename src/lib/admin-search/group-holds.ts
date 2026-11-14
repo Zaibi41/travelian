@@ -91,6 +91,18 @@ export function gatewayMessage(error: unknown, fallback: string) {
   return error.message || fallback;
 }
 
+/** The return flight of a held booking, "21 Dec 2026 11:05–18:05, JED - ISB, 9P701"; null for one-way. */
+export function returnFlightText(flight: GroupHoldView["flight"]) {
+  const back = (flight.legs ?? []).filter(leg => leg.direction === "return");
+  if (!back.length) return null;
+  const first = back[0];
+  const last = back[back.length - 1];
+  const when = departureText(first.departure_date, first.departure_time);
+  const span = when && last.arrival_time ? `${when}–${last.arrival_time}` : when;
+  const route = first.origin && last.destination ? `${first.origin} - ${last.destination}` : null;
+  return [span, route, back.map(leg => leg.flight_number).filter(Boolean).join(" / ") || null].filter(Boolean).join(", ") || null;
+}
+
 /** "22 Nov 2026 06:40" from the gateway's date and time; null without a date. */
 export function departureText(date?: string | null, time?: string | null) {
   if (!date) return null;

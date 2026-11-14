@@ -33,10 +33,11 @@ export interface GroupSearch {
   airline?: string;
 }
 
-export const searchGroupFares = (search: Required<Pick<GroupSearch, "from" | "to" | "date">> & GroupSearch, options?: GatewayOptions) =>
+/** Any one of From, To and date is enough; the empty ones are sent as null. */
+export const searchGroupFares = (search: GroupSearch, options?: GatewayOptions) =>
   gatewayPost(
     "/v1/group-ticketing/search",
-    { origin: search.from, destination: search.to, departure_date: search.date, adults: search.adults },
+    { origin: search.from ?? null, destination: search.to ?? null, departure_date: search.date ?? null, adults: search.adults },
     { unavailableMessage: UNAVAILABLE, ...options },
   );
 
@@ -106,8 +107,9 @@ export function writeGroupSearch(params: URLSearchParams, search: GroupSearch): 
   return next;
 }
 
-export const isCompleteSearch = (search: GroupSearch): search is GroupSearch & { from: string; to: string; date: string } =>
-  Boolean(search.from && search.to && search.date && search.from !== search.to);
+/** A search runs once any one of From, To or Departure date is filled (as on the home page); From and To must differ. */
+export const isCompleteSearch = (search: GroupSearch): boolean =>
+  Boolean(search.from || search.to || search.date) && !(search.from && search.from === search.to);
 
 /** "20" / "20 kg" / 20 -> 20; empty or not a number -> null. */
 function kilos(value: unknown): number | null {
@@ -129,9 +131,11 @@ export function baggageText(checked: unknown, handCarry: unknown): string | null
 
 export interface GroupResultLeg {
   flightNumber?: string | null;
+  /** "JED - ISB" */
   route?: string | null;
   departureDate?: string | null;
   departureTime?: string | null;
+  arrivalTime?: string | null;
   baggage: string | null;
   meal?: "Yes" | "No" | null;
 }
@@ -150,6 +154,8 @@ export interface GroupResultRow {
   seatsLeft?: number | null;
   baggage?: string | null;
   meal?: "Yes" | "No" | null;
+  /** The outbound flight's arrival time (HH:MM), when the provider sends it. */
+  arrivalTime?: string | null;
   /** The return flight, when the provider sends one. */
   returnLeg?: GroupResultLeg | null;
   stock?: "supplier" | "owned";
@@ -164,7 +170,9 @@ export interface GroupResultRow {
 export function resultRows(groups: GroupInventory[], airline?: string): GroupResultRow[] {
   return groups
     .flatMap(group => group.tickets.map(ticket => {
-      const back = (ticket.legs ?? []).find(leg => leg.direction === "return");
+      const legs = ticket.legs ?? [];
+      const back = legs.find(leg => leg.direction === "return");
+      const outbound = legs.filter(leg => leg.direction !== "return");
       return {
         id: ticket.id,
         departureDate: ticket.departure_date,
@@ -177,9 +185,11 @@ export function resultRows(groups: GroupInventory[], airline?: string): GroupRes
         seatsLeft: ticket.remaining,
         baggage: baggageText(ticket.baggage, ticket.hand_carry),
         meal: ticket.meal ?? null,
+        arrivalTime: outbound.length ? outbound[outbound.length - 1].arrival_time ?? null : null,
         returnLeg: back ? {
           flightNumber: back.flight_number, route: back.origin && back.destination ? `${back.origin} - ${back.destination}` : null,
-          departureDate: back.departure_date, departureTime: back.departure_time, baggage: baggageText(back.baggage, back.hand_carry), meal: back.meal ?? null,
+          departureDate: back.departure_date, departureTime: back.departure_time, arrivalTime: legs.filter(leg => leg.direction === "return").at(-1)?.arrival_time ?? null,
+          baggage: baggageText(back.baggage, back.hand_carry), meal: back.meal ?? null,
         } : null,
         stock: ticket.stock,
         canHold: Boolean(ticket.can_hold),

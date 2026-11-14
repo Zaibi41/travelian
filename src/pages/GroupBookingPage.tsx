@@ -10,7 +10,7 @@ import { HeldPriceDialog, ReleaseFailedNotice, SupplierNotice } from "./GroupHel
 import { GroupPaymentsTab, groupHoldKey } from "@/components/admin/search/GroupPaymentsTab";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
-import { GROUP_BOOKING_TABS, departureText, fetchGroupHold, groupBookingPath, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
+import { GROUP_BOOKING_TABS, departureText, fetchGroupHold, groupBookingPath, returnFlightText, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
 import { sourceLine } from "@/lib/admin-search/group-ticketing";
 
 const BOOKINGS = "/admin/bookings/group-ticketing";
@@ -96,6 +96,7 @@ function Details({ view }: { view: GroupHoldView }) {
       ["Hold expires", view.hold_expires_at ? formatDateTime(view.hold_expires_at) : "—"],
       ["Flight", [view.flight.airline, view.flight.sector].filter(Boolean).join(", ") || "—"],
       ["Departure", departureText(view.flight.departure_date, view.flight.departure_time) ?? "—"],
+      ...(returnFlightText(view.flight) ? [["Return", <span key="return" title={returnFlightText(view.flight) ?? undefined}>{returnFlightText(view.flight)}</span>] as [string, React.ReactNode]] : []),
       ["Stock", view.stock === "owned" ? "Owned" : "Supplier"],
       ...(source ? [["Source", <span key="source" title={source}>{source}</span>] as [string, React.ReactNode]] : []),
       ...(view.supplier ? [["Supplier", <Tag key="supplier">{view.supplier}</Tag>] as [string, React.ReactNode]] : []),

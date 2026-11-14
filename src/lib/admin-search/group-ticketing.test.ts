@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { baggageText, inventoryOptions, parseGroupSearch, resultRows, searchGroupFares, sectorCodes, sourceLine, writeGroupSearch, type GroupInventory } from "./group-ticketing";
+import { baggageText, inventoryOptions, isCompleteSearch, parseGroupSearch, resultRows, searchGroupFares, sectorCodes, sourceLine, writeGroupSearch, type GroupInventory } from "./group-ticketing";
 
 const ticket = (id: string, overrides: Record<string, unknown> = {}) => ({
   id, sector: "LHE - DMM", departure_date: "2026-11-13", departure_time: "09:45", airline: "Airblue", remaining: 9, baggage: "20 KG",
@@ -37,7 +37,7 @@ describe("group ticketing search helpers", () => {
   it("builds rows with the listing price, logo, flight number, meal and the return leg, earliest first, with an airline filter", () => {
     const rows = resultRows(GROUPS);
     expect(rows.map(row => row.id)).toEqual(["t2", "t1", "t3"]);
-    expect(Object.keys(rows[0]).sort()).toEqual(["airline", "baggage", "canHold", "departureDate", "departureTime", "flightNumber", "id", "logoUrl",
+    expect(Object.keys(rows[0]).sort()).toEqual(["airline", "arrivalTime", "baggage", "canHold", "departureDate", "departureTime", "flightNumber", "id", "logoUrl",
       "holdUnavailableReason", "meal", "price", "returnLeg", "seatsLeft", "sector", "source", "stock"].sort());
     expect(rows[0]).toMatchObject({ logoUrl: "/v1/logos/abc", price: { amount_minor: 9_975_000, currency: "PKR" }, baggage: "20 kg", returnLeg: null });
     expect(rows[2]).toMatchObject({ airline: "PIA", baggage: null });
@@ -69,6 +69,38 @@ describe("group ticketing search helpers", () => {
     expect(inventoryOptions(merged).sectors).toEqual([
       { from: "LHE", to: "DMM", count: 2 }, { from: "ISB", to: "JED", count: 1 }, { from: "LHE", to: "KWI", count: 1 },
     ]);
+  });
+
+  it("a search runs with any one of From, To or date; From and To must differ", () => {
+    expect(isCompleteSearch({ from: "LHE", adults: 1 })).toBe(true);
+    expect(isCompleteSearch({ to: "DMM", adults: 1 })).toBe(true);
+    expect(isCompleteSearch({ date: "2026-12-05", adults: 1 })).toBe(true);
+    expect(isCompleteSearch({ from: "LHE", to: "DMM", date: "2026-12-05", adults: 1 })).toBe(true);
+    expect(isCompleteSearch({ adults: 1 })).toBe(false);
+    expect(isCompleteSearch({ from: "LHE", to: "LHE", adults: 1 })).toBe(false);
+  });
+
+  it("return rows carry both flights with times; one-way rows have no return", () => {
+    const [back] = resultRows([{ id: "g9", sector: "ISB - JED", tickets: [ticket("r1", {
+      sector: "ISB - JED", departure_date: "2026-12-02", departure_time: "06:40", flight_number: "9P700",
+      legs: [{ direction: "outbound", flight_number: "9P700", origin: "ISB", destination: "JED", departure_date: "2026-12-02", departure_time: "06:40", arrival_time: "10:05" },
+        { direction: "return", flight_number: "9P701", origin: "JED", destination: "ISB", departure_date: "2026-12-21", departure_time: "11:05", arrival_time: "18:05" }],
+    })] }] as unknown as GroupInventory[]);
+    expect(back).toMatchObject({ arrivalTime: "10:05", returnLeg: { flightNumber: "9P701", route: "JED - ISB", departureDate: "2026-12-21", departureTime: "11:05", arrivalTime: "18:05" } });
+    const [one] = resultRows([{ id: "g8", sector: "LHE - DMM", tickets: [ticket("o1", {
+      legs: [{ direction: "outbound", flight_number: "PF742", origin: "LHE", destination: "DMM", departure_time: "21:10", arrival_time: "23:45" }] })] }] as unknown as GroupInventory[]);
+    expect(one).toMatchObject({ arrivalTime: "23:45", returnLeg: null });
+  });
+
+  it("the sector list comes from the listing, both directions where offered", () => {
+    const listed = [{ id: "a", sector: "x", tickets: [ticket("1", { sector: "LHE - DMM" }), ticket("2", { sector: "DMM - LHE" }), ticket("3", { sector: "LHE - DMM" })] }] as unknown as GroupInventory[];
+    expect(inventoryOptions(listed).sectors).toEqual([{ from: "LHE", to: "DMM", count: 2 }, { from: "DMM", to: "LHE", count: 1 }]);
+  });
+
+  it("posts empty fields as null", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: [] }), { status: 200 }));
+    await searchGroupFares({ to: "DMM", adults: 1 }, { baseUrl: "http://gw", accessToken: "t", fetchImpl });
+    expect(JSON.parse(fetchImpl.mock.calls[0][1].body)).toEqual({ origin: null, destination: "DMM", departure_date: null, adults: 1 });
   });
 
   it("keeps the search in the URL", () => {

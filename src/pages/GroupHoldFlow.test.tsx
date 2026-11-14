@@ -386,6 +386,27 @@ describe("Dhillu & Sahi hold time note", () => {
   });
 });
 
+describe("Return tickets on the held and booking pages", () => {
+  const RETURN: GroupHoldView = { ...HELD, flight: { ...HELD.flight, legs: [
+    { direction: "outbound", flight_number: "9P700", origin: "ISB", destination: "JED", departure_date: "2026-11-22", departure_time: "06:40", arrival_time: "10:05" },
+    { direction: "return", flight_number: "9P701", origin: "JED", destination: "ISB", departure_date: "2026-12-21", departure_time: "11:05", arrival_time: "18:05" },
+  ] } };
+
+  it("the return flight shows under the outbound one", async () => {
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", RETURN);
+    const details = await screen.findByRole("region", { name: "Booking details" });
+    expect(details).toHaveTextContent("Return 21 Dec 2026 11:05–18:05, JED - ISB, 9P701");
+    gateway.fetchGroupHold.mockResolvedValue(RETURN);
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
+    expect(await screen.findByRole("region", { name: "Details" })).toHaveTextContent("Return21 Dec 2026 11:05–18:05, JED - ISB, 9P701");
+  });
+
+  it("a one-way booking has no return line", async () => {
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", HELD);
+    expect(await screen.findByRole("region", { name: "Booking details" })).not.toHaveTextContent("Return");
+  });
+});
+
 describe("Live provider rules", () => {
   const SKYPASS_HELD: GroupHoldView = { ...PAID, pnr: undefined, can_issue_tickets: false, issue_unavailable_reason: "Issuing is not available for this provider yet" };
 
