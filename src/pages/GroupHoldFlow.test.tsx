@@ -309,10 +309,10 @@ describe("Dhillu & Sahi hold and unrecorded supplier holds", () => {
 
   it("a hold the supplier made but Travelian couldn't record: Not recorded, the notice, both actions off", async () => {
     gateway.fetchGroupHold.mockResolvedValue({ ...HELD, status: "not_recorded", can_record_payments: false, can_issue_tickets: false, can_release: false,
-      supplier_notice: "Supplier hold not recorded, it expires by itself after 1 hour" });
+      supplier_notice: "Supplier hold not recorded. It will cancel by itself at the supplier shortly. Record the PNR and check with the supplier." });
     renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123");
     expect(await screen.findByText("This hold was not recorded")).toBeInTheDocument();
-    expect(screen.getByText("Supplier hold not recorded, it expires by itself after 1 hour")).toBeInTheDocument();
+    expect(screen.getByText("Supplier hold not recorded. It will cancel by itself at the supplier shortly. Record the PNR and check with the supplier.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continue to payment" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Release hold" })).toBeDisabled();
     renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");

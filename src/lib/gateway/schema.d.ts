@@ -2649,7 +2649,7 @@ export interface components {
             supplier?: string | null;
             /**
              * Supplier Notice
-             * @description What happens to the seats at the supplier, e.g. 'Supplier hold not recorded, it expires by itself after 1 hour'. Only with the supplier names permission.
+             * @description What happens to the seats at the supplier, e.g. 'Cancelled at the supplier'. Only with the supplier names permission.
              */
             supplier_notice?: string | null;
             /**
