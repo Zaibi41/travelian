@@ -100,34 +100,81 @@ export function writeGroupSearch(params: URLSearchParams, search: GroupSearch): 
 export const isCompleteSearch = (search: GroupSearch): search is GroupSearch & { from: string; to: string; date: string } =>
   Boolean(search.from && search.to && search.date && search.from !== search.to);
 
+/** "20" / "20 kg" / 20 -> 20; empty or not a number -> null. */
+function kilos(value: unknown): number | null {
+  const text = String(value ?? "").toLowerCase().replace("kg", "").trim();
+  if (!text || !/^\d+(\.\d+)?$/.test(text)) return null;
+  return Number(text);
+}
+
+/** Baggage as shown in results: checked 0 or empty with hand carry 7 -> "7 kg"; 20 and 7 -> "20+7 kg";
+ *  20 alone -> "20 kg". Null when the provider sends neither. Display only. */
+export function baggageText(checked: unknown, handCarry: unknown): string | null {
+  const bag = kilos(checked);
+  const hand = kilos(handCarry);
+  if ((bag === null || bag === 0) && hand) return `${hand} kg`;
+  if (bag && hand) return `${bag}+${hand} kg`;
+  if (bag) return `${bag} kg`;
+  return null;
+}
+
+export interface GroupResultLeg {
+  flightNumber?: string | null;
+  route?: string | null;
+  departureDate?: string | null;
+  departureTime?: string | null;
+  baggage: string | null;
+  meal?: "Yes" | "No" | null;
+}
+
 export interface GroupResultRow {
   id: string;
   departureDate?: string | null;
   departureTime?: string | null;
   /** Gateway path, e.g. /v1/logos/{id}. */
   logoUrl?: string | null;
-  /** Per adult, selling price from the gateway. */
+  /** Per adult, selling price from the gateway (the listing price plus markup). */
   price?: GroupMoney | null;
   sector?: string | null;
   airline?: string | null;
+  flightNumber?: string | null;
   seatsLeft?: number | null;
   baggage?: string | null;
+  meal?: "Yes" | "No" | null;
+  /** The return flight, when the provider sends one. */
+  returnLeg?: GroupResultLeg | null;
+  stock?: "supplier" | "owned";
+  canHold: boolean;
+  /** The gateway's reason when Hold seats is off (provider can't hold, no selling price, ...). */
+  holdUnavailableReason?: string | null;
 }
 
 /** One row per departure, filtered by airline (display filter), earliest first. */
 export function resultRows(groups: GroupInventory[], airline?: string): GroupResultRow[] {
   return groups
-    .flatMap(group => group.tickets.map(ticket => ({
-      id: ticket.id,
-      departureDate: ticket.departure_date,
-      departureTime: ticket.departure_time,
-      logoUrl: ticket.logo_url ?? group.logo_url,
-      price: ticket.selling_price ?? null,
-      sector: ticket.sector ?? group.sector,
-      airline: (ticket.airline ?? group.airline)?.trim() || null,
-      seatsLeft: ticket.remaining,
-      baggage: ticket.baggage == null || String(ticket.baggage).trim() === "" ? null : String(ticket.baggage).trim(),
-    })))
+    .flatMap(group => group.tickets.map(ticket => {
+      const back = (ticket.legs ?? []).find(leg => leg.direction === "return");
+      return {
+        id: ticket.id,
+        departureDate: ticket.departure_date,
+        departureTime: ticket.departure_time,
+        logoUrl: ticket.logo_url ?? group.logo_url,
+        price: ticket.selling_price ?? null,
+        sector: ticket.sector ?? group.sector,
+        airline: (ticket.airline ?? group.airline)?.trim() || null,
+        flightNumber: ticket.flight_number ?? null,
+        seatsLeft: ticket.remaining,
+        baggage: baggageText(ticket.baggage, ticket.hand_carry),
+        meal: ticket.meal ?? null,
+        returnLeg: back ? {
+          flightNumber: back.flight_number, route: back.origin && back.destination ? `${back.origin} - ${back.destination}` : null,
+          departureDate: back.departure_date, departureTime: back.departure_time, baggage: baggageText(back.baggage, back.hand_carry), meal: back.meal ?? null,
+        } : null,
+        stock: ticket.stock,
+        canHold: Boolean(ticket.can_hold),
+        holdUnavailableReason: ticket.hold_unavailable_reason ?? null,
+      };
+    }))
     .filter(row => !airline || row.airline === airline)
     .sort((a, b) => (a.departureDate ?? "").localeCompare(b.departureDate ?? "") || (a.airline ?? "").localeCompare(b.airline ?? ""));
 }

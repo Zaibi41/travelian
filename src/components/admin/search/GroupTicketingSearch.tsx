@@ -15,6 +15,7 @@ import { Chip } from "@/components/admin/ui/feedback";
 import { cn } from "@/lib/utils";
 import { GatewayError, gatewayAssetUrl } from "@/lib/gateway/client";
 import { Button } from "@/components/admin/ui/button";
+import { formatMoney } from "@/lib/admin-bookings/format";
 import { groupHoldFormPath } from "@/lib/admin-search/group-holds";
 import {
   fetchGroupInventory, inventoryOptions, isCompleteSearch, parseGroupSearch, resultRows, searchGroupFares, writeGroupSearch,
@@ -22,6 +23,8 @@ import {
 } from "@/lib/admin-search/group-ticketing";
 
 const ANY = "any";
+/** Shown under a disabled Hold seats when the gateway gave no reason of its own. */
+const HOLD_OFF_REASON = "Holding isn't available for this provider";
 const errorMessage = (error: unknown) =>
   error instanceof GatewayError ? error.message : "Group fares couldn't be loaded. Try again in a few minutes.";
 
@@ -40,11 +43,11 @@ function departure(value?: string | null) {
 }
 
 // Search > Group Ticketing (spec 6; mockup PDF docs/2026-11-14 page 9), on the gateway's real
-// group inventory. Hidden until the gateway provides them (docs/backend-todo.md): the
-// Available providers, Search expiry and Quotes pending cards; Children and Infants
-// (group fares are adults only); Hold rule; Book and Quote. Group results have no price:
-// the exact price comes back from the hold ("Shown after hold"). Each row's Hold seats opens
-// the traveler details page with the fare and this search in the URL. The results scroll area is
+// group inventory (Skypass and Dhillu & Sahi). Hidden until the gateway provides them
+// (docs/backend-todo.md): the Available providers, Search expiry and Quotes pending cards;
+// Children and Infants (group fares are adults only); Hold rule; Book and Quote. The price is the
+// listing's per-adult price with Travelian's markup. Hold seats opens the traveler details page
+// with the fare and this search in the URL; it is off, with the reason, where the provider can't hold. The results scroll area is
 // `relative` so the sr-only "Action" header stays inside it (an absolutely positioned element would
 // otherwise widen the page at 390px).
 export function GroupTicketingSearch() {
@@ -181,7 +184,7 @@ export function GroupTicketingSearch() {
         <section aria-label="Results" className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
           <div>
             <h2 className="text-section font-semibold text-foreground">Results</h2>
-            <p className="text-body text-muted-foreground">Group fares have no price in this list. The exact price appears after you hold the seats.</p>
+            <p className="text-body text-muted-foreground">Prices are per adult, from the provider's listing.</p>
           </div>
           {results.error ? (
             <DashboardErrorNotice message={errorMessage(results.error)} />
@@ -193,43 +196,64 @@ export function GroupTicketingSearch() {
             <p className="py-2 text-body text-muted-foreground">No group fares match this search.</p>
           ) : (
             <div className="relative overflow-x-auto">
-              <table className="w-full min-w-[46rem] border-collapse text-table">
+              <table className="w-full min-w-[54rem] border-collapse text-table">
                 <thead>
                   <tr className="bg-muted text-left">
-                    {["Departure", "Airline", "Seats left", "Baggage", "Price per passenger"].map(column => (
+                    {["Departure", "Airline", "Seats left", "Baggage", "Meal", "Price per passenger"].map(column => (
                       <th key={column} scope="col" className="h-table-header px-2.5 font-semibold text-foreground">{column}</th>
                     ))}
                     <th scope="col" className="h-table-header px-2.5"><span className="sr-only">Action</span></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map(row => (
-                    <tr key={row.id} className="border-b border-border last:border-b-0">
-                      <td className="px-2.5 py-2 align-top">
-                        <span className="block whitespace-nowrap tabular-nums text-foreground">
-                          {departure(row.departureDate)}{row.departureTime ? ` ${row.departureTime}` : ""}
-                        </span>
-                        <span className="block text-label text-muted-foreground">{row.sector ?? "—"}</span>
-                      </td>
-                      <td className="max-w-[16rem] px-2.5 py-2 align-top">
-                        <span className="flex min-w-0 items-center gap-2">
-                          <AirlineLogo path={row.logoUrl} />
-                          <span className="truncate font-semibold text-foreground" title={row.airline ?? undefined}>{row.airline ?? "—"}</span>
-                        </span>
-                      </td>
-                      <td className="px-2.5 py-2 align-top tabular-nums text-foreground">{row.seatsLeft ?? "—"}</td>
-                      <td className="max-w-[14rem] px-2.5 py-2 align-top">
-                        <span className="block truncate text-foreground" title={row.baggage ?? undefined}>{row.baggage ?? "Baggage info not available"}</span>
-                      </td>
-                      <td className="whitespace-nowrap px-2.5 py-2 align-top text-muted-foreground">Shown after hold</td>
-                      <td className="px-2.5 py-2 text-right align-top">
-                        <Button type="button" variant="primary" size="sm" aria-label={`Hold seats, ${row.airline ?? "group fare"} ${departure(row.departureDate)}`}
-                          onClick={() => navigate(groupHoldFormPath(row.id, search))}>
-                          Hold seats
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {rows.map(row => {
+                    const back = row.returnLeg;
+                    return (
+                      <tr key={row.id} className="border-b border-border last:border-b-0">
+                        <td className="px-2.5 py-2 align-top">
+                          <span className="block whitespace-nowrap tabular-nums text-foreground">
+                            {departure(row.departureDate)}{row.departureTime ? ` ${row.departureTime}` : ""}
+                          </span>
+                          <span className="block text-label text-muted-foreground">{row.sector ?? "—"}</span>
+                          {back && (
+                            <span className="mt-1 block whitespace-nowrap text-label text-muted-foreground">
+                              Return {departure(back.departureDate)}{back.departureTime ? ` ${back.departureTime}` : ""}{back.route ? `, ${back.route}` : ""}
+                            </span>
+                          )}
+                        </td>
+                        <td className="max-w-[16rem] px-2.5 py-2 align-top">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <AirlineLogo path={row.logoUrl} />
+                            <span className="min-w-0">
+                              <span className="block truncate font-semibold text-foreground" title={row.airline ?? undefined}>{row.airline ?? "—"}</span>
+                              {row.flightNumber && <span className="block truncate text-label text-muted-foreground">{row.flightNumber}{back?.flightNumber ? ` / ${back.flightNumber}` : ""}</span>}
+                            </span>
+                          </span>
+                        </td>
+                        <td className="px-2.5 py-2 align-top tabular-nums text-foreground">{row.seatsLeft ?? "—"}</td>
+                        <td className="max-w-[12rem] px-2.5 py-2 align-top">
+                          <span className="block truncate text-foreground" title={row.baggage ?? undefined}>{row.baggage ?? "Baggage info not available"}</span>
+                          {back && <span className="block truncate text-label text-muted-foreground">Return {back.baggage ?? "baggage info not available"}</span>}
+                        </td>
+                        <td className="whitespace-nowrap px-2.5 py-2 align-top text-foreground">
+                          {row.meal === "Yes" ? "Meal" : row.meal === "No" ? "No Meal" : <span className="text-muted-foreground">Meal info not available</span>}
+                        </td>
+                        <td className="whitespace-nowrap px-2.5 py-2 align-top tabular-nums">
+                          {row.price ? <span className="font-semibold text-foreground">{formatMoney(row.price)}</span> : <span className="text-muted-foreground">Price not available</span>}
+                        </td>
+                        <td className="px-2.5 py-2 text-right align-top">
+                          <Button type="button" variant="primary" size="sm" disabled={!row.canHold}
+                            title={row.canHold ? undefined : row.holdUnavailableReason ?? HOLD_OFF_REASON}
+                            aria-label={`Hold seats, ${row.airline ?? "group fare"} ${departure(row.departureDate)}`}
+                            aria-describedby={row.canHold ? undefined : `hold-off-${row.id}`}
+                            onClick={() => navigate(groupHoldFormPath(row.id, search))}>
+                            Hold seats
+                          </Button>
+                          {!row.canHold && <span id={`hold-off-${row.id}`} className="mt-1 block max-w-[10rem] text-left text-table text-muted-foreground sm:ml-auto">{row.holdUnavailableReason ?? HOLD_OFF_REASON}</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

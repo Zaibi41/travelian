@@ -175,7 +175,17 @@ describe("Hold group seats (step 2)", () => {
     const again = await screen.findByRole("complementary", { name: "Selected group fare" });
     await within(again).findByText("Fly Jinnah");
     expect(within(again).getByRole("button", { name: "Hold seats" })).toBeDisabled();
-    expect(again).toHaveTextContent("can't be held through Travelian yet");
+    expect(again).toHaveTextContent("Holding isn't available for this provider");
+  });
+
+  it("no selling price configured: the gateway's reason shows before any details are typed, and Hold seats is off", async () => {
+    gateway.fetchGroupTicket.mockResolvedValue({ ...TICKET, can_hold: false, hold_unavailable_reason: "No selling price is configured for group fares" });
+    renderAt(HOLD_URL);
+    const fare = await screen.findByRole("complementary", { name: "Selected group fare" });
+    await within(fare).findByText("Fly Jinnah");
+    expect(fare).toHaveTextContent("No selling price is configured for group fares.");
+    expect(within(fare).getByRole("button", { name: "Hold seats" })).toBeDisabled();
+    expect(gateway.holdGroupSeats).not.toHaveBeenCalled();
   });
 
   it("finds a saved customer by passport number first; masked, no reveal; the hold sends the id only", async () => {
@@ -238,6 +248,44 @@ describe("Group seats held (step 3)", () => {
     expect(screen.getByRole("button", { name: "Continue to payment" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Release hold" })).toBeDisabled();
     expect(screen.getByRole("link", { name: "Search again" })).toHaveAttribute("href", "/admin/search?tab=group-ticketing");
+  });
+});
+
+describe("Live provider rules", () => {
+  const SKYPASS_HELD: GroupHoldView = { ...PAID, pnr: undefined, can_issue_tickets: false, issue_unavailable_reason: "Issuing is not available for this provider yet" };
+
+  it("the countdown runs from the gateway's own hold expiry (no 'Hold time not confirmed' state)", async () => {
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", { ...HELD, hold_expires_at: new Date(Date.now() + 30 * 60_000).toISOString() });
+    expect(await screen.findByRole("timer")).toHaveTextContent(/Hold expires, (30:00|29:5\d) left/);
+    expect(document.body.textContent).not.toMatch(/Hold time not confirmed/);
+  });
+
+  it("staff without supplier access: no PNR row, no supplier name", async () => {
+    gateway.fetchGroupHold.mockResolvedValue({ ...HELD, pnr: undefined });
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123");
+    const details = await screen.findByRole("region", { name: "Booking details" });
+    expect(details).not.toHaveTextContent("PNR");
+    expect(details).toHaveTextContent("StockSupplier");
+  });
+
+  it("Issue tickets stays off with the provider's reason even when paid in full", async () => {
+    gateway.fetchGroupHold.mockResolvedValue(SKYPASS_HELD);
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
+    const issue = await screen.findByRole("region", { name: "Issue tickets" });
+    expect(issue).toHaveTextContent("Issuing is not available for this provider yet");
+    expect(within(issue).getByRole("button", { name: "Issue tickets" })).toBeDisabled();
+    expect(gateway.issueGroupTickets).not.toHaveBeenCalled();
+  });
+
+  it("a failed supplier release: Expired plus 'Supplier release failed, release manually' (sent to Admin / Super Admin only)", async () => {
+    gateway.fetchGroupHold.mockResolvedValue({ ...HELD, status: "expired", supplier_release_failed: true, can_record_payments: false, can_issue_tickets: false });
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
+    expect(await screen.findByText("Supplier release failed, release manually")).toBeInTheDocument();
+    expect(screen.getByText("This hold has expired")).toBeInTheDocument();
+    gateway.fetchGroupHold.mockResolvedValue({ ...HELD, status: "expired", can_record_payments: false, can_issue_tickets: false });
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000124");
+    await screen.findAllByText("This hold has expired");
+    expect(screen.getAllByText("Supplier release failed, release manually")).toHaveLength(1);
   });
 });
 

@@ -23,7 +23,12 @@ import AdminSearchPage from "./AdminSearchPage";
 const INVENTORY = {
   data: [{
     id: "g1", sector: "LAHORE - DAMMAM", airline: "Airblue", logo_url: "/v1/logos/abc",
-    tickets: [{ id: "t1", sector: "LHE - DMM", departure_date: "2026-11-13", departure_time: "09:45", airline: "Airblue", logo_url: "/v1/logos/abc", selling_price: { amount_minor: 9_975_000, currency: "PKR" }, remaining: 9, baggage: "20 KG" }],
+    tickets: [
+      { id: "t1", sector: "LHE - DMM", departure_date: "2026-11-13", departure_time: "09:45", airline: "Airblue", logo_url: "/v1/logos/abc", flight_number: "PA470",
+        selling_price: { amount_minor: 9_975_000, currency: "PKR" }, remaining: 9, baggage: "20", hand_carry: "7", meal: "Yes", stock: "supplier", can_hold: true },
+      { id: "t2", sector: "LHE - DMM", departure_date: "2026-11-13", departure_time: "21:10", airline: "Serene Air", remaining: 4, baggage: "0", hand_carry: "7", stock: "supplier",
+        can_hold: false, hold_unavailable_reason: "Holding isn't available for this provider" },
+    ],
   }],
 };
 
@@ -63,27 +68,34 @@ describe("Search (internal roles)", () => {
     expect(screen.queryByText(/Available providers|Search expiry|Quotes pending/)).not.toBeInTheDocument();
   });
 
-  it("Group Ticketing: real results, price shown only after the hold, a Hold seats action per row; no supplier", async () => {
+  it("Group Ticketing: listing price in Rs, logo, flight number, meal, the baggage rule; Hold seats off with a reason where the provider can't hold; no supplier", async () => {
     renderAt("/admin/search?tab=group-ticketing&from=LHE&to=DMM&date=2026-11-13&adults=2");
     const results = await screen.findByRole("region", { name: "Results" });
     await within(results).findByText("Airblue");
-    expect(within(results).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Departure", "Airline", "Seats left", "Baggage", "Price per passenger", "Action"]);
-    expect(within(results).getByText("13 Nov 2026 09:45")).toBeInTheDocument();
-    expect(within(results).getByText("Shown after hold")).toBeInTheDocument();
-    expect(results).toHaveTextContent("Group fares have no price in this list. The exact price appears after you hold the seats.");
-    expect(within(results).queryByText(/Rs\s/)).not.toBeInTheDocument();
-    expect(within(results).getByText("9")).toBeInTheDocument();
+    expect(within(results).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Departure", "Airline", "Seats left", "Baggage", "Meal", "Price per passenger", "Action"]);
+    const [first, second] = within(results).getAllByRole("row").slice(1);
+    expect(first).toHaveTextContent("13 Nov 2026 09:45");
+    expect(first).toHaveTextContent("PA470");
+    expect(first).toHaveTextContent("20+7 kg");
+    expect(first).toHaveTextContent("Meal");
+    expect(first).toHaveTextContent("Rs 99,750");
+    expect(within(first).getByRole("button", { name: /^Hold seats/ })).toBeEnabled();
+    expect(second).toHaveTextContent("7 kg");
+    expect(second).not.toHaveTextContent("0+7");
+    expect(second).toHaveTextContent("Meal info not available");
+    expect(second).toHaveTextContent("Price not available");
+    expect(within(second).getByRole("button", { name: /^Hold seats/ })).toBeDisabled();
+    expect(within(second).getByRole("button", { name: /^Hold seats/ })).toHaveAccessibleDescription("Holding isn't available for this provider");
     expect(gateway.search).toHaveBeenCalledWith(expect.objectContaining({ from: "LHE", to: "DMM", date: "2026-11-13", adults: 2 }), expect.anything());
     expect(document.body.textContent).not.toMatch(/Book|Quote|Owned|Supplier|Children|Infants|dhillu|skypass/i);
-    expect(within(results).getByRole("button", { name: /^Hold seats/ })).toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: /LHE → DMM \(1\)/ })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /LHE → DMM \(2\)/ })).toBeInTheDocument();
   });
 
   it("Hold seats opens the traveler details page with the fare, sector and adults from the search", async () => {
     renderAt("/admin/search?tab=group-ticketing&from=LHE&to=DMM&date=2026-11-13&adults=2");
     const results = await screen.findByRole("region", { name: "Results" });
     await within(results).findByText("Airblue");
-    fireEvent.click(within(results).getByRole("button", { name: /^Hold seats/ }));
+    fireEvent.click(within(results).getAllByRole("button", { name: /^Hold seats/ })[0]);
     expect(location.current).toBeDefined();
     const url = new URL(location.current!, "http://x");
     expect(url.pathname).toBe("/admin/search/group-ticketing/hold");

@@ -194,7 +194,8 @@ function IssueTickets({ view, held, onChange }: { view: GroupHoldView; held: boo
   });
   const due = view.amount_due.amount_minor > 0;
   const canIssue = held && !due && view.can_issue_tickets;
-  const text = view.status === "issued" ? "Tickets are issued."
+  const text = view.issue_unavailable_reason && view.status === "held" ? view.issue_unavailable_reason
+    : view.status === "issued" ? "Tickets are issued."
     : view.status === "unknown" ? "The tickets' status is unknown. Don't issue again: check with the supplier."
     : view.status === "processing" ? "Issuing is in progress."
     : !held ? "The hold is no longer open."
@@ -211,7 +212,8 @@ function IssueTickets({ view, held, onChange }: { view: GroupHoldView; held: boo
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-3">
         {view.status === "held" && <HoldCountdown expiresAt={view.hold_expires_at} expired={!held} />}
-        <Button type="button" variant="primary" disabled={!canIssue || issue.isPending} onClick={() => { setProblem(null); setResult(null); issue.mutate(undefined); }}>
+        <Button type="button" variant="primary" disabled={!canIssue || issue.isPending} title={view.issue_unavailable_reason ?? undefined}
+          onClick={() => { setProblem(null); setResult(null); issue.mutate(undefined); }}>
           {issue.isPending ? "Issuing…" : "Issue tickets"}
         </Button>
       </div>

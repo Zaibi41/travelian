@@ -130,7 +130,10 @@ Still open:
 | Group Ticketing: Hold rule | Hold rule on each departure (Skypass sends `on_hold_rule`, meaning undocumented) |
 | Group Ticketing: child and infant prices | Price per passenger type (section 5). The hold flow is adults only |
 | Group Ticketing: Book, Quote; Results summary (seats available, hold expires) | Booking and quote endpoints; hold expiry on results |
-| Group Ticketing: Hold seats is shown on every row but the gateway refuses the hold (`hold_not_supported`) and the traveler details page says so, because no group supplier has a documented hold, release, price-check and issue contract. Stock label (Supplier / Owned) comes from the gateway; owned stock does not exist yet | A `GroupHoldProvider` per source in the gateway (`app/services/group_holds.py`, gateway `docs/api/group-holds.md`): Skypass hold and release calls were checked live on 14 November 2026 and work, but give no hold id, expiry or price; its `submit-booking` behaviour (hold or issue) and hold duration are unconfirmed. Dhillu & Sahi has no hold or issue call. Al Haider has no adapter or credentials |
+| Group Ticketing: Issue tickets is off for every group booking ("Issuing is not available for this provider yet") | An issue call per provider. Skypass `submit-booking` is not built: whether it issues tickets or confirms a booking, and when payment is due, are unconfirmed. Dhillu & Sahi has no issue call |
+| Group Ticketing: Hold seats is off for Dhillu & Sahi fares | A hold and release call from Dhillu & Sahi (only add-booking exists) |
+| Group Ticketing: Al Haider fares | An adapter (inventory, hold, release) and credentials: `AL_HAIDER_BASE_URL`, `AL_HAIDER_EMAIL`, `AL_HAIDER_PASSWORD` (its collection logs in with email and password) |
+| Group Ticketing: owned stock | Travelian-owned group inventory in the gateway (`stock: owned` is reserved for it) |
 
 ## 7. Customers & Travelers (`/admin/customers`)
 

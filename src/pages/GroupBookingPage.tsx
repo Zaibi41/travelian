@@ -6,6 +6,7 @@ import { TabLinks } from "@/components/admin/ui/TabLinks";
 import { StatusBadge, Tag } from "@/components/admin/ui/StatusBadge";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GroupBookingSteps } from "@/components/admin/search/GroupBookingSteps";
+import { ReleaseFailedNotice } from "./GroupHeldPage";
 import { GroupPaymentsTab, groupHoldKey } from "@/components/admin/search/GroupPaymentsTab";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
@@ -46,6 +47,7 @@ export default function GroupBookingPage() {
         </div>
         <GroupBookingSteps current={4} />
       </div>
+      {view?.supplier_release_failed && <ReleaseFailedNotice />}
       <TabLinks label="Booking" tabs={GROUP_BOOKING_TABS.map(entry => ({ to: groupBookingPath(bookingId, entry.slug), label: entry.label }))} />
       {hold.error && !view ? (
         <NotAvailableNotice title="This booking can't be shown">
@@ -84,7 +86,7 @@ function Details({ view }: { view: GroupHoldView }) {
   return (
     <FieldTable label="Details" rows={[
       ["Booking reference", view.booking_id],
-      ["PNR", view.pnr ?? "—"],
+      ...(view.pnr ? [["PNR", view.pnr] as [string, React.ReactNode]] : []),
       ["Status", <StatusBadge key="status" severity={status.severity}>{status.label}</StatusBadge>],
       ["Hold expires", view.hold_expires_at ? formatDateTime(view.hold_expires_at) : "—"],
       ["Flight", [view.flight.airline, view.flight.sector].filter(Boolean).join(", ") || "—"],

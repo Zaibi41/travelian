@@ -2543,7 +2543,7 @@ export interface components {
             booking_id: string;
             /**
              * Can Issue Tickets
-             * @description This viewer may issue now: held, not expired, nothing due (the endpoint still checks).
+             * @description This viewer may issue now: held, not expired, nothing due, provider supports it (the endpoint still checks).
              * @default false
              */
             can_issue_tickets: boolean;
@@ -2555,8 +2555,16 @@ export interface components {
             can_record_payments: boolean;
             customer?: components["schemas"]["GroupHoldCustomer"] | null;
             flight: components["schemas"]["GroupHoldFlight"];
-            /** Hold Expires At */
+            /**
+             * Hold Expires At
+             * @description Travelian's own time limit: hold creation + GROUP_HOLD_MINUTES.
+             */
             hold_expires_at?: string | null;
+            /**
+             * Issue Unavailable Reason
+             * @description Why Issue tickets is off for this booking's provider, when it is.
+             */
+            issue_unavailable_reason?: string | null;
             /**
              * Payment Status
              * @enum {string}
@@ -2564,7 +2572,10 @@ export interface components {
             payment_status: "unpaid" | "part_paid" | "paid";
             /** Payments */
             payments?: components["schemas"]["GroupHoldPayment"][];
-            /** Pnr */
+            /**
+             * Pnr
+             * @description The supplier's PNR. Only with the supplier names permission.
+             */
             pnr?: string | null;
             /** @description Selling price per adult, from the hold (or the accepted new price). */
             price_per_adult: components["schemas"]["GroupMoney"];
@@ -2589,6 +2600,11 @@ export interface components {
              * @description Only with the supplier names permission.
              */
             supplier?: string | null;
+            /**
+             * Supplier Release Failed
+             * @description The seats could not be released at the supplier after the hold ended (being retried, or given up). Only with the supplier names permission.
+             */
+            supplier_release_failed?: boolean | null;
             total: components["schemas"]["GroupMoney"];
             /**
              * Travelers
@@ -2616,6 +2632,40 @@ export interface components {
              * @enum {string}
              */
             result: "issued" | "not_issued" | "unknown";
+        };
+        /** GroupLegView */
+        GroupLegView: {
+            /** Arrival Date */
+            arrival_date?: string | null;
+            /** Arrival Time */
+            arrival_time?: string | null;
+            /**
+             * Baggage
+             * @description Checked baggage in kg, e.g. '20'.
+             */
+            baggage?: string | null;
+            /** Departure Date */
+            departure_date?: string | null;
+            /** Departure Time */
+            departure_time?: string | null;
+            /** Destination */
+            destination?: string | null;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "outbound" | "return";
+            /** Flight Number */
+            flight_number?: string | null;
+            /**
+             * Hand Carry
+             * @description Hand carry in kg, e.g. '7'.
+             */
+            hand_carry?: string | null;
+            /** Meal */
+            meal?: ("Yes" | "No") | null;
+            /** Origin */
+            origin?: string | null;
         };
         /** GroupMoney */
         GroupMoney: {
@@ -2699,11 +2749,14 @@ export interface components {
         GroupTicketView: {
             /** Airline */
             airline?: string | null;
-            /** Baggage */
+            /**
+             * Baggage
+             * @description Checked baggage of the outbound leg in kg.
+             */
             baggage?: string | number | null;
             /**
              * Can Hold
-             * @description Whether the gateway can hold seats on this fare (its source supports holds).
+             * @description Whether Hold seats can be used on this fare: its source holds seats and a selling price exists.
              * @default false
              */
             can_hold: boolean;
@@ -2714,15 +2767,35 @@ export interface components {
              * @description HH:MM of the first segment, when the supplier sends it.
              */
             departure_time?: string | null;
+            /**
+             * Flight Number
+             * @description Outbound flight number, e.g. 9P700.
+             */
+            flight_number?: string | null;
+            /**
+             * Hand Carry
+             * @description Hand carry of the outbound leg in kg.
+             */
+            hand_carry?: string | number | null;
+            /**
+             * Hold Unavailable Reason
+             * @description Why Hold seats is off for this fare, when it is.
+             */
+            hold_unavailable_reason?: string | null;
             /** Id */
             id: string;
+            /**
+             * Legs
+             * @description Every flight, outbound then return.
+             */
+            legs?: components["schemas"]["GroupLegView"][];
             /**
              * Logo Url
              * @description Gateway path for the airline logo.
              */
             logo_url?: string | null;
             /** Meal */
-            meal?: string | number | null;
+            meal?: ("Yes" | "No") | null;
             /**
              * Pnr
              * @description Supplier PNR. Only with the supplier names permission.

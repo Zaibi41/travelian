@@ -58,6 +58,15 @@ export default function GroupHeldPage() {
   );
 }
 
+/** Admin and Super Admin only: the gateway sends supplier_release_failed only to viewers with supplier access. */
+export function ReleaseFailedNotice() {
+  return (
+    <Notice tone="critical" title="Supplier release failed, release manually">
+      The hold has ended here, but the supplier hasn't confirmed that the seats were released. Travelian keeps retrying; release them with the supplier.
+    </Notice>
+  );
+}
+
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2 text-label">
@@ -82,6 +91,7 @@ function Held({ view }: { view: GroupHoldView }) {
   const adults = `${view.adults} ${view.adults === 1 ? "adult" : "adults"}`;
   return (
     <>
+      {view.supplier_release_failed && <ReleaseFailedNotice />}
       {held ? (
         <section aria-label="Seats held" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-status-fine/40 bg-status-fine-soft px-card py-3">
           <span className="flex items-center gap-2.5 text-body font-semibold text-status-fine-text">
@@ -103,7 +113,7 @@ function Held({ view }: { view: GroupHoldView }) {
           <h2 id="booking-details-title" className="font-display text-section font-semibold text-brand-navy">Booking details</h2>
           <dl className="mt-2 flex flex-col">
             <Row label="Booking reference" value={view.booking_id} />
-            <Row label="PNR" value={view.pnr ?? "—"} />
+            {view.pnr && <Row label="PNR" value={view.pnr} />}
             <div className="flex items-start justify-between gap-4 py-2 text-label">
               <dt className="shrink-0 text-muted-foreground">Flight</dt>
               <dd className="min-w-0 text-right font-medium text-foreground">

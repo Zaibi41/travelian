@@ -9,6 +9,7 @@ import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GroupBookingSteps } from "@/components/admin/search/GroupBookingSteps";
 import { GroupHoldForm } from "@/components/admin/search/GroupHoldForm";
 import { GatewayError } from "@/lib/gateway/client";
+import { formatMoney } from "@/lib/admin-bookings/format";
 import { parseGroupSearch } from "@/lib/admin-search/group-ticketing";
 import { departureText, fetchGroupTicket, groupResultsPath } from "@/lib/admin-search/group-holds";
 
@@ -77,7 +78,7 @@ export default function GroupHoldPage() {
                   {([
                     ["Passengers", `${adults} ${adults === 1 ? "adult" : "adults"}`],
                     ["Stock", fare.stock === "owned" ? "Owned" : "Supplier"],
-                    ["Price", "Shown after hold"],
+                    ["Price", fare.selling_price ? `${formatMoney(fare.selling_price)} per adult` : "Shown after hold"],
                   ] as const).map(([label, value]) => (
                     <div key={label} className="flex items-baseline justify-between gap-3 py-2 text-label">
                       <dt className="text-muted-foreground">{label}</dt>
@@ -88,12 +89,12 @@ export default function GroupHoldPage() {
                 {fare.remaining != null && fare.remaining < adults ? (
                   <Notice tone="critical" className="mt-2">Only {fare.remaining} {fare.remaining === 1 ? "seat" : "seats"} left. Search again with fewer adults.</Notice>
                 ) : !fare.can_hold ? (
-                  <Notice tone="action" className="mt-2">Seats on this fare can't be held through Travelian yet. Ask the supplier team to hold them.</Notice>
+                  <Notice tone="action" className="mt-2">{fare.hold_unavailable_reason ?? "Holding isn't available for this provider"}.</Notice>
                 ) : null}
                 <Button type="submit" form={FORM_ID} variant="primary" className="mt-3 w-full" disabled={!canHold || pending}>
                   {pending ? "Holding seats…" : "Hold seats"}
                 </Button>
-                <p className="mt-2 text-helper text-muted-foreground">The seats are held for a limited time. The exact price appears after the hold.</p>
+                <p className="mt-2 text-helper text-muted-foreground">The seats are held for a limited time. The price is confirmed when the seats are held.</p>
               </>
             )}
           </aside>
