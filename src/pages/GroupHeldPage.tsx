@@ -10,6 +10,7 @@ import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GroupBookingSteps, HoldCountdown, useHoldOver } from "@/components/admin/search/GroupBookingSteps";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
+import { sourceLine } from "@/lib/admin-search/group-ticketing";
 import { departureText, fetchGroupHold, gatewayMessage, groupBookingPath, releaseGroupHold, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
 
 const SEARCH = "/admin/search?tab=group-ticketing";
@@ -89,6 +90,7 @@ function Held({ view }: { view: GroupHoldView }) {
     onError: error => setProblem(gatewayMessage(error, "The hold couldn't be released. Nothing was changed.")),
   });
   const adults = `${view.adults} ${view.adults === 1 ? "adult" : "adults"}`;
+  const source = sourceLine(view.group_source);
   return (
     <>
       {view.supplier_release_failed && <ReleaseFailedNotice />}
@@ -122,6 +124,7 @@ function Held({ view }: { view: GroupHoldView }) {
               </dd>
             </div>
             <Row label="Stock" value={view.stock === "owned" ? "Owned" : "Supplier"} />
+            {source && <Row label="Source" value={<span title={source}>{source}</span>} />}
             {view.status !== "held" && <Row label="Status" value={<StatusBadge severity={view.status === "issued" ? "fine" : "critical"}>{view.status === "issued" ? "Issued" : view.status === "released" ? "Released" : view.status === "expired" ? "Expired" : view.status === "unknown" ? "Unknown" : "Processing"}</StatusBadge>} />}
           </dl>
           <dl className="mt-2 flex flex-col border-t border-border pt-2">

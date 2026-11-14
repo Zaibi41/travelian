@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { baggageText, inventoryOptions, parseGroupSearch, resultRows, searchGroupFares, sectorCodes, writeGroupSearch, type GroupInventory } from "./group-ticketing";
+import { baggageText, inventoryOptions, parseGroupSearch, resultRows, searchGroupFares, sectorCodes, sourceLine, writeGroupSearch, type GroupInventory } from "./group-ticketing";
 
 const ticket = (id: string, overrides: Record<string, unknown> = {}) => ({
   id, sector: "LHE - DMM", departure_date: "2026-11-13", departure_time: "09:45", airline: "Airblue", remaining: 9, baggage: "20 KG",
@@ -38,7 +38,7 @@ describe("group ticketing search helpers", () => {
     const rows = resultRows(GROUPS);
     expect(rows.map(row => row.id)).toEqual(["t2", "t1", "t3"]);
     expect(Object.keys(rows[0]).sort()).toEqual(["airline", "baggage", "canHold", "departureDate", "departureTime", "flightNumber", "id", "logoUrl",
-      "holdUnavailableReason", "meal", "price", "returnLeg", "seatsLeft", "sector", "stock"].sort());
+      "holdUnavailableReason", "meal", "price", "returnLeg", "seatsLeft", "sector", "source", "stock"].sort());
     expect(rows[0]).toMatchObject({ logoUrl: "/v1/logos/abc", price: { amount_minor: 9_975_000, currency: "PKR" }, baggage: "20 kg", returnLeg: null });
     expect(rows[2]).toMatchObject({ airline: "PIA", baggage: null });
     const twoWay = resultRows([{ id: "g3", sector: "ISB - JED", tickets: [ticket("t4", {
@@ -50,6 +50,16 @@ describe("group ticketing search helpers", () => {
       returnLeg: { flightNumber: "9P701", route: "JED - ISB", departureTime: "11:05", baggage: "10+30 kg", meal: "No" } });
     expect(resultRows(GROUPS, "Serene Air").map(row => row.id)).toEqual(["t2"]);
   });
+  it("Source line from the gateway's group_source; none when the gateway leaves it out (no supplier access)", () => {
+    const source = { provider: "dhillu_sahi", provider_name: "Dhillu & Sahi", supplier_pnr: "41SDS4", supplier_group_id: "3056", supplier_ticket_id: "10817" };
+    expect(sourceLine(source)).toBe("Dhillu & Sahi · PNR 41SDS4 · Group 3056");
+    expect(sourceLine({ provider: "skypass", provider_name: "Skypass", supplier_pnr: "4D1HMQ-4RPD3R", supplier_ticket_id: "12116" })).toBe("Skypass · PNR 4D1HMQ-4RPD3R");
+    expect(sourceLine(null)).toBeNull();
+    const [withSource] = resultRows([{ id: "g4", sector: "LHE - DMM", tickets: [ticket("t5", { group_source: source })] }] as unknown as GroupInventory[]);
+    expect(withSource.source).toBe("Dhillu & Sahi · PNR 41SDS4 · Group 3056");
+    expect(resultRows(GROUPS).every(row => row.source === null)).toBe(true);
+  });
+
   it("keeps the search in the URL", () => {
     const search = parseGroupSearch(new URLSearchParams("tab=group-ticketing&from=lhe&to=DMM&date=2026-11-13&adults=3&airline=PIA"));
     expect(search).toEqual({ from: "LHE", to: "DMM", date: "2026-11-13", adults: 3, airline: "PIA" });

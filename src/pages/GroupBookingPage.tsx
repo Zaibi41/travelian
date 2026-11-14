@@ -11,6 +11,7 @@ import { GroupPaymentsTab, groupHoldKey } from "@/components/admin/search/GroupP
 import { GatewayError } from "@/lib/gateway/client";
 import { formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
 import { GROUP_BOOKING_TABS, departureText, fetchGroupHold, groupBookingPath, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
+import { sourceLine } from "@/lib/admin-search/group-ticketing";
 
 const BOOKINGS = "/admin/bookings/group-ticketing";
 const STATUS: Record<GroupHoldView["status"], { label: string; severity: "fine" | "action" | "critical" }> = {
@@ -83,6 +84,7 @@ function FieldTable({ label, rows }: { label: string; rows: [string, React.React
 
 function Details({ view }: { view: GroupHoldView }) {
   const status = STATUS[view.status];
+  const source = sourceLine(view.group_source);
   return (
     <FieldTable label="Details" rows={[
       ["Booking reference", view.booking_id],
@@ -92,6 +94,7 @@ function Details({ view }: { view: GroupHoldView }) {
       ["Flight", [view.flight.airline, view.flight.sector].filter(Boolean).join(", ") || "—"],
       ["Departure", departureText(view.flight.departure_date, view.flight.departure_time) ?? "—"],
       ["Stock", view.stock === "owned" ? "Owned" : "Supplier"],
+      ...(source ? [["Source", <span key="source" title={source}>{source}</span>] as [string, React.ReactNode]] : []),
       ...(view.supplier ? [["Supplier", <Tag key="supplier">{view.supplier}</Tag>] as [string, React.ReactNode]] : []),
       ["Adults", view.adults],
       ["Price per adult", formatMoney(view.price_per_adult)],

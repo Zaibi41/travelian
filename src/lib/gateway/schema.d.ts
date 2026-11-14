@@ -2555,6 +2555,8 @@ export interface components {
             can_record_payments: boolean;
             customer?: components["schemas"]["GroupHoldCustomer"] | null;
             flight: components["schemas"]["GroupHoldFlight"];
+            /** @description Provider, supplier PNR, group and ticket IDs, as copied from the listing when the hold was created. Only with the supplier names permission. */
+            group_source?: components["schemas"]["GroupSource"] | null;
             /**
              * Hold Expires At
              * @description Travelian's own time limit: hold creation + GROUP_HOLD_MINUTES.
@@ -2745,6 +2747,28 @@ export interface components {
             /** Origin */
             origin: string;
         };
+        /**
+         * GroupSource
+         * @description Which supplier fare this is. Only for viewers with the supplier names permission.
+         */
+        GroupSource: {
+            /**
+             * Provider
+             * @description Source code, e.g. dhillu_sahi or skypass.
+             */
+            provider: string;
+            /**
+             * Provider Name
+             * @description Display name, e.g. Dhillu & Sahi.
+             */
+            provider_name: string;
+            /** Supplier Group Id */
+            supplier_group_id?: string | null;
+            /** Supplier Pnr */
+            supplier_pnr?: string | null;
+            /** Supplier Ticket Id */
+            supplier_ticket_id?: string | null;
+        };
         /** GroupTicketView */
         GroupTicketView: {
             /** Airline */
@@ -2772,6 +2796,8 @@ export interface components {
              * @description Outbound flight number, e.g. 9P700.
              */
             flight_number?: string | null;
+            /** @description Provider, supplier PNR, group and ticket IDs. Only with the supplier names permission. */
+            group_source?: components["schemas"]["GroupSource"] | null;
             /**
              * Hand Carry
              * @description Hand carry of the outbound leg in kg.

@@ -1,5 +1,5 @@
 import { todayIso } from "@/lib/admin-search/date-display";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -209,7 +209,8 @@ export function GroupTicketingSearch() {
                   {rows.map(row => {
                     const back = row.returnLeg;
                     return (
-                      <tr key={row.id} className="border-b border-border last:border-b-0">
+                      <Fragment key={row.id}>
+                      <tr className={cn("border-border", row.source ? "" : "border-b last:border-b-0")}>
                         <td className="px-2.5 py-2 align-top">
                           <span className="block whitespace-nowrap tabular-nums text-foreground">
                             {departure(row.departureDate)}{row.departureTime ? ` ${row.departureTime}` : ""}
@@ -252,6 +253,15 @@ export function GroupTicketingSearch() {
                           {!row.canHold && <span id={`hold-off-${row.id}`} className="mt-1 block max-w-[10rem] text-left text-table text-muted-foreground sm:ml-auto">{row.holdUnavailableReason ?? HOLD_OFF_REASON}</span>}
                         </td>
                       </tr>
+                      {/* Supplier access only: the gateway leaves group_source out for everyone else. */}
+                      {row.source && (
+                        <tr className="border-b border-border last:border-b-0">
+                          <td colSpan={7} className="max-w-0 px-2.5 pb-2 pt-0 text-label text-muted-foreground">
+                            <span className="block truncate" title={row.source}>Source: {row.source}</span>
+                          </td>
+                        </tr>
+                      )}
+                      </Fragment>
                     );
                   })}
                 </tbody>

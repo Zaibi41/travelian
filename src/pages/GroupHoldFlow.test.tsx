@@ -260,6 +260,32 @@ describe("Group seats held (step 3)", () => {
   });
 });
 
+describe("Group identity (Source line)", () => {
+  const SOURCE = { provider: "dhillu_sahi", provider_name: "Dhillu & Sahi", supplier_pnr: "41SDS4", supplier_group_id: "3056", supplier_ticket_id: "10817" };
+  const LINE = "Dhillu & Sahi · PNR 41SDS4 · Group 3056";
+
+  it("supplier access (the gateway sent group_source): Source on the held page and the booking page", async () => {
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", { ...HELD, supplier: "dhillu_sahi", group_source: SOURCE });
+    const details = await screen.findByRole("region", { name: "Booking details" });
+    expect(details).toHaveTextContent(`Source${LINE}`);
+    gateway.fetchGroupHold.mockResolvedValue({ ...HELD, supplier: "dhillu_sahi", group_source: SOURCE });
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
+    expect(await screen.findByRole("region", { name: "Details" })).toHaveTextContent(`Source${LINE}`);
+  });
+
+  it("staff without supplier access (no group_source sent): no Source row, only the Supplier stock label", async () => {
+    gateway.fetchGroupHold.mockResolvedValue({ ...HELD, pnr: undefined });
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123");
+    const details = await screen.findByRole("region", { name: "Booking details" });
+    expect(details).not.toHaveTextContent("Source");
+    expect(details).toHaveTextContent("StockSupplier");
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
+    const booking = await screen.findByRole("region", { name: "Details" });
+    expect(booking).not.toHaveTextContent(/Source|Dhillu|41SDS4|3056/);
+    expect(booking).toHaveTextContent("StockSupplier");
+  });
+});
+
 describe("Live provider rules", () => {
   const SKYPASS_HELD: GroupHoldView = { ...PAID, pnr: undefined, can_issue_tickets: false, issue_unavailable_reason: "Issuing is not available for this provider yet" };
 

@@ -9,6 +9,15 @@ import type { components } from "@/lib/gateway/schema";
 export type GroupInventory = components["schemas"]["GroupView"];
 export type GroupTicket = components["schemas"]["GroupTicketView"];
 export type GroupMoney = components["schemas"]["GroupMoney"];
+export type GroupSource = components["schemas"]["GroupSource"];
+
+/** "Dhillu & Sahi · PNR 41SDS4 · Group 3056". The gateway sends group_source only to viewers with
+ *  supplier access (Admin and Super Admin, or staff granted it); null when it isn't sent. */
+export function sourceLine(source?: GroupSource | null): string | null {
+  if (!source) return null;
+  return [source.provider_name, source.supplier_pnr && `PNR ${source.supplier_pnr}`, source.supplier_group_id && `Group ${source.supplier_group_id}`]
+    .filter(Boolean).join(" · ");
+}
 
 const UNAVAILABLE = "Group fares can't be loaded right now. The supplier isn't responding; try again in a few minutes.";
 
@@ -147,6 +156,8 @@ export interface GroupResultRow {
   canHold: boolean;
   /** The gateway's reason when Hold seats is off (provider can't hold, no price from the provider, ...). */
   holdUnavailableReason?: string | null;
+  /** "Dhillu & Sahi · PNR 41SDS4 · Group 3056"; only when the gateway sent group_source (supplier access). */
+  source: string | null;
 }
 
 /** One row per departure, filtered by airline (display filter), earliest first. */
@@ -173,6 +184,7 @@ export function resultRows(groups: GroupInventory[], airline?: string): GroupRes
         stock: ticket.stock,
         canHold: Boolean(ticket.can_hold),
         holdUnavailableReason: ticket.hold_unavailable_reason ?? null,
+        source: sourceLine(ticket.group_source),
       };
     }))
     .filter(row => !airline || row.airline === airline)
