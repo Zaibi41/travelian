@@ -224,19 +224,22 @@ function IssueTickets({ view, held, onChange }: { view: GroupHoldView; held: boo
 }
 
 /** "The price has changed" (mockup page 13): held price, new price, difference; Release hold or Customer agrees, continue. */
-export function PriceChangedDialog({ change, busy, onClose, onRelease, onContinue }: {
+export function PriceChangedDialog({ change, busy, onClose, onRelease, onContinue, labels = ["Held price", "New price"], releaseLabel = "Release hold",
+  description = "The supplier price changed when we checked it again. Tell the customer, and continue only if they agree." }: {
   change: PriceChange | null; busy: boolean; onClose: () => void; onRelease: () => void; onContinue: () => void;
+  /** The two prices' names: before and now. */
+  labels?: [string, string]; releaseLabel?: string; description?: string;
 }) {
   return (
     <Dialog open={change !== null} onOpenChange={next => { if (!next && !busy) onClose(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display text-section text-brand-navy">The price has changed</DialogTitle>
-          <DialogDescription>The supplier price changed when we checked it again. Tell the customer, and continue only if they agree.</DialogDescription>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         {change && (
           <dl className="flex flex-col rounded-lg border border-border bg-muted/40 px-3 py-1 text-label">
-            {([["Held price", formatMoney(change.heldTotal)], ["New price", formatMoney(change.newTotal)], ["Difference", signedMoney(change.difference)]] as const).map(([label, value]) => (
+            {([[labels[0], formatMoney(change.heldTotal)], [labels[1], formatMoney(change.newTotal)], ["Difference", signedMoney(change.difference)]] as const).map(([label, value]) => (
               <div key={label} className="flex items-baseline justify-between gap-3 py-1.5">
                 <dt className="text-muted-foreground">{label}</dt>
                 <dd className="font-semibold tabular-nums text-foreground">{value}</dd>
@@ -245,7 +248,7 @@ export function PriceChangedDialog({ change, busy, onClose, onRelease, onContinu
           </dl>
         )}
         <DialogFooter className="gap-2 sm:justify-end">
-          <Button type="button" variant="outline" disabled={busy} onClick={onRelease}>Release hold</Button>
+          <Button type="button" variant="outline" disabled={busy} onClick={onRelease}>{releaseLabel}</Button>
           <Button type="button" variant="primary" disabled={busy} onClick={onContinue}>Customer agrees, continue</Button>
         </DialogFooter>
       </DialogContent>

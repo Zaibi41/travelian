@@ -6,7 +6,7 @@ import { TabLinks } from "@/components/admin/ui/TabLinks";
 import { StatusBadge, Tag } from "@/components/admin/ui/StatusBadge";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GroupBookingSteps } from "@/components/admin/search/GroupBookingSteps";
-import { ReleaseFailedNotice, SupplierNotice } from "./GroupHeldPage";
+import { HeldPriceDialog, ReleaseFailedNotice, SupplierNotice } from "./GroupHeldPage";
 import { GroupPaymentsTab, groupHoldKey } from "@/components/admin/search/GroupPaymentsTab";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
@@ -51,6 +51,7 @@ export default function GroupBookingPage() {
       </div>
       {view?.supplier_release_failed && <ReleaseFailedNotice />}
       {view?.supplier_notice && !view.supplier_release_failed && <SupplierNotice view={view} />}
+      {view?.status === "held" && <HeldPriceDialog view={view} />}
       <TabLinks label="Booking" tabs={GROUP_BOOKING_TABS.map(entry => ({ to: groupBookingPath(bookingId, entry.slug), label: entry.label }))} />
       {hold.error && !view ? (
         <NotAvailableNotice title="This booking can't be shown">

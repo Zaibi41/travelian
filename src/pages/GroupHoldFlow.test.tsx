@@ -8,7 +8,7 @@ import type { GroupHoldView } from "@/lib/admin-search/group-holds";
 // Search > Group Ticketing booking flow (mockup PDF docs/2026-11-14 pages 10-13). Gateway calls
 // are mocked with made-up values; no real people or documents.
 const gateway = vi.hoisted(() => ({
-  fetchGroupTicket: vi.fn(), holdGroupSeats: vi.fn(), fetchGroupHold: vi.fn(), issueGroupTickets: vi.fn(), releaseGroupHold: vi.fn(),
+  fetchGroupTicket: vi.fn(), holdGroupSeats: vi.fn(), fetchGroupHold: vi.fn(), issueGroupTickets: vi.fn(), releaseGroupHold: vi.fn(), acceptHeldPrice: vi.fn(),
 }));
 vi.mock("@/lib/admin-search/group-holds", async importOriginal => ({ ...(await importOriginal<object>()), ...gateway }));
 const bookings = vi.hoisted(() => ({ fetchPaymentAccounts: vi.fn(), recordPayment: vi.fn() }));
@@ -318,6 +318,52 @@ describe("Dhillu & Sahi hold and unrecorded supplier holds", () => {
     renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
     await screen.findByRole("region", { name: "Details" });
     expect(screen.getAllByText("Not recorded").length).toBeGreaterThan(1);
+  });
+});
+
+describe("Dhillu & Sahi held at a different price", () => {
+  const CHANGED: GroupHoldView = { ...HELD, can_record_payments: false, can_release: false,
+    price_change: { shown_total: rs(170_000), held_total: rs(180_000), difference: rs(10_000) } };
+
+  it("the dialog shows the price shown, the held price and the difference; Continue to payment waits for the customer", async () => {
+    gateway.acceptHeldPrice.mockResolvedValue({ ...CHANGED, price_change: undefined, can_record_payments: true });
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", CHANGED);
+    const dialog = await screen.findByRole("dialog", { name: "The price has changed" });
+    expect(dialog).toHaveTextContent("Price shownRs 170,000");
+    expect(dialog).toHaveTextContent("Held priceRs 180,000");
+    expect(dialog).toHaveTextContent("Difference+ Rs 10,000");
+    // The page behind the open dialog is hidden from assistive tech (modal).
+    expect(screen.getByRole("button", { name: "Continue to payment", hidden: true })).toBeDisabled();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Customer agrees, continue" }));
+    await waitFor(() => expect(gateway.acceptHeldPrice).toHaveBeenCalledWith("TRV-GRP-000123"));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Continue to payment" })).toBeEnabled();
+  });
+
+  it("closing the dialog leaves a notice to review the price; Search again leaves the hold alone", async () => {
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123", CHANGED);
+    const dialog = await screen.findByRole("dialog", { name: "The price has changed" });
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    expect(await screen.findByText("Confirm the new price with the customer before taking payment.", { exact: false })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Review the price" }));
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Search again" }));
+    await waitFor(() => expect(location.current).toBe("/admin/search?tab=group-ticketing"));
+    expect(gateway.releaseGroupHold).not.toHaveBeenCalled();
+  });
+
+  it("the booking page shows the same dialog until the customer agrees", async () => {
+    gateway.fetchGroupHold.mockResolvedValue(CHANGED);
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
+    expect(await screen.findByRole("dialog", { name: "The price has changed" })).toBeInTheDocument();
+  });
+
+  it("cancelled at the supplier: Expired, the notice for supplier access, both actions off", async () => {
+    gateway.fetchGroupHold.mockResolvedValue({ ...HELD, status: "expired", can_record_payments: false, can_issue_tickets: false, can_release: false,
+      supplier_notice: "Cancelled at the supplier" });
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123");
+    expect(await screen.findByText("This hold has expired")).toBeInTheDocument();
+    expect(screen.getByText("Cancelled at the supplier")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue to payment" })).toBeDisabled();
   });
 });
 

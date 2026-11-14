@@ -58,6 +58,11 @@ export const releaseGroupHold = (bookingId: string, extra?: GatewayOptions) =>
   gatewayPost("/v1/group-ticketing/holds/{booking_id}/release", undefined as never,
     options(bookingId, extra, "The hold couldn't be released right now. Nothing was changed."));
 
+/** The customer agreed to the price the supplier held at (it differed from the price shown). Payments can follow. */
+export const acceptHeldPrice = (bookingId: string, extra?: GatewayOptions) =>
+  gatewayPost("/v1/group-ticketing/holds/{booking_id}/accept-held-price", undefined as never,
+    options(bookingId, extra, "The new price couldn't be confirmed right now. Nothing was changed."));
+
 /** Issue tickets. The gateway checks the price again first; `acceptedTotal` after the customer agreed to a new price. */
 export const issueGroupTickets = (bookingId: string, acceptedTotal?: GroupMoney, extra?: GatewayOptions) =>
   gatewayPost("/v1/group-ticketing/holds/{booking_id}/issue", { accepted_total: acceptedTotal ?? null },

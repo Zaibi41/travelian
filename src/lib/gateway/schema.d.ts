@@ -1109,6 +1109,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/group-ticketing/holds/{booking_id}/accept-held-price": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Held Price
+         * @description The customer agreed to the price the supplier held at (it differed from the price shown). Payments can then be recorded.
+         */
+        post: operations["accept_held_price_v1_group_ticketing_holds__booking_id__accept_held_price_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/group-ticketing/holds/{booking_id}/issue": {
         parameters: {
             query?: never;
@@ -2347,6 +2367,18 @@ export interface components {
             vendors_succeeded: string[];
         };
         /**
+         * GroupHeldPriceChange
+         * @description The supplier held the seats at a different price than shown before the hold. Payments wait until the customer agrees.
+         */
+        GroupHeldPriceChange: {
+            /** @description held_total - shown_total; negative when the price went down. */
+            difference: components["schemas"]["GroupMoney"];
+            /** @description The selling total for the price the supplier held at (this booking's total). */
+            held_total: components["schemas"]["GroupMoney"];
+            /** @description The selling total shown before the hold. */
+            shown_total: components["schemas"]["GroupMoney"];
+        };
+        /**
          * GroupHoldContact
          * @description The customer card, typed per booking (or a saved customer by customer_id).
          */
@@ -2585,6 +2617,8 @@ export interface components {
              * @description The supplier's PNR. Only with the supplier names permission.
              */
             pnr?: string | null;
+            /** @description Set while the held price differs from the price shown and the customer hasn't agreed yet (POST .../accept-held-price). */
+            price_change?: components["schemas"]["GroupHeldPriceChange"] | null;
             /** @description Selling price per adult, from the hold (or the accepted new price). */
             price_per_adult: components["schemas"]["GroupMoney"];
             /**
@@ -6659,6 +6693,65 @@ export interface operations {
             };
             /** @description No such group booking. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_held_price_v1_group_ticketing_holds__booking_id__accept_held_price_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupHoldView"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Needs the record_payments permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such group booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No price change to confirm, or not on hold. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

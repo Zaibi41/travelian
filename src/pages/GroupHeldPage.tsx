@@ -11,7 +11,8 @@ import { GroupBookingSteps, HoldCountdown, useHoldOver } from "@/components/admi
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
 import { sourceLine } from "@/lib/admin-search/group-ticketing";
-import { departureText, fetchGroupHold, gatewayMessage, groupBookingPath, releaseGroupHold, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
+import { PriceChangedDialog } from "@/components/admin/search/GroupPaymentsTab";
+import { acceptHeldPrice, departureText, fetchGroupHold, gatewayMessage, groupBookingPath, releaseGroupHold, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
 
 const SEARCH = "/admin/search?tab=group-ticketing";
 export const groupHoldKey = (bookingId: string) => ["group-holds", bookingId];
@@ -75,6 +76,38 @@ export function SupplierNotice({ view }: { view: GroupHoldView }) {
   return <Notice tone={view.status === "not_recorded" ? "critical" : "info"} title={view.supplier_notice} />;
 }
 
+/** The supplier held the seats at a different price than shown (Dhillu & Sahi total_amount). Payments wait until the
+ *  customer agrees; "Search again" leaves the hold to end by itself (the gateway refuses payments meanwhile). */
+export function HeldPriceDialog({ view }: { view: GroupHoldView }) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [dismissed, setDismissed] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const accept = useMutation({
+    mutationFn: () => acceptHeldPrice(view.booking_id),
+    onSuccess: next => { queryClient.setQueryData(groupHoldKey(view.booking_id), next); void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] }); },
+    onError: error => setProblem(gatewayMessage(error, "The new price couldn't be confirmed. Nothing was changed.")),
+  });
+  const change = view.price_change;
+  if (!change) return null;
+  return (
+    <>
+      {problem && <p role="alert" className="text-helper text-status-critical-text">{problem}</p>}
+      {dismissed && (
+        <Notice tone="action" title="The price has changed">
+          Confirm the new price with the customer before taking payment.{" "}
+          <button type="button" className="font-medium text-teal hover:underline" onClick={() => setDismissed(false)}>Review the price</button>
+        </Notice>
+      )}
+      <PriceChangedDialog
+        change={dismissed ? null : { heldTotal: change.shown_total, newTotal: change.held_total, difference: change.difference }}
+        busy={accept.isPending} labels={["Price shown", "Held price"]} releaseLabel="Search again"
+        description="The supplier held the seats at a different price than shown. Tell the customer, and continue only if they agree."
+        onClose={() => setDismissed(true)} onRelease={() => navigate(SEARCH)} onContinue={() => { setProblem(null); accept.mutate(); }} />
+    </>
+  );
+}
+
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-2 text-label">
@@ -102,6 +135,7 @@ function Held({ view }: { view: GroupHoldView }) {
     <>
       {view.supplier_release_failed && <ReleaseFailedNotice />}
       {!view.supplier_release_failed && <SupplierNotice view={view} />}
+      {held && <HeldPriceDialog view={view} />}
       {held ? (
         <section aria-label="Seats held" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-status-fine/40 bg-status-fine-soft px-card py-3">
           <span className="flex items-center gap-2.5 text-body font-semibold text-status-fine-text">
@@ -155,7 +189,7 @@ function Held({ view }: { view: GroupHoldView }) {
           <p className="text-helper text-muted-foreground">This price is valid until the hold expires. It is checked again when you issue the tickets.</p>
           {problem && <p role="alert" className="mt-2 text-helper text-status-critical-text">{problem}</p>}
           <div className="mt-3 flex flex-col gap-2">
-            <Button type="button" variant="primary" className="w-full" disabled={!held} onClick={() => navigate(groupBookingPath(view.booking_id))}>Continue to payment</Button>
+            <Button type="button" variant="primary" className="w-full" disabled={!held || Boolean(view.price_change)} onClick={() => navigate(groupBookingPath(view.booking_id))}>Continue to payment</Button>
             <Button type="button" variant="outline" className="w-full" disabled={!held || !view.can_release || release.isPending} onClick={() => { setProblem(null); release.mutate(); }}>
               {release.isPending ? "Releasing…" : "Release hold"}
             </Button>
