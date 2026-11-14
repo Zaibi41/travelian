@@ -1,6 +1,6 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const role = { current: "staff" };
@@ -27,10 +27,18 @@ const INVENTORY = {
   }],
 };
 
+/** Where the page navigated to (path and query). */
+const location = { current: undefined as string | undefined };
+function LocationProbe() {
+  const here = useLocation();
+  location.current = `${here.pathname}${here.search}`;
+  return null;
+}
+
 const renderAt = (url: string) =>
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <MemoryRouter initialEntries={[url]}><AdminSearchPage /></MemoryRouter>
+      <MemoryRouter initialEntries={[url]}><AdminSearchPage /><LocationProbe /></MemoryRouter>
     </QueryClientProvider>,
   );
 
@@ -55,17 +63,31 @@ describe("Search (internal roles)", () => {
     expect(screen.queryByText(/Available providers|Search expiry|Quotes pending/)).not.toBeInTheDocument();
   });
 
-  it("Group Ticketing: real results with the selling price; no source, supplier or actions", async () => {
-    renderAt("/admin/search?tab=group-ticketing&from=LHE&to=DMM&date=2026-11-13");
+  it("Group Ticketing: real results, price shown only after the hold, a Hold seats action per row; no supplier", async () => {
+    renderAt("/admin/search?tab=group-ticketing&from=LHE&to=DMM&date=2026-11-13&adults=2");
     const results = await screen.findByRole("region", { name: "Results" });
     await within(results).findByText("Airblue");
-    expect(within(results).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Departure", "Airline", "Seats left", "Baggage", "Price per passenger"]);
+    expect(within(results).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Departure", "Airline", "Seats left", "Baggage", "Price per passenger", "Action"]);
     expect(within(results).getByText("13 Nov 2026 09:45")).toBeInTheDocument();
-    expect(within(results).getByText("Rs 99,750")).toBeInTheDocument();
+    expect(within(results).getByText("Shown after hold")).toBeInTheDocument();
+    expect(results).toHaveTextContent("Group fares have no price in this list. The exact price appears after you hold the seats.");
+    expect(within(results).queryByText(/Rs\s/)).not.toBeInTheDocument();
     expect(within(results).getByText("9")).toBeInTheDocument();
-    expect(gateway.search).toHaveBeenCalledWith(expect.objectContaining({ from: "LHE", to: "DMM", date: "2026-11-13", adults: 1 }), expect.anything());
-    expect(document.body.textContent).not.toMatch(/Book|Hold seats|Quote|Owned|Supplier|Children|Infants/);
+    expect(gateway.search).toHaveBeenCalledWith(expect.objectContaining({ from: "LHE", to: "DMM", date: "2026-11-13", adults: 2 }), expect.anything());
+    expect(document.body.textContent).not.toMatch(/Book|Quote|Owned|Supplier|Children|Infants|dhillu|skypass/i);
+    expect(within(results).getByRole("button", { name: /^Hold seats/ })).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: /LHE → DMM \(1\)/ })).toBeInTheDocument();
+  });
+
+  it("Hold seats opens the traveler details page with the fare, sector and adults from the search", async () => {
+    renderAt("/admin/search?tab=group-ticketing&from=LHE&to=DMM&date=2026-11-13&adults=2");
+    const results = await screen.findByRole("region", { name: "Results" });
+    await within(results).findByText("Airblue");
+    fireEvent.click(within(results).getByRole("button", { name: /^Hold seats/ }));
+    expect(location.current).toBeDefined();
+    const url = new URL(location.current!, "http://x");
+    expect(url.pathname).toBe("/admin/search/group-ticketing/hold");
+    expect(Object.fromEntries(url.searchParams)).toEqual({ ticket: "t1", from: "LHE", to: "DMM", date: "2026-11-13", adults: "2" });
   });
 
   it("asks for a complete search before calling the gateway", () => {

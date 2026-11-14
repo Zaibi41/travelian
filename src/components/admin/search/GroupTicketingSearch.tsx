@@ -1,6 +1,6 @@
 import { todayIso } from "@/lib/admin-search/date-display";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { Compass } from "lucide-react";
@@ -14,7 +14,8 @@ import { SectorAirportSelect } from "@/components/admin/ui/SectorAirportSelect";
 import { Chip } from "@/components/admin/ui/feedback";
 import { cn } from "@/lib/utils";
 import { GatewayError, gatewayAssetUrl } from "@/lib/gateway/client";
-import { formatMoney } from "@/lib/admin-bookings/format";
+import { Button } from "@/components/admin/ui/button";
+import { groupHoldFormPath } from "@/lib/admin-search/group-holds";
 import {
   fetchGroupInventory, inventoryOptions, isCompleteSearch, parseGroupSearch, resultRows, searchGroupFares, writeGroupSearch,
   type GroupSearch,
@@ -38,12 +39,16 @@ function departure(value?: string | null) {
   return Number.isFinite(date.getTime()) ? format(date, "d MMM yyyy") : value;
 }
 
-// Search > Group Ticketing (spec 6, mockup search-group-ticketing), on the gateway's real
+// Search > Group Ticketing (spec 6; mockup PDF docs/2026-11-14 page 9), on the gateway's real
 // group inventory. Hidden until the gateway provides them (docs/backend-todo.md): the
 // Available providers, Search expiry and Quotes pending cards; Children and Infants
-// (the search takes adults only, so the price is per adult); Source (owned or supplier);
-// Hold rule; Book, Hold seats and Quote. Price is the gateway's selling price only.
+// (group fares are adults only); Hold rule; Book and Quote. Group results have no price:
+// the exact price comes back from the hold ("Shown after hold"). Each row's Hold seats opens
+// the traveler details page with the fare and this search in the URL. The results scroll area is
+// `relative` so the sr-only "Action" header stays inside it (an absolutely positioned element would
+// otherwise widen the page at 390px).
 export function GroupTicketingSearch() {
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const search = parseGroupSearch(params);
   const [draft, setDraft] = useState<GroupSearch>(search);
@@ -174,7 +179,10 @@ export function GroupTicketingSearch() {
 
       {isCompleteSearch(search) && (
         <section aria-label="Results" className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
-          <h2 className="text-section font-semibold text-foreground">Results</h2>
+          <div>
+            <h2 className="text-section font-semibold text-foreground">Results</h2>
+            <p className="text-body text-muted-foreground">Group fares have no price in this list. The exact price appears after you hold the seats.</p>
+          </div>
           {results.error ? (
             <DashboardErrorNotice message={errorMessage(results.error)} />
           ) : results.isPending ? (
@@ -184,13 +192,14 @@ export function GroupTicketingSearch() {
           ) : rows.length === 0 ? (
             <p className="py-2 text-body text-muted-foreground">No group fares match this search.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[42rem] border-collapse text-table">
+            <div className="relative overflow-x-auto">
+              <table className="w-full min-w-[46rem] border-collapse text-table">
                 <thead>
                   <tr className="bg-muted text-left">
                     {["Departure", "Airline", "Seats left", "Baggage", "Price per passenger"].map(column => (
                       <th key={column} scope="col" className="h-table-header px-2.5 font-semibold text-foreground">{column}</th>
                     ))}
+                    <th scope="col" className="h-table-header px-2.5"><span className="sr-only">Action</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -212,8 +221,12 @@ export function GroupTicketingSearch() {
                       <td className="max-w-[14rem] px-2.5 py-2 align-top">
                         <span className="block truncate text-foreground" title={row.baggage ?? undefined}>{row.baggage ?? "Baggage info not available"}</span>
                       </td>
-                      <td className="whitespace-nowrap px-2.5 py-2 align-top tabular-nums text-foreground">
-                        {row.price ? <>Adult <span className="font-semibold">{formatMoney(row.price)}</span></> : "Price not available"}
+                      <td className="whitespace-nowrap px-2.5 py-2 align-top text-muted-foreground">Shown after hold</td>
+                      <td className="px-2.5 py-2 text-right align-top">
+                        <Button type="button" variant="primary" size="sm" aria-label={`Hold seats, ${row.airline ?? "group fare"} ${departure(row.departureDate)}`}
+                          onClick={() => navigate(groupHoldFormPath(row.id, search))}>
+                          Hold seats
+                        </Button>
                       </td>
                     </tr>
                   ))}

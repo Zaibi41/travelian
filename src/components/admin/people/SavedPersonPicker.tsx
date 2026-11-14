@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
@@ -15,12 +15,22 @@ import { fullName, peopleErrorMessage } from "@/lib/saved-people/states";
  * search, at least 3 characters) and pick one. Everything shown is masked by the gateway; the
  * booking form then sends only the person's id and the gateway fills in the details itself.
  */
-export function SavedPersonPicker({ open, title, description, suggested = [], onPick, onClose }: {
-  open: boolean; title: string; description: string; suggested?: PersonSummary[]; onPick: (person: PersonSummary) => void; onClose: () => void;
+export function SavedPersonPicker({ open, title, description, suggested = [], initialQuery, onPick, onClose }: {
+  open: boolean; title: string; description: string; suggested?: PersonSummary[];
+  /** Typed outside the dialog (e.g. the customer card's search field): searched as soon as it opens. */
+  initialQuery?: string;
+  onPick: (person: PersonSummary) => void; onClose: () => void;
 }) {
   const [text, setText] = useState("");
   const [query, setQuery] = useState("");
   const [tooShort, setTooShort] = useState(false);
+  useEffect(() => {
+    const value = initialQuery?.trim() ?? "";
+    if (!open || !value) return;
+    setText(value);
+    setTooShort(value.length < MIN_SEARCH_LENGTH);
+    if (value.length >= MIN_SEARCH_LENGTH) setQuery(value);
+  }, [open, initialQuery]);
   const searching = query.length >= MIN_SEARCH_LENGTH;
   const people = useQuery({
     queryKey: ["saved-people", "search", query],

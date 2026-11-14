@@ -1069,6 +1069,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/group-ticketing/holds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hold Group Seats
+         * @description Hold the seats with the supplier (never retried). The answer carries the price per adult and total.
+         */
+        post: operations["hold_group_seats_v1_group_ticketing_holds_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/group-ticketing/holds/{booking_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Group Hold
+         * @description The hold with its countdown, price, payments and masked travelers. A hold past its time limit reads as expired.
+         */
+        get: operations["group_hold_v1_group_ticketing_holds__booking_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/group-ticketing/holds/{booking_id}/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Issue Group Tickets
+         * @description Check the price again; if it moved, refuse with price_changed unless accepted_total equals the new total.
+         *     Needs full payment and the issue tickets permission. One issue call, never retried.
+         */
+        post: operations["issue_group_tickets_v1_group_ticketing_holds__booking_id__issue_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/group-ticketing/holds/{booking_id}/price-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Group Price
+         * @description Ask the supplier for the current price (read-only). Nothing changes.
+         */
+        post: operations["check_group_price_v1_group_ticketing_holds__booking_id__price_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/group-ticketing/holds/{booking_id}/release": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Release Group Hold
+         * @description Release the seats at the supplier, then mark the booking released (logged).
+         */
+        post: operations["release_group_hold_v1_group_ticketing_holds__booking_id__release_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/group-ticketing/inventory": {
         parameters: {
             query?: never;
@@ -2245,10 +2346,276 @@ export interface components {
             /** Vendors Succeeded */
             vendors_succeeded: string[];
         };
+        /**
+         * GroupHoldContact
+         * @description The customer card, typed per booking (or a saved customer by customer_id).
+         */
+        GroupHoldContact: {
+            /**
+             * Customer Id
+             * @description A saved customer; typed values override for this booking.
+             */
+            customer_id?: string | null;
+            /** Document Number */
+            document_number?: string | null;
+            /** Email */
+            email?: string | null;
+            /**
+             * Full Name
+             * @description Given name(s) and surname; the last word is the surname.
+             */
+            full_name?: string | null;
+            /**
+             * Id Type
+             * @description The customer's document: passport or CNIC.
+             */
+            id_type?: ("PSPT" | "NATI") | null;
+            /**
+             * Phone
+             * @description With country code, e.g. +92 300 1234567. A Pakistani number may start with 0.
+             */
+            phone?: string | null;
+            /**
+             * Save For Next Time
+             * @description Save or update the customer after the hold. Never blocks the hold.
+             * @default true
+             */
+            save_for_next_time: boolean;
+        };
+        /** GroupHoldCustomer */
+        GroupHoldCustomer: {
+            /** Email */
+            email?: string | null;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone?: string | null;
+        };
+        /** GroupHoldFlight */
+        GroupHoldFlight: {
+            /** Airline */
+            airline?: string | null;
+            /** Baggage */
+            baggage?: string | null;
+            /** Departure Date */
+            departure_date?: string | null;
+            /** Departure Time */
+            departure_time?: string | null;
+            /** Destination */
+            destination?: string | null;
+            /** Logo Url */
+            logo_url?: string | null;
+            /** Origin */
+            origin?: string | null;
+            /** Sector */
+            sector?: string | null;
+        };
+        /**
+         * GroupHoldPassenger
+         * @description A Flights passenger plus the traveler card's gender (checked against the title; not stored).
+         */
+        GroupHoldPassenger: {
+            /** Date Of Birth */
+            date_of_birth?: string | null;
+            /** Document Country */
+            document_country?: string | null;
+            /** Document Expiry */
+            document_expiry?: string | null;
+            /**
+             * Document Id
+             * @description With traveler_id: which saved document (needed when the person has several).
+             */
+            document_id?: string | null;
+            /** Document Number */
+            document_number?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /**
+             * Gender
+             * @description M or F; must agree with the title (Mr: M; Mrs or Miss: F).
+             */
+            gender?: ("M" | "F") | null;
+            /** Id Type */
+            id_type?: ("PSPT" | "NATI") | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Nationality */
+            nationality?: string | null;
+            /**
+             * Save For Next Time
+             * @description Create or update the saved person after the hold. Never blocks the hold.
+             * @default true
+             */
+            save_for_next_time: boolean;
+            /** Title */
+            title?: ("MR" | "MRS" | "MISS" | "MASTER") | null;
+            /**
+             * Traveler Id
+             * @description A saved person; identity fields are then loaded by the gateway.
+             */
+            traveler_id?: string | null;
+            /**
+             * Travels With
+             * @description Infants only: the adult it travels with, counted among adults from 0 (Adult 1 = 0). Default: infant n with adult n.
+             */
+            travels_with?: number | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "ADT" | "CHD" | "INF";
+        };
+        /** GroupHoldPayment */
+        GroupHoldPayment: {
+            amount: components["schemas"]["GroupMoney"];
+            /** Id */
+            id: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "bank_transfer" | "jazzcash" | "1link";
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /** Received Into */
+            received_into: string;
+            /** Reference */
+            reference: string;
+        };
+        /** GroupHoldRequest */
+        GroupHoldRequest: {
+            /**
+             * Adults
+             * @description Adults only; must equal the number of passengers.
+             */
+            adults: number;
+            contact: components["schemas"]["GroupHoldContact"];
+            /**
+             * Passengers
+             * @description One adult (ADT) per seat.
+             */
+            passengers: components["schemas"]["GroupHoldPassenger"][];
+            /**
+             * Ticket Id
+             * Format: uuid
+             * @description The group fare (GroupTicketView.id) from the search results.
+             */
+            ticket_id: string;
+        };
+        /** GroupHoldTraveler */
+        GroupHoldTraveler: {
+            /** Date Of Birth Masked */
+            date_of_birth_masked: string;
+            /** Document Country */
+            document_country?: string | null;
+            /** Document Expiry Masked */
+            document_expiry_masked?: string | null;
+            /** Document Number Masked */
+            document_number_masked?: string | null;
+            /** First Name */
+            first_name: string;
+            /** Id Type */
+            id_type: string;
+            /** Last Name */
+            last_name: string;
+            /** Nationality */
+            nationality?: string | null;
+            /** Position */
+            position: number;
+            /** Ticket Number */
+            ticket_number?: string | null;
+            /** Title */
+            title: string;
+        };
+        /** GroupHoldView */
+        GroupHoldView: {
+            /** Adults */
+            adults: number;
+            amount_due: components["schemas"]["GroupMoney"];
+            amount_paid: components["schemas"]["GroupMoney"];
+            /**
+             * Booking Id
+             * @description Travelian reference, e.g. TRV-GRP-AB12CD.
+             */
+            booking_id: string;
+            /**
+             * Can Issue Tickets
+             * @description This viewer may issue now: held, not expired, nothing due (the endpoint still checks).
+             * @default false
+             */
+            can_issue_tickets: boolean;
+            /**
+             * Can Record Payments
+             * @description This viewer may record a payment now (the endpoint still checks).
+             * @default false
+             */
+            can_record_payments: boolean;
+            customer?: components["schemas"]["GroupHoldCustomer"] | null;
+            flight: components["schemas"]["GroupHoldFlight"];
+            /** Hold Expires At */
+            hold_expires_at?: string | null;
+            /**
+             * Payment Status
+             * @enum {string}
+             */
+            payment_status: "unpaid" | "part_paid" | "paid";
+            /** Payments */
+            payments?: components["schemas"]["GroupHoldPayment"][];
+            /** Pnr */
+            pnr?: string | null;
+            /** @description Selling price per adult, from the hold (or the accepted new price). */
+            price_per_adult: components["schemas"]["GroupMoney"];
+            /**
+             * Saved People
+             * @description Only in the hold answer: what happened to the saved customer and travelers.
+             */
+            saved_people?: components["schemas"]["SaveOutcomeView"][] | null;
+            /**
+             * Status
+             * @description held; expired (time limit passed, can't be held again: search again); released; processing (issuing); issued; unknown (issuing outcome unclear).
+             * @enum {string}
+             */
+            status: "held" | "expired" | "released" | "processing" | "issued" | "unknown";
+            /**
+             * Stock
+             * @enum {string}
+             */
+            stock: "supplier" | "owned";
+            /**
+             * Supplier
+             * @description Only with the supplier names permission.
+             */
+            supplier?: string | null;
+            total: components["schemas"]["GroupMoney"];
+            /**
+             * Travelers
+             * @description Masked documents and dates of birth.
+             */
+            travelers?: components["schemas"]["GroupHoldTraveler"][];
+        };
         /** GroupInventoryView */
         GroupInventoryView: {
             /** Data */
             data: components["schemas"]["GroupView"][];
+        };
+        /** GroupIssueRequest */
+        GroupIssueRequest: {
+            /** @description After 'The price has changed': the new total the customer agreed to. Issuing is refused if the price moved again. */
+            accepted_total?: components["schemas"]["GroupMoney"] | null;
+        };
+        /** GroupIssueResult */
+        GroupIssueResult: {
+            hold: components["schemas"]["GroupHoldView"];
+            /** Message */
+            message: string;
+            /**
+             * Result
+             * @enum {string}
+             */
+            result: "issued" | "not_issued" | "unknown";
         };
         /** GroupMoney */
         GroupMoney: {
@@ -2259,6 +2626,16 @@ export interface components {
             amount_minor: number;
             /** Currency */
             currency: string;
+        };
+        /** GroupPriceCheck */
+        GroupPriceCheck: {
+            /** Changed */
+            changed: boolean;
+            /** @description new_total - held_total; negative when the price went down. */
+            difference: components["schemas"]["GroupMoney"];
+            held_total: components["schemas"]["GroupMoney"];
+            new_price_per_adult: components["schemas"]["GroupMoney"];
+            new_total: components["schemas"]["GroupMoney"];
         };
         /** GroupQuoteAcknowledgement */
         GroupQuoteAcknowledgement: {
@@ -2324,6 +2701,12 @@ export interface components {
             airline?: string | null;
             /** Baggage */
             baggage?: string | number | null;
+            /**
+             * Can Hold
+             * @description Whether the gateway can hold seats on this fare (its source supports holds).
+             * @default false
+             */
+            can_hold: boolean;
             /** Departure Date */
             departure_date?: string | null;
             /**
@@ -2353,6 +2736,13 @@ export interface components {
             selling_price?: components["schemas"]["GroupMoney"] | null;
             /** Sold */
             sold?: string | number | null;
+            /**
+             * Stock
+             * @description Supplier stock or Travelian-owned stock. Never names the supplier.
+             * @default supplier
+             * @enum {string}
+             */
+            stock: "supplier" | "owned";
             /**
              * Subparts
              * @description Raw supplier segments. Requires both supplier names and cost and margin permissions.
@@ -2824,12 +3214,14 @@ export interface components {
             method: "bank_transfer" | "jazzcash" | "1link";
             /**
              * Received At
-             * Format: date-time
-             * @description When the money was received. Not in the future.
+             * @description When the money was received. Not in the future. Left out: now.
              */
-            received_at: string;
-            /** Reference */
-            reference: string;
+            received_at?: string | null;
+            /**
+             * Reference
+             * @description The payer's transaction reference. Left out (Group Ticketing payments): the gateway records a reference of its own.
+             */
+            reference?: string | null;
         };
         /** RecordPaymentResponse */
         RecordPaymentResponse: {
@@ -6052,6 +6444,326 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    hold_group_seats_v1_group_ticketing_holds_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupHoldRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupHoldView"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such group booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Fare gone, not enough seats, holds not supported for this fare, or no selling price. Nothing held. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Adults only; passengers must match the adults searched. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The supplier didn't confirm the hold. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    group_hold_v1_group_ticketing_holds__booking_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupHoldView"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such group booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_group_tickets_v1_group_ticketing_holds__booking_id__issue_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupIssueResult"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such group booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description price_changed (held_total, new_total, difference), payment_due, hold_expired, or not issuable. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The price couldn't be checked. Nothing was issued. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    check_group_price_v1_group_ticketing_holds__booking_id__price_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupPriceCheck"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such group booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not on hold or expired. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The supplier couldn't be asked. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    release_group_hold_v1_group_ticketing_holds__booking_id__release_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupHoldView"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such group booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not on hold, expired, or being issued. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The supplier didn't confirm. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

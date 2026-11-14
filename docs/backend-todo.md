@@ -127,9 +127,10 @@ Still open:
 | Cards: Available providers, Search expiry, Quotes pending | Provider health endpoint (admin only); fare validity from search results; quotations table |
 | Group Ticketing: "Departure Date (Optional)" / "All departure dates" (public site wording) | `POST /v1/group-ticketing/search` requires `departure_date` and filters by that exact date (and by seats left). Make it optional (all dates) in the gateway; until then the admin date stays required |
 | Group Ticketing: Children, Infants | `/v1/group-ticketing/search` accepts adults only |
-| Group Ticketing: Source (Owned / Supplier), Hold rule | `source` and hold rule on each departure; owned stock in the gateway |
-| Group Ticketing: child and infant prices | Price per passenger type (section 5) |
-| Group Ticketing: Book, Hold seats, Quote; Results summary (seats available, hold expires) | Booking, hold and quote endpoints wired for staff; hold expiry on results |
+| Group Ticketing: Hold rule | Hold rule on each departure (Skypass sends `on_hold_rule`, meaning undocumented) |
+| Group Ticketing: child and infant prices | Price per passenger type (section 5). The hold flow is adults only |
+| Group Ticketing: Book, Quote; Results summary (seats available, hold expires) | Booking and quote endpoints; hold expiry on results |
+| Group Ticketing: Hold seats is shown on every row but the gateway refuses the hold (`hold_not_supported`) and the traveler details page says so, because no group supplier has a documented hold, release, price-check and issue contract. Stock label (Supplier / Owned) comes from the gateway; owned stock does not exist yet | A `GroupHoldProvider` per source in the gateway (`app/services/group_holds.py`, gateway `docs/api/group-holds.md`): Skypass hold and release calls were checked live on 14 November 2026 and work, but give no hold id, expiry or price; its `submit-booking` behaviour (hold or issue) and hold duration are unconfirmed. Dhillu & Sahi has no hold or issue call. Al Haider has no adapter or credentials |
 
 ## 7. Customers & Travelers (`/admin/customers`)
 

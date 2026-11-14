@@ -55,6 +55,8 @@ const GroupTicketingCollectionsPage = lazy(() => import("./pages/GroupTicketingC
 const AdminSearchPage = lazy(() => import("./pages/AdminSearchPage"));
 const HoldFlightPage = lazy(() => import("./pages/HoldFlightPage"));
 const HoldResultPage = lazy(() => import("./pages/HoldResultPage"));
+const GroupHoldPage = lazy(() => import("./pages/GroupHoldPage"));
+const GroupHeldPage = lazy(() => import("./pages/GroupHeldPage"));
 const FlightBookingsPage = lazy(() => import("./pages/FlightBookingsPage"));
 const CustomerPortalPage = lazy(() => import("./pages/CustomerPortalPage"));
 const UsersPage = lazy(() => import("./pages/UsersPage"));
@@ -70,6 +72,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const BookingsRoute = lazy(() => import("./pages/AdminBookingsRoutes").then(m => ({ default: m.BookingsRoute })));
 const BookingDetailRoute = lazy(() => import("./pages/AdminBookingsRoutes").then(m => ({ default: m.BookingDetailRoute })));
 const LegacyRequestsRoute = lazy(() => import("./pages/AdminBookingsRoutes").then(m => ({ default: m.LegacyRequestsRoute })));
+const GroupBookingRoute = lazy(() => import("./pages/AdminBookingsRoutes").then(m => ({ default: m.GroupBookingRoute })));
 const ReportsPage = lazy(() => import("./pages/ReportsPage"));
 const RoadmapPlaceholderPage = lazy(() => import("./pages/RoadmapPlaceholderPage"));
 
@@ -126,6 +129,7 @@ const App = () => (
             {["flights", "group-ticketing", "hotels", "umrah", "inquiries-requests", "quotations"].map(tab => (
               <Route key={tab} path={`/admin/bookings/${tab}`} element={<AdminLayout><BookingsRoute tab={tab} /></AdminLayout>} />
             ))}
+            <Route path="/admin/bookings/group-ticketing/:bookingId/:tab" element={<AdminLayout><GroupBookingRoute /></AdminLayout>} />
             <Route path="/admin/bookings/:bookingId" element={<AdminLayout><BookingDetailRoute /></AdminLayout>} />
             <Route path="/admin/bookings/:bookingId/:tab" element={<AdminLayout><BookingDetailRoute /></AdminLayout>} />
             <Route path="/admin/bookings/holds" element={<AdminLayout><Navigate to="/admin/flight-bookings?tab=held" replace /></AdminLayout>} />
@@ -148,6 +152,8 @@ const App = () => (
             <Route path="/admin/search" element={<AdminLayout><AdminSearchPage /></AdminLayout>} />
             <Route path="/admin/search/flights/hold" element={<AdminLayout><HoldFlightPage /></AdminLayout>} />
             <Route path="/admin/search/flights/hold/result" element={<AdminLayout><HoldResultPage /></AdminLayout>} />
+            <Route path="/admin/search/group-ticketing/hold" element={<AdminLayout><GroupHoldPage /></AdminLayout>} />
+            <Route path="/admin/search/group-ticketing/held/:bookingId" element={<AdminLayout><GroupHeldPage /></AdminLayout>} />
             <Route path="/admin/flight-bookings" element={<AdminLayout><FlightBookingsPage /></AdminLayout>} />
             <Route path="/admin/requests" element={<AdminLayout><LegacyRequestsRoute /></AdminLayout>} />
             <Route path="/admin/booking" element={<AdminLayout><BookingPage adminMode /></AdminLayout>} />
