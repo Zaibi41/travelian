@@ -50,7 +50,7 @@ async function open(page: Page, width: number, { changed = false, holdError = fa
   await page.route("**/*", route => {
     const url = gatewayView(route.request().url());
     if (url.port === "8000") {
-      if (url.pathname === "/v1/admin/customers") return route.fulfill({ json: { results: PEOPLE, can_manage: true, can_merge: false } });
+      if (["/v1/admin/customers", "/v1/admin/customers/search", "/v1/admin/travelers/search"].includes(url.pathname)) return route.fulfill({ json: { results: PEOPLE, can_manage: true, can_merge: false } });
       if (url.pathname === "/v1/live-ticketing/flights/bookings") holdBodies.push(route.request().postDataJSON());
       if (url.pathname === "/v1/live-ticketing/flights/search") return route.fulfill({ json: SEARCH });
       if (url.pathname === "/v1/live-ticketing/flights/reprice") {
@@ -144,28 +144,27 @@ for (const width of [1280, 390]) {
     holdBodies.length = 0;
     await open(page, width);
     await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
-    await page.getByRole("region", { name: "Customer" }).getByRole("button", { name: "Find", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "Find a saved customer" });
-    await dialog.getByLabel("Mobile number, CNIC, passport, email or name").fill("3001234567");
-    await dialog.getByRole("button", { name: "Search" }).click();
-    await expect(dialog.getByRole("button", { name: /^Use / })).toHaveCount(2);
-    const box = (await dialog.boundingBox())!;
-    expect(box.y).toBeGreaterThanOrEqual(0);
+    // Live search: the list opens under the field as the user types, inside the viewport.
+    const find = page.getByRole("combobox", { name: "Find saved customer" });
+    await find.fill("3001234567");
+    const list = page.getByRole("listbox", { name: "Find saved customer results" });
+    await expect(list.getByRole("option")).toHaveCount(2);
+    const box = (await list.boundingBox())!;
+    const field = (await find.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(field.y + field.height - 2);
     expect(box.y + box.height).toBeLessThanOrEqual(900);
+    expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(width);
     await expectReadableText(page, `saved people search at ${width}px`);
-    await dialog.getByRole("button", { name: "Use Muhammad Abdullah Rehmanullah Khan Durrani" }).click();
-    await expect(dialog).toBeHidden();
+    await page.keyboard.press("Enter");                                    // the first match: the long-named customer
+    await expect(list).toHaveCount(0);
 
     // The customer is Adult 1 (ticked by default): the saved customer is the saved traveler.
     const adult = page.getByRole("region", { name: "Adult 1" });
     await expect(adult).toContainText("••••••567");
     const infant = page.getByRole("region", { name: "Infant 1" });
-    await infant.getByRole("button", { name: "Use saved traveler, Infant 1" }).click();
-    const travelerDialog = page.getByRole("dialog", { name: "Use a saved traveler" });
-    await travelerDialog.getByLabel("Mobile number, CNIC, passport, email or name").fill("3001234567");
-    await travelerDialog.getByRole("button", { name: "Search" }).click();
-    await travelerDialog.getByRole("button", { name: "Use Baby Durrani" }).click();
+    await infant.getByRole("combobox", { name: "Use saved traveler, Infant 1" }).fill("Baby");
+    await page.getByRole("option", { name: /^Baby Durrani/ }).click();
     await expect(infant).toContainText("••••••321");
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `hold form with saved people at ${width}px`);

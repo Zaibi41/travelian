@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, Search } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
 import { Checkbox } from "@/components/admin/ui/choice";
 import { FieldLabel, Input } from "@/components/admin/ui/field";
@@ -8,7 +8,7 @@ import { Tag } from "@/components/admin/ui/StatusBadge";
 import { Notice } from "@/components/admin/ui/feedback";
 import { DayFirstDateField } from "@/components/admin/ui/DayFirstDateField";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SavedPersonPicker } from "@/components/admin/people/SavedPersonPicker";
+import { PersonTypeahead } from "@/components/admin/people/PersonTypeahead";
 import { CountrySelect } from "./CountrySelect";
 import { GroupBookingSteps } from "./GroupBookingSteps";
 import { DEFAULT_COUNTRY_CODE } from "@/data/countries";
@@ -43,7 +43,6 @@ const AGE_HINT: Record<PassengerType, string> = {
 const genderOf = (title: Title): Gender => (title === "MR" || title === "MASTER" ? "M" : "F");
 
 export interface BookingCustomer {
-  query: string;
   /** Given name(s) and surname, as on the document (airlines need both). */
   first_name: string;
   last_name: string;
@@ -79,7 +78,7 @@ export interface BookingTraveler {
 export interface PassengerCounts { adults: number; children: number; infants: number }
 
 export const blankCustomer = (): BookingCustomer => ({
-  query: "", first_name: "", last_name: "", phone: "", email: "", id_type: "PSPT", document_number: "", alsoAdult1: true, save: true, saved: null,
+  first_name: "", last_name: "", phone: "", email: "", id_type: "PSPT", document_number: "", alsoAdult1: true, save: true, saved: null,
 });
 
 export const blankTraveler = (type: PassengerType = "ADT", travelsWith = 0): BookingTraveler => ({
@@ -266,7 +265,6 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
   const [travelers, setTravelers] = useState<BookingTraveler[]>(() => initialTravelers(counts));
   const [selling, setSelling] = useState<string | null>(null);
   const [localErrors, setLocalErrors] = useState<FormErrors | null>(null);
-  const [picking, setPicking] = useState<"customer" | number | null>(null);
   const shown = localErrors ?? errors;
   const fieldError = (key: string) => shown.fields[key]?.map(message => fieldMessage(key, message)).join(" ");
   const sellingText = selling ?? (defaultSelling ? String(Math.round(defaultSelling.amount_minor / 100)) : "");
@@ -348,15 +346,9 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
           </div>
           <div className="flex flex-col gap-1">
             <FieldLabel htmlFor="customer-find">Find saved customer</FieldLabel>
-            <div className="flex gap-2">
-              <div className="relative min-w-0 flex-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-                <Input id="customer-find" value={customer.query} maxLength={64} placeholder="Passport or CNIC number, phone, email or name" className="pl-9"
-                  onChange={event => setCustomer({ ...customer, query: event.target.value })}
-                  onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); setPicking("customer"); } }} />
-              </div>
-              <Button type="button" variant="outline" onClick={() => setPicking("customer")}>Find</Button>
-            </div>
+            <PersonTypeahead id="customer-find" label="Find saved customer" kind="customer" placeholder="Name, phone, email, or passport or CNIC number"
+              emptyText="No saved customer matches. Type the details below to add one."
+              onPick={person => setCustomer(current => ({ ...current, saved: person, phone: "", email: "" }))} />
           </div>
           {customer.saved ? (
             <div className="flex flex-col gap-2">
@@ -461,12 +453,21 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
             <section key={index} aria-label={label} className={CARD}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="font-display text-section font-semibold text-brand-navy">{label}</h2>
-                {!savedCustomerIsAdult1 && (
-                  <Button type="button" variant="outline" aria-label={`${saved ? "Change" : "Use saved traveler"}, ${label}`} onClick={() => setPicking(index)}>
-                    {saved ? "Change" : "Use saved traveler"}
-                  </Button>
+                {!savedCustomerIsAdult1 && saved && (
+                  <Button type="button" variant="outline" aria-label={`Change, ${label}`} onClick={() => setTraveler(index, { saved: null, documentId: null })}>Change</Button>
                 )}
               </div>
+              {!saved && (
+                <div className="flex flex-col gap-1">
+                  <FieldLabel htmlFor={id("find")}>Use saved traveler</FieldLabel>
+                  <PersonTypeahead id={id("find")} label={`Use saved traveler, ${label}`} kind="traveler" placeholder="Name or passport or CNIC number"
+                    emptyText="No saved traveler matches. Type the details below."
+                    onPick={person => {
+                      const title = TITLES[traveler.type].some(([value]) => value === person.title) ? person.title as Title : traveler.title;
+                      setTraveler(index, { saved: person, documentId: person.documents.length === 1 ? person.documents[0].id : null, title, gender: genderOf(title) });
+                    }} />
+                </div>
+              )}
               {fieldError(`passengers.${index}`) && <p role="alert" className="text-body text-status-critical-text">{fieldError(`passengers.${index}`)}</p>}
               {saved ? (
                 <div className="flex flex-col gap-3">
@@ -557,26 +558,6 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
         })()}
       </form>
 
-      {/* Outside the form: the picker's own search form must not submit the booking form (React events bubble through portals). */}
-      <SavedPersonPicker
-          open={picking !== null}
-          title={picking === "customer" ? "Find a saved customer" : "Use a saved traveler"}
-          description={picking === "customer"
-            ? "Search by passport or CNIC number first, or phone, email or name. Details stay masked; the server fills them in."
-            : "Pick the traveler. Name, date of birth and document stay on the server, masked here, and are filled in for the hold."}
-          initialQuery={picking === "customer" ? customer.query : undefined}
-          suggested={picking !== "customer" && customer.saved ? [customer.saved] : []}
-          onClose={() => setPicking(null)}
-          onPick={person => {
-            if (picking === "customer") setCustomer({ ...customer, saved: person, phone: "", email: "" });
-            else if (typeof picking === "number") {
-              const options = TITLES[travelers[picking].type];
-              const title = options.some(([value]) => value === person.title) ? person.title as Title : travelers[picking].title;
-              setTraveler(picking, { saved: person, documentId: person.documents.length === 1 ? person.documents[0].id : null, title, gender: genderOf(title) });
-            }
-            setPicking(null);
-          }}
-        />
     </>
   );
 }

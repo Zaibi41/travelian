@@ -490,6 +490,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/customers/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Customers
+         * @description Live search for "Find saved customer" (hold form): up to 8 people by name (partial: given name, surname or full
+         *     name), phone or email (contains), or document number (prefix). Masked values only.
+         */
+        get: operations["search_customers_v1_admin_customers_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/customers/{person_id}": {
         parameters: {
             query?: never;
@@ -729,6 +750,27 @@ export interface paths {
         };
         /** List Roles */
         get: operations["list_roles_v1_admin_roles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/travelers/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Travelers
+         * @description Live search for "Use saved traveler" (hold form): up to 8 people by name (partial: given name, surname or full
+         *     name) or document number (prefix). Masked values only.
+         */
+        get: operations["search_travelers_v1_admin_travelers_search_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5502,6 +5544,50 @@ export interface operations {
             };
         };
     };
+    search_customers_v1_admin_customers_search_get: {
+        parameters: {
+            query: {
+                /** @description At least 2 characters. */
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPersonSearch"];
+                };
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such person or document. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Search needs at least 2 characters. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     get_person_v1_admin_customers__person_id__get: {
         parameters: {
             query?: never;
@@ -6121,6 +6207,43 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["RoleRecord"][];
                 };
+            };
+        };
+    };
+    search_travelers_v1_admin_travelers_search_get: {
+        parameters: {
+            query: {
+                /** @description At least 2 characters. */
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPersonSearch"];
+                };
+            };
+            /** @description Not back office. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Search needs at least 2 characters. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -15,7 +15,9 @@ vi.mock("@/lib/admin-search/group-holds", async importOriginal => ({ ...(await i
 const bookings = vi.hoisted(() => ({ fetchPaymentAccounts: vi.fn(), recordPayment: vi.fn(), setSellingPrice: vi.fn(), downloadItinerary: vi.fn() }));
 vi.mock("@/lib/admin-bookings/api", () => bookings);
 const people = vi.hoisted(() => ({ searchPeople: vi.fn() }));
-vi.mock("@/lib/saved-people/api", async importOriginal => ({ ...(await importOriginal<object>()), searchPeople: people.searchPeople }));
+vi.mock("@/lib/saved-people/api", async importOriginal => ({
+  ...(await importOriginal<object>()), searchPeople: people.searchPeople, searchCustomers: people.searchPeople, searchTravelers: people.searchPeople,
+}));
 
 import GroupHoldPage from "./GroupHoldPage";
 import GroupHeldPage from "./GroupHeldPage";
@@ -237,15 +239,14 @@ describe("Hold group seats (step 2)", () => {
     renderAt(HOLD_URL);
     const fare = await screen.findByRole("complementary", { name: "Selected group fare" });
     await within(fare).findByText("Fly Jinnah");
-    fireEvent.change(screen.getByLabelText("Find saved customer"), { target: { value: "AB1234567" } });
-    fireEvent.click(screen.getByRole("button", { name: "Find" }));
-    const dialog = await screen.findByRole("dialog", { name: "Find a saved customer" });
+    fireEvent.change(screen.getByRole("combobox", { name: "Find saved customer" }), { target: { value: "AB1234567" } });
+    const list = await screen.findByRole("listbox", { name: "Find saved customer results" });
     await waitFor(() => expect(people.searchPeople).toHaveBeenCalledWith("AB1234567", expect.anything()));
-    expect(dialog).toHaveTextContent("Ali Raza");
-    expect(dialog).toHaveTextContent("AB•••4567");
-    expect(dialog).not.toHaveTextContent(/Reveal/);
-    fireEvent.click(within(dialog).getByRole("button", { name: "Use Ali Raza" }));
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(list).toHaveTextContent("Ali Raza");
+    expect(list).toHaveTextContent("AB•••4567");
+    expect(list).not.toHaveTextContent(/Reveal/);
+    fireEvent.click(within(list).getByRole("option", { name: /^Ali Raza/ }));
+    await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
     expect(screen.getByRole("region", { name: "Customer" })).toHaveTextContent("Saved customer");
     expect(within(screen.getByRole("region", { name: "Customer" })).queryByLabelText("Given name")).not.toBeInTheDocument();
     // Adult 1 is the saved customer (ticked by default): masked card, no typed identity.

@@ -7,7 +7,9 @@ import type { HoldDraft } from "@/lib/admin-search/hold";
 
 const gateway = vi.hoisted(() => ({ hold: vi.fn(), reprice: vi.fn(), people: vi.fn(), groupTicket: vi.fn() }));
 vi.mock("@/lib/admin-search/group-holds", async importOriginal => ({ ...(await importOriginal<object>()), fetchGroupTicket: gateway.groupTicket }));
-vi.mock("@/lib/saved-people/api", async importOriginal => ({ ...(await importOriginal<object>()), searchPeople: gateway.people }));
+vi.mock("@/lib/saved-people/api", async importOriginal => ({
+  ...(await importOriginal<object>()), searchPeople: gateway.people, searchCustomers: gateway.people, searchTravelers: gateway.people,
+}));
 vi.mock("@/lib/admin-search/flights", async importOriginal => ({
   ...(await importOriginal<object>()), holdFlight: gateway.hold, repriceFlights: gateway.reprice,
 }));
@@ -102,7 +104,7 @@ describe("Shared booking form on the Flights hold page", () => {
     expect(infant).toHaveTextContent("Under 2 on the travel date");
     expect(within(infant).getByLabelText("Travels with")).toHaveTextContent("Adult 1");
     expect(within(infant).queryByLabelText("Nationality")).not.toBeInTheDocument();
-    expect(within(adult).getByRole("button", { name: "Use saved traveler, Adult 1" })).toBeInTheDocument();
+    expect(within(adult).getByRole("combobox", { name: "Use saved traveler, Adult 1" })).toBeInTheDocument();
     expect(screen.getByText(/Passport, ID number and date of birth are never shown in full here/)).toBeInTheDocument();
     expect(screen.getByText("Holding reserves the seats until the time limit. No payment is taken.")).toBeInTheDocument();
   });
@@ -291,11 +293,8 @@ describe("the customer is also Adult 1: given name and surname, editable both wa
     expect(within(screen.getByRole("region", { name: "Adult 1" })).getByRole("combobox", { name: "Document type" })).toBeEnabled();
     const infant = screen.getByRole("region", { name: "Infant 1" });
     expect(within(infant).getByRole("combobox", { name: "Document type" })).toBeEnabled();
-    fireEvent.click(within(infant).getByRole("button", { name: "Use saved traveler, Infant 1" }));
-    const dialog = await screen.findByRole("dialog");
-    fireEvent.change(within(dialog).getByLabelText("Mobile number, CNIC, passport, email or name"), { target: { value: "Baby" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Search" }));
-    fireEvent.click(await within(dialog).findByRole("button", { name: "Use Baby Khan" }));
+    fireEvent.change(within(infant).getByRole("combobox", { name: "Use saved traveler, Infant 1" }), { target: { value: "Baby" } });
+    fireEvent.click(await screen.findByRole("option", { name: /^Baby Khan/ }));
     expect(within(screen.getByRole("region", { name: "Infant 1" })).getByRole("combobox", { name: "Document type" })).toBeDisabled();
   });
 });
@@ -367,29 +366,25 @@ describe("country dropdowns on the hold form", () => {
     const SARA = { id: "p-00000002", title: "MRS" as const, first_name: "Sara", last_name: "Khan", birth_year: 1993, phone_masked: "+92 •••••••567",
       documents: [doc("d-00000002", "••••••111"), doc("d-00000003", "••••••222")], match: "phone" };
 
-    async function pick(button: HTMLElement, query: string, who: string) {
-      fireEvent.click(button);
-      const dialog = await screen.findByRole("dialog");
-      fireEvent.change(within(dialog).getByLabelText("Mobile number, CNIC, passport, email or name"), { target: { value: query } });
-      fireEvent.click(within(dialog).getByRole("button", { name: "Search" }));
-      fireEvent.click(await within(dialog).findByRole("button", { name: `Use ${who}` }));
+    /** Type in a live-search field and choose the match by its name. */
+    async function pick(input: HTMLElement, query: string, who: string) {
+      fireEvent.change(input, { target: { value: query } });
+      fireEvent.click(await screen.findByRole("option", { name: new RegExp(`^${who}`) }));
     }
+    const findCustomer = () => within(screen.getByRole("region", { name: "Customer" })).getByRole("combobox", { name: "Find saved customer" });
 
     it("finds customers by mobile number, lists every match and sends only the saved ids; the gateway fills the details", async () => {
       gateway.people.mockResolvedValue({ results: [ALI, SARA], can_manage: true, can_merge: false });
       gateway.hold.mockResolvedValue({ booking_id: "TRV-1", pnr: "ABC123", selling_total: rs(15_316) });
       renderPage(STAFF_DRAFT);
       const customer = screen.getByRole("region", { name: "Customer" });
-      fireEvent.click(within(customer).getByRole("button", { name: "Find" }));
-      const dialog = await screen.findByRole("dialog", { name: "Find a saved customer" });
-      fireEvent.change(within(dialog).getByLabelText("Mobile number, CNIC, passport, email or name"), { target: { value: "3001234567" } });
-      fireEvent.click(within(dialog).getByRole("button", { name: "Search" }));
-      const list = await within(dialog).findByRole("list", { name: "Saved people" });
+      expect(within(customer).queryByRole("button", { name: "Find" })).not.toBeInTheDocument();   // live search, no Find button
+      fireEvent.change(findCustomer(), { target: { value: "3001234567" } });
+      const list = await screen.findByRole("listbox", { name: "Find saved customer results" });
       expect(gateway.people).toHaveBeenCalledWith("3001234567", expect.anything());
-      expect(within(list).getAllByRole("button", { name: /^Use / })).toHaveLength(2);
-      expect(list).toHaveTextContent("Ali Khan");
-      expect(list).toHaveTextContent("+92 •••••••567");
-      fireEvent.click(within(list).getByRole("button", { name: "Use Ali Khan" }));
+      expect(within(list).getAllByRole("option")).toHaveLength(2);
+      expect(list).toHaveTextContent("Ali KhanPassport ••••••567 · +92 •••••••567 · a•••@example.invalid");
+      fireEvent.click(within(list).getByRole("option", { name: /^Ali Khan/ }));
 
       expect(customer).toHaveTextContent("Ali Khan");
       expect(customer).toHaveTextContent("Passport ••••••567");
@@ -402,7 +397,7 @@ describe("country dropdowns on the hold form", () => {
       // The infant: a saved traveler with two documents; one must be chosen.
       const infant = screen.getByRole("region", { name: "Infant 1" });
       gateway.people.mockResolvedValue({ results: [SARA], can_manage: true, can_merge: false });
-      await pick(within(infant).getByRole("button", { name: "Use saved traveler, Infant 1" }), "Sara", "Sara Khan");
+      await pick(within(infant).getByRole("combobox", { name: "Use saved traveler, Infant 1" }), "Sara", "Sara Khan");
       fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
       expect(await within(infant).findByRole("alert")).toHaveTextContent("Choose which saved document travels.");
       expect(gateway.hold).not.toHaveBeenCalled();
@@ -425,7 +420,7 @@ describe("country dropdowns on the hold form", () => {
       gateway.hold.mockResolvedValue({ booking_id: "TRV-2", pnr: "XYZ123", selling_total: rs(15_316), label: "UAT test data", warnings: [] });
       renderPage(STAFF_DRAFT);
       const customer = screen.getByRole("region", { name: "Customer" });
-      await pick(within(customer).getByRole("button", { name: "Find" }), "3001234567", "Ali Khan");
+      await pick(findCustomer(), "3001234567", "Ali Khan");
       expect(customer).toHaveTextContent("Passport ••••••567");
       expect(customer).toHaveTextContent("+92 •••••••567 · a•••@example.invalid");    // the saved phone and email, masked
       expect(within(customer).queryByLabelText("Phone")).not.toBeInTheDocument();     // nothing to retype
@@ -437,24 +432,18 @@ describe("country dropdowns on the hold form", () => {
       expect(gateway.hold.mock.calls[0][0].customer).toEqual({ customer_id: "p-00000001", save_for_next_time: true });
     });
 
-    it("Type details instead goes back to the typed form; no match says to type the details", async () => {
+    it("Type details instead goes back to the typed form; one character doesn't search; no match says to type the details", async () => {
       gateway.people.mockResolvedValue({ results: [], can_manage: true, can_merge: false });
       renderPage(STAFF_DRAFT);
       const customer = screen.getByRole("region", { name: "Customer" });
-      fireEvent.click(within(customer).getByRole("button", { name: "Find" }));
-      const dialog = await screen.findByRole("dialog", { name: "Find a saved customer" });
-      fireEvent.change(within(dialog).getByLabelText("Mobile number, CNIC, passport, email or name"), { target: { value: "ab" } });
-      fireEvent.click(within(dialog).getByRole("button", { name: "Search" }));
-      expect(within(dialog).getByRole("alert")).toHaveTextContent("Type at least 3 characters.");
+      fireEvent.change(findCustomer(), { target: { value: "a" } });
+      await new Promise(resolve => setTimeout(resolve, 400));
       expect(gateway.people).not.toHaveBeenCalled();
-      fireEvent.change(within(dialog).getByLabelText("Mobile number, CNIC, passport, email or name"), { target: { value: "3009999999" } });
-      fireEvent.click(within(dialog).getByRole("button", { name: "Search" }));
-      expect(await within(dialog).findByRole("status")).toHaveTextContent("No saved person matches");
+      fireEvent.change(findCustomer(), { target: { value: "3009999999" } });
+      expect(await screen.findByRole("option", { name: "No saved customer matches. Type the details below to add one." })).toBeInTheDocument();
 
       gateway.people.mockResolvedValue({ results: [ALI], can_manage: true, can_merge: false });
-      fireEvent.change(within(dialog).getByLabelText("Mobile number, CNIC, passport, email or name"), { target: { value: "Ali" } });
-      fireEvent.click(within(dialog).getByRole("button", { name: "Search" }));
-      fireEvent.click(await within(dialog).findByRole("button", { name: "Use Ali Khan" }));
+      await pick(findCustomer(), "Ali", "Ali Khan");
       fireEvent.click(within(customer).getByRole("button", { name: "Type details instead" }));
       expect(within(customer).getByLabelText("Email")).toBeInTheDocument();
       expect(customer).not.toHaveTextContent("Saved customer");
@@ -466,7 +455,7 @@ describe("country dropdowns on the hold form", () => {
         [{ path: ["contact", "phone"], message: "Required." }, { path: ["contact", "email"], message: "Required." }]));
       renderPage(STAFF_DRAFT);
       const customer = screen.getByRole("region", { name: "Customer" });
-      await pick(within(customer).getByRole("button", { name: "Find" }), "Ali", "Ali Khan");
+      await pick(findCustomer(), "Ali", "Ali Khan");
       expect(customer).toHaveTextContent("Ali Khan");
       fillInfant();
       fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
@@ -569,4 +558,67 @@ describe("fare check unavailable (503)", () => {
     await waitFor(() => expect(gateway.reprice).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
   });
+});
+
+describe("live search for saved customers and travelers (both hold pages)", () => {
+  const USMAN = { id: "p-00000021", title: "MR" as const, first_name: "Usman", last_name: "Tariq", birth_year: 1988, nationality: "PAK",
+    phone_masked: "+92 •••••••234", email_masked: "u•••@example.invalid",
+    documents: [{ id: "d-00000021", id_type: "PSPT" as const, document_country: "PAK", document_number_masked: "••••••967", document_expiry_masked: "2031", document_validity: "valid" as const }],
+    match: "name" };
+  const SANA = { ...USMAN, id: "p-00000022", first_name: "Sana", last_name: "Tariq", phone_masked: undefined, email_masked: undefined,
+    documents: [{ ...USMAN.documents[0], id: "d-00000022", document_number_masked: "••••••111" }] };
+  const renderGroup = () =>
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <MemoryRouter initialEntries={["/admin/search/group-ticketing/hold?ticket=t1&from=ISB&to=JED&date=2026-11-22&adults=2"]}>
+          <Routes><Route path="/admin/search/group-ticketing/hold" element={<GroupHoldPage />} /></Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+  beforeEach(() => {
+    gateway.people.mockReset().mockResolvedValue({ results: [USMAN, SANA], can_manage: true, can_merge: false });
+    gateway.groupTicket.mockResolvedValue({ id: "t1", sector: "ISB - JED", departure_date: "2026-11-22", departure_time: "06:40", airline: "Fly Jinnah",
+      remaining: 12, baggage: "20", hand_carry: "7", stock: "supplier", can_hold: true });
+  });
+
+  for (const [page, open] of [["Flights", () => renderPage(STAFF_DRAFT)], ["Group", renderGroup]] as const) {
+    it(`${page}: typing 'tar' lists matches with name, masked document, phone and email; arrow keys and Enter choose; the customer fills in`, async () => {
+      open();
+      const input = within(screen.getByRole("region", { name: "Customer" })).getByRole("combobox", { name: "Find saved customer" });
+      fireEvent.change(input, { target: { value: "tar" } });
+      const list = await screen.findByRole("listbox", { name: "Find saved customer results" });
+      await waitFor(() => expect(gateway.people).toHaveBeenCalledWith("tar", expect.anything()));
+      expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual([
+        "Usman TariqPassport ••••••967 · +92 •••••••234 · u•••@example.invalid", "Sana TariqPassport ••••••111"]);
+      expect(input).toHaveAttribute("aria-expanded", "true");
+      fireEvent.keyDown(input, { key: "ArrowDown" });                                     // Usman -> Sana
+      expect(input.getAttribute("aria-activedescendant")).toContain("p-00000022");
+      fireEvent.keyDown(input, { key: "ArrowUp" });                                       // back to Usman
+      fireEvent.keyDown(input, { key: "Enter" });
+      await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+      const customer = screen.getByRole("region", { name: "Customer" });
+      expect(customer).toHaveTextContent("Usman Tariq");
+      expect(customer).toHaveTextContent("+92 •••••••234 · u•••@example.invalid");
+      expect(screen.getByRole("region", { name: "Adult 1" })).toHaveTextContent("Saved customer");   // the customer is Adult 1
+    });
+
+    it(`${page}: Esc closes the list; a traveler card searches by name and fills in the saved traveler`, async () => {
+      open();
+      const input = within(screen.getByRole("region", { name: "Customer" })).getByRole("combobox", { name: "Find saved customer" });
+      fireEvent.change(input, { target: { value: "usm" } });
+      await screen.findByRole("listbox");
+      fireEvent.keyDown(input, { key: "Escape" });
+      await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
+      const second = screen.getAllByRole("region").find(region => /^(Adult 2|Infant 1)$/.test(region.getAttribute("aria-label") ?? ""))!;
+      const label = second.getAttribute("aria-label")!;
+      fireEvent.change(within(second).getByRole("combobox", { name: `Use saved traveler, ${label}` }), { target: { value: "sana" } });
+      fireEvent.click(await screen.findByRole("option", { name: /^Sana Tariq/ }));
+      const card = screen.getByRole("region", { name: label });
+      expect(card).toHaveTextContent("Sana Tariq");
+      expect(card).toHaveTextContent("Passport ••••••111");
+      expect(within(card).queryByLabelText("Given name")).not.toBeInTheDocument();      // the server holds the identity
+      expect(within(card).getByRole("combobox", { name: "Document type" })).toBeDisabled();
+    });
+  }
 });

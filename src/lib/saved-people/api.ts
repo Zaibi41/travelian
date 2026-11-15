@@ -24,6 +24,14 @@ const person = (personId: string, options?: GatewayOptions): GatewayOptions => (
 export const searchPeople = (q: string, options?: GatewayOptions) =>
   gatewayGet("/v1/admin/customers", { q: q.trim(), limit: 20 }, options);
 
+/** Live search on the hold form ("Find saved customer"): name (partial), phone, email or document number; at most 8. */
+export const searchCustomers = (q: string, options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/customers/search", { q: q.trim() }, options);
+
+/** Live search on a traveler card ("Use saved traveler"): name (partial) or document number; at most 8. */
+export const searchTravelers = (q: string, options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/travelers/search", { q: q.trim() }, options);
+
 /** How many people the register shows before any search. */
 export const RECENT_LIMIT = 50;
 
