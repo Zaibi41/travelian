@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/admin/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
 import { FieldLabel, Input } from "@/components/admin/ui/field";
+import { Checkbox } from "@/components/admin/ui/choice";
 import { LabeledSelect } from "@/components/admin/ui/LabeledSelect";
 import { Notice } from "@/components/admin/ui/feedback";
 import { StatusBadge, Tag } from "@/components/admin/ui/StatusBadge";
@@ -14,7 +15,7 @@ import { formatMoney } from "@/lib/admin-bookings/format";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABEL, rupeesToPaisa } from "@/lib/admin-bookings/payments";
 import type { PaymentMethod } from "@/lib/admin-bookings/types";
 import {
-  gatewayMessage, issueGroupTickets, priceChangeFrom, releaseGroupHold, type GroupHoldView, type GroupIssueResult, type GroupMoney, type PriceChange,
+  costChangeFrom, gatewayMessage, issueGroupTickets, releaseGroupHold, type CostChange, type GroupHoldView, type GroupIssueResult, type GroupMoney,
 } from "@/lib/admin-search/group-holds";
 import { cn } from "@/lib/utils";
 
@@ -168,7 +169,7 @@ function RecordPayment({ view, enabled, onChange }: { view: GroupHoldView; enabl
 
 function IssueTickets({ view, held, onChange }: { view: GroupHoldView; held: boolean; onChange: (next: GroupHoldView) => void }) {
   const queryClient = useQueryClient();
-  const [change, setChange] = useState<PriceChange | null>(null);
+  const [change, setChange] = useState<CostChange | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [result, setResult] = useState<GroupIssueResult | null>(null);
   const settle = (next: GroupHoldView) => {
@@ -177,10 +178,10 @@ function IssueTickets({ view, held, onChange }: { view: GroupHoldView; held: boo
     onChange(next);
   };
   const issue = useMutation({
-    mutationFn: (accepted?: GroupMoney) => issueGroupTickets(view.booking_id, accepted),
+    mutationFn: (confirm?: { cost: GroupMoney; belowCost: boolean }) => issueGroupTickets(view.booking_id, confirm?.cost, confirm?.belowCost ?? false),
     onSuccess: outcome => { setChange(null); setResult(outcome); settle(outcome.hold); },
     onError: error => {
-      const moved = priceChangeFrom(error);
+      const moved = costChangeFrom(error);
       if (moved) { setChange(moved); return; }
       setChange(null);
       setProblem(gatewayMessage(error, "Tickets couldn't be issued. Nothing was issued."));
@@ -217,39 +218,56 @@ function IssueTickets({ view, held, onChange }: { view: GroupHoldView; held: boo
           {issue.isPending ? "Issuing…" : "Issue tickets"}
         </Button>
       </div>
-      <PriceChangedDialog change={change} busy={issue.isPending || release.isPending}
-        onClose={() => setChange(null)} onRelease={() => release.mutate()} onContinue={() => change && issue.mutate(change.newTotal)} />
+      <CostChangedDialog change={change} busy={issue.isPending || release.isPending}
+        onClose={() => setChange(null)} onRelease={() => release.mutate()}
+        onContinue={() => change && issue.mutate({ cost: change.acceptedCost, belowCost: change.belowCost })} />
     </section>
   );
 }
 
-/** "The price has changed" (mockup page 13): held price, new price, difference; Release hold or Customer agrees, continue. */
-export function PriceChangedDialog({ change, busy, onClose, onRelease, onContinue, labels = ["Held price", "New price"], releaseLabel = "Release hold",
-  description = "The supplier price changed when we checked it again. Tell the customer, and continue only if they agree." }: {
-  change: PriceChange | null; busy: boolean; onClose: () => void; onRelease: () => void; onContinue: () => void;
-  /** The two prices' names: before and now. */
-  labels?: [string, string]; releaseLabel?: string; description?: string;
+/** The supplier price changed when checked again before issuing. The customer's price stays; the issuer confirms the
+ *  new supplier price (and, when it is above the selling price, confirms issuing at a loss). Amounts the gateway leaves
+ *  out (cost and profit without cost access) aren't shown. */
+export function CostChangedDialog({ change, busy, onClose, onRelease, onContinue }: {
+  change: CostChange | null; busy: boolean; onClose: () => void; onRelease: () => void; onContinue: () => void;
 }) {
+  const [lossConfirmed, setLossConfirmed] = useState(false);
+  const rows: [string, string][] = change ? [
+    ...(change.previousCost ? [["Supplier price before", formatMoney(change.previousCost)]] as [string, string][] : []),
+    ...(change.newCost ? [["Supplier price now", formatMoney(change.newCost)]] as [string, string][] : []),
+    ...(change.difference ? [["Difference", signedMoney(change.difference)]] as [string, string][] : []),
+    ["Selling price", formatMoney(change.sellingTotal)],
+    ...(change.profit ? [["Profit", signedMoney(change.profit)]] as [string, string][] : []),
+  ] : [];
+  const close = () => { setLossConfirmed(false); onClose(); };
   return (
-    <Dialog open={change !== null} onOpenChange={next => { if (!next && !busy) onClose(); }}>
+    <Dialog open={change !== null} onOpenChange={next => { if (!next && !busy) close(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display text-section text-brand-navy">The price has changed</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle className="font-display text-section text-brand-navy">The supplier price has changed</DialogTitle>
+          <DialogDescription>The supplier price changed when we checked it again. The customer's price stays the same.</DialogDescription>
         </DialogHeader>
-        {change && (
-          <dl className="flex flex-col rounded-lg border border-border bg-muted/40 px-3 py-1 text-label">
-            {([[labels[0], formatMoney(change.heldTotal)], [labels[1], formatMoney(change.newTotal)], ["Difference", signedMoney(change.difference)]] as const).map(([label, value]) => (
-              <div key={label} className="flex items-baseline justify-between gap-3 py-1.5">
-                <dt className="text-muted-foreground">{label}</dt>
-                <dd className="font-semibold tabular-nums text-foreground">{value}</dd>
-              </div>
-            ))}
-          </dl>
+        <dl className="flex flex-col rounded-lg border border-border bg-muted/40 px-3 py-1 text-label">
+          {rows.map(([label, value]) => (
+            <div key={label} className="flex items-baseline justify-between gap-3 py-1.5">
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd className="font-semibold tabular-nums text-foreground">{value}</dd>
+            </div>
+          ))}
+        </dl>
+        {change?.belowCost && (
+          <div className="flex flex-col gap-2">
+            <p role="alert" className="text-helper text-status-critical-text">The supplier price is now above the selling price. Issuing makes a loss.</p>
+            <label className="flex items-center gap-2 text-label text-foreground">
+              <Checkbox checked={lossConfirmed} onCheckedChange={next => setLossConfirmed(next === true)} disabled={busy} />
+              Issue below the supplier price
+            </label>
+          </div>
         )}
         <DialogFooter className="gap-2 sm:justify-end">
-          <Button type="button" variant="outline" disabled={busy} onClick={onRelease}>{releaseLabel}</Button>
-          <Button type="button" variant="primary" disabled={busy} onClick={onContinue}>Customer agrees, continue</Button>
+          <Button type="button" variant="outline" disabled={busy} onClick={onRelease}>Release hold</Button>
+          <Button type="button" variant="primary" disabled={busy || (change?.belowCost === true && !lossConfirmed)}
+            onClick={() => { setLossConfirmed(false); onContinue(); }}>Confirm new price, issue</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

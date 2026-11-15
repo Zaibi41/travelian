@@ -1186,7 +1186,8 @@ export interface paths {
         put?: never;
         /**
          * Issue Group Tickets
-         * @description Check the price again; if it moved, refuse with price_changed unless accepted_total equals the new total.
+         * @description Check the supplier cost again; the selling price never changes. If the cost moved, refuse with supplier_cost_changed
+         *     unless accepted_supplier_cost equals the new cost (and accept_below_cost when it is above the selling price).
          *     Needs full payment and the issue tickets permission. One issue call, never retried.
          */
         post: operations["issue_group_tickets_v1_group_ticketing_holds__booking_id__issue_post"];
@@ -2772,8 +2773,14 @@ export interface components {
         };
         /** GroupIssueRequest */
         GroupIssueRequest: {
-            /** @description After 'The price has changed': the new total the customer agreed to. Issuing is refused if the price moved again. */
-            accepted_total?: components["schemas"]["GroupMoney"] | null;
+            /**
+             * Accept Below Cost
+             * @description Required when the new supplier cost is above the selling price.
+             * @default false
+             */
+            accept_below_cost: boolean;
+            /** @description After 'supplier_cost_changed': the new supplier cost the issuer confirmed. Refused if it moved again. */
+            accepted_supplier_cost?: components["schemas"]["GroupMoney"] | null;
         };
         /** GroupIssueResult */
         GroupIssueResult: {
@@ -2830,15 +2837,33 @@ export interface components {
             /** Currency */
             currency: string;
         };
-        /** GroupPriceCheck */
+        /**
+         * GroupPriceCheck
+         * @description The supplier cost checked again (read-only). The selling price never changes here; only the cost can move.
+         */
         GroupPriceCheck: {
-            /** Changed */
+            /** @description Send this back as accepted_supplier_cost to issue at the new cost. */
+            accepted_supplier_cost: components["schemas"]["GroupMoney"];
+            /**
+             * Below Cost
+             * @description The new supplier cost is above the selling price.
+             */
+            below_cost: boolean;
+            /**
+             * Changed
+             * @description The supplier cost differs from the one on the booking.
+             */
             changed: boolean;
-            /** @description new_total - held_total; negative when the price went down. */
-            difference: components["schemas"]["GroupMoney"];
-            held_total: components["schemas"]["GroupMoney"];
-            new_price_per_adult: components["schemas"]["GroupMoney"];
-            new_total: components["schemas"]["GroupMoney"];
+            /** @description new - previous supplier cost. Only with the cost and margin permission. */
+            difference?: components["schemas"]["GroupMoney"] | null;
+            /** @description Only with the cost and margin permission. */
+            new_supplier_cost?: components["schemas"]["GroupMoney"] | null;
+            /** @description Only with the cost and margin permission. */
+            previous_supplier_cost?: components["schemas"]["GroupMoney"] | null;
+            /** @description selling_total - new supplier cost. Only with the cost and margin permission. */
+            profit?: components["schemas"]["GroupMoney"] | null;
+            /** @description What the customer pays (unchanged). */
+            selling_total: components["schemas"]["GroupMoney"];
         };
         /** GroupQuoteAcknowledgement */
         GroupQuoteAcknowledgement: {
@@ -7076,7 +7101,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description price_changed (held_total, new_total, difference), payment_due, hold_expired, or not issuable. */
+            /** @description supplier_cost_changed or below_cost (with the price check's fields), payment_due, hold_expired, or not issuable. */
             409: {
                 headers: {
                     [name: string]: unknown;

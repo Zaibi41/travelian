@@ -545,38 +545,69 @@ describe("Payment and issue tickets (step 4)", () => {
     gateway.issueGroupTickets.mockResolvedValue({ result: "issued", message: "Tickets issued.", hold: { ...PAID, status: "issued", can_issue_tickets: false } });
     renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
     fireEvent.click(await screen.findByRole("button", { name: "Issue tickets" }));
-    await waitFor(() => expect(gateway.issueGroupTickets).toHaveBeenCalledWith("TRV-GRP-000123", undefined));
+    await waitFor(() => expect(gateway.issueGroupTickets).toHaveBeenCalledWith("TRV-GRP-000123", undefined, false));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(await screen.findByRole("status")).toHaveTextContent("Tickets issued.");
     expect(screen.getByRole("button", { name: "Issue tickets" })).toBeDisabled();
   });
 
-  it("price changed: the dialog shows held, new and difference; Customer agrees continues with the new total", async () => {
+  const costChanged = (extra: Record<string, unknown>, code = "supplier_cost_changed") =>
+    new GatewayError("unavailable", "The supplier price has changed. Nothing was issued.", 409, code, [],
+      { selling_total: rs(237_000), below_cost: code === "below_cost", accepted_supplier_cost: rs(232_000), ...extra });
+
+  it("supplier price changed: cost access sees both prices, selling price and profit; Confirm issues at the new cost", async () => {
     gateway.fetchGroupHold.mockResolvedValue(PAID);
     gateway.issueGroupTickets
-      .mockRejectedValueOnce(new GatewayError("unavailable", "The price has changed to Rs 244,000. Nothing was issued.", 409, "price_changed", [],
-        { held_total: rs(237_000), new_total: rs(244_000), difference: rs(7_000) }))
-      .mockResolvedValueOnce({ result: "issued", message: "Tickets issued.", hold: { ...PAID, total: rs(244_000), status: "issued" } });
+      .mockRejectedValueOnce(costChanged({ previous_supplier_cost: rs(225_000), new_supplier_cost: rs(232_000), difference: rs(7_000), profit: rs(5_000) }))
+      .mockResolvedValueOnce({ result: "issued", message: "Tickets issued.", hold: { ...PAID, status: "issued" } });
     renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
     fireEvent.click(await screen.findByRole("button", { name: "Issue tickets" }));
-    const dialog = await screen.findByRole("dialog", { name: "The price has changed" });
-    expect(dialog).toHaveTextContent("Held priceRs 237,000");
-    expect(dialog).toHaveTextContent("New priceRs 244,000");
+    const dialog = await screen.findByRole("dialog", { name: "The supplier price has changed" });
+    expect(dialog).toHaveTextContent("Supplier price beforeRs 225,000");
+    expect(dialog).toHaveTextContent("Supplier price nowRs 232,000");
     expect(dialog).toHaveTextContent("Difference+ Rs 7,000");
-    fireEvent.click(within(dialog).getByRole("button", { name: "Customer agrees, continue" }));
-    await waitFor(() => expect(gateway.issueGroupTickets).toHaveBeenLastCalledWith("TRV-GRP-000123", rs(244_000)));
+    expect(dialog).toHaveTextContent("Selling priceRs 237,000");
+    expect(dialog).toHaveTextContent("Profit+ Rs 5,000");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Confirm new price, issue" }));
+    await waitFor(() => expect(gateway.issueGroupTickets).toHaveBeenLastCalledWith("TRV-GRP-000123", rs(232_000), false));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(await screen.findByRole("status")).toHaveTextContent("Tickets issued.");
   });
 
-  it("price changed: Release hold releases and nothing is issued", async () => {
+  it("supplier price changed, no cost access: the selling price only", async () => {
     gateway.fetchGroupHold.mockResolvedValue(PAID);
-    gateway.issueGroupTickets.mockRejectedValue(new GatewayError("unavailable", "The price has changed.", 409, "price_changed", [],
-      { held_total: rs(237_000), new_total: rs(230_000), difference: rs(-7_000) }));
+    gateway.issueGroupTickets.mockRejectedValueOnce(costChanged({}));
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
+    fireEvent.click(await screen.findByRole("button", { name: "Issue tickets" }));
+    const dialog = await screen.findByRole("dialog", { name: "The supplier price has changed" });
+    expect(dialog).toHaveTextContent("Selling priceRs 237,000");
+    expect(dialog).not.toHaveTextContent(/Supplier price (before|now)|Profit|232,000/);
+  });
+
+  it("supplier price above the selling price: a warning, and Confirm stays off until the loss is confirmed", async () => {
+    gateway.fetchGroupHold.mockResolvedValue(PAID);
+    gateway.issueGroupTickets.mockRejectedValueOnce(costChanged({ accepted_supplier_cost: rs(240_000), profit: rs(-3_000) }, "below_cost"))
+      .mockResolvedValueOnce({ result: "issued", message: "Tickets issued.", hold: { ...PAID, status: "issued" } });
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
+    fireEvent.click(await screen.findByRole("button", { name: "Issue tickets" }));
+    const dialog = await screen.findByRole("dialog", { name: "The supplier price has changed" });
+    expect(dialog).toHaveTextContent("The supplier price is now above the selling price. Issuing makes a loss.");
+    expect(dialog).toHaveTextContent("Profit− Rs 3,000");
+    const confirm = within(dialog).getByRole("button", { name: "Confirm new price, issue" });
+    expect(confirm).toBeDisabled();
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: "Issue below the supplier price" }));
+    expect(confirm).toBeEnabled();
+    fireEvent.click(confirm);
+    await waitFor(() => expect(gateway.issueGroupTickets).toHaveBeenLastCalledWith("TRV-GRP-000123", rs(240_000), true));
+  });
+
+  it("supplier price changed: Release hold releases and nothing is issued", async () => {
+    gateway.fetchGroupHold.mockResolvedValue(PAID);
+    gateway.issueGroupTickets.mockRejectedValue(costChanged({ difference: rs(-7_000) }));
     gateway.releaseGroupHold.mockResolvedValue({ ...PAID, status: "released", can_record_payments: false, can_issue_tickets: false });
     renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
     fireEvent.click(await screen.findByRole("button", { name: "Issue tickets" }));
-    const dialog = await screen.findByRole("dialog", { name: "The price has changed" });
+    const dialog = await screen.findByRole("dialog", { name: "The supplier price has changed" });
     expect(dialog).toHaveTextContent("Difference− Rs 7,000");
     fireEvent.click(within(dialog).getByRole("button", { name: "Release hold" }));
     await waitFor(() => expect(gateway.releaseGroupHold).toHaveBeenCalledWith("TRV-GRP-000123"));

@@ -46,7 +46,9 @@ async function open(page: Page, width: number, { paid = false, changed = false }
       if (path === "/v1/group-ticketing/holds/TRV-GRP-000123") return route.fulfill({ json: paid ? PAID : HELD });
       if (path === "/v1/group-ticketing/holds/TRV-GRP-000123/issue") {
         return changed
-          ? route.fulfill({ status: 409, json: { detail: "The price has changed to Rs 244,000. Nothing was issued.", code: "price_changed", held_total: rs(237_000), new_total: rs(244_000), difference: rs(7_000) } })
+          ? route.fulfill({ status: 409, json: { detail: "The supplier price is now above the selling price. Confirm to issue at a loss. Nothing was issued.", code: "below_cost",
+            selling_total: rs(237_000), below_cost: true, accepted_supplier_cost: rs(244_000), previous_supplier_cost: rs(230_000), new_supplier_cost: rs(244_000),
+            difference: rs(14_000), profit: rs(-7_000) } })
           : route.fulfill({ json: { result: "issued", message: "Tickets issued.", hold: { ...PAID, status: "issued" } } });
       }
       if (path === "/v1/admin/payment-accounts") return route.fulfill({ json: ACCOUNTS });
@@ -100,7 +102,7 @@ for (const width of [1440, 390]) {
     await shot(page, `admin-group-held-${width}`);
   });
 
-  test(`payments tab, paid in full, issue and the price-changed dialog at ${width}px`, async ({ page }) => {
+  test(`payments tab, paid in full, issue and the supplier-price-changed dialog at ${width}px`, async ({ page }) => {
     await open(page, width, { paid: true, changed: true });
     await page.goto("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
     await expect(page.getByRole("heading", { name: "Booking TRV-GRP-000123", level: 1 })).toBeVisible();
@@ -111,8 +113,12 @@ for (const width of [1440, 390]) {
     await expectReadableText(page, `payments at ${width}px`);
     await shot(page, `admin-group-payments-${width}`);
     await page.getByRole("button", { name: "Issue tickets" }).click();
-    const dialog = page.getByRole("dialog", { name: "The price has changed" });
-    await expect(dialog).toContainText("+ Rs 7,000");
+    const dialog = page.getByRole("dialog", { name: "The supplier price has changed" });
+    await expect(dialog).toContainText("+ Rs 14,000");
+    await expect(dialog).toContainText("− Rs 7,000");
+    await expect(dialog.getByRole("button", { name: "Confirm new price, issue" })).toBeDisabled();
+    await dialog.getByRole("checkbox", { name: "Issue below the supplier price" }).click();
+    await expect(dialog.getByRole("button", { name: "Confirm new price, issue" })).toBeEnabled();
     const box = await dialog.boundingBox();
     expect(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= (width < 600 ? 844 : 900)).toBe(true);
     await shot(page, `admin-group-price-changed-${width}`);

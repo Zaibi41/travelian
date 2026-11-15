@@ -63,25 +63,39 @@ export const acceptHeldPrice = (bookingId: string, extra?: GatewayOptions) =>
   gatewayPost("/v1/group-ticketing/holds/{booking_id}/accept-held-price", undefined as never,
     options(bookingId, extra, "The new price couldn't be confirmed right now. Nothing was changed."));
 
-/** Issue tickets. The gateway checks the price again first; `acceptedTotal` after the customer agreed to a new price. */
-export const issueGroupTickets = (bookingId: string, acceptedTotal?: GroupMoney, extra?: GatewayOptions) =>
-  gatewayPost("/v1/group-ticketing/holds/{booking_id}/issue", { accepted_total: acceptedTotal ?? null },
+/** Issue tickets. The gateway checks the supplier cost again first (the selling price never changes there).
+ *  After "supplier_cost_changed": `acceptedCost` is the new cost the issuer confirmed; `acceptBelowCost` when it is
+ *  above the selling price. */
+export const issueGroupTickets = (bookingId: string, acceptedCost?: GroupMoney, acceptBelowCost = false, extra?: GatewayOptions) =>
+  gatewayPost("/v1/group-ticketing/holds/{booking_id}/issue", { accepted_supplier_cost: acceptedCost ?? null, accept_below_cost: acceptBelowCost },
     options(bookingId, extra, "Tickets can't be issued right now. Nothing was issued."));
 
-export interface PriceChange {
-  heldTotal: GroupMoney;
-  newTotal: GroupMoney;
-  difference: GroupMoney;
+/** The gateway's "supplier_cost_changed" / "below_cost" refusal at issue. Cost amounts and profit only reach viewers
+ *  with cost access; everyone gets the selling total and the cost to confirm. */
+export interface CostChange {
+  sellingTotal: GroupMoney;
+  belowCost: boolean;
+  acceptedCost: GroupMoney;
+  previousCost?: GroupMoney;
+  newCost?: GroupMoney;
+  difference?: GroupMoney;
+  profit?: GroupMoney;
 }
 
 const isMoney = (value: unknown): value is GroupMoney =>
   typeof value === "object" && value !== null && typeof (value as GroupMoney).amount_minor === "number" && typeof (value as GroupMoney).currency === "string";
+const optionalMoney = (value: unknown) => (isMoney(value) ? value : undefined);
 
-/** The gateway's "price_changed" refusal, with its three amounts; null for any other error. */
-export function priceChangeFrom(error: unknown): PriceChange | null {
-  if (!(error instanceof GatewayError) || error.code !== "price_changed") return null;
-  const { held_total: heldTotal, new_total: newTotal, difference } = error.extra;
-  return isMoney(heldTotal) && isMoney(newTotal) && isMoney(difference) ? { heldTotal, newTotal, difference } : null;
+/** The cost-change refusal's fields; null for any other error. */
+export function costChangeFrom(error: unknown): CostChange | null {
+  if (!(error instanceof GatewayError) || (error.code !== "supplier_cost_changed" && error.code !== "below_cost")) return null;
+  const extra = error.extra;
+  if (!isMoney(extra.selling_total) || !isMoney(extra.accepted_supplier_cost)) return null;
+  return {
+    sellingTotal: extra.selling_total, belowCost: extra.below_cost === true, acceptedCost: extra.accepted_supplier_cost,
+    previousCost: optionalMoney(extra.previous_supplier_cost), newCost: optionalMoney(extra.new_supplier_cost),
+    difference: optionalMoney(extra.difference), profit: optionalMoney(extra.profit),
+  };
 }
 
 /** The sentence to show for a failed action: the gateway's own words when it gave them. */
