@@ -153,7 +153,7 @@ function adultNumber(passengers: BookingPassenger[], position: number) {
 }
 
 const PROBLEMS: Record<string, { badge: string; severity: "action" | "critical" | "neutral"; title: string }> = {
-  total_unverified: { badge: "Needs attention", severity: "action", title: "Hold created, but its total couldn't be verified" },
+  total_unverified: { badge: "Not saved", severity: "critical", title: "The total couldn't be verified, so nothing was saved" },
   not_saved: { badge: "Action needed now", severity: "critical", title: "The hold was created but couldn't be saved" },
   not_confirmed_hold: { badge: "Not confirmed", severity: "critical", title: "The supplier didn't confirm the hold" },
   booking_off: { badge: "Not available", severity: "neutral", title: "Booking is turned off" },
@@ -163,7 +163,6 @@ function Problem({ state }: { state: Extract<HoldResultState, { kind: "problem" 
   const navigate = useNavigate();
   const problem = PROBLEMS[state.code] ?? { badge: "Not confirmed", severity: "critical" as const, title: "The hold didn't go through" };
   const pnr = typeof state.extra.pnr === "string" ? state.extra.pnr : null;
-  const bookingId = typeof state.extra.booking_id === "string" ? state.extra.booking_id : null;
   const results = state.draft ? `/admin/search?${writeFlightSearch(new URLSearchParams("tab=flights"), state.draft.request).toString()}` : SEARCH;
   const copyPnr = async () => {
     if (!pnr) return;
@@ -187,9 +186,6 @@ function Problem({ state }: { state: Extract<HoldResultState, { kind: "problem" 
         <p className="text-body text-muted-foreground">{state.message}</p>
       </div>
       <div className="flex flex-wrap gap-2">
-        {state.code === "total_unverified" && bookingId && (
-          <Button asChild variant="primary"><Link to={bookingDetailPath(bookingId)}>View booking</Link></Button>
-        )}
         {(state.code === "total_unverified" || state.code === "not_saved") && pnr && (
           <Button type="button" variant="outline" onClick={() => void copyPnr()}>Copy PNR</Button>
         )}
@@ -198,7 +194,7 @@ function Problem({ state }: { state: Extract<HoldResultState, { kind: "problem" 
         )}
         {state.code === "booking_off"
           ? <Button asChild variant="outline"><Link to={results}>Back to results</Link></Button>
-          : state.code !== "total_unverified" && <Button asChild variant="outline"><Link to={SEARCH}>Back to search</Link></Button>}
+          : <Button asChild variant="outline"><Link to={SEARCH}>Back to search</Link></Button>}
       </div>
     </section>
   );

@@ -75,13 +75,14 @@ describe("Hold result (mockup flights-hold-result)", () => {
     expect(screen.queryByText("UAT test data")).not.toBeInTheDocument();
   });
 
-  it("total not verified: Needs attention, the gateway's sentence, View booking and Copy PNR", () => {
-    const message = "The hold was created at the supplier (PNR 2E572B, TRV-2S60SD) but its total couldn't be verified. Check the total with the supplier before taking any payment.";
-    renderResult({ kind: "problem", code: "total_unverified", message, extra: { pnr: "2E572B", booking_id: "TRV-2S60SD" }, mode: "hold", draft: STAFF_DRAFT });
-    const card = screen.getByRole("region", { name: "Hold created, but its total couldn't be verified" });
-    expect(card).toHaveTextContent("Needs attention");
+  it("total not verified: nothing saved, the gateway's sentence, Copy PNR and Back to search, no booking link", () => {
+    const message = "The supplier created a hold (PNR 2E572B) but its total couldn't be verified, so it wasn't saved. Don't take payment for it; it lapses at the supplier's time limit. Search and hold again.";
+    renderResult({ kind: "problem", code: "total_unverified", message, extra: { pnr: "2E572B" }, mode: "hold", draft: STAFF_DRAFT });
+    const card = screen.getByRole("region", { name: "The total couldn't be verified, so nothing was saved" });
+    expect(card).toHaveTextContent("Not saved");
     expect(card).toHaveTextContent(message);
-    expect(within(card).getByRole("link", { name: "View booking" })).toHaveAttribute("href", "/admin/bookings/TRV-2S60SD");
+    expect(within(card).queryByRole("link", { name: "View booking" })).not.toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: "Back to search" })).toBeInTheDocument();
     Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
     fireEvent.click(within(card).getByRole("button", { name: "Copy PNR" }));
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith("2E572B");
