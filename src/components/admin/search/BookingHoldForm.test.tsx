@@ -320,6 +320,24 @@ describe("country dropdowns on the hold form", () => {
       }
     });
 
+    it("a saved customer (with phone and email saved) is picked and the hold goes through with no missing-field errors", async () => {
+      gateway.people.mockResolvedValue({ results: [ALI], can_manage: true, can_merge: false });
+      gateway.hold.mockResolvedValue({ booking_id: "TRV-2", pnr: "XYZ123", selling_total: rs(15_316), label: "UAT test data", warnings: [] });
+      renderPage(STAFF_DRAFT);
+      const customer = screen.getByRole("region", { name: "Customer" });
+      await pick(within(customer).getByRole("button", { name: "Find" }), "3001234567", "Ali Khan");
+      expect(customer).toHaveTextContent("Passport ••••••567");
+      expect(customer).toHaveTextContent("+92 •••••••567 · a•••@example.invalid");    // the saved phone and email, masked
+      expect(within(customer).queryByLabelText("Phone")).not.toBeInTheDocument();     // nothing to retype
+      const infant = screen.getByRole("region", { name: "Infant 1" });
+      fireEvent.change(within(infant).getByLabelText("Given name"), { target: { value: "Baby" } });
+      fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+      expect(await screen.findByRole("heading", { name: "Result page" })).toBeInTheDocument();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      // Only the id: the gateway loads the saved phone and email; no empty value is sent that could blank them.
+      expect(gateway.hold.mock.calls[0][0].customer).toEqual({ customer_id: "p-00000001", save_for_next_time: true });
+    });
+
     it("Type details instead goes back to the typed form; no match says to type the details", async () => {
       gateway.people.mockResolvedValue({ results: [], can_manage: true, can_merge: false });
       renderPage(STAFF_DRAFT);

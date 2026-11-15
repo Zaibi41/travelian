@@ -173,10 +173,13 @@ function Field({ id, label, error, hint, children, className }: { id: string; la
 }
 
 /** A saved person on a card: name and masked document, no reveal; a choice when several documents are saved. */
-function SavedCard({ person, label, documentId, onDocument }: {
+function SavedCard({ person, label, documentId, onDocument, contact = false }: {
   person: PersonSummary; label: string; documentId?: string | null; onDocument?: (id: string) => void;
+  /** The customer: also show the saved phone and email (masked), which the hold uses. */
+  contact?: boolean;
 }) {
   const documents = person.documents;
+  const contactLine = [person.phone_masked, person.email_masked].filter(Boolean).join(" · ");
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5">
       <div className="flex min-w-0 items-center justify-between gap-2">
@@ -184,8 +187,11 @@ function SavedCard({ person, label, documentId, onDocument }: {
           <p className="truncate text-body font-semibold text-foreground" title={fullName(person)}>{fullName(person)}</p>
           {documents.length <= 1 && (
             <p className="truncate text-label text-muted-foreground">
-              {documents[0] ? `${ID_TYPE_LABEL[documents[0].id_type]} ${documents[0].document_number_masked}` : [person.phone_masked, person.email_masked].filter(Boolean).join(" · ") || "No document saved"}
+              {documents[0] ? `${ID_TYPE_LABEL[documents[0].id_type]} ${documents[0].document_number_masked}` : contactLine || "No document saved"}
             </p>
+          )}
+          {contact && documents.length > 0 && (
+            <p className="truncate text-label text-muted-foreground" title={contactLine || undefined}>{contactLine || "No phone or email saved"}</p>
           )}
         </div>
         <Tag tone="teal" className="shrink-0">{label}</Tag>
@@ -299,7 +305,7 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
           </div>
           {customer.saved ? (
             <div className="flex flex-col gap-2">
-              <SavedCard person={customer.saved} label="Saved customer" />
+              <SavedCard person={customer.saved} label="Saved customer" contact />
               {/* The gateway asks for these only when the saved customer has none (contact_incomplete). */}
               {(fieldError("contact.phone") || fieldError("contact.email") || customer.phone || customer.email) && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
