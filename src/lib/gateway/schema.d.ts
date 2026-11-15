@@ -2151,6 +2151,42 @@ export interface components {
             /** User Id */
             user_id: string;
         };
+        /**
+         * CustomerCard
+         * @description The customer card, typed per booking (or a saved customer by customer_id).
+         */
+        CustomerCard: {
+            /**
+             * Customer Id
+             * @description A saved customer; typed values override for this booking.
+             */
+            customer_id?: string | null;
+            /** Document Number */
+            document_number?: string | null;
+            /** Email */
+            email?: string | null;
+            /**
+             * Full Name
+             * @description Given name(s) and surname; the last word is the surname.
+             */
+            full_name?: string | null;
+            /**
+             * Id Type
+             * @description The customer's document: passport or CNIC.
+             */
+            id_type?: ("PSPT" | "NATI") | null;
+            /**
+             * Phone
+             * @description With country code, e.g. +92 300 1234567. A Pakistani number may start with 0.
+             */
+            phone?: string | null;
+            /**
+             * Save For Next Time
+             * @description Save or update the customer after the hold. Never blocks the hold.
+             * @default true
+             */
+            save_for_next_time: boolean;
+        };
         /** DashboardFilterOptions */
         DashboardFilterOptions: {
             /** Products */
@@ -2484,42 +2520,6 @@ export interface components {
             /** @description Supplier cost shown before the hold. Only with the cost and margin permission. */
             shown_cost?: components["schemas"]["GroupMoney"] | null;
         };
-        /**
-         * GroupHoldContact
-         * @description The customer card, typed per booking (or a saved customer by customer_id).
-         */
-        GroupHoldContact: {
-            /**
-             * Customer Id
-             * @description A saved customer; typed values override for this booking.
-             */
-            customer_id?: string | null;
-            /** Document Number */
-            document_number?: string | null;
-            /** Email */
-            email?: string | null;
-            /**
-             * Full Name
-             * @description Given name(s) and surname; the last word is the surname.
-             */
-            full_name?: string | null;
-            /**
-             * Id Type
-             * @description The customer's document: passport or CNIC.
-             */
-            id_type?: ("PSPT" | "NATI") | null;
-            /**
-             * Phone
-             * @description With country code, e.g. +92 300 1234567. A Pakistani number may start with 0.
-             */
-            phone?: string | null;
-            /**
-             * Save For Next Time
-             * @description Save or update the customer after the hold. Never blocks the hold.
-             * @default true
-             */
-            save_for_next_time: boolean;
-        };
         /** GroupHoldCustomer */
         GroupHoldCustomer: {
             /** Email */
@@ -2638,7 +2638,7 @@ export interface components {
              * @description Adults only; must equal the number of passengers.
              */
             adults: number;
-            contact: components["schemas"]["GroupHoldContact"];
+            contact: components["schemas"]["CustomerCard"];
             /**
              * Passengers
              * @description One adult (ADT) per seat.
@@ -3176,7 +3176,10 @@ export interface components {
             accept_price_change: boolean;
             /** @description The total the user confirmed. The hold is refused if the supplier's total differs. */
             confirmed_total: components["schemas"]["FlightMoney"];
-            contact: components["schemas"]["HoldContact"];
+            /** @description The customer, already split (first/last name, phone code and number). */
+            contact?: components["schemas"]["HoldContact"] | null;
+            /** @description Or the customer card shared with the Group Ticketing hold (full name, one phone field); the gateway splits it. Send contact or customer, not both. */
+            customer?: components["schemas"]["CustomerCard"] | null;
             /** Passengers */
             passengers: components["schemas"]["HoldPassenger"][];
             /** Quote Id */

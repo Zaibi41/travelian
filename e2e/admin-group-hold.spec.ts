@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { gatewayView } from "./support/gateway";
 import { expectReadableText } from "./support/type-scale";
+import { docsShot } from "./support/docs-shot";
 
 // Search > Group Ticketing booking flow (mockup PDF docs/2026-11-14 pages 9-13): results with
 // Hold seats, traveler details, seats held, payment and issue tickets, the price-changed dialog.
@@ -71,8 +72,8 @@ for (const width of [1440, 390]) {
     await page.goto("/admin/search?tab=group-ticketing&from=ISB&to=JED&date=2026-11-22&adults=2");
     const results = page.getByRole("region", { name: "Results" });
     await expect(results).toContainText("Rs 168,000");
-    await expect(results).toContainText("20+7 kg");
-    await expect(results).toContainText("Return 30+10 kg");
+    await expect(results).toContainText("7+20 kg");
+    await expect(results).toContainText("Return 10+30 kg");
     await expect(results).toContainText("7 kg");
     await expect(results.getByRole("button", { name: /^Hold seats/ })).toHaveCount(2);
     await expect(results.getByRole("button", { name: /^Hold seats, A very long/ })).toBeDisabled();
@@ -84,14 +85,15 @@ for (const width of [1440, 390]) {
     await page.getByLabel("Full name").fill("Ali Raza");
     await page.getByLabel("Phone").fill("+92 300 1234567");
     await page.getByLabel("Email").fill("ali.raza@example.invalid");
-    await page.getByLabel("Document number").fill("AB1234567");
+    await page.getByRole("region", { name: "Customer" }).getByLabel("Document number").fill("AB1234567");
     const adult2 = page.getByRole("region", { name: "Adult 2" });
     await adult2.getByLabel("Given name").fill("Sana");
     await adult2.getByLabel("Surname").fill("Raza");
-    await adult2.getByLabel("Passport number").fill("CD7654321");
+    await adult2.getByLabel("Document number").fill("CD7654321");
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `traveler details at ${width}px`);
     await shot(page, `admin-group-hold-form-${width}`);
+    if (width === 1440) await docsShot(page, "hold-form-group-1440");
     await page.getByRole("button", { name: "Hold seats" }).click();
     await expect(page.getByRole("heading", { name: "Group seats held", level: 1 })).toBeVisible();
     await expect(page.getByRole("region", { name: "Seats held" })).toContainText("Seats held for 2 adults");

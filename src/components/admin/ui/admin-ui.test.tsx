@@ -108,7 +108,7 @@ describe("Dialog", () => {
 
 describe("product tabs", () => {
   it("the admin's own list: same order and labels as the public tabs, each with an icon", () => {
-    expect(ADMIN_PRODUCT_TABS.map(tab => tab.label)).toEqual(["Flights", "Group Ticketing", "Hotels", "Umrah"]);
+    expect(ADMIN_PRODUCT_TABS.map(tab => tab.label)).toEqual(["Flights", "Group Ticketing", "Hotels"]);
     expect(ADMIN_PRODUCT_TABS.every(tab => tab.icon)).toBe(true);
   });
 });

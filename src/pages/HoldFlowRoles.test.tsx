@@ -53,14 +53,14 @@ const renderAt = (element: React.ReactNode, path: string, state: unknown, search
 describe("supplier fields in the hold flow follow what the gateway sends", () => {
   it.each(Object.entries(VIEWS))("hold page for %s", (_role, view) => {
     renderAt(<HoldFlightPage />, "/admin/search/flights/hold", draftFor(view));
-    const summary = screen.getByRole("region", { name: "Selected fare" });
+    const summary = screen.getByRole("complementary", { name: "Selected fare" });
     expect(Boolean(within(summary).queryByText(/Provider: southair/))).toBe(Boolean(view.supplier));
     expect(summary.textContent?.includes("Supplier cost Rs 15,015")).toBe(Boolean(view.supplier_total));
     expect(summary.textContent?.includes("Margin Rs 301")).toBe(Boolean(view.margin));
     if (!view.supplier && !view.supplier_total) expect(summary).not.toHaveTextContent(SUPPLIER_TEXT);
     // The form itself never shows supplier data, whatever the role.
     expect(screen.getByRole("region", { name: "Customer" })).not.toHaveTextContent(SUPPLIER_TEXT);
-    expect(screen.getByRole("region", { name: "Travelers" })).not.toHaveTextContent(SUPPLIER_TEXT);
+    for (const card of ["Adult 1", "Infant 1"]) expect(screen.getByRole("region", { name: card })).not.toHaveTextContent(SUPPLIER_TEXT);
   });
 
   it.each(Object.entries(VIEWS))("price-changed dialog for %s shows no supplier fields", async (_role, view) => {

@@ -111,7 +111,6 @@ const ADMIN = [
   ["admin-search-flights", "/admin/search?tab=flights"],
   ["admin-search-group-ticketing", "/admin/search?tab=group-ticketing"],
   ["admin-search-hotels", "/admin/search?tab=hotels"],
-  ["admin-search-umrah", "/admin/search?tab=umrah"],
   ["admin-bookings", "/admin/bookings"],
   ["admin-customers", "/admin/customers"],
 ] as const;

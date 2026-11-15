@@ -13,7 +13,6 @@ const TABS = [
   { id: "flights", label: "Flights" },
   { id: "group-ticketing", label: "Group Ticketing" },
   { id: "hotels", label: "Hotels" },
-  { id: "umrah", label: "Umrah" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -23,10 +22,6 @@ const SHELLS: Partial<Record<TabId, { title: string; body: string }>> = {
   hotels: {
     title: "Hotel search isn't available yet",
     body: "No hotel provider is connected to the gateway, and Hotel Inventory isn't served by the gateway yet.",
-  },
-  umrah: {
-    title: "Umrah search isn't available yet",
-    body: "Umrah packages aren't served by the gateway yet.",
   },
 };
 

@@ -54,16 +54,19 @@ describe("Search (internal roles)", () => {
     gateway.search.mockResolvedValue(INVENTORY);
   });
 
-  it("shows the four product tabs; Flights opens the live search; Hotels and Umrah say not available yet", () => {
+  it("shows three product tabs (Umrah is hidden); Flights opens the live search; Hotels says not available yet", () => {
     renderAt("/admin/search");
     expect(within(screen.getByRole("navigation", { name: "Search products" })).getAllByRole("link").map(link => link.textContent))
-      .toEqual(["Flights", "Group Ticketing", "Hotels", "Umrah"]);
+      .toEqual(["Flights", "Group Ticketing", "Hotels"]);
     expect(screen.getByRole("button", { name: "Search flights" })).toBeDisabled();
-    for (const tab of ["hotels", "umrah"]) {
-      const { unmount } = renderAt(`/admin/search?tab=${tab}`);
-      expect(screen.getAllByRole("status").slice(-1)[0]).toHaveTextContent(/search isn't available yet/);
-      unmount();
-    }
+    const hotels = renderAt("/admin/search?tab=hotels");
+    expect(screen.getAllByRole("status").slice(-1)[0]).toHaveTextContent(/search isn't available yet/);
+    hotels.unmount();
+    // An old Umrah link opens Flights; nothing about Umrah shows.
+    const umrah = renderAt("/admin/search?tab=umrah");
+    expect(screen.queryByText(/Umrah/)).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Search flights" }).length).toBeGreaterThan(0);
+    umrah.unmount();
     // No cards without data: Available providers, Search expiry, Quotes pending.
     expect(screen.queryByText(/Available providers|Search expiry|Quotes pending/)).not.toBeInTheDocument();
   });

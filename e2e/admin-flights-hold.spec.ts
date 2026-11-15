@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { gatewayView } from "./support/gateway";
 import { expectReadableText } from "./support/type-scale";
+import { docsShot } from "./support/docs-shot";
 
 // Flights booking flow pages (fare check, hold form, hold result): no horizontal page scroll.
 // Local-only session and intercepted gateway answers; nothing reaches a real gateway or supplier.
@@ -80,9 +81,10 @@ for (const width of [1280, 1366, 1440, 1920]) {
     await open(page, width);
     await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
     await expect(page.getByRole("heading", { name: "Hold flight", level: 1 })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Selected fare" })).toContainText("Rs 15,316");
+    await expect(page.getByRole("complementary", { name: "Selected fare" })).toContainText("Rs 15,316");
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `hold form at ${width}px`);
+    if (width === 1440) await docsShot(page, "hold-form-flights-1440");
     await page.getByRole("button", { name: "Hold seats" }).click();
     await expect(page.getByRole("heading", { name: "Hold result" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Travelers" })).toContainText("••••••567");
@@ -120,7 +122,7 @@ for (const width of [1280, 390]) {
     holdBodies.length = 0;
     await open(page, width);
     await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
-    await page.getByRole("region", { name: "Customer" }).getByRole("button", { name: "Find saved customer" }).click();
+    await page.getByRole("region", { name: "Customer" }).getByRole("button", { name: "Find", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Find a saved customer" });
     await dialog.getByLabel("Mobile number, CNIC, passport, email or name").fill("3001234567");
     await dialog.getByRole("button", { name: "Search" }).click();
@@ -133,16 +135,16 @@ for (const width of [1280, 390]) {
     await dialog.getByRole("button", { name: "Use Muhammad Abdullah Rehmanullah Khan Durrani" }).click();
     await expect(dialog).toBeHidden();
 
-    const adult = page.getByRole("group", { name: "Adult 1" });
-    await adult.getByRole("checkbox", { name: "Same as customer, Adult 1" }).click();
-    await expect(adult.getByLabel("Saved traveler", { exact: true })).toContainText("••••••567");
-    const infant = page.getByRole("group", { name: "Infant 1" });
-    await infant.getByRole("button", { name: "Use a saved traveler, Infant 1" }).click();
+    // The customer is Adult 1 (ticked by default): the saved customer is the saved traveler.
+    const adult = page.getByRole("region", { name: "Adult 1" });
+    await expect(adult).toContainText("••••••567");
+    const infant = page.getByRole("region", { name: "Infant 1" });
+    await infant.getByRole("button", { name: "Use saved traveler, Infant 1" }).click();
     const travelerDialog = page.getByRole("dialog", { name: "Use a saved traveler" });
     await travelerDialog.getByLabel("Mobile number, CNIC, passport, email or name").fill("3001234567");
     await travelerDialog.getByRole("button", { name: "Search" }).click();
     await travelerDialog.getByRole("button", { name: "Use Baby Durrani" }).click();
-    await expect(infant.getByLabel("Saved traveler", { exact: true })).toContainText("••••••321");
+    await expect(infant).toContainText("••••••321");
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `hold form with saved people at ${width}px`);
 
@@ -150,7 +152,7 @@ for (const width of [1280, 390]) {
     await expect(page.getByRole("heading", { name: "Hold result" })).toBeVisible();
     expect(holdBodies).toHaveLength(1);
     expect(holdBodies[0]).toMatchObject({
-      contact: { customer_id: "p-00000001" },
+      customer: { customer_id: "p-00000001" },
       passengers: [
         { type: "ADT", traveler_id: "p-00000001", document_id: "d-00000001" },
         { type: "INF", traveler_id: "p-00000002", document_id: "d-00000002", travels_with: 0 },
@@ -163,7 +165,7 @@ for (const width of [1280, 390]) {
 test("country dropdown opens attached to its field, stays in view and works with the keyboard", async ({ page }) => {
   await open(page, 1366);
   await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
-  const adult = page.getByRole("group", { name: "Adult 1" });
+  const adult = page.getByRole("region", { name: "Adult 1" });
   const nationality = adult.getByRole("combobox", { name: "Nationality" });
   await expect(nationality).toHaveText("Pakistan");
   await nationality.focus();

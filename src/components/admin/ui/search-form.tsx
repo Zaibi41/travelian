@@ -135,7 +135,7 @@ export function SearchSubmitButton({ label, disabled }: { label: string; disable
 export function SearchProductTabs({ active, label = "Search products" }: { active: string; label?: string }) {
   return (
     <nav aria-label={label}>
-      <div className="grid grid-cols-2 overflow-hidden rounded-t-xl border-b border-border bg-muted/40 sm:grid-cols-4">
+      <div className="grid grid-cols-3 overflow-hidden rounded-t-xl border-b border-border bg-muted/40">
         {ADMIN_PRODUCT_TABS.map(tab => (
           <Link
             key={tab.id}

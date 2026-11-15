@@ -81,11 +81,11 @@ async function fillTravelers() {
   fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Ali Raza" } });
   fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "+92 300 1234567" } });
   fireEvent.change(screen.getByLabelText("Email"), { target: { value: "ali.raza@example.invalid" } });
-  fireEvent.change(screen.getByLabelText("Document number"), { target: { value: "AB1234567" } });
+  fireEvent.change(within(screen.getByRole("region", { name: "Customer" })).getByLabelText("Document number"), { target: { value: "AB1234567" } });
   const adult2 = screen.getByRole("region", { name: "Adult 2" });
   fireEvent.change(within(adult2).getByLabelText("Given name"), { target: { value: "Sana" } });
   fireEvent.change(within(adult2).getByLabelText("Surname"), { target: { value: "Raza" } });
-  fireEvent.change(within(adult2).getByLabelText("Passport number"), { target: { value: "CD7654321" } });
+  fireEvent.change(within(adult2).getByLabelText("Document number"), { target: { value: "CD7654321" } });
 }
 
 describe("Hold group seats (step 2)", () => {
@@ -241,7 +241,7 @@ describe("Hold group seats (step 2)", () => {
     // Adult 1 is the saved customer (ticked by default): masked card, no typed identity.
     const adult1 = screen.getByRole("region", { name: "Adult 1" });
     expect(adult1).toHaveTextContent("AB•••4567");
-    expect(within(adult1).queryByLabelText("Passport number")).not.toBeInTheDocument();
+    expect(within(adult1).queryByLabelText("Document number")).not.toBeInTheDocument();
     const adult2 = screen.getByRole("region", { name: "Adult 2" });
     fireEvent.change(within(adult2).getByLabelText("Given name"), { target: { value: "Sana" } });
     fireEvent.change(within(adult2).getByLabelText("Surname"), { target: { value: "Raza" } });

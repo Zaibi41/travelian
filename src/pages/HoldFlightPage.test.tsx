@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 import { ADMIN_DRAFT, STAFF_DRAFT } from "@/test/hold-fixtures";
 import HoldFlightPage from "./HoldFlightPage";
 
+globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+
 const renderHoldPage = (state: unknown, url = "/admin/search/flights/hold?mode=hold") =>
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
@@ -18,7 +20,7 @@ describe("Hold flight page: Selected fare", () => {
   it("shows the flight, fare, baggage, gateway prices, confirmed time and the countdown; no supplier fields for staff", () => {
     renderHoldPage(STAFF_DRAFT);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Hold flight");
-    const summary = screen.getByRole("region", { name: "Selected fare" });
+    const summary = screen.getByRole("complementary", { name: "Selected fare" });
     for (const text of ["South Air", "Z8266", "00:25", "02:35", "LHE", "KHI", "02h 10m · Non-stop", "EB", "No checked baggage", "Rs 13,597", "Rs 15,316", "Fare confirmed at 10:05"]) {
       expect(summary).toHaveTextContent(text);
     }
@@ -29,7 +31,7 @@ describe("Hold flight page: Selected fare", () => {
 
   it("shows provider, supplier cost and margin only when the gateway sent them", () => {
     renderHoldPage(ADMIN_DRAFT);
-    const summary = screen.getByRole("region", { name: "Selected fare" });
+    const summary = screen.getByRole("complementary", { name: "Selected fare" });
     expect(summary).toHaveTextContent("Admin only");
     expect(summary).toHaveTextContent("Provider: southair");
     expect(summary).toHaveTextContent("Supplier cost Rs 15,015 · Margin Rs 301");
@@ -43,6 +45,6 @@ describe("Hold flight page: Selected fare", () => {
   it("without a fare check (reload or direct link) says the fare must be checked again", () => {
     renderHoldPage(null);
     expect(screen.getByText("This fare check has ended")).toBeInTheDocument();
-    expect(screen.queryByRole("region", { name: "Selected fare" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("complementary", { name: "Selected fare" })).not.toBeInTheDocument();
   });
 });

@@ -55,11 +55,11 @@ describe("shared search form parts", () => {
     expect(container.querySelector(".lucide-search")).not.toBeNull();
   });
 
-  it("SearchProductTabs: four tabs with the public icons; the active one is marked", () => {
+  it("SearchProductTabs: three tabs with the public icons (no Umrah); the active one is marked", () => {
     render(<MemoryRouter><SearchProductTabs active="group-ticketing" /></MemoryRouter>);
     const nav = screen.getByRole("navigation", { name: "Search products" });
-    expect(within(nav).getAllByRole("link").map(link => link.textContent)).toEqual(["Flights", "Group Ticketing", "Hotels", "Umrah"]);
-    expect(nav.querySelectorAll("[data-tab-icon]")).toHaveLength(4);
+    expect(within(nav).getAllByRole("link").map(link => link.textContent)).toEqual(["Flights", "Group Ticketing", "Hotels"]);
+    expect(nav.querySelectorAll("[data-tab-icon]")).toHaveLength(3);
     expect(within(nav).getByRole("link", { name: "Group Ticketing" })).toHaveAttribute("aria-current", "page");
     expect(within(nav).getByRole("link", { name: "Flights" })).toHaveAttribute("href", "/admin/search?tab=flights");
   });
