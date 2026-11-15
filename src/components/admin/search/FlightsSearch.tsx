@@ -382,7 +382,7 @@ function Results({ data, search, filters, onFilters, renderFareAction, actionNot
       <StatusLine data={data} />
       <div className={cn("grid min-w-0 grid-cols-1 items-start gap-section-gap", allFlights.length > 0 && "xl:grid-cols-[13rem_minmax(0,1fr)]")}>
         {allFlights.length > 0 && (
-          <aside aria-label="Filters" className="min-w-0 xl:sticky xl:top-4">
+          <aside aria-label="Filters" className="min-w-0">
             {/* Below 1280px: the same filter cards behind one Filters toggle, so the fare tables keep their width. */}
             <details className="group rounded-xl border border-border bg-card shadow-card xl:hidden">
               <summary className="flex h-control cursor-pointer list-none items-center justify-between px-3 text-body font-semibold text-foreground">
@@ -567,8 +567,9 @@ function FlightCard({ journey, flight, data, renderFareAction, actionNotes }: {
           <FlightDetails journey={journey} flight={flight} />
         </div>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[52rem] border-collapse text-table">
+      {/* From 1024px the table fits its card (columns wrap); only phones and tablets scroll it sideways. */}
+      <div className="max-lg:overflow-x-auto">
+        <table className="w-full border-collapse text-table max-lg:min-w-[52rem]">
           <thead>
             <tr className="bg-muted text-left">
               {["Fare", "Meal", "Baggage", "Refund", showsProvider ? "Hold left · Provider" : "Hold left"].map(column => (

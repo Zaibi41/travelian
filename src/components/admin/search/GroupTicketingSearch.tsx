@@ -201,8 +201,9 @@ export function GroupTicketingSearch() {
           ) : rows.length === 0 ? (
             <p className="py-2 text-body text-muted-foreground">No group fares match this search.</p>
           ) : (
-            <div className="relative overflow-x-auto">
-              <table className="w-full min-w-[54rem] border-collapse text-table">
+            // From 1024px the table fits the card; only phones and tablets scroll it sideways.
+            <div className="relative max-lg:overflow-x-auto">
+              <table className="w-full border-collapse text-table max-lg:min-w-[54rem]">
                 <thead>
                   <tr className="bg-muted text-left">
                     {["Departure", "Airline", "Seats left", "Baggage", "Meal", "Price per passenger"].map(column => (
