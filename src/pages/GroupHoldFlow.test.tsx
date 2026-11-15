@@ -77,8 +77,11 @@ beforeEach(() => {
   people.searchPeople.mockResolvedValue({ results: [SAVED] });
 });
 
+const customerField = (label: string) => within(screen.getByRole("region", { name: "Customer" })).getByLabelText(label);
+
 async function fillTravelers() {
-  fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Ali Raza" } });
+  fireEvent.change(customerField("Given name"), { target: { value: "Ali" } });
+  fireEvent.change(customerField("Surname"), { target: { value: "Raza" } });
   fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "+92 300 1234567" } });
   fireEvent.change(screen.getByLabelText("Email"), { target: { value: "ali.raza@example.invalid" } });
   fireEvent.change(within(screen.getByRole("region", { name: "Customer" })).getByLabelText("Document number"), { target: { value: "AB1234567" } });
@@ -86,6 +89,8 @@ async function fillTravelers() {
   fireEvent.change(within(adult2).getByLabelText("Given name"), { target: { value: "Sana" } });
   fireEvent.change(within(adult2).getByLabelText("Surname"), { target: { value: "Raza" } });
   fireEvent.change(within(adult2).getByLabelText("Document number"), { target: { value: "CD7654321" } });
+  fireEvent.change(within(screen.getByRole("region", { name: "Adult 1" })).getByLabelText("Date of birth"), { target: { value: "1988-04-12" } });
+  fireEvent.change(within(adult2).getByLabelText("Date of birth"), { target: { value: "1990-09-23" } });
 }
 
 describe("Hold group seats (step 2)", () => {
@@ -106,11 +111,12 @@ describe("Hold group seats (step 2)", () => {
     expect(fare).not.toHaveTextContent(/Rs\s|dhillu|skypass/);
     expect(within(fare).getByRole("button", { name: "Hold seats" })).toBeEnabled();
     // Adult 1's name and passport come from the customer while "The customer is also Adult 1" is ticked.
-    fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Ali Raza" } });
+    fireEvent.change(customerField("Given name"), { target: { value: "Ali" } });
+    fireEvent.change(customerField("Surname"), { target: { value: "Raza" } });
     const adult1 = screen.getByRole("region", { name: "Adult 1" });
     expect(within(adult1).getByLabelText("Given name")).toHaveValue("Ali");
     expect(within(adult1).getByLabelText("Surname")).toHaveValue("Raza");
-    expect(within(adult1).getByLabelText("Given name")).toHaveAttribute("readonly");
+    expect(within(adult1).getByLabelText("Given name")).not.toHaveAttribute("readonly");  // editable, kept in step with the customer
   });
 
   it("hold success: sends adults only with the customer card, then opens Seats held with the gateway's price", async () => {
@@ -124,7 +130,7 @@ describe("Hold group seats (step 2)", () => {
     const body = gateway.holdGroupSeats.mock.calls[0][0];
     expect(body.ticket_id).toBe("t1");
     expect(body.adults).toBe(2);
-    expect(body.contact).toMatchObject({ full_name: "Ali Raza", phone: "+92 300 1234567", id_type: "PSPT", document_number: "AB1234567", save_for_next_time: true });
+    expect(body.contact).toMatchObject({ first_name: "Ali", last_name: "Raza", phone: "+92 300 1234567", id_type: "PSPT", document_number: "AB1234567", save_for_next_time: true });
     expect(body.passengers.map((p: { type: string }) => p.type)).toEqual(["ADT", "ADT"]);
     expect(body.passengers[0]).toMatchObject({ first_name: "Ali", last_name: "Raza", document_number: "AB1234567", nationality: "PAK", document_country: "PAK", gender: "M" });
     expect(body.passengers[1]).toMatchObject({ first_name: "Sana", last_name: "Raza", document_number: "CD7654321" });
@@ -171,7 +177,8 @@ describe("Hold group seats (step 2)", () => {
     fireEvent.click(within(fare).getByRole("button", { name: "Hold seats" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("The supplier didn't confirm the hold. Check with the supplier before trying again.");
     expect(location.current).toContain("/admin/search/group-ticketing/hold");
-    expect(screen.getByLabelText("Full name")).toHaveValue("Ali Raza");
+    expect(customerField("Given name")).toHaveValue("Ali");
+    expect(customerField("Surname")).toHaveValue("Raza");
     expect(within(fare).getByRole("button", { name: "Hold seats" })).toBeEnabled();
   });
 
@@ -237,7 +244,7 @@ describe("Hold group seats (step 2)", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Use Ali Raza" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(screen.getByRole("region", { name: "Customer" })).toHaveTextContent("Saved customer");
-    expect(screen.queryByLabelText("Full name")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Customer" })).queryByLabelText("Given name")).not.toBeInTheDocument();
     // Adult 1 is the saved customer (ticked by default): masked card, no typed identity.
     const adult1 = screen.getByRole("region", { name: "Adult 1" });
     expect(adult1).toHaveTextContent("AB•••4567");
@@ -245,6 +252,7 @@ describe("Hold group seats (step 2)", () => {
     const adult2 = screen.getByRole("region", { name: "Adult 2" });
     fireEvent.change(within(adult2).getByLabelText("Given name"), { target: { value: "Sana" } });
     fireEvent.change(within(adult2).getByLabelText("Surname"), { target: { value: "Raza" } });
+    fireEvent.change(within(adult2).getByLabelText("Date of birth"), { target: { value: "1990-09-23" } });
     fireEvent.click(within(fare).getByRole("button", { name: "Hold seats" }));
     await waitFor(() => expect(gateway.holdGroupSeats).toHaveBeenCalled());
     const body = gateway.holdGroupSeats.mock.calls[0][0];

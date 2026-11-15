@@ -74,6 +74,26 @@ async function open(page: Page, width: number, { changed = false, holdError = fa
   await expect(page.getByRole("region", { name: "Results" })).toBeVisible();
 }
 
+/** A typed day-first date, as staff type it ("12/04/1988"), then leave the field. */
+async function typeDate(field: ReturnType<Page["getByLabel"]>, dayFirst: string) {
+  await field.fill(dayFirst);
+  await field.blur();
+}
+
+/** The fields the form needs before it calls the gateway: the customer (who is Adult 1), Adult 1's birth date, the infant. */
+async function fillRequired(page: Page) {
+  const customer = page.getByRole("region", { name: "Customer" });
+  await customer.getByLabel("Given name").fill("Muhammad Abdullah");
+  await customer.getByLabel("Surname").fill("Rehmanullah Khan Durrani");
+  await customer.getByLabel("Phone").fill("+92 300 1234567");
+  await customer.getByLabel("Email").fill("a.very.long.customer.address@example.invalid");
+  await typeDate(page.getByRole("region", { name: "Adult 1" }).getByLabel("Date of birth", { exact: true }), "12/04/1990");
+  const infant = page.getByRole("region", { name: "Infant 1" });
+  await infant.getByLabel("Given name").fill("Baby");
+  await infant.getByLabel("Surname").fill("Passenger");
+  await typeDate(infant.getByLabel("Date of birth", { exact: true }), "01/01/2026");
+}
+
 const overflow = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
 for (const width of [1280, 1366, 1440, 1920]) {
@@ -85,6 +105,7 @@ for (const width of [1280, 1366, 1440, 1920]) {
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `hold form at ${width}px`);
     if (width === 1440) await docsShot(page, "hold-form-flights-1440");
+    await fillRequired(page);
     await page.getByRole("button", { name: "Hold seats" }).click();
     await expect(page.getByRole("heading", { name: "Hold result" })).toBeVisible();
     await expect(page.getByRole("region", { name: "Travelers" })).toContainText("••••••567");
@@ -109,6 +130,7 @@ for (const width of [1280, 1366, 1440, 1920]) {
   test(`hold problem state fits at ${width}px`, async ({ page }) => {
     await open(page, width, { holdError: true });
     await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
+    await fillRequired(page);
     await page.getByRole("button", { name: "Hold seats" }).click();
     const card = page.getByRole("region", { name: "The total couldn't be verified, so nothing was saved" });
     await expect(card).toBeVisible();

@@ -2166,8 +2166,13 @@ export interface components {
             /** Email */
             email?: string | null;
             /**
+             * First Name
+             * @description Given name(s), as on the document.
+             */
+            first_name?: string | null;
+            /**
              * Full Name
-             * @description Given name(s) and surname; the last word is the surname.
+             * @description Older clients: given name(s) and surname; the last word is the surname.
              */
             full_name?: string | null;
             /**
@@ -2175,6 +2180,11 @@ export interface components {
              * @description The customer's document: passport or CNIC.
              */
             id_type?: ("PSPT" | "NATI") | null;
+            /**
+             * Last Name
+             * @description Surname, as on the document. Airlines need both parts.
+             */
+            last_name?: string | null;
             /**
              * Phone
              * @description With country code, e.g. +92 300 1234567. A Pakistani number may start with 0.

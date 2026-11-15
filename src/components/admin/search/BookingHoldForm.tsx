@@ -44,7 +44,9 @@ const genderOf = (title: Title): Gender => (title === "MR" || title === "MASTER"
 
 export interface BookingCustomer {
   query: string;
-  full_name: string;
+  /** Given name(s) and surname, as on the document (airlines need both). */
+  first_name: string;
+  last_name: string;
   phone: string;
   email: string;
   id_type: IdType;
@@ -77,7 +79,7 @@ export interface BookingTraveler {
 export interface PassengerCounts { adults: number; children: number; infants: number }
 
 export const blankCustomer = (): BookingCustomer => ({
-  query: "", full_name: "", phone: "", email: "", id_type: "PSPT", document_number: "", alsoAdult1: true, save: true, saved: null,
+  query: "", first_name: "", last_name: "", phone: "", email: "", id_type: "PSPT", document_number: "", alsoAdult1: true, save: true, saved: null,
 });
 
 export const blankTraveler = (type: PassengerType = "ADT", travelsWith = 0): BookingTraveler => ({
@@ -95,10 +97,26 @@ export function initialTravelers({ adults, children, infants }: PassengerCounts)
   ];
 }
 
-/** "Ali Raza" -> given "Ali", surname "Raza": shown on Adult 1 when the customer is Adult 1 (the gateway splits it the same way). */
-export function splitFullName(name: string) {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  return words.length < 2 ? { first: words[0] ?? "", last: "" } : { first: words.slice(0, -1).join(" "), last: words[words.length - 1] };
+/** The fields Adult 1 shares with the customer while "The customer is also Adult 1" is ticked (one value, editable on both). */
+const MIRRORED = ["first_name", "last_name", "id_type", "document_number"] as const;
+type MirroredField = (typeof MIRRORED)[number];
+
+/** The form's labels for the gateway's field names, so messages say "Surname is required", not "last_name". */
+const FIELD_LABELS: Record<string, string> = {
+  first_name: "Given name", last_name: "Surname", full_name: "Given name and surname", phone: "Phone", phone_code: "Phone", email: "Email",
+  title: "Title", gender: "Gender", date_of_birth: "Date of birth", nationality: "Nationality", id_type: "Document type",
+  document_number: "Document number", document_expiry: "Document expiry", document_country: "Issuing country", travels_with: "Travels with",
+  selling_price_per_adult: "Selling price per adult",
+};
+
+/** A field error in the form's words: "Surname is required" for a missing value, "Email isn't valid" for a pattern
+ *  the gateway rejects; the gateway's own sentence otherwise. */
+function fieldMessage(key: string, message: string) {
+  const label = FIELD_LABELS[key.split(".").pop() ?? ""];
+  if (!label) return message;
+  if (/^(field )?required\b|^required[.:]|missing|is required/i.test(message)) return `${label} is required`;
+  if (/should match pattern|string_pattern|not a valid/i.test(message)) return `${label} isn't valid`;
+  return message;
 }
 
 /** The saved person a card uses: Adult 1 takes the saved customer when "The customer is also Adult 1". */
@@ -118,7 +136,7 @@ export function customerCard(customer: BookingCustomer) {
   return customer.saved
     ? { customer_id: customer.saved.id, ...typed, save_for_next_time: true }
     : {
-      full_name: customer.full_name.trim(), phone: customer.phone.trim(), email: customer.email.trim(), id_type: customer.id_type,
+      first_name: customer.first_name.trim(), last_name: customer.last_name.trim(), phone: customer.phone.trim(), email: customer.email.trim(), id_type: customer.id_type,
       document_number: optional(customer.document_number), save_for_next_time: customer.save,
     };
 }
@@ -133,7 +151,7 @@ export function passengerRequest(traveler: BookingTraveler, index: number, custo
     return { type: traveler.type, title: traveler.title, ...gender, traveler_id: saved.id, ...(document ? { document_id: document } : {}), ...infant, save_for_next_time: true };
   }
   const fromCustomer = index === 0 && customer.alsoAdult1;
-  const name = fromCustomer ? splitFullName(customer.full_name) : { first: traveler.first_name, last: traveler.last_name };
+  const name = fromCustomer ? { first: customer.first_name, last: customer.last_name } : { first: traveler.first_name, last: traveler.last_name };
   const idType = fromCustomer ? customer.id_type : traveler.id_type;
   const number = fromCustomer ? customer.document_number : traveler.document_number;
   return {
@@ -250,11 +268,42 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
   const [localErrors, setLocalErrors] = useState<FormErrors | null>(null);
   const [picking, setPicking] = useState<"customer" | number | null>(null);
   const shown = localErrors ?? errors;
-  const fieldError = (key: string) => shown.fields[key]?.join(" ");
+  const fieldError = (key: string) => shown.fields[key]?.map(message => fieldMessage(key, message)).join(" ");
   const sellingText = selling ?? (defaultSelling ? String(Math.round(defaultSelling.amount_minor / 100)) : "");
   const adults = travelers.filter(traveler => traveler.type === "ADT").length;
   const setTraveler = (index: number, change: Partial<BookingTraveler>) =>
     setTravelers(current => current.map((traveler, i) => (i === index ? { ...traveler, ...change } : traveler)));
+  /** Adult 1 shares its name and document with the typed customer while "The customer is also Adult 1" is ticked. */
+  const mirrored = (index: number) => index === 0 && customer.alsoAdult1 && !customer.saved;
+  const travelerValue = (index: number, field: MirroredField) => (mirrored(index) ? customer[field] : travelers[index][field]);
+  const setTravelerValue = (index: number, field: MirroredField, value: string) => (mirrored(index)
+    ? setCustomer(current => ({ ...current, [field]: value }))
+    : setTraveler(index, { [field]: value } as Partial<BookingTraveler>));
+  const setAlsoAdult1 = (alsoAdult1: boolean) => {
+    // Unticking keeps what Adult 1 showed, so nothing typed is lost.
+    if (!alsoAdult1 && !customer.saved) setTraveler(0, Object.fromEntries(MIRRORED.map(field => [field, customer[field]])) as Partial<BookingTraveler>);
+    setCustomer(current => ({ ...current, alsoAdult1 }));
+  };
+
+  const cardLabel = (index: number) => {
+    const traveler = travelers[index];
+    return traveler ? `${TYPE_LABEL[traveler.type]} ${travelers.slice(0, index + 1).filter(other => other.type === traveler.type).length}` : `Traveler ${index + 1}`;
+  };
+
+  /** Required before calling the gateway: the customer's name, phone and email (typed); each typed traveler's name and
+   *  date of birth. Each missing field gets its message under it; the banner lists them. */
+  const missingFields = () => {
+    const fields: Record<string, string[]> = {};
+    const need = (key: string, value: string) => { if (!value.trim()) fields[key] = [`${FIELD_LABELS[key.split(".").pop()!]} is required`]; };
+    if (!customer.saved) for (const name of ["first_name", "last_name", "phone", "email"] as const) need(`contact.${name}`, customer[name]);
+    travelers.forEach((traveler, index) => {
+      if (savedFor(index, traveler, customer)) return;
+      need(`passengers.${index}.first_name`, travelerValue(index, "first_name"));
+      need(`passengers.${index}.last_name`, travelerValue(index, "last_name"));
+      need(`passengers.${index}.date_of_birth`, traveler.date_of_birth);
+    });
+    return fields;
+  };
 
   const submit = () => {
     if (!canSubmit) return;
@@ -266,6 +315,11 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
       setLocalErrors({ fields: { [`passengers.${noDocument}`]: ["Choose which saved document travels."] }, message: "Choose which saved document each saved traveler uses." });
       return;
     }
+    const missing = missingFields();
+    if (Object.keys(missing).length) {
+      setLocalErrors({ fields: missing, message: null });
+      return;
+    }
     const rupees = sellingText.trim();
     if (defaultSelling && !/^[1-9]\d*$/.test(rupees)) {
       setLocalErrors({ fields: { selling_price_per_adult: ["Enter the selling price in whole rupees."] }, message: "Check the selling price." });
@@ -275,9 +329,10 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
     onSubmit({ customer, travelers, sellingPerAdult: defaultSelling ? { amount_minor: Number(rupees) * 100, currency: defaultSelling.currency } : null });
   };
 
-  const customerInput = (name: "full_name" | "phone" | "email" | "document_number", label: string, placeholder: string, type = "text") => (
+  const customerInput = (name: "first_name" | "last_name" | "phone" | "email" | "document_number", label: string, placeholder: string, type = "text") => (
     <Field id={`customer-${name}`} label={label} error={fieldError(`contact.${name}`)}>
-      <Input id={`customer-${name}`} type={type} value={customer[name]} placeholder={placeholder} autoComplete="off" maxLength={name === "email" ? 50 : name === "document_number" ? 20 : 60}
+      <Input id={`customer-${name}`} type={type} value={customer[name]} placeholder={placeholder} autoComplete="off"
+        maxLength={name === "email" ? 50 : name === "document_number" ? 20 : name === "phone" ? 24 : 30}
         aria-invalid={Boolean(fieldError(`contact.${name}`))} aria-describedby={fieldError(`contact.${name}`) ? `customer-${name}-error` : undefined}
         onChange={event => setCustomer({ ...customer, [name]: event.target.value })} />
     </Field>
@@ -317,8 +372,9 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {customerInput("full_name", "Full name", "Given name and surname")}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {customerInput("first_name", "Given name", "As on the document")}
+                {customerInput("last_name", "Surname", "As on the document")}
                 {customerInput("phone", "Phone", "+92 300 1234567", "tel")}
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)_minmax(0,1fr)]">
@@ -332,7 +388,7 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
           )}
           <div className="flex flex-col gap-2">
             <label className="flex items-center gap-2 text-body text-foreground">
-              <Checkbox checked={customer.alsoAdult1} onCheckedChange={checked => setCustomer({ ...customer, alsoAdult1: checked === true })} />
+              <Checkbox checked={customer.alsoAdult1} onCheckedChange={checked => setAlsoAdult1(checked === true)} />
               The customer is also Adult 1
             </label>
             {!customer.saved && (
@@ -355,8 +411,6 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
           const id = (field: string) => `traveler-${index}-${field}`;
           const saved = savedFor(index, traveler, customer);
           const savedCustomerIsAdult1 = index === 0 && customer.alsoAdult1 && Boolean(customer.saved);
-          const fromCustomer = index === 0 && customer.alsoAdult1 && !customer.saved;
-          const name = fromCustomer ? splitFullName(customer.full_name) : null;
           const titleSelect = (
             <Field id={id("title")} label="Title" error={fieldError(key("title"))}>
               <Select value={traveler.title} onValueChange={value => setTraveler(index, { title: value as Title, gender: genderOf(value as Title) })}>
@@ -381,11 +435,12 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
               </Select>
             </Field>
           );
-          const text = (field: "first_name" | "last_name" | "document_number", fieldLabel: string, value: string, readOnly: boolean) => (
+          // Always editable; on Adult 1 with "The customer is also Adult 1" the value is the customer's, kept in step both ways.
+          const text = (field: "first_name" | "last_name" | "document_number", fieldLabel: string) => (
             <Field id={id(field)} label={fieldLabel} error={fieldError(key(field))}>
-              <Input id={id(field)} value={value} readOnly={readOnly} autoComplete="off" maxLength={field === "document_number" ? 20 : 25}
+              <Input id={id(field)} value={travelerValue(index, field)} autoComplete="off" maxLength={field === "document_number" ? 20 : 25}
                 aria-invalid={Boolean(fieldError(key(field)))} aria-describedby={fieldError(key(field)) ? `${id(field)}-error` : undefined}
-                className={cn(readOnly && "bg-muted/40")} onChange={event => setTraveler(index, { [field]: event.target.value })} />
+                onChange={event => setTravelerValue(index, field, event.target.value)} />
             </Field>
           );
           const date = (field: "date_of_birth" | "document_expiry", fieldLabel: string, hint?: string) => (
@@ -415,9 +470,15 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
               {fieldError(`passengers.${index}`) && <p role="alert" className="text-body text-status-critical-text">{fieldError(`passengers.${index}`)}</p>}
               {saved ? (
                 <div className="flex flex-col gap-3">
-                  <div className="grid grid-cols-2 gap-3 sm:max-w-md">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {titleSelect}
                     {genderSelect}
+                    {/* Locked: the saved record holds the document (choose another saved document below, or type details instead). */}
+                    <Field id={id("id_type")} label="Document type">
+                      <DocumentTypeSelect id={id("id_type")} disabled
+                        value={(saved.documents.find(document => document.id === documentFor(traveler, saved)) ?? saved.documents[0])?.id_type === "NATI" ? "NATI" : "PSPT"}
+                        onChange={() => undefined} />
+                    </Field>
                     {travelsWith}
                   </div>
                   <SavedCard person={saved} label={savedCustomerIsAdult1 ? "Saved customer" : "Saved traveler"}
@@ -433,8 +494,8 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
                 <>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,0.6fr)_minmax(0,1.2fr)_minmax(0,1.2fr)]">
                     {titleSelect}
-                    {text("first_name", "Given name", name ? name.first : traveler.first_name, Boolean(name))}
-                    {text("last_name", "Surname", name ? name.last : traveler.last_name, Boolean(name))}
+                    {text("first_name", "Given name")}
+                    {text("last_name", "Surname")}
                   </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {genderSelect}
@@ -443,10 +504,10 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
                   </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
                     <Field id={id("id_type")} label="Document type" error={fieldError(key("id_type"))}>
-                      <DocumentTypeSelect id={id("id_type")} value={fromCustomer ? customer.id_type : traveler.id_type} disabled={fromCustomer}
-                        onChange={id_type => setTraveler(index, { id_type })} />
+                      <DocumentTypeSelect id={id("id_type")} value={travelerValue(index, "id_type") as IdType}
+                        onChange={id_type => setTravelerValue(index, "id_type", id_type)} />
                     </Field>
-                    {text("document_number", "Document number", fromCustomer ? customer.document_number : traveler.document_number, fromCustomer)}
+                    {text("document_number", "Document number")}
                   </div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {date("document_expiry", "Document expiry")}
@@ -480,7 +541,20 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
           </section>
         )}
 
-        {shown.message && <Notice tone="critical">{shown.message}</Notice>}
+        {(() => {
+          // The banner names the fields to fix, in the form's words ("Surname (Adult 1)"), else the gateway's sentence.
+          const fields = Object.keys(shown.fields).filter(key => FIELD_LABELS[key.split(".").pop() ?? ""]).map(key => {
+            const [scope, position] = key.split(".");
+            const where = scope === "contact" ? "Customer" : scope === "passengers" ? cardLabel(Number(position)) : null;
+            return `${FIELD_LABELS[key.split(".").pop()!]}${where ? ` (${where})` : ""}`;
+          });
+          const unique = [...new Set(fields)];
+          const list = unique.length ? `Check ${unique.length === 1 ? "this field" : "these fields"}: ${unique.join(", ")}.` : null;
+          // A specific sentence from the gateway ("Sana is under 12 ...") stays; a generic one gives way to the list.
+          const generic = !shown.message || /^(some details need correcting|check the customer's details)/i.test(shown.message);
+          const text = [generic && list ? null : shown.message, list].filter(Boolean).join(" ");
+          return text ? <Notice tone="critical">{text}</Notice> : null;
+        })()}
       </form>
 
       {/* Outside the form: the picker's own search form must not submit the booking form (React events bubble through portals). */}

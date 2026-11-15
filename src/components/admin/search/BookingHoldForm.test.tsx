@@ -56,9 +56,25 @@ function chooseCountry(card: HTMLElement, label: string, search: string, option:
 
 function fillCustomer() {
   const customer = screen.getByRole("region", { name: "Customer" });
-  type("Full name", "Test Customer", customer);
+  type("Given name", "Test", customer);
+  type("Surname", "Customer", customer);
   type("Phone", "+92 300 1234567", customer);
   type("Email", "ops@example.invalid", customer);
+}
+
+/** The infant's required fields (STAFF_DRAFT is 1 adult and 1 infant). */
+function fillInfant() {
+  const infant = screen.getByRole("region", { name: "Infant 1" });
+  type("Given name", "Baby", infant);
+  type("Surname", "Passenger", infant);
+  type("Date of birth", "2026-01-01", infant);
+}
+
+/** Everything the form needs before it calls the gateway: the customer (who is Adult 1), Adult 1's birth date, the infant. */
+function fillRequired() {
+  fillCustomer();
+  type("Date of birth", "1990-01-01", screen.getByRole("region", { name: "Adult 1" }));
+  fillInfant();
 }
 
 describe("Shared booking form on the Flights hold page", () => {
@@ -72,7 +88,7 @@ describe("Shared booking form on the Flights hold page", () => {
   it("has the Group customer section and one card per traveler from the search counts, with empty identity fields", () => {
     renderPage(STAFF_DRAFT);
     const customer = screen.getByRole("region", { name: "Customer" });
-    for (const label of ["Find saved customer", "Full name", "Phone", "Email", "Document type", "Document number"]) expect(within(customer).getByLabelText(label)).toBeInTheDocument();
+    for (const label of ["Find saved customer", "Given name", "Surname", "Phone", "Email", "Document type", "Document number"]) expect(within(customer).getByLabelText(label)).toBeInTheDocument();
     expect(within(customer).getByRole("checkbox", { name: "The customer is also Adult 1" })).toBeChecked();
     expect(within(customer).getByRole("checkbox", { name: "Save this customer for next time" })).toBeChecked();
     const adult = screen.getByRole("region", { name: "Adult 1" });
@@ -118,7 +134,7 @@ describe("Shared booking form on the Flights hold page", () => {
     const request = gateway.hold.mock.calls[0][0];
     expect(request).toMatchObject({
       quote_id: "q1", confirmed_total: rs(15_316), accept_price_change: true,
-      customer: { full_name: "Test Customer", phone: "+92 300 1234567", email: "ops@example.invalid", id_type: "PSPT", document_number: "AB1234567" },
+      customer: { first_name: "Test", last_name: "Customer", phone: "+92 300 1234567", email: "ops@example.invalid", id_type: "PSPT", document_number: "AB1234567" },
     });
     expect(request).not.toHaveProperty("contact");
     expect(request.passengers[0]).not.toHaveProperty("gender");
@@ -136,8 +152,11 @@ describe("Shared booking form on the Flights hold page", () => {
       { path: ["passengers", 0], message: "Test: passport number, issuing country, passport expiry required for a passport." },
     ]));
     renderPage(STAFF_DRAFT);
+    fillRequired();
     fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
-    expect(await screen.findByLabelText("Email", { selector: "input" })).toHaveAccessibleDescription(/String should match pattern/);
+    // In the form's words under each field, and the banner lists the fields by label.
+    expect(await screen.findByLabelText("Email", { selector: "input" })).toHaveAccessibleDescription("Email isn't valid");
+    expect(screen.getByText("Check these fields: Email (Customer), Given name (Adult 1).")).toBeInTheDocument();
     const adult = screen.getByRole("region", { name: "Adult 1" });
     expect(within(adult).getByLabelText("Given name")).toHaveAttribute("aria-invalid", "true");
     expect(within(adult).getByRole("alert")).toHaveTextContent("passport number, issuing country, passport expiry required for a passport.");
@@ -147,6 +166,7 @@ describe("Shared booking form on the Flights hold page", () => {
   it("shows the gateway's own message when a rule refuses the hold", async () => {
     gateway.hold.mockRejectedValue(new GatewayError("unavailable", "Test's passport expires before the last travel date.", 422, undefined));
     renderPage(STAFF_DRAFT);
+    fillRequired();
     fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
     expect(await screen.findByText("Test's passport expires before the last travel date.")).toBeInTheDocument();
   });
@@ -154,6 +174,7 @@ describe("Shared booking form on the Flights hold page", () => {
   it.each(["booking_off", "not_confirmed_hold", "not_saved", "total_unverified"])("%s goes to the result page's problem state", async code => {
     gateway.hold.mockRejectedValue(new GatewayError("unavailable", `message for ${code}`, 409, code, [], { pnr: "5D8242" }));
     renderPage(STAFF_DRAFT);
+    fillRequired();
     fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
     expect(await screen.findByRole("heading", { name: "Result page" })).toBeInTheDocument();
     expect(result.state).toMatchObject({ kind: "problem", code, message: `message for ${code}`, extra: { pnr: "5D8242" } });
@@ -164,6 +185,7 @@ describe("Shared booking form on the Flights hold page", () => {
     gateway.reprice.mockResolvedValue({ ...STAFF_DRAFT.quote, quote_id: "q2", price_changed: true, new_total: rs(16_000), selling_total: rs(16_000),
       old_price_per_adult: rs(13_597), new_price_per_adult: rs(14_281), price_difference_per_adult: rs(684) });
     renderPage(STAFF_DRAFT);
+    fillRequired();
     fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
     const dialog = await screen.findByRole("dialog", { name: "The fare price has changed" });
     expect(dialog).toHaveTextContent("Up Rs 684");
@@ -199,6 +221,82 @@ describe("Shared booking form on the Flights hold page", () => {
     gateway.reprice.mockRejectedValue(new GatewayError("unavailable", "This fare is no longer available. Search again and choose another fare.", 409, "fare_gone"));
     renderPage(expired);
     expect(await screen.findByRole("dialog", { name: "This fare is no longer available" })).toBeInTheDocument();
+  });
+});
+
+describe("the customer is also Adult 1: given name and surname, editable both ways", () => {
+  beforeEach(() => {
+    gateway.hold.mockReset();
+    gateway.people.mockReset();
+  });
+
+  it("a two-word given name and a surname fill Adult 1 one-to-one; both stay editable and a change on either side updates the other", () => {
+    renderPage(STAFF_DRAFT);
+    const customer = screen.getByRole("region", { name: "Customer" });
+    const adult = screen.getByRole("region", { name: "Adult 1" });
+    type("Given name", "Ali Hassan", customer);
+    type("Surname", "Raza", customer);
+    expect(within(adult).getByLabelText("Given name")).toHaveValue("Ali Hassan");
+    expect(within(adult).getByLabelText("Surname")).toHaveValue("Raza");
+    for (const label of ["Given name", "Surname", "Document number"]) expect(within(adult).getByLabelText(label)).not.toHaveAttribute("readonly");
+    type("Surname", "Raza Khan", adult);                                       // edited on Adult 1 ...
+    expect(within(customer).getByLabelText("Surname")).toHaveValue("Raza Khan");  // ... shows on the customer
+    type("Document number", "AB1234567", customer);
+    expect(within(adult).getByLabelText("Document number")).toHaveValue("AB1234567");
+  });
+
+  it("a one-word name: Adult 1's Surname is empty and editable; Hold stops before the gateway with 'Surname is required' under the field", async () => {
+    renderPage(STAFF_DRAFT);
+    const customer = screen.getByRole("region", { name: "Customer" });
+    const adult = screen.getByRole("region", { name: "Adult 1" });
+    type("Given name", "Customer", customer);
+    type("Phone", "+92 300 1234567", customer);
+    type("Email", "ops@example.invalid", customer);
+    type("Date of birth", "1990-01-01", adult);
+    fillInfant();
+    const surname = within(adult).getByLabelText("Surname");
+    expect(surname).toHaveValue("");
+    expect(surname).not.toHaveAttribute("readonly");
+    fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+    expect(await within(adult).findByText("Surname is required")).toBeInTheDocument();
+    expect(surname).toHaveAccessibleDescription("Surname is required");
+    expect(within(customer).getByLabelText("Surname")).toHaveAccessibleDescription("Surname is required");
+    expect(screen.getByText("Check these fields: Surname (Customer), Surname (Adult 1).")).toBeInTheDocument();
+    expect(screen.queryByText(/last_name|Required:/)).not.toBeInTheDocument();
+    expect(gateway.hold).not.toHaveBeenCalled();
+    type("Surname", "Raza", adult);                                             // fixed on Adult 1, filled for the customer too
+    gateway.hold.mockResolvedValue({ booking_id: "TRV-1", pnr: "ABC123", selling_total: rs(15_316), label: "UAT test data", warnings: [] });
+    fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+    await waitFor(() => expect(gateway.hold).toHaveBeenCalledOnce());
+    expect(gateway.hold.mock.calls[0][0].customer).toMatchObject({ first_name: "Customer", last_name: "Raza" });
+    expect(gateway.hold.mock.calls[0][0].passengers[0]).toMatchObject({ first_name: "Customer", last_name: "Raza" });
+  });
+
+  it("the gateway's 'Required: last_name' becomes 'Surname is required' under the field", async () => {
+    gateway.hold.mockRejectedValue(new GatewayError("unavailable", "Some details need correcting.", 422, "invalid_customer",
+      [{ path: ["contact", "last_name"], message: "Required: last_name." }]));
+    renderPage(STAFF_DRAFT);
+    fillRequired();
+    fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+    const surname = within(screen.getByRole("region", { name: "Customer" })).getByLabelText("Surname");
+    await waitFor(() => expect(surname).toHaveAccessibleDescription("Surname is required"));
+    expect(screen.getByText("Check this field: Surname (Customer).")).toBeInTheDocument();
+  });
+
+  it("Document type is locked only for a saved traveler; a typed traveler (Adult 1 mirrored, or the infant) can change it", async () => {
+    gateway.people.mockResolvedValue({ results: [{ id: "p-00000009", title: "MISS", first_name: "Baby", last_name: "Khan", birth_year: 2026, documents: [
+      { id: "d-00000009", id_type: "PSPT", document_country: "PAK", document_number_masked: "••••••999", document_expiry_masked: "2031", document_validity: "valid" }],
+      match: "name" }], can_manage: true, can_merge: false });
+    renderPage(STAFF_DRAFT);
+    expect(within(screen.getByRole("region", { name: "Adult 1" })).getByRole("combobox", { name: "Document type" })).toBeEnabled();
+    const infant = screen.getByRole("region", { name: "Infant 1" });
+    expect(within(infant).getByRole("combobox", { name: "Document type" })).toBeEnabled();
+    fireEvent.click(within(infant).getByRole("button", { name: "Use saved traveler, Infant 1" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Mobile number, CNIC, passport, email or name"), { target: { value: "Baby" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Search" }));
+    fireEvent.click(await within(dialog).findByRole("button", { name: "Use Baby Khan" }));
+    expect(within(screen.getByRole("region", { name: "Infant 1" })).getByRole("combobox", { name: "Document type" })).toBeDisabled();
   });
 });
 
@@ -242,6 +340,7 @@ describe("country dropdowns on the hold form", () => {
     fireEvent.change(input, { target: { value: "united kingdom" } });
     fireEvent.keyDown(input, { key: "Enter" });
     expect(trigger).toHaveTextContent("United Kingdom");
+    fillRequired();
     fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
     await waitFor(() => expect(gateway.hold).toHaveBeenCalledTimes(1));
     expect(gateway.hold.mock.calls[0][0].passengers[1]).toMatchObject({ type: "INF", document_country: "GBR" });
@@ -253,9 +352,10 @@ describe("country dropdowns on the hold form", () => {
       { path: ["passengers", 0, "nationality"], message: "String should match pattern '^[A-Z]{3}$'" },
     ]));
     renderPage(STAFF_DRAFT);
+    fillRequired();
     fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
     const field = await within(screen.getByRole("region", { name: "Adult 1" })).findByRole("combobox", { name: "Nationality" });
-    await waitFor(() => expect(field).toHaveAccessibleDescription("String should match pattern '^[A-Z]{3}$'"));
+    await waitFor(() => expect(field).toHaveAccessibleDescription("Nationality isn't valid"));
     expect(field).toHaveAttribute("aria-invalid", "true");
   });
 
@@ -329,8 +429,7 @@ describe("country dropdowns on the hold form", () => {
       expect(customer).toHaveTextContent("Passport ••••••567");
       expect(customer).toHaveTextContent("+92 •••••••567 · a•••@example.invalid");    // the saved phone and email, masked
       expect(within(customer).queryByLabelText("Phone")).not.toBeInTheDocument();     // nothing to retype
-      const infant = screen.getByRole("region", { name: "Infant 1" });
-      fireEvent.change(within(infant).getByLabelText("Given name"), { target: { value: "Baby" } });
+      fillInfant();
       fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
       expect(await screen.findByRole("heading", { name: "Result page" })).toBeInTheDocument();
       expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -369,8 +468,9 @@ describe("country dropdowns on the hold form", () => {
       const customer = screen.getByRole("region", { name: "Customer" });
       await pick(within(customer).getByRole("button", { name: "Find" }), "Ali", "Ali Khan");
       expect(customer).toHaveTextContent("Ali Khan");
+      fillInfant();
       fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
-      expect(await within(customer).findByLabelText("Phone")).toBeInTheDocument();
+      expect(await within(customer).findByLabelText("Phone")).toHaveAccessibleDescription("Phone is required");
       type("Phone", "+92 300 1234567", customer);
       type("Email", "ali@example.invalid", customer);
       gateway.hold.mockResolvedValue({ booking_id: "TRV-1", pnr: "ABC123", selling_total: rs(15_316) });
@@ -406,8 +506,8 @@ describe("one shared booking form on both hold routes", () => {
       expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Traveler details");
       expect(screen.getByRole("form", { name: "Traveler details" })).toBeInTheDocument();
       const customer = screen.getByRole("region", { name: "Customer" });
-      expect(within(customer).getAllByText(/Find saved customer|Full name|Phone|Email|Document type|Document number/).map(node => node.textContent))
-        .toEqual(["Find saved customer", "Full name", "Phone", "Email", "Document type", "Document number"]);
+      expect(within(customer).getAllByText(/Find saved customer|Given name|Surname|Phone|Email|Document type|Document number/).map(node => node.textContent))
+        .toEqual(["Find saved customer", "Given name", "Surname", "Phone", "Email", "Document type", "Document number"]);
       expect(screen.getByText(/Passport, ID number and date of birth are never shown in full here/)).toBeInTheDocument();
       const panel = await screen.findByRole("complementary");
       expect(within(panel).getByRole("button", { name: "Hold seats" })).toHaveAttribute("form");

@@ -83,7 +83,9 @@ for (const width of [1440, 390]) {
     await results.getByRole("button", { name: /^Hold seats, Fly Jinnah/ }).click();
     await expect(page.getByRole("heading", { name: "Hold group seats", level: 1 })).toBeVisible();
     await expect(page.getByRole("complementary", { name: "Selected group fare" })).toContainText("Price");
-    await page.getByLabel("Full name").fill("Ali Raza");
+    const customer = page.getByRole("region", { name: "Customer" });
+    await customer.getByLabel("Given name").fill("Ali");
+    await customer.getByLabel("Surname").fill("Raza");
     await page.getByLabel("Phone").fill("+92 300 1234567");
     await page.getByLabel("Email").fill("ali.raza@example.invalid");
     await page.getByRole("region", { name: "Customer" }).getByLabel("Document number").fill("AB1234567");
@@ -91,6 +93,11 @@ for (const width of [1440, 390]) {
     await adult2.getByLabel("Given name").fill("Sana");
     await adult2.getByLabel("Surname").fill("Raza");
     await adult2.getByLabel("Document number").fill("CD7654321");
+    for (const [card, born] of [["Adult 1", "12/04/1988"], ["Adult 2", "23/09/1990"]]) {
+      const date = page.getByRole("region", { name: card }).getByLabel("Date of birth", { exact: true });
+      await date.fill(born);
+      await date.blur();
+    }
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `traveler details at ${width}px`);
     await shot(page, `admin-group-hold-form-${width}`);
