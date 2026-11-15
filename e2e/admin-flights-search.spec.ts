@@ -92,15 +92,19 @@ for (const width of [1920, 1440, 1366, 1280, 1024, 768, 390]) {
 
 test("cabin, provider and flight details open attached, above the page, and close", async ({ page }) => {
   await openFlights(page, 1440);
-  // Travelers and cabin in one picker: Economy chosen, the other cabins off with the reason.
-  const picker = page.getByRole("button", { name: "Travelers and cabin 1 adult · Economy" });
-  await picker.click();
+  await page.getByRole("combobox", { name: "Cabin Class" }).click();
+  await expect(page.getByRole("option", { name: "Economy", exact: true })).toBeEnabled();
+  for (const cabin of ["Premium Economy", "Business", "First"]) {
+    await expect(page.getByRole("option", { name: new RegExp(`^${cabin}`) })).toHaveAttribute("aria-disabled", "true");
+  }
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("listbox")).toHaveCount(0);
+  // Travelers opens attached under its button, above the page.
+  const travelers = page.getByRole("button", { name: "Travelers: 1 adult" });
+  await travelers.click();
   const popup = page.getByRole("dialog");
-  await expect(popup.getByRole("radio", { name: "Economy", exact: true })).toBeChecked();
-  for (const cabin of ["Premium Economy", "Business", "First"]) await expect(popup.getByRole("radio", { name: new RegExp(`^${cabin}`) })).toBeDisabled();
-  const field = (await picker.boundingBox())!;
-  const box = (await popup.boundingBox())!;
-  expect(box.y).toBeGreaterThanOrEqual(field.y + field.height - 2);
+  await expect(popup.getByRole("button", { name: "Fewer adults" })).toBeDisabled();
+  expect((await popup.boundingBox())!.y).toBeGreaterThanOrEqual((await travelers.boundingBox())!.y);
   await page.keyboard.press("Escape");
   await expect(popup).toHaveCount(0);
 
@@ -149,10 +153,19 @@ for (const width of [1920, 1440, 1280]) {
     await expect(page.locator(".admin-search-row")).not.toContainText("Allama Iqbal");
     await expectRowAligned(page, [
       "[data-route-row] > div:first-child .h-14", "[data-route-row] > div:last-child .h-14",
-      "[data-size='date'] input", "[data-size='people'] button",
+      "[data-size='date'] input",
     ]);
+    // Line 1 holds trip type, Travelers and Cabin, above the field row.
+    const line1 = (await page.getByRole("radiogroup", { name: "Trip type" }).boundingBox())!;
+    const fields = (await page.locator(".admin-search-row").boundingBox())!;
+    expect(line1.y + line1.height).toBeLessThanOrEqual(fields.y);
+    // With Trip and Travelers out of the row, the chosen cities fit from 1440px, Provider shown (narrower: ellipsis).
+    for (const name of width >= 1440 ? ["From Lahore – LHE", "To Karachi – KHI"] : []) {
+      const text = page.getByRole("button", { name }).locator("[data-airport-selected]");
+      expect(await text.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+    }
     // The search button: same height wherever the row puts it (it moves to a second line when Provider is shown).
     expect(Math.round((await page.locator("[data-size='submit'] button").boundingBox())!.height)).toBe(56);
-    if (width === 1440) await docsShot(page, "airport-row-flights-1440");
+    if (width === 1440 || width === 1920) await docsShot(page, `search-two-lines-flights-${width}`);
   });
 }

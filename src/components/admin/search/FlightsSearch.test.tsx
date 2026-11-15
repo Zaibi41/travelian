@@ -95,7 +95,7 @@ describe("admin Flights search", () => {
     renderAt("/admin/search?tab=flights");
     expect(screen.getByRole("button", { name: "Search flights" })).toBeDisabled();
     expect(gateway.search).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Travelers and cabin 1 adult · Economy" }));
+    fireEvent.click(screen.getByRole("button", { name: "Travelers: 1 adult" }));
     expect(screen.getByRole("button", { name: "Fewer adults" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Fewer infants" })).toBeDisabled();
   });
@@ -175,22 +175,25 @@ describe("mockup elements (Search > Flights)", () => {
   beforeEach(() => gateway.search.mockReset().mockResolvedValue(STAFF));
   const url = "/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27";
 
-  it("search bar in one row: trip type (Multi-city off with a reason), one travelers and cabin picker (Economy only), Return only for Round-trip", async () => {
+  it("two lines: trip type, Travelers and Cabin above; From, To, dates and Search flights in the field row; Return only for Round-trip", async () => {
     renderAt(url);
     const row = document.querySelector(".admin-search-row")!;
-    expect([...row.children].map(child => child.getAttribute("data-size"))).toEqual(["trip", "route", "date", "people", "submit"]);
-    expect(screen.getByRole("combobox", { name: "Trip" })).toHaveTextContent("One-way");
+    expect([...row.children].map(child => child.getAttribute("data-size"))).toEqual(["route", "date", "submit"]);
+    const line1 = screen.getByRole("radiogroup", { name: "Trip type" }).parentElement!;
+    expect(line1).not.toBe(row);
+    expect(within(line1).getByRole("button", { name: "Travelers: 1 adult" })).toBeInTheDocument();
+    expect(within(line1).getByRole("combobox", { name: "Cabin Class" })).toHaveTextContent("Economy");
+    expect(screen.queryByRole("combobox", { name: "Trip" })).not.toBeInTheDocument();
+    const multi = screen.getByRole("radio", { name: "Multi-city" });
+    expect(multi).toBeDisabled();
+    expect(multi).toHaveAccessibleDescription("Multi-city isn't available from the current flight provider.");
     expect(screen.queryByLabelText("Return date")).not.toBeInTheDocument();
-    fireEvent.keyDown(screen.getByRole("combobox", { name: "Trip" }), { key: "ArrowDown" });
-    expect(await screen.findByRole("option", { name: /Multi-city/ })).toHaveAttribute("aria-disabled", "true");
-    fireEvent.click(screen.getByRole("option", { name: "Round-trip" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Round-trip" }));
     expect(screen.getByLabelText("Return date")).toBeEnabled();
-    expect([...row.children].map(child => child.getAttribute("data-size"))).toEqual(["trip", "route", "date", "date", "people", "submit"]);
-    fireEvent.click(screen.getByRole("button", { name: "Travelers and cabin 1 adult · Economy" }));
-    expect(screen.getByRole("radio", { name: "Economy" })).toBeChecked();
-    expect(screen.getByRole("radio", { name: /Business/ })).toBeDisabled();
+    expect([...row.children].map(child => child.getAttribute("data-size"))).toEqual(["route", "date", "date", "submit"]);
+    fireEvent.click(screen.getByRole("button", { name: "Travelers: 1 adult" }));
     fireEvent.click(screen.getByRole("button", { name: "More children" }));
-    expect(screen.getByRole("button", { name: "Travelers and cabin 1 adult, 1 child · Economy" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Travelers: 1 adult, 1 child" })).toBeInTheDocument();
   });
 
   it("no Provider field, provider counts or provider names for staff; Quotes pending never shown", async () => {

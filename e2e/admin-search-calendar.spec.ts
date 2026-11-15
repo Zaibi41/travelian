@@ -79,8 +79,7 @@ test("tabbing into the field doesn't open the popup, so the date can be typed da
 
 test("return date (round trip) and Group Ticketing's date open the same popup", async ({ page }) => {
   await open(page, 1440, "flights");
-  await page.getByRole("combobox", { name: "Trip" }).click();
-  await page.getByRole("option", { name: "Round-trip" }).click();
+  await page.getByRole("radio", { name: "Round-trip" }).click();
   await page.getByLabel("Return date", { exact: true }).click();
   const returnPopup = page.getByRole("dialog", { name: "Select return date" });
   await expect(returnPopup.getByRole("grid")).toHaveCount(2);

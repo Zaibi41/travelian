@@ -136,11 +136,15 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
             if (canSearch) commit(draft);
           }}
         >
-          {/* One row like the public site: trip type, From, swap, To, dates, travelers and cabin, provider
-              (admin only) and Search flights. Fields keep compact widths and From / To take the rest; when
-              the form is too narrow for that, the row wraps (theme.css, .admin-search-row). */}
+          {/* Line 1: trip type, Travelers and Cabin, left-aligned. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <TripTypeControl value={draft.trip} onChange={trip => setDraft({ ...draft, trip, returnDate: trip === "oneway" ? undefined : draft.returnDate })} />
+            <TravelersPicker value={draft} onChange={next => setDraft({ ...draft, ...next })} />
+            <CabinPicker />
+          </div>
+          {/* Line 2, like the public site: From, swap, To, dates, provider (admin only) and Search flights. Fields
+              keep compact widths and From / To take the rest; narrower forms wrap (theme.css, .admin-search-row). */}
           <div className="admin-search-row">
-            <div data-size="trip"><TripSelect value={draft.trip} onChange={trip => setDraft({ ...draft, trip, returnDate: trip === "oneway" ? undefined : draft.returnDate })} /></div>
             <div data-size="route" className="min-w-0">
               <RouteRow
                 from={<AirportCombobox id="flight-from" label="From" placeholder="Origin" icon="departure" value={draft.from} onChange={from => setDraft({ ...draft, from })} />}
@@ -152,7 +156,6 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
             {draft.trip === "roundtrip" && (
               <div data-size="date"><DateInput id="flight-return" label="Return date" value={draft.returnDate} min={draft.date} onChange={returnDate => setDraft({ ...draft, returnDate })} /></div>
             )}
-            <div data-size="people"><TravelersCabinPicker value={draft} onChange={next => setDraft({ ...draft, ...next })} /></div>
             {providerNames.length > 0 && (
               <div data-size="provider">
                 <LabeledSelect id="flight-provider" label="Provider" value={filters.provider} triggerClassName={SEARCH_FIELD}
@@ -193,25 +196,48 @@ function DateInput({ id, label, value, min, onChange }: { id: string; label: str
   );
 }
 
-/** Trip type as one compact field: One-way, Round-trip; Multi-city listed but off, with the reason. */
-function TripSelect({ value, onChange }: { value: FlightSearch["trip"]; onChange: (trip: FlightSearch["trip"]) => void }) {
+/** Trip type above the fields (as before): One-way | Round-trip | Multi-city, a segmented control; Multi-city
+ *  is shown but off, with the reason. */
+function TripTypeControl({ value, onChange }: { value: FlightSearch["trip"]; onChange: (trip: FlightSearch["trip"]) => void }) {
   return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <label htmlFor="flight-trip" className="text-label font-medium text-muted-foreground">Trip</label>
-      <Select value={value} onValueChange={next => onChange(next as FlightSearch["trip"])}>
-        <SelectTrigger id="flight-trip" className={cn(SEARCH_FIELD, "w-full px-3")}><SelectValue /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="oneway" className="text-body">One-way</SelectItem>
-          <SelectItem value="roundtrip" className="text-body">Round-trip</SelectItem>
-          <SelectItem value="multicity" disabled className="text-body">Multi-city<span className="sr-only"> ({REASONS.multiCity})</span></SelectItem>
-          <p className="max-w-[14rem] px-2 py-1.5 text-label text-muted-foreground">{REASONS.multiCity}</p>
-        </SelectContent>
-      </Select>
+    <div role="radiogroup" aria-label="Trip type" className="inline-flex rounded-sm border border-border bg-muted p-0.5">
+      {(["oneway", "roundtrip"] as const).map(trip => (
+        <button key={trip} type="button" role="radio" aria-checked={value === trip} onClick={() => onChange(trip)}
+          className={cn("h-8 rounded-sm px-3 text-body font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            value === trip ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
+          {trip === "oneway" ? "One-way" : "Round-trip"}
+        </button>
+      ))}
+      <WithReason reason={REASONS.multiCity}>
+        {describedBy => (
+          <button type="button" role="radio" aria-checked={false} disabled aria-describedby={describedBy}
+            className="h-8 cursor-not-allowed rounded-sm px-3 text-body font-medium text-muted-foreground opacity-60">Multi-city</button>
+        )}
+      </WithReason>
     </div>
   );
 }
 
 const CABINS = ["Economy", "Premium Economy", "Business", "First"] as const;
+
+/** Cabin Class: Economy only; the other cabins are listed but disabled (the provider search has no cabin). */
+function CabinPicker() {
+  return (
+    <Select value="Economy">
+      <SelectTrigger aria-label="Cabin Class" className="h-8 w-auto min-w-[7.5rem] gap-2 rounded-sm border-border bg-card px-3 text-body shadow-none">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {CABINS.map(cabin => (
+          <SelectItem key={cabin} value={cabin} disabled={cabin !== "Economy"} className="text-body data-[state=checked]:text-primary">
+            {cabin}{cabin !== "Economy" && <span className="sr-only"> ({REASONS.cabin})</span>}
+          </SelectItem>
+        ))}
+        <p className="px-2 py-1.5 text-label text-muted-foreground">{REASONS.cabin}</p>
+      </SelectContent>
+    </Select>
+  );
+}
 
 const TRAVELER_ROWS = [
   { key: "adults", label: "Adults", hint: "12+ years", min: 1, max: 9 },
@@ -219,71 +245,54 @@ const TRAVELER_ROWS = [
   { key: "infants", label: "Infants", hint: "Under 2, one per adult", min: 0, max: 8 },
 ] as const;
 
-/** "1 adult · Economy": travelers and cabin in one compact picker. Only Economy is searched; the other
- *  cabins are listed but off, with the reason. */
-function travelersCabinLabel({ adults, children, infants }: Pick<FlightSearch, "adults" | "children" | "infants">) {
+/** "1 adult", "2 adults, 1 child, 1 infant". */
+function travelersLabel({ adults, children, infants }: Pick<FlightSearch, "adults" | "children" | "infants">) {
   const parts = [`${adults} ${adults === 1 ? "adult" : "adults"}`];
   if (children) parts.push(`${children} ${children === 1 ? "child" : "children"}`);
   if (infants) parts.push(`${infants} ${infants === 1 ? "infant" : "infants"}`);
-  return `${parts.join(", ")} · Economy`;
+  return parts.join(", ");
 }
 
-function TravelersCabinPicker({ value, onChange }: { value: FlightSearch; onChange: (next: Partial<FlightSearch>) => void }) {
+/** Travelers dropdown: adults, children and infants, each with its minimum; infants at most one per adult. */
+function TravelersPicker({ value, onChange }: { value: FlightSearch; onChange: (next: Partial<FlightSearch>) => void }) {
   const [open, setOpen] = useState(false);
-  const label = travelersCabinLabel(value);
   return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <span id="flight-travelers-label" className="text-label font-medium text-muted-foreground">Travelers and cabin</span>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <button type="button" aria-labelledby="flight-travelers-label flight-travelers-value"
-            className={cn(SEARCH_FIELD, "flex w-full min-w-0 items-center gap-2 px-3 text-left text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}>
-            <Users className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-            <span id="flight-travelers-value" className="min-w-0 flex-1 truncate" title={label}>{label}</span>
-            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent align="start" className="w-72 p-3">
-          <div className="flex flex-col gap-2.5">
-            {TRAVELER_ROWS.map(row => {
-              const current = value[row.key];
-              const max = row.key === "infants" ? Math.min(row.max, value.adults) : row.max;
-              return (
-                <div key={row.key} className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-body font-medium text-foreground">{row.label}</p>
-                    <p className="text-label text-muted-foreground">{row.hint}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button type="button" size="icon" variant="outline" className="h-9 w-9" aria-label={`Fewer ${row.label.toLowerCase()}`}
-                      disabled={current <= row.min} onClick={() => onChange({ [row.key]: current - 1, ...(row.key === "adults" && value.infants > current - 1 ? { infants: current - 1 } : {}) })}>
-                      <Minus className="h-3.5 w-3.5" />
-                    </Button>
-                    <span className="w-5 text-center text-body tabular-nums" aria-live="polite">{current}</span>
-                    <Button type="button" size="icon" variant="outline" className="h-9 w-9" aria-label={`More ${row.label.toLowerCase()}`}
-                      disabled={current >= max} onClick={() => onChange({ [row.key]: current + 1 })}>
-                      <Plus className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="outline" size="sm" aria-label={`Travelers: ${travelersLabel(value)}`} className="gap-1.5">
+          <Users className="h-4 w-4 text-muted-foreground" aria-hidden="true" />{travelersLabel(value)}
+          <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 p-3">
+        <div className="flex flex-col gap-2.5">
+          {TRAVELER_ROWS.map(row => {
+            const current = value[row.key];
+            const max = row.key === "infants" ? Math.min(row.max, value.adults) : row.max;
+            return (
+              <div key={row.key} className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-body font-medium text-foreground">{row.label}</p>
+                  <p className="text-label text-muted-foreground">{row.hint}</p>
                 </div>
-              );
-            })}
-            <fieldset className="flex flex-col gap-1 border-t border-border pt-2.5">
-              <legend className="pt-2.5 text-body font-medium text-foreground">Cabin Class</legend>
-              {CABINS.map(cabin => (
-                <label key={cabin} className={cn("flex items-center gap-2 text-body", cabin === "Economy" ? "text-primary" : "text-muted-foreground")}
-                  title={cabin === "Economy" ? undefined : REASONS.cabin}>
-                  <input type="radio" name="flight-cabin" checked={cabin === "Economy"} disabled={cabin !== "Economy"} readOnly className="h-4 w-4 accent-[hsl(var(--primary))]" />
-                  {cabin}{cabin !== "Economy" && <span className="sr-only"> ({REASONS.cabin})</span>}
-                </label>
-              ))}
-              <p className="text-label text-muted-foreground">{REASONS.cabin}</p>
-            </fieldset>
-            <Button type="button" size="sm" className="mt-1" onClick={() => setOpen(false)}>Done</Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
+                <div className="flex items-center gap-2">
+                  <Button type="button" size="icon" variant="outline" className="h-9 w-9" aria-label={`Fewer ${row.label.toLowerCase()}`}
+                    disabled={current <= row.min} onClick={() => onChange({ [row.key]: current - 1, ...(row.key === "adults" && value.infants > current - 1 ? { infants: current - 1 } : {}) })}>
+                    <Minus className="h-3.5 w-3.5" />
+                  </Button>
+                  <span className="w-5 text-center text-body tabular-nums" aria-live="polite">{current}</span>
+                  <Button type="button" size="icon" variant="outline" className="h-9 w-9" aria-label={`More ${row.label.toLowerCase()}`}
+                    disabled={current >= max} onClick={() => onChange({ [row.key]: current + 1 })}>
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+          <Button type="button" size="sm" className="mt-1" onClick={() => setOpen(false)}>Done</Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 

@@ -144,15 +144,15 @@ test("unpaid: Issue tickets is off until Due is Rs 0; long names truncate", asyn
 });
 
 // A chosen airport is one line ("Islamabad – ISB"), so From and To keep the height of the date and the button.
-for (const width of [1440, 1280]) {
+for (const width of [1920, 1440, 1280]) {
   test(`chosen airports keep the group search row aligned at ${width}px`, async ({ page }) => {
     await open(page, width);
     await page.goto("/admin/search?tab=group-ticketing&from=ISB&to=JED&date=2026-11-22&adults=2");
     await expect(page.getByRole("button", { name: "From Islamabad – ISB" })).toBeVisible();
     await expect(page.getByRole("button", { name: "To Jeddah – JED" })).toBeVisible();
-    await expect(page.locator(".admin-search-fields")).not.toContainText(/International Airport|Pakistan|Saudi Arabia/);
+    await expect(page.locator(".admin-search-row")).not.toContainText(/International Airport|Pakistan|Saudi Arabia/);
     await expectRowAligned(page, ["[data-route-row] > div:first-child .h-14", "[data-route-row] > div:last-child .h-14", "#group-date",
-      ".admin-search-fields button[type='submit']"]);
-    if (width === 1440) await docsShot(page, "airport-row-group-1440");
+      ".admin-search-row button[type='submit']"]);
+    if (width === 1440 || width === 1920) await docsShot(page, `search-two-lines-group-${width}`);
   });
 }

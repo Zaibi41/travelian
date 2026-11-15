@@ -164,11 +164,10 @@ export function GroupTicketingSearch() {
             if (canSearch) commit(draft);
           }}
         >
-          {/* One line like the public site's group form when wide enough (theme.css, .admin-search-fields):
-              From and To (limited to the available sectors) with the round swap, Departure Date and the
-              search button. Narrower: From/To on their own row, the rest below. */}
-          <div className="admin-search-fields" data-fields="group">
-            <div className="admin-search-route min-w-0">
+          {/* The same field row as Search > Flights (theme.css, .admin-search-row): From and To (limited to the
+              available sectors) with the round swap, Departure Date and the search button. */}
+          <div className="admin-search-row">
+            <div data-size="route" className="min-w-0">
               <RouteRow
                 from={<SectorAirportSelect id="group-from" label="From" placeholder="Origin" icon="departure" codes={airports("from")} value={draft.from}
                   onChange={from => setDraft({ ...draft, from })} />}
@@ -177,11 +176,11 @@ export function GroupTicketingSearch() {
                 onSwap={() => setDraft({ ...draft, from: draft.to, to: draft.from })}
               />
             </div>
-            <div className="flex min-w-0 flex-col gap-1">
+            <div data-size="date" className="flex min-w-0 flex-col gap-1">
               <FieldLabel htmlFor="group-date">Departure Date</FieldLabel>
               <DayFirstDateField id="group-date" variant="search" calendarTitle="Select departure date" min={todayIso()} value={draft.date} onChange={date => setDraft({ ...draft, date })} />
             </div>
-            <SearchSubmitButton label="Search group fares" disabled={!canSearch} />
+            <div data-size="submit"><SearchSubmitButton label="Search group fares" disabled={!canSearch} /></div>
           </div>
         </form>
       </section>
