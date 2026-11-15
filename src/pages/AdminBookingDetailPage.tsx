@@ -12,6 +12,7 @@ import { PaymentsAndIssuing, TicketsTab } from "@/components/admin/bookings/Paym
 import { ItineraryTab } from "@/components/admin/bookings/ItineraryTab";
 import { DownloadItineraryButton } from "@/components/admin/bookings/DownloadItineraryButton";
 import { SampleDataBadge, StatusChips } from "@/components/admin/bookings/BookingChips";
+import { BookingHeading } from "@/components/admin/bookings/BookingHeading";
 import { GatewayError } from "@/lib/gateway/client";
 import {
   BOOKING_STATUS_LABEL, ISSUANCE_STATUS_LABEL, PAYMENT_STATUS_LABEL, PRODUCT_LABEL, formatDateTime, formatMoney, formatTimeLeft, isOpenHold,
@@ -70,7 +71,7 @@ export default function AdminBookingDetailPage() {
     <div className="flex min-w-0 flex-col gap-section-gap">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-          <h1 className="min-w-0 break-all font-display text-page-title font-bold text-foreground">Booking {booking.pnr ?? booking.booking_id}</h1>
+          <BookingHeading bookingId={booking.booking_id} pnr={booking.pnr} className="text-foreground" />
           {booking.sample && <SampleDataBadge label={booking.sample_label} />}
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -122,6 +123,7 @@ function Overview({ booking }: { booking: BookingDetail }) {
     <FieldTable
       label="Overview"
       rows={[
+        ["Airline PNR", booking.pnr ?? "—"],
         ["Booking ID", booking.booking_id],
         ["Product", PRODUCT_LABEL[booking.product] ?? booking.product],
         ["Customer or agency", booking.customer_or_agency ?? "—"],

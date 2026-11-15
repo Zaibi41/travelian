@@ -1,4 +1,5 @@
 import { Link, Navigate, useParams } from "react-router-dom";
+import { BookingHeading } from "@/components/admin/bookings/BookingHeading";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,7 +44,7 @@ export default function GroupBookingPage() {
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="min-w-0 break-all font-display text-page-title font-bold text-brand-navy">Booking {bookingId}</h1>
+            <BookingHeading bookingId={bookingId} pnr={view?.pnr} className="text-brand-navy" />
             {subtitle ? <p className="truncate text-body text-muted-foreground" title={subtitle}>{subtitle}</p> : <Skeleton className="mt-1 h-4 w-64 rounded-sm" />}
           </div>
           <div className="flex flex-wrap items-center gap-3">

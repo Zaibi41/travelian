@@ -11,7 +11,6 @@ import {
   softDeletePackage as softDeleteRemotePackage,
 } from "@/lib/package-api";
 import {
-  listTickets as listRemoteTickets,
   saveTicket as saveRemoteTicket,
   softDeleteTicket as softDeleteRemoteTicket,
 } from "@/lib/ticket-api";
@@ -179,8 +178,9 @@ function loadStoredArray<T>(key: string): T[] {
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const { pathname, search } = useLocation();
-  const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
-  const needsUmrah = isAdmin || pathname.startsWith("/umrah") || pathname === "/request-booking" || (pathname === "/booking" && new URLSearchParams(search).get("type") === "umrah");
+  // The admin no longer loads Umrah packages (Umrah is hidden) or the old /content/tickets list (tickets come
+  // from the gateway): those /content calls failed on every admin page.
+  const needsUmrah = pathname.startsWith("/umrah") || pathname === "/request-booking" || (pathname === "/booking" && new URLSearchParams(search).get("type") === "umrah");
   const [packageLoadStatus, setPackageLoadStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [flights, setFlights] = useState<Flight[]>([]);
@@ -226,13 +226,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     });
     return () => { cancelled = true; };
   }, [needsUmrah]);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    let cancelled = false;
-    void listRemoteTickets().then(items => { if (!cancelled) setTickets(items); }).catch(() => {});
-    return () => { cancelled = true; };
-  }, [isAdmin]);
 
   // Hotel content is loaded on demand via loadHotelContent (Home, admin hotel search).
   useEffect(() => {

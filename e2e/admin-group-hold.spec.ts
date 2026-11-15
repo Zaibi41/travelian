@@ -115,7 +115,7 @@ for (const width of [1440, 390]) {
   test(`payments tab, paid in full, issue and the supplier-price-changed dialog at ${width}px`, async ({ page }) => {
     await open(page, width, { paid: true, changed: true });
     await page.goto("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
-    await expect(page.getByRole("heading", { name: "Booking TRV-GRP-000123", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "PNR K7P2QX", level: 1 })).toBeVisible();  // the airline PNR leads; the booking id sits beside it
     await expect(page.getByRole("region", { name: "Payment summary" })).toContainText("Paid in full");
     await expect(page.getByRole("combobox", { name: "Received into" })).toContainText("Meezan Bank");
     await expect(page.getByRole("button", { name: "Issue tickets" })).toBeEnabled();

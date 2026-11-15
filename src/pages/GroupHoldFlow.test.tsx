@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GatewayError } from "@/lib/gateway/client";
@@ -55,17 +56,19 @@ function Probe() {
 }
 const renderAt = (url: string, state?: unknown) =>
   render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
-      <MemoryRouter initialEntries={[{ pathname: url.split("?")[0], search: url.includes("?") ? `?${url.split("?")[1]}` : "", state }]}>
-        <Routes>
-          <Route path="/admin/search/group-ticketing/hold" element={<GroupHoldPage />} />
-          <Route path="/admin/search/group-ticketing/held/:bookingId" element={<GroupHeldPage />} />
-          <Route path="/admin/bookings/group-ticketing/:bookingId/:tab" element={<GroupBookingPage />} />
-          <Route path="*" element={<p>elsewhere</p>} />
-        </Routes>
-        <Probe />
-      </MemoryRouter>
-    </QueryClientProvider>,
+    <HelmetProvider>
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })}>
+        <MemoryRouter initialEntries={[{ pathname: url.split("?")[0], search: url.includes("?") ? `?${url.split("?")[1]}` : "", state }]}>
+          <Routes>
+            <Route path="/admin/search/group-ticketing/hold" element={<GroupHoldPage />} />
+            <Route path="/admin/search/group-ticketing/held/:bookingId" element={<GroupHeldPage />} />
+            <Route path="/admin/bookings/group-ticketing/:bookingId/:tab" element={<GroupBookingPage />} />
+            <Route path="*" element={<p>elsewhere</p>} />
+          </Routes>
+          <Probe />
+        </MemoryRouter>
+      </QueryClientProvider>
+    </HelmetProvider>,
   );
 const HOLD_URL = "/admin/search/group-ticketing/hold?ticket=t1&from=ISB&to=JED&date=2026-11-22&adults=2";
 
@@ -449,6 +452,23 @@ describe("Dhillu & Sahi hold time note", () => {
     const held = await screen.findByRole("region", { name: "Seats held" });
     expect(within(held).getByRole("timer")).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/Hold time (from supplier|estimated)|after 1 hour/);
+  });
+});
+
+describe("Group booking page heading", () => {
+  it("with the PNR (sent to supplier access): 'PNR K7P2QX' and 'Booking TRV-GRP-000123' beside it; the tab title follows", async () => {
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
+    expect(await screen.findByRole("heading", { level: 1, name: "PNR K7P2QX" })).toBeInTheDocument();
+    expect(screen.getByText("Booking TRV-GRP-000123")).toBeInTheDocument();
+    await waitFor(() => expect(document.title).toBe("PNR K7P2QX · Booking TRV-GRP-000123 · Travelian Admin"));
+  });
+
+  it("a group hold without a PNR (or not sent to this viewer): 'Booking TRV-GRP-000123' alone", async () => {
+    gateway.fetchGroupHold.mockResolvedValue({ ...HELD, pnr: undefined });
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
+    await screen.findByRole("region", { name: "Payment summary" });
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Booking TRV-GRP-000123$/);
+    await waitFor(() => expect(document.title).toBe("Booking TRV-GRP-000123 · Travelian Admin"));
   });
 });
 

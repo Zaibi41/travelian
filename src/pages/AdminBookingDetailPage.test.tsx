@@ -5,6 +5,7 @@ import type { BookingDetail } from "@/lib/admin-bookings/types";
 import { GatewayError } from "@/lib/gateway/client";
 import { fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 
 const detail = { current: {} as Record<string, unknown> };
 vi.mock("@/lib/admin-bookings/use-bookings", () => ({ useBookingDetail: () => detail.current }));
@@ -34,14 +35,16 @@ const ADMIN_VIEW: BookingDetail = {
 
 const renderAt = (url: string) =>
   render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}>
-      <MemoryRouter initialEntries={[url]}>
-        <Routes>
-          <Route path="/admin/bookings/:bookingId" element={<AdminBookingDetailPage />} />
-          <Route path="/admin/bookings/:bookingId/:tab" element={<AdminBookingDetailPage />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
+    <HelmetProvider>
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { mutations: { retry: false } } })}>
+        <MemoryRouter initialEntries={[url]}>
+          <Routes>
+            <Route path="/admin/bookings/:bookingId" element={<AdminBookingDetailPage />} />
+            <Route path="/admin/bookings/:bookingId/:tab" element={<AdminBookingDetailPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    </HelmetProvider>,
   );
 
 const tabLabels = () => within(screen.getByRole("navigation", { name: "Booking" })).getAllByRole("link").map(link => link.textContent);
@@ -53,11 +56,30 @@ describe("Booking detail", () => {
 
   it("is a page with nine tabs for admins, statuses in the header, and no Edit booking", () => {
     renderAt("/admin/bookings/TRV-1");
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Booking AB12CD");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^PNR AB12CD$/);
     expect(tabLabels()).toEqual(["Overview", "Itinerary", "Passengers", "Fare", "Payments", "Supplier payment", "Tickets", "Servicing", "Audit"]);
     expect(screen.getByRole("link", { name: "Fare" })).toHaveAttribute("href", "/admin/bookings/TRV-1/fare");
     expect(screen.queryByText(/Edit booking/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("with an airline PNR: heading 'PNR AB12CD', 'Booking TRV-1' beside it, the same in the tab title; Overview has Airline PNR above Booking ID", async () => {
+    renderAt("/admin/bookings/TRV-1");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^PNR AB12CD$/);
+    expect(screen.getByText("Booking TRV-1")).toBeInTheDocument();
+    await waitFor(() => expect(document.title).toBe("PNR AB12CD · Booking TRV-1 · Travelian Admin"));
+    const rows = within(screen.getByRole("region", { name: "Overview" })).getAllByRole("term").map(term => term.textContent);
+    expect(rows.slice(0, 2)).toEqual(["Airline PNR", "Booking ID"]);
+    expect(screen.getByRole("region", { name: "Overview" })).toHaveTextContent("Airline PNRAB12CD");
+  });
+
+  it("without a PNR yet: heading 'Booking TRV-1' alone, the tab title too, and Airline PNR shows a dash", async () => {
+    detail.current = ok({ ...ADMIN_VIEW, pnr: null });
+    renderAt("/admin/bookings/TRV-1");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Booking TRV-1$/);
+    expect(screen.queryByText(/^PNR /)).not.toBeInTheDocument();
+    await waitFor(() => expect(document.title).toBe("Booking TRV-1 · Travelian Admin"));
+    expect(screen.getByRole("region", { name: "Overview" })).toHaveTextContent("Airline PNR—");
   });
 
   it("Overview shows recorded fields and hides Owner and Supplier status", () => {
