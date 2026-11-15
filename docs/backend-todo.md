@@ -14,6 +14,10 @@ Related: the `travelian-group-ticketing-proxy` Lambda has `CORS_ORIGIN=*`, so an
 
 Needed: require authentication on all `/content/bookings` routes (GET, POST, PATCH), scope results by role on the server, and never return supplier cost or margin to agency or customer roles. The Admin Dashboard does not use this endpoint; it reads the same DynamoDB records server-side through the gateway.
 
+Frontend change (2026-11-15): agency and customer roles no longer load the old screens that read `/content/bookings` and `/content/booking-requests` (`/admin/flight-bookings`, including its Invoices and Refunds tabs, and `/admin/requests`). They see the menu placeholder, so their browsers never request supplier names or `supplierCost`. This does not close the hole: the Lambda still returns everything to anyone who calls it directly, until it is locked down or retired.
+
+Needed to bring those screens back for agency roles: `GET /v1/agency/bookings` (gateway, Cognito token), scoped to the caller's `bookings.agency_id`, returning selling price, paid and due only. It must never return supplier cost, margin, profit, supplier or provider names, or airline IDs (field visibility, not page hiding).
+
 ## 2. Admin Dashboard home (`/admin`)
 
 ### Endpoints (travelian-api-gateway, `/v1`, Cognito access token)

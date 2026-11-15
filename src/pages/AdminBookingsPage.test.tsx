@@ -14,7 +14,7 @@ vi.mock("@/lib/admin-bookings/use-bookings", () => ({
     return list.current;
   },
 }));
-vi.mock("./BookingRequestsPage", () => ({ default: () => <p>Old requests screen</p> }));
+
 
 import AdminBookingsPage from "./AdminBookingsPage";
 import { LegacyRequestsRoute } from "./AdminBookingsRoutes";
@@ -193,9 +193,9 @@ describe("old /admin/requests bookings screen", () => {
     expect(screen.getByText("at /admin/bookings")).toBeInTheDocument();
   });
 
-  it("stays for agency roles, who can't use the back-office register", () => {
+  it("shows agency roles the menu placeholder, not the old screen", () => {
     role.current = "agency_owner";
     renderRequests();
-    expect(screen.getByText("Old requests screen")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Bookings" })).toBeInTheDocument();
   });
 });

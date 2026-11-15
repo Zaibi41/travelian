@@ -57,7 +57,7 @@ const HoldFlightPage = lazy(() => import("./pages/HoldFlightPage"));
 const HoldResultPage = lazy(() => import("./pages/HoldResultPage"));
 const GroupHoldPage = lazy(() => import("./pages/GroupHoldPage"));
 const GroupHeldPage = lazy(() => import("./pages/GroupHeldPage"));
-const FlightBookingsPage = lazy(() => import("./pages/FlightBookingsPage"));
+const FlightBookingsRoute = lazy(() => import("./pages/AdminBookingsRoutes").then(m => ({ default: m.FlightBookingsRoute })));
 const CustomerPortalPage = lazy(() => import("./pages/CustomerPortalPage"));
 const UsersPage = lazy(() => import("./pages/UsersPage"));
 const CustomersTravelersPage = lazy(() => import("./pages/CustomersTravelersPage"));
@@ -154,7 +154,7 @@ const App = () => (
             <Route path="/admin/search/flights/hold/result" element={<AdminLayout><HoldResultPage /></AdminLayout>} />
             <Route path="/admin/search/group-ticketing/hold" element={<AdminLayout><GroupHoldPage /></AdminLayout>} />
             <Route path="/admin/search/group-ticketing/held/:bookingId" element={<AdminLayout><GroupHeldPage /></AdminLayout>} />
-            <Route path="/admin/flight-bookings" element={<AdminLayout><FlightBookingsPage /></AdminLayout>} />
+            <Route path="/admin/flight-bookings" element={<AdminLayout><FlightBookingsRoute /></AdminLayout>} />
             <Route path="/admin/requests" element={<AdminLayout><LegacyRequestsRoute /></AdminLayout>} />
             <Route path="/admin/booking" element={<AdminLayout><BookingPage adminMode /></AdminLayout>} />
             <Route path="/admin/wallet" element={<AdminLayout><WalletPage /></AdminLayout>} />
