@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { gatewayView } from "./support/gateway";
 import { expectReadableText } from "./support/type-scale";
 import { docsShot } from "./support/docs-shot";
+import { expectRowAligned } from "./support/row-alignment";
 
 // Search > Group Ticketing booking flow (mockup PDF docs/2026-11-14 pages 9-13): results with
 // Hold seats, traveler details, seats held, payment and issue tickets, the price-changed dialog.
@@ -134,3 +135,17 @@ test("unpaid: Issue tickets is off until Due is Rs 0; long names truncate", asyn
   await expect(page.getByRole("button", { name: "Issue tickets" })).toBeDisabled();
   await expect(page.getByRole("region", { name: "Issue tickets" })).toContainText("Record the full payment first");
 });
+
+// A chosen airport is one line ("Islamabad – ISB"), so From and To keep the height of the date and the button.
+for (const width of [1440, 1280]) {
+  test(`chosen airports keep the group search row aligned at ${width}px`, async ({ page }) => {
+    await open(page, width);
+    await page.goto("/admin/search?tab=group-ticketing&from=ISB&to=JED&date=2026-11-22&adults=2");
+    await expect(page.getByRole("button", { name: "From Islamabad – ISB" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "To Jeddah – JED" })).toBeVisible();
+    await expect(page.locator(".admin-search-fields")).not.toContainText(/International Airport|Pakistan|Saudi Arabia/);
+    await expectRowAligned(page, ["[data-route-row] > div:first-child .h-14", "[data-route-row] > div:last-child .h-14", "#group-date",
+      ".admin-search-fields button[type='submit']"]);
+    if (width === 1440) await docsShot(page, "airport-row-group-1440");
+  });
+}

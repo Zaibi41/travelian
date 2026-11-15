@@ -4,7 +4,7 @@ import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { useAirports } from "@/hooks/use-airports";
 import { cn } from "@/lib/utils";
 import {
-  AIRPORT_FIELD, AIRPORT_LIST_PANEL, AirportIcon, AirportLines, FieldLabel, SelectedAirportCard, airportOptionClass, type AirportIconKind,
+  AIRPORT_FIELD, AIRPORT_LIST_PANEL, AirportIcon, AirportLines, FieldLabel, SelectedAirportCard, SelectedAirportText, airportOptionClass, type AirportIconKind,
 } from "./search-form";
 
 interface SectorAirportSelectProps {
@@ -79,8 +79,8 @@ export function SectorAirportSelect({ id, label, placeholder, codes, value, onCh
             className={cn(AIRPORT_FIELD, "flex h-14 w-full min-w-0 items-center gap-2.5 px-3 text-left text-body text-muted-foreground",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60")}
           >
-            <AirportIcon kind={icon} />
-            {value ? <AirportLines code={value} airport={index?.byCode.get(value)} /> : <span className="min-w-0 flex-1 truncate">{placeholder}</span>}
+            {value ? <SelectedAirportText code={value} airport={index?.byCode.get(value)} icon={icon} />
+              : <><AirportIcon kind={icon} /><span className="min-w-0 flex-1 truncate">{placeholder}</span></>}
             <ChevronDown className="h-4 w-4 shrink-0 opacity-60" aria-hidden="true" />
           </button>
         </PopoverAnchor>

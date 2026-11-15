@@ -13,10 +13,11 @@ import type { Airport } from "@/lib/admin-search/airports";
 import { cn } from "@/lib/utils";
 
 /** Field shell: public search field look (rounded, soft fill), on the admin scale. 56px, the same
- *  height as the two-line airport fields, so a one-line search form lines up. */
+ *  height as the airport fields, so a one-line search form lines up. */
 export const SEARCH_FIELD = "h-14 rounded-xl border border-muted-foreground/80 bg-muted/30 text-body";
-/** Airport fields are taller: two lines ("LHE - Lahore", then the airport name and country). */
-export const AIRPORT_FIELD = "min-h-14 rounded-xl border border-muted-foreground/80 bg-muted/30";
+/** Airport fields: exactly the search field height in every state (empty, chosen, focused, with the x).
+ *  A chosen airport shows one line ("Lahore – LHE"); the airport name is only in the suggestion list. */
+export const AIRPORT_FIELD = "h-14 rounded-xl border border-muted-foreground/80 bg-muted/30";
 
 export type AirportIconKind = "departure" | "arrival" | "plain";
 const ICONS = { departure: PlaneTakeoff, arrival: PlaneLanding, plain: Plane } as const;
@@ -42,19 +43,35 @@ export function AirportLines({ code, airport, icon = "plain" }: { code: string; 
   );
 }
 
-/** A chosen airport: the two-line card in the field look, with an x that clears it. The card
- *  itself is a button that reopens the choice. */
+/** "Lahore – LHE": the city and code of the chosen airport (the code alone for one not in the list).
+ *  One line; a long city name is cut with an ellipsis, never wrapped. */
+function selectedAirportLabel(code: string, airport?: Airport) {
+  return airport ? `${airport.city} – ${airport.iata}` : code;
+}
+
+/** A chosen airport inside its field: the icon and one line, "Lahore – LHE". No airport name or country. */
+export function SelectedAirportText({ code, airport, icon = "plain" }: { code: string; airport?: Airport; icon?: AirportIconKind }) {
+  const text = selectedAirportLabel(code, airport);
+  return (
+    <span className="flex min-w-0 flex-1 items-center gap-2.5" title={text}>
+      <AirportIcon kind={icon} />
+      <span data-airport-selected className="min-w-0 flex-1 truncate whitespace-nowrap text-left text-body font-semibold text-foreground">{text}</span>
+    </span>
+  );
+}
+
+/** A chosen airport: one line in the field look, with an x that clears it. The text itself is a
+ *  button that reopens the choice. */
 export function SelectedAirportCard({ id, label, code, airport, icon, onOpen, onClear }: {
   id: string; label: string; code: string; airport?: Airport; icon: AirportIconKind; onOpen: () => void; onClear: () => void;
 }) {
-  const name = airport ? `${airport.iata} - ${airport.city}, ${airport.name}, ${airport.country}` : code;
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <FieldLabel id={`${id}-label`}>{label}</FieldLabel>
-      <div className={cn(AIRPORT_FIELD, "flex min-w-0 items-center gap-1 py-1.5 pl-3 pr-1")}>
-        <button id={id} type="button" aria-labelledby={`${id}-label ${id}`} onClick={onOpen} title={name}
-          className="flex min-h-10 min-w-0 flex-1 items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <AirportLines code={code} airport={airport} icon={icon} />
+      <div className={cn(AIRPORT_FIELD, "flex min-w-0 items-center gap-1 pl-3 pr-1")}>
+        <button id={id} type="button" aria-labelledby={`${id}-label ${id}`} onClick={onOpen}
+          className="flex h-10 min-w-0 flex-1 items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <SelectedAirportText code={code} airport={airport} icon={icon} />
         </button>
         <button type="button" aria-label={`Clear ${label.toLowerCase()} airport`} onClick={onClear}
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-muted-foreground [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">

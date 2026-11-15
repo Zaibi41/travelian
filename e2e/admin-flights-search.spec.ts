@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { gatewayView } from "./support/gateway";
 import { docsShot } from "./support/docs-shot";
+import { expectRowAligned } from "./support/row-alignment";
 
 // Admin Search > Flights layout. Nothing reaches a real gateway or supplier: a local-only
 // session (no real token) and intercepted gateway responses shaped like the gateway's output.
@@ -138,3 +139,20 @@ test("docs render: admin Flights tab and the public results page at 1440px", asy
   await expect(page.getByText("PKR 12,500").first()).toBeVisible({ timeout: 15_000 });
   await docsShot(page, "flights-results-public-1440");
 });
+
+// A chosen airport is one line ("Lahore – LHE"), so From and To keep the height of the other boxes.
+for (const width of [1920, 1440, 1280]) {
+  test(`chosen airports keep the search row aligned at ${width}px`, async ({ page }) => {
+    await openFlights(page, width);
+    await expect(page.getByRole("button", { name: "From Lahore – LHE" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "To Karachi – KHI" })).toBeVisible();
+    await expect(page.locator(".admin-search-row")).not.toContainText("Allama Iqbal");
+    await expectRowAligned(page, [
+      "[data-route-row] > div:first-child .h-14", "[data-route-row] > div:last-child .h-14",
+      "[data-size='date'] input", "[data-size='people'] button",
+    ]);
+    // The search button: same height wherever the row puts it (it moves to a second line when Provider is shown).
+    expect(Math.round((await page.locator("[data-size='submit'] button").boundingBox())!.height)).toBe(56);
+    if (width === 1440) await docsShot(page, "airport-row-flights-1440");
+  });
+}

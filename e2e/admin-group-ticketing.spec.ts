@@ -47,8 +47,8 @@ const chips = (page: Page) => page.locator("[data-route-chip]");
 test("tabs carry the public icons; Group Ticketing is active", async ({ page }) => {
   await open(page);
   const tabs = page.getByRole("navigation", { name: "Search products" }).getByRole("link");
-  await expect(tabs).toHaveText(["Flights", "Group Ticketing", "Hotels", "Umrah"]);
-  await expect(page.locator("[data-tab-icon]")).toHaveCount(4);
+  await expect(tabs).toHaveText(["Flights", "Group Ticketing", "Hotels"]);  // Umrah is hidden from the site
+  await expect(page.locator("[data-tab-icon]")).toHaveCount(3);
   await expect(page.getByRole("link", { name: "Group Ticketing" })).toHaveAttribute("aria-current", "page");
 });
 
@@ -56,8 +56,8 @@ test("Suggested routes: the 4 sectors with the most departures; a chip fills Fro
   const searches = await open(page);
   await expect(chips(page)).toHaveText(["LHE → JED (5)", "ISB → JED (4)", "KHI → JED (3)", "LHE → MED (2)"]);
   await chips(page).nth(1).click();
-  await expect(page.getByRole("button", { name: /^From ISB - Islamabad/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /^To JED - Jeddah/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "From Islamabad – ISB" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "To Jeddah – JED" })).toBeVisible();
   await expect(chips(page).nth(1)).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByLabel("Select available sector")).toContainText("ISB → JED (4)");
   expect(searches).toHaveLength(0);                                    // a chip never searches by itself
@@ -81,7 +81,7 @@ test("From and To list only the available sectors; keyboard; a code not in the a
   await expect(fromList).toContainText("Allama Iqbal International Airport, Pakistan");
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("button", { name: /^From KHI - Karachi/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "From Karachi – KHI" })).toBeVisible();
 
   await page.getByRole("combobox", { name: "To", exact: true }).click();
   const toList = page.getByRole("listbox", { name: "To airports" });
@@ -94,8 +94,8 @@ test("From and To list only the available sectors; keyboard; a code not in the a
 test("swap keeps today's behaviour: a reverse pair with no sector is allowed and finds nothing", async ({ page }) => {
   const searches = await open(page, 1440, { query: "&from=LHE&to=JED&date=2026-11-24" });
   await page.getByRole("button", { name: "Swap origin and destination" }).click();
-  await expect(page.getByRole("button", { name: /^From JED - Jeddah/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /^To LHE - Lahore/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "From Jeddah – JED" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "To Lahore – LHE" })).toBeVisible();
   await expect(page.getByLabel("Select available sector")).toContainText("All available sectors");
   await page.getByRole("button", { name: "Search group fares" }).click();
   await expect.poll(() => searches.at(-1)?.postDataJSON()).toMatchObject({ origin: "JED", destination: "LHE", departure_date: "2026-11-24" });
@@ -132,12 +132,10 @@ for (const width of [1280, 1440, 390]) {
       expect(cy).toBeGreaterThan(fromCard.y + fromCard.height);
       expect(cy).toBeLessThan(toCard.y);
     }
-    expect(fromCard.height).toBeGreaterThanOrEqual(56);
-    // Airport names are not clipped.
-    for (const id of ["#group-from", "#group-to"]) {
-      expect(await page.locator(id).evaluate(button => [...button.querySelectorAll<HTMLElement>("[data-airport-line]")].every(line =>
-        line.scrollWidth <= line.clientWidth + 1 && line.scrollHeight <= line.clientHeight + 1))).toBe(true);
-    }
+    // A chosen airport is one line, "Lahore – LHE": the field is exactly the search-field height.
+    expect(Math.round(fromCard.height)).toBe(56);
+    expect(Math.round(toCard.height)).toBe(56);
+    await expect(page.locator("#group-from")).toHaveText("Lahore – LHE");
     // Leading icons: take-off, landing, calendar (as on the public site).
     await expect(page.locator("#group-from svg.lucide-plane-takeoff")).toHaveCount(1);
     await expect(page.locator("#group-to svg.lucide-plane-landing")).toHaveCount(1);
@@ -145,7 +143,7 @@ for (const width of [1280, 1440, 390]) {
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `Group Ticketing at ${width}px`);
 
-    await page.getByRole("button", { name: /^From LHE/ }).click();
+    await page.getByRole("button", { name: "From Lahore – LHE" }).click();
     const panel = page.locator("[data-radix-popper-content-wrapper] > *").filter({ has: page.getByRole("listbox") });
     await expect.poll(async () => (await panel.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(Math.min(360, width - 24) - 1);
     expect(await overflow(page)).toBe(0);

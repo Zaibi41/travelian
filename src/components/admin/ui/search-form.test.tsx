@@ -19,6 +19,8 @@ vi.mock("@/hooks/use-airports", () => ({ useAirports: () => index }));
 
 import { AirportLines, RouteRow, SearchProductTabs, SearchSubmitButton, SwapButton } from "./search-form";
 import { SectorAirportSelect } from "./SectorAirportSelect";
+import { AirportCombobox } from "./AirportCombobox";
+import { useState } from "react";
 import { DayFirstDateField } from "@/components/admin/ui/DayFirstDateField";
 
 describe("shared search form parts", () => {
@@ -79,10 +81,11 @@ describe("shared search form parts", () => {
     expect(onChange).toHaveBeenCalledWith("LHE");
   });
 
-  it("SectorAirportSelect shows the chosen airport as a card with an x", () => {
+  it("SectorAirportSelect shows the chosen airport on one line with an x", () => {
     const onChange = vi.fn();
     render(<SectorAirportSelect id="t-to" label="To" placeholder="Destination" icon="arrival" codes={["JED"]} value="JED" onChange={onChange} />);
-    expect(screen.getByRole("button", { name: /^To JED - Jeddah/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "To Jeddah – JED" })).toBeInTheDocument();
+    expect(document.body).not.toHaveTextContent(/King Abdulaziz|Saudi Arabia/);
     fireEvent.click(screen.getByRole("button", { name: "Clear to airport" }));
     expect(onChange).toHaveBeenCalledWith(undefined);
   });
@@ -91,5 +94,27 @@ describe("shared search form parts", () => {
     render(<DayFirstDateField id="d" variant="search" value="2026-11-24" onChange={() => undefined} />);
     expect(screen.getByRole("textbox")).toHaveValue("24 Nov 2026");
     expect(screen.getByRole("button", { name: "Choose from calendar" }).className).toContain("left-1");
+  });
+
+  it("choosing an airport shows one line, 'Lahore – LHE', with no airport name; the suggestions still show the name", () => {
+    function From() {
+      const [value, setValue] = useState<string | undefined>();
+      return <AirportCombobox id="t-from" label="From" placeholder="Origin" value={value} onChange={setValue} />;
+    }
+    render(<From />);
+    fireEvent.focus(screen.getByRole("combobox", { name: "From" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "From" }), { target: { value: "lah" } });
+    const option = screen.getByRole("option", { name: /LHE - Lahore/ });
+    expect(option).toHaveTextContent("Allama Iqbal International Airport, Pakistan");  // the list keeps code, city and airport name
+    fireEvent.click(option);
+    const chosen = screen.getByRole("button", { name: "From Lahore – LHE" });
+    expect(chosen).toHaveTextContent(/^Lahore – LHE$/);
+    expect(document.body).not.toHaveTextContent(/Allama Iqbal|Pakistan/);
+    // One line, cut with an ellipsis; the field keeps the fixed search-field height.
+    const text = chosen.querySelector("[data-airport-selected]")!;
+    expect(text.className).toMatch(/\btruncate\b/);
+    expect(text.className).toMatch(/whitespace-nowrap/);
+    expect(chosen.parentElement!.className).toMatch(/\bh-14\b/);
+    expect(chosen.parentElement!.className).not.toMatch(/min-h-14/);
   });
 });
