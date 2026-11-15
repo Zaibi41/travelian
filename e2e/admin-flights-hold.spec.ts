@@ -57,7 +57,7 @@ async function open(page: Page, width: number, { changed = false, holdError = fa
       }
       if (url.pathname === "/v1/live-ticketing/flights/bookings") {
         return holdError
-          ? route.fulfill({ status: 502, json: { detail: "The hold was created at the supplier (PNR 2E572B, TRV-2S60SD) but its total couldn't be verified. Check the total with the supplier before taking any payment.", code: "total_unverified", pnr: "2E572B", booking_id: "TRV-2S60SD" } })
+          ? route.fulfill({ status: 502, json: { detail: "The supplier created a hold (PNR 2E572B) but its total couldn't be verified, so it wasn't saved. Don't take payment for it; it lapses at the supplier's time limit. Search and hold again.", code: "total_unverified", pnr: "2E572B" } })
           : route.fulfill({ status: 201, json: HOLD });
       }
       if (url.pathname === "/v1/admin/bookings/TRV-PE49ZP") return route.fulfill({ json: DETAIL });
@@ -108,7 +108,9 @@ for (const width of [1280, 1366, 1440, 1920]) {
     await open(page, width, { holdError: true });
     await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
     await page.getByRole("button", { name: "Hold seats" }).click();
-    await expect(page.getByRole("region", { name: "Hold created, but its total couldn't be verified" })).toBeVisible();
+    const card = page.getByRole("region", { name: "The total couldn't be verified, so nothing was saved" });
+    await expect(card).toBeVisible();
+    await expect(card.getByRole("link", { name: "Back to search" })).toBeVisible();
     expect(await overflow(page)).toBe(0);
   });
 }
