@@ -87,6 +87,15 @@ describe("Booking detail", () => {
     expect(screen.queryByText(/Supplier cost|Profit|11,000|1,500/)).not.toBeInTheDocument();
   });
 
+  it("Fare: no real supplier cost (imported booking) shows cost and profit as n/a, never 0", () => {
+    detail.current = ok({ ...ADMIN_VIEW, fare: { billable_price: rs(12_500), cost_unknown: true } });
+    renderAt("/admin/bookings/TRV-1/fare");
+    const fare = screen.getByRole("region", { name: "Fare" });
+    expect(within(fare).getAllByRole("row").map(row => row.textContent)).toEqual([
+      "ItemAmount", "Billable priceRs 12,500", "Supplier costn/a", "Profitn/a",
+    ]);
+  });
+
   it("Fare: the selling price per passenger type, cost each only with access, and the selling price form before payment", async () => {
     const per = [{ passenger_type: "ADT" as const, count: 2, selling_each: rs(6_000), supplier_cost_each: rs(5_500) },
       { passenger_type: "INF" as const, count: 1, selling_each: rs(500), supplier_cost_each: rs(450) }];

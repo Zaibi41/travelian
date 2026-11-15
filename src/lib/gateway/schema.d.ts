@@ -1780,6 +1780,11 @@ export interface components {
         /** BookingFare */
         BookingFare: {
             billable_price: components["schemas"]["BookingMoney"];
+            /**
+             * Cost Unknown
+             * @description True when no real supplier cost exists (none recorded, or an imported booking whose cost was filled in as its total): show cost and profit as n/a. Only with the cost and margin permission.
+             */
+            cost_unknown?: boolean | null;
             /** @description Omitted without the cost and margin permission, or when unknown. */
             margin?: components["schemas"]["BookingMoney"] | null;
             /**
@@ -2091,17 +2096,36 @@ export interface components {
         };
         /**
          * BusinessResults
-         * @description Follows all filters. A field is omitted when it can't be computed exactly.
+         * @description Follows all filters. Money is summed per currency, never converted.
          */
         BusinessResults: {
-            /** @description Omitted if any paid booking lacks supplier cost, or for roles without margin visibility. */
-            gross_profit?: components["schemas"]["Money"] | null;
+            /**
+             * Gross Profit
+             * @description Per currency, as total_sales. amount_minor omitted (n/a) when a paid booking in that currency has no real supplier cost (none recorded, or an imported booking whose cost was filled in as its total). Omitted for roles without margin visibility.
+             */
+            gross_profit?: components["schemas"]["CurrencyAmount"][] | null;
             /** Issued Tickets */
             issued_tickets: number;
             /** Total Bookings */
             total_bookings: number;
-            /** @description Omitted if any paid booking is not priced in PKR. */
-            total_sales?: components["schemas"]["Money"] | null;
+            /**
+             * Total Sales
+             * @description One entry per currency of the paid bookings (PKR when there are none).
+             */
+            total_sales: components["schemas"]["CurrencyAmount"][];
+        };
+        /** CurrencyAmount */
+        CurrencyAmount: {
+            /**
+             * Amount Minor
+             * @description Amount in minor units (paisa for PKR). Omitted = n/a: it can't be computed exactly.
+             */
+            amount_minor?: number | null;
+            /**
+             * Currency
+             * @description ISO currency code, e.g. PKR.
+             */
+            currency: string;
         };
         /** CurrentUser */
         CurrentUser: {
@@ -3380,20 +3404,6 @@ export interface components {
             merge_into_person_id: string;
             /** Reason */
             reason: string;
-        };
-        /** Money */
-        Money: {
-            /**
-             * Amount Minor
-             * @description Amount in paisa.
-             */
-            amount_minor: number;
-            /**
-             * Currency
-             * @default PKR
-             * @constant
-             */
-            currency: "PKR";
         };
         /**
          * NeedsAction

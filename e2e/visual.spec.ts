@@ -18,7 +18,7 @@ const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" })
 const SUMMARY = {
   source: "gateway_bookings", contains_sample_data: false, generated_at: "2026-11-11T05:00:00Z",
   needs_action: { pending_issuance: 2, payment_pending: 0, expiring_holds: 1, expiring_window_hours: 2 },
-  business: { total_bookings: 42, issued_tickets: 30, total_sales: rs(1_284_500), gross_profit: rs(96_400) },
+  business: { total_bookings: 42, issued_tickets: 30, total_sales: [rs(1_284_500)], gross_profit: [rs(96_400)] },
 };
 const REPORT = { granularity: "day", timezone: "Asia/Karachi", buckets: [
   { start: "2026-11-05", bookings: 4, issued: 3 }, { start: "2026-11-06", bookings: 6, issued: 5 }, { start: "2026-11-07", bookings: 2, issued: 2 },

@@ -1,5 +1,5 @@
 import { format, isToday, isTomorrow, parseISO } from "date-fns";
-import type { BookingReport, Money } from "./types";
+import type { BookingReport, CurrencyAmount, Money } from "./types";
 
 // Formatting only. Amounts arrive from the gateway as integer paisa.
 
@@ -11,6 +11,16 @@ function rupees(money: Money) {
 export function formatRs(money: Money) {
   const value = Math.round(rupees(money));
   return `${value < 0 ? "-" : ""}Rs ${Math.abs(value).toLocaleString("en-PK")}`;
+}
+
+/** One figure per currency, never converted: "Rs 1,284,500 · SAR 400". A missing amount is "n/a", never 0. */
+export function formatAmounts(items: CurrencyAmount[]) {
+  return items.map(({ currency, amount_minor: minor }) => {
+    const label = currency === "PKR" ? "Rs" : currency;
+    if (minor === undefined || minor === null) return items.length > 1 ? `${label} n/a` : "n/a";
+    const value = Math.round(minor / 100);
+    return `${value < 0 ? "-" : ""}${label} ${Math.abs(value).toLocaleString("en-PK")}`;
+  }).join(" · ");
 }
 
 export function formatCount(count: number) {

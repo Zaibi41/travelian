@@ -30,7 +30,7 @@ function summary(counts: [number, number, number], business: Partial<DashboardSu
     contains_sample_data: false,
     generated_at: "2026-11-05T07:00:00Z",
     needs_action: { pending_issuance: counts[0], payment_pending: counts[1], expiring_holds: counts[2], expiring_window_hours: 2 },
-    business: { total_bookings: 42, issued_tickets: 30, total_sales: rs(1_284_500), gross_profit: rs(96_400), ...business },
+    business: { total_bookings: 42, issued_tickets: 30, total_sales: [rs(1_284_500)], gross_profit: [rs(96_400)], ...business },
   };
 }
 
@@ -87,6 +87,21 @@ describe("DashboardPage", () => {
     renderPage();
     expect(screen.queryByText("Total sales")).not.toBeInTheDocument();
     expect(screen.queryByText("Gross profit")).not.toBeInTheDocument();
+  });
+
+  it("sums money per currency and shows n/a, never 0, for profit the gateway can't compute", () => {
+    setData({ summary: ok(summary([0, 0, 0], { total_sales: [rs(1_284_500), { currency: "SAR", amount_minor: 40_000 }],
+      gross_profit: [{ currency: "PKR" }, { currency: "SAR", amount_minor: 10_000 }] })) });
+    renderPage();
+    expect(screen.getByText("Rs 1,284,500 · SAR 400")).toBeInTheDocument();
+    expect(screen.getByText("Rs n/a · SAR 100")).toBeInTheDocument();
+  });
+
+  it("a single currency with unknown profit reads n/a", () => {
+    setData({ summary: ok(summary([0, 0, 0], { gross_profit: [{ currency: "PKR" }] })) });
+    renderPage();
+    expect(screen.getByText("Gross profit").closest("div")?.parentElement).toHaveTextContent("n/a");
+    expect(screen.queryByText("Rs 0")).not.toBeInTheDocument();
   });
 
   it("hides elements with no data source and labels not in the mockup", () => {

@@ -9,7 +9,10 @@ type Schemas = components["schemas"];
 export type DashboardSummary = Schemas["DashboardSummary"];
 export type NeedsAction = Schemas["NeedsAction"];
 export type BusinessResults = Schemas["BusinessResults"];
-export type Money = Schemas["Money"];
+/** One amount in integer minor units (paisa for PKR). */
+export type Money = { amount_minor: number; currency: string };
+/** A per-currency figure; no amount_minor = n/a (the gateway can't compute it exactly). */
+export type CurrencyAmount = Schemas["CurrencyAmount"];
 export type BookingReport = Schemas["BookingReport"];
 export type AttentionQueue = Schemas["AttentionQueue"];
 export type AttentionItem = Schemas["AttentionItem"];
