@@ -4,16 +4,24 @@ import { Button } from "@/components/admin/ui/button";
 import { downloadItinerary } from "@/lib/admin-bookings/api";
 import { GatewayError } from "@/lib/gateway/client";
 
-/** "Download itinerary (PDF)" for a booking (Flights and Group Ticketing). The file comes from the gateway with the
- *  user's token (never a plain link) and is saved as "<booking reference>.pdf". */
+/** "Download itinerary (PDF)" and "Download PNG" for a booking (Flights and Group Ticketing). Both come from the gateway
+ *  with the user's token (never a plain link): the PDF as "<booking reference>.pdf", the PNG (the same document as an
+ *  image) as "<booking reference>-itinerary.png". */
 export function DownloadItineraryButton({ bookingId }: { bookingId: string }) {
-  const download = useMutation({ mutationFn: () => downloadItinerary(bookingId) });
+  const download = useMutation({ mutationFn: (format: "pdf" | "png") => downloadItinerary(bookingId, undefined, format) });
+  const pending = (format: "pdf" | "png") => download.isPending && download.variables === format;
   return (
     <div className="flex min-w-0 flex-col items-start gap-1 sm:items-end">
-      <Button type="button" variant="outline" size="sm" className="gap-1.5" disabled={download.isPending} onClick={() => download.mutate()}>
-        <Download className="h-4 w-4" aria-hidden="true" />
-        {download.isPending ? "Preparing…" : "Download itinerary (PDF)"}
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" variant="outline" size="sm" className="gap-1.5" disabled={download.isPending} onClick={() => download.mutate("pdf")}>
+          <Download className="h-4 w-4" aria-hidden="true" />
+          {pending("pdf") ? "Preparing…" : "Download itinerary (PDF)"}
+        </Button>
+        <Button type="button" variant="outline" size="sm" className="gap-1.5" disabled={download.isPending} onClick={() => download.mutate("png")}>
+          <Download className="h-4 w-4" aria-hidden="true" />
+          {pending("png") ? "Preparing…" : "Download PNG"}
+        </Button>
+      </div>
       {download.error && (
         <p role="alert" className="text-helper text-status-critical-text">
           {download.error instanceof GatewayError ? download.error.message : "The itinerary couldn't be downloaded. Try again."}

@@ -25,6 +25,20 @@ describe("downloadItinerary", () => {
     expect(click).toHaveBeenCalledOnce();
   });
 
+  it("PNG: the same endpoint with format=png, saved as <reference>-itinerary.png", async () => {
+    const image = new Blob([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], { type: "image/png" });
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(image, { status: 200, headers: { "Content-Type": "image/png" } }));
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:png");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const names: string[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) { names.push(this.download); });
+    await downloadItinerary("TRV-GRP-AB12CD", { baseUrl: "http://gw", accessToken: "t", fetchImpl }, "png");
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("http://gw/v1/admin/bookings/TRV-GRP-AB12CD/itinerary.pdf?format=png");
+    expect(init.headers).toMatchObject({ Accept: "image/png", Authorization: "Bearer t" });
+    expect(names).toEqual(["TRV-GRP-AB12CD-itinerary.png"]);
+  });
+
   it("an unknown booking is the gateway's 404 message, and nothing is saved", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ detail: "Booking not found." }), { status: 404 }));
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click");

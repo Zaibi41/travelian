@@ -180,8 +180,8 @@ export function gatewayGet<P extends GetPath>(path: P, query?: GetQuery<P>, opti
 }
 
 /** A file from the gateway (e.g. a PDF), sent with the user's token like every other call; returned as a Blob. */
-export function gatewayGetFile<P extends GetPath>(path: P, accept: string, options: GatewayOptions = {}): Promise<Blob> {
-  return send(path, { method: "GET", accept }, options) as Promise<Blob>;
+export function gatewayGetFile<P extends GetPath>(path: P, accept: string, options: GatewayOptions = {}, query?: GetQuery<P>): Promise<Blob> {
+  return send(path, { method: "GET", accept, query: query as Record<string, unknown> | undefined }, options) as Promise<Blob>;
 }
 
 export function gatewayPost<P extends PostPath>(path: P, body: PostBody<P>, options: GatewayOptions = {}): Promise<PostResponse<P>> {

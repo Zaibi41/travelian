@@ -112,9 +112,16 @@ describe("Booking detail", () => {
     gateway.downloadItinerary.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new GatewayError("unavailable", "The itinerary can't be downloaded right now.", 503));
     renderAt("/admin/bookings/TRV-1/overview");
     fireEvent.click(screen.getByRole("button", { name: "Download itinerary (PDF)" }));
-    await waitFor(() => expect(gateway.downloadItinerary).toHaveBeenCalledWith("TRV-1"));
+    await waitFor(() => expect(gateway.downloadItinerary).toHaveBeenCalledWith("TRV-1", undefined, "pdf"));
     fireEvent.click(await screen.findByRole("button", { name: "Download itinerary (PDF)" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("The itinerary can't be downloaded right now.");
+  });
+
+  it("Download PNG sits beside the PDF and asks for the same booking as an image", async () => {
+    gateway.downloadItinerary.mockResolvedValue(undefined);
+    renderAt("/admin/bookings/TRV-1/overview");
+    fireEvent.click(screen.getByRole("button", { name: "Download PNG" }));
+    await waitFor(() => expect(gateway.downloadItinerary).toHaveBeenCalledWith("TRV-1", undefined, "png"));
   });
 
   it("plain staff: no Supplier payment tab, and its URL goes back to Overview", () => {

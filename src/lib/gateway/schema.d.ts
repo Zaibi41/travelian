@@ -372,9 +372,11 @@ export interface paths {
         };
         /**
          * Itinerary Pdf
-         * @description The booking's itinerary as a PDF (Flights and Group Ticketing): reference, PNR, status, customer, travelers, every
-         *     flight (outbound then return) and the selling price, paid and due. Never a supplier name, group id, cost or profit;
-         *     a group booking's PNR (the supplier's) only with the supplier names permission.
+         * @description The booking's itinerary / e-ticket as a PDF (Flights and Group Ticketing; app/services/itinerary_pdf.py): status
+         *     banner, Booked by / Contact (Travelian), travelers with fare, Total, Paid and Due (selling price), every flight
+         *     outbound then return. Never a supplier name, group id, cost or profit; a group booking's PNR (the supplier's) only
+         *     with the supplier names permission; full passport numbers only with reveal_identity (each one logged).
+         *     format=png: the finished PDF rendered at about 150 DPI, pages stacked into one image (same rules and reveals).
          */
         get: operations["itinerary_pdf_v1_admin_bookings__booking_id__itinerary_pdf_get"];
         put?: never;
@@ -5064,7 +5066,10 @@ export interface operations {
     };
     itinerary_pdf_v1_admin_bookings__booking_id__itinerary_pdf_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description pdf (default) or png: the same document as one image. */
+                format?: "pdf" | "png";
+            };
             header?: never;
             path: {
                 booking_id: string;
@@ -5080,6 +5085,7 @@ export interface operations {
                 };
                 content: {
                     "application/pdf": unknown;
+                    "image/png": unknown;
                 };
             };
             /** @description Back-office users only. */
