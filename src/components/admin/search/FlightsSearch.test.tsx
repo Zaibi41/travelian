@@ -16,6 +16,10 @@ globalThis.ResizeObserver ??= class {
   unobserve() {}
   disconnect() {}
 } as unknown as typeof ResizeObserver;
+// Radix Select scrolls and checks pointer capture; jsdom has neither.
+Element.prototype.scrollIntoView ??= function scrollIntoView() {};
+Element.prototype.hasPointerCapture ??= () => false;
+Element.prototype.releasePointerCapture ??= () => {};
 
 const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" });
 const fare = (id: string, price: number, refund = "Refundable") => ({ id, name: id.toUpperCase(), meal: "Snacks", refund, time_limit: "1 hours for domestic", selling_price: rs(price) });
@@ -53,18 +57,20 @@ describe("admin Flights search", () => {
     expect(within(cards[1]).getAllByRole("row")).toHaveLength(3);  // header + 2 fares, then "Show 2 more fares"
     fireEvent.click(within(cards[1]).getByRole("button", { name: "Show 2 more fares" }));
     expect(within(cards[1]).getAllByRole("row")).toHaveLength(5);
-    expect(screen.getByRole("note")).toHaveTextContent("Search prices are indicative.");
-    expect(screen.getByRole("group", { name: /Search expiry/ })).toBeInTheDocument();
+    // One status line replaces the provider and expiry cards and the yellow banner.
+    expect(screen.getByLabelText("Search status")).toHaveTextContent(/Fares valid until \d\d:\d\d \(\d\d:\d\d left\) · Prices are revalidated before booking/);
+    expect(screen.queryByRole("note")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Search prices are indicative|Search expiry|Available providers/)).not.toBeInTheDocument();
   });
 
-  it("shows no supplier or provider card to staff; admins get the provider card from the gateway", async () => {
+  it("shows no provider count or names to staff; admins get 'Providers responding' in the status line from the gateway", async () => {
     const { unmount } = renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
     await screen.findByRole("region", { name: "Results" });
-    expect(screen.queryByText(/Available providers|southair|supplier/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Providers responding|southair|supplier/i)).not.toBeInTheDocument();
     unmount();
     gateway.search.mockResolvedValue({ ...STAFF, providers: [{ name: "southair", status: "responded" }] });
     renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
-    expect(await screen.findByRole("group", { name: /Available providers: 1 of 1/ })).toBeInTheDocument();
+    expect(await screen.findByLabelText("Search status")).toHaveTextContent(/^Providers responding 1 of 1 · Fares valid until/);
   });
 
   it("shows 'not available yet', never 'Some results may be missing', when nothing came back", async () => {
@@ -89,7 +95,7 @@ describe("admin Flights search", () => {
     renderAt("/admin/search?tab=flights");
     expect(screen.getByRole("button", { name: "Search flights" })).toBeDisabled();
     expect(gateway.search).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "1 Traveler" }));
+    fireEvent.click(screen.getByRole("button", { name: "Travelers and cabin 1 adult · Economy" }));
     expect(screen.getByRole("button", { name: "Fewer adults" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Fewer infants" })).toBeDisabled();
   });
@@ -114,7 +120,7 @@ const LIVE_UAT: FlightSearchView = {
 };
 
 describe("admin Flights search, live Southair shape", () => {
-  it("shows times, duration, stops and per-fare baggage; meal, refund and hold time say not available", async () => {
+  it("shows times, duration, stops and per-fare baggage; missing meal, refund and hold time show a dash", async () => {
     gateway.search.mockReset().mockResolvedValue(LIVE_UAT);
     renderAt("/admin/search?tab=flights&from=LHE&to=KHI&date=2026-11-19");
     const results = await screen.findByRole("region", { name: "Results" });
@@ -126,9 +132,9 @@ describe("admin Flights search, live Southair shape", () => {
     const rows = within(results).getAllByRole("row").slice(1);
     expect(rows.map(row => within(row).getAllByRole("cell")[2].textContent)).toEqual(["No checked baggage", "20KG", "30KG"]);
     for (const row of rows) {
-      expect(row).toHaveTextContent("Meal info not available");
-      expect(row).toHaveTextContent("Not available yet");  // refund
-      expect(row).toHaveTextContent("Hold time not available");
+      const cells = within(row).getAllByRole("cell").map(cell => cell.textContent);
+      expect([cells[1], cells[3], cells[4]]).toEqual(["—Not available", "—Not available", "—Not available"]);  // meal, refund, hold left (dash; screen readers hear "Not available")
+      expect(row).not.toHaveTextContent(/info not available|Not available yet|Hold time not available/);
     }
     expect(results).not.toHaveTextContent("Baggage info not available");
     expect(document.body.innerHTML).not.toMatch(/southair/i);
@@ -142,8 +148,8 @@ describe("admin Flights search, live Southair shape", () => {
     renderAt("/admin/search?tab=flights&from=LHE&to=KHI&date=2026-11-19");
     const results = await screen.findByRole("region", { name: "Results" });
     fireEvent.click(within(results).getByRole("button", { name: "Show 1 more fares" }));
-    expect(within(results).getAllByText("Price not available")).toHaveLength(3);
-    expect(screen.getByRole("combobox", { name: "Price range" })).toBeDisabled();
+    expect(within(results).getAllByRole("row").slice(1).map(row => within(row).getAllByRole("cell")[5].textContent)).toEqual(["—Not available", "—Not available", "—Not available"]);
+    expect(screen.getAllByRole("group", { name: "Price range" })[0]).toBeDisabled();
   });
 });
 
@@ -169,17 +175,22 @@ describe("mockup elements (Search > Flights)", () => {
   beforeEach(() => gateway.search.mockReset().mockResolvedValue(STAFF));
   const url = "/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27";
 
-  it("search bar: Multi-city disabled with a reason, Cabin Class Economy, Return date disabled until Round-trip", async () => {
+  it("search bar in one row: trip type (Multi-city off with a reason), one travelers and cabin picker (Economy only), Return only for Round-trip", async () => {
     renderAt(url);
-    const multi = screen.getByRole("radio", { name: "Multi-city" });
-    expect(multi).toBeDisabled();
-    expect(multi).toHaveAccessibleDescription("Multi-city isn't available from the current flight provider.");
-    expect(screen.getByRole("combobox", { name: "Cabin Class" })).toHaveTextContent("Economy");
-    const returnDate = screen.getByLabelText("Return date");
-    expect(returnDate).toBeDisabled();
-    expect(returnDate).toHaveAccessibleDescription("Choose Round-trip to add a return date.");
-    fireEvent.click(screen.getByRole("radio", { name: "Round-trip" }));
+    const row = document.querySelector(".admin-search-row")!;
+    expect([...row.children].map(child => child.getAttribute("data-size"))).toEqual(["trip", "route", "date", "people", "submit"]);
+    expect(screen.getByRole("combobox", { name: "Trip" })).toHaveTextContent("One-way");
+    expect(screen.queryByLabelText("Return date")).not.toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Trip" }), { key: "ArrowDown" });
+    expect(await screen.findByRole("option", { name: /Multi-city/ })).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(screen.getByRole("option", { name: "Round-trip" }));
     expect(screen.getByLabelText("Return date")).toBeEnabled();
+    expect([...row.children].map(child => child.getAttribute("data-size"))).toEqual(["trip", "route", "date", "date", "people", "submit"]);
+    fireEvent.click(screen.getByRole("button", { name: "Travelers and cabin 1 adult · Economy" }));
+    expect(screen.getByRole("radio", { name: "Economy" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Business/ })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "More children" }));
+    expect(screen.getByRole("button", { name: "Travelers and cabin 1 adult, 1 child · Economy" })).toBeInTheDocument();
   });
 
   it("no Provider field, provider counts or provider names for staff; Quotes pending never shown", async () => {
@@ -187,6 +198,8 @@ describe("mockup elements (Search > Flights)", () => {
     const results = await screen.findByRole("region", { name: "Results" });
     expect(screen.queryByRole("combobox", { name: "Provider" })).not.toBeInTheDocument();
     expect(results).not.toHaveTextContent(/Providers responding|southair|Provider/);
+    expect(screen.getByLabelText("Search status")).not.toHaveTextContent(/Providers/);
+    expect(screen.queryByRole("group", { name: "Provider" })).not.toBeInTheDocument();
     expect(screen.queryByText(/Quotes pending/)).not.toBeInTheDocument();
   });
 
@@ -198,18 +211,50 @@ describe("mockup elements (Search > Flights)", () => {
     renderAt(url);
     const results = await screen.findByRole("region", { name: "Results" });
     expect(screen.getByRole("combobox", { name: "Provider" })).toHaveTextContent("All providers");
-    expect(results).toHaveTextContent("Providers responding 1 of 1");
+    expect(screen.getByLabelText("Search status")).toHaveTextContent("Providers responding 1 of 1");
+    expect(screen.getAllByRole("group", { name: "Provider" }).length).toBeGreaterThan(0);
     expect(within(results).getAllByRole("columnheader", { name: "Hold left · Provider" }).length).toBeGreaterThan(0);
     expect(within(results).getAllByText("southair").length).toBeGreaterThan(0);
   });
 
-  it("results header: fare valid until (from expires_at) and Sort by", async () => {
-    const expires = new Date(2026, 10, 27, 14, 5);
+  it("status line: fares valid until (from expires_at); Sort by with the public site's options plus arrival", async () => {
+    const expires = new Date(Date.now() + 9 * 60_000);
     gateway.search.mockResolvedValue({ ...STAFF, expires_at: expires.toISOString() });
     renderAt(url);
     const results = await screen.findByRole("region", { name: "Results" });
-    expect(results).toHaveTextContent("Fare valid until 14:05");
-    expect(within(results).getByRole("combobox", { name: "Sort by" })).toHaveTextContent("Price, low to high");
+    const hhmm = `${String(expires.getHours()).padStart(2, "0")}:${String(expires.getMinutes()).padStart(2, "0")}`;
+    expect(screen.getByLabelText("Search status")).toHaveTextContent(`Fares valid until ${hhmm}`);
+    const sort = within(results).getByRole("combobox", { name: "Sort by" });
+    expect(sort).toHaveTextContent("Price, low to high");
+    fireEvent.keyDown(sort, { key: "ArrowDown" });
+    expect((await screen.findAllByRole("option")).map(option => option.textContent)).toEqual([
+      "Price, low to high", "Price, high to low", "Shortest duration", "Longest duration", "Departure, early to late", "Arrival, early to late"]);
+    fireEvent.click(screen.getByRole("option", { name: "Price, high to low" }));
+    expect(within(results).getAllByRole("article").map(card => card.getAttribute("aria-label"))).toEqual([
+      "Synthetic Aviation With A Very Long Airline Name MM112", "Synthetic Aviation MM114"]);
+  });
+
+  it("filters in a rail: all seven, chips for active ones, removing a chip and Clear all", async () => {
+    const withSupplier = structuredClone(STAFF);
+    withSupplier.providers = [{ name: "southair", status: "responded" }];
+    gateway.search.mockResolvedValue(withSupplier);
+    renderAt(url);
+    const results = await screen.findByRole("region", { name: "Results" });
+    const rail = screen.getByRole("complementary", { name: "Filters" });
+    const desktop = rail.querySelector(".xl\\:block") as HTMLElement;
+    expect(within(desktop).getAllByRole("group").map(group => group.getAttribute("aria-label")))
+      .toEqual(["Airline", "Stops", "Departure time", "Baggage", "Refundable", "Price range", "Provider"]);
+    expect(screen.queryByRole("group", { name: "Active filters" })).not.toBeInTheDocument();
+    fireEvent.click(within(within(desktop).getByRole("group", { name: "Stops" })).getByRole("radio", { name: "Non-stop" }));
+    fireEvent.click(within(within(desktop).getByRole("group", { name: "Departure time" })).getByRole("radio", { name: "Night (21–05)" }));
+    const chips = screen.getByRole("group", { name: "Active filters" });
+    expect(within(chips).getAllByRole("button").map(button => button.textContent)).toEqual(["Stops: Non-stop", "Departure time: Night (21–05)", "Clear all"]);
+    expect(within(results).getAllByRole("article")).toHaveLength(1);
+    fireEvent.click(within(chips).getByRole("button", { name: "Remove filter Stops: Non-stop" }));
+    expect(within(screen.getByRole("group", { name: "Active filters" })).getAllByRole("button")).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
+    expect(screen.queryByRole("group", { name: "Active filters" })).not.toBeInTheDocument();
+    expect(within(results).getAllByRole("article")).toHaveLength(2);
   });
 
   it("filters: Baggage and Price range from the results; Refundable enabled only with refund data", async () => {
@@ -218,16 +263,17 @@ describe("mockup elements (Search > Flights)", () => {
     gateway.search.mockResolvedValue(noRefund);
     const { unmount } = renderAt(url);
     await screen.findByRole("region", { name: "Results" });
-    expect(screen.getByRole("combobox", { name: "Baggage" })).toBeEnabled();
-    expect(screen.getByRole("combobox", { name: "Price range" })).toBeEnabled();
-    const refund = screen.getByRole("combobox", { name: "Refundable" });
-    expect(refund).toBeDisabled();
-    expect(refund).toHaveAccessibleDescription("Not available yet");
+    expect(screen.getAllByRole("group", { name: "Baggage" })[0]).toBeEnabled();
+    expect(screen.getAllByRole("group", { name: "Price range" })[0]).toBeEnabled();
+    const refund = screen.getAllByRole("group", { name: "Refundable" })[0];
+    expect(refund).toBeDisabled();  // visible, off, with a tooltip instead of helper text
+    expect(refund).toHaveAttribute("title", "Not provided by suppliers yet");
+    expect(refund).toHaveAccessibleDescription("Not provided by suppliers yet");
     unmount();
     gateway.search.mockResolvedValue(STAFF);
     renderAt(url);
     await screen.findByRole("region", { name: "Results" });
-    expect(screen.getByRole("combobox", { name: "Refundable" })).toBeEnabled();
+    expect(screen.getAllByRole("group", { name: "Refundable" })[0]).toBeEnabled();
   });
 
   it("card: neutral logo placeholder (no image), Flight details dialog with real fields, refund badge only with data", async () => {
@@ -335,17 +381,17 @@ describe("Search > Flights small fixes (item 3)", () => {
     expect(gateway.search).toHaveBeenCalledWith(expect.objectContaining({ date: "2027-01-05" }), expect.anything());
   });
 
-  it("c) a running timer has no warning tag; an expired one turns critical with the word Expired", async () => {
+  it("c) a running countdown sits in the status line; once over it says the fares expired, in red text", async () => {
     gateway.search.mockResolvedValue(STAFF);
     const { unmount } = renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
-    const card = await screen.findByRole("group", { name: /Search expiry/ });
-    expect(card).not.toHaveTextContent("Needs action");
-    expect(card.getAttribute("aria-label")).not.toMatch(/Needs action|Critical/);
+    const timer = await screen.findByRole("timer");
+    expect(timer).toHaveTextContent(/\(\d\d:\d\d left\)/);
+    expect(timer).not.toHaveTextContent("Needs action");
     unmount();
     gateway.search.mockResolvedValue({ ...STAFF, expires_at: new Date(Date.now() - 1000).toISOString() });
     renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-28");
-    const expired = await screen.findByRole("group", { name: /Search expiry: Expired/ });
-    expect(expired).toHaveTextContent("Expired");
-    expect(expired).not.toHaveTextContent("Needs action");
+    const expired = await screen.findByRole("timer");
+    expect(expired).toHaveTextContent("Fares expired, search again");
+    expect(expired.className).toMatch(/text-status-critical-text/);
   });
 });

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { Minus, Plane, Plus } from "lucide-react";
+import { ChevronDown, Minus, Plane, Plus, Users, X } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/admin/ui/dialog";
 import { Input } from "@/components/admin/ui/field";
@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/admin/ui/StatusBadge";
-import { StatusKpiCard } from "@/components/admin/StatusKpiCard";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { LabeledSelect } from "@/components/admin/ui/LabeledSelect";
 import { AirportCombobox } from "@/components/admin/ui/AirportCombobox";
@@ -23,7 +22,7 @@ import { formatMoney } from "@/lib/admin-bookings/format";
 import { cn } from "@/lib/utils";
 import {
   DEFAULT_FILTERS, airlineLabel, baggageOptions, filterFlights, formatDuration, isCompleteFlightSearch, isRefundable, parseFlightSearch,
-  priceBands, searchFlights, stopsLabel, writeFlightSearch,
+  SORT_OPTIONS, priceBands, searchFlights, stopsLabel, writeFlightSearch,
   type FareView, type FlightSearch, type FlightSearchView, type FlightView, type JourneyView, type ResultFilters,
 } from "@/lib/admin-search/flights";
 
@@ -57,7 +56,7 @@ export const REASONS = {
   multiCity: "Multi-city isn't available from the current flight provider.",
   cabin: "Only Economy is searched for now.",
   returnDate: "Choose Round-trip to add a return date.",
-  refund: "Not available yet",
+  refund: "Not provided by suppliers yet",
   fareRules: "Not available yet",
   quote: "Quotes aren't available yet",
 } as const;
@@ -118,7 +117,6 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
     retry: false,
     refetchOnWindowFocus: false,
   });
-  const countdown = useCountdown(results.data?.expires_at);
   // Provider names come only to roles the gateway allows (D23); nothing is shown otherwise.
   const providerNames = (results.data?.providers ?? []).map(provider => provider.name);
   const canSearch = isCompleteFlightSearch(draft);
@@ -130,58 +128,7 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
 
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
-      {results.data && (
-        <div className="grid grid-cols-1 gap-card-gap sm:grid-cols-2">
-          {results.data.providers && (
-            <StatusKpiCard
-              label="Available providers"
-              value={`${results.data.providers.filter(p => p.status === "responded").length} of ${results.data.providers.length}`}
-            />
-          )}
-          {results.data.status === "complete" && countdown && (
-            <StatusKpiCard
-              label="Search expiry"
-              value={countdown.seconds > 0 ? countdown.label : "Expired"}
-              // Mockup search-flights: a running timer carries no warning tag. Once expired the card
-              // turns critical; the value "Expired" is its text label, so no separate tag is shown.
-              severity={countdown.seconds > 0 ? undefined : "critical"}
-              showBadge={false}
-              hint={countdown.seconds > 0 ? "Fares must be revalidated before booking" : "Search again for current fares"}
-            />
-          )}
-        </div>
-      )}
-
       <section aria-label="Search flights" className="flex flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
-        <div className="flex flex-wrap items-center gap-2">
-          <div role="radiogroup" aria-label="Trip type" className="inline-flex rounded-sm border border-border bg-muted p-0.5">
-            {(["oneway", "roundtrip"] as const).map(trip => (
-              <button
-                key={trip}
-                type="button"
-                role="radio"
-                aria-checked={draft.trip === trip}
-                onClick={() => setDraft({ ...draft, trip, returnDate: trip === "oneway" ? undefined : draft.returnDate })}
-                className={cn(
-                  "h-8 rounded-sm px-3 text-body font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  draft.trip === trip ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {trip === "oneway" ? "One-way" : "Round-trip"}
-              </button>
-            ))}
-            <WithReason reason={REASONS.multiCity}>
-              {describedBy => (
-                <button type="button" role="radio" aria-checked={false} disabled aria-describedby={describedBy}
-                  className="h-8 cursor-not-allowed rounded-sm px-3 text-body font-medium text-muted-foreground opacity-60">
-                  Multi-city
-                </button>
-              )}
-            </WithReason>
-          </div>
-          <TravelersPicker value={draft} onChange={next => setDraft({ ...draft, ...next })} />
-          <CabinPicker />
-        </div>
         <form
           className="admin-search-form flex min-w-0 flex-col gap-3"
           onSubmit={event => {
@@ -189,36 +136,35 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
             if (canSearch) commit(draft);
           }}
         >
-          {/* One line like the public site when the form is wide enough (theme.css, .admin-search-fields):
-              From, round swap, To, dates, provider (admin only) and Search flights. Narrower: From/To
-              on their own row, the rest below; stacked on phones. */}
-          <div className="admin-search-fields" data-fields={providerNames.length ? "flights-provider" : "flights"}>
-            <div className="admin-search-route min-w-0">
+          {/* One row like the public site: trip type, From, swap, To, dates, travelers and cabin, provider
+              (admin only) and Search flights. Fields keep compact widths and From / To take the rest; when
+              the form is too narrow for that, the row wraps (theme.css, .admin-search-row). */}
+          <div className="admin-search-row">
+            <div data-size="trip"><TripSelect value={draft.trip} onChange={trip => setDraft({ ...draft, trip, returnDate: trip === "oneway" ? undefined : draft.returnDate })} /></div>
+            <div data-size="route" className="min-w-0">
               <RouteRow
                 from={<AirportCombobox id="flight-from" label="From" placeholder="Origin" icon="departure" value={draft.from} onChange={from => setDraft({ ...draft, from })} />}
                 to={<AirportCombobox id="flight-to" label="To" placeholder="Destination" icon="arrival" value={draft.to} onChange={to => setDraft({ ...draft, to })} />}
                 onSwap={() => setDraft({ ...draft, from: draft.to, to: draft.from })}
               />
             </div>
-            <DateInput id="flight-date" label="Departure date" value={draft.date} min={todayIso()} onChange={date => setDraft({ ...draft, date })} />
-            <DateInput id="flight-return" label="Return date" value={draft.trip === "roundtrip" ? draft.returnDate : undefined} min={draft.date}
-              disabledReason={draft.trip === "roundtrip" ? undefined : REASONS.returnDate} onChange={returnDate => setDraft({ ...draft, returnDate })} />
-            {providerNames.length > 0 && (
-              <LabeledSelect id="flight-provider" label="Provider" value={filters.provider} triggerClassName={SEARCH_FIELD}
-                options={[{ value: "any", label: "All providers" }, ...providerNames.map(name => ({ value: name, label: name }))]}
-                onChange={provider => setFilters({ ...filters, provider })} />
+            <div data-size="date"><DateInput id="flight-date" label="Departure date" value={draft.date} min={todayIso()} onChange={date => setDraft({ ...draft, date })} /></div>
+            {draft.trip === "roundtrip" && (
+              <div data-size="date"><DateInput id="flight-return" label="Return date" value={draft.returnDate} min={draft.date} onChange={returnDate => setDraft({ ...draft, returnDate })} /></div>
             )}
-            <SearchSubmitButton label="Search flights" disabled={!canSearch} />
+            <div data-size="people"><TravelersCabinPicker value={draft} onChange={next => setDraft({ ...draft, ...next })} /></div>
+            {providerNames.length > 0 && (
+              <div data-size="provider">
+                <LabeledSelect id="flight-provider" label="Provider" value={filters.provider} triggerClassName={SEARCH_FIELD}
+                  options={[{ value: "any", label: "All providers" }, ...providerNames.map(name => ({ value: name, label: name }))]}
+                  onChange={provider => setFilters({ ...filters, provider })} />
+              </div>
+            )}
+            <div data-size="submit"><SearchSubmitButton label="Search flights" disabled={!canSearch} /></div>
           </div>
         </form>
         {sameAirport && <p role="alert" className="text-body text-status-critical-text">Origin and destination are the same airport. Choose a different destination.</p>}
       </section>
-
-      {complete && (
-        <p role="note" className="rounded-lg border border-status-action/40 bg-status-action-soft px-card py-2.5 text-body text-status-action-text">
-          Search prices are indicative. A fare must be revalidated before any money is taken. The booked price is final.
-        </p>
-      )}
 
       {complete && (
         results.error ? (
@@ -238,39 +184,34 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
   );
 }
 
-function DateInput({ id, label, value, min, disabledReason, onChange }: {
-  id: string; label: string; value?: string; min?: string; disabledReason?: string; onChange: (value?: string) => void;
-}) {
+function DateInput({ id, label, value, min, onChange }: { id: string; label: string; value?: string; min?: string; onChange: (value?: string) => void }) {
   return (
-    <div className="relative flex min-w-0 flex-col gap-1" title={disabledReason}>
+    <div className="relative flex min-w-0 flex-col gap-1">
       <label htmlFor={id} className="text-label font-medium text-muted-foreground">{label}</label>
-      <DayFirstDateField id={id} value={value} min={min} disabled={Boolean(disabledReason)} variant="search" calendarTitle={`Select ${label.toLowerCase()}`}
-        describedBy={disabledReason ? `${id}-reason` : undefined} onChange={onChange} />
-      {disabledReason && <span id={`${id}-reason`} className="sr-only">{disabledReason}</span>}
+      <DayFirstDateField id={id} value={value} min={min} variant="search" calendarTitle={`Select ${label.toLowerCase()}`} onChange={onChange} />
+    </div>
+  );
+}
+
+/** Trip type as one compact field: One-way, Round-trip; Multi-city listed but off, with the reason. */
+function TripSelect({ value, onChange }: { value: FlightSearch["trip"]; onChange: (trip: FlightSearch["trip"]) => void }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1">
+      <label htmlFor="flight-trip" className="text-label font-medium text-muted-foreground">Trip</label>
+      <Select value={value} onValueChange={next => onChange(next as FlightSearch["trip"])}>
+        <SelectTrigger id="flight-trip" className={cn(SEARCH_FIELD, "w-full px-3")}><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="oneway" className="text-body">One-way</SelectItem>
+          <SelectItem value="roundtrip" className="text-body">Round-trip</SelectItem>
+          <SelectItem value="multicity" disabled className="text-body">Multi-city<span className="sr-only"> ({REASONS.multiCity})</span></SelectItem>
+          <p className="max-w-[14rem] px-2 py-1.5 text-label text-muted-foreground">{REASONS.multiCity}</p>
+        </SelectContent>
+      </Select>
     </div>
   );
 }
 
 const CABINS = ["Economy", "Premium Economy", "Business", "First"] as const;
-
-/** Cabin Class: Economy only; the other cabins are listed but disabled (the provider search has no cabin). */
-function CabinPicker() {
-  return (
-    <Select value="Economy">
-      <SelectTrigger aria-label="Cabin Class" className="h-8 w-auto min-w-[7.5rem] gap-2 rounded-sm border-border bg-card px-3 text-body shadow-none">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {CABINS.map(cabin => (
-          <SelectItem key={cabin} value={cabin} disabled={cabin !== "Economy"} className="text-body data-[state=checked]:text-primary">
-            {cabin}{cabin !== "Economy" && <span className="sr-only"> ({REASONS.cabin})</span>}
-          </SelectItem>
-        ))}
-        <p className="px-2 py-1.5 text-label text-muted-foreground">{REASONS.cabin}</p>
-      </SelectContent>
-    </Select>
-  );
-}
 
 const TRAVELER_ROWS = [
   { key: "adults", label: "Adults", hint: "12+ years", min: 1, max: 9 },
@@ -278,43 +219,71 @@ const TRAVELER_ROWS = [
   { key: "infants", label: "Infants", hint: "Under 2, one per adult", min: 0, max: 8 },
 ] as const;
 
-function TravelersPicker({ value, onChange }: { value: FlightSearch; onChange: (next: Partial<FlightSearch>) => void }) {
+/** "1 adult · Economy": travelers and cabin in one compact picker. Only Economy is searched; the other
+ *  cabins are listed but off, with the reason. */
+function travelersCabinLabel({ adults, children, infants }: Pick<FlightSearch, "adults" | "children" | "infants">) {
+  const parts = [`${adults} ${adults === 1 ? "adult" : "adults"}`];
+  if (children) parts.push(`${children} ${children === 1 ? "child" : "children"}`);
+  if (infants) parts.push(`${infants} ${infants === 1 ? "infant" : "infants"}`);
+  return `${parts.join(", ")} · Economy`;
+}
+
+function TravelersCabinPicker({ value, onChange }: { value: FlightSearch; onChange: (next: Partial<FlightSearch>) => void }) {
   const [open, setOpen] = useState(false);
-  const total = value.adults + value.children + value.infants;
+  const label = travelersCabinLabel(value);
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button type="button" variant="outline" size="sm">{total} {total === 1 ? "Traveler" : "Travelers"}</Button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-72 p-3">
-        <div className="flex flex-col gap-2.5">
-          {TRAVELER_ROWS.map(row => {
-            const current = value[row.key];
-            const max = row.key === "infants" ? Math.min(row.max, value.adults) : row.max;
-            return (
-              <div key={row.key} className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-body font-medium text-foreground">{row.label}</p>
-                  <p className="text-label text-muted-foreground">{row.hint}</p>
+    <div className="flex min-w-0 flex-col gap-1">
+      <span id="flight-travelers-label" className="text-label font-medium text-muted-foreground">Travelers and cabin</span>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button type="button" aria-labelledby="flight-travelers-label flight-travelers-value"
+            className={cn(SEARCH_FIELD, "flex w-full min-w-0 items-center gap-2 px-3 text-left text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}>
+            <Users className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <span id="flight-travelers-value" className="min-w-0 flex-1 truncate" title={label}>{label}</span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-72 p-3">
+          <div className="flex flex-col gap-2.5">
+            {TRAVELER_ROWS.map(row => {
+              const current = value[row.key];
+              const max = row.key === "infants" ? Math.min(row.max, value.adults) : row.max;
+              return (
+                <div key={row.key} className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-body font-medium text-foreground">{row.label}</p>
+                    <p className="text-label text-muted-foreground">{row.hint}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button type="button" size="icon" variant="outline" className="h-9 w-9" aria-label={`Fewer ${row.label.toLowerCase()}`}
+                      disabled={current <= row.min} onClick={() => onChange({ [row.key]: current - 1, ...(row.key === "adults" && value.infants > current - 1 ? { infants: current - 1 } : {}) })}>
+                      <Minus className="h-3.5 w-3.5" />
+                    </Button>
+                    <span className="w-5 text-center text-body tabular-nums" aria-live="polite">{current}</span>
+                    <Button type="button" size="icon" variant="outline" className="h-9 w-9" aria-label={`More ${row.label.toLowerCase()}`}
+                      disabled={current >= max} onClick={() => onChange({ [row.key]: current + 1 })}>
+                      <Plus className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button type="button" size="icon" variant="outline" className="h-9 w-9" aria-label={`Fewer ${row.label.toLowerCase()}`}
-                    disabled={current <= row.min} onClick={() => onChange({ [row.key]: current - 1, ...(row.key === "adults" && value.infants > current - 1 ? { infants: current - 1 } : {}) })}>
-                    <Minus className="h-3.5 w-3.5" />
-                  </Button>
-                  <span className="w-5 text-center text-body tabular-nums" aria-live="polite">{current}</span>
-                  <Button type="button" size="icon" variant="outline" className="h-9 w-9" aria-label={`More ${row.label.toLowerCase()}`}
-                    disabled={current >= max} onClick={() => onChange({ [row.key]: current + 1 })}>
-                    <Plus className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-          <Button type="button" size="sm" className="mt-1" onClick={() => setOpen(false)}>Done</Button>
-        </div>
-      </PopoverContent>
-    </Popover>
+              );
+            })}
+            <fieldset className="flex flex-col gap-1 border-t border-border pt-2.5">
+              <legend className="pt-2.5 text-body font-medium text-foreground">Cabin Class</legend>
+              {CABINS.map(cabin => (
+                <label key={cabin} className={cn("flex items-center gap-2 text-body", cabin === "Economy" ? "text-primary" : "text-muted-foreground")}
+                  title={cabin === "Economy" ? undefined : REASONS.cabin}>
+                  <input type="radio" name="flight-cabin" checked={cabin === "Economy"} disabled={cabin !== "Economy"} readOnly className="h-4 w-4 accent-[hsl(var(--primary))]" />
+                  {cabin}{cabin !== "Economy" && <span className="sr-only"> ({REASONS.cabin})</span>}
+                </label>
+              ))}
+              <p className="text-label text-muted-foreground">{REASONS.cabin}</p>
+            </fieldset>
+            <Button type="button" size="sm" className="mt-1" onClick={() => setOpen(false)}>Done</Button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }
 
@@ -327,6 +296,36 @@ export function noFlightsMessage(from: string, to: string, date?: string) {
 export const filtersApplied = (filters: ResultFilters) =>
   (Object.keys(DEFAULT_FILTERS) as (keyof ResultFilters)[]).some(key => key !== "sort" && filters[key] !== DEFAULT_FILTERS[key]);
 
+const STOPS_OPTIONS = [{ value: "any", label: "Any" }, { value: "nonstop", label: "Non-stop" }, { value: "one", label: "1 stop" }, { value: "two_plus", label: "2+ stops" }];
+const TIME_OPTIONS = [{ value: "any", label: "Any" }, { value: "morning", label: "Morning (05–12)" }, { value: "afternoon", label: "Afternoon (12–17)" },
+  { value: "evening", label: "Evening (17–21)" }, { value: "night", label: "Night (21–05)" }];
+const REFUND_OPTIONS = [{ value: "any", label: "Any" }, { value: "refundable", label: "Refundable" }, { value: "non_refundable", label: "Non-refundable" }];
+
+type FilterKey = Exclude<keyof ResultFilters, "sort">;
+interface FilterGroup { key: FilterKey; title: string; options: { value: string; label: string }[]; disabledReason?: string }
+
+/** One filter in the rail (as on the public results page): a small card with a title and its choices. */
+function FilterCard({ group, value, onChange }: { group: FilterGroup; value: string; onChange: (value: string) => void }) {
+  const name = `flight-filter-${group.key}`;
+  return (
+    <fieldset aria-label={group.title} title={group.disabledReason} disabled={Boolean(group.disabledReason)}
+      aria-describedby={group.disabledReason ? `${name}-reason` : undefined}
+      className={cn("min-w-0 rounded-xl border border-border bg-card px-3 py-2.5 shadow-card", group.disabledReason && "opacity-60")}>
+      <legend className="float-left mb-1.5 w-full text-label font-semibold text-foreground">{group.title}</legend>
+      {group.disabledReason && <span id={`${name}-reason`} className="sr-only">{group.disabledReason}</span>}
+      <div className="clear-left flex flex-col gap-1">
+        {group.options.map(option => (
+          <label key={option.value} className={cn("flex min-w-0 items-center gap-2 text-label", group.disabledReason ? "cursor-not-allowed text-muted-foreground" : "cursor-pointer text-foreground")} title={option.label}>
+            <input type="radio" name={name} value={option.value} checked={value === option.value} onChange={() => onChange(option.value)}
+              className="h-3.5 w-3.5 shrink-0 accent-[hsl(var(--primary))]" />
+            <span className="min-w-0 truncate">{option.label}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 function Results({ data, search, filters, onFilters, renderFareAction, actionNotes }: {
   data: FlightSearchView; search: FlightSearch; filters: ResultFilters; onFilters: (next: ResultFilters) => void;
   renderFareAction?: FlightsSearchProps["renderFareAction"]; actionNotes?: string[];
@@ -336,11 +335,10 @@ function Results({ data, search, filters, onFilters, renderFareAction, actionNot
   const hasRefundInfo = allFlights.some(flight => flight.fares.some(fare => isRefundable(fare) !== null));
   const baggage = useMemo(() => baggageOptions(allFlights), [allFlights]);
   const bands = useMemo(() => priceBands(allFlights), [allFlights]);
-  const responding = data.providers ? `${data.providers.filter(p => p.status === "responded").length} of ${data.providers.length}` : null;
-  const validUntil = clock(data.expires_at);
+  const providers = (data.providers ?? []).map(provider => provider.name);
   // D24: a provider failed or timed out. Its notice replaces the "no flights" message.
   const providerFailed = Boolean(data.notice) || Boolean(data.providers?.some(provider => provider.status === "failed"));
-  const partialNotice = "Some results may be missing.";       // shown here only when the header has no notice
+  const partialNotice = "Some results may be missing.";
 
   // Nothing came back: say so honestly. "Some results may be missing" (D24) is only for
   // partial results, shown with them below when the gateway sends that notice.
@@ -351,86 +349,137 @@ function Results({ data, search, filters, onFilters, renderFareAction, actionNot
       </NotAvailableNotice>
     );
   }
+  // All seven filters. Refundable stays visible but off while no supplier sends refund data;
+  // Provider only for roles the gateway sends provider names to.
+  const groups: FilterGroup[] = [
+    { key: "airline", title: "Airline", options: [{ value: "any", label: "All" }, ...airlines.map(name => ({ value: name, label: name }))] },
+    { key: "stops", title: "Stops", options: STOPS_OPTIONS },
+    { key: "time", title: "Departure time", options: TIME_OPTIONS },
+    { key: "baggage", title: "Baggage", options: [{ value: "any", label: "Any" }, ...baggage] },
+    { key: "refund", title: "Refundable", options: REFUND_OPTIONS, disabledReason: hasRefundInfo ? undefined : REASONS.refund },
+    { key: "price", title: "Price range", options: [{ value: "any", label: "Any" }, ...bands.map(band => ({ value: band.value, label: band.label }))],
+      disabledReason: bands.length === 0 ? "Not enough prices to filter" : undefined },
+    ...(providers.length ? [{ key: "provider" as const, title: "Provider", options: [{ value: "any", label: "All providers" }, ...providers.map(name => ({ value: name, label: name }))] }] : []),
+  ];
+  const active = groups.flatMap(group => {
+    const value = filters[group.key];
+    if (value === DEFAULT_FILTERS[group.key]) return [];
+    const option = group.options.find(item => item.value === value);
+    return option ? [{ key: group.key, label: `${group.title}: ${option.label}` }] : [];
+  });
+  const clearAll = () => onFilters({ ...DEFAULT_FILTERS, sort: filters.sort });
+  const filterRail = (
+    <div className="flex min-w-0 flex-col gap-2.5">
+      {groups.map(group => (
+        <FilterCard key={group.key} group={group} value={group.key === "refund" && !hasRefundInfo ? "any" : filters[group.key]}
+          onChange={value => onFilters({ ...filters, [group.key]: value })} />
+      ))}
+    </div>
+  );
+
   return (
-    <section aria-label="Results" className="flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h2 className="text-section font-semibold text-foreground">Results</h2>
-          {data.notice && <p className="text-body text-status-action-text">{data.notice}</p>}
-        </div>
-        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-body text-muted-foreground">
-          {responding && <span>Providers responding {responding}</span>}
-          {responding && validUntil && <span aria-hidden="true">·</span>}
-          {validUntil && <span>Fare valid until {validUntil}</span>}
-          {allFlights.length > 0 && (
-            <>
-              <span aria-hidden="true">·</span>
-              <label htmlFor="flight-sort">Sort by</label>
-              <Select value={filters.sort} onValueChange={sort => onFilters({ ...filters, sort: sort as ResultFilters["sort"] })}>
-                <SelectTrigger id="flight-sort" className="h-control w-auto min-w-[10rem] rounded-md border-border bg-card px-3 text-body text-foreground shadow-none">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="price" className="text-body">Price, low to high</SelectItem>
-                  <SelectItem value="departure" className="text-body">Departure time</SelectItem>
-                  <SelectItem value="duration" className="text-body">Shortest</SelectItem>
-                </SelectContent>
-              </Select>
-            </>
-          )}
-        </div>
-      </div>
-      {allFlights.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-          <LabeledSelect id="flight-filter-airline" label="Airline" value={filters.airline}
-            options={[{ value: "any", label: "All" }, ...airlines.map(name => ({ value: name, label: name }))]}
-            onChange={airline => onFilters({ ...filters, airline })} />
-          <LabeledSelect id="flight-filter-stops" label="Stops" value={filters.stops}
-            options={[{ value: "any", label: "Any" }, { value: "nonstop", label: "Non-stop" }, { value: "one", label: "1 stop" }, { value: "two_plus", label: "2+ stops" }]}
-            onChange={stops => onFilters({ ...filters, stops: stops as ResultFilters["stops"] })} />
-          <LabeledSelect id="flight-filter-time" label="Departure time" value={filters.time}
-            options={[{ value: "any", label: "Any" }, { value: "morning", label: "Morning (05–12)" }, { value: "afternoon", label: "Afternoon (12–17)" }, { value: "evening", label: "Evening (17–21)" }, { value: "night", label: "Night (21–05)" }]}
-            onChange={time => onFilters({ ...filters, time: time as ResultFilters["time"] })} />
-          <LabeledSelect id="flight-filter-baggage" label="Baggage" value={filters.baggage}
-            options={[{ value: "any", label: "Any" }, ...baggage]}
-            onChange={value => onFilters({ ...filters, baggage: value })} />
-          <LabeledSelect id="flight-filter-refund" label="Refundable" value={hasRefundInfo ? filters.refund : "any"}
-            options={[{ value: "any", label: "Any" }, { value: "refundable", label: "Refundable" }, { value: "non_refundable", label: "Non-refundable" }]}
-            disabled={!hasRefundInfo} note={hasRefundInfo ? undefined : REASONS.refund}
-            onChange={refund => onFilters({ ...filters, refund: refund as ResultFilters["refund"] })} />
-          <LabeledSelect id="flight-filter-price" label="Price range" value={filters.price}
-            options={[{ value: "any", label: "Any" }, ...bands.map(band => ({ value: band.value, label: band.label }))]}
-            disabled={bands.length === 0} note={bands.length === 0 ? "Not enough prices to filter" : undefined}
-            onChange={price => onFilters({ ...filters, price })} />
-        </div>
-      )}
-      {data.journeys.length === 0 && (
-        providerFailed ? (data.notice ? null : <p className="py-2 text-body text-status-action-text">{partialNotice}</p>)
-          : <p className="py-2 text-body text-muted-foreground">{noFlightsMessage(search.from ?? "", search.to ?? "", search.date)}</p>
-      )}
-      {data.journeys.map(journey => {
-        const flights = filterFlights(journey.flights, filters);
-        const journeyDate = journey.direction === "outbound" ? search.date : search.returnDate;
-        // Nothing came back for this journey: the date message, unless a provider failed (then the
-        // partial-failure notice stays). Filters only explain an empty list when there were flights.
-        const empty = journey.flights.length === 0
-          ? (providerFailed ? (data.notice ? null : <p className="py-1 text-body text-status-action-text">{partialNotice}</p>)
-            : <p className="py-1 text-body text-muted-foreground">{noFlightsMessage(journey.origin, journey.destination, journeyDate)}</p>)
-          : <p className="py-1 text-body text-muted-foreground">No flights match these filters.</p>;
-        return (
-          <div key={journey.direction} className="flex flex-col gap-2.5">
-            {data.journeys.length > 1 && (
-              <h3 className="text-body font-semibold text-foreground">
-                {journey.direction === "outbound" ? "Outbound" : "Return"} · {journey.origin} → {journey.destination}
-              </h3>
+    <div className="flex min-w-0 flex-col gap-3">
+      <StatusLine data={data} />
+      <div className={cn("grid min-w-0 grid-cols-1 items-start gap-section-gap", allFlights.length > 0 && "xl:grid-cols-[13rem_minmax(0,1fr)]")}>
+        {allFlights.length > 0 && (
+          <aside aria-label="Filters" className="min-w-0 xl:sticky xl:top-4">
+            {/* Below 1280px: the same filter cards behind one Filters toggle, so the fare tables keep their width. */}
+            <details className="group rounded-xl border border-border bg-card shadow-card xl:hidden">
+              <summary className="flex h-control cursor-pointer list-none items-center justify-between px-3 text-body font-semibold text-foreground">
+                Filters{active.length ? ` (${active.length})` : ""}
+                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" aria-hidden="true" />
+              </summary>
+              <div className="grid grid-cols-1 gap-2.5 px-3 pb-3 sm:grid-cols-2">{groups.map(group => (
+                <FilterCard key={group.key} group={group} value={group.key === "refund" && !hasRefundInfo ? "any" : filters[group.key]}
+                  onChange={value => onFilters({ ...filters, [group.key]: value })} />
+              ))}</div>
+            </details>
+            <div className="hidden xl:block">{filterRail}</div>
+          </aside>
+        )}
+        <section aria-label="Results" className="flex min-w-0 flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+              <h2 className="text-section font-semibold text-foreground">Results</h2>
+              {data.notice && <p className="text-body text-status-action-text">{data.notice}</p>}
+            </div>
+            {allFlights.length > 0 && (
+              <div className="flex items-center gap-2 text-body text-muted-foreground">
+                <label htmlFor="flight-sort">Sort by</label>
+                <Select value={filters.sort} onValueChange={sort => onFilters({ ...filters, sort: sort as ResultFilters["sort"] })}>
+                  <SelectTrigger id="flight-sort" className="h-control w-auto min-w-[12rem] rounded-md border-border bg-card px-3 text-body text-foreground shadow-none">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SORT_OPTIONS.map(option => <SelectItem key={option.value} value={option.value} className="text-body">{option.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
-            {flights.length === 0 ? empty : flights.map(flight => (
-              <FlightCard key={flight.id} journey={journey} flight={flight} data={data} renderFareAction={renderFareAction} actionNotes={actionNotes} />
-            ))}
           </div>
-        );
-      })}
-    </section>
+          {active.length > 0 && (
+            <div role="group" aria-label="Active filters" className="flex flex-wrap items-center gap-2">
+              {active.map(chip => (
+                <button key={chip.key} type="button" aria-label={`Remove filter ${chip.label}`} onClick={() => onFilters({ ...filters, [chip.key]: DEFAULT_FILTERS[chip.key] })}
+                  className="inline-flex max-w-full items-center gap-1 rounded-pill border border-border bg-card px-2.5 py-1 text-label font-medium text-foreground hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                  <span className="truncate">{chip.label}</span><X className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                </button>
+              ))}
+              <Button type="button" variant="ghost" size="sm" onClick={clearAll}>Clear all</Button>
+            </div>
+          )}
+          {data.journeys.length === 0 && (
+            providerFailed ? (data.notice ? null : <p className="py-2 text-body text-status-action-text">{partialNotice}</p>)
+              : <p className="py-2 text-body text-muted-foreground">{noFlightsMessage(search.from ?? "", search.to ?? "", search.date)}</p>
+          )}
+          {data.journeys.map(journey => {
+            const flights = filterFlights(journey.flights, filters);
+            const journeyDate = journey.direction === "outbound" ? search.date : search.returnDate;
+            // Nothing came back for this journey: the date message, unless a provider failed (then the
+            // partial-failure notice stays). Filters only explain an empty list when there were flights.
+            const empty = journey.flights.length === 0
+              ? (providerFailed ? (data.notice ? null : <p className="py-1 text-body text-status-action-text">{partialNotice}</p>)
+                : <p className="py-1 text-body text-muted-foreground">{noFlightsMessage(journey.origin, journey.destination, journeyDate)}</p>)
+              : <p className="py-1 text-body text-muted-foreground">No flights match these filters.</p>;
+            return (
+              <div key={journey.direction} className="flex flex-col gap-2.5">
+                {data.journeys.length > 1 && (
+                  <h3 className="text-body font-semibold text-foreground">
+                    {journey.direction === "outbound" ? "Outbound" : "Return"} · {journey.origin} → {journey.destination}
+                  </h3>
+                )}
+                {flights.length === 0 ? empty : flights.map(flight => (
+                  <FlightCard key={flight.id} journey={journey} flight={flight} data={data} renderFareAction={renderFareAction} actionNotes={actionNotes} />
+                ))}
+              </div>
+            );
+          })}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+/** One compact line above the results: "Providers responding 1 of 1 · Fares valid until 14:52 (09:12 left) ·
+ *  Prices are revalidated before booking". Provider counts only when the gateway sends providers. */
+function StatusLine({ data }: { data: FlightSearchView }) {
+  const countdown = useCountdown(data.expires_at);
+  const responding = data.providers ? `${data.providers.filter(p => p.status === "responded").length} of ${data.providers.length}` : null;
+  const until = clock(data.expires_at);
+  const expired = countdown !== null && countdown.seconds === 0;
+  const parts: React.ReactNode[] = [
+    responding && <span key="providers">Providers responding {responding}</span>,
+    until && data.status === "complete" && (
+      <span key="valid" role="timer" aria-live="off" className={cn(expired && "font-semibold text-status-critical-text")}>
+        {expired ? "Fares expired, search again" : <>Fares valid until {until} <span className="tabular-nums">({countdown?.label} left)</span></>}
+      </span>
+    ),
+    <span key="revalidate">Prices are revalidated before booking</span>,
+  ].filter(Boolean);
+  return (
+    <p aria-label="Search status" className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-body text-muted-foreground">
+      {parts.map((part, index) => <span key={index} className="contents">{index > 0 && <span aria-hidden="true">{" · "}</span>}{part}</span>)}
+    </p>
   );
 }
 
@@ -478,6 +527,12 @@ function FlightDetails({ journey, flight }: { journey: JourneyView; flight: Flig
   );
 }
 
+/** A missing value is a dash (its meaning for screen readers), never a "not available" sentence. */
+function Missing({ value }: { value?: string | null }) {
+  if (!value) return <span className="text-muted-foreground"><span aria-hidden="true">—</span><span className="sr-only">Not available</span></span>;
+  return <span className="line-clamp-2 break-words" title={value}>{value}</span>;
+}
+
 function FlightCard({ journey, flight, data, renderFareAction, actionNotes }: {
   journey: JourneyView; flight: FlightView; data: FlightSearchView; renderFareAction?: FlightsSearchProps["renderFareAction"]; actionNotes?: string[];
 }) {
@@ -486,7 +541,7 @@ function FlightCard({ journey, flight, data, renderFareAction, actionNotes }: {
   const meta = [formatDuration(flight.duration_minutes), stopsLabel(flight)].filter(Boolean).join(" · ");
   const showsProvider = flight.fares.some(fare => fare.supplier);
   return (
-    <article aria-label={`${airlineLabel(flight)} ${flight.flight_number ?? ""}`} className="min-w-0 overflow-hidden rounded-md border border-border">
+    <article aria-label={`${airlineLabel(flight)} ${flight.flight_number ?? ""}`} className="min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-card">
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5 lg:grid-cols-[auto_minmax(8rem,12rem)_minmax(0,1fr)_auto]">
         <span className="col-start-1 row-start-1"><LogoPlaceholder flight={flight} /></span>
         <div className="col-start-2 row-start-1 min-w-0">
@@ -516,31 +571,33 @@ function FlightCard({ journey, flight, data, renderFareAction, actionNotes }: {
         <table className="w-full min-w-[52rem] border-collapse text-table">
           <thead>
             <tr className="bg-muted text-left">
-              {["Fare", "Meal", "Baggage", "Refund", "Price", showsProvider ? "Hold left · Provider" : "Hold left", ...(renderFareAction ? ["Actions"] : [])].map(column => (
+              {["Fare", "Meal", "Baggage", "Refund", showsProvider ? "Hold left · Provider" : "Hold left"].map(column => (
                 <th key={column} scope="col" className="h-table-header px-2.5 font-semibold text-foreground">{column}</th>
               ))}
+              <th scope="col" className="h-table-header px-2.5 text-right font-semibold text-foreground">Price</th>
+              {renderFareAction && <th scope="col" className="h-table-header px-2.5 text-right font-semibold text-foreground">Actions</th>}
             </tr>
           </thead>
           <tbody>
             {fares.map(fare => {
               const refundable = isRefundable(fare);
               return (
-                <tr key={fare.id} className="border-t border-border align-top">
+                <tr key={fare.id} className="border-t border-border align-middle">
                   <td className="px-2.5 py-2 font-semibold text-foreground">{fare.name}</td>
-                  <td className="max-w-[9rem] px-2.5 py-2"><span className={cn("line-clamp-2 break-words", !fare.meal && "text-muted-foreground")} title={fare.meal ?? undefined}>{fare.meal ?? "Meal info not available"}</span></td>
-                  <td className="max-w-[9rem] px-2.5 py-2"><span className={cn("line-clamp-2 break-words", !fare.baggage && "text-muted-foreground")} title={fare.baggage ?? undefined}>{fare.baggage ?? "Baggage info not available"}</span></td>
+                  <td className="max-w-[9rem] px-2.5 py-2"><Missing value={fare.meal} /></td>
+                  <td className="max-w-[9rem] px-2.5 py-2"><Missing value={fare.baggage} /></td>
                   <td className="max-w-[9rem] px-2.5 py-2">
-                    {refundable === null ? <span className="line-clamp-2 text-muted-foreground">{REASONS.refund}</span>
+                    {refundable === null ? <Missing value={null} />
                       : <StatusBadge severity={refundable ? "fine" : "critical"}>{refundable ? "Refundable" : "Non-refundable"}</StatusBadge>}
                   </td>
-                  <td className="whitespace-nowrap px-2.5 py-2 tabular-nums">
-                    {fare.selling_price ? <><span className="font-semibold text-foreground">{formatMoney(fare.selling_price)}</span> <span className="text-label text-muted-foreground">per adult</span></> : <span className="text-muted-foreground">Price not available</span>}
-                  </td>
                   <td className="max-w-[10rem] px-2.5 py-2">
-                    <span className={cn("line-clamp-2 break-words", !fare.time_limit && "text-muted-foreground")} title={fare.time_limit ?? undefined}>{fare.time_limit ?? "Hold time not available"}</span>
+                    <Missing value={fare.time_limit} />
                     {fare.supplier && <span className="block truncate text-label text-muted-foreground" title={fare.supplier}>{fare.supplier}</span>}
                   </td>
-                  {renderFareAction && <td className="px-2.5 py-2">{renderFareAction({ journey, flight, fare }, data)}</td>}
+                  <td className="whitespace-nowrap px-2.5 py-2 text-right tabular-nums">
+                    {fare.selling_price ? <><span className="font-semibold text-foreground">{formatMoney(fare.selling_price)}</span> <span className="text-label text-muted-foreground">per adult</span></> : <Missing value={null} />}
+                  </td>
+                  {renderFareAction && <td className="px-2.5 py-2 text-right">{renderFareAction({ journey, flight, fare }, data)}</td>}
                 </tr>
               );
             })}

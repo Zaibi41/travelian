@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { gatewayView } from "./support/gateway";
+import { docsShot } from "./support/docs-shot";
 
 // Admin Search > Flights layout. Nothing reaches a real gateway or supplier: a local-only
 // session (no real token) and intercepted gateway responses shaped like the gateway's output.
@@ -90,13 +91,17 @@ for (const width of [1920, 1440, 1366, 1280, 1024, 768, 390]) {
 
 test("cabin, provider and flight details open attached, above the page, and close", async ({ page }) => {
   await openFlights(page, 1440);
-  await page.getByRole("combobox", { name: "Cabin Class" }).click();
-  await expect(page.getByRole("option", { name: "Economy", exact: true })).toBeEnabled();
-  for (const cabin of ["Premium Economy", "Business", "First"]) {
-    await expect(page.getByRole("option", { name: new RegExp(`^${cabin}`) })).toHaveAttribute("aria-disabled", "true");
-  }
+  // Travelers and cabin in one picker: Economy chosen, the other cabins off with the reason.
+  const picker = page.getByRole("button", { name: "Travelers and cabin 1 adult · Economy" });
+  await picker.click();
+  const popup = page.getByRole("dialog");
+  await expect(popup.getByRole("radio", { name: "Economy", exact: true })).toBeChecked();
+  for (const cabin of ["Premium Economy", "Business", "First"]) await expect(popup.getByRole("radio", { name: new RegExp(`^${cabin}`) })).toBeDisabled();
+  const field = (await picker.boundingBox())!;
+  const box = (await popup.boundingBox())!;
+  expect(box.y).toBeGreaterThanOrEqual(field.y + field.height - 2);
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("listbox")).toHaveCount(0);
+  await expect(popup).toHaveCount(0);
 
   await page.getByRole("combobox", { name: "Provider" }).click();
   await expect(page.getByRole("option", { name: "southair" })).toBeVisible();
@@ -105,8 +110,31 @@ test("cabin, provider and flight details open attached, above the page, and clos
   await page.getByRole("button", { name: "Flight details" }).first().click();
   const dialog = page.getByRole("dialog", { name: "Flight details" });
   await expect(dialog).toBeVisible();
-  const box = await dialog.boundingBox();
-  expect(box && box.y >= 0 && box.y + box.height <= 900).toBe(true);
+  const details = await dialog.boundingBox();
+  expect(details && details.y >= 0 && details.y + details.height <= 900).toBe(true);
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
+});
+
+// Docs only (DOCS_RENDER_DIR=docs/2026-11-15): the admin Flights tab next to the public results page it
+// takes its layout from. Both answered locally with made-up fares; skipped in normal runs.
+test("docs render: admin Flights tab and the public results page at 1440px", async ({ page }) => {
+  test.skip(!process.env.DOCS_RENDER_DIR, "only when rendering docs");
+  await openFlights(page, 1440);
+  await expect(page.getByLabel("Search status")).toContainText("Providers responding 1 of 1");
+  await docsShot(page, "flights-tab-admin-1440");
+
+  const offer = (id: string, flightNumber: string, departure: string, arrival: string, stops: number, total: number, baggage: string) => ({
+    provider: "public-e2e", offerId: id, airline: "South Air", flightNumber, origin: "LHE", destination: "KHI",
+    originAirport: "Allama Iqbal International Airport", destinationAirport: "Jinnah International Airport",
+    departureTime: departure, arrivalTime: arrival, cabin: "Economy", duration: stops ? "3h 30m" : "2h 10m", stops, baggage,
+    seats: 9, price: { currency: "PKR", total }, segments: [],
+  });
+  await page.route(/\/flights\/search$/, route => route.fulfill({ json: { searchId: "public-e2e", providerStatus: {}, results: [
+    offer("p1", "Z8266", "2026-11-19T00:25:00+05:00", "2026-11-19T02:35:00+05:00", 0, 13_997, "20 kg"),
+    offer("p2", "Z8270", "2026-11-19T18:10:00+05:00", "2026-11-19T21:40:00+05:00", 1, 12_500, "30 kg"),
+  ] } }));
+  await page.goto("/flights-search?from=LHE&to=KHI&date=2026-11-19&adults=1");
+  await expect(page.getByText("PKR 12,500").first()).toBeVisible({ timeout: 15_000 });
+  await docsShot(page, "flights-results-public-1440");
 });

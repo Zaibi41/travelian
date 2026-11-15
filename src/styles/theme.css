@@ -38,6 +38,28 @@
 .admin-search-form {
   container: admin-search / inline-size;
 }
+/* Flights: one flexible row (trip type, From / swap / To, dates, travelers and cabin, provider, Search
+ * flights), like the public site. Fields keep compact widths and From / To take the rest; when From / To
+ * would drop below about 24rem the row wraps instead of squeezing the airports (Zohaib, 15 November 2026).
+ * Phones: every field on its own line. */
+.admin-search-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+.admin-search-row > * {
+  flex: 1 1 40rem; /* wider than a phone form: one field per line */
+  min-width: 0;
+}
+@container admin-search (min-width: 560px) {
+  .admin-search-row > [data-size="route"] { flex: 1 1 24rem; }
+  .admin-search-row > [data-size="trip"] { flex: 0 0 7.5rem; }
+  .admin-search-row > [data-size="date"] { flex: 0 0 9.5rem; }
+  .admin-search-row > [data-size="people"] { flex: 0 0 12.5rem; }
+  .admin-search-row > [data-size="provider"] { flex: 0 0 10rem; }
+  .admin-search-row > [data-size="submit"] { flex: 0 0 auto; }
+}
 .admin-search-fields {
   display: grid;
   align-items: end;

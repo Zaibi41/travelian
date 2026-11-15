@@ -136,8 +136,9 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
         );
         const priced = Boolean(pick.fare.selling_price);
         return (
-          <div className="flex flex-col gap-1.5">
-            <div className="flex flex-wrap gap-1.5">
+          // One Actions cell, right-aligned: Book, Hold and Quote as buttons, then Fare rules and Revalidate as links.
+          <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5">
+            <div className="flex flex-wrap justify-end gap-1.5">
               {(["book", "hold"] as const).map(mode => (
                 <Button key={mode} type="button" size="sm" variant={mode === "book" ? "primary" : "outline"} disabled={!priced}
                   title={priced ? undefined : "Price not available"} aria-label={`${mode === "book" ? "Book" : "Hold"} ${label}`}

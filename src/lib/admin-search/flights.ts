@@ -93,7 +93,17 @@ export const searchFlights = (search: FlightSearch & { from: string; to: string;
 export type StopsFilter = "any" | "nonstop" | "one" | "two_plus";
 export type TimeFilter = "any" | "morning" | "afternoon" | "evening" | "night";
 export type RefundFilter = "any" | "refundable" | "non_refundable";
-export type SortOrder = "price" | "departure" | "duration";
+export type SortOrder = "price" | "price_desc" | "duration" | "duration_desc" | "departure" | "arrival";
+
+/** The sort options, as the public results page offers them (plus arrival). Display order only. */
+export const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
+  { value: "price", label: "Price, low to high" },
+  { value: "price_desc", label: "Price, high to low" },
+  { value: "duration", label: "Shortest duration" },
+  { value: "duration_desc", label: "Longest duration" },
+  { value: "departure", label: "Departure, early to late" },
+  { value: "arrival", label: "Arrival, early to late" },
+];
 
 export interface ResultFilters {
   airline: string;
@@ -176,6 +186,7 @@ function inWindow(time: TimeFilter, local?: string | null) {
   return h >= 21 || h < 5;
 }
 
+const finite = (value: number) => (Number.isFinite(value) ? value : -1);
 const lowestPrice = (flight: FlightView) =>
   Math.min(...flight.fares.map(fare => fare.selling_price?.amount_minor ?? Number.POSITIVE_INFINITY));
 
@@ -199,9 +210,15 @@ export function filterFlights(flights: FlightView[], filters: ResultFilters): Fl
     }))
     .filter(flight => flight.fares.length > 0);
   const byDeparture = (a: FlightView, b: FlightView) => (a.departure_local ?? "").localeCompare(b.departure_local ?? "");
+  const byArrival = (a: FlightView, b: FlightView) => (a.arrival_local ?? "~").localeCompare(b.arrival_local ?? "~");
+  const duration = (flight: FlightView) => flight.duration_minutes ?? Infinity;
   return kept.sort((a, b) => {
     if (filters.sort === "departure") return byDeparture(a, b);
-    if (filters.sort === "duration") return (a.duration_minutes ?? Infinity) - (b.duration_minutes ?? Infinity) || byDeparture(a, b);
+    if (filters.sort === "arrival") return byArrival(a, b) || byDeparture(a, b);
+    if (filters.sort === "duration") return duration(a) - duration(b) || byDeparture(a, b);
+    if (filters.sort === "duration_desc") return (b.duration_minutes ?? -1) - (a.duration_minutes ?? -1) || byDeparture(a, b);
+    // High to low by each flight's lowest fare (as on the public site); flights without a price stay last.
+    if (filters.sort === "price_desc") return finite(lowestPrice(b)) - finite(lowestPrice(a)) || byDeparture(a, b);
     return lowestPrice(a) - lowestPrice(b) || byDeparture(a, b);
   });
 }
