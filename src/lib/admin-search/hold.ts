@@ -41,6 +41,10 @@ export function fareCheckFailure(error: unknown): FareCheckState {
   const code = error instanceof GatewayError ? error.code : undefined;
   if (code === "fare_gone" || code === "search_expired") return { kind: "gone", message };
   if (code === "adults_only") return { kind: "adults_only", message };
+  // 503: the gateway or a service behind it (e.g. sign-in verification) is unavailable; say so plainly, with its reason.
+  if (error instanceof GatewayError && error.status === 503) {
+    return { kind: "unconfirmed", message: `Fare check unavailable, try again.${error.message ? ` ${error.message}` : ""}` };
+  }
   return { kind: "unconfirmed", message };
 }
 

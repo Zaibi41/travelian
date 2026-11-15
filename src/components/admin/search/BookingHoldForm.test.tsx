@@ -557,3 +557,16 @@ describe("one shared booking form on both hold routes", () => {
     expect(await screen.findByLabelText("Admin only")).toHaveTextContent("Supplier cost Rs 160,000 per adult");
   });
 });
+
+describe("fare check unavailable (503)", () => {
+  it("the timer's re-check failing with 503 says 'Fare check unavailable, try again' with the gateway's reason, and Try again re-checks", async () => {
+    gateway.reprice.mockReset().mockRejectedValueOnce(new GatewayError("unavailable", "Identity verification is temporarily unavailable.", 503))
+      .mockResolvedValueOnce({ ...STAFF_DRAFT.quote, quote_id: "q9", expires_at: new Date(Date.now() + 600_000).toISOString() });
+    renderPage({ ...STAFF_DRAFT, quote: { ...STAFF_DRAFT.quote, expires_at: new Date(Date.now() - 1000).toISOString() } });
+    const dialog = await screen.findByRole("dialog", { name: "We couldn't confirm this fare" });
+    expect(dialog).toHaveTextContent("Fare check unavailable, try again. Identity verification is temporarily unavailable.");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Try again" }));
+    await waitFor(() => expect(gateway.reprice).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+});
