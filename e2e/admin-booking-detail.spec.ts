@@ -12,10 +12,10 @@ const DETAIL = {
   customer_or_agency: "Test Customer With A Rather Long Family Name", statuses: { booking: "held", payment: "unpaid", issuance: "not_issued" },
   amount: rs(15_316), deadline: "2099-11-10T13:28:58Z", created_at: "2026-11-09T13:28:58Z", fare: { billable_price: rs(15_316) },
   passengers: [
-    { position: 0, type: "ADT", title: "MR", first_name: "Muhammad Abdullah", last_name: "Rehmanullah Khan Durrani", date_of_birth_masked: "1990-••-••",
-      id_type: "PSPT", document_number_masked: "••••••567", document_country: "PAK", nationality: "PAK", document_expiry_masked: "2031-••-••", document_validity: "valid" },
-    { position: 1, type: "INF", title: "MISS", first_name: "Baby", last_name: "Passenger", date_of_birth_masked: "2026-••-••", id_type: "PSPT",
-      document_number_masked: "••••••321", nationality: "PAK", infant_of_position: 0 },
+    { position: 0, type: "ADT", title: "MR", first_name: "Muhammad Abdullah", last_name: "Rehmanullah Khan Durrani", date_of_birth: "1990-01-31",
+      id_type: "PSPT", document_number: "AB1234567", document_country: "PAK", nationality: "PAK", document_expiry: "2031-01-01", document_validity: "valid" },
+    { position: 1, type: "INF", title: "MISS", first_name: "Baby", last_name: "Passenger", date_of_birth: "2026-03-02", id_type: "PSPT",
+      document_number: "AB7654321", nationality: "PAK", infant_of_position: 0 },
   ],
   audit: [{ action: "hold_created", actor_user_id: "0901a7ce-ef7d-4af6-8ca4-31fd1252137a", actor_role: "super_admin", at: "2026-11-09T13:28:58Z",
     details: { label: "UAT test data", pnr: "CAEDEC", time_limit: "2026-11-10 13:28 UTC", travelers: 2, fare_info: "matches" } }],
@@ -42,18 +42,14 @@ async function open(page: Page, width: number, tab: string) {
 const overflow = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
 for (const width of [1440, 1024, 768, 390]) {
-  test(`passengers and audit tabs fit at ${width}px; reveal dialog stays in view`, async ({ page }) => {
+  test(`passengers and audit tabs fit at ${width}px; documents and dates of birth show in full`, async ({ page }) => {
     await open(page, width, "passengers");
     await expect(page.getByRole("region", { name: "Passengers" })).toBeVisible();
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `booking detail at ${width}px`);
-    await page.getByRole("button", { name: /Reveal \(logged\) MR Muhammad/ }).click();
-    const dialog = page.getByRole("dialog", { name: "Reveal identity details" });
-    await expect(dialog).toBeVisible();
-    const box = await dialog.boundingBox();
-    expect(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= 900).toBe(true);
-    await page.keyboard.press("Escape");
-    await expect(dialog).toHaveCount(0);
+    await expect(page.getByRole("region", { name: "Passengers" })).toContainText("Passport AB1234567");
+    await expect(page.getByRole("region", { name: "Passengers" })).toContainText("31 Jan 1990");
+    await expect(page.getByRole("button", { name: /Reveal/ })).toHaveCount(0);
     await open(page, width, "audit");
     await expect(page.getByRole("region", { name: "Audit" })).toBeVisible();
     expect(await overflow(page)).toBe(0);

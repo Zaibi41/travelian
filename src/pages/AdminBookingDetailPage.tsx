@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDay } from "@/lib/admin-search/date-display";
 import { Navigate, useParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/admin/ui/button";
@@ -20,14 +21,14 @@ import {
 } from "@/lib/admin-bookings/format";
 import { DETAIL_TABS, bookingDetailPath, type DetailTabSlug } from "@/lib/admin-bookings/tabs";
 import { useBookingDetail } from "@/lib/admin-bookings/use-bookings";
-import { revealTraveler, setSellingPrice } from "@/lib/admin-bookings/api";
-import type { BookingAuditEntry, BookingDetail, BookingPassenger, RevealResponse } from "@/lib/admin-bookings/types";
+import { setSellingPrice } from "@/lib/admin-bookings/api";
+import type { BookingAuditEntry, BookingDetail, BookingPassenger } from "@/lib/admin-bookings/types";
 
 // Tabs the gateway doesn't record yet: the mockup's columns with a not-available row
 // (docs/backend-todo.md, Booking detail). No "Edit booking" (decided 2026-11-09).
 const SHELL_TABS: Partial<Record<DetailTabSlug, { columns: string[]; what: string }>> = {
   itinerary: { columns: ["Segment", "From", "To", "Departs", "Arrives", "Airline / flight", "Fare", "Baggage"], what: "itinerary segments" },
-  passengers: { columns: ["Passenger name", "Type", "Document (masked)", "Date of birth (masked)", "Nationality", "Ticket number"], what: "passengers" },
+  passengers: { columns: ["Passenger name", "Type", "Document", "Date of birth", "Nationality", "Ticket number"], what: "passengers" },
   servicing: { columns: ["Case", "Type (refund, reissue, void, cancellation)", "Opened", "Status", "Amount (Rs)", "Owner"], what: "refund, reissue, void or cancellation cases" },
   audit: { columns: ["When", "Who", "Action", "Details"], what: "an audit trail" },
 };
@@ -238,12 +239,10 @@ function Cell({ children, muted }: { children: React.ReactNode; muted?: boolean 
   return <td className={`h-table-row max-w-[14rem] px-2.5 ${muted ? "text-muted-foreground" : "text-foreground"}`}><span className="line-clamp-2 break-words">{children}</span></td>;
 }
 
-// Passengers tab (mockup booking-detail-passengers): passport and date of birth masked by the
-// gateway; the full values only through the logged reveal, for viewers the gateway allows.
+// Passengers tab (mockup booking-detail-passengers): the full passport or ID number and date of birth, as stored.
 function Passengers({ booking }: { booking: BookingDetail }) {
-  const [revealing, setRevealing] = useState<BookingPassenger | null>(null);
   const passengers = booking.passengers ?? [];
-  const columns = ["Passenger name", "Type", "Document (masked)", "Date of birth (masked)", "Nationality", "Ticket number", ...(booking.can_reveal_identity ? ["Actions"] : [])];
+  const columns = ["Passenger name", "Type", "Document", "Date of birth", "Nationality", "Ticket number"];
   return (
     <section aria-label="Passengers" className="flex flex-col gap-2">
       <div className="overflow-x-auto rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
@@ -261,71 +260,17 @@ function Passengers({ booking }: { booking: BookingDetail }) {
                 <tr key={passenger.position} className="border-b border-border last:border-b-0">
                   <Cell>{name}</Cell>
                   <Cell>{type}</Cell>
-                  <Cell muted={!passenger.document_number_masked}>{ID_TYPE[passenger.id_type]} {passenger.document_number_masked ?? "—"}</Cell>
-                  <Cell>{passenger.date_of_birth_masked}</Cell>
+                  <Cell muted={!passenger.document_number}>{ID_TYPE[passenger.id_type]} {passenger.document_number ?? "—"}</Cell>
+                  <Cell>{formatDay(passenger.date_of_birth)}</Cell>
                   <Cell muted={!passenger.nationality}>{passenger.nationality ?? "—"}</Cell>
                   <Cell muted={!passenger.ticket_number}>{passenger.ticket_number ?? "—"}</Cell>
-                  {booking.can_reveal_identity && (
-                    <td className="h-table-row px-2.5">
-                      <Button type="button" variant="outline" size="sm" aria-label={`Reveal (logged) ${name}`} onClick={() => setRevealing(passenger)}>
-                        Reveal (logged)
-                      </Button>
-                    </td>
-                  )}
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
-      <p className="text-body text-muted-foreground">Passport and date of birth are masked. Reveal is logged.</p>
-      {revealing && <RevealDialog bookingId={booking.booking_id} passenger={revealing} onClose={() => setRevealing(null)} />}
     </section>
-  );
-}
-
-const REASON_MIN = 5;
-
-function RevealDialog({ bookingId, passenger, onClose }: { bookingId: string; passenger: BookingPassenger; onClose: () => void }) {
-  const [reason, setReason] = useState("");
-  const reveal = useMutation({ mutationFn: () => revealTraveler(bookingId, passenger.position, reason.trim()) });
-  const values: RevealResponse | undefined = reveal.data;
-  const name = [passenger.first_name, passenger.last_name].join(" ");
-  return (
-    <Dialog open onOpenChange={open => { if (!open) onClose(); }}>
-      <DialogContent className="flex max-h-[85vh] w-[calc(100%-2rem)] max-w-lg flex-col gap-3 overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="text-section">Reveal identity details</DialogTitle>
-          <DialogDescription className="text-body">{name}. The reveal is logged with your reason.</DialogDescription>
-        </DialogHeader>
-        <div className="min-h-0 overflow-y-auto">
-          {values ? (
-            <dl className="grid grid-cols-[minmax(8rem,10rem)_minmax(0,1fr)] text-body">
-              {([["Date of birth", values.date_of_birth], ["Document number", values.document_number], ["Document expiry", values.document_expiry]] as const).map(([label, value]) => (
-                <div key={label} className="contents">
-                  <dt className="border-b border-border py-2 font-semibold text-foreground">{label}</dt>
-                  <dd className="min-w-0 break-words border-b border-border py-2 tabular-nums text-foreground">{value ?? "—"}</dd>
-                </div>
-              ))}
-            </dl>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="reveal-reason" className="text-label font-medium text-muted-foreground">Reason</label>
-              <Textarea id="reveal-reason" value={reason} maxLength={500} rows={3} onChange={event => setReason(event.target.value)} className="text-body" />
-              {reveal.error && <p role="alert" className="text-body text-status-critical-text">{reveal.error instanceof GatewayError ? reveal.error.message : "Identity details can't be shown right now."}</p>}
-            </div>
-          )}
-        </div>
-        <DialogFooter className="gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>{values ? "Done" : "Cancel"}</Button>
-          {!values && (
-            <Button type="button" disabled={reason.trim().length < REASON_MIN || reveal.isPending} onClick={() => reveal.mutate()}>
-              {reveal.isPending ? "Revealing…" : "Reveal"}
-            </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 

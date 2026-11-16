@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { formatDay } from "@/lib/admin-search/date-display";
 import { toast } from "sonner";
 import { Button } from "@/components/admin/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,7 +21,7 @@ export type HoldResultState =
 const SEARCH = "/admin/search?tab=flights";
 
 // Hold result (mockup flights-hold-result). Facts come from the gateway: the hold answer, then the
-// saved booking (customer and masked travelers). Problems show the gateway's own sentence.
+// saved booking (customer and travelers). Problems show the gateway's own sentence.
 export default function HoldResultPage() {
   const state = useLocation().state as HoldResultState | null;
   return (
@@ -92,7 +93,7 @@ function Held({ hold }: { hold: HoldView }) {
       </section>
       <People bookingId={hold.booking_id} />
       <p className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-body text-foreground">
-        A held booking appears in Bookings as Flights, status Held, unpaid, not issued, with the hold deadline. The Passengers tab in Booking detail shows the saved travelers with masked documents.
+        A held booking appears in Bookings as Flights, status Held, unpaid, not issued, with the hold deadline. The Passengers tab in Booking detail shows the saved travelers and their documents.
       </p>
     </>
   );
@@ -100,7 +101,7 @@ function Held({ hold }: { hold: HoldView }) {
 
 const TYPE: Record<BookingPassenger["type"], string> = { ADT: "Adult", CHD: "Child", INF: "Infant" };
 
-/** Customer and travelers as the gateway saved them (masked). */
+/** Customer and travelers as the gateway saved them. */
 function People({ bookingId }: { bookingId: string }) {
   const detail = useBookingDetail(bookingId);
   const booking = detail.data;
@@ -134,14 +135,13 @@ function People({ bookingId }: { bookingId: string }) {
                 <tr key={passenger.position} className="border-b border-border last:border-b-0">
                   <td className="h-table-row max-w-[12rem] truncate px-2.5 text-foreground">{passenger.first_name} {passenger.last_name}</td>
                   <td className="h-table-row px-2.5 text-foreground">{TYPE[passenger.type]}{passenger.type === "INF" && passenger.infant_of_position != null ? ` with Adult ${adultNumber(booking.passengers ?? [], passenger.infant_of_position)}` : ""}</td>
-                  <td className="h-table-row px-2.5 tabular-nums text-foreground">{passenger.document_number_masked ?? "—"}</td>
-                  <td className="h-table-row px-2.5 tabular-nums text-foreground">{passenger.date_of_birth_masked}</td>
+                  <td className="h-table-row px-2.5 tabular-nums text-foreground">{passenger.document_number ?? "—"}</td>
+                  <td className="h-table-row px-2.5 tabular-nums text-foreground">{formatDay(passenger.date_of_birth)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-body text-muted-foreground">Documents and dates of birth are masked. Reveal is logged.</p>
       </section>
     </div>
   );

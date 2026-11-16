@@ -27,8 +27,8 @@ const HELD = {
   price_per_adult: rs(118_500), total: rs(237_000), amount_paid: rs(0), amount_due: rs(237_000), payment_status: "unpaid",
   customer: { name: "Ali Raza", phone: "+92 3001234567", email: "ali.raza@example.invalid" },
   travelers: [
-    { position: 0, title: "MR", first_name: "Ali", last_name: "Raza", id_type: "PSPT", document_number_masked: "AB•••4567", date_of_birth_masked: "1988-••-••" },
-    { position: 1, title: "MRS", first_name: "Sana", last_name: "Raza", id_type: "PSPT", document_number_masked: "AB•••4567", date_of_birth_masked: "1990-••-••" },
+    { position: 0, title: "MR", first_name: "Ali", last_name: "Raza", id_type: "PSPT", document_number: "AB1234567", date_of_birth: "1988-05-04" },
+    { position: 1, title: "MRS", first_name: "Sana", last_name: "Raza", id_type: "PSPT", document_number: "AB1234567", date_of_birth: "1990-01-31" },
   ],
   payments: [], can_record_payments: true, can_issue_tickets: true,
 };

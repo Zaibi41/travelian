@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDay } from "@/lib/admin-search/date-display";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
@@ -11,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { DocumentDialog, MergeDialog, PersonFormDialog } from "@/components/admin/people/PersonDialogs";
-import { ValidityBadge } from "@/components/admin/people/MaskedDocuments";
+import { ValidityBadge } from "@/components/admin/people/SavedDocuments";
 import { countryName } from "@/data/countries";
 import { formatDateTime } from "@/lib/admin-bookings/format";
 import { bookingDetailPath } from "@/lib/admin-bookings/tabs";
@@ -20,7 +21,7 @@ import { fetchPerson, removeDocument, type PersonDetail, type SavedDocument } fr
 import { ID_TYPE_LABEL, TITLE_LABEL, fullName, peopleErrorMessage } from "@/lib/saved-people/states";
 import { personPath } from "@/lib/saved-people/routes";
 
-// A saved person: masked details, documents and bookings (Customers & Travelers). Edit,
+// A saved person: details, documents and bookings (Customers & Travelers). Edit,
 // documents and merge show only when the gateway says the caller may (can_manage, can_merge).
 export default function SavedPersonPage() {
   const { personId = "" } = useParams();
@@ -94,10 +95,10 @@ export default function SavedPersonPage() {
         <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-body sm:grid-cols-2 lg:grid-cols-3">
           {[
             ["Title", data.title ? TITLE_LABEL[data.title] ?? data.title : "—"],
-            ["Date of birth (masked)", data.date_of_birth_masked ?? "—"],
+            ["Date of birth", formatDay(data.date_of_birth) || "—"],
             ["Nationality", data.nationality ? countryName(data.nationality) ?? data.nationality : "—"],
-            ["Phone", data.phone_masked ?? "—"],
-            ["Email", data.email_masked ?? "—"],
+            ["Phone", data.phone ?? "—"],
+            ["Email", data.email ?? "—"],
             ["Last booking", formatDateTime(data.last_booking_at)],
           ].map(([label, value]) => (
             <div key={label} className="flex min-w-0 flex-col">
@@ -122,8 +123,8 @@ export default function SavedPersonPage() {
                 <tr className="bg-muted text-left">
                   <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Document type</th>
                   <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Country</th>
-                  <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Number (masked)</th>
-                  <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Expiry (masked)</th>
+                  <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Number</th>
+                  <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Expiry</th>
                   {data.can_manage && !merged && <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Actions</th>}
                 </tr>
               </thead>
@@ -132,13 +133,13 @@ export default function SavedPersonPage() {
                   <tr key={document.id} className="border-b border-border last:border-b-0">
                     <td className="px-2.5 py-2 text-foreground">{ID_TYPE_LABEL[document.id_type]}</td>
                     <td className="px-2.5 py-2 text-foreground">{document.document_country}</td>
-                    <td className="px-2.5 py-2 tabular-nums text-foreground">{document.document_number_masked}</td>
+                    <td className="px-2.5 py-2 tabular-nums text-foreground">{document.document_number}</td>
                     <td className="px-2.5 py-2 text-foreground">
-                      <span className="flex items-center gap-1.5 whitespace-nowrap tabular-nums">{document.document_expiry_masked ?? "—"}<ValidityBadge validity={document.document_validity} /></span>
+                      <span className="flex items-center gap-1.5 whitespace-nowrap tabular-nums">{formatDay(document.document_expiry) || "—"}<ValidityBadge validity={document.document_validity} /></span>
                     </td>
                     {data.can_manage && !merged && (
                       <td className="px-2.5 py-2">
-                        <Button variant="outline" size="sm" aria-label={`Remove ${ID_TYPE_LABEL[document.id_type]} ${document.document_number_masked}`}
+                        <Button variant="outline" size="sm" aria-label={`Remove ${ID_TYPE_LABEL[document.id_type]} ${document.document_number}`}
                           onClick={() => setRemoving(document)}>Remove</Button>
                       </td>
                     )}
@@ -216,7 +217,7 @@ function RemoveDocumentDialog({ personId, document, onClose, onRemoved }: {
         <AlertDialogHeader>
           <AlertDialogTitle>Remove this document?</AlertDialogTitle>
           <AlertDialogDescription>
-            {document ? `${ID_TYPE_LABEL[document.id_type]} ${document.document_number_masked}. ` : ""}Past bookings keep their own copy.
+            {document ? `${ID_TYPE_LABEL[document.id_type]} ${document.document_number}. ` : ""}Past bookings keep their own copy.
           </AlertDialogDescription>
         </AlertDialogHeader>
         {error && <p role="alert" className="text-body text-status-critical-text">{error}</p>}

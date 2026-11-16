@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatDay } from "@/lib/admin-search/date-display";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
@@ -14,9 +15,9 @@ import {
   type DocumentInput, type PersonCreate, type PersonCreated, type PersonDetail, type PersonSummary, type PersonUpdate,
 } from "@/lib/saved-people/api";
 import { ID_TYPE_LABEL, TITLE_LABEL, fullName, mergeProblem, peopleErrorMessage, saveStateFrom, type SaveState } from "@/lib/saved-people/states";
-import { MaskedDocuments } from "./MaskedDocuments";
+import { SavedDocuments } from "./SavedDocuments";
 
-// Dialogs for Customers & Travelers. Values shown are the gateway's masked values only;
+// Dialogs for Customers & Travelers. Values shown are the gateway's, in full;
 // the gateway checks every rule again (duplicates, document numbers, permissions).
 
 const DIALOG = "flex max-h-[85vh] w-[calc(100%-2rem)] max-w-lg flex-col gap-3 overflow-hidden";
@@ -98,11 +99,11 @@ export function DuplicateNotice({ state, busy, onChoose, onBack }: {
         <p className="text-body font-semibold text-foreground">Possible duplicate: {state.reason}</p>
         <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-body">
           <dt className="text-muted-foreground">Name</dt><dd className="truncate text-foreground" title={fullName(person)}>{fullName(person)}</dd>
-          <dt className="text-muted-foreground">Birth year</dt><dd className="text-foreground">{person.birth_year ?? "—"}</dd>
-          <dt className="text-muted-foreground">Phone</dt><dd className="truncate text-foreground">{person.phone_masked ?? "—"}</dd>
-          <dt className="text-muted-foreground">Email</dt><dd className="truncate text-foreground">{person.email_masked ?? "—"}</dd>
+          <dt className="text-muted-foreground">Date of birth</dt><dd className="text-foreground">{formatDay(person.date_of_birth) || "—"}</dd>
+          <dt className="text-muted-foreground">Phone</dt><dd className="truncate text-foreground">{person.phone ?? "—"}</dd>
+          <dt className="text-muted-foreground">Email</dt><dd className="truncate text-foreground">{person.email ?? "—"}</dd>
         </dl>
-        <MaskedDocuments documents={person.documents ?? []} />
+        <SavedDocuments documents={person.documents ?? []} />
       </div>
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button type="button" variant="ghost" disabled={busy} onClick={onBack}>Back</Button>
@@ -128,8 +129,8 @@ interface PersonDraft {
 
 function draftFrom(person?: PersonSummary): PersonDraft {
   return {
-    title: person?.title ?? NONE, first_name: person?.first_name ?? "", last_name: person?.last_name ?? "", date_of_birth: "",
-    nationality: person?.nationality ?? "", phone_code: person ? "" : "92", phone: "", email: "",
+    title: person?.title ?? NONE, first_name: person?.first_name ?? "", last_name: person?.last_name ?? "", date_of_birth: person?.date_of_birth ?? "",
+    nationality: person?.nationality ?? "", phone_code: person ? "" : "92", phone: "", email: person?.email ?? "",
   };
 }
 
@@ -142,7 +143,7 @@ export function createBody(draft: PersonDraft, document: DocumentDraft | null): 
   };
 }
 
-/** Edit sends only what changed; blank masked fields (date of birth, phone, email) keep the saved value. */
+/** Edit sends only what changed; a blank date of birth, phone or email keeps the saved value. */
 export function updateBody(draft: PersonDraft, person: PersonSummary): PersonUpdate {
   const body: PersonUpdate = {};
   const title = draft.title === NONE ? null : (draft.title as Title);
@@ -150,12 +151,12 @@ export function updateBody(draft: PersonDraft, person: PersonSummary): PersonUpd
   if (draft.first_name.trim() !== person.first_name) body.first_name = draft.first_name.trim();
   if (draft.last_name.trim() !== person.last_name) body.last_name = draft.last_name.trim();
   if ((optional(draft.nationality) ?? null) !== (person.nationality ?? null)) body.nationality = optional(draft.nationality) ?? null;
-  if (optional(draft.date_of_birth)) body.date_of_birth = draft.date_of_birth;
+  if (optional(draft.date_of_birth) && draft.date_of_birth !== person.date_of_birth) body.date_of_birth = draft.date_of_birth;
   if (optional(draft.phone)) {
     body.phone = draft.phone.trim();
     if (optional(draft.phone_code)) body.phone_code = draft.phone_code.trim();
   }
-  if (optional(draft.email)) body.email = draft.email.trim();
+  if (optional(draft.email) && draft.email.trim() !== person.email) body.email = draft.email.trim();
   return body;
 }
 
@@ -258,12 +259,12 @@ export function PersonFormDialog({ open, onOpenChange, person, onSaved }: {
                     onChange={event => set({ phone_code: event.target.value.replace(/\D/g, "") })} />
                 </Field>
                 <Field id={id("phone")} label="Phone">
-                  <Input id={id("phone")} inputMode="numeric" value={draft.phone} maxLength={10} placeholder={person?.phone_masked ?? undefined}
+                  <Input id={id("phone")} inputMode="numeric" value={draft.phone} maxLength={10} placeholder={person?.phone ?? undefined}
                     className="h-control text-body" onChange={event => set({ phone: event.target.value.replace(/\D/g, "") })} />
                 </Field>
               </div>
               <Field id={id("email")} label="Email">
-                <Input id={id("email")} type="email" value={draft.email} maxLength={50} placeholder={person?.email_masked ?? undefined}
+                <Input id={id("email")} type="email" value={draft.email} maxLength={50} placeholder={person?.email ?? undefined}
                   className="h-control text-body" onChange={event => set({ email: event.target.value })} />
               </Field>
               {!editing && (
@@ -430,7 +431,7 @@ export function MergeDialog({ open, onOpenChange, source, onMerged }: {
                   <span className="flex min-w-0 flex-col">
                     <span className="truncate text-body font-medium text-foreground" title={fullName(person)}>{fullName(person)}</span>
                     <span className="truncate text-label text-muted-foreground">
-                      {[person.birth_year, person.phone_masked, person.email_masked].filter(Boolean).join(" · ") || "No contact details"}
+                      {[formatDay(person.date_of_birth), person.phone, person.email].filter(Boolean).join(" · ") || "No contact details"}
                     </span>
                   </span>
                 </label>

@@ -4,8 +4,8 @@ import { addDocument, createPerson, fetchPerson, mergePerson, removeDocument, se
 import { MERGE_REASON_MIN, mergeProblem, peopleErrorMessage, saveStateFrom } from "./states";
 import { customersTabPath, personPath } from "./routes";
 
-// Made-up, masked values only.
-const SUMMARY = { id: "p-00000001", first_name: "Test", last_name: "Person", birth_year: 1990, phone_masked: "+92 •••••••567", documents: [] };
+// Made-up values.
+const SUMMARY = { id: "p-00000001", first_name: "Test", last_name: "Person", date_of_birth: "1990-01-31", phone: "+92 3001234567", documents: [] };
 
 function gateway(status: number, body: unknown) {
   const fetchImpl = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } }));

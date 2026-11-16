@@ -11,7 +11,7 @@ test.use({ launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } });
 const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" });
 const SOON = () => new Date(Date.now() + 3 * 3_600_000).toISOString();
 const traveler = (position: number, first: string, ticket?: string) => ({
-  position, type: "ADT", title: "MR", first_name: first, last_name: "Rehmanullah Khan Durrani", date_of_birth_masked: "1990-••-••", id_type: "PSPT",
+  position, type: "ADT", title: "MR", first_name: first, last_name: "Rehmanullah Khan Durrani", date_of_birth: "1990-01-31", id_type: "PSPT",
   ...(ticket ? { ticket_number: ticket } : {}),
 });
 

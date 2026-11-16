@@ -38,8 +38,8 @@ const HELD: GroupHoldView = {
   price_per_adult: rs(118_500), total: rs(237_000), amount_paid: rs(0), amount_due: rs(237_000), payment_status: "unpaid",
   customer: { name: "Ali Raza", phone: "+92 3001234567", email: "a@example.invalid" },
   travelers: [
-    { position: 0, title: "MR", first_name: "Ali", last_name: "Raza", id_type: "PSPT", document_number_masked: "AB•••4567", date_of_birth_masked: "1988-••-••" },
-    { position: 1, title: "MRS", first_name: "Sana", last_name: "Raza", id_type: "PSPT", document_number_masked: "AB•••4567", date_of_birth_masked: "1990-••-••" },
+    { position: 0, title: "MR", first_name: "Ali", last_name: "Raza", id_type: "PSPT", document_number: "AB1234567", date_of_birth: "1988-05-04" },
+    { position: 1, title: "MRS", first_name: "Sana", last_name: "Raza", id_type: "PSPT", document_number: "AB1234567", date_of_birth: "1990-01-31" },
   ],
   payments: [], can_record_payments: true, can_issue_tickets: true, can_release: true, can_set_selling_price: true,
 };
@@ -48,8 +48,8 @@ const PAID: GroupHoldView = {
   payments: [{ id: "pay1", method: "bank_transfer", received_into: "Meezan Bank, Travelian current account", amount: rs(237_000), reference: "TRV-PAY-1", received_at: "2026-11-14T10:00:00Z" }],
 };
 const ACCOUNTS = { accounts: [{ id: "acct-0001", method: "bank_transfer", label: "Meezan Bank, Travelian current account" }, { id: "acct-0002", method: "jazzcash", label: "JazzCash, Travelian business wallet" }] };
-const SAVED = { id: "p-00000001", title: "MR", first_name: "Ali", last_name: "Raza", nationality: "PAK", phone_masked: "+92 •••••••567", email_masked: "a•••@example.invalid",
-  documents: [{ id: "d-00000001", id_type: "PSPT", document_country: "PAK", document_number_masked: "AB•••4567" }], match: "document" };
+const SAVED = { id: "p-00000001", title: "MR", first_name: "Ali", last_name: "Raza", nationality: "PAK", phone: "+92 3001234567", email: "ali@example.invalid",
+  documents: [{ id: "d-00000001", id_type: "PSPT", document_country: "PAK", document_number: "AB1234567" }], match: "document" };
 
 const location = { current: "" };
 function Probe() {
@@ -155,7 +155,7 @@ describe("Hold group seats (step 2)", () => {
     expect(screen.getByRole("timer")).toHaveTextContent(/Hold expires, \d\d:\d\d left/);
     expect(screen.getByText("Rs 118,500")).toBeInTheDocument();
     expect(screen.getByText("Rs 237,000")).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Booking details" })).toHaveTextContent("Sana Raza, Passport AB•••4567");
+    expect(screen.getByRole("region", { name: "Booking details" })).toHaveTextContent("Sana Raza, Passport AB1234567");
     expect(document.body.textContent).not.toMatch(/Reveal|dhillu|skypass/i);
   });
 
@@ -245,7 +245,7 @@ describe("Hold group seats (step 2)", () => {
     expect(gateway.holdGroupSeats).not.toHaveBeenCalled();
   });
 
-  it("finds a saved customer by passport number first; masked, no reveal; the hold sends the id only", async () => {
+  it("finds a saved customer by passport number first; full values, no reveal; the hold sends the id only", async () => {
     gateway.holdGroupSeats.mockResolvedValue(HELD);
     renderAt(HOLD_URL);
     const fare = await screen.findByRole("complementary", { name: "Selected group fare" });
@@ -254,15 +254,15 @@ describe("Hold group seats (step 2)", () => {
     const list = await screen.findByRole("listbox", { name: "Find saved customer results" });
     await waitFor(() => expect(people.searchPeople).toHaveBeenCalledWith("AB1234567", expect.anything()));
     expect(list).toHaveTextContent("Ali Raza");
-    expect(list).toHaveTextContent("AB•••4567");
+    expect(list).toHaveTextContent("AB1234567");
     expect(list).not.toHaveTextContent(/Reveal/);
     fireEvent.click(within(list).getByRole("option", { name: /^Ali Raza/ }));
     await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
     expect(screen.getByRole("region", { name: "Customer" })).toHaveTextContent("Saved customer");
     expect(within(screen.getByRole("region", { name: "Customer" })).queryByLabelText("Given name")).not.toBeInTheDocument();
-    // Adult 1 is the saved customer (ticked by default): masked card, no typed identity.
+    // Adult 1 is the saved customer (ticked by default): full values on the card, no typed identity.
     const adult1 = screen.getByRole("region", { name: "Adult 1" });
-    expect(adult1).toHaveTextContent("AB•••4567");
+    expect(adult1).toHaveTextContent("AB1234567");
     expect(within(adult1).queryByLabelText("Document number")).not.toBeInTheDocument();
     const adult2 = screen.getByRole("region", { name: "Adult 2" });
     fireEvent.change(within(adult2).getByLabelText("Given name"), { target: { value: "Sana" } });

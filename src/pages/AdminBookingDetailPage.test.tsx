@@ -9,9 +9,8 @@ import { HelmetProvider } from "react-helmet-async";
 
 const detail = { current: {} as Record<string, unknown> };
 vi.mock("@/lib/admin-bookings/use-bookings", () => ({ useBookingDetail: () => detail.current }));
-const reveal = vi.hoisted(() => vi.fn());
 const gateway = vi.hoisted(() => ({ setSellingPrice: vi.fn(), downloadItinerary: vi.fn() }));
-vi.mock("@/lib/admin-bookings/api", () => ({ revealTraveler: reveal, setSellingPrice: gateway.setSellingPrice, downloadItinerary: gateway.downloadItinerary }));
+vi.mock("@/lib/admin-bookings/api", () => ({ setSellingPrice: gateway.setSellingPrice, downloadItinerary: gateway.downloadItinerary }));
 
 import AdminBookingDetailPage from "./AdminBookingDetailPage";
 
@@ -25,7 +24,7 @@ const STAFF_VIEW: BookingDetail = {
   amount: rs(12_500), deadline: "2099-11-05T09:00:00Z", created_at: "2026-11-05T07:00:00Z",
   fare: { billable_price: rs(12_500) },
   sections_not_available: ["itinerary", "passengers", "payments", "tickets", "servicing", "audit"],
-  can_reveal_identity: false, can_record_payments: false, can_issue_tickets: false, can_set_selling_price: false,
+  can_record_payments: false, can_issue_tickets: false, can_set_selling_price: false,
 };
 const ADMIN_VIEW: BookingDetail = {
   ...STAFF_VIEW, provider: "AirSial",
@@ -173,7 +172,7 @@ describe("Booking detail", () => {
   it("tabs without recorded data show the mockup columns and say not available", () => {
     renderAt("/admin/bookings/TRV-1/passengers");
     const table = screen.getByRole("table");
-    expect(within(table).getByRole("columnheader", { name: "Document (masked)" })).toBeInTheDocument();
+    expect(within(table).getByRole("columnheader", { name: "Document" })).toBeInTheDocument();
     expect(table).toHaveTextContent("Not available yet. The gateway doesn't record passengers for bookings yet.");
   });
 
@@ -219,15 +218,15 @@ describe("Booking detail", () => {
   });
 });
 
-// A UAT hold as the gateway returns it: masked identity, audit trail (no personal data).
+// A UAT hold as the gateway returns it: full identity, audit trail (no personal data).
 const HOLD_VIEW: BookingDetail = {
   ...STAFF_VIEW, customer_or_agency: "Test Customer",
   customer: { first_name: "Test", last_name: "Customer", phone: "+92 3001234567", email: "ops@example.invalid" },
   passengers: [
-    { position: 0, type: "ADT", title: "MR", first_name: "Test", last_name: "Passenger", date_of_birth_masked: "1990-••-••", id_type: "PSPT",
-      document_number_masked: "••••••567", document_country: "PAK", nationality: "PAK", document_expiry_masked: "2031-••-••", document_validity: "valid" },
-    { position: 1, type: "INF", title: "MISS", first_name: "Baby", last_name: "Passenger", date_of_birth_masked: "2026-••-••", id_type: "PSPT",
-      document_number_masked: "••••••321", nationality: "PAK", infant_of_position: 0 },
+    { position: 0, type: "ADT", title: "MR", first_name: "Test", last_name: "Passenger", date_of_birth: "1990-01-31", id_type: "PSPT",
+      document_number: "AB1234567", document_country: "PAK", nationality: "PAK", document_expiry: "2031-01-01", document_validity: "valid" },
+    { position: 1, type: "INF", title: "MISS", first_name: "Baby", last_name: "Passenger", date_of_birth: "2026-03-02", id_type: "PSPT",
+      document_number: "AB7654321", nationality: "PAK", infant_of_position: 0 },
   ],
   audit: [
     { action: "hold_created", actor_user_id: "0901a7ce-ef7d-4af6-8ca4-31fd1252137a", actor_role: "super_admin", at: "2026-11-09T13:22:54Z",
@@ -241,51 +240,22 @@ const HOLD_VIEW: BookingDetail = {
 describe("Passengers and Audit tabs", () => {
   beforeEach(() => {
     detail.current = ok(HOLD_VIEW);
-    reveal.mockReset();
   });
 
-  it("Passengers lists the mockup's columns with masked document and date of birth, and no Reveal without the permission", () => {
+  it("Passengers lists the document number and date of birth in full, with no masking notice and no Reveal", () => {
     renderAt("/admin/bookings/TRV-1/passengers");
     const tab = screen.getByRole("region", { name: "Passengers" });
     expect(within(tab).getAllByRole("columnheader").map(h => h.textContent)).toEqual(
-      ["Passenger name", "Type", "Document (masked)", "Date of birth (masked)", "Nationality", "Ticket number"]);
+      ["Passenger name", "Type", "Document", "Date of birth", "Nationality", "Ticket number"]);
     const [adult, infant] = within(tab).getAllByRole("row").slice(1);
     expect(adult).toHaveTextContent("MR Test Passenger");
-    expect(adult).toHaveTextContent("Passport ••••••567");
-    expect(adult).toHaveTextContent("1990-••-••");
+    expect(adult).toHaveTextContent("Passport AB1234567");
+    expect(adult).toHaveTextContent("31 Jan 1990");
+    expect(infant).toHaveTextContent("AB7654321");
     expect(infant).toHaveTextContent("Infant (with passenger 1)");
-    expect(tab).toHaveTextContent("Passport and date of birth are masked. Reveal is logged.");
+    expect(tab).not.toHaveTextContent(/masked|•/);
     expect(within(tab).queryByRole("button", { name: /Reveal/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/Not available yet/)).not.toBeInTheDocument();
-  });
-
-  it("Reveal asks for a reason, calls the gateway, shows the values in the dialog only, and clears them on close", async () => {
-    detail.current = ok({ ...HOLD_VIEW, can_reveal_identity: true });
-    reveal.mockResolvedValue({ date_of_birth: "1990-01-31", document_number: "AB1234567", document_expiry: "2031-01-01" });
-    renderAt("/admin/bookings/TRV-1/passengers");
-    fireEvent.click(screen.getByRole("button", { name: "Reveal (logged) MR Test Passenger" }));
-    const dialog = screen.getByRole("dialog", { name: "Reveal identity details" });
-    const submit = within(dialog).getByRole("button", { name: "Reveal" });
-    expect(submit).toBeDisabled();
-    fireEvent.change(within(dialog).getByLabelText("Reason"), { target: { value: "Ticketing needs it" } });
-    fireEvent.click(submit);
-    await waitFor(() => expect(reveal).toHaveBeenCalledWith("TRV-1", 0, "Ticketing needs it"));
-    expect(await within(dialog).findByText("AB1234567")).toBeInTheDocument();
-    expect(within(dialog).getByText("1990-01-31")).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Passengers", hidden: true })).not.toHaveTextContent("AB1234567");  // never in the table
-    fireEvent.click(within(dialog).getByRole("button", { name: "Done" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(document.body).not.toHaveTextContent("AB1234567");
-  });
-
-  it("Reveal shows the gateway's refusal", async () => {
-    detail.current = ok({ ...HOLD_VIEW, can_reveal_identity: true });
-    reveal.mockRejectedValue(new GatewayError("forbidden", "Revealing identity details requires the reveal identity permission."));
-    renderAt("/admin/bookings/TRV-1/passengers");
-    fireEvent.click(screen.getByRole("button", { name: "Reveal (logged) MR Test Passenger" }));
-    fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Ticketing needs it" } });
-    fireEvent.click(screen.getByRole("button", { name: "Reveal" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("requires the reveal identity permission");
   });
 
   it("a group booking's stored fare terms show on Overview (text, who, when) and in Audit", () => {

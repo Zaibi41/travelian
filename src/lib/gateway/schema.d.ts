@@ -375,8 +375,8 @@ export interface paths {
          * @description The booking's itinerary / e-ticket as a PDF (Flights and Group Ticketing; app/services/itinerary_pdf.py): status
          *     banner, Booked by / Contact (Travelian), travelers with fare, Total, Paid and Due (selling price), every flight
          *     outbound then return. Never a supplier name, group id, cost or profit; a group booking's PNR (the supplier's) only
-         *     with the supplier names permission; full passport numbers only with reveal_identity (each one logged).
-         *     format=png: the finished PDF rendered at about 150 DPI, pages stacked into one image (same rules and reveals).
+         *     with the supplier names permission; full passport numbers.
+         *     format=png: the finished PDF rendered at about 150 DPI, pages stacked into one image (same rules).
          */
         get: operations["itinerary_pdf_v1_admin_bookings__booking_id__itinerary_pdf_get"];
         put?: never;
@@ -448,26 +448,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/admin/bookings/{booking_id}/travelers/{position}/reveal": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Reveal Traveler Identity
-         * @description Full date of birth and document number for one traveler. Logged with the reason (spec 3.2).
-         */
-        post: operations["reveal_traveler_identity_v1_admin_bookings__booking_id__travelers__position__reveal_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/admin/customers": {
         parameters: {
             query?: never;
@@ -478,7 +458,7 @@ export interface paths {
         /**
          * Search People
          * @description With q: exact full document number first, then phone or email, then name prefix. Without q:
-         *     the most recent people (latest booking first, then the most recently saved). Masked values only.
+         *     the most recent people (latest booking first, then the most recently saved).
          */
         get: operations["search_people_v1_admin_customers_get"];
         put?: never;
@@ -500,7 +480,7 @@ export interface paths {
         /**
          * Search Customers
          * @description Live search for "Find saved customer" (hold form): up to 8 people by name (partial: given name, surname or full
-         *     name), phone or email (contains), or document number (prefix). Masked values only.
+         *     name), phone or email (contains), or document number (prefix).
          */
         get: operations["search_customers_v1_admin_customers_search_get"];
         put?: never;
@@ -768,7 +748,7 @@ export interface paths {
         /**
          * Search Travelers
          * @description Live search for "Use saved traveler" (hold form): up to 8 people by name (partial: given name, surname or full
-         *     name) or document number (prefix). Masked values only.
+         *     name) or document number (prefix).
          */
         get: operations["search_travelers_v1_admin_travelers_search_get"];
         put?: never;
@@ -1719,12 +1699,6 @@ export interface components {
              * @default false
              */
             can_record_payments: boolean;
-            /**
-             * Can Reveal Identity
-             * @description Whether this viewer may call the reveal endpoint (the endpoint still checks).
-             * @default false
-             */
-            can_reveal_identity: boolean;
             /**
              * Can Set Selling Price
              * @description Whether this viewer may change the selling price now: on hold, not issued, nothing paid, Super Admin or record payments (the endpoint still checks).
@@ -2771,14 +2745,17 @@ export interface components {
         };
         /** GroupHoldTraveler */
         GroupHoldTraveler: {
-            /** Date Of Birth Masked */
-            date_of_birth_masked: string;
+            /**
+             * Date Of Birth
+             * Format: date
+             */
+            date_of_birth: string;
             /** Document Country */
             document_country?: string | null;
-            /** Document Expiry Masked */
-            document_expiry_masked?: string | null;
-            /** Document Number Masked */
-            document_number_masked?: string | null;
+            /** Document Expiry */
+            document_expiry?: string | null;
+            /** Document Number */
+            document_number?: string | null;
             /** First Name */
             first_name: string;
             /** Id Type */
@@ -3734,26 +3711,6 @@ export interface components {
             /** Username */
             username: string;
         };
-        /** RevealRequest */
-        RevealRequest: {
-            /**
-             * Reason
-             * @description Why the full values are needed. Logged with the reveal.
-             */
-            reason: string;
-        };
-        /** RevealResponse */
-        RevealResponse: {
-            /**
-             * Date Of Birth
-             * Format: date
-             */
-            date_of_birth: string;
-            /** Document Expiry */
-            document_expiry?: string | null;
-            /** Document Number */
-            document_number?: string | null;
-        };
         /** RoleRecord */
         RoleRecord: {
             /** Id */
@@ -3777,7 +3734,7 @@ export interface components {
              * @description Traveler position in the request.
              */
             position?: number | null;
-            /** @description needs_choice: the saved person this may be (masked). */
+            /** @description needs_choice: the saved person this may be. */
             possible_duplicate?: components["schemas"]["SavedPersonSummary"] | null;
             /** Reason */
             reason?: string | null;
@@ -3796,16 +3753,10 @@ export interface components {
         SavedDocument: {
             /** Document Country */
             document_country: string;
-            /**
-             * Document Expiry Masked
-             * @description Year only.
-             */
-            document_expiry_masked?: string | null;
-            /**
-             * Document Number Masked
-             * @description Last 3 characters only.
-             */
-            document_number_masked: string;
+            /** Document Expiry */
+            document_expiry?: string | null;
+            /** Document Number */
+            document_number: string;
             /** Document Validity */
             document_validity?: ("valid" | "expiring" | "expired") | null;
             /** Id */
@@ -3864,8 +3815,6 @@ export interface components {
         };
         /** SavedPersonDetail */
         SavedPersonDetail: {
-            /** Birth Year */
-            birth_year?: number | null;
             /**
              * Bookings
              * @default []
@@ -3883,15 +3832,15 @@ export interface components {
              * @default false
              */
             can_merge: boolean;
-            /** Date Of Birth Masked */
-            date_of_birth_masked?: string | null;
+            /** Date Of Birth */
+            date_of_birth?: string | null;
             /**
              * Documents
              * @default []
              */
             documents: components["schemas"]["SavedDocument"][];
-            /** Email Masked */
-            email_masked?: string | null;
+            /** Email */
+            email?: string | null;
             /** First Name */
             first_name: string;
             /** Id */
@@ -3909,8 +3858,11 @@ export interface components {
             merged_into_id?: string | null;
             /** Nationality */
             nationality?: string | null;
-            /** Phone Masked */
-            phone_masked?: string | null;
+            /**
+             * Phone
+             * @description With country code, e.g. +92 3001234567.
+             */
+            phone?: string | null;
             /** Title */
             title?: ("MR" | "MRS" | "MISS" | "MASTER") | null;
         };
@@ -3952,15 +3904,15 @@ export interface components {
         };
         /** SavedPersonSummary */
         SavedPersonSummary: {
-            /** Birth Year */
-            birth_year?: number | null;
+            /** Date Of Birth */
+            date_of_birth?: string | null;
             /**
              * Documents
              * @default []
              */
             documents: components["schemas"]["SavedDocument"][];
-            /** Email Masked */
-            email_masked?: string | null;
+            /** Email */
+            email?: string | null;
             /** First Name */
             first_name: string;
             /** Id */
@@ -3976,8 +3928,11 @@ export interface components {
             match?: ("document" | "contact" | "name") | null;
             /** Nationality */
             nationality?: string | null;
-            /** Phone Masked */
-            phone_masked?: string | null;
+            /**
+             * Phone
+             * @description With country code, e.g. +92 3001234567.
+             */
+            phone?: string | null;
             /** Title */
             title?: ("MR" | "MRS" | "MISS" | "MASTER") | null;
         };
@@ -4201,26 +4156,20 @@ export interface components {
         };
         /**
          * BookingPassenger
-         * @description A traveler. Date of birth and document number are masked; the full values need a logged reveal.
+         * @description A traveler, with the full identity values as stored.
          */
         app__schemas__admin_bookings__BookingPassenger: {
             /**
-             * Date Of Birth Masked
-             * @description Year only, e.g. 1990-••-••.
+             * Date Of Birth
+             * Format: date
              */
-            date_of_birth_masked: string;
+            date_of_birth: string;
             /** Document Country */
             document_country?: string | null;
-            /**
-             * Document Expiry Masked
-             * @description Year only, e.g. 2031-••-••. The full date needs a logged reveal.
-             */
-            document_expiry_masked?: string | null;
-            /**
-             * Document Number Masked
-             * @description Last 3 characters only.
-             */
-            document_number_masked?: string | null;
+            /** Document Expiry */
+            document_expiry?: string | null;
+            /** Document Number */
+            document_number?: string | null;
             /**
              * Document Validity
              * @description From the expiry date today: expired, expiring within 6 months, or valid. Omitted without an expiry.
@@ -4244,7 +4193,7 @@ export interface components {
             nationality?: string | null;
             /**
              * Position
-             * @description Order in the booking; used by the reveal endpoint.
+             * @description Order in the booking.
              */
             position: number;
             /**
@@ -5445,63 +5394,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-            /** @description Booking data is not available. */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    reveal_traveler_identity_v1_admin_bookings__booking_id__travelers__position__reveal_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                booking_id: string;
-                position: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RevealRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RevealResponse"];
-                };
-            };
-            /** @description Needs the reveal_identity permission. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No such booking or traveler. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
             };
             /** @description Booking data is not available. */
             503: {

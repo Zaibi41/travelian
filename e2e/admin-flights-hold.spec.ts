@@ -31,17 +31,17 @@ const DETAIL = {
   amount: rs(15_316), fare: { billable_price: rs(15_316) }, sections_not_available: [], can_reveal_identity: false, can_record_payments: false, can_issue_tickets: false,
   customer: { first_name: "Muhammad Abdullah", last_name: "Rehmanullah Khan Durrani", phone: "+92 3001234567", email: "a.very.long.customer.address@example.invalid" },
   passengers: [
-    { position: 0, type: "ADT", title: "MR", first_name: "Muhammad Abdullah", last_name: "Rehmanullah Khan Durrani", date_of_birth_masked: "1990-••-••", id_type: "PSPT", document_number_masked: "••••••567" },
-    { position: 1, type: "INF", title: "MISS", first_name: "Baby", last_name: "Passenger", date_of_birth_masked: "2026-••-••", id_type: "PSPT", document_number_masked: "••••••321", infant_of_position: 0 },
+    { position: 0, type: "ADT", title: "MR", first_name: "Muhammad Abdullah", last_name: "Rehmanullah Khan Durrani", date_of_birth: "1990-01-31", id_type: "PSPT", document_number: "AB1234567" },
+    { position: 1, type: "INF", title: "MISS", first_name: "Baby", last_name: "Passenger", date_of_birth: "2026-03-02", id_type: "PSPT", document_number: "AB7654321", infant_of_position: 0 },
   ],
 };
 
-// Saved people (made-up, already masked, as the gateway returns them).
-const savedDoc = (id: string, masked: string) => ({ id, id_type: "PSPT", document_country: "PAK", document_number_masked: masked, document_expiry_masked: "2031", document_validity: "valid" });
+// Saved people (made-up, full values, as the gateway returns them).
+const savedDoc = (id: string, number: string) => ({ id, id_type: "PSPT", document_country: "PAK", document_number: number, document_expiry: "2031-01-01", document_validity: "valid" });
 const PEOPLE = [
-  { id: "p-00000001", title: "MR", first_name: "Muhammad Abdullah", last_name: "Rehmanullah Khan Durrani", birth_year: 1990, nationality: "PAK",
-    phone_masked: "+92 •••••••567", email_masked: "a•••@a-very-long-company-domain-name.example.invalid", documents: [savedDoc("d-00000001", "••••••567")], match: "phone" },
-  { id: "p-00000002", title: "MISS", first_name: "Baby", last_name: "Durrani", birth_year: 2026, phone_masked: "+92 •••••••567", documents: [savedDoc("d-00000002", "••••••321")], match: "phone" },
+  { id: "p-00000001", title: "MR", first_name: "Muhammad Abdullah", last_name: "Rehmanullah Khan Durrani", date_of_birth: "1990-01-31", nationality: "PAK",
+    phone: "+92 3001234567", email: "abdullah@a-very-long-company-domain-name.example.invalid", documents: [savedDoc("d-00000001", "AB1234567")], match: "phone" },
+  { id: "p-00000002", title: "MISS", first_name: "Baby", last_name: "Durrani", date_of_birth: "2026-03-02", phone: "+92 3001234567", documents: [savedDoc("d-00000002", "AB7654321")], match: "phone" },
 ];
 const holdBodies: unknown[] = [];
 
@@ -108,7 +108,7 @@ for (const width of [1280, 1366, 1440, 1920]) {
     await fillRequired(page);
     await page.getByRole("button", { name: "Hold seats" }).click();
     await expect(page.getByRole("heading", { name: "Hold result" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Travelers" })).toContainText("••••••567");
+    await expect(page.getByRole("region", { name: "Travelers" })).toContainText("AB1234567");
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `hold result at ${width}px`);
   });
@@ -161,11 +161,11 @@ for (const width of [1280, 390]) {
 
     // The customer is Adult 1 (ticked by default): the saved customer is the saved traveler.
     const adult = page.getByRole("region", { name: "Adult 1" });
-    await expect(adult).toContainText("••••••567");
+    await expect(adult).toContainText("AB1234567");
     const infant = page.getByRole("region", { name: "Infant 1" });
     await infant.getByRole("combobox", { name: "Use saved traveler, Infant 1" }).fill("Baby");
     await page.getByRole("option", { name: /^Baby Durrani/ }).click();
-    await expect(infant).toContainText("••••••321");
+    await expect(infant).toContainText("AB7654321");
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `hold form with saved people at ${width}px`);
 

@@ -134,8 +134,8 @@ export function countdownLabel(seconds: number) {
   return h > 0 ? `${h}:${two(m)}:${two(s)}` : `${two(m)}:${two(s)}`;
 }
 
-/** "Sana Raza, Passport AB•••4567" (masked by the gateway). */
+/** "Sana Raza, Passport AB1234567". */
 export const travelerLine = (traveler: GroupHoldView["travelers"][number]) =>
   [`${traveler.first_name} ${traveler.last_name}`.trim(),
-    traveler.document_number_masked ? `${traveler.id_type === "NATI" ? "CNIC" : "Passport"} ${traveler.document_number_masked}` : null]
+    traveler.document_number ? `${traveler.id_type === "NATI" ? "CNIC" : "Passport"} ${traveler.document_number}` : null]
     .filter(Boolean).join(", ");

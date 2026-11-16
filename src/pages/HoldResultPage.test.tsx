@@ -16,8 +16,8 @@ const HOLD = { booking_id: "TRV-PE49ZP", pnr: "CAEDEC", time_limit: new Date(Dat
 const SAVED = {
   booking_id: "TRV-PE49ZP", customer: { first_name: "Test", last_name: "Customer", phone: "+92 3001234567", email: "ops@example.invalid" },
   passengers: [
-    { position: 0, type: "ADT", title: "MR", first_name: "Test", last_name: "Passenger", date_of_birth_masked: "1990-••-••", id_type: "PSPT", document_number_masked: "••••••567" },
-    { position: 1, type: "INF", title: "MISS", first_name: "Baby", last_name: "Passenger", date_of_birth_masked: "2026-••-••", id_type: "PSPT", document_number_masked: "••••••321", infant_of_position: 0 },
+    { position: 0, type: "ADT", title: "MR", first_name: "Test", last_name: "Passenger", date_of_birth: "1990-01-31", id_type: "PSPT", document_number: "AB1234567" },
+    { position: 1, type: "INF", title: "MISS", first_name: "Baby", last_name: "Passenger", date_of_birth: "2026-03-02", id_type: "PSPT", document_number: "AB7654321", infant_of_position: 0 },
   ],
 } as unknown as BookingDetail;
 
@@ -45,7 +45,7 @@ describe("Hold result (mockup flights-hold-result)", () => {
     toast.success.mockReset();
   });
 
-  it("shows the gateway's facts, the UAT label, and the saved customer and masked travelers", () => {
+  it("shows the gateway's facts, the UAT label, and the saved customer and travelers in full", () => {
     renderResult({ kind: "held", hold: HOLD, mode: "hold" });
     const card = screen.getByRole("region", { name: "Hold confirmed" });
     expect(within(card).getByText("Hold confirmed")).toBeInTheDocument();
@@ -59,10 +59,10 @@ describe("Hold result (mockup flights-hold-result)", () => {
     expect(within(card).getByRole("link", { name: "View booking" })).toHaveAttribute("href", "/admin/bookings/TRV-PE49ZP");
     expect(screen.getByRole("region", { name: "Customer" })).toHaveTextContent("Test Customer");
     const travelers = screen.getByRole("region", { name: "Travelers" });
-    expect(travelers).toHaveTextContent("••••••567");
-    expect(travelers).toHaveTextContent("1990-••-••");
+    expect(travelers).toHaveTextContent("AB1234567");
+    expect(travelers).toHaveTextContent("31 Jan 1990");
     expect(travelers).toHaveTextContent("Infant with Adult 1");
-    expect(travelers).toHaveTextContent("Documents and dates of birth are masked. Reveal is logged.");
+    expect(travelers).not.toHaveTextContent(/masked|Reveal|•/);
   });
 
   it("shows the gateway's warnings with a text label", () => {

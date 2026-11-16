@@ -41,14 +41,14 @@ async function choose(label: string, option: string) {
 const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" });
 const SOON = new Date(Date.now() + 3 * 3_600_000).toISOString();
 const traveler = (position: number, first: string, ticket?: string) => ({
-  position, title: "MR", first_name: first, last_name: "Khan", type: "ADT" as const, id_type: "PSPT" as const, date_of_birth_masked: "1990-••-••",
+  position, title: "MR", first_name: first, last_name: "Khan", type: "ADT" as const, id_type: "PSPT" as const, date_of_birth: "1990-01-31",
   ...(ticket ? { ticket_number: ticket } : {}),
 });
 const BOOKING: BookingDetail = {
   source: "gateway_bookings", sample: false, booking_id: "TRV-O5QZB5", pnr: "CAEDEC", product: "flight", customer_or_agency: "Ali Khan",
   statuses: { booking: "held", payment: "unpaid", issuance: "not_issued" }, amount: rs(15_316), amount_paid: rs(0), amount_due: rs(15_316),
   deadline: SOON, fare: { billable_price: rs(15_316) }, sections_not_available: ["payments", "tickets"], can_set_selling_price: false,
-  can_reveal_identity: false, can_record_payments: true, can_issue_tickets: true,
+  can_record_payments: true, can_issue_tickets: true,
   passengers: [traveler(1, "Ali"), traveler(2, "Sara")],
 };
 const READY: IssuanceChecklist = {

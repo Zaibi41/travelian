@@ -4,19 +4,19 @@ import { expectReadableText } from "./support/type-scale";
 
 // Customers & Travelers: search, detail, add person, duplicate choice, merge, permissions and
 // no horizontal page scroll. Local-only session and intercepted gateway answers (made-up,
-// already-masked values); nothing reaches a real gateway.
+// full values); nothing reaches a real gateway.
 if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
 test.use({ launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } });
 
 const LONG = { first_name: "Muhammad Abdullah Rehman", last_name: "Rehmanullah Khan Durrani" };
 const DOCS = [
-  { id: "d-1", id_type: "PSPT", document_country: "PAK", document_number_masked: "••••••567", document_expiry_masked: "2031", document_validity: "valid" },
-  { id: "d-2", id_type: "NATI", document_country: "PAK", document_number_masked: "••••••••••671" },
+  { id: "d-1", id_type: "PSPT", document_country: "PAK", document_number: "AB1234567", document_expiry: "2031-01-01", document_validity: "valid" },
+  { id: "d-2", id_type: "NATI", document_country: "PAK", document_number: "3520212345671" },
 ];
-const ONE = { id: "p-00000001", title: "MR", ...LONG, birth_year: 1990, nationality: "PAK", phone_masked: "+92 •••••••567",
-  email_masked: "a•••@a-very-long-company-domain-name.example.invalid", documents: DOCS, last_booking_at: "2026-11-09T13:28:58Z", match: "name" };
-const TWO = { id: "p-00000002", title: "MR", first_name: "Muhammad", last_name: "Durrani", birth_year: 1990, phone_masked: "+92 •••••••111", documents: [], match: "name" };
-const DETAIL = { ...ONE, match: undefined, date_of_birth_masked: "1990-••-••", can_manage: true, can_merge: true,
+const ONE = { id: "p-00000001", title: "MR", ...LONG, date_of_birth: "1990-01-31", nationality: "PAK", phone: "+92 3001234567",
+  email: "abdullah@a-very-long-company-domain-name.example.invalid", documents: DOCS, last_booking_at: "2026-11-09T13:28:58Z", match: "name" };
+const TWO = { id: "p-00000002", title: "MR", first_name: "Muhammad", last_name: "Durrani", date_of_birth: "1990-01-31", phone: "+92 3001111111", documents: [], match: "name" };
+const DETAIL = { ...ONE, match: undefined, date_of_birth: "1990-01-31", can_manage: true, can_merge: true,
   bookings: [{ booking_id: "TRV-PE49ZP", created_at: "2026-11-09T13:28:58Z", role: "traveler" }] };
 
 interface Options { canManage?: boolean; canMerge?: boolean; forbidden?: boolean }
@@ -63,20 +63,20 @@ for (const width of [390, 768, 1024, 1440]) {
     await page.getByLabel("Search", { exact: true }).fill("durrani");
     await page.getByRole("button", { name: "Search", exact: true }).click();
     const table = page.getByRole("region", { name: "Customers" });
-    await expect(table).toContainText("+92 •••••••567");
+    await expect(table).toContainText("+92 3001234567");
     await expect(page).toHaveURL(/q=durrani/);
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `customers at ${width}px`);
 
     await page.getByRole("link", { name: "Travelers", exact: true }).click();
-    await expect(page.getByRole("region", { name: "Travelers" })).toContainText("1990-••-••");
-    await expect(page.getByRole("region", { name: "Travelers" })).toContainText("Passport ••••••567");
+    await expect(page.getByRole("region", { name: "Travelers" })).toContainText("31 Jan 1990");
+    await expect(page.getByRole("region", { name: "Travelers" })).toContainText("Passport AB1234567");
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `travelers at ${width}px`);
 
     await page.getByRole("link", { name: `${LONG.first_name} ${LONG.last_name}` }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(`${LONG.first_name} ${LONG.last_name}`);
-    await expect(page.getByRole("region", { name: "Documents" })).toContainText("••••••••••671");
+    await expect(page.getByRole("region", { name: "Documents" })).toContainText("3520212345671");
     await expect(page.getByRole("region", { name: "Bookings" })).toContainText("TRV-PE49ZP");
     await expect(page.getByText(/reveal/i)).toHaveCount(0);
     expect(await overflow(page)).toBe(0);
@@ -94,7 +94,7 @@ test("add a person, see the possible duplicate, keep separate", async ({ page })
   await dialog.getByRole("button", { name: "Save" }).click();
   const notice = dialog.getByRole("region", { name: "Possible duplicate" });
   await expect(notice).toContainText("Possible duplicate: Same phone");
-  await expect(notice).toContainText("+92 •••••••111");
+  await expect(notice).toContainText("+92 3001111111");
   await expect(dialog).not.toContainText("possible_duplicate");
   await notice.getByRole("button", { name: "Keep separate" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "New Person" })).toBeVisible();
@@ -124,7 +124,7 @@ test("merge needs a person and a reason, then opens the kept record", async ({ p
 
 test("a role without manage_people or merge_people sees no edit or merge buttons", async ({ page }) => {
   await open(page, 1440, "/admin/customers?q=durrani", { canManage: false, canMerge: false });
-  await expect(page.getByRole("region", { name: "Customers" })).toContainText("+92 •••••••567");
+  await expect(page.getByRole("region", { name: "Customers" })).toContainText("+92 3001234567");
   await expect(page.getByRole("button", { name: /^Edit/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Merge/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add Customer" })).toHaveCount(0);

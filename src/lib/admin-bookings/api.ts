@@ -29,13 +29,6 @@ export function saveFile(file: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }
 
-/** Full date of birth, document number and expiry for one traveler. Needs reveal_identity; logged with the reason. */
-export const revealTraveler = (bookingId: string, position: number, reason: string, options?: GatewayOptions) =>
-  gatewayPost("/v1/admin/bookings/{booking_id}/travelers/{position}/reveal", { reason }, {
-    ...options, pathParams: { booking_id: bookingId, position: String(position) },
-    unavailableMessage: "Identity details can't be shown right now.",
-  });
-
 // Payments and issuing (spec 7 Booking detail, mockup booking-payment-issue). The gateway checks
 // every permission and rule again; the page only offers what the booking detail says is allowed.
 const issuancePath = (bookingId: string, options?: GatewayOptions) => ({

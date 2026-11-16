@@ -38,10 +38,10 @@ const BOOKINGS = {
   ],
 };
 const PEOPLE = { can_manage: true, can_merge: true, results: [
-  { id: "p-00000001", title: "MR", first_name: "Muhammad Abdullah Rehman", last_name: "Rehmanullah Khan Durrani", birth_year: 1990, nationality: "PAK",
-    phone_masked: "+92 •••••••567", email_masked: "a•••@example.invalid", documents: [{ id: "d-1", id_type: "PSPT", document_country: "PAK", document_number_masked: "••••••567", document_validity: "valid" }],
+  { id: "p-00000001", title: "MR", first_name: "Muhammad Abdullah Rehman", last_name: "Rehmanullah Khan Durrani", date_of_birth: "1990-01-31", nationality: "PAK",
+    phone: "+92 3001234567", email: "abdullah@example.invalid", documents: [{ id: "d-1", id_type: "PSPT", document_country: "PAK", document_number: "AB1234567", document_validity: "valid" }],
     last_booking_at: "2026-11-09T13:28:58Z", match: "name" },
-  { id: "p-00000002", title: "MS", first_name: "Ayesha", last_name: "Siddiqui", birth_year: 1994, phone_masked: "+92 •••••••111", documents: [], match: "name" },
+  { id: "p-00000002", title: "MS", first_name: "Ayesha", last_name: "Siddiqui", date_of_birth: "1994-07-09", phone: "+92 3001111111", documents: [], match: "name" },
 ] };
 const ticket = (id: string, sector: string, count = 1) => Array.from({ length: count }, (_, index) => ({
   id: `${id}-${index}`, sector, departure_date: "2026-11-24", departure_time: "09:45", airline: "Airblue",

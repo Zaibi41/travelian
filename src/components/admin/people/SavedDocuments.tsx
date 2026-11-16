@@ -1,4 +1,5 @@
 import { StatusBadge } from "@/components/admin/ui/StatusBadge";
+import { formatDay } from "@/lib/admin-search/date-display";
 import type { SavedDocument } from "@/lib/saved-people/api";
 import { ID_TYPE_LABEL, VALIDITY_LABEL } from "@/lib/saved-people/states";
 
@@ -9,16 +10,16 @@ export function ValidityBadge({ validity }: { validity?: SavedDocument["document
   return validity ? <StatusBadge severity={VALIDITY_SEVERITY[validity]}>{VALIDITY_LABEL[validity]}</StatusBadge> : null;
 }
 
-/** Masked documents, one line each: type, country, last 3 characters, expiry year, validity. */
-export function MaskedDocuments({ documents }: { documents: SavedDocument[] }) {
+/** Documents, one line each: type, country, number, expiry date, validity. */
+export function SavedDocuments({ documents }: { documents: SavedDocument[] }) {
   if (documents.length === 0) return <p className="text-body text-muted-foreground">No documents saved.</p>;
   return (
     <ul className="flex flex-col gap-1">
       {documents.map(document => (
         <li key={document.id} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-body text-foreground">
           <span className="truncate">
-            {ID_TYPE_LABEL[document.id_type]} · {document.document_country} · {document.document_number_masked}
-            {document.document_expiry_masked ? ` · expires ${document.document_expiry_masked}` : ""}
+            {ID_TYPE_LABEL[document.id_type]} · {document.document_country} · {document.document_number}
+            {document.document_expiry ? ` · expires ${formatDay(document.document_expiry)}` : ""}
           </span>
           <ValidityBadge validity={document.document_validity} />
         </li>

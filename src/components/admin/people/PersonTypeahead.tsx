@@ -20,14 +20,14 @@ function useDebounced(value: string, delay = DEBOUNCE_MS) {
   return settled;
 }
 
-/** "Passport ••••••967" for the first saved document; null without one. */
+/** "Passport AB1234967" for the first saved document; null without one. */
 function documentLine(person: PersonSummary) {
   const document = person.documents[0];
-  return document ? `${ID_TYPE_LABEL[document.id_type]} ${document.document_number_masked}` : null;
+  return document ? `${ID_TYPE_LABEL[document.id_type]} ${document.document_number}` : null;
 }
 
 /** Live search for a saved person on the hold form: from 2 characters (250 ms after typing stops) a list of up to 8
- *  matches opens under the field. Arrow keys move, Enter chooses, Esc closes. Values are masked; choosing hands the
+ *  matches opens under the field. Arrow keys move, Enter chooses, Esc closes. Choosing hands the
  *  person to the form, which sends only their id (the gateway fills the details in). */
 export function PersonTypeahead({ id, label, kind, placeholder, emptyText, onPick, autoFocus }: {
   id: string;
@@ -113,7 +113,7 @@ export function PersonTypeahead({ id, label, kind, placeholder, emptyText, onPic
               {people.isError ? "Saved people can't be searched right now. Type the details below." : emptyText}
             </li>
           ) : results.map((person, position) => {
-            const details = [documentLine(person), kind === "customer" ? person.phone_masked : null, kind === "customer" ? person.email_masked : null]
+            const details = [documentLine(person), kind === "customer" ? person.phone : null, kind === "customer" ? person.email : null]
               .filter(Boolean).join(" · ");
             return (
               <li key={person.id} id={`${listId}-${person.id}`} role="option" aria-selected={position === active}

@@ -3,9 +3,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GatewayError } from "@/lib/gateway/client";
 
-// Made-up, masked values only.
-const SAVED = { id: "p-00000001", first_name: "Test", last_name: "Person", birth_year: 1990, phone_masked: "+92 •••••••567", email_masked: "t•••@example.invalid",
-  documents: [{ id: "d-1", id_type: "PSPT", document_country: "PAK", document_number_masked: "••••••567", document_expiry_masked: "2031", document_validity: "valid" }] };
+// Made-up values.
+const SAVED = { id: "p-00000001", first_name: "Test", last_name: "Person", date_of_birth: "1990-01-31", phone: "+92 3001234567", email: "test@example.invalid",
+  documents: [{ id: "d-1", id_type: "PSPT", document_country: "PAK", document_number: "AB1234567", document_expiry: "2031-01-01", document_validity: "valid" }] };
 const OTHER = { ...SAVED, id: "p-00000002", first_name: "Test", last_name: "Persons", documents: [] };
 
 const createPerson = vi.fn();
@@ -29,7 +29,7 @@ beforeEach(() => {
 });
 
 describe("Add Customer: possible duplicate", () => {
-  it("shows the masked match and resends with the chosen option", async () => {
+  it("shows the match in full and resends with the chosen option", async () => {
     createPerson
       .mockRejectedValueOnce(new GatewayError("unavailable", "raw", 409, "possible_duplicate", [], { possible_duplicate: SAVED, reason: "same_name_and_birth_date" }))
       .mockResolvedValueOnce({ person: SAVED, outcome: "added_to_existing" });
@@ -41,7 +41,7 @@ describe("Add Customer: possible duplicate", () => {
 
     const notice = await screen.findByRole("region", { name: "Possible duplicate" });
     expect(notice).toHaveTextContent("Possible duplicate: Same name and date of birth");
-    expect(notice).toHaveTextContent("••••••567");
+    expect(notice).toHaveTextContent("AB1234567");
     expect(notice).not.toHaveTextContent("possible_duplicate");
     fireEvent.click(screen.getByRole("button", { name: "Add to this person" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith("p-00000001", "Details added to the saved person."));
@@ -84,7 +84,7 @@ describe("request bodies", () => {
     });
   });
 
-  it("edit sends only changed fields; blank masked fields keep the saved value", () => {
+  it("edit sends only changed fields; blank or unchanged date of birth and email keep the saved value", () => {
     expect(updateBody({ ...draft, first_name: "Test", phone: "3001234567", phone_code: "" }, { ...SAVED, title: "MR", nationality: "PAK" } as never)).toEqual({ phone: "3001234567" });
   });
 });

@@ -1,5 +1,5 @@
 // Saved customers and travelers (Customers & Travelers screen). Data: travelian-api-gateway
-// /v1/admin/customers only. Every value the gateway returns is already masked; permissions
+// /v1/admin/customers only. Values come in full from the gateway; permissions
 // (can_manage, can_merge) come from the response, never from the browser.
 
 import { gatewayDelete, gatewayGet, gatewayPatch, gatewayPost, type GatewayOptions } from "@/lib/gateway/client";

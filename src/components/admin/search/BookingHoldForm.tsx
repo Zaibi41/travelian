@@ -52,7 +52,7 @@ export interface BookingCustomer {
   document_number: string;
   alsoAdult1: boolean;
   save: boolean;
-  /** A saved customer (masked; the gateway loads the details). */
+  /** A saved customer (the gateway loads the details). */
   saved: PersonSummary | null;
 }
 
@@ -189,14 +189,14 @@ function Field({ id, label, error, hint, children, className }: { id: string; la
   );
 }
 
-/** A saved person on a card: name and masked document, no reveal; a choice when several documents are saved. */
+/** A saved person on a card: name and document; a choice when several documents are saved. */
 function SavedCard({ person, label, documentId, onDocument, contact = false }: {
   person: PersonSummary; label: string; documentId?: string | null; onDocument?: (id: string) => void;
-  /** The customer: also show the saved phone and email (masked), which the hold uses. */
+  /** The customer: also show the saved phone and email, which the hold uses. */
   contact?: boolean;
 }) {
   const documents = person.documents;
-  const contactLine = [person.phone_masked, person.email_masked].filter(Boolean).join(" · ");
+  const contactLine = [person.phone, person.email].filter(Boolean).join(" · ");
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2.5">
       <div className="flex min-w-0 items-center justify-between gap-2">
@@ -204,7 +204,7 @@ function SavedCard({ person, label, documentId, onDocument, contact = false }: {
           <p className="truncate text-body font-semibold text-foreground" title={fullName(person)}>{fullName(person)}</p>
           {documents.length <= 1 && (
             <p className="truncate text-label text-muted-foreground">
-              {documents[0] ? `${ID_TYPE_LABEL[documents[0].id_type]} ${documents[0].document_number_masked}` : contactLine || "No document saved"}
+              {documents[0] ? `${ID_TYPE_LABEL[documents[0].id_type]} ${documents[0].document_number}` : contactLine || "No document saved"}
             </p>
           )}
           {contact && documents.length > 0 && (
@@ -220,7 +220,7 @@ function SavedCard({ person, label, documentId, onDocument, contact = false }: {
             <label key={document.id} className="flex min-w-0 items-center gap-2 text-body text-foreground">
               <input type="radio" name={`document-${person.id}`} checked={documentId === document.id} onChange={() => onDocument(document.id)}
                 className="h-4 w-4 accent-[hsl(var(--teal))]" />
-              <span className="truncate">{ID_TYPE_LABEL[document.id_type]} {document.document_number_masked}</span>
+              <span className="truncate">{ID_TYPE_LABEL[document.id_type]} {document.document_number}</span>
             </label>
           ))}
         </fieldset>
@@ -391,10 +391,6 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
             )}
           </div>
         </section>
-
-        <p className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-body text-foreground">
-          Passport, ID number and date of birth are never shown in full here. Type them in, or pick a saved traveler: the saved details then stay on the server, show masked, and the gateway fills them in for the hold.
-        </p>
 
         {travelers.map((traveler, index) => {
           const number = travelers.slice(0, index + 1).filter(other => other.type === traveler.type).length;

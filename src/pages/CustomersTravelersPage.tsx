@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatDay } from "@/lib/admin-search/date-display";
 import { cn } from "@/lib/utils";
 import { SEARCH_FIELD } from "@/components/admin/ui/search-form";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -12,7 +13,7 @@ import { TabLinks } from "@/components/admin/ui/TabLinks";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { DocumentDialog, MergeDialog, PersonFormDialog } from "@/components/admin/people/PersonDialogs";
-import { ValidityBadge } from "@/components/admin/people/MaskedDocuments";
+import { ValidityBadge } from "@/components/admin/people/SavedDocuments";
 import { formatDateTime } from "@/lib/admin-bookings/format";
 import { GatewayError } from "@/lib/gateway/client";
 import { MIN_SEARCH_LENGTH, RECENT_LIMIT, listRecentPeople, searchPeople, type PersonSearch, type PersonSummary } from "@/lib/saved-people/api";
@@ -20,12 +21,12 @@ import { ID_TYPE_LABEL, fullName, peopleErrorMessage } from "@/lib/saved-people/
 import { CUSTOMERS_TABS, customersTabPath, personPath, type CustomersTab } from "@/lib/saved-people/routes";
 
 // Customers & Travelers (spec 8, mockups customers-*). Data: travelian-api-gateway
-// /v1/admin/customers only, masked. One record per person: the Customers and Travelers tabs
+// /v1/admin/customers only. One record per person: the Customers and Travelers tabs
 // are two views of the same saved people. Permissions come from the search response.
 // Hidden until the backend has them (docs/backend-todo.md): every summary card, the Source,
 // Agency, Branch, Last booking, Document validity, Flag, Nationality, Document expiry and
 // Customer (owner) filters, the Bookings, Flag and Notes columns, and Flag with reason.
-// No Reveal anywhere (approved deviation, docs/mockups/README.md).
+// Documents, dates of birth, phones and emails show in full; there is no Reveal.
 export default function CustomersTravelersPage({ tab = "" }: { tab?: string }) {
   const current: CustomersTab = CUSTOMERS_TABS.find(entry => entry.slug === tab) ?? CUSTOMERS_TABS[0];
   const [params] = useSearchParams();
@@ -233,9 +234,9 @@ function PeopleTable({ customers, searching, loading, data, onEdit, onMerge, onA
               <tr className="bg-muted text-left">
                 <th scope="col" className={TH}>Name as on passport</th>
                 <th scope="col" className={TH}>Nationality</th>
-                <th scope="col" className={TH}>Date of birth (masked)</th>
+                <th scope="col" className={TH}>Date of birth</th>
                 <th scope="col" className={TH}>Document type</th>
-                <th scope="col" className={TH}>Document expiry (masked)</th>
+                <th scope="col" className={TH}>Document expiry</th>
                 <th scope="col" className={TH}>Actions</th>
               </tr>
             )}
@@ -251,21 +252,21 @@ function PeopleTable({ customers, searching, loading, data, onEdit, onMerge, onA
                   </td>
                   {customers ? (
                     <>
-                      <td className={`${TD} whitespace-nowrap text-foreground`}>{person.phone_masked ?? "—"}</td>
-                      <td className={`${TD} max-w-[14rem]`}><span className="block truncate text-foreground" title={person.email_masked ?? undefined}>{person.email_masked ?? "—"}</span></td>
+                      <td className={`${TD} whitespace-nowrap text-foreground`}>{person.phone ?? "—"}</td>
+                      <td className={`${TD} max-w-[14rem]`}><span className="block truncate text-foreground" title={person.email ?? undefined}>{person.email ?? "—"}</span></td>
                       <td className={`${TD} whitespace-nowrap tabular-nums text-foreground`}>{formatDateTime(person.last_booking_at)}</td>
                     </>
                   ) : (
                     <>
                       <td className={`${TD} whitespace-nowrap text-foreground`}>{person.nationality ?? "—"}</td>
-                      <td className={`${TD} whitespace-nowrap tabular-nums text-foreground`}>{person.birth_year ? `${person.birth_year}-••-••` : "—"}</td>
+                      <td className={`${TD} whitespace-nowrap tabular-nums text-foreground`}>{formatDay(person.date_of_birth) || "—"}</td>
                       <td className={`${TD} whitespace-nowrap text-foreground`}>
-                        {documents.length ? documents.map(document => <span key={document.id} className="block">{ID_TYPE_LABEL[document.id_type]} {document.document_number_masked}</span>) : "—"}
+                        {documents.length ? documents.map(document => <span key={document.id} className="block">{ID_TYPE_LABEL[document.id_type]} {document.document_number}</span>) : "—"}
                       </td>
                       <td className={`${TD} text-foreground`}>
                         {documents.length ? documents.map(document => (
                           <span key={document.id} className="flex items-center gap-1.5 whitespace-nowrap tabular-nums">
-                            {document.document_expiry_masked ?? "—"}<ValidityBadge validity={document.document_validity} />
+                            {formatDay(document.document_expiry) || "—"}<ValidityBadge validity={document.document_validity} />
                           </span>
                         )) : "—"}
                       </td>
