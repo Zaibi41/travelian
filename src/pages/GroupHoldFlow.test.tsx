@@ -309,6 +309,18 @@ describe("Group seats held (step 3)", () => {
   });
 });
 
+describe("No cancellation on group bookings", () => {
+  const NOTICE = "Cancellation is not available for group fares. Unpaid holds lapse at the supplier's expiry.";
+  for (const tab of ["payments", "travelers", "details"]) {
+    it(`the booking page (${tab}) says so and has no Cancel action`, async () => {
+      renderAt(`/admin/bookings/group-ticketing/TRV-GRP-000123/${tab}`);
+      expect(await screen.findByRole("note")).toHaveTextContent(NOTICE);
+      expect(screen.queryByRole("button", { name: /cancel/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: /cancel/i })).not.toBeInTheDocument();
+    });
+  }
+});
+
 describe("Group identity (Source line)", () => {
   const SOURCE = { provider: "dhillu_sahi", provider_name: "Dhillu & Sahi", supplier_pnr: "41SDS4", supplier_group_id: "3056", supplier_ticket_id: "10817" };
   const LINE = "Dhillu & Sahi · PNR 41SDS4 · Group 3056";

@@ -12,6 +12,7 @@ import { NotAvailableTable } from "@/components/admin/bookings/NotAvailable";
 import { PaymentsAndIssuing, TicketsTab } from "@/components/admin/bookings/PaymentsAndIssuing";
 import { ItineraryTab } from "@/components/admin/bookings/ItineraryTab";
 import { DownloadItineraryButton } from "@/components/admin/bookings/DownloadItineraryButton";
+import { GroupNoCancelNotice } from "@/components/admin/bookings/GroupNoCancelNotice";
 import { SampleDataBadge, StatusChips } from "@/components/admin/bookings/BookingChips";
 import { BookingHeading } from "@/components/admin/bookings/BookingHeading";
 import { acknowledgedBy } from "@/lib/group-fare-terms";
@@ -81,6 +82,7 @@ export default function AdminBookingDetailPage() {
           <DownloadItineraryButton bookingId={booking.booking_id} />
         </div>
       </div>
+      {booking.product === "group" && <GroupNoCancelNotice />}
       <TabLinks label="Booking" tabs={visibleTabs.map(entry => ({ to: bookingDetailPath(booking.booking_id, entry.slug), label: entry.label }))} />
       {detail.error && <DashboardErrorNotice message={errorMessage(detail.error)} />}
       {tab === "overview" && <Overview booking={booking} />}

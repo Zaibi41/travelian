@@ -258,6 +258,17 @@ describe("Passengers and Audit tabs", () => {
     expect(screen.queryByText(/Not available yet/)).not.toBeInTheDocument();
   });
 
+  it("a group booking says cancellation isn't available and has no Cancel action; a flight booking has no such notice", () => {
+    detail.current = ok({ ...HOLD_VIEW, product: "group" });
+    const first = renderAt("/admin/bookings/TRV-1");
+    expect(screen.getByRole("note")).toHaveTextContent("Cancellation is not available for group fares. Unpaid holds lapse at the supplier's expiry.");
+    expect(screen.queryByRole("button", { name: /cancel/i })).not.toBeInTheDocument();
+    first.unmount();
+    detail.current = ok(HOLD_VIEW);
+    renderAt("/admin/bookings/TRV-1");
+    expect(screen.queryByText(/Cancellation is not available/)).not.toBeInTheDocument();
+  });
+
   it("a group booking's stored fare terms show on Overview (text, who, when) and in Audit", () => {
     const text = "The customer has been told that this group fare is non-refundable and non-changeable, and agrees.";
     detail.current = ok({ ...HOLD_VIEW, product: "group",

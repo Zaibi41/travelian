@@ -122,8 +122,11 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole("region", { name: "Payment summary" })).toContainText("Paid in full");
     await expect(page.getByRole("combobox", { name: "Received into" })).toContainText("Meezan Bank");
     await expect(page.getByRole("button", { name: "Issue tickets" })).toBeEnabled();
+    await expect(page.getByRole("note")).toHaveText("Cancellation is not available for group fares. Unpaid holds lapse at the supplier's expiry.");
+    await expect(page.getByRole("button", { name: /cancel/i })).toHaveCount(0);
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `payments at ${width}px`);
+    await docsShot(page, `group-booking-no-cancel-${width}`);
     await shot(page, `admin-group-payments-${width}`);
     await page.getByRole("button", { name: "Issue tickets" }).click();
     const dialog = page.getByRole("dialog", { name: "The supplier price has changed" });
