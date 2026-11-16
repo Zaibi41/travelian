@@ -3767,20 +3767,59 @@ export interface components {
              */
             id_type: "PSPT" | "NATI";
         };
-        /** SavedPersonBooking */
+        /**
+         * SavedPersonBooking
+         * @description One booking of a saved person's history. Cost and profit only with the cost and margin permission.
+         */
         SavedPersonBooking: {
             /** Booking Id */
             booking_id: string;
+            /**
+             * Cost Unknown
+             * @description Cost and margin permission only: the supplier cost was not recorded.
+             */
+            cost_unknown?: boolean | null;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
             /**
+             * Departure Local
+             * @description First flight's local departure, e.g. 2026-11-19T00:25.
+             */
+            departure_local?: string | null;
+            /**
+             * Pnr
+             * @description Airline PNR; a group booking's only with the supplier names permission.
+             */
+            pnr?: string | null;
+            /**
+             * Product
+             * @description flight or group (also hotel / umrah).
+             */
+            product?: string | null;
+            /** @description Selling price minus supplier cost. Cost and margin permission only. */
+            profit?: components["schemas"]["BookingMoney"] | null;
+            /**
              * Role
              * @enum {string}
              */
             role: "customer" | "traveler";
+            /**
+             * Route
+             * @description Airports in travel order, e.g. "LHE → DXB → LHE". Omitted when the flights were not recorded.
+             */
+            route?: string | null;
+            selling_price?: components["schemas"]["BookingMoney"] | null;
+            statuses?: components["schemas"]["BookingStatuses"] | null;
+            /** @description Cost and margin permission only. */
+            supplier_cost?: components["schemas"]["BookingMoney"] | null;
+            /**
+             * Ticket Numbers
+             * @default []
+             */
+            ticket_numbers: string[];
         };
         /** SavedPersonCreate */
         SavedPersonCreate: {

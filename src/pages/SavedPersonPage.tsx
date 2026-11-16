@@ -14,7 +14,8 @@ import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStat
 import { DocumentDialog, MergeDialog, PersonFormDialog } from "@/components/admin/people/PersonDialogs";
 import { ValidityBadge } from "@/components/admin/people/SavedDocuments";
 import { countryName } from "@/data/countries";
-import { formatDateTime } from "@/lib/admin-bookings/format";
+import { PRODUCT_LABEL, formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
+import { StatusChips } from "@/components/admin/bookings/BookingChips";
 import { bookingDetailPath } from "@/lib/admin-bookings/tabs";
 import { GatewayError } from "@/lib/gateway/client";
 import { fetchPerson, removeDocument, type PersonDetail, type SavedDocument } from "@/lib/saved-people/api";
@@ -71,6 +72,8 @@ export default function SavedPersonPage() {
   const merged = Boolean(data.merged_into_id);
   const documents = data.documents ?? [];
   const bookings = data.bookings ?? [];
+  // Cost and profit come only to roles with the cost and margin permission (the gateway leaves them out otherwise).
+  const showCost = bookings.some(booking => booking.supplier_cost || booking.profit || booking.cost_unknown);
 
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
@@ -157,19 +160,41 @@ export default function SavedPersonPage() {
           <p className="text-body text-muted-foreground">No bookings linked yet.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[32rem] border-collapse text-table">
+            <table className="w-full min-w-[64rem] border-collapse text-table">
               <thead>
                 <tr className="bg-muted text-left">
-                  <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Booking ID</th>
-                  <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">As</th>
-                  <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Created at</th>
+                  {["Booking ID", "PNR", "Product", "Route", "Date", "As", "Status", "Ticket numbers", "Selling price",
+                    ...(showCost ? ["Supplier cost", "Profit"] : []), "Created at"].map(column => (
+                    <th key={column} scope="col" className="h-table-header whitespace-nowrap px-2.5 font-semibold text-foreground">{column}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
                 {bookings.map(booking => (
-                  <tr key={`${booking.booking_id}-${booking.role}`} className="border-b border-border last:border-b-0">
-                    <td className="px-2.5 py-2"><Link className="font-semibold text-foreground hover:underline" to={bookingDetailPath(booking.booking_id)}>{booking.booking_id}</Link></td>
+                  <tr key={`${booking.booking_id}-${booking.role}`} className="cursor-pointer border-b border-border align-top last:border-b-0 hover:bg-muted/50"
+                    onClick={() => navigate(bookingDetailPath(booking.booking_id))}>
+                    <td className="px-2.5 py-2"><Link className="whitespace-nowrap font-semibold text-foreground hover:underline" to={bookingDetailPath(booking.booking_id)}
+                      onClick={event => event.stopPropagation()}>{booking.booking_id}</Link></td>
+                    <td className="px-2.5 py-2 whitespace-nowrap tabular-nums text-foreground">{booking.pnr ?? "—"}</td>
+                    <td className="px-2.5 py-2 text-foreground">{booking.product ? PRODUCT_LABEL[booking.product] ?? booking.product : "—"}</td>
+                    <td className="max-w-[12rem] truncate px-2.5 py-2 text-foreground" title={booking.route ?? undefined}>{booking.route ?? "—"}</td>
+                    <td className="px-2.5 py-2 whitespace-nowrap tabular-nums text-foreground">{formatDay(booking.departure_local) || "—"}</td>
                     <td className="px-2.5 py-2 text-foreground">{booking.role === "customer" ? "Customer" : "Traveler"}</td>
+                    <td className="px-2.5 py-2">{booking.statuses ? <StatusChips statuses={booking.statuses} /> : "—"}</td>
+                    <td className="px-2.5 py-2 tabular-nums text-foreground">
+                      {booking.ticket_numbers?.length ? booking.ticket_numbers.map(ticket => <span key={ticket} className="block whitespace-nowrap">{ticket}</span>) : "—"}
+                    </td>
+                    <td className="px-2.5 py-2 whitespace-nowrap tabular-nums text-foreground">{booking.selling_price ? formatMoney(booking.selling_price) : "—"}</td>
+                    {showCost && (
+                      <>
+                        <td className="px-2.5 py-2 whitespace-nowrap tabular-nums text-foreground">
+                          {booking.supplier_cost ? formatMoney(booking.supplier_cost) : booking.cost_unknown ? "Not recorded" : "—"}
+                        </td>
+                        <td className="px-2.5 py-2 whitespace-nowrap tabular-nums text-foreground">
+                          {booking.profit ? formatMoney(booking.profit) : booking.cost_unknown ? "Not recorded" : "—"}
+                        </td>
+                      </>
+                    )}
                     <td className="px-2.5 py-2 whitespace-nowrap tabular-nums text-foreground">{formatDateTime(booking.created_at)}</td>
                   </tr>
                 ))}

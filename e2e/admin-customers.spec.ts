@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
 import { gatewayView } from "./support/gateway";
+import { docsShot } from "./support/docs-shot";
 import { expectReadableText } from "./support/type-scale";
 
 // Customers & Travelers: search, detail, add person, duplicate choice, merge, permissions and
@@ -17,7 +18,15 @@ const ONE = { id: "p-00000001", title: "MR", ...LONG, date_of_birth: "1990-01-31
   email: "abdullah@a-very-long-company-domain-name.example.invalid", documents: DOCS, last_booking_at: "2026-11-09T13:28:58Z", match: "name" };
 const TWO = { id: "p-00000002", title: "MR", first_name: "Muhammad", last_name: "Durrani", date_of_birth: "1990-01-31", phone: "+92 3001111111", documents: [], match: "name" };
 const DETAIL = { ...ONE, match: undefined, date_of_birth: "1990-01-31", can_manage: true, can_merge: true,
-  bookings: [{ booking_id: "TRV-PE49ZP", created_at: "2026-11-09T13:28:58Z", role: "traveler" }] };
+  bookings: [
+    { booking_id: "TRV-PE49ZP", created_at: "2026-11-09T13:28:58Z", role: "traveler", pnr: "63B55C", product: "flight", route: "LHE → IST → YYZ → IST → LHE",
+      departure_local: "2026-11-19T00:25", statuses: { booking: "ticket_issued", payment: "paid", issuance: "issued" },
+      ticket_numbers: ["2142345678901", "2142345678902"], selling_price: { amount_minor: 46_700_000, currency: "PKR" },
+      supplier_cost: { amount_minor: 45_770_000, currency: "PKR" }, profit: { amount_minor: 930_000, currency: "PKR" } },
+    { booking_id: "TRV-GR0UP1", created_at: "2026-11-10T09:00:00Z", role: "customer", product: "group", route: "LHE → JED",
+      departure_local: "2026-12-02T03:10", statuses: { booking: "held", payment: "unpaid", issuance: "not_issued" }, ticket_numbers: [],
+      selling_price: { amount_minor: 19_000_000, currency: "PKR" }, cost_unknown: true },
+  ] };
 
 interface Options { canManage?: boolean; canMerge?: boolean; forbidden?: boolean }
 
@@ -77,7 +86,12 @@ for (const width of [390, 768, 1024, 1440]) {
     await page.getByRole("link", { name: `${LONG.first_name} ${LONG.last_name}` }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(`${LONG.first_name} ${LONG.last_name}`);
     await expect(page.getByRole("region", { name: "Documents" })).toContainText("3520212345671");
-    await expect(page.getByRole("region", { name: "Bookings" })).toContainText("TRV-PE49ZP");
+    const history = page.getByRole("region", { name: "Bookings" });
+    await expect(history).toContainText("TRV-PE49ZP");
+    await expect(history).toContainText("LHE → IST → YYZ → IST → LHE");
+    await expect(history).toContainText("2142345678902");
+    await expect(history).toContainText("Profit");
+    await docsShot(page, `customer-booking-history-${width}`);
     await expect(page.getByText(/reveal/i)).toHaveCount(0);
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `person detail at ${width}px`);
