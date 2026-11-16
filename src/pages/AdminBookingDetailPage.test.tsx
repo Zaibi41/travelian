@@ -11,6 +11,10 @@ const detail = { current: {} as Record<string, unknown> };
 vi.mock("@/lib/admin-bookings/use-bookings", () => ({ useBookingDetail: () => detail.current }));
 const gateway = vi.hoisted(() => ({ setSellingPrice: vi.fn(), downloadItinerary: vi.fn() }));
 vi.mock("@/lib/admin-bookings/api", () => ({ setSellingPrice: gateway.setSellingPrice, downloadItinerary: gateway.downloadItinerary }));
+const groupApi = vi.hoisted(() => ({ recordGroupTickets: vi.fn() }));
+vi.mock("@/lib/admin-search/group-holds", async importOriginal => ({
+  ...(await importOriginal<typeof import("@/lib/admin-search/group-holds")>()), recordGroupTickets: groupApi.recordGroupTickets,
+}));
 
 import AdminBookingDetailPage from "./AdminBookingDetailPage";
 
@@ -24,7 +28,7 @@ const STAFF_VIEW: BookingDetail = {
   amount: rs(12_500), deadline: "2099-11-05T09:00:00Z", created_at: "2026-11-05T07:00:00Z",
   fare: { billable_price: rs(12_500) },
   sections_not_available: ["itinerary", "passengers", "payments", "tickets", "servicing", "audit"],
-  can_record_payments: false, can_issue_tickets: false, can_set_selling_price: false,
+  can_record_payments: false, can_issue_tickets: false, can_set_selling_price: false, can_edit_group_tickets: false, itinerary_available: true,
 };
 const ADMIN_VIEW: BookingDetail = {
   ...STAFF_VIEW, provider: "AirSial",
@@ -256,6 +260,60 @@ describe("Passengers and Audit tabs", () => {
     expect(tab).not.toHaveTextContent(/masked|•/);
     expect(within(tab).queryByRole("button", { name: /Reveal/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/Not available yet/)).not.toBeInTheDocument();
+  });
+
+  describe("group final PNR and tickets", () => {
+    const PAID_GROUP = { ...HOLD_VIEW, product: "group" as const, statuses: { booking: "held" as const, payment: "paid" as const, issuance: "not_issued" as const },
+      group_ticketing_status: "awaiting_final_pnr" as const, itinerary_available: false };
+
+    it("paid: the heading says Paid – awaiting final PNR, Overview has Final PNR, downloads are off and say why", () => {
+      detail.current = ok(PAID_GROUP);
+      renderAt("/admin/bookings/TRV-1");
+      expect(screen.getAllByText("Paid – awaiting final PNR").length).toBeGreaterThan(0);
+      expect(screen.getByRole("region", { name: "Overview" })).toHaveTextContent("Final PNR—");
+      expect(screen.getByRole("button", { name: "Download itinerary (PDF)" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Download PNG" })).toBeDisabled();
+      expect(screen.getByText("Available once the tickets are issued (final PNR)")).toBeInTheDocument();
+    });
+
+    it("staff with the permission type the final PNR and each ticket number on the Tickets tab, then save", async () => {
+      groupApi.recordGroupTickets.mockResolvedValue({ ticketing_status: "ticketed" });
+      detail.current = ok({ ...PAID_GROUP, can_edit_group_tickets: true });
+      renderAt("/admin/bookings/TRV-1/tickets");
+      const tab = screen.getByRole("region", { name: "Tickets" });
+      const save = within(tab).getByRole("button", { name: "Save" });
+      expect(save).toBeDisabled();                                                        // the final PNR first
+      fireEvent.change(within(tab).getByLabelText("Final PNR"), { target: { value: "k9qx2l" } });
+      fireEvent.change(within(tab).getByLabelText("Ticket number, MR Test Passenger"), { target: { value: "214 2345678901" } });
+      fireEvent.click(save);
+      await waitFor(() => expect(groupApi.recordGroupTickets).toHaveBeenCalledWith("TRV-1", {
+        final_pnr: "K9QX2L", tickets: [{ position: 0, ticket_number: "2142345678901" }, { position: 1, ticket_number: null }] }));
+    });
+
+    it("shows the gateway's refusal; without the permission the tab only reads", async () => {
+      groupApi.recordGroupTickets.mockRejectedValue(new GatewayError("unavailable", "Each traveler needs a different ticket number.", 422));
+      detail.current = ok({ ...PAID_GROUP, can_edit_group_tickets: true, final_pnr: "K9QX2L" });
+      const first = renderAt("/admin/bookings/TRV-1/tickets");
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent("Each traveler needs a different ticket number.");
+      first.unmount();
+      detail.current = ok({ ...PAID_GROUP, final_pnr: "K9QX2L", group_ticketing_status: "final_pnr_received",
+        passengers: HOLD_VIEW.passengers!.map((p, i) => i === 0 ? { ...p, ticket_number: "2142345678901" } : p) });
+      renderAt("/admin/bookings/TRV-1/tickets");
+      const tab = screen.getByRole("region", { name: "Tickets" });
+      expect(within(tab).queryByRole("textbox")).not.toBeInTheDocument();
+      expect(tab).toHaveTextContent("Final PNR K9QX2L");
+      expect(tab).toHaveTextContent("Final PNR received");
+      expect(tab).toHaveTextContent("2142345678901");
+    });
+
+    it("Ticketed: downloads are on", () => {
+      detail.current = ok({ ...PAID_GROUP, final_pnr: "K9QX2L", group_ticketing_status: "ticketed", itinerary_available: true });
+      renderAt("/admin/bookings/TRV-1");
+      expect(screen.getAllByText("Ticketed").length).toBeGreaterThan(0);
+      expect(screen.getByRole("button", { name: "Download itinerary (PDF)" })).toBeEnabled();
+      expect(screen.getByRole("region", { name: "Overview" })).toHaveTextContent("Final PNRK9QX2L");
+    });
   });
 
   it("a group booking says cancellation isn't available and has no Cancel action; a flight booking has no such notice", () => {

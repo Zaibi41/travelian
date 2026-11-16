@@ -13,6 +13,9 @@ import { PaymentsAndIssuing, TicketsTab } from "@/components/admin/bookings/Paym
 import { ItineraryTab } from "@/components/admin/bookings/ItineraryTab";
 import { DownloadItineraryButton } from "@/components/admin/bookings/DownloadItineraryButton";
 import { GroupNoCancelNotice } from "@/components/admin/bookings/GroupNoCancelNotice";
+import { GroupTicketsTab } from "@/components/admin/bookings/GroupTicketsTab";
+import { StatusBadge } from "@/components/admin/ui/StatusBadge";
+import { GROUP_TICKETING_LABEL } from "@/lib/admin-search/group-holds";
 import { SampleDataBadge, StatusChips } from "@/components/admin/bookings/BookingChips";
 import { BookingHeading } from "@/components/admin/bookings/BookingHeading";
 import { acknowledgedBy } from "@/lib/group-fare-terms";
@@ -79,7 +82,10 @@ export default function AdminBookingDetailPage() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <StatusChips statuses={booking.statuses} direction="row" />
-          <DownloadItineraryButton bookingId={booking.booking_id} />
+          {booking.group_ticketing_status && (
+            <StatusBadge severity={booking.group_ticketing_status === "ticketed" ? "fine" : "action"}>{GROUP_TICKETING_LABEL[booking.group_ticketing_status]}</StatusBadge>
+          )}
+          <DownloadItineraryButton bookingId={booking.booking_id} available={booking.itinerary_available} />
         </div>
       </div>
       {booking.product === "group" && <GroupNoCancelNotice />}
@@ -89,7 +95,7 @@ export default function AdminBookingDetailPage() {
       {tab === "fare" && <Fare booking={booking} />}
       {tab === "supplier-payment" && booking.supplier_payment && <SupplierPaymentTab booking={booking} />}
       {tab === "payments" && <PaymentsAndIssuing booking={booking} />}
-      {tab === "tickets" && <TicketsTab booking={booking} />}
+      {tab === "tickets" && (booking.product === "group" ? <GroupTicketsTab booking={booking} /> : <TicketsTab booking={booking} />)}
       {tab === "itinerary" && booking.itinerary?.length ? <ItineraryTab segments={booking.itinerary} /> : null}
       {tab === "itinerary" && booking.itinerary?.length ? null
         : tab === "passengers" && booking.passengers?.length ? <Passengers booking={booking} />
@@ -128,6 +134,7 @@ function Overview({ booking }: { booking: BookingDetail }) {
       label="Overview"
       rows={[
         ["Airline PNR", booking.pnr ?? "—"],
+        ...(booking.product === "group" ? [["Final PNR", booking.final_pnr ?? "—"] as [string, React.ReactNode]] : []),
         ["Booking ID", booking.booking_id],
         ["Product", PRODUCT_LABEL[booking.product] ?? booking.product],
         ["Customer or agency", booking.customer_or_agency ?? "—"],
@@ -276,7 +283,8 @@ function Passengers({ booking }: { booking: BookingDetail }) {
   );
 }
 
-const AUDIT_ACTION: Record<string, string> = { hold_created: "Hold created", identity_revealed: "Identity revealed", fare_terms_acknowledged: "Fare terms acknowledged" };
+const AUDIT_ACTION: Record<string, string> = { hold_created: "Hold created", identity_revealed: "Identity revealed", fare_terms_acknowledged: "Fare terms acknowledged",
+  final_pnr_recorded: "Final PNR recorded", ticket_numbers_recorded: "Ticket numbers recorded", group_ticketed: "Ticketed" };
 const FARE_CHECK: Record<string, string> = { matches: "total verified", differs: "total differs", no_total: "total not verified", failed: "total not verified" };
 const REVEALED_FIELD: Record<string, string> = { date_of_birth: "date of birth", document_number: "document number", document_expiry: "document expiry" };
 
@@ -292,6 +300,13 @@ function auditDetails(entry: BookingAuditEntry) {
   }
   if (entry.action === "fare_terms_acknowledged") {
     return [d.terms_text, d.terms_version && `version ${d.terms_version}`, d.acknowledged_by && `ticked by ${d.acknowledged_by}`].filter(Boolean).join(" · ");
+  }
+  if (entry.action === "final_pnr_recorded") {
+    return [d.final_pnr && `Final PNR ${d.final_pnr}`, d.previous_final_pnr && `was ${d.previous_final_pnr}`].filter(Boolean).join(" · ");
+  }
+  if (entry.action === "ticket_numbers_recorded" || entry.action === "group_ticketed") {
+    return [d.final_pnr && `Final PNR ${d.final_pnr}`, typeof d.tickets === "number" && `${d.tickets} ${d.tickets === 1 ? "ticket" : "tickets"}`,
+      typeof d.travelers === "number" && `of ${d.travelers} travelers`].filter(Boolean).join(" ");
   }
   return Object.entries(d).map(([key, value]) => `${key.replace(/_/g, " ")}: ${String(value)}`).join(" · ");
 }

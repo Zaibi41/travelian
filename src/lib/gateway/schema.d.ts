@@ -374,8 +374,8 @@ export interface paths {
          * Itinerary Pdf
          * @description The booking's itinerary / e-ticket as a PDF (Flights and Group Ticketing; app/services/itinerary_pdf.py): status
          *     banner, Booked by / Contact (Travelian), travelers with fare, Total, Paid and Due (selling price), every flight
-         *     outbound then return. Never a supplier name, group id, cost or profit; a group booking's PNR (the supplier's) only
-         *     with the supplier names permission; full passport numbers.
+         *     outbound then return. Never a supplier name, group id, cost or profit; full passport numbers. A group booking prints
+         *     only once Ticketed, with the airline's final PNR (409 before).
          *     format=png: the finished PDF rendered at about 150 DPI, pages stacked into one image (same rules).
          */
         get: operations["itinerary_pdf_v1_admin_bookings__booking_id__itinerary_pdf_get"];
@@ -695,6 +695,26 @@ export interface paths {
          * @description Stop offering the account for new payments. Payments already recorded keep it.
          */
         post: operations["deactivate_payment_account_v1_admin_finance_payment_accounts__account_id__deactivate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/flight-operations/group-departures-without-final-pnr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Group Departures
+         * @description Paid group bookings without a final PNR departing within 48 hours, soonest first.
+         */
+        get: operations["group_departures_v1_admin_flight_operations_group_departures_without_final_pnr_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1259,6 +1279,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/group-ticketing/holds/{booking_id}/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Group Tickets
+         * @description Record the airline's final PNR and per-traveler ticket numbers (issue tickets permission, paid in full; logged).
+         *     With a ticket number for every traveler the booking becomes Ticketed and its itinerary can be printed.
+         */
+        post: operations["record_group_tickets_v1_group_ticketing_holds__booking_id__tickets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/group-ticketing/inventory": {
         parameters: {
             query?: never;
@@ -1688,6 +1729,12 @@ export interface components {
             /** Booking Id */
             booking_id: string;
             /**
+             * Can Edit Group Tickets
+             * @description Group bookings: this viewer may record the final PNR and ticket numbers on the Tickets tab (issue tickets permission, paid in full; the endpoint still checks).
+             * @default false
+             */
+            can_edit_group_tickets: boolean;
+            /**
              * Can Issue Tickets
              * @description Whether this viewer may issue, verify and resolve (the endpoints still check).
              * @default false
@@ -1717,10 +1764,26 @@ export interface components {
             /** @description Group bookings: the stored non-refundable, non-changeable acknowledgement. */
             fare_terms?: components["schemas"]["FareTermsView"] | null;
             /**
+             * Final Pnr
+             * @description Group bookings: the airline's final PNR, recorded by staff after payment.
+             */
+            final_pnr?: string | null;
+            /**
+             * Group Ticketing Status
+             * @description Group bookings after full payment: Paid – awaiting final PNR, Final PNR received, Ticketed.
+             */
+            group_ticketing_status?: ("awaiting_final_pnr" | "final_pnr_received" | "ticketed") | null;
+            /**
              * Itinerary
              * @description The Itinerary tab: the flights as held, in travel order. Omitted when not recorded (bookings held before 14 Nov 2026).
              */
             itinerary?: components["schemas"]["BookingSegment"][] | null;
+            /**
+             * Itinerary Available
+             * @description The itinerary PDF / PNG can be downloaded. Group bookings: only once Ticketed.
+             * @default true
+             */
+            itinerary_available: boolean;
             /**
              * Passengers
              * @description The Passengers tab. Omitted when no travelers were saved.
@@ -2575,6 +2638,40 @@ export interface components {
             /** Vendors Succeeded */
             vendors_succeeded: string[];
         };
+        /** GroupDeparture */
+        GroupDeparture: {
+            /** Airline Name */
+            airline_name?: string | null;
+            /** Booking Id */
+            booking_id: string;
+            /** Customer Or Agency */
+            customer_or_agency?: string | null;
+            /**
+             * Departure At
+             * Format: date-time
+             * @description First flight's departure (local time at the origin, Pakistan time zone assumed).
+             */
+            departure_at: string;
+            /** Flight Number */
+            flight_number?: string | null;
+            /**
+             * Route
+             * @description e.g. "LHE → JED → LHE".
+             */
+            route?: string | null;
+        };
+        /** GroupDeparturesWithoutFinalPnr */
+        GroupDeparturesWithoutFinalPnr: {
+            /**
+             * Items
+             * @description Soonest departure first.
+             */
+            items: components["schemas"]["GroupDeparture"][];
+            /** Total */
+            total: number;
+            /** Window Hours */
+            window_hours: number;
+        };
         /**
          * GroupFareTerms
          * @description Group fares are non-refundable and non-changeable. The texts to show, word for word (app.services.group_terms).
@@ -2800,6 +2897,12 @@ export interface components {
              */
             booking_id: string;
             /**
+             * Can Edit Tickets
+             * @description This viewer may record the final PNR and ticket numbers now (issue tickets permission, paid in full; the endpoint still checks).
+             * @default false
+             */
+            can_edit_tickets: boolean;
+            /**
              * Can Issue Tickets
              * @description This viewer may issue now: held, not expired, nothing due, provider supports it (the endpoint still checks).
              * @default false
@@ -2826,6 +2929,11 @@ export interface components {
             customer?: components["schemas"]["GroupHoldCustomer"] | null;
             /** @description The non-refundable, non-changeable acknowledgement stored at the hold. */
             fare_terms?: components["schemas"]["FareTermsView"] | null;
+            /**
+             * Final Pnr
+             * @description The airline's final PNR for this booking, recorded by staff after payment.
+             */
+            final_pnr?: string | null;
             flight: components["schemas"]["GroupHoldFlight"];
             /** @description Provider, supplier PNR, group and ticket IDs, as copied from the listing when the hold was created. Only with the supplier names permission. */
             group_source?: components["schemas"]["GroupSource"] | null;
@@ -2844,6 +2952,12 @@ export interface components {
              * @description Why Issue tickets is off for this booking's provider, when it is.
              */
             issue_unavailable_reason?: string | null;
+            /**
+             * Itinerary Available
+             * @description The itinerary / e-ticket PDF and PNG can be downloaded: a group booking only once Ticketed.
+             * @default true
+             */
+            itinerary_available: boolean;
             /**
              * Payment Status
              * @enum {string}
@@ -2869,10 +2983,10 @@ export interface components {
             saved_people?: components["schemas"]["SaveOutcomeView"][] | null;
             /**
              * Status
-             * @description held; expired (time limit passed, can't be held again: search again); released; processing (issuing); issued; unknown (issuing outcome unclear); not_recorded (the supplier held but the booking couldn't be completed; only viewers with supplier access can open it).
+             * @description held; confirmed (paid, the final PNR is recorded); expired (time limit passed, can't be held again: search again); released; processing (issuing); issued; unknown (issuing outcome unclear); not_recorded (the supplier held but the booking couldn't be completed; only viewers with supplier access can open it).
              * @enum {string}
              */
-            status: "held" | "expired" | "released" | "processing" | "issued" | "unknown" | "not_recorded";
+            status: "held" | "confirmed" | "expired" | "released" | "processing" | "issued" | "unknown" | "not_recorded";
             /**
              * Stock
              * @enum {string}
@@ -2895,10 +3009,15 @@ export interface components {
              * @description The seats could not be released at the supplier after the hold ended (being retried, or given up). Only with the supplier names permission.
              */
             supplier_release_failed?: boolean | null;
+            /**
+             * Ticketing Status
+             * @description After full payment: awaiting_final_pnr, final_pnr_received, ticketed.
+             */
+            ticketing_status?: ("awaiting_final_pnr" | "final_pnr_received" | "ticketed") | null;
             total: components["schemas"]["GroupMoney"];
             /**
              * Travelers
-             * @description Masked documents and dates of birth.
+             * @description Documents and dates of birth in full.
              */
             travelers?: components["schemas"]["GroupHoldTraveler"][];
         };
@@ -3081,6 +3200,19 @@ export interface components {
             /** Supplier Ticket Id */
             supplier_ticket_id?: string | null;
         };
+        /** GroupTicketNumber */
+        GroupTicketNumber: {
+            /**
+             * Position
+             * @description The traveler's booking position.
+             */
+            position: number;
+            /**
+             * Ticket Number
+             * @description Empty clears it. Letters, digits and dashes, 6 to 20.
+             */
+            ticket_number?: string | null;
+        };
         /** GroupTicketView */
         GroupTicketView: {
             /** Airline */
@@ -3173,6 +3305,19 @@ export interface components {
             ticket_type?: string | number | null;
             /** Updated At */
             updated_at?: string | null;
+        };
+        /**
+         * GroupTicketsRequest
+         * @description The final PNR and per-traveler ticket numbers, typed by staff from the airline / supplier.
+         */
+        GroupTicketsRequest: {
+            /**
+             * Final Pnr
+             * @description The airline's final PNR, 5 to 8 letters and digits.
+             */
+            final_pnr: string;
+            /** Tickets */
+            tickets?: components["schemas"]["GroupTicketNumber"][];
         };
         /** GroupView */
         GroupView: {
@@ -5292,6 +5437,13 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description A group booking that isn't Ticketed yet (final PNR and every ticket number). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -6191,6 +6343,40 @@ export interface operations {
                 };
             };
             /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    group_departures_v1_admin_flight_operations_group_departures_without_final_pnr_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupDeparturesWithoutFinalPnr"];
+                };
+            };
+            /** @description Not back office. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -7440,6 +7626,67 @@ export interface operations {
             };
             /** @description The supplier didn't confirm. */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    record_group_tickets_v1_group_ticketing_holds__booking_id__tickets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupTicketsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupHoldView"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such group booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description payment_due, hold_expired or not_ticketable. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A bad final PNR or ticket number, a repeated ticket number, or a traveler not on the booking. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -19,7 +19,7 @@ const DETAIL = {
   ],
   audit: [{ action: "hold_created", actor_user_id: "0901a7ce-ef7d-4af6-8ca4-31fd1252137a", actor_role: "super_admin", at: "2026-11-09T13:28:58Z",
     details: { label: "UAT test data", pnr: "CAEDEC", time_limit: "2026-11-10 13:28 UTC", travelers: 2, fare_info: "matches" } }],
-  sections_not_available: ["itinerary", "payments", "tickets", "servicing"], can_reveal_identity: true,
+  sections_not_available: ["itinerary", "payments", "tickets", "servicing"],
 };
 
 async function open(page: Page, width: number, tab: string) {

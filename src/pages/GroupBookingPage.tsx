@@ -14,12 +14,12 @@ import { GroupNoCancelNotice } from "@/components/admin/bookings/GroupNoCancelNo
 import { GatewayError } from "@/lib/gateway/client";
 import { formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
 import { acknowledgedBy } from "@/lib/group-fare-terms";
-import { GROUP_BOOKING_TABS, departureText, fetchGroupHold, groupBookingPath, returnFlightText, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
+import { GROUP_BOOKING_TABS, GROUP_TICKETING_LABEL, departureText, fetchGroupHold, groupBookingPath, returnFlightText, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
 import { sourceLine } from "@/lib/admin-search/group-ticketing";
 
 const BOOKINGS = "/admin/bookings/group-ticketing";
 const STATUS: Record<GroupHoldView["status"], { label: string; severity: "fine" | "action" | "critical" }> = {
-  held: { label: "Held", severity: "action" }, expired: { label: "Expired", severity: "critical" }, released: { label: "Released", severity: "critical" },
+  held: { label: "Held", severity: "action" }, confirmed: { label: "Confirmed", severity: "fine" }, expired: { label: "Expired", severity: "critical" }, released: { label: "Released", severity: "critical" },
   processing: { label: "Issuing", severity: "action" }, issued: { label: "Issued", severity: "fine" }, unknown: { label: "Unknown", severity: "critical" },
   not_recorded: { label: "Not recorded", severity: "critical" },
 };
@@ -50,8 +50,10 @@ export default function GroupBookingPage() {
             {subtitle ? <p className="truncate text-body text-muted-foreground" title={subtitle}>{subtitle}</p> : <Skeleton className="mt-1 h-4 w-64 rounded-sm" />}
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            {view && view.status !== "held" && <StatusBadge severity={STATUS[view.status].severity}>{STATUS[view.status].label}</StatusBadge>}
-            {view && <DownloadItineraryButton bookingId={bookingId} />}
+            {view?.ticketing_status
+              ? <StatusBadge severity={view.ticketing_status === "ticketed" ? "fine" : "action"}>{GROUP_TICKETING_LABEL[view.ticketing_status]}</StatusBadge>
+              : view && view.status !== "held" && <StatusBadge severity={STATUS[view.status].severity}>{STATUS[view.status].label}</StatusBadge>}
+            {view && <DownloadItineraryButton bookingId={bookingId} available={view.itinerary_available} />}
           </div>
         </div>
         <GroupBookingSteps current={4} />
@@ -100,7 +102,10 @@ function Details({ view }: { view: GroupHoldView }) {
     <FieldTable label="Details" rows={[
       ["Booking reference", view.booking_id],
       ...(view.pnr ? [["PNR", view.pnr] as [string, React.ReactNode]] : []),
+      ["Final PNR", view.final_pnr ?? "—"],
       ["Status", <StatusBadge key="status" severity={status.severity}>{status.label}</StatusBadge>],
+      ...(view.ticketing_status ? [["Ticketing", <StatusBadge key="ticketing" severity={view.ticketing_status === "ticketed" ? "fine" : "action"}>
+        {GROUP_TICKETING_LABEL[view.ticketing_status]}</StatusBadge>] as [string, React.ReactNode]] : []),
       ["Hold expires", view.hold_expires_at ? formatDateTime(view.hold_expires_at) : "—"],
       ["Flight", [view.flight.airline, view.flight.sector].filter(Boolean).join(", ") || "—"],
       ["Departure", departureText(view.flight.departure_date, view.flight.departure_time) ?? "—"],

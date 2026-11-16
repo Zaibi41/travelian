@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { GroupDeparturesPanel } from "@/components/admin/flight-operations/GroupDeparturesPanel";
 import { useSearchParams } from "react-router-dom";
 import { CalendarCheck, Clock3, Download, Eye, Plane, RotateCcw, Ticket, XCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -278,6 +279,8 @@ export default function FlightBookingsPage() {
           <p className="mt-1 text-body text-muted-foreground">Review approvals, pending payments, expiring holds, issued tickets, and cancellations.</p>
         </div>
       </div>
+
+      <GroupDeparturesPanel />
 
       <div className="flex gap-2 overflow-x-auto rounded-2xl border bg-card p-2 shadow-card">
         {tabs.map((tab) => (

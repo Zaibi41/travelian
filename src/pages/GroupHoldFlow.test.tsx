@@ -41,7 +41,7 @@ const HELD: GroupHoldView = {
     { position: 0, title: "MR", first_name: "Ali", last_name: "Raza", id_type: "PSPT", document_number: "AB1234567", date_of_birth: "1988-05-04" },
     { position: 1, title: "MRS", first_name: "Sana", last_name: "Raza", id_type: "PSPT", document_number: "AB1234567", date_of_birth: "1990-01-31" },
   ],
-  payments: [], can_record_payments: true, can_issue_tickets: true, can_release: true, can_set_selling_price: true,
+  payments: [], can_record_payments: true, can_issue_tickets: true, can_release: true, can_set_selling_price: true, can_edit_tickets: false, itinerary_available: false,
 };
 const PAID: GroupHoldView = {
   ...HELD, amount_paid: rs(237_000), amount_due: rs(0), payment_status: "paid",
@@ -536,9 +536,21 @@ describe("Group booking page heading", () => {
 });
 
 describe("Group booking itinerary download", () => {
-  it("the booking page offers Download itinerary (PDF) for this booking", async () => {
+  it("before Ticketed the downloads are off and say why", async () => {
+    gateway.fetchGroupHold.mockResolvedValue({ ...PAID, ticketing_status: "awaiting_final_pnr", itinerary_available: false });
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
+    expect(await screen.findByRole("button", { name: "Download itinerary (PDF)" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Download PNG" })).toBeDisabled();
+    expect(screen.getByText("Available once the tickets are issued (final PNR)")).toBeInTheDocument();
+    expect(screen.getAllByText("Paid – awaiting final PNR").length).toBeGreaterThan(0);
+    expect(screen.getByRole("region", { name: "Details" })).toHaveTextContent("Final PNR—");
+  });
+
+  it("once Ticketed the booking page offers Download itinerary (PDF) and shows the final PNR", async () => {
+    gateway.fetchGroupHold.mockResolvedValue({ ...PAID, status: "issued", final_pnr: "K9QX2L", ticketing_status: "ticketed", itinerary_available: true });
     bookings.downloadItinerary.mockResolvedValue(undefined);
     renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
+    expect(await screen.findByRole("region", { name: "Details" })).toHaveTextContent("Final PNRK9QX2L");
     fireEvent.click(await screen.findByRole("button", { name: "Download itinerary (PDF)" }));
     await waitFor(() => expect(bookings.downloadItinerary).toHaveBeenCalledWith("TRV-GRP-000123", undefined, "pdf"));
     fireEvent.click(screen.getByRole("button", { name: "Download PNG" }));

@@ -58,6 +58,19 @@ export const releaseGroupHold = (bookingId: string, extra?: GatewayOptions) =>
   gatewayPost("/v1/group-ticketing/holds/{booking_id}/release", undefined as never,
     options(bookingId, extra, "The hold couldn't be released right now. Nothing was changed."));
 
+export type GroupTicketsRequest = Schemas["GroupTicketsRequest"];
+export type GroupTicketingStatus = NonNullable<GroupHoldView["ticketing_status"]>;
+
+/** After payment: "Paid – awaiting final PNR" -> "Final PNR received" -> "Ticketed". */
+export const GROUP_TICKETING_LABEL: Record<GroupTicketingStatus, string> = {
+  awaiting_final_pnr: "Paid – awaiting final PNR", final_pnr_received: "Final PNR received", ticketed: "Ticketed",
+};
+
+/** Staff record the airline's final PNR and per-traveler ticket numbers (logged; the gateway checks permission and payment). */
+export const recordGroupTickets = (bookingId: string, body: GroupTicketsRequest, extra?: GatewayOptions) =>
+  gatewayPost("/v1/group-ticketing/holds/{booking_id}/tickets", body,
+    options(bookingId, extra, "The final PNR and tickets couldn't be saved right now. Nothing was changed."));
+
 /** The customer agreed to the price the supplier held at (it differed from the price shown). Payments can follow. */
 export const acceptHeldPrice = (bookingId: string, extra?: GatewayOptions) =>
   gatewayPost("/v1/group-ticketing/holds/{booking_id}/accept-held-price", undefined as never,

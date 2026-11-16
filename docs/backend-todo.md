@@ -152,3 +152,13 @@ Built on `/v1/admin/customers` (search, detail, add, edit, documents, merge) and
 | Columns: Bookings (count), Flag, Notes; action Flag with reason | A bookings count on the search result; flags with reasons and notes on `saved_people` (table, endpoints, audit) |
 | Communications (P3) tab | Message history from the notification service |
 
+
+## 8. Group Ticketing: final PNR and tickets
+
+Staff record the final PNR and ticket numbers on the booking's Tickets tab
+(`POST /v1/group-ticketing/holds/{id}/tickets`). Not filled in automatically yet:
+
+| Missing | Needs |
+| --- | --- |
+| Final PNR and ticket numbers from the supplier | Dhillu & Sahi `agent-booking-detail` returns the group PNR only (`data.data.pnr`, `groupdata.pnr`); its documented passenger records (`booking_sub[]`) have no ticket number. Ask Dhillu & Sahi for the final PNR and ticket fields, then read them in `refresh_supplier` (Skypass and Al Haider: check their booking reads the same way) |
+| Paid group holds outliving their hold time | The expiry job still expires a paid group hold that has no final PNR yet at its time limit (unchanged behaviour). Recording the final PNR moves the booking to confirmed, so it no longer expires |
