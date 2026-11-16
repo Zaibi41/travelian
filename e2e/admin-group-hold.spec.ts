@@ -93,6 +93,9 @@ for (const width of [1440, 390]) {
     await adult2.getByLabel("Given name").fill("Sana");
     await adult2.getByLabel("Surname").fill("Raza");
     await adult2.getByLabel("Document number").fill("CD7654321");
+    // Required before Hold seats: the customer was told the fare is non-refundable and non-changeable.
+    await expect(page.getByRole("button", { name: "Hold seats" })).toBeDisabled();
+    await page.getByRole("checkbox", { name: /non-refundable and non-changeable, and agrees/ }).check();
     for (const [card, born] of [["Adult 1", "12/04/1988"], ["Adult 2", "23/09/1990"]]) {
       const date = page.getByRole("region", { name: card }).getByLabel("Date of birth", { exact: true });
       await date.fill(born);

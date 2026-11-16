@@ -29,7 +29,8 @@ Element.prototype.releasePointerCapture ??= () => {};
 Element.prototype.scrollIntoView ??= function scrollIntoView() {};
 
 const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" });
-const TICKET = { id: "t1", sector: "ISB - JED", departure_date: "2026-11-22", departure_time: "06:40", airline: "Fly Jinnah", remaining: 12, baggage: "20+7", stock: "supplier" as const, can_hold: true };
+const TERMS_TEXT_FOR_FARE = "The customer has been told that this group fare is non-refundable and non-changeable, and agrees.";
+const TICKET = { fare_terms: { version: "group-fare-terms-v1", notice: "", acknowledgement: TERMS_TEXT_FOR_FARE, refund: "Non-refundable" as const }, id: "t1", sector: "ISB - JED", departure_date: "2026-11-22", departure_time: "06:40", airline: "Fly Jinnah", remaining: 12, baggage: "20+7", stock: "supplier" as const, can_hold: true };
 const in30 = () => new Date(Date.now() + 30 * 60_000).toISOString();
 const HELD: GroupHoldView = {
   booking_id: "TRV-GRP-000123", pnr: "K7P2QX", status: "held", hold_expires_at: in30(), adults: 2,
@@ -82,9 +83,14 @@ beforeEach(() => {
   people.searchPeople.mockResolvedValue({ results: [SAVED] });
 });
 
+const TERMS_TEXT = "The customer has been told that this group fare is non-refundable and non-changeable, and agrees.";
+/** The required tick box above Hold seats. */
+const termsBox = () => screen.getByRole("checkbox", { name: TERMS_TEXT });
+
 const customerField = (label: string) => within(screen.getByRole("region", { name: "Customer" })).getByLabelText(label);
 
 async function fillTravelers() {
+  fireEvent.click(termsBox());
   fireEvent.change(customerField("Given name"), { target: { value: "Ali" } });
   fireEvent.change(customerField("Surname"), { target: { value: "Raza" } });
   fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "+92 300 1234567" } });
@@ -114,6 +120,10 @@ describe("Hold group seats (step 2)", () => {
     expect(fare).toHaveTextContent("StockSupplier");
     expect(fare).toHaveTextContent("PriceShown after hold");
     expect(fare).not.toHaveTextContent(/Rs\s|dhillu|skypass/);
+    // Hold seats stays off until staff confirm the customer was told the fare is non-refundable and non-changeable.
+    expect(within(fare).getByRole("button", { name: "Hold seats" })).toBeDisabled();
+    expect(termsBox()).not.toBeChecked();
+    fireEvent.click(termsBox());
     expect(within(fare).getByRole("button", { name: "Hold seats" })).toBeEnabled();
     // Adult 1's name and passport come from the customer while "The customer is also Adult 1" is ticked.
     fireEvent.change(customerField("Given name"), { target: { value: "Ali" } });
@@ -134,6 +144,7 @@ describe("Hold group seats (step 2)", () => {
     await waitFor(() => expect(location.current).toBe("/admin/search/group-ticketing/held/TRV-GRP-000123"));
     const body = gateway.holdGroupSeats.mock.calls[0][0];
     expect(body.ticket_id).toBe("t1");
+    expect(body.fare_terms_acknowledged).toBe(true);
     expect(body.adults).toBe(2);
     expect(body.contact).toMatchObject({ first_name: "Ali", last_name: "Raza", phone: "+92 300 1234567", id_type: "PSPT", document_number: "AB1234567", save_for_next_time: true });
     expect(body.passengers.map((p: { type: string }) => p.type)).toEqual(["ADT", "ADT"]);
@@ -221,7 +232,7 @@ describe("Hold group seats (step 2)", () => {
     const fare = await screen.findByRole("complementary", { name: "Selected group fare" });
     await within(fare).findByText("Fly Jinnah");
     expect(fare).toHaveTextContent("Rs 160,000 per adult");
-    expect(within(fare).getByRole("button", { name: "Hold seats" })).toBeEnabled();
+    expect(within(fare).getByRole("button", { name: "Hold seats" })).toBeDisabled();   // until the fare terms box is ticked
   });
 
   it("a provider with no hold API: the gateway's reason shows before any details are typed, and Hold seats is off", async () => {
@@ -257,6 +268,7 @@ describe("Hold group seats (step 2)", () => {
     fireEvent.change(within(adult2).getByLabelText("Given name"), { target: { value: "Sana" } });
     fireEvent.change(within(adult2).getByLabelText("Surname"), { target: { value: "Raza" } });
     fireEvent.change(within(adult2).getByLabelText("Date of birth"), { target: { value: "1990-09-23" } });
+    fireEvent.click(termsBox());
     fireEvent.click(within(fare).getByRole("button", { name: "Hold seats" }));
     await waitFor(() => expect(gateway.holdGroupSeats).toHaveBeenCalled());
     const body = gateway.holdGroupSeats.mock.calls[0][0];
@@ -453,6 +465,44 @@ describe("Dhillu & Sahi hold time note", () => {
     const held = await screen.findByRole("region", { name: "Seats held" });
     expect(within(held).getByRole("timer")).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/Hold time (from supplier|estimated)|after 1 hour/);
+  });
+});
+
+describe("Group fare terms: non-refundable and non-changeable", () => {
+  const TERMS = { text: TERMS_TEXT_FOR_FARE, version: "group-fare-terms-v1", acknowledged_by: "staff" as const, acknowledged_by_user_id: "u-1", acknowledged_at: "2026-11-15T12:40:00Z" };
+
+  it("the hold is blocked until the box is ticked, and the tick is sent to the gateway", async () => {
+    gateway.holdGroupSeats.mockResolvedValue(HELD);
+    renderAt(HOLD_URL);
+    const fare = await screen.findByRole("complementary", { name: "Selected group fare" });
+    await within(fare).findByText("Fly Jinnah");
+    await fillTravelers();                       // ticks the box
+    fireEvent.click(termsBox());                 // untick: Hold seats goes off again
+    expect(within(fare).getByRole("button", { name: "Hold seats" })).toBeDisabled();
+    fireEvent.submit(screen.getByRole("form", { name: "Traveler details" }));
+    expect(gateway.holdGroupSeats).not.toHaveBeenCalled();
+    fireEvent.click(termsBox());
+    fireEvent.click(within(fare).getByRole("button", { name: "Hold seats" }));
+    await waitFor(() => expect(gateway.holdGroupSeats).toHaveBeenCalledOnce());
+    expect(gateway.holdGroupSeats.mock.calls[0][0].fare_terms_acknowledged).toBe(true);
+  });
+
+  it("the gateway's refusal without the acknowledgement shows its sentence", async () => {
+    gateway.holdGroupSeats.mockRejectedValue(new GatewayError("unavailable", "Confirm that the customer has been told this group fare is non-refundable and non-changeable. Nothing was held.", 422, "fare_terms_not_acknowledged"));
+    renderAt(HOLD_URL);
+    const fare = await screen.findByRole("complementary", { name: "Selected group fare" });
+    await within(fare).findByText("Fly Jinnah");
+    await fillTravelers();
+    fireEvent.click(within(fare).getByRole("button", { name: "Hold seats" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Confirm that the customer has been told this group fare is non-refundable and non-changeable. Nothing was held.");
+  });
+
+  it("the booking's Details show the stored acknowledgement: the text, who and when", async () => {
+    gateway.fetchGroupHold.mockResolvedValue({ ...HELD, fare_terms: TERMS });
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
+    const details = await screen.findByRole("region", { name: "Details" });
+    expect(details).toHaveTextContent(`Fare termsNon-refundable · Non-changeable. ${TERMS_TEXT_FOR_FARE}`);
+    expect(details).toHaveTextContent(/Told by staff on \d/);
   });
 });
 

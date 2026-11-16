@@ -75,7 +75,10 @@ describe("Search (internal roles)", () => {
     renderAt("/admin/search?tab=group-ticketing&from=LHE&to=DMM&date=2026-11-13&adults=2");
     const results = await screen.findByRole("region", { name: "Results" });
     await within(results).findByText("Airblue");
-    expect(within(results).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Departure", "Airline", "Seats left", "Baggage", "Meal", "Price per passenger", "Action"]);
+    expect(within(results).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Departure", "Airline", "Seats left", "Baggage", "Meal", "Refund", "Price per passenger", "Action"]);
+    // Group fares are non-refundable and non-changeable: a notice above the results and "Non-refundable" on every row.
+    expect(within(results).getByText("Group fares are non-refundable and non-changeable. Names and dates cannot be altered after booking.")).toBeInTheDocument();
+    for (const row of within(results).getAllByRole("row").slice(1)) expect(row).toHaveTextContent("Non-refundable");
     const [first, second] = within(results).getAllByRole("row").slice(1);
     expect(first).toHaveTextContent("13 Nov 2026 09:45");
     expect(first).toHaveTextContent("PA470");
@@ -90,7 +93,8 @@ describe("Search (internal roles)", () => {
     expect(within(second).getByRole("button", { name: /^Hold seats/ })).toBeDisabled();
     expect(within(second).getByRole("button", { name: /^Hold seats/ })).toHaveAccessibleDescription("Holding isn't available for this provider");
     expect(gateway.search).toHaveBeenCalledWith(expect.objectContaining({ from: "LHE", to: "DMM", date: "2026-11-13", adults: 2 }), expect.anything());
-    expect(document.body.textContent).not.toMatch(/Book|Quote|Owned|Supplier|Children|Infants|dhillu|skypass/i);
+    expect(document.body.textContent).not.toMatch(/Quote|Owned|Supplier|Children|Infants|dhillu|skypass/i);
+    expect(screen.queryByRole("button", { name: /^(Book|Quote)/ })).not.toBeInTheDocument();   // (the fare notice says "after booking")
     expect(await screen.findByRole("button", { name: /LHE → DMM \(2\)/ })).toBeInTheDocument();
   });
 

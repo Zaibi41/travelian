@@ -14,6 +14,8 @@ import { SectorAirportSelect } from "@/components/admin/ui/SectorAirportSelect";
 import { Chip } from "@/components/admin/ui/feedback";
 import { cn } from "@/lib/utils";
 import { GatewayError, gatewayAssetUrl } from "@/lib/gateway/client";
+import { GROUP_FARE_NOTICE, GROUP_FARE_REFUND } from "@/lib/group-fare-terms";
+import { Notice } from "@/components/admin/ui/feedback";
 import { Button } from "@/components/admin/ui/button";
 import { formatMoney } from "@/lib/admin-bookings/format";
 import { groupHoldFormPath } from "@/lib/admin-search/group-holds";
@@ -200,12 +202,14 @@ export function GroupTicketingSearch() {
           ) : rows.length === 0 ? (
             <p className="py-2 text-body text-muted-foreground">No group fares match this search.</p>
           ) : (
-            // From 1024px the table fits the card; only phones and tablets scroll it sideways.
+            <>
+            <Notice tone="action">{GROUP_FARE_NOTICE}</Notice>
+            {/* From 1024px the table fits the card; only phones and tablets scroll it sideways. */}
             <div className="relative max-lg:overflow-x-auto">
               <table className="w-full border-collapse text-table max-lg:min-w-[54rem]">
                 <thead>
                   <tr className="bg-muted text-left">
-                    {["Departure", "Airline", "Seats left", "Baggage", "Meal", "Price per passenger"].map(column => (
+                    {["Departure", "Airline", "Seats left", "Baggage", "Meal", "Refund", "Price per passenger"].map(column => (
                       <th key={column} scope="col" className="h-table-header px-2.5 font-semibold text-foreground">{column}</th>
                     ))}
                     <th scope="col" className="h-table-header px-2.5"><span className="sr-only">Action</span></th>
@@ -248,6 +252,7 @@ export function GroupTicketingSearch() {
                         <td className="whitespace-nowrap px-2.5 py-2 align-top text-foreground">
                           {row.meal === "Yes" ? "Meal" : row.meal === "No" ? "No Meal" : <span className="text-muted-foreground">Meal info not available</span>}
                         </td>
+                        <td className="whitespace-nowrap px-2.5 py-2 align-top text-foreground">{GROUP_FARE_REFUND}</td>
                         <td className="whitespace-nowrap px-2.5 py-2 align-top tabular-nums">
                           {row.price ? <span className="font-semibold text-foreground">{formatMoney(row.price)}</span> : <span className="text-muted-foreground">Price not available</span>}
                         </td>
@@ -265,7 +270,7 @@ export function GroupTicketingSearch() {
                       {/* Supplier access only: the gateway leaves group_source out for everyone else. */}
                       {row.source && (
                         <tr className="border-b border-border last:border-b-0">
-                          <td colSpan={7} className="max-w-0 px-2.5 pb-2 pt-0 text-label text-muted-foreground">
+                          <td colSpan={8} className="max-w-0 px-2.5 pb-2 pt-0 text-label text-muted-foreground">
                             <span className="block truncate" title={row.source}>Source: {row.source}</span>
                           </td>
                         </tr>
@@ -276,6 +281,7 @@ export function GroupTicketingSearch() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </section>
       )}

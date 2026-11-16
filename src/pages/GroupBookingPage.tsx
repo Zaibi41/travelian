@@ -12,6 +12,7 @@ import { HeldPriceDialog, ReleaseFailedNotice, SupplierNotice } from "./GroupHel
 import { GroupPaymentsTab, groupHoldKey } from "@/components/admin/search/GroupPaymentsTab";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
+import { acknowledgedBy } from "@/lib/group-fare-terms";
 import { GROUP_BOOKING_TABS, departureText, fetchGroupHold, groupBookingPath, returnFlightText, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
 import { sourceLine } from "@/lib/admin-search/group-ticketing";
 
@@ -106,6 +107,8 @@ function Details({ view }: { view: GroupHoldView }) {
       ...(source ? [["Source", <span key="source" title={source}>{source}</span>] as [string, React.ReactNode]] : []),
       ...(view.supplier ? [["Supplier", <Tag key="supplier">{view.supplier}</Tag>] as [string, React.ReactNode]] : []),
       ["Adults", view.adults],
+      ...(view.fare_terms ? [["Fare terms", <span key="terms">Non-refundable · Non-changeable. {view.fare_terms.text}{" "}
+        <span className="text-muted-foreground">({acknowledgedBy(view.fare_terms, formatDateTime(view.fare_terms.acknowledged_at))})</span></span>] as [string, React.ReactNode]] : []),
       ["Price per adult", formatMoney(view.price_per_adult)],
       ["Total", formatMoney(view.total)],
       // Cost and profit: only when the gateway sends them (cost and margin access).

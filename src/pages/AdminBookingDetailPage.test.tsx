@@ -288,6 +288,29 @@ describe("Passengers and Audit tabs", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("requires the reveal identity permission");
   });
 
+  it("a group booking's stored fare terms show on Overview (text, who, when) and in Audit", () => {
+    const text = "The customer has been told that this group fare is non-refundable and non-changeable, and agrees.";
+    detail.current = ok({ ...HOLD_VIEW, product: "group",
+      fare_terms: { text, version: "group-fare-terms-v1", acknowledged_by: "staff", acknowledged_by_user_id: "0901a7ce-ef7d-4af6-8ca4-31fd1252137a", acknowledged_at: "2026-11-09T13:22:54Z" },
+      audit: [{ action: "fare_terms_acknowledged", actor_user_id: "0901a7ce-ef7d-4af6-8ca4-31fd1252137a", actor_role: "staff", at: "2026-11-09T13:22:54Z",
+        details: { terms_version: "group-fare-terms-v1", terms_text: text, acknowledged_by: "staff" } }] });
+    const first = renderAt("/admin/bookings/TRV-1");
+    const overview = screen.getByRole("region", { name: "Overview" });
+    expect(overview).toHaveTextContent(`Fare termsNon-refundable · Non-changeable. ${text}`);
+    expect(overview).toHaveTextContent(/Told by staff on \d/);
+    first.unmount();
+    renderAt("/admin/bookings/TRV-1/audit");
+    const row = within(screen.getByRole("region", { name: "Audit" })).getAllByRole("row")[1];
+    expect(row).toHaveTextContent("Staff · 0901a7ce");
+    expect(row).toHaveTextContent("Fare terms acknowledged");
+    expect(row).toHaveTextContent(`${text} · version group-fare-terms-v1 · ticked by staff`);
+  });
+
+  it("a booking without stored fare terms shows no Fare terms row", () => {
+    renderAt("/admin/bookings/TRV-1");
+    expect(screen.getByRole("region", { name: "Overview" })).not.toHaveTextContent("Fare terms");
+  });
+
   it("Audit shows When, Who, Action and Details from the gateway", () => {
     renderAt("/admin/bookings/TRV-1/audit");
     const tab = screen.getByRole("region", { name: "Audit" });

@@ -40,7 +40,7 @@ describe("Group Ticketing results: Source line", () => {
     const results = await screen.findByRole("region", { name: "Results" });
     const line = await within(results).findByText("Source: Dhillu & Sahi · PNR 41SDS4 · Group 3056");
     expect(line).toHaveClass("truncate");
-    expect(line.closest("td")).toHaveAttribute("colspan", "7");
+    expect(line.closest("td")).toHaveAttribute("colspan", "8");
   });
 
   it("no supplier access (group_source not sent): no Source line and no supplier name", async () => {

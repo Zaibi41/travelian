@@ -13,6 +13,7 @@ import { ItineraryTab } from "@/components/admin/bookings/ItineraryTab";
 import { DownloadItineraryButton } from "@/components/admin/bookings/DownloadItineraryButton";
 import { SampleDataBadge, StatusChips } from "@/components/admin/bookings/BookingChips";
 import { BookingHeading } from "@/components/admin/bookings/BookingHeading";
+import { acknowledgedBy } from "@/lib/group-fare-terms";
 import { GatewayError } from "@/lib/gateway/client";
 import {
   BOOKING_STATUS_LABEL, ISSUANCE_STATUS_LABEL, PAYMENT_STATUS_LABEL, PRODUCT_LABEL, formatDateTime, formatMoney, formatTimeLeft, isOpenHold,
@@ -132,6 +133,9 @@ function Overview({ booking }: { booking: BookingDetail }) {
         ["Issuance status", ISSUANCE_STATUS_LABEL[booking.statuses.issuance]],
         ["Amount", <span className="tabular-nums">{formatMoney(booking.amount)}</span>],
         ["Deadline", <span className="tabular-nums">{deadline(booking.deadline, isOpenHold(booking.statuses.booking))}</span>],
+        // Group bookings: the stored acknowledgement that the fare is non-refundable and non-changeable.
+        ...(booking.fare_terms ? [["Fare terms", <span>Non-refundable · Non-changeable. {booking.fare_terms.text}{" "}
+          <span className="text-muted-foreground">({acknowledgedBy(booking.fare_terms, formatDateTime(booking.fare_terms.acknowledged_at))})</span></span>] as [string, React.ReactNode]] : []),
       ]}
     />
   );
@@ -325,7 +329,7 @@ function RevealDialog({ bookingId, passenger, onClose }: { bookingId: string; pa
   );
 }
 
-const AUDIT_ACTION: Record<string, string> = { hold_created: "Hold created", identity_revealed: "Identity revealed" };
+const AUDIT_ACTION: Record<string, string> = { hold_created: "Hold created", identity_revealed: "Identity revealed", fare_terms_acknowledged: "Fare terms acknowledged" };
 const FARE_CHECK: Record<string, string> = { matches: "total verified", differs: "total differs", no_total: "total not verified", failed: "total not verified" };
 const REVEALED_FIELD: Record<string, string> = { date_of_birth: "date of birth", document_number: "document number", document_expiry: "document expiry" };
 
@@ -338,6 +342,9 @@ function auditDetails(entry: BookingAuditEntry) {
   if (entry.action === "identity_revealed") {
     const fields = Array.isArray(d.fields) ? d.fields.map(field => REVEALED_FIELD[String(field)] ?? String(field)).join(", ") : "";
     return [typeof d.traveler_position === "number" && `Passenger ${d.traveler_position + 1}`, fields, d.reason && `Reason: ${d.reason}`].filter(Boolean).join(" · ");
+  }
+  if (entry.action === "fare_terms_acknowledged") {
+    return [d.terms_text, d.terms_version && `version ${d.terms_version}`, d.acknowledged_by && `ticked by ${d.acknowledged_by}`].filter(Boolean).join(" · ");
   }
   return Object.entries(d).map(([key, value]) => `${key.replace(/_/g, " ")}: ${String(value)}`).join(" · ");
 }

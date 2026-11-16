@@ -1740,6 +1740,8 @@ export interface components {
             /** Deadline */
             deadline?: string | null;
             fare: components["schemas"]["BookingFare"];
+            /** @description Group bookings: the stored non-refundable, non-changeable acknowledgement. */
+            fare_terms?: components["schemas"]["FareTermsView"] | null;
             /**
              * Itinerary
              * @description The Itinerary tab: the flights as held, in travel order. Omitted when not recorded (bookings held before 14 Nov 2026).
@@ -2312,6 +2314,38 @@ export interface components {
             /** @description Only with the cost and margin permission. */
             supplier_cost_each?: components["schemas"]["BookingMoney"] | null;
         };
+        /**
+         * FareTermsView
+         * @description The stored acknowledgement that the fare is non-refundable and non-changeable.
+         */
+        FareTermsView: {
+            /**
+             * Acknowledged At
+             * Format: date-time
+             */
+            acknowledged_at: string;
+            /**
+             * Acknowledged By
+             * @description Who ticked it: a staff user for the customer, or the customer.
+             * @enum {string}
+             */
+            acknowledged_by: "staff" | "customer";
+            /**
+             * Acknowledged By User Id
+             * @description The user who ticked it.
+             */
+            acknowledged_by_user_id?: string | null;
+            /**
+             * Text
+             * @description The exact text that was shown and ticked.
+             */
+            text: string;
+            /**
+             * Version
+             * @description The version of that text.
+             */
+            version: string;
+        };
         /** FareView */
         FareView: {
             /** Baggage */
@@ -2551,6 +2585,30 @@ export interface components {
             vendors_succeeded: string[];
         };
         /**
+         * GroupFareTerms
+         * @description Group fares are non-refundable and non-changeable. The texts to show, word for word (app.services.group_terms).
+         */
+        GroupFareTerms: {
+            /**
+             * Acknowledgement
+             * @description The tick box on the staff hold form; this exact text is stored with the booking.
+             */
+            acknowledgement: string;
+            /**
+             * Notice
+             * @description Above the results: the rule in one line.
+             */
+            notice: string;
+            /**
+             * Refund
+             * @default Non-refundable
+             * @constant
+             */
+            refund: "Non-refundable";
+            /** Version */
+            version: string;
+        };
+        /**
          * GroupHeldPriceChange
          * @description The supplier held the seats at a different cost than shown before the hold. The selling price stays the staff's;
          *     payments wait until the change is confirmed, which is refused while the selling price is below the new cost.
@@ -2692,6 +2750,12 @@ export interface components {
             adults: number;
             contact: components["schemas"]["CustomerCard"];
             /**
+             * Fare Terms Acknowledged
+             * @description Required (true): the customer has been told that this group fare is non-refundable and non-changeable, and agrees. Stored with the booking (who, when, the text shown). The hold is refused without it.
+             * @default false
+             */
+            fare_terms_acknowledged: boolean;
+            /**
              * Passengers
              * @description One adult (ADT) per seat.
              */
@@ -2766,6 +2830,8 @@ export interface components {
              */
             can_set_selling_price: boolean;
             customer?: components["schemas"]["GroupHoldCustomer"] | null;
+            /** @description The non-refundable, non-changeable acknowledgement stored at the hold. */
+            fare_terms?: components["schemas"]["FareTermsView"] | null;
             flight: components["schemas"]["GroupHoldFlight"];
             /** @description Provider, supplier PNR, group and ticket IDs, as copied from the listing when the hold was created. Only with the supplier names permission. */
             group_source?: components["schemas"]["GroupSource"] | null;
@@ -3043,6 +3109,7 @@ export interface components {
              * @description HH:MM of the first segment, when the supplier sends it.
              */
             departure_time?: string | null;
+            fare_terms?: components["schemas"]["GroupFareTerms"];
             /**
              * Flight Number
              * @description Outbound flight number, e.g. 9P700.

@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Notice } from "@/components/admin/ui/feedback";
+import { Checkbox } from "@/components/admin/ui/choice";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import {
   AdminOnlyCost, BookingHoldColumns, BookingHoldForm, BookingHoldLayout, FarePanel, NO_ERRORS, customerCard, fieldErrorMap, money, passengerRequest,
@@ -15,9 +16,10 @@ import { departureText, fetchGroupTicket, gatewayMessage, groupHeldPath, groupRe
 const FORM_ID = "group-hold-form";
 
 /** The Group Ticketing hold request from the shared form: adults only, with each traveler's gender. */
-export function groupHoldRequest(ticketId: string, { customer, travelers, sellingPerAdult }: BookingValues): GroupHoldRequest {
+export function groupHoldRequest(ticketId: string, { customer, travelers, sellingPerAdult }: BookingValues, termsAcknowledged = false): GroupHoldRequest {
   return {
     ticket_id: ticketId,
+    fare_terms_acknowledged: termsAcknowledged,
     adults: travelers.length,
     contact: customerCard(customer),
     ...(sellingPerAdult ? { selling_price_per_adult: sellingPerAdult } : {}),
@@ -37,6 +39,8 @@ export default function GroupHoldPage() {
   const results = groupResultsPath(search);
   const [pending, setPending] = useState(false);
   const [errors, setErrors] = useState<FormErrors>(NO_ERRORS);
+  // Required before Hold seats: the customer was told the fare is non-refundable and non-changeable (stored by the gateway).
+  const [termsAcknowledged, setTermsAcknowledged] = useState(false);
   const ticket = useQuery({
     queryKey: ["admin-search", "group-ticket", ticketId],
     queryFn: ({ signal }) => fetchGroupTicket(ticketId, { signal }),
@@ -46,13 +50,14 @@ export default function GroupHoldPage() {
   });
   const fare = ticket.data;
   const gone = ticket.error instanceof GatewayError && (ticket.error.kind === "not_found" || ticket.error.status === 409);
-  const canHold = Boolean(fare?.can_hold) && (fare?.remaining == null || fare.remaining >= adults);
+  const holdable = Boolean(fare?.can_hold) && (fare?.remaining == null || fare.remaining >= adults);
+  const canHold = holdable && termsAcknowledged;
 
   const submit = async (values: BookingValues) => {
     setPending(true);
     setErrors(NO_ERRORS);
     try {
-      const view = await holdGroupSeats(groupHoldRequest(ticketId, values));
+      const view = await holdGroupSeats(groupHoldRequest(ticketId, values, termsAcknowledged));
       navigate(groupHeldPath(view.booking_id), { state: view });
     } catch (error) {
       setErrors({
@@ -92,7 +97,13 @@ export default function GroupHoldPage() {
                 <Notice tone="critical">Only {fare.remaining} {fare.remaining === 1 ? "seat" : "seats"} left. Search again with fewer adults.</Notice>
               ) : !fare.can_hold ? (
                 <Notice tone="action">{fare.hold_unavailable_reason ?? "Holding isn't available for this provider"}.</Notice>
-              ) : null}
+              ) : (
+                // The gateway's own wording: this exact text is stored with the booking when ticked.
+                <label className="flex items-start gap-2 text-label text-foreground">
+                  <Checkbox className="mt-0.5" checked={termsAcknowledged} disabled={pending} onCheckedChange={checked => setTermsAcknowledged(checked === true)} />
+                  <span>{fare.fare_terms?.acknowledgement ?? "The customer has been told that this group fare is non-refundable and non-changeable, and agrees."}</span>
+                </label>
+              )}
             >
               {!fare ? (
                 <div className="flex flex-col gap-2" aria-busy="true" aria-label="Loading the selected fare">

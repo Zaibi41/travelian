@@ -1,4 +1,5 @@
 import { API_BASE_URL as API_BASE } from "./api-config";
+import { GROUP_FARE_CUSTOMER_LINE } from "./group-fare-terms";
 import { listPublicGroupTicketingCollections } from "@/lib/group-ticketing-collections-api";
 import { normalizeAirlineName } from "@/lib/airline-normalization";
 
@@ -650,6 +651,7 @@ export function groupTicketWhatsAppMessage(category: string, group: GroupTicket)
     `Fare: ${display.fare ? `${display.currency || "PKR"} ${display.fare}` : "Please confirm"}`,
     ...itinerary,
     "",
+    GROUP_FARE_CUSTOMER_LINE,
     "Please share availability and booking details.",
   ].join("\n");
 }
