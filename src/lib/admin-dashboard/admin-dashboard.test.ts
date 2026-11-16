@@ -64,7 +64,7 @@ describe("card links: only to lists whose counts match", () => {
     expect(needsActionLinks({ period: "all", provider: "airsial" }).pendingIssuance).toBe("/admin/bookings/flights?card=awaiting_issuance&provider=airsial");
   });
   it("falls back to the placeholder for another product", () => {
-    expect(needsActionLinks({ period: "all", product: "hotel" })).toEqual({
+    expect(needsActionLinks({ period: "all", product: "group" })).toEqual({
       pendingIssuance: ATTENTION_QUEUE_PLACEHOLDER, paymentPending: ATTENTION_QUEUE_PLACEHOLDER, expiringHolds: ATTENTION_QUEUE_PLACEHOLDER,
     });
   });

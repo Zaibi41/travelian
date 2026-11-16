@@ -19,7 +19,9 @@ export type AttentionItem = Schemas["AttentionItem"];
 export type DashboardFilterOptions = Schemas["DashboardFilterOptions"];
 
 export type DashboardPeriod = NonNullable<NonNullable<import("@/lib/gateway/schema").operations["dashboard_summary_v1_admin_dashboard_summary_get"]["parameters"]["query"]>["period"]>;
-export type DashboardProduct = "flight" | "hotel" | "umrah";
+/** The Product filter: Flights or Group (none = All; Hotel and Umrah count under All). */
+export type DashboardProduct = Schemas["ProductResults"]["product"];
+export type ProductResults = Schemas["ProductResults"];
 
 export interface DashboardQuery {
   /** Default "all" (decided 2026-10-31). */

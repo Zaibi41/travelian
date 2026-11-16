@@ -18,14 +18,18 @@ const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" })
 const SUMMARY = {
   source: "gateway_bookings", contains_sample_data: false, generated_at: "2026-11-11T05:00:00Z",
   needs_action: { pending_issuance: 2, payment_pending: 0, expiring_holds: 1, expiring_window_hours: 2 },
-  business: { total_bookings: 42, issued_tickets: 30, total_sales: [rs(1_284_500)], gross_profit: [rs(96_400)] },
+  business: { total_bookings: 42, held: 7, paid: 31, issued_tickets: 30, total_sales: [rs(1_284_500)], gross_profit: [rs(96_400)],
+    by_product: [
+      { product: "flight", label: "Flights", total_bookings: 30, held: 5, paid: 22, issued_tickets: 21, total_sales: [rs(884_500)], gross_profit: [rs(66_400)] },
+      { product: "group", label: "Group", total_bookings: 12, held: 2, paid: 9, issued_tickets: 9, total_sales: [rs(400_000)], gross_profit: [rs(30_000)] },
+    ] },
 };
 const REPORT = { granularity: "day", timezone: "Asia/Karachi", buckets: [
   { start: "2026-11-05", bookings: 4, issued: 3 }, { start: "2026-11-06", bookings: 6, issued: 5 }, { start: "2026-11-07", bookings: 2, issued: 2 },
   { start: "2026-11-08", bookings: 7, issued: 4 }, { start: "2026-11-09", bookings: 5, issued: 5 }, { start: "2026-11-10", bookings: 3, issued: 1 },
 ] };
 const ATTENTION = { total: 1, items: [{ booking_id: "b1", type: "hold_expiring", reference: "GROUP-LHE-JED-ZAMZAM-TOWERS-35PAX-REF-0001" }] };
-const FILTERS = { products: [{ value: "flight", label: "Flights" }], providers: [] };
+const FILTERS = { products: [{ value: "flight", label: "Flights" }, { value: "group", label: "Group" }], providers: [] };
 const BOOKINGS = {
   source: "gateway_bookings", total: 2,
   cards: { all_bookings: 2, confirmed: 1, on_hold: 1, cancelled: 0, unpaid: 1, expiring_soon: 0, expiring_window_hours: 24, hold_deadlines: 1, awaiting_issuance: 0 },

@@ -30,9 +30,11 @@ interface StatusKpiCardProps {
   selected?: boolean;
   /** Show the severity tag ("Needs action"...). Off only where the mockup shows none and the value is itself the label. */
   showBadge?: boolean;
+  /** The figure per product (e.g. Flights, Group), one line each under the value. */
+  breakdown?: { label: string; value: string }[];
 }
 
-export function StatusKpiCard({ label, value, severity, hint, fullValue, to, size = "default", selected = false, showBadge = true }: StatusKpiCardProps) {
+export function StatusKpiCard({ label, value, severity, hint, fullValue, to, size = "default", selected = false, showBadge = true, breakdown }: StatusKpiCardProps) {
   const body = (
     <div
       className={cn(
@@ -57,11 +59,22 @@ export function StatusKpiCard({ label, value, severity, hint, fullValue, to, siz
       >
         {value}
       </span>
+      {breakdown && breakdown.length > 0 && (
+        <dl className="flex flex-col gap-0.5 text-label">
+          {breakdown.map(line => (
+            <div key={line.label} className="flex min-w-0 justify-between gap-2">
+              <dt className="shrink-0 text-muted-foreground">{line.label}</dt>
+              <dd className="min-w-0 break-words text-right font-medium tabular-nums text-foreground">{line.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
       {hint && <span className="text-label text-muted-foreground">{hint}</span>}
     </div>
   );
 
-  const accessibleName = `${label}: ${fullValue ?? value}${severity ? `, ${SEVERITY_LABEL[severity]}` : ""}${hint ? `. ${hint}` : ""}`;
+  const split = breakdown?.length ? ` (${breakdown.map(line => `${line.label} ${line.value}`).join(", ")})` : "";
+  const accessibleName = `${label}: ${fullValue ?? value}${split}${severity ? `, ${SEVERITY_LABEL[severity]}` : ""}${hint ? `. ${hint}` : ""}`;
   return to ? (
     <Link to={to} aria-label={accessibleName} aria-current={selected ? "true" : undefined} className="group block min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
       {body}

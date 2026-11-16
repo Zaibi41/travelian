@@ -2118,12 +2118,29 @@ export interface components {
          */
         BusinessResults: {
             /**
+             * By Product
+             * @description Flights and Group separately, only when no product filter is set (All). Hotel and Umrah count in the totals only.
+             */
+            by_product?: components["schemas"]["ProductResults"][] | null;
+            /**
              * Gross Profit
              * @description Per currency, as total_sales. amount_minor omitted (n/a) when a paid booking in that currency has no real supplier cost (none recorded, or an imported booking whose cost was filled in as its total). Omitted for roles without margin visibility.
              */
             gross_profit?: components["schemas"]["CurrencyAmount"][] | null;
+            /**
+             * Held
+             * @description Holds still open (held or pending payment, expiry ahead).
+             * @default 0
+             */
+            held: number;
             /** Issued Tickets */
             issued_tickets: number;
+            /**
+             * Paid
+             * @description Paid in full, not cancelled or expired.
+             * @default 0
+             */
+            paid: number;
             /** Total Bookings */
             total_bookings: number;
             /**
@@ -3557,6 +3574,34 @@ export interface components {
              */
             accounts: components["schemas"]["PaymentAccount"][];
         };
+        /**
+         * ProductResults
+         * @description One product's share of the business results (same rules, same filters).
+         */
+        ProductResults: {
+            /**
+             * Gross Profit
+             * @description Omitted for roles without margin visibility.
+             */
+            gross_profit?: components["schemas"]["CurrencyAmount"][] | null;
+            /** Held */
+            held: number;
+            /** Issued Tickets */
+            issued_tickets: number;
+            /** Label */
+            label: string;
+            /** Paid */
+            paid: number;
+            /**
+             * Product
+             * @enum {string}
+             */
+            product: "flight" | "group";
+            /** Total Bookings */
+            total_bookings: number;
+            /** Total Sales */
+            total_sales: components["schemas"]["CurrencyAmount"][];
+        };
         /** ProviderStatus */
         ProviderStatus: {
             /** Name */
@@ -4714,7 +4759,7 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
-                product?: ("flight" | "hotel" | "umrah") | null;
+                product?: ("flight" | "group") | null;
                 /** @description Provider name, case-insensitive. Requires supplier visibility. */
                 provider?: string | null;
             };
@@ -5972,7 +6017,7 @@ export interface operations {
         parameters: {
             query?: {
                 period?: "all" | "today" | "yesterday" | "last-week" | "last-two-weeks" | "this-month" | "last-month" | "last-three-months" | "last-six-months" | "this-year" | "last-year";
-                product?: ("flight" | "hotel" | "umrah") | null;
+                product?: ("flight" | "group") | null;
                 /** @description Provider name, case-insensitive. Requires supplier visibility. */
                 provider?: string | null;
             };

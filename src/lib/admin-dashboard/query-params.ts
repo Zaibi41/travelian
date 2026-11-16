@@ -1,7 +1,7 @@
 import { bookingReportPeriods } from "@/lib/booking-report-period";
 import type { DashboardPeriod, DashboardProduct, DashboardQuery } from "./types";
 
-const PRODUCTS: DashboardProduct[] = ["flight", "hotel", "umrah"];
+const PRODUCTS: DashboardProduct[] = ["flight", "group"];
 
 /** Reads filters from the URL. Unknown values fall back to defaults (Date = All). */
 export function parseDashboardQuery(params: URLSearchParams): DashboardQuery {
