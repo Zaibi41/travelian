@@ -48,7 +48,7 @@ const PAGES: [string, string, (page: Page) => Promise<void>][] = [
   ["Search Flights with results", "/admin/search?tab=flights&from=LHE&to=KHI&date=2026-11-19",
     page => expect(page.getByRole("region", { name: "Results" })).toContainText("Z8266")],
   ["Search Group Ticketing", "/admin/search?tab=group-ticketing", page => expect(page.getByRole("heading", { level: 1, name: "Search" })).toBeVisible()],
-  ["Search Hotels", "/admin/search?tab=hotels", page => expect(page.getByText("Hotel search isn't available yet")).toBeVisible()],
+  ["Search Hotels", "/admin/search?tab=hotels", page => expect(page.getByRole("button", { name: "Search hotels" })).toBeVisible()],
   ["Bookings", "/admin/bookings", page => expect(page.getByRole("region", { name: "Bookings" })).toContainText("CAEDEC")],
   ["Customers & Travelers", "/admin/customers", page => expect(page.getByRole("heading", { level: 1, name: "Customers & Travelers" })).toBeVisible()],
 ];

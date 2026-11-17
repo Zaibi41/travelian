@@ -10,6 +10,8 @@ export interface BookingsTab {
   label: string;
   /** Product filter sent to the gateway; undefined for All Bookings. */
   product?: BookingProduct;
+  /** Kept but not shown in the sub-menu; its URL opens All Bookings. */
+  hidden?: boolean;
 }
 
 export const BOOKINGS_TABS: BookingsTab[] = [
@@ -17,7 +19,7 @@ export const BOOKINGS_TABS: BookingsTab[] = [
   { slug: "flights", label: "Flights", product: "flight" },
   { slug: "group-ticketing", label: "Group Ticketing", product: "group" },
   { slug: "hotels", label: "Hotels", product: "hotel" },
-  { slug: "umrah", label: "Umrah", product: "umrah" },
+  { slug: "umrah", label: "Umrah", product: "umrah", hidden: true },
   { slug: "inquiries-requests", label: "Inquiries & Requests" },
   { slug: "quotations", label: "Quotations" },
 ];

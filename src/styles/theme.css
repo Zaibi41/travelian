@@ -51,6 +51,9 @@
   .admin-search-row > [data-size="route"] { flex: 1 1 24rem; }
   .admin-search-row > [data-size="date"] { flex: 0 0 9.5rem; }
   .admin-search-row > [data-size="provider"] { flex: 0 0 10rem; }
+  /* Search > Hotels: Destination takes the rest; Guests and rooms fits "10 guests, 9 rooms". */
+  .admin-search-row > [data-size="destination"] { flex: 1 1 12rem; }
+  .admin-search-row > [data-size="guests"] { flex: 0 0 11.5rem; }
   .admin-search-row > [data-size="submit"] { flex: 0 0 auto; }
   .admin-search-row > [data-size="submit"] { display: block; }
 }

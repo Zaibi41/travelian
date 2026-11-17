@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { SEARCH_FIELD } from "@/components/admin/ui/search-form";
+import { ProductTabLinks } from "@/components/admin/ui/ProductTabLinks";
 import { Pagination } from "@/components/admin/ui/pagination";
 import { Link, useSearchParams } from "react-router-dom";
-import { Search } from "lucide-react";
+import { FileText, Hotel, LayoutList, MessageSquare, Plane, Search, Users, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
 import { Input } from "@/components/admin/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusKpiCard } from "@/components/admin/StatusKpiCard";
 import { DashboardErrorNotice, CardGridSkeleton } from "@/components/admin/dashboard/DashboardStates";
 import { LabeledSelect } from "@/components/admin/ui/LabeledSelect";
-import { TabLinks } from "@/components/admin/ui/TabLinks";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { PaidChip, SampleDataBadge, StatusChips } from "@/components/admin/bookings/BookingChips";
 import { GatewayError } from "@/lib/gateway/client";
@@ -36,10 +36,6 @@ function errorMessage(error: unknown) {
 
 // Tabs whose data the gateway doesn't record yet (docs/backend-todo.md, Bookings).
 const NOT_AVAILABLE: Record<string, { title: string; body: string }> = {
-  "group-ticketing": {
-    title: "Group Ticketing bookings aren't available yet",
-    body: "The gateway doesn't record departure, seats, manifest status, name-list deadline or supplier for group bookings yet. Group bookings are listed under All Bookings.",
-  },
   hotels: {
     title: "Hotel bookings aren't available yet",
     body: "The gateway doesn't record hotel, rooms, dates, voucher or cancellation date for hotel bookings yet. Hotel bookings are listed under All Bookings.",
@@ -71,7 +67,8 @@ export default function AdminBookingsPage({ tab = "" }: { tab?: string }) {
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
       <h1 className="font-display text-page-title font-bold text-foreground">Bookings</h1>
-      <TabLinks label="Bookings" tabs={BOOKINGS_TABS.map(entry => ({ to: bookingsTabPath(entry), label: entry.label }))} />
+      <ProductTabLinks label="Bookings"
+        tabs={BOOKINGS_TABS.filter(entry => !entry.hidden).map(entry => ({ to: bookingsTabPath(entry), label: entry.label, icon: TAB_ICONS[entry.slug] }))} />
       {unavailable ? (
         <NotAvailableNotice title={unavailable.title}>{unavailable.body}</NotAvailableNotice>
       ) : (
@@ -81,6 +78,10 @@ export default function AdminBookingsPage({ tab = "" }: { tab?: string }) {
   );
 }
 
+const TAB_ICONS: Record<string, LucideIcon> = {
+  "": LayoutList, flights: Plane, "group-ticketing": Users, hotels: Hotel, "inquiries-requests": MessageSquare, quotations: FileText,
+};
+
 function BookingsRegister({ tab }: { tab: BookingsTab }) {
   const [params, setParams] = useSearchParams();
   const filters = parseBookingsFilters(params);
@@ -88,7 +89,9 @@ function BookingsRegister({ tab }: { tab: BookingsTab }) {
   const setFilters = (next: BookingsFilters) => setParams(serializeBookingsFilters(next), { replace: true });
   const change = (patch: Partial<BookingsFilters>) => setFilters({ ...filters, ...patch, page: patch.page ?? 1 });
   const data = bookings.data;
-  const flights = tab.product === "flight";
+  // Group Ticketing uses the Flights layout; its departure, seats, manifest and name-list columns
+  // wait for the gateway (docs/backend-todo.md, Bookings).
+  const flights = tab.product === "flight" || tab.product === "group";
 
   return (
     <>

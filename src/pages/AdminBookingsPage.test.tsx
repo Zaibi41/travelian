@@ -53,12 +53,12 @@ describe("Bookings register", () => {
     list.current = ok(ADMIN_LIST);
   });
 
-  it("shows the seven sub-menus as page links, All Bookings active", () => {
+  it("shows the six sub-menus as page links (Umrah hidden), All Bookings active", () => {
     renderPage();
     const tabs = screen.getByRole("navigation", { name: "Bookings" });
     expect(within(tabs).getAllByRole("link").map(link => [link.textContent, link.getAttribute("href")])).toEqual([
       ["All Bookings", "/admin/bookings"], ["Flights", "/admin/bookings/flights"], ["Group Ticketing", "/admin/bookings/group-ticketing"],
-      ["Hotels", "/admin/bookings/hotels"], ["Umrah", "/admin/bookings/umrah"], ["Inquiries & Requests", "/admin/bookings/inquiries-requests"],
+      ["Hotels", "/admin/bookings/hotels"], ["Inquiries & Requests", "/admin/bookings/inquiries-requests"],
       ["Quotations", "/admin/bookings/quotations"],
     ]);
     expect(within(tabs).getByRole("link", { name: "All Bookings" })).toHaveAttribute("aria-current", "page");
@@ -146,8 +146,19 @@ describe("Bookings register", () => {
     expect(picked).toHaveAttribute("href", "/admin/bookings/flights");  // clicking again clears it
   });
 
+  it("Group Ticketing tab lists group bookings in the Flights layout", () => {
+    list.current = ok({ ...ADMIN_LIST, cards: { ...ADMIN_LIST.cards, hold_deadlines: 1 } });
+    renderPage("group-ticketing", "/admin/bookings/group-ticketing");
+    expect(list.product).toBe("group");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^Hold deadlines:/ })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Awaiting issuance:/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Time left" })).toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Amount" })).not.toBeInTheDocument();
+  });
+
   it("tabs without recorded data say so instead of showing empty tables", () => {
-    for (const tab of ["group-ticketing", "hotels", "umrah", "inquiries-requests", "quotations"]) {
+    for (const tab of ["hotels", "inquiries-requests", "quotations"]) {
       const { unmount } = renderPage(tab, `/admin/bookings/${tab}`);
       expect(screen.getByRole("status")).toHaveTextContent(/aren't available yet/);
       expect(screen.queryByRole("table")).not.toBeInTheDocument();

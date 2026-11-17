@@ -4,12 +4,12 @@ import { cn } from "@/lib/utils";
 import { SEARCH_FIELD } from "@/components/admin/ui/search-form";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { Contact, Luggage, MessageSquare, Search, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/admin/ui/button";
 import { Input } from "@/components/admin/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TabLinks } from "@/components/admin/ui/TabLinks";
+import { ProductTabLinks } from "@/components/admin/ui/ProductTabLinks";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { DocumentDialog, MergeDialog, PersonFormDialog } from "@/components/admin/people/PersonDialogs";
@@ -27,6 +27,8 @@ import { CUSTOMERS_TABS, customersTabPath, personPath, type CustomersTab } from 
 // Agency, Branch, Last booking, Document validity, Flag, Nationality, Document expiry and
 // Customer (owner) filters, the Bookings, Flag and Notes columns, and Flag with reason.
 // Documents, dates of birth, phones and emails show in full; there is no Reveal.
+const TAB_ICONS: Record<string, LucideIcon> = { "": Contact, travelers: Luggage, communications: MessageSquare };
+
 export default function CustomersTravelersPage({ tab = "" }: { tab?: string }) {
   const current: CustomersTab = CUSTOMERS_TABS.find(entry => entry.slug === tab) ?? CUSTOMERS_TABS[0];
   const [params] = useSearchParams();
@@ -36,7 +38,7 @@ export default function CustomersTravelersPage({ tab = "" }: { tab?: string }) {
       {current.slug === "communications" ? (
         <>
           <h1 className="font-display text-page-title font-bold text-foreground">Customers &amp; Travelers</h1>
-          <TabLinks label="Customers & Travelers" tabs={CUSTOMERS_TABS.map(entry => ({ to: customersTabPath(entry, q), label: entry.label }))} />
+          <ProductTabLinks label="Customers & Travelers" tabs={CUSTOMERS_TABS.map(entry => ({ to: customersTabPath(entry, q), label: entry.label, icon: TAB_ICONS[entry.slug] }))} />
           <NotAvailableNotice title="Communications aren't available yet">
             Message history comes with the notification service. Shared WhatsApp inbox is decided after the dashboard is built.
           </NotAvailableNotice>
@@ -77,7 +79,7 @@ function PeopleRegister({ tab, q }: { tab: CustomersTab; q: string }) {
         <h1 className="font-display text-page-title font-bold text-foreground">Customers &amp; Travelers</h1>
         {customers && canManage && !forbidden && <Button onClick={() => setAdding(true)}>Add Customer</Button>}
       </div>
-      <TabLinks label="Customers & Travelers" tabs={CUSTOMERS_TABS.map(entry => ({ to: customersTabPath(entry, q), label: entry.label }))} />
+      <ProductTabLinks label="Customers & Travelers" tabs={CUSTOMERS_TABS.map(entry => ({ to: customersTabPath(entry, q), label: entry.label, icon: TAB_ICONS[entry.slug] }))} />
       {forbidden ? (
         <NotAvailableNotice title="Not available for your role">
           Saved customers and travelers are for the Travelian back office. A super admin can tell you who to ask.

@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeftRight, ArrowUpDown, Plane, PlaneLanding, PlaneTakeoff, Search, X } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ADMIN_PRODUCT_TABS } from "@/components/admin/ui/product-tabs";
+import { ADMIN_PRODUCT_TABS, productTabClass } from "@/components/admin/ui/product-tabs";
 import type { Airport } from "@/lib/admin-search/airports";
 import { cn } from "@/lib/utils";
 
@@ -158,11 +158,7 @@ export function SearchProductTabs({ active, label = "Search products" }: { activ
             key={tab.id}
             to={`/admin/search?tab=${tab.id}`}
             aria-current={tab.id === active ? "page" : undefined}
-            className={cn(
-              "flex min-h-12 min-w-0 items-center justify-center gap-2 border-b-2 px-4 text-body font-semibold transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
-              tab.id === active ? "border-primary bg-primary/5 text-primary" : "border-transparent text-muted-foreground hover:bg-card/60 hover:text-primary",
-            )}
+            className={productTabClass(tab.id === active)}
           >
             <tab.icon data-tab-icon className="h-4 w-4 shrink-0" aria-hidden="true" />{tab.label}
           </Link>

@@ -126,7 +126,8 @@ const App = () => (
             <Route path="/admin/agencies" element={<AdminLayout><AgenciesPage /></AdminLayout>} />
             <Route path="/admin/packages" element={<AdminLayout><PackagesPage /></AdminLayout>} />
             <Route path="/admin/bookings" element={<AdminLayout><BookingsRoute /></AdminLayout>} />
-            {["flights", "group-ticketing", "hotels", "umrah", "inquiries-requests", "quotations"].map(tab => (
+            <Route path="/admin/bookings/umrah" element={<Navigate to="/admin/bookings" replace />} />
+            {["flights", "group-ticketing", "hotels", "inquiries-requests", "quotations"].map(tab => (
               <Route key={tab} path={`/admin/bookings/${tab}`} element={<AdminLayout><BookingsRoute tab={tab} /></AdminLayout>} />
             ))}
             <Route path="/admin/bookings/group-ticketing/:bookingId/:tab" element={<AdminLayout><GroupBookingRoute /></AdminLayout>} />
