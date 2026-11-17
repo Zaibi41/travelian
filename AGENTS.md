@@ -1,3 +1,58 @@
+## Architecture (applies to everything)
+- The frontend is a pure SPA. All data and actions go through
+  travelian-api-gateway (/v1/...), authenticated with the user's token.
+- The frontend never calls the database, DynamoDB, a supplier or an airline
+  directly, and never calls the old unauthenticated /content/* endpoints for
+  admin screens.
+- Frontend: routing, forms, display, loading/error states, filters kept in
+  the URL. It does not compute money, profit, balances or permissions, and
+  hiding is never a security measure; the API decides what is returned.
+- Gateway: authentication, role and scope checks, field-level visibility,
+  validation, business rules, talking to other systems.
+- Endpoints are defined in the gateway as OpenAPI schemas. Generate the
+  frontend types and client from that schema so the repos cannot drift.
+- If an endpoint doesn't exist yet, hide the card or screen and add the
+  endpoint to the backend to-do list. Do not build a workaround.
+- Check docs/roadmap.md for what is planned next; do not start a later item unless asked.
+
+## Admin Dashboard Rules (admin area only)
+The rules in the sections below this one, about the public website, apply
+to customer-facing pages. They do not apply to admin screens unless stated.
+- Source of truth: docs/spec-v3.md and the approved mockup for each screen.
+  Build only screens that have a mockup. Other menus show a placeholder
+  page with the menu name.
+- Do not add any card, filter, widget or label that is not in the spec.
+  If something seems missing, ask first.
+- Theme: src/styles/admin-tokens.css (all admin tokens) and src/styles/theme.css
+  (admin layout layer), active under data-app-theme="admin". See docs/design-system.md.
+  Use theme tokens only, never hard-coded colors. Status colors (critical,
+  action, fine) always come with a text label.
+- Type: 13px body, 12px labels, nothing below 12px. Headings use
+  Plus Jakarta Sans.
+- Currency label is "Rs". Money is stored and passed as integer paisa.
+- Default date filter is "All". Needs-action cards ignore the date filter.
+- A card with no real data behind it is hidden, never shown as 0.
+  A real zero on a needs-action or risk card shows the green "fine" stripe.
+- B2C customers have no wallet. Wallets exist for B2B agencies only.
+- Supplier cost, margin and airline IDs are never returned to Agency Owner
+  roles. This is enforced by the API.
+- No chatbot functionality for now.
+- Never put credentials, passwords or secrets in the repo or in code.
+- The "Responsive Testing Rule", "Text Overflow Rule" and "Final QA Before
+  Completion" sections below also apply to admin screens. Test admin at 1440,
+  1024, 768 and 390px, and with long names (agency, airline, provider).
+- When a card, filter or widget is hidden because its data doesn't exist yet,
+  add it to docs/backend-todo.md with the endpoint or table it needs.
+- Field visibility (enforced by the gateway, never by the page):
+  - Super Admin and Admin: see provider/supplier names, supplier cost, margin.
+  - Staff: do not by default. Two grantable permissions, per role or per user:
+    "can see supplier names" and "can see cost and margin".
+  - Agency, sub-agency and customer roles: never, and this cannot be granted.
+    The gateway must not return these fields to them at all.
+  - Staff see the Owned/Supplier label on group stock, without supplier names.
+  - If a provider fails, staff see a general notice ("Some results may be
+    missing") with no provider names.
+    
 ## Travelian Product / UI Rules
 
 These rules apply when the user explicitly asks for UI, layout, styling, frontend behavior, flight results, Modify Search, homepage, footer, navbar, modal, dropdown, or responsive fixes.

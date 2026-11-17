@@ -1,0 +1,190 @@
+/*
+ * Admin design tokens: the single source for the admin's colours, type, sizes, radii, shadows,
+ * spacing, focus ring and motion. See docs/design-system.md.
+ *
+ * Scope: the admin only. Everything is under :root[data-app-theme="admin"], which AdminLayout
+ * sets on <html> while it is mounted (so dropdowns, dialogs and toasts rendered into <body> get
+ * these values too). The public website is the visual REFERENCE, not a consumer: nothing here
+ * applies to a public page, and no public file imports this one. The selector's higher
+ * specificity (:root + attribute) overrides src/index.css regardless of import order.
+ *
+ * Where the values come from
+ *   Colours: the admin's own values, unchanged (Zohaib, 2026-11-11: colours are not unified with
+ *     the public site; differences are listed in docs/design-system.md). Brand navy #00245D and
+ *     teal #01747E were measured from public/travelian-brand-logo.png.
+ *   Everything else (type scale, control heights, radii, field style, badge size, spacing, focus
+ *     ring, motion): read from the public website (Tailwind defaults it uses, src/index.css and
+ *     its search form) and copied here, so the admin looks like the public site.
+ *
+ * Rules
+ *   - Admin screens use these tokens only, through the Tailwind names in tailwind.config.ts.
+ *     No hex/rgb/hsl, arbitrary pixel font sizes or arbitrary radii in admin component files
+ *     (src/styles/admin-type-scale.test.ts fails the build).
+ *   - A status colour is never the only signal: always pair it with a text label.
+ *   - Text on a status colour uses the *-text shade on the *-soft background.
+ *
+ * Colours are HSL triples (no hsl() wrapper) so Tailwind can apply opacity:
+ *   hsl(var(--primary)) / hsl(var(--primary) / 0.5)
+ */
+
+:root[data-app-theme="admin"] {
+  /* ================= Colour (admin values, unchanged) ================= */
+
+  /* Brand (from the logo) */
+  --brand-navy: 216.8 100% 18.2%;      /* #00245D sidebar, headings, active tab, links */
+  --brand-teal: 184.8 98.4% 24.9%;     /* #01747E primary action buttons (guarded by a test) */
+
+  /* Primary action: the filled teal button (Search again, Continue, Hold, View booking).
+   * admin-type-scale.test.ts checks this stays the current teal. */
+  --action-primary: var(--brand-teal);
+  --action-primary-foreground: 0 0% 100%;  /* 5.53:1 */
+
+  /* Surfaces and text */
+  --background: 217 33% 97%;           /* #F5F7FA */
+  --foreground: 222 47% 11%;           /* #0F1729 */
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+
+  --primary: var(--brand-navy);
+  --primary-foreground: 0 0% 100%;     /* 14.91:1 */
+  --primary-hover: 217 100% 13%;       /* #001942 */
+
+  --secondary: 217 33% 95%;            /* #EEF1F6 */
+  --secondary-foreground: 222 47% 11%;
+  --muted: 217 33% 95%;                /* #EEF1F6 table header */
+  --muted-foreground: 217 12% 42%;     /* #5E6878 */
+  --accent: 217 60% 95%;               /* #EBF0FA */
+  --accent-foreground: var(--brand-navy);
+
+  --teal: var(--brand-teal);
+  --teal-foreground: 0 0% 100%;        /* 5.53:1 */
+  --teal-soft: 185 60% 94%;            /* #E7F7F9 */
+
+  --border: 217 30% 90%;               /* #DEE4ED */
+  --input: 217 30% 90%;
+  --ring: var(--brand-navy);
+
+  /* Status */
+  --destructive: 0 72% 51%;            /* #DC2828 critical */
+  --destructive-foreground: 0 0% 100%; /* 4.80:1 */
+  --warning: 38 92% 50%;               /* #F59F0A needs action */
+  --warning-foreground: 38 90% 12%;    /* #3A2603 */
+  --success: 152 60% 38%;              /* #279B65 fine */
+  --success-foreground: 152 60% 8%;    /* #082115 */
+  --info: 210 80% 52%;
+  --info-foreground: 0 0% 100%;
+
+  --status-critical: var(--destructive);
+  --status-critical-text: 0 72% 42%;   /* #B81E1E  5.67:1 on soft */
+  --status-critical-soft: 0 86% 96%;   /* #FEECEC */
+  --status-action: var(--warning);
+  --status-action-text: 38 90% 28%;    /* #885907  5.38:1 on soft */
+  --status-action-soft: 38 92% 92%;    /* #FDF0D8 */
+  --status-fine: var(--success);
+  --status-fine-text: 152 60% 28%;     /* #1D724A  5.25:1 on soft */
+  --status-fine-soft: 152 50% 93%;     /* #E4F6EE */
+
+  /* Product colours */
+  --gold: 42 78% 55%;
+  --gold-foreground: 42 78% 15%;
+  --gold-light: 42 60% 92%;
+  --whatsapp: 142 70% 49%;
+  --whatsapp-foreground: 0 0% 100%;
+  --whatsapp-hover: 142 71% 43%;
+  --deal: 0 72% 51%;
+  --deal-foreground: 0 0% 100%;
+
+  /* Sidebar */
+  --sidebar-background: var(--brand-navy);
+  --sidebar-foreground: 213 31% 91%;             /* 12.11:1 */
+  --sidebar-primary: var(--brand-teal);          /* active item */
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 217 70% 25%;                 /* #13356C hover */
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 217 70% 25%;
+  --sidebar-ring: 185 70% 50%;                   /* #26CAD9 focus on navy 7.53:1 */
+  --sidebar-muted: 215 20% 65%;                  /* 5.85:1 on navy */
+
+  /* Airline logo tile (same values as the public tile: Tailwind slate-200, slate-50, slate-900) */
+  --logo-tile-border: 214.3 31.8% 91.4%;
+  --logo-tile-fade: 210 40% 98%;
+  --logo-tile-ink: 222.2 47.4% 11.2%;
+  --logo-tile-shadow: 0 6px 18px hsl(222.2 47.4% 11.2% / 0.08);
+
+  /* Charts */
+  --chart-1: var(--brand-teal);        /* Bookings */
+  --chart-2: var(--brand-navy);        /* Issued */
+
+  /* Gradients and shadows (tinted with the admin navy; colour, so unchanged) */
+  --gradient-primary: linear-gradient(135deg, hsl(216.8 100% 18.2%), hsl(217 80% 28%));
+  --gradient-hero: linear-gradient(135deg, hsl(217 100% 10%), hsl(216.8 100% 18.2%));
+  --gradient-sidebar: linear-gradient(180deg, hsl(216.8 100% 18.2%), hsl(217 100% 14%));
+  --gradient-deal: linear-gradient(135deg, hsl(0, 72%, 51%), hsl(340, 80%, 45%));
+  --gradient-gold: linear-gradient(135deg, hsl(42, 78%, 55%), hsl(38, 92%, 50%));
+  --shadow-card: 0 1px 3px 0 hsl(216.8 100% 18.2% / 0.05), 0 1px 2px -1px hsl(216.8 100% 18.2% / 0.04);
+  --shadow-elevated: 0 10px 30px -8px hsl(216.8 100% 18.2% / 0.09), 0 4px 6px -2px hsl(216.8 100% 18.2% / 0.05);
+  --shadow-hover: 0 20px 50px -12px hsl(216.8 100% 18.2% / 0.13);
+  --shadow-premium: 0 4px 20px -4px hsl(42 78% 55% / 0.15);
+
+  /* ================= Type (public site's fonts and sizes) ================= */
+  --font-display: 'Plus Jakarta Sans', sans-serif;   /* headings */
+  --font-body: 'Inter', sans-serif;                  /* everything else */
+
+  /* Page title and big numbers 24px, smaller numbers 20px, section headings 18px, body and
+   * sidebar 14px, field labels and table text 13px, helper text and tags 12px. Nothing smaller. */
+  --text-page-title: 24px;
+  --text-kpi: 24px;
+  --text-kpi-sm: 20px;
+  --text-section: 18px;
+  --text-nav: 14px;
+  --text-body: 14px;
+  --text-table: 13px;
+  --text-label: 13px;
+  --text-helper: 12px;
+
+  /* ================= Sizes (public site's controls) ================= */
+  /* Buttons, selects, inputs and filter chips: 40px (public h-10), 44px on touch screens.
+   * Search-form fields and the search button: 48px (public search form h-12). */
+  --control-height: 40px;
+  --control-height-touch: 44px;
+  --control-height-lg: 48px;
+  --badge-height: 22px;                /* public badge: 12px text, 2px + 1px border each side */
+  --badge-padding-x: 10px;             /* public badge px-2.5 */
+
+  /* ================= Radius (public site) ================= */
+  --radius: 0.625rem;                  /* 10px cards, panels, dialogs */
+  --radius-md: 8px;                    /* buttons, inputs, selects, sidebar items */
+  --radius-sm: 6px;                    /* small chips inside a field */
+  --radius-field: 12px;                /* search-form fields and the search button (rounded-xl) */
+  --radius-pill: 9999px;               /* badges, round swap, count bubbles */
+
+  /* ================= Spacing (4px grid, public site) ================= */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --card-padding: var(--space-5);      /* public search card: 20px sides */
+  --card-gap: var(--space-3);          /* public search grid gap-3 */
+  --section-gap: var(--space-3);
+
+  /* ================= Focus ring (public site: 2px ring, 2px offset) ================= */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* ================= Motion (public site: Tailwind transition-colors) ================= */
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Touch screens: controls grow to 44px so they are easy to tap. */
+@media (pointer: coarse) {
+  :root[data-app-theme="admin"] {
+    --control-height: var(--control-height-touch);
+  }
+}

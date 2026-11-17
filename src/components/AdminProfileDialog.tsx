@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
+import { Button } from "@/components/admin/ui/button";
+import { Input } from "@/components/admin/ui/field";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/PasswordInput";
 import { useRole } from "@/contexts/RoleContext";
@@ -55,22 +55,22 @@ export function AdminProfileDialog({ action, onClose, onEdit, onRestoreFocus }: 
         <DialogDescription>{action === "password" ? "Enter your current password and choose a new one." : "Your Travelian account details."}</DialogDescription>
       </DialogHeader>
       {action === "view" ? <>
-        <dl className="min-h-0 space-y-4 overflow-y-auto p-6 text-sm">
+        <dl className="min-h-0 space-y-4 overflow-y-auto p-6 text-body">
           {[['Full name', currentUser.name], ['Email', currentUser.email], ['Account role', roleLabel(currentRole)]].map(([label, value]) => <div key={label}><dt className="text-muted-foreground">{label}</dt><dd className="mt-1 break-words font-medium">{value}</dd></div>)}
         </dl>
         <div className="flex shrink-0 justify-end gap-2 border-t px-6 py-4"><Button variant="outline" onClick={onClose}>Close</Button><Button onClick={onEdit}>Edit profile</Button></div>
       </> : <form onSubmit={submit} className="flex min-h-0 flex-col">
         <div className="min-h-0 space-y-4 overflow-y-auto p-6">
-          {!canUpdate && <p role="alert" className="text-sm text-destructive">Please sign in with your Travelian account to update these details.</p>}
+          {!canUpdate && <p role="alert" className="text-body text-destructive">Please sign in with your Travelian account to update these details.</p>}
           {action === "edit" ? <>
             <div className="space-y-2"><Label htmlFor="profile-name">Full name</Label><Input id="profile-name" name="name" autoComplete="name" required maxLength={100} value={name} onChange={event => setName(event.target.value)} disabled={busy} /></div>
-            <div className="space-y-2"><Label htmlFor="profile-email">Email</Label><Input id="profile-email" value={currentUser.email} readOnly autoComplete="email" /><p className="text-xs text-muted-foreground">Your sign-in email stays the same.</p></div>
+            <div className="space-y-2"><Label htmlFor="profile-email">Email</Label><Input id="profile-email" value={currentUser.email} readOnly autoComplete="email" /><p className="text-helper text-muted-foreground">Your sign-in email stays the same.</p></div>
           </> : <>
             <div className="space-y-2"><Label htmlFor="current-password">Current password</Label><PasswordInput id="current-password" autoComplete="current-password" required value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} disabled={busy} /></div>
             <div className="space-y-2"><Label htmlFor="new-password">New password</Label><PasswordInput id="new-password" autoComplete="new-password" required minLength={8} value={newPassword} onChange={event => setNewPassword(event.target.value)} disabled={busy} /></div>
             <div className="space-y-2"><Label htmlFor="confirm-new-password">Confirm new password</Label><PasswordInput id="confirm-new-password" autoComplete="new-password" required minLength={8} value={confirmation} onChange={event => setConfirmation(event.target.value)} disabled={busy} /></div>
           </>}
-          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+          {error && <p role="alert" className="text-body text-destructive">{error}</p>}
         </div>
         <div className="flex shrink-0 justify-end gap-2 border-t px-6 py-4"><Button type="button" variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" disabled={busy || !canUpdate}>{busy && <Loader2 aria-hidden="true" className="mr-2 h-4 w-4 animate-spin" />}{action === "edit" ? "Save changes" : "Change password"}</Button></div>
       </form>}

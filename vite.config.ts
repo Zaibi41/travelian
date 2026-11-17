@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command, isPreview }) => {
   const env = loadEnv(mode, process.cwd(), "VITE_");
   const apiUrl = env.VITE_TRAVELIAN_API_BASE_URL?.trim();
   if (!apiUrl) {
@@ -13,13 +13,29 @@ export default defineConfig(({ mode }) => {
   if (!["http:", "https:"].includes(parsedApiUrl.protocol)) {
     throw new Error("VITE_TRAVELIAN_API_BASE_URL must use HTTP or HTTPS");
   }
+  // Browsers on another computer cannot reach this machine's localhost.
+  // During development, send gateway requests through the frontend origin.
+  const gatewayUrl = env.VITE_TRAVELIAN_GATEWAY_BASE_URL?.trim();
+  const gatewayTarget = command === "serve" && !isPreview && gatewayUrl ? new URL(gatewayUrl) : undefined;
+  if (gatewayTarget && !["http:", "https:"].includes(gatewayTarget.protocol)) {
+    throw new Error("VITE_TRAVELIAN_GATEWAY_BASE_URL must use HTTP or HTTPS");
+  }
+  if (gatewayTarget?.hostname === "localhost") gatewayTarget.hostname = "127.0.0.1";
   return {
     define: {
       global: "globalThis",
+      ...(gatewayTarget ? { "import.meta.env.VITE_TRAVELIAN_GATEWAY_BASE_URL": JSON.stringify("/__gateway") } : {}),
     },
     server: {
       host: "::",
       port: 8080,
+      proxy: gatewayTarget ? {
+        "^/__gateway(?:/|$)": {
+          target: gatewayTarget.toString().replace(/\/+$/, ""),
+          changeOrigin: true,
+          rewrite: (requestPath) => requestPath.replace(/^\/__gateway(?=\/|$)/, ""),
+        },
+      } : undefined,
       hmr: {
         overlay: false,
       },

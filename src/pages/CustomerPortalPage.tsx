@@ -1,6 +1,6 @@
 import { CalendarCheck, CreditCard, Gift, Heart, LifeBuoy, User, Wallet } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/admin/ui/card";
+import { Button } from "@/components/admin/ui/button";
 import { EmptyState } from "@/components/EmptyState";
 import { getSession } from "@/lib/auth-session";
 
@@ -21,9 +21,9 @@ export default function CustomerPortalPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="rounded-3xl gradient-hero p-6 text-primary-foreground shadow-card">
-        <p className="text-sm text-primary-foreground/70">Customer Portal</p>
-        <h1 className="mt-1 text-2xl font-bold font-display">{session?.name || "Travelian Customer"}</h1>
-        <p className="mt-1 text-sm text-primary-foreground/70">{session?.email || "Manage your Travelian account, trips and support requests."}</p>
+        <p className="text-body text-primary-foreground/70">Customer Portal</p>
+        <h1 className="mt-1 text-page-title font-bold font-display">{session?.name || "Travelian Customer"}</h1>
+        <p className="mt-1 text-body text-primary-foreground/70">{session?.email || "Manage your Travelian account, trips and support requests."}</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -34,7 +34,7 @@ export default function CustomerPortalPage() {
                 <item.icon className="h-5 w-5" />
               </div>
               <h2 className="mt-4 font-bold text-foreground">{item.title}</h2>
-              <p className="mt-1 text-xs text-muted-foreground">No records available yet.</p>
+              <p className="mt-1 text-helper text-muted-foreground">No records available yet.</p>
             </CardContent>
           </Card>
         ))}

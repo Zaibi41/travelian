@@ -76,6 +76,38 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Admin-only tokens (src/styles/theme.css). Defined only under
+        // <html data-app-theme="admin">; do not use on public pages.
+        brand: {
+          navy: "hsl(var(--brand-navy))",
+          teal: "hsl(var(--brand-teal))",
+        },
+        // Admin primary action (src/styles/admin-tokens.css): the filled teal button.
+        action: {
+          DEFAULT: "hsl(var(--action-primary))",
+          foreground: "hsl(var(--action-primary-foreground))",
+        },
+        status: {
+          critical: {
+            DEFAULT: "hsl(var(--status-critical))",
+            text: "hsl(var(--status-critical-text))",
+            soft: "hsl(var(--status-critical-soft))",
+          },
+          action: {
+            DEFAULT: "hsl(var(--status-action))",
+            text: "hsl(var(--status-action-text))",
+            soft: "hsl(var(--status-action-soft))",
+          },
+          fine: {
+            DEFAULT: "hsl(var(--status-fine))",
+            text: "hsl(var(--status-fine-text))",
+            soft: "hsl(var(--status-fine-soft))",
+          },
+        },
+        chart: {
+          1: "hsl(var(--chart-1))",
+          2: "hsl(var(--chart-2))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -92,6 +124,36 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        pill: "9999px",
+        // Admin search-form fields and search button (src/styles/admin-tokens.css).
+        field: "var(--radius-field)",
+      },
+      // Admin-only type scale and sizes (src/styles/theme.css).
+      fontSize: {
+        "page-title": ["var(--text-page-title)", { lineHeight: "1.25" }],
+        kpi: ["var(--text-kpi)", { lineHeight: "1.2" }],
+        "kpi-sm": ["var(--text-kpi-sm)", { lineHeight: "1.2" }],
+        section: ["var(--text-section)", { lineHeight: "1.4" }],
+        nav: ["var(--text-nav)", { lineHeight: "1.4" }],
+        body: ["var(--text-body)", { lineHeight: "1.5" }],
+        table: ["var(--text-table)", { lineHeight: "1.4" }],
+        label: ["var(--text-label)", { lineHeight: "1.4" }],
+        helper: ["var(--text-helper)", { lineHeight: "1.4" }],
+      },
+      spacing: {
+        "content": "var(--content-padding)",
+        "card": "var(--card-padding)",
+        "card-gap": "var(--card-gap)",
+        "section-gap": "var(--section-gap)",
+        "control": "var(--control-height)",
+        "control-lg": "var(--control-height-lg)",
+        "badge-x": "var(--badge-padding-x)",
+        "nav-item": "var(--nav-item-height)",
+        "table-header": "var(--table-header-height)",
+        "table-row": "var(--table-row-height)",
+        "badge": "var(--badge-height)",
+        "admin-sidebar": "var(--admin-sidebar-width)",
+        "stripe": "var(--status-stripe)",
       },
       keyframes: {
         "accordion-down": { from: { height: "0" }, to: { height: "var(--radix-accordion-content-height)" } },

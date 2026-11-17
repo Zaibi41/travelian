@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,9 @@ import { isAdminPortalRole, roleForSession } from "@/lib/role-mapping";
 import { useRole } from "@/contexts/RoleContext";
 import { PasswordInput } from "@/components/PasswordInput";
 import { AuthAside } from "@/components/public/AuthAside";
+import { EXPIRED_MESSAGE, EXPIRED_REASON, safeReturnPath, signInDecision, type SignInDecision } from "@/lib/auth-guard";
+import { clearSession, getSession } from "@/lib/auth-session";
+import { renewSession } from "@/lib/session-renewal";
 
 
 export default function SignInPage() {
@@ -21,6 +24,27 @@ export default function SignInPage() {
   const submitting = useRef(false);
   const [errors, setErrors] = useState({ email: "", password: "" });
   const [serverError, setServerError] = useState("");
+  // Decided before the first render, so the form never flashes for someone already signed in.
+  const [gate, setGate] = useState<SignInDecision>(() => signInDecision(getSession(), searchParams.get("redirect")));
+
+  useEffect(() => {
+    if (gate.kind === "form") {
+      const stale = getSession();
+      if (stale) clearSession();                    // expired, no refresh token: nothing to keep
+      return undefined;
+    }
+    if (gate.kind !== "refresh") return undefined;
+    let live = true;
+    void renewSession().then(ok => {
+      if (!live) return;
+      if (!ok) clearSession();
+      setGate(ok ? signInDecision(getSession(), searchParams.get("redirect")) : { kind: "form" });
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- decided once per visit
+  }, [gate.kind]);
 
   const signIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -47,9 +71,9 @@ export default function SignInPage() {
       const role = roleForSession(session);
       if (role) setCurrentRole(role);
       toast.success("Welcome back");
-      const redirect = searchParams.get("redirect");
+      // Only a relative path inside /admin is followed (no other site, //host or javascript:).
       const fallback = isAdminPortalRole(role) ? "/admin" : "/admin/customer";
-      navigate(redirect && redirect.startsWith("/") ? redirect : fallback);
+      navigate(safeReturnPath(searchParams.get("redirect")) ?? fallback, { replace: true });
     } catch (error) {
       setLoading(false);
       const message = error instanceof Error ? error.message : "Sign in failed. Please try again.";
@@ -60,15 +84,21 @@ export default function SignInPage() {
     }
   };
 
+  if (gate.kind === "go") return <Navigate to={gate.to} replace />;
+  if (gate.kind === "refresh") return <p role="status" className="sr-only">Checking your session…</p>;
+
   return (
     <div data-public-page-scroll className="h-full min-h-0 overflow-y-auto travelian-hero-background">
       <div className="flex min-h-full items-center justify-center px-4 py-6 sm:px-6 sm:py-8">
         <Card className="my-auto w-full max-w-[880px] shrink-0 overflow-hidden rounded-xl border border-border/60 bg-white shadow-md">
           <CardContent className="grid p-0 lg:grid-cols-[44fr_56fr]">
-            <AuthAside variant="minimal" eyebrow="Member access" title="Welcome back" description="Manage your trips, bookings and account from one place." />
+            <AuthAside variant="minimal" eyebrowSize="text-xs" eyebrow="Member access" title="Welcome back" description="Manage your trips, bookings and account from one place." />
             <div className="px-6 py-8 sm:px-10 sm:py-10">
               <h1 className="font-display text-2xl font-semibold tracking-tight text-foreground">Sign in to Travelian</h1>
               <p className="mt-2 text-sm text-muted-foreground">Access your bookings and account.</p>
+              {searchParams.get("reason") === EXPIRED_REASON && (
+                <p role="status" className="mt-4 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-sm text-foreground">{EXPIRED_MESSAGE}</p>
+              )}
 
               <form onSubmit={signIn} noValidate aria-busy={loading} className="mt-7">
                 <div>

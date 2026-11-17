@@ -114,8 +114,6 @@ export function downloadETicket(b: BookingRecord) {
   doc.text(`${b.pricing.currency} ${b.pricing.base.toFixed(2)}`, W - 40, y, { align: "right" }); y += 16;
   doc.text("Add-ons", 40, y);
   doc.text(`${b.pricing.currency} ${b.pricing.addons.toFixed(2)}`, W - 40, y, { align: "right" }); y += 16;
-  doc.text("Taxes & fees", 40, y);
-  doc.text(`${b.pricing.currency} ${b.pricing.taxes.toFixed(2)}`, W - 40, y, { align: "right" }); y += 16;
   doc.setFont("helvetica", "bold");
   doc.text("Total Paid", 40, y);
   doc.text(`${b.pricing.currency} ${b.pricing.total.toFixed(2)}`, W - 40, y, { align: "right" }); y += 30;

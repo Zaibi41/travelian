@@ -1,3 +1,4 @@
+import { AdminFlightCheckout } from "@/components/admin/search/AdminFlightCheckout";
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -140,8 +141,14 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
   return null;
 }
 
-export default function BookingPage() {
+export default function BookingPage({ adminMode = false }: { adminMode?: boolean } = {}) {
   const [params] = useSearchParams();
+  // Admin: never use a price from the URL; booking is blocked until the gateway reprices.
+  if (adminMode && (params.get("type") === "flight" || params.get("airline"))) return <AdminFlightCheckout params={params} />;
+  return <PublicBooking params={params} />;
+}
+
+function PublicBooking({ params }: { params: URLSearchParams }) {
   const { packages, packageLoadStatus } = useAdmin();
   const productCtx = useMemo(() => buildCtx(params, { packages }), [params, packages]);
 

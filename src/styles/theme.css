@@ -1,0 +1,59 @@
+/*
+ * Admin theme: the admin design tokens plus the admin-only LAYOUT layer.
+ *
+ * - src/styles/admin-tokens.css: every colour, type size, control height, radius, shadow,
+ *   spacing step, focus ring and motion value the admin uses (the single source).
+ * - This file: only layout values the public site has no equivalent for (sidebar, header,
+ *   dense table rows, page padding). They are built from the tokens where they can be.
+ *
+ * Scope: admin only (:root[data-app-theme="admin"], set by AdminLayout). The public site keeps
+ * its own values in src/index.css and is not affected. See docs/design-system.md.
+ */
+@import './admin-tokens.css';
+
+:root[data-app-theme="admin"] {
+  /* ---------- Admin layout ---------- */
+  --admin-sidebar-width: 248px;   /* not --sidebar-width: ui/sidebar.tsx owns that name (16rem) */
+  --nav-item-height: 36px;        /* sidebar rows */
+  --content-padding: var(--space-6);
+  --status-stripe: 4px;           /* left border on KPI cards */
+
+  /* Dense tables: the one place the admin is denser than the public site. */
+  --table-header-height: 28px;
+  --table-row-height: 30px;
+}
+
+/* ---------- Search forms (Flights, Group Ticketing) ----------
+ * Measured on the form's own width (container query), so the field row also follows the sidebar being
+ * open or collapsed. Flights: trip type, Travelers and Cabin on the line above the field row.
+ */
+.admin-search-form {
+  container: admin-search / inline-size;
+}
+/* The field row of Search > Flights (line 2, under trip type, Travelers and Cabin) and Group Ticketing: From /
+ * swap / To, dates, provider (Flights, admin only) and the search button, like the public site. Fields keep
+ * compact widths and From / To take the rest; when From / To would drop below about 24rem the row wraps instead
+ * of squeezing the airports (Zohaib, 15 November 2026). Phones: every field on its own line. */
+.admin-search-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+.admin-search-row > * {
+  flex: 1 1 40rem; /* wider than a phone form: one field per line */
+  min-width: 0;
+}
+.admin-search-row > [data-size="submit"] {
+  display: grid; /* phones: the search button spans the row, as before */
+}
+@container admin-search (min-width: 560px) {
+  .admin-search-row > [data-size="route"] { flex: 1 1 24rem; }
+  .admin-search-row > [data-size="date"] { flex: 0 0 9.5rem; }
+  .admin-search-row > [data-size="provider"] { flex: 0 0 10rem; }
+  /* Search > Hotels: Destination takes the rest; Guests and rooms fits "10 guests, 9 rooms". */
+  .admin-search-row > [data-size="destination"] { flex: 1 1 12rem; }
+  .admin-search-row > [data-size="guests"] { flex: 0 0 11.5rem; }
+  .admin-search-row > [data-size="submit"] { flex: 0 0 auto; }
+  .admin-search-row > [data-size="submit"] { display: block; }
+}

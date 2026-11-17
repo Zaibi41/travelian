@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ExternalLink, KeyRound, Loader2, Pencil, Plus, Ticket, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/admin/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
+import { Input } from "@/components/admin/ui/field";
+import { Label } from "@/components/admin/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Switch } from "@/components/admin/ui/choice";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   deleteGroupTicketingCollection,
@@ -112,8 +112,8 @@ export default function GroupTicketingCollectionsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display">Group Ticketing Collections</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-page-title font-bold font-display">Group Ticketing Collections</h1>
+          <p className="text-body text-muted-foreground">
             Manage public collection names, category slugs, and supplier mappings. Changes are saved to the database and used on the website.
           </p>
         </div>
@@ -131,7 +131,7 @@ export default function GroupTicketingCollectionsPage() {
 
       <Card className="shadow-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base font-display">
+          <CardTitle className="flex items-center gap-2 text-body font-display">
             <Ticket className="h-5 w-5 text-primary" />
             Collection mapping
           </CardTitle>
@@ -162,17 +162,15 @@ export default function GroupTicketingCollectionsPage() {
                     <TableCell>
                       <Badge variant="secondary">{collection.supplierName}</Badge>
                     </TableCell>
-                    <TableCell className="font-mono text-xs">{collection.integrationProvider || "—"}</TableCell>
-                    <TableCell className="font-mono text-xs">{collection.providerId || "—"}</TableCell>
-                    <TableCell className="font-mono text-xs">{collection.slug}</TableCell>
+                    <TableCell className="font-mono text-helper">{collection.integrationProvider || "—"}</TableCell>
+                    <TableCell className="font-mono text-helper">{collection.providerId || "—"}</TableCell>
+                    <TableCell className="font-mono text-helper">{collection.slug}</TableCell>
                     <TableCell>
-                      <Link
-                        to="/admin/secrets"
-                        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                      >
-                        <KeyRound className="h-3.5 w-3.5" />
+                      {/* Secret name only (stored in AWS Parameter Store); the Secret Manager page was retired. */}
+                      <span className="inline-flex items-center gap-1 font-mono text-helper text-muted-foreground">
+                        <KeyRound aria-hidden="true" className="h-3.5 w-3.5" />
                         {collection.secretId}
-                      </Link>
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge variant={collection.enabled !== false && !collection.deletedAt ? "default" : "outline"}>
@@ -233,7 +231,7 @@ export default function GroupTicketingCollectionsPage() {
                   onChange={(event) => setForm((current) => ({ ...current, supplierName: event.target.value }))}
                   placeholder="AH"
                 />
-                <p className="text-xs text-muted-foreground">Shown in View Details, resolved by category slug.</p>
+                <p className="text-helper text-muted-foreground">Shown in View Details, resolved by category slug.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="integrationProvider">API integration</Label>
@@ -250,7 +248,7 @@ export default function GroupTicketingCollectionsPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Controls which supplier API fetches tickets. Safe to rename supplier code separately.</p>
+                <p className="text-helper text-muted-foreground">Controls which supplier API fetches tickets. Safe to rename supplier code separately.</p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
@@ -283,8 +281,8 @@ export default function GroupTicketingCollectionsPage() {
               </div>
               <div className="flex items-center justify-between rounded-xl border p-3">
                 <div>
-                  <p className="text-sm font-medium">Active on website</p>
-                  <p className="text-xs text-muted-foreground">Disabled collections are hidden from public listings.</p>
+                  <p className="text-body font-medium">Active on website</p>
+                  <p className="text-helper text-muted-foreground">Disabled collections are hidden from public listings.</p>
                 </div>
                 <Switch
                   checked={form.enabled !== false}

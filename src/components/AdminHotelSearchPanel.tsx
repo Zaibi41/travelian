@@ -4,7 +4,7 @@ import { addDays } from "date-fns";
 import { Building2, Hotel } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/admin/ui/button";
 import { EmptyState } from "@/components/EmptyState";
 import { HotelSearchBar, type HotelSearchValues } from "@/components/public/HotelSearchBar";
 import { useLocale } from "@/contexts/LocaleContext";
@@ -32,8 +32,8 @@ export function AdminHotelSearchPanel({ hotels }: { hotels: HotelModel[] }) {
       <Card className="travelian-search-card shadow-card">
         <CardContent className="space-y-5 p-5">
           <div>
-            <h2 className="text-xl font-bold font-display">Hotel Search</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Search active hotel inventory from Travelian database records.</p>
+            <h2 className="text-section font-bold font-display">Hotel Search</h2>
+            <p className="mt-1 text-body text-muted-foreground">Search active hotel inventory from Travelian database records.</p>
           </div>
           <HotelSearchBar
             initialValues={searchValues}
@@ -56,8 +56,8 @@ export function AdminHotelSearchPanel({ hotels }: { hotels: HotelModel[] }) {
                     <h3 className="font-bold">{hotel.name}</h3>
                     <Badge variant="secondary">{hotel.starRating || 0} star</Badge>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{hotel.city}, {hotel.country}</p>
-                  <p className="mt-2 text-sm text-muted-foreground">{hotel.amenities?.slice(0, 4).join(" / ") || "Amenities available on request"}</p>
+                  <p className="mt-1 text-body text-muted-foreground">{hotel.city}, {hotel.country}</p>
+                  <p className="mt-2 text-body text-muted-foreground">{hotel.amenities?.slice(0, 4).join(" / ") || "Amenities available on request"}</p>
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                     <p className="font-black text-primary">From {formatPrice(hotel.pricePerNight || 0)} / night</p>
                     <Button asChild size="sm" className="rounded-xl"><Link to={`/hotel/${hotel.hotelId}`}>View / Request</Link></Button>

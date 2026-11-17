@@ -2,14 +2,14 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { ComponentType, ReactNode } from "react";
 import { Agency, AgencyStatus } from "@/data/models";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card";
+import { Button } from "@/components/admin/ui/button";
+import { Input } from "@/components/admin/ui/field";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Building2, Search, Plus, Wallet, Users, MoreHorizontal, CheckCircle, XCircle, Ban, Pencil, Network, Mail, MapPin } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
+import { Label } from "@/components/admin/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useRole } from "@/contexts/RoleContext";
@@ -149,8 +149,8 @@ export default function AgenciesPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display">Agency Management</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-page-title font-bold font-display">Agency Management</h1>
+          <p className="text-body text-muted-foreground">
             {isAgencyOwner ? "Manage your agency branches and team users." : "Create agencies, manage branches, and control B2B partners."}
           </p>
         </div>
@@ -180,6 +180,11 @@ export default function AgenciesPage() {
         <Input placeholder="Search agencies..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
       </div>
 
+      {filtered.length === 0 && (
+        <p className="rounded-lg border border-dashed border-border bg-card p-8 text-center text-body text-muted-foreground">
+          {search.trim() ? "No agencies match your search." : "No agencies yet."}
+        </p>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map(agency => {
           const agencyUsers = users.filter(u => u.agencyId === agency.agencyId);
@@ -194,8 +199,8 @@ export default function AgenciesPage() {
                       {(agency.agencyType || "main") === "sub" ? <Network className="h-5 w-5 text-primary" /> : <Building2 className="h-5 w-5 text-primary" />}
                     </div>
                     <div className="min-w-0">
-                      <CardTitle className="text-sm font-display truncate">{agency.agencyName}</CardTitle>
-                      <p className="text-xs text-muted-foreground truncate">{agency.city || "No city"}</p>
+                      <CardTitle className="text-body font-display truncate">{agency.agencyName}</CardTitle>
+                      <p className="text-helper text-muted-foreground truncate">{agency.city || "No city"}</p>
                     </div>
                   </div>
                   {canEdit && (
@@ -239,19 +244,19 @@ export default function AgenciesPage() {
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <StatusBadge status={agency.status} />
-                  <Badge variant="outline" className="text-[10px]">
+                  <Badge variant="outline" className="text-helper">
                     {(agency.agencyType || "main") === "sub" ? "Sub agency" : "Main agency"}
                   </Badge>
                 </div>
                 {agency.parentAgencyId && (
-                  <p className="text-xs text-muted-foreground">Parent: {parentName(agency)}</p>
+                  <p className="text-helper text-muted-foreground">Parent: {parentName(agency)}</p>
                 )}
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <Metric icon={Wallet} value={`PKR ${agency.walletBalance.toLocaleString()}`} />
+                <div className="grid grid-cols-3 gap-2 text-helper">
+                  <Metric icon={Wallet} value={`Rs ${agency.walletBalance.toLocaleString()}`} />
                   <Metric icon={Users} value={`${agencyUsers.length} users`} />
                   <Metric icon={Network} value={`${subAgencies.length} subs`} />
                 </div>
-                <div className="space-y-1 text-xs text-muted-foreground">
+                <div className="space-y-1 text-helper text-muted-foreground">
                   <p className="flex items-center gap-1.5"><Mail className="h-3 w-3" /> {agency.email}</p>
                   <p className="flex items-center gap-1.5"><MapPin className="h-3 w-3" /> {agency.contactPerson || "No contact"} / {agency.commissionRate}%</p>
                 </div>
@@ -267,12 +272,12 @@ export default function AgenciesPage() {
             <DialogTitle className="font-display">{selectedAgency?.agencyName}</DialogTitle>
           </DialogHeader>
           {selectedAgency && (
-            <div className="space-y-4 text-sm">
+            <div className="space-y-4 text-body">
               <div className="grid grid-cols-2 gap-3">
                 <Info label="Status"><StatusBadge status={selectedAgency.status} /></Info>
                 <Info label="Type">{selectedAgency.agencyType === "sub" ? "Sub agency" : "Main agency"}</Info>
                 <Info label="Commission">{selectedAgency.commissionRate}%</Info>
-                <Info label="Wallet">PKR {selectedAgency.walletBalance.toLocaleString()}</Info>
+                <Info label="Wallet">Rs {selectedAgency.walletBalance.toLocaleString()}</Info>
                 <Info label="Bookings">{selectedAgency.totalBookings}</Info>
                 <Info label="Users">{users.filter(u => u.agencyId === selectedAgency.agencyId).length}</Info>
               </div>
@@ -357,8 +362,8 @@ function SummaryCard({ title, value, icon: Icon }: { title: string; value: numbe
           <Icon className="h-5 w-5 text-primary" />
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">{title}</p>
-          <p className="text-xl font-bold font-display">{value}</p>
+          <p className="text-helper text-muted-foreground">{title}</p>
+          <p className="text-kpi-sm font-bold font-display">{value}</p>
         </div>
       </CardContent>
     </Card>
@@ -386,7 +391,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function Info({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-helper text-muted-foreground">{label}</p>
       <div className="font-medium">{children}</div>
     </div>
   );

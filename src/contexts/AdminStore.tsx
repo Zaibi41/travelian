@@ -11,7 +11,6 @@ import {
   softDeletePackage as softDeleteRemotePackage,
 } from "@/lib/package-api";
 import {
-  listTickets as listRemoteTickets,
   saveTicket as saveRemoteTicket,
   softDeleteTicket as softDeleteRemoteTicket,
 } from "@/lib/ticket-api";
@@ -53,17 +52,6 @@ export interface PaymentConfig {
   testMode: boolean;
 }
 
-// Secret Key
-export interface SecretKey {
-  id: string;
-  name: string;
-  category: 'flight_api' | 'hotel_api' | 'payment' | 'sms' | 'email' | 'other';
-  value: string;
-  environment: 'production' | 'staging' | 'development';
-  lastUpdated: string;
-  createdBy: string;
-}
-
 interface AdminState {
   // Data
   bookings: Booking[];
@@ -81,7 +69,6 @@ interface AdminState {
   flightSearchLogs: FlightSearchLog[];
   paymentLinks: PaymentLink[];
   paymentConfig: PaymentConfig;
-  secretKeys: SecretKey[];
   walletLedger: WalletLedgerEntry[];
   walletDeposits: WalletDepositRequest[];
   paymentWebhookEvents: PaymentWebhookEvent[];
@@ -167,17 +154,12 @@ interface AdminState {
   // Payment config
   updatePaymentConfig: (cfg: Partial<PaymentConfig>) => void;
 
-  // Secret keys
-  addSecretKey: (sk: SecretKey) => void;
-  updateSecretKey: (id: string, data: Partial<SecretKey>) => void;
-  deleteSecretKey: (id: string) => void;
 }
 
 const AdminContext = createContext<AdminState | undefined>(undefined);
 
 const initialSearchLogs: FlightSearchLog[] = [];
 const initialPaymentLinks: PaymentLink[] = [];
-const initialSecretKeys: SecretKey[] = [];
 const WALLET_LEDGER_STORAGE_KEY = "travelian:wallet-ledger";
 const WALLET_DEPOSITS_STORAGE_KEY = "travelian:wallet-deposits";
 const PAYMENT_WEBHOOK_STORAGE_KEY = "travelian:payment-webhook-events";
@@ -196,8 +178,9 @@ function loadStoredArray<T>(key: string): T[] {
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const { pathname, search } = useLocation();
-  const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
-  const needsUmrah = isAdmin || pathname.startsWith("/umrah") || pathname === "/request-booking" || (pathname === "/booking" && new URLSearchParams(search).get("type") === "umrah");
+  // The admin no longer loads Umrah packages (Umrah is hidden) or the old /content/tickets list (tickets come
+  // from the gateway): those /content calls failed on every admin page.
+  const needsUmrah = pathname.startsWith("/umrah") || pathname === "/request-booking" || (pathname === "/booking" && new URLSearchParams(search).get("type") === "umrah");
   const [packageLoadStatus, setPackageLoadStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [flights, setFlights] = useState<Flight[]>([]);
@@ -216,7 +199,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     cardEnabled: true, walletEnabled: true, bankTransferEnabled: true,
     visaEnabled: true, mastercardEnabled: true, testMode: true,
   });
-  const [secretKeys, setSecretKeys] = useState<SecretKey[]>(initialSecretKeys);
   const [walletLedger, setWalletLedger] = useState<WalletLedgerEntry[]>(() => loadStoredArray<WalletLedgerEntry>(WALLET_LEDGER_STORAGE_KEY));
   const [walletDeposits, setWalletDeposits] = useState<WalletDepositRequest[]>(() => loadStoredArray<WalletDepositRequest>(WALLET_DEPOSITS_STORAGE_KEY));
   const [paymentWebhookEvents, setPaymentWebhookEvents] = useState<PaymentWebhookEvent[]>(() => loadStoredArray<PaymentWebhookEvent>(PAYMENT_WEBHOOK_STORAGE_KEY));
@@ -244,13 +226,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     });
     return () => { cancelled = true; };
   }, [needsUmrah]);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    let cancelled = false;
-    void listRemoteTickets().then(items => { if (!cancelled) setTickets(items); }).catch(() => {});
-    return () => { cancelled = true; };
-  }, [isAdmin]);
 
   // Hotel content is loaded on demand via loadHotelContent (Home, admin hotel search).
   useEffect(() => {
@@ -526,16 +501,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   // Payment config
   const updatePaymentConfig = useCallback((cfg: Partial<PaymentConfig>) => setPaymentConfig(p => ({ ...p, ...cfg })), []);
 
-  // Secret keys
-  const addSecretKey = useCallback((sk: SecretKey) => setSecretKeys(p => [...p, sk]), []);
-  const updateSecretKey = useCallback((id: string, data: Partial<SecretKey>) => setSecretKeys(p => p.map(sk => sk.id === id ? { ...sk, ...data } : sk)), []);
-  const deleteSecretKey = useCallback((id: string) => setSecretKeys(p => p.filter(sk => sk.id !== id)), []);
-
   return (
     <AdminContext.Provider value={{
       bookings, flights, hotels, agencies, transactions, notifications, tickets, users,
       packageLoadStatus, packages, coupons, blogPosts, flightSearchLogs, paymentLinks,
-      paymentConfig, secretKeys, walletLedger, walletDeposits, paymentWebhookEvents,
+      paymentConfig, walletLedger, walletDeposits, paymentWebhookEvents,
       loadHotelContent,
       updateBookingStatus, addBooking, deleteBooking,
       addFlight, updateFlight, deleteFlight,
@@ -548,7 +518,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       addPackage, updatePackage, deletePackage,
       addCoupon, updateCoupon, deleteCoupon,
       addFlightSearchLog, addPaymentLink, updatePaymentLink,
-      updatePaymentConfig, addSecretKey, updateSecretKey, deleteSecretKey,
+      updatePaymentConfig,
     }}>
       {children}
     </AdminContext.Provider>

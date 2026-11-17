@@ -1,22 +1,22 @@
 import { useMemo, useState } from "react";
 import { useAdmin } from "@/contexts/AdminStore";
 import { useRole } from "@/contexts/RoleContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card";
+import { Button } from "@/components/admin/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Wallet, ArrowUpRight, ArrowDownRight, Plus, Building2, ShieldCheck, CheckCircle, XCircle, Download, Landmark, CreditCard, Link2, RotateCcw } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
+import { Input } from "@/components/admin/ui/field";
+import { Label } from "@/components/admin/ui/field";
+import { Textarea } from "@/components/admin/ui/field";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 type DepositMethod = "card" | "1link" | "bank_transfer";
 type AdjustmentType = "credit" | "debit";
 
-const formatPkr = (amount: number) => `PKR ${Math.max(0, amount).toLocaleString()}`;
+const formatPkr = (amount: number) => `Rs ${Math.max(0, amount).toLocaleString()}`;
 
 const methodLabels: Record<string, string> = {
   card: "Card",
@@ -98,7 +98,7 @@ export default function WalletPage() {
 
   const submitDeposit = () => {
     const amount = Number(depositAmount);
-    if (!depositAgencyId || !amount || amount <= 0) return toast.error("Select agency and enter a valid PKR amount");
+    if (!depositAgencyId || !amount || amount <= 0) return toast.error("Select agency and enter a valid Rs amount");
     if (depositMethod === "bank_transfer" && !depositReference.trim()) return toast.error("Bank transfer reference is required");
     const deposit = createWalletDeposit({
       agencyId: depositAgencyId,
@@ -162,8 +162,8 @@ export default function WalletPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display">Wallet Ledger</h1>
-          <p className="text-sm text-muted-foreground">Agency wallet deposits, approvals and immutable PKR ledger activity</p>
+          <h1 className="text-page-title font-bold font-display">Wallet Ledger</h1>
+          <p className="text-body text-muted-foreground">Agency wallet deposits, approvals and immutable Rs ledger activity</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button className="gradient-primary text-primary-foreground gap-2" onClick={() => openDeposit("card")}><CreditCard className="h-4 w-4" /> Card Deposit</Button>
@@ -183,22 +183,22 @@ export default function WalletPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="shadow-card">
-          <CardHeader><CardTitle className="text-base font-display">Agency Balances</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-body font-display">Agency Balances</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            {agencyBalances.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">No active agency wallets are available.</p>}
+            {agencyBalances.length === 0 && <p className="py-6 text-center text-body text-muted-foreground">No active agency wallets are available.</p>}
             {agencyBalances.map(agency => (
               <div key={agency.agencyId} className="rounded-xl border p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent"><Building2 className="h-4 w-4 text-primary" /></div>
                     <div>
-                      <p className="text-sm font-semibold">{agency.agencyName}</p>
-                      <p className="text-xs text-muted-foreground">{agency.city}</p>
+                      <p className="text-body font-semibold">{agency.agencyName}</p>
+                      <p className="text-helper text-muted-foreground">{agency.city}</p>
                     </div>
                   </div>
-                  <p className="text-sm font-bold text-primary">{formatPkr(agency.availableBalance)}</p>
+                  <p className="text-body font-bold text-primary">{formatPkr(agency.availableBalance)}</p>
                 </div>
-                {agency.pendingBalance > 0 && <p className="mt-2 text-xs text-amber-600">Pending verification: {formatPkr(agency.pendingBalance)}</p>}
+                {agency.pendingBalance > 0 && <p className="mt-2 text-helper text-amber-600">Pending verification: {formatPkr(agency.pendingBalance)}</p>}
               </div>
             ))}
           </CardContent>
@@ -206,17 +206,17 @@ export default function WalletPage() {
 
         <Card className="shadow-card lg:col-span-2">
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <CardTitle className="text-base font-display">Pending Deposit Queue</CardTitle>
+            <CardTitle className="text-body font-display">Pending Deposit Queue</CardTitle>
             <Badge variant="secondary">{pendingDeposits.length} pending</Badge>
           </CardHeader>
           <CardContent className="space-y-3">
-            {pendingDeposits.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">No pending bank transfer deposits.</p>}
+            {pendingDeposits.length === 0 && <p className="py-8 text-center text-body text-muted-foreground">No pending bank transfer deposits.</p>}
             {pendingDeposits.map(deposit => (
               <div key={deposit.depositId} className="flex flex-col gap-3 rounded-xl border p-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="font-semibold">{deposit.agencyName} · {formatPkr(deposit.amount)}</p>
-                  <p className="text-sm text-muted-foreground">Reference: {deposit.reference} · {deposit.transferDate || "Transfer date not set"}</p>
-                  {deposit.proofUrl && <p className="text-xs text-muted-foreground">Proof: {deposit.proofUrl}</p>}
+                  <p className="text-body text-muted-foreground">Reference: {deposit.reference} · {deposit.transferDate || "Transfer date not set"}</p>
+                  {deposit.proofUrl && <p className="text-helper text-muted-foreground">Proof: {deposit.proofUrl}</p>}
                 </div>
                 {isSuperAdmin && (
                   <div className="flex gap-2">
@@ -232,7 +232,7 @@ export default function WalletPage() {
 
       <Card className="shadow-card">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-base font-display">Transaction Ledger</CardTitle>
+          <CardTitle className="text-body font-display">Transaction Ledger</CardTitle>
           <div className="flex flex-wrap gap-2">
             {!isAgencyUser && (
               <Select value={agencyFilter} onValueChange={setAgencyFilter}>
@@ -247,7 +247,7 @@ export default function WalletPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-2">
-          {filteredLedger.length === 0 && <p className="py-8 text-center text-sm text-muted-foreground">No approved ledger entries yet.</p>}
+          {filteredLedger.length === 0 && <p className="py-8 text-center text-body text-muted-foreground">No approved ledger entries yet.</p>}
           {filteredLedger.map(entry => (
             <div key={entry.ledgerId} className="flex flex-col gap-3 rounded-xl border p-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-start gap-3">
@@ -256,12 +256,12 @@ export default function WalletPage() {
                 </div>
                 <div>
                   <p className="font-semibold">{entry.description}</p>
-                  <p className="text-xs text-muted-foreground">{entry.agencyName} · {new Date(entry.createdAt).toLocaleString()} · {methodLabels[entry.method] || entry.method} · {entry.reference}</p>
+                  <p className="text-helper text-muted-foreground">{entry.agencyName} · {new Date(entry.createdAt).toLocaleString()} · {methodLabels[entry.method] || entry.method} · {entry.reference}</p>
                 </div>
               </div>
               <div className="text-right">
                 <p className={`font-bold ${entry.type === "credit" ? "text-success" : "text-destructive"}`}>{entry.type === "credit" ? "+" : "-"}{formatPkr(entry.amount)}</p>
-                <p className="text-xs text-muted-foreground">Balance: {formatPkr(entry.balanceAfter)}</p>
+                <p className="text-helper text-muted-foreground">Balance: {formatPkr(entry.balanceAfter)}</p>
               </div>
             </div>
           ))}
@@ -283,13 +283,13 @@ export default function WalletPage() {
                   </Select>
                 </div>
               )}
-              <div className="space-y-2"><Label>Amount (PKR)</Label><Input type="number" value={depositAmount} onChange={event => setDepositAmount(event.target.value)} /></div>
+              <div className="space-y-2"><Label>Amount (Rs)</Label><Input type="number" value={depositAmount} onChange={event => setDepositAmount(event.target.value)} /></div>
               <div className="space-y-2"><Label>Reference</Label><Input value={depositReference} onChange={event => setDepositReference(event.target.value)} placeholder={depositMethod === "bank_transfer" ? "Bank transaction ID" : "Auto generated if blank"} /></div>
             </div>
-            <TabsContent value="card" className="mt-4 rounded-xl border p-4 text-sm text-muted-foreground">Card payments are treated as confirmed payment callbacks in this v1 UI and automatically credit the ledger once submitted.</TabsContent>
-            <TabsContent value="1link" className="mt-4 rounded-xl border p-4 text-sm text-muted-foreground">1Link payments generate a provider reference and automatically credit after the simulated success callback.</TabsContent>
+            <TabsContent value="card" className="mt-4 rounded-xl border p-4 text-body text-muted-foreground">Card payments are treated as confirmed payment callbacks in this v1 UI and automatically credit the ledger once submitted.</TabsContent>
+            <TabsContent value="1link" className="mt-4 rounded-xl border p-4 text-body text-muted-foreground">1Link payments generate a provider reference and automatically credit after the simulated success callback.</TabsContent>
             <TabsContent value="bank_transfer" className="mt-4 space-y-4">
-              <div className="rounded-xl border bg-muted/40 p-4 text-sm">
+              <div className="rounded-xl border bg-muted/40 p-4 text-body">
                 <p className="font-semibold text-foreground">Travelian bank transfer</p>
                 <p className="text-muted-foreground">Transfer to the owner/business account configured by finance, then submit the transaction reference for Super Admin verification.</p>
               </div>
@@ -310,7 +310,7 @@ export default function WalletPage() {
           <div className="space-y-4">
             <div className="space-y-2"><Label>Agency</Label><Select value={adjustmentAgencyId} onValueChange={setAdjustmentAgencyId}><SelectTrigger><SelectValue placeholder="Select agency" /></SelectTrigger><SelectContent>{activeAgencies.map(a => <SelectItem key={a.agencyId} value={a.agencyId}>{a.agencyName}</SelectItem>)}</SelectContent></Select></div>
             <div className="space-y-2"><Label>Type</Label><Select value={adjustmentType} onValueChange={(value) => setAdjustmentType(value as AdjustmentType)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="credit">Credit</SelectItem><SelectItem value="debit">Debit</SelectItem></SelectContent></Select></div>
-            <div className="space-y-2"><Label>Amount (PKR)</Label><Input type="number" value={adjustmentAmount} onChange={event => setAdjustmentAmount(event.target.value)} /></div>
+            <div className="space-y-2"><Label>Amount (Rs)</Label><Input type="number" value={adjustmentAmount} onChange={event => setAdjustmentAmount(event.target.value)} /></div>
             <div className="space-y-2"><Label>Reason</Label><Textarea rows={3} value={adjustmentReason} onChange={event => setAdjustmentReason(event.target.value)} placeholder="Required audit reason" /></div>
             <Button onClick={submitAdjustment} className="w-full gradient-primary text-primary-foreground">Post Ledger Entry</Button>
           </div>
@@ -326,8 +326,8 @@ function Metric({ title, value, icon: Icon }: { title: string; value: string; ic
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="mt-1 text-2xl font-bold font-display">{value}</p>
+            <p className="text-body text-muted-foreground">{title}</p>
+            <p className="mt-1 text-kpi font-bold font-display">{value}</p>
           </div>
           <div className="rounded-lg bg-accent p-2.5"><Icon className="h-5 w-5 text-primary" /></div>
         </div>

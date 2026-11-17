@@ -3,11 +3,17 @@ import { ChevronRight, Globe } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
-import { getNavigationForRole, roleLabel } from "@/lib/admin-navigation";
+import { getInternalSidebarForRole, getNavigationForRole, isInternalRole, sidebarPathFor, type AdminNavItem } from "@/lib/admin-navigation";
+
+interface SidebarSection {
+  category: string;
+  items: AdminNavItem[];
+  /** Menu icon (internal roles only). No number chips: removed at the user's request. */
+  icon?: AdminNavItem["icon"];
+}
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Sidebar,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -19,10 +25,18 @@ export function AdminSidebar() {
   const { state, isMobile } = useSidebar();
   const collapsed = state === "collapsed" && !isMobile;
   const location = useLocation();
-  const { currentRole, currentUser } = useRole();
-  const sections = useMemo(() => getNavigationForRole(currentRole), [currentRole]);
+  const { currentRole } = useRole();
+  // Internal roles: the 14 spec menus. Agency and customer roles: unchanged sidebar.
+  const internal = isInternalRole(currentRole);
+  const sections = useMemo<SidebarSection[]>(
+    () => internal
+      ? getInternalSidebarForRole(currentRole).map((menu) => ({ category: menu.title, items: menu.items, icon: menu.icon }))
+      : getNavigationForRole(currentRole),
+    [currentRole, internal],
+  );
+  const currentPath = sidebarPathFor(location.pathname);
   const isPathActive = (path: string) =>
-    path === "/admin" ? location.pathname === "/admin" : location.pathname === path || location.pathname.startsWith(`${path}/`);
+    path === "/admin" ? currentPath === "/admin" : currentPath === path || currentPath.startsWith(`${path}/`);
   const activeItemKey = useMemo(() => {
     for (const section of sections) {
       const item = section.items.find((candidate) => isPathActive(candidate.url));
@@ -44,7 +58,17 @@ export function AdminSidebar() {
     setOpenGroups(categoryToOpen ? { [categoryToOpen]: true } : {});
   }, [activeCategory, currentRole, sections]);
 
-  const allItems = sections.flatMap((section) => section.items.map((item) => ({ ...item, category: section.category })));
+  // Collapsed sidebar. Internal roles: one icon per menu (opens its first screen,
+  // highlighted while on any of its screens). Others: one icon per item, as before.
+  const allItems = internal
+    ? sections.map((section) => ({
+      ...section.items[0],
+      title: section.category,
+      icon: section.icon ?? section.items[0].icon,
+      category: section.category,
+      menuActive: section.items.some((item) => isPathActive(item.url)),
+    }))
+    : sections.flatMap((section) => section.items.map((item) => ({ ...item, category: section.category, menuActive: undefined as boolean | undefined })));
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border/70">
@@ -65,28 +89,31 @@ export function AdminSidebar() {
               <SidebarMenuItem key={`collapsed-${item.url}-${item.title}`}>
               <SidebarMenuButton
                   asChild
-                  isActive={isActive(item.category, item.url, item.title)}
+                  isActive={item.menuActive ?? isActive(item.category, item.url, item.title)}
                   tooltip={item.title}
-                  className="mx-auto h-10 w-10 rounded-xl p-0 data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                  className="mx-auto h-10 w-10 rounded-xl p-0 data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                 >
-                  <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground" className="flex h-full w-full items-center justify-center">
+                  <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-sidebar-primary-foreground" className="flex h-full w-full items-center justify-center">
                     <item.icon className="h-5 w-5 shrink-0" />
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
-            <SidebarMenuItem className="mt-2 border-t border-sidebar-border/60 pt-2">
-              <SidebarMenuButton asChild tooltip="View Public Site" className="mx-auto h-10 w-10 rounded-xl p-0">
-                <Link to="/" className="flex items-center justify-center text-sidebar-muted hover:text-sidebar-accent-foreground">
-                  <Globe className="h-5 w-5 shrink-0" />
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            {!internal && (
+              <SidebarMenuItem className="mt-2 border-t border-sidebar-border/60 pt-2">
+                <SidebarMenuButton asChild tooltip="View Public Site" className="mx-auto h-10 w-10 rounded-xl p-0">
+                  <Link to="/" className="flex items-center justify-center text-sidebar-muted hover:text-sidebar-accent-foreground">
+                    <Globe className="h-5 w-5 shrink-0" />
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         ) : (
           <div className="space-y-1">
             {sections.map((section) => {
-              if (section.items.length === 1 && directCategories.has(section.category)) {
+              const direct = internal ? section.items.length === 1 : section.items.length === 1 && directCategories.has(section.category);
+              if (direct) {
                 const item = section.items[0];
                 return (
                   <SidebarMenu key={section.category} className="gap-0.5">
@@ -94,11 +121,11 @@ export function AdminSidebar() {
                       <SidebarMenuButton
                         asChild
                         isActive={isActive(section.category, item.url, item.title)}
-                        className="h-10 rounded-xl px-2.5 text-[14px] font-bold data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                        className="h-10 rounded-xl px-2.5 text-nav font-bold data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                       >
                         <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground font-bold">
-                          <item.icon className="h-5 w-5 shrink-0" />
-                          <span>{item.title}</span>
+                          {!internal && <item.icon className="h-5 w-5 shrink-0" />}
+                          <span className="min-w-0 break-words">{internal ? section.category : item.title}</span>
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -112,8 +139,14 @@ export function AdminSidebar() {
                   open={open}
                   onOpenChange={(nextOpen) => setOpenGroups(nextOpen ? { [section.category]: true } : {})}
                 >
-                  <CollapsibleTrigger className="group flex h-9 w-full items-center justify-between rounded-lg px-2.5 text-[12px] font-bold uppercase tracking-[0.04em] text-sidebar-muted transition-colors hover:bg-sidebar-accent/55 hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent/80 data-[state=open]:text-sidebar-accent-foreground">
-                    <span>{section.category}</span>
+                  <CollapsibleTrigger
+                    className={internal
+                      ? "group flex h-10 w-full items-center justify-between gap-2 rounded-xl px-2.5 text-nav font-bold text-sidebar-foreground transition-colors hover:bg-sidebar-accent/80 data-[state=open]:bg-sidebar-accent/60"
+                      : "group flex h-9 w-full items-center justify-between rounded-lg px-2.5 text-label font-bold uppercase tracking-[0.04em] text-sidebar-muted transition-colors hover:bg-sidebar-accent/55 hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent/80 data-[state=open]:text-sidebar-accent-foreground"}
+                  >
+                    {internal
+                      ? <span className="min-w-0 break-words text-left">{section.category}</span>
+                      : <span>{section.category}</span>}
                     <ChevronRight className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-90" />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="ml-2 overflow-hidden border-l border-sidebar-border/70 pl-1.5 data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
@@ -123,10 +156,10 @@ export function AdminSidebar() {
                           <SidebarMenuButton
                             asChild
                             isActive={isActive(section.category, item.url, item.title)}
-                            className="h-9 rounded-xl px-2.5 text-[13.5px] font-semibold data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
+                            className="h-9 rounded-xl px-2.5 text-nav font-semibold data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                           >
                             <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground font-semibold">
-                              <item.icon className="h-5 w-5 shrink-0" />
+                              {!internal && <item.icon className="h-5 w-5 shrink-0" />}
                               <span>{item.title}</span>
                             </NavLink>
                           </SidebarMenuButton>
@@ -138,34 +171,23 @@ export function AdminSidebar() {
               );
             })}
 
-            <div className="mt-2 border-t border-sidebar-border/60 pt-2">
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild className="h-8 rounded-xl px-2.5 text-[12.5px]">
-                    <Link to="/" className="flex items-center gap-2 text-sidebar-muted hover:text-sidebar-accent-foreground">
-                      <Globe className="h-4 w-4 shrink-0" />
-                      <span>View Public Site</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </div>
+            {!internal && (
+              <div className="mt-2 border-t border-sidebar-border/60 pt-2">
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild className="h-8 rounded-xl px-2.5 text-label">
+                      <Link to="/" className="flex items-center gap-2 text-sidebar-muted hover:text-sidebar-accent-foreground">
+                        <Globe className="h-4 w-4 shrink-0" />
+                        <span>View Public Site</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      <SidebarFooter className="mt-auto border-t border-sidebar-border/60 p-3">
-        {!collapsed && (
-          <div className="rounded-xl border border-sidebar-border/70 bg-sidebar-accent/80 p-2.5 shadow-sm">
-            <p className="text-[10px] uppercase tracking-[0.08em] text-sidebar-muted">Logged in as</p>
-            <p className="mt-1 truncate text-sm font-semibold text-sidebar-accent-foreground">{currentUser.name}</p>
-            <p className="mt-0.5 truncate text-[11px] text-sidebar-muted">
-              {roleLabel(currentRole)}
-              {currentUser.agencyName && ` - ${currentUser.agencyName}`}
-            </p>
-          </div>
-        )}
-      </SidebarFooter>
     </Sidebar>
   );
 }

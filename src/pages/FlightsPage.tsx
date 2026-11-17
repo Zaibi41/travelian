@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Activity, AlertTriangle, BarChart3, Pencil, Plus, ShieldCheck, SlidersHorizontal, Tags, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/admin/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card";
+import { Input } from "@/components/admin/ui/field";
+import { Label } from "@/components/admin/ui/field";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/EmptyState";
@@ -150,8 +150,8 @@ export default function FlightsPage() {
       <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold font-display">Flight Pricing & Rules</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-page-title font-bold font-display">Flight Pricing & Rules</h1>
+          <p className="text-body text-muted-foreground">
             Apply server-side pricing adjustments to live API fares by provider, airline, route, cabin or agency.
           </p>
         </div>
@@ -172,10 +172,10 @@ export default function FlightsPage() {
             </div>
             <div className="min-w-0 flex-1 space-y-2">
               <h3 className="font-bold">Airline-Based Promotions</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-body text-muted-foreground">
                 Apply different discounts per airline, regardless of which provider returns them. 
-                Example: <span className="font-semibold">Airblue flights get PKR 200 off</span>, 
-                <span className="font-semibold ml-1">Air Arabia flights get PKR 100 off</span>, 
+                Example: <span className="font-semibold">Airblue flights get Rs 200 off</span>, 
+                <span className="font-semibold ml-1">Air Arabia flights get Rs 100 off</span>, 
                 other airlines unchanged.
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
@@ -199,7 +199,7 @@ export default function FlightsPage() {
                   <Badge variant="secondary">Enabled</Badge>
                 </div>
                 <h3 className="mt-4 font-bold text-foreground">{providerLabel(provider)}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">Available in the production flight-search provider registry.</p>
+                <p className="mt-1 text-helper text-muted-foreground">Available in the production flight-search provider registry.</p>
               </CardContent>
             </Card>
           ))}
@@ -221,7 +221,7 @@ export default function FlightsPage() {
         <TabsContent value="markup" className="grid gap-5 xl:grid-cols-[1fr_420px]">
           <Card id="create-flight-pricing-rule" className="scroll-mt-6 shadow-card">
             <CardHeader>
-              <CardTitle className="text-base font-display">{editingRuleId ? "Edit pricing rule" : "Create pricing rule"}</CardTitle>
+              <CardTitle className="text-body font-display">{editingRuleId ? "Edit pricing rule" : "Create pricing rule"}</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -244,14 +244,14 @@ export default function FlightsPage() {
                 <Input inputMode="decimal" type="text" value={percentage} onChange={(event) => updatePricingText(event.target.value, setPercentage, true)} />
               </div>
               <div className="space-y-2">
-                <Label>Fixed PKR adjustment</Label>
+                <Label>Fixed Rs adjustment</Label>
                 <Input inputMode="decimal" type="text" value={fixedAmount} onChange={(event) => updatePricingText(event.target.value, setFixedAmount, true)} />
-                <p className="text-xs text-muted-foreground">Use a signed value. Example: <span className="font-semibold text-foreground">-500</span> reduces each matching fare by PKR 500.</p>
+                <p className="text-helper text-muted-foreground">Use a signed value. Example: <span className="font-semibold text-foreground">-500</span> reduces each matching fare by Rs 500.</p>
               </div>
               <div className="space-y-2">
                 <Label>Minimum margin protection</Label>
                 <Input inputMode="decimal" type="text" value={minimumMargin} onChange={(event) => updatePricingText(event.target.value, setMinimumMargin, false)} />
-                <p className="text-xs text-muted-foreground">Keep this at 0 when a negative supplier adjustment must be applied.</p>
+                <p className="text-helper text-muted-foreground">Keep this at 0 when a negative supplier adjustment must be applied.</p>
               </div>
               <div className="flex items-end">
                 <Button className="w-full gradient-primary text-primary-foreground" disabled={saving} onClick={saveRule}>
@@ -262,9 +262,9 @@ export default function FlightsPage() {
           </Card>
           <PricingBreakdownCard rule={draftRule} baseCost={baseFare} discount={discount} />
           <div className="space-y-3 xl:col-span-2">
-            <h2 className="text-base font-bold font-display">Saved flight pricing rules</h2>
+            <h2 className="text-body font-bold font-display">Saved flight pricing rules</h2>
             {loading ? (
-              <Card className="shadow-card"><CardContent className="p-5 text-sm text-muted-foreground">Loading pricing rules...</CardContent></Card>
+              <Card className="shadow-card"><CardContent className="p-5 text-body text-muted-foreground">Loading pricing rules...</CardContent></Card>
             ) : rules.length === 0 ? (
               <EmptyState
                 icon={SlidersHorizontal}
@@ -281,9 +281,9 @@ export default function FlightsPage() {
                           <h3 className="font-bold text-foreground">{rule.name}</h3>
                           <Badge variant="secondary">{titleCase(rule.scope)}</Badge>
                         </div>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          {rule.percentage}% + PKR {rule.fixedAmount.toLocaleString()} adjustment
-                          {rule.minimumMargin > 0 ? ` · minimum margin PKR ${rule.minimumMargin.toLocaleString()}` : ""}
+                        <p className="mt-2 text-body text-muted-foreground">
+                          {rule.percentage}% + Rs {rule.fixedAmount.toLocaleString()} adjustment
+                          {rule.minimumMargin > 0 ? ` · minimum margin Rs ${rule.minimumMargin.toLocaleString()}` : ""}
                         </p>
                       </div>
                       <div className="flex shrink-0 gap-2">
@@ -320,8 +320,8 @@ export default function FlightsPage() {
           ) : (
             <Card className="shadow-card">
               <CardContent className="overflow-x-auto p-0">
-                <table className="w-full min-w-[760px] text-left text-sm">
-                  <thead className="border-b bg-muted/40 text-xs uppercase text-muted-foreground">
+                <table className="w-full min-w-[760px] text-left text-body">
+                  <thead className="border-b bg-muted/40 text-helper uppercase text-muted-foreground">
                     <tr><th className="p-3">Route</th><th className="p-3">Trip</th><th className="p-3">Departure</th><th className="p-3">Return</th><th className="p-3">Providers</th><th className="p-3">Status</th><th className="p-3">Time</th></tr>
                   </thead>
                   <tbody>
@@ -331,9 +331,9 @@ export default function FlightsPage() {
                         <td className="p-3 capitalize">{log.tripType}</td>
                         <td className="p-3">{log.departureDate}</td>
                         <td className="p-3">{log.returnDate || "-"}</td>
-                        <td className="p-3 text-xs text-muted-foreground">{Object.entries(log.providers || {}).map(([provider, status]) => `${provider}: ${status}`).join(", ")}</td>
+                        <td className="p-3 text-helper text-muted-foreground">{Object.entries(log.providers || {}).map(([provider, status]) => `${provider}: ${status}`).join(", ")}</td>
                         <td className="p-3"><Badge variant={log.status === "error" ? "destructive" : "secondary"}>{log.status.replace("_", " ")}</Badge></td>
-                        <td className="p-3 text-xs text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</td>
+                        <td className="p-3 text-helper text-muted-foreground">{new Date(log.createdAt).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -346,7 +346,7 @@ export default function FlightsPage() {
         <TabsContent value="simulator" className="grid gap-5 xl:grid-cols-[1fr_420px]">
           <Card className="shadow-card">
             <CardHeader>
-              <CardTitle className="text-base font-display">Fare preview / simulator</CardTitle>
+              <CardTitle className="text-body font-display">Fare preview / simulator</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -396,7 +396,7 @@ function RuleTarget({ scope, providers, value, onChange }: { scope: MarkupScope;
               size="sm"
               variant={value.toLowerCase() === airline.name.toLowerCase() || value.toUpperCase() === airline.code ? "default" : "outline"}
               onClick={() => onChange(airline.name)}
-              className="text-xs"
+              className="text-helper"
             >
               {airline.label}
             </Button>
@@ -408,7 +408,7 @@ function RuleTarget({ scope, providers, value, onChange }: { scope: MarkupScope;
           placeholder={targetPlaceholder(scope)}
           className="mt-2"
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="text-helper text-muted-foreground">
           Select a common airline or type airline name/code. Discount applies to all fares from this airline, regardless of provider.
         </p>
       </div>

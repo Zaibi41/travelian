@@ -37,11 +37,16 @@ deploy-lambda*.zip
 # TypeScript incremental build cache
 *.tsbuildinfo
 
-# Local-only automated tests
-*.test.*
-*.spec.*
-/e2e/
-
 # Local-only design and UI behavior notes
 /DESIGN.md
 /UX-CONTRACT.md
+
+# Data and exports in docs/ stay local (they can hold customer data or
+# credentials). Markdown docs such as the spec and roadmap are tracked.
+docs/*.csv
+docs/*.xlsx
+docs/*.xls
+docs/*.zip
+docs/*.json
+docs/postman/
+docs/exports/

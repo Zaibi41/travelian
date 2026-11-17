@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AirlineLogo } from "@/components/public/AirlineLogo";
 import { SearchPageHero } from "@/components/public/SearchPageShell";
+import { GROUP_FARE_NOTICE, GROUP_FARE_REFUND } from "@/lib/group-fare-terms";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { SearchTabs } from "@/components/public/SearchTabs";
 import { whatsappUrl } from "@/lib/site-config";
@@ -413,6 +414,7 @@ function GroupCard({
               <div className="text-left sm:text-right">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase">Fixed Fare</p>
                 <p className="text-xl font-black text-primary leading-tight">{formattedPrice}</p>
+                <p className="text-[10px] font-semibold text-muted-foreground">Refund: <span className="text-foreground">{GROUP_FARE_REFUND}</span></p>
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -751,6 +753,7 @@ export default function GroupTicketingPage() {
               </div>
             ) : (
               <div className="grid gap-3.5">
+                <p role="note" className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-900">{GROUP_FARE_NOTICE}</p>
                 {filteredGroups.map((group, index) => (
                   <GroupCard
                     key={group.id}

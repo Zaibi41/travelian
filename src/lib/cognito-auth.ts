@@ -296,6 +296,25 @@ export function cognitoLogoutUrl() {
 
 export const cognitoConfig = cognitoEnv;
 
+/** Cognito's standard refresh: new ID and access tokens from the stored refresh token. Null when
+ *  there is no Cognito refresh token or Cognito returns no tokens (the caller then signs out). */
+export async function refreshCognitoSession(): Promise<AuthSession | null> {
+  const session = getSession();
+  if (!session || session.provider !== "Cognito" || !session.refreshToken) return null;
+  const { clientId } = getCognitoConfig();
+  const data = await cognitoRequest<{ AuthenticationResult?: { IdToken?: string; AccessToken?: string; ExpiresIn?: number } }>("InitiateAuth", {
+    AuthFlow: "REFRESH_TOKEN_AUTH",
+    ClientId: clientId,
+    AuthParameters: { REFRESH_TOKEN: session.refreshToken },
+  });
+  const result = data.AuthenticationResult;
+  if (!result?.IdToken || !result.AccessToken) return null;
+  return sessionFromTokens({
+    id_token: result.IdToken, access_token: result.AccessToken, refresh_token: session.refreshToken,
+    expires_in: result.ExpiresIn ?? 3600, token_type: "Bearer",
+  });
+}
+
 function requireAccountSession() {
   const session = getSession();
   if (!session || session.provider !== "Cognito" || !session.accessToken || (session.expiresAt && session.expiresAt <= Date.now())) {
