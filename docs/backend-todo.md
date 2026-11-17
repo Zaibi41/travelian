@@ -83,11 +83,17 @@ Built on `GET /v1/admin/bookings` and `GET /v1/admin/bookings/{booking_id}` (bac
 | Accounts & Ledgers: Chart of accounts, Provider accounts, General ledger, Manual journals tabs | Ledger tables and endpoints (spec §5); shown disabled with "Not built" |
 | Tickets tab: Issue time, Issued by | Passengers carry `ticket_number` only. Issue time and who issued per ticket (the Audit tab has the issuing event) |
 
+### Group Ticketing sub-menu (listed in the Flights layout)
+
+| Missing | Needs |
+| --- | --- |
+| Departure, seats, manifest status, name-list deadline, deposits columns; add passengers, confirm, release hold actions | These group booking fields on `GET /v1/admin/bookings?product=group` and the actions in the gateway |
+| Awaiting issuance and Payment pending cards | The dashboard's issuance and payment rules (`is_pending_issuance`, `is_payment_pending`) cover flights only; extend them to group bookings, then return the cards for `product=group` |
+
 ### Other sub-menus (shown as "not available yet")
 
 | Sub-menu | Needs |
 | --- | --- |
-| Group Ticketing | Group booking fields: departure, seats, manifest status, name-list deadline, supplier, deposits; actions add passengers, confirm, release hold |
 | Hotels | Hotel booking fields: hotel, rooms, dates, voucher, cancellation date; send voucher |
 | Umrah | Package, travelers, visa status, installments, service status |
 | Inquiries & Requests | Inquiries/requests table in the gateway (status, owner, source, SLA, linked booking); assign, reply, convert. The old `/content/booking-requests` screen is not connected to the new page |
@@ -126,7 +132,10 @@ Still open:
 | Flights tab, shown but disabled: Multi-city, cabins other than Economy, Fare rules, Book, Hold, Quote; Refundable filter (disabled when no fare has refund data) | Southair search has no multi-city or cabin parameter and no fare-rules or quotations endpoint; Book and Hold wait for the hold step (passenger form) and the booking flag. Search runs on Southair through `/v1/live-ticketing/flights/search` |
 | Flights tab, hidden or placeholder: Quotes pending card, "Staff fare" tag, airline logo (neutral placeholder), refund per fare, Fare rules and the Refundable filter ("Not available yet"), meal and hold time ("not available") | A quotations table; a fare type field on `FareView`; a gateway-served `logo_url` on `FlightView`; refund, meal and hold-time data from the supplier (fare rules). Note: reprice does not return refund data yet |
 | Legacy flight search (agency roles, `/admin/flights-search`) | Still calls the legacy Lambda `/flights/search`; its response (network tab) contains supplier IDs, names and CDN logo URLs. The admin page no longer shows or links them, but only moving this search to the gateway removes them from the network. Admin checkout shows no price and blocks booking until the gateway reprices |
-| Hotels tab | Hotel provider search plus Hotel Inventory served by the gateway, one list (D25) |
+| Hotels tab: Hotel Inventory hotels in the same list (D25) | Built on RateHawk through `/v1/hotels/search` (17 November 2026). Manual hotels need a Hotel Inventory table and a gateway search over it, merged into that answer with source "Hotel Inventory" |
+| Hotels tab: Book, Hold, Quote | Hotelpage, prebook and booking routes on `/v1/hotels/...` that use the search's rate IDs (RateHawk `search/hp/`, `hotel/prebook/`, `hotel/order/booking/form/` + `finish/` + `finish/status/`), a hotel booking record in `bookings`, and an approved booking screen. The RateHawk calls already exist in the Super Admin console (`/v1/admin/suppliers/ratehawk/operations/{key}`), writes behind `RATEHAWK_WRITE_ENABLED`; quotations table for Quote |
+| Hotels tab: rates in Rs | RateHawk's sandbox rejects PKR, so rates are in USD. Needs a production key that prices in PKR, or an agreed exchange-rate source in the gateway |
+| Hotels tab: Popular destinations other than Dubai | The RateHawk sandbox's destination search finds only Dubai (Makkah, Madinah, Istanbul return nothing). Check again with the production key |
 | Umrah tab | Umrah packages served by the gateway |
 | Cards: Available providers, Search expiry, Quotes pending | Provider health endpoint (admin only); fare validity from search results; quotations table |
 | Group Ticketing: "Departure Date (Optional)" / "All departure dates" (public site wording) | `POST /v1/group-ticketing/search` requires `departure_date` and filters by that exact date (and by seats left). Make it optional (all dates) in the gateway; until then the admin date stays required |
