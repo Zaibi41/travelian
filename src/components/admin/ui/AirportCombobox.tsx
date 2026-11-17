@@ -104,7 +104,7 @@ export function AirportCombobox({ id, label, placeholder, value, onChange, icon 
           />
           </div>
         </PopoverAnchor>
-        <PopoverContent
+        <PopoverContent data-scroll-into-view=""
           align="start"
           className={AIRPORT_LIST_PANEL}
           onOpenAutoFocus={event => event.preventDefault()}

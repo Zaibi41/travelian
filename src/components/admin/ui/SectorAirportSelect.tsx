@@ -84,7 +84,7 @@ export function SectorAirportSelect({ id, label, placeholder, codes, value, onCh
             <ChevronDown className="h-4 w-4 shrink-0 opacity-60" aria-hidden="true" />
           </button>
         </PopoverAnchor>
-        <PopoverContent align="start" className={AIRPORT_LIST_PANEL} onOpenAutoFocus={event => event.preventDefault()}
+        <PopoverContent data-scroll-into-view="" align="start" className={AIRPORT_LIST_PANEL} onOpenAutoFocus={event => event.preventDefault()}
           onInteractOutside={event => {
             if (triggerRef.current?.contains(event.target as Node)) event.preventDefault();
           }}>

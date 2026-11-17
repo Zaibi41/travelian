@@ -190,7 +190,7 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
           <ChevronsUpDown aria-hidden="true" className="pointer-events-none h-4 w-4 shrink-0 opacity-50" />
         </div>
       </PopoverAnchor>
-      <PopoverContent
+      <PopoverContent data-scroll-into-view=""
         onOpenAutoFocus={event => event.preventDefault()}
         onCloseAutoFocus={event => event.preventDefault()}
         onInteractOutside={event => { if (fieldRef.current?.contains(event.target as Node)) event.preventDefault(); }}

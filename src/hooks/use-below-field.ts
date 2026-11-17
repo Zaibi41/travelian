@@ -108,6 +108,9 @@ export function useBelowField<T extends HTMLElement>(forwardedRef: ForwardedRef<
     const undos: (() => void)[] = [];
     const undoRoom = () => undos.splice(0).reverse().forEach(undo => undo());
     let trigger: HTMLElement | null = null;
+    // Only lists marked data-scroll-into-view (the From and To airport lists) move the page; every other dropdown
+    // opens where it is. The public search card keeps its own older behaviour.
+    const scrolls = node.hasAttribute("data-scroll-into-view");
     const update = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
@@ -115,7 +118,7 @@ export function useBelowField<T extends HTMLElement>(forwardedRef: ForwardedRef<
         measure();
         // Once the list sits under its field (Radix has placed it), make sure all of it is on screen.
         const top = node.getBoundingClientRect().top;
-        if (top >= 0 && top < window.innerHeight && (placedAt === 0 || performance.now() - placedAt < 800)) {
+        if (scrolls && top >= 0 && top < window.innerHeight && (placedAt === 0 || performance.now() - placedAt < 800)) {
           placedAt ||= performance.now();
           undos.push(bringListIntoView(node, trigger));
           measure();
@@ -128,7 +131,7 @@ export function useBelowField<T extends HTMLElement>(forwardedRef: ForwardedRef<
         const target = document.getElementById(element.getAttribute("aria-controls") ?? "");
         return target === node || (target !== null && node.contains(target));
       }) ?? null;
-      if (trigger) makeRoomBelowField(trigger);
+      if (trigger && (scrolls || trigger.closest(".travelian-search-card"))) makeRoomBelowField(trigger);
     }
     measure();
     update();

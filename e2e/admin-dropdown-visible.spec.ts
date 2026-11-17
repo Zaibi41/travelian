@@ -75,10 +75,10 @@ async function open(page: Page, width: number, { changed = false, holdError = fa
 }
 
 
-// Every dropdown and picker opens fully on screen: the shared hook (src/hooks/use-below-field.ts) scrolls the page,
-// or the field's scrolling panel, until the whole list shows, adding room where the page ends too soon.
+// Only the From and To airport lists move the page (src/hooks/use-below-field.ts, data-scroll-into-view): they
+// scroll it until the whole list shows. Every other dropdown opens where it is and leaves the page still.
 
-/** The open list: on screen, and not squeezed (only a part with its own fixed height, like the country list, scrolls). */
+/** The open list's box. */
 async function openListBox(page: Page) {
   await page.waitForTimeout(700);
   return page.evaluate(() => {
@@ -89,50 +89,38 @@ async function openListBox(page: Page) {
   });
 }
 
-async function scrollToEnd(page: Page) {
-  await page.evaluate(() => {
-    window.scrollTo(0, 1e6);
-    document.querySelectorAll<HTMLElement>("main, main *").forEach(el => {
-      if (el.scrollHeight > el.clientHeight && /(auto|scroll)/.test(getComputedStyle(el).overflowY)) el.scrollTop = 1e6;
-    });
-  });
-  await page.waitForTimeout(150);
-}
+const scrollY = (page: Page) => page.evaluate(() => window.scrollY);
 
-for (const [width, height] of [[1440, 760], [1366, 650], [390, 700]] as const) {
-  test(`hold form: the last traveler's dropdowns and date picker open fully on screen at ${width}x${height}`, async ({ page }) => {
+for (const [width, height] of [[1440, 760], [390, 700]] as const) {
+  test(`hold form: the dropdowns and date picker leave the page where it is at ${width}x${height}`, async ({ page }) => {
     await open(page, width);
     await page.setViewportSize({ width, height });
     await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
     await expect(page.getByRole("heading", { name: "Hold flight", level: 1 })).toBeVisible();
-    const last = page.getByRole("region", { name: "Infant 1" });
-    await expect(last).toBeVisible();
+    const first = page.getByRole("region", { name: "Adult 1" });
+    await expect(first).toBeVisible();
     const triggers = [
-      ["Nationality", last.getByRole("combobox", { name: /Nationality/ }).or(last.getByLabel("Nationality", { exact: true })).first()],
-      ["Issuing country", last.getByRole("combobox", { name: /Issuing country/ }).or(last.getByLabel("Issuing country", { exact: true })).first()],
-      ["Document type", last.getByLabel("Document type", { exact: true }).first()],
-      ["Title", last.getByLabel("Title", { exact: true }).first()],
-      ["Date of birth", last.getByRole("button", { name: /calendar/i }).first()],
+      ["Nationality", first.getByRole("combobox", { name: /Nationality/ }).or(first.getByLabel("Nationality", { exact: true })).first()],
+      ["Document type", first.getByLabel("Document type", { exact: true }).first()],
+      ["Title", first.getByLabel("Title", { exact: true }).first()],
     ] as const;
     let opened = 0;
     for (const [name, trigger] of triggers) {
       if (!(await trigger.count())) continue;
       opened += 1;
-      await scrollToEnd(page);
+      await trigger.scrollIntoViewIfNeeded();
+      const before = await scrollY(page);
       await trigger.click();
-      const box = await openListBox(page);
-      expect(box, `${name} opened`).not.toBeNull();
-      expect(box!.top, `${name} top`).toBeGreaterThanOrEqual(0);
-      expect(box!.bottom, `${name} bottom`).toBeLessThanOrEqual(box!.viewport + 1);
-      expect(box!.squeezed, `${name} shown in full`).toBe(false);
+      expect(await openListBox(page), `${name} opened`).not.toBeNull();
+      expect(await scrollY(page), `${name} left the page still`).toBe(before);
       await page.keyboard.press("Escape");
       await page.waitForTimeout(150);
     }
-    expect(opened).toBeGreaterThanOrEqual(3);
+    expect(opened).toBeGreaterThanOrEqual(2);
   });
 }
 
-test("search form: Travelers, Cabin Class and Provider open fully on a short screen", async ({ page }) => {
+test("search form: Travelers, Cabin Class and Provider leave the page where it is", async ({ page }) => {
   await open(page, 1366);
   await page.setViewportSize({ width: 1366, height: 420 });
   const form = page.getByRole("region", { name: "Search flights" });
@@ -141,12 +129,69 @@ test("search form: Travelers, Cabin Class and Provider open fully on a short scr
     ["Cabin Class", form.getByRole("combobox", { name: "Cabin Class" })],
     ["Provider", form.getByLabel("Provider")],
   ] as const) {
+    const before = await scrollY(page);
     await trigger.click();
-    const box = await openListBox(page);
-    expect(box, `${name} opened`).not.toBeNull();
-    expect(box!.bottom, `${name} bottom`).toBeLessThanOrEqual(box!.viewport + 1);
-    expect(box!.squeezed, `${name} shown in full`).toBe(false);
+    expect(await openListBox(page), `${name} opened`).not.toBeNull();
+    expect(await scrollY(page), `${name} left the page still`).toBe(before);
     await page.keyboard.press("Escape");
     await page.waitForTimeout(150);
   }
 });
+
+test("search form: From and To scroll the page until the whole airport list shows", async ({ page }) => {
+  await open(page, 1366);
+  await page.setViewportSize({ width: 1366, height: 520 });
+  const form = page.getByRole("region", { name: "Search flights" });
+  for (const name of ["From", "To"]) {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await form.locator(`#flight-${name === "From" ? "from" : "to"}`).click();
+    const box = await openListBox(page);
+    expect(box, `${name} opened`).not.toBeNull();
+    expect(box!.top, `${name} top`).toBeGreaterThanOrEqual(0);
+    expect(box!.bottom, `${name} bottom`).toBeLessThanOrEqual(box!.viewport + 1);
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(150);
+  }
+});
+
+const BOOKING = (n: number) => ({ booking_id: `TRV-E2E${String(n).padStart(3, "0")}`, pnr: `PNR${String(n).padStart(3, "0")}`, product: "flight",
+  statuses: { booking: "held", payment: "unpaid", issuance: "not_issued" }, amount: rs(15_316), created_at: "2026-11-09T13:28:58Z",
+  expires_at: new Date(Date.now() + 3_600_000).toISOString(), customer_or_agency: "Muhammad Abdullah Rehmanullah Khan Durrani" });
+const BOOKINGS = {
+  source: "gateway_bookings", total: 30, sample_label: "Sample data",
+  cards: { all_bookings: 30, confirmed: 0, on_hold: 30, cancelled: 0, unpaid: 30, expiring_soon: 0, expiring_window_hours: 2, hold_deadlines: 30, awaiting_issuance: 0 },
+  filter_options: { agencies: [], providers: [] },
+  items: Array.from({ length: 30 }, (_, n) => BOOKING(n + 1)),
+};
+
+for (const [width, height] of [[1440, 760], [1024, 700], [768, 900], [390, 700]] as const) {
+  test(`bookings: the filters open where they are and leave the page still at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.route("**/*", route => {
+      const url = gatewayView(route.request().url());
+      if (url.port === "8000") {
+        return url.pathname === "/v1/admin/bookings" ? route.fulfill({ json: BOOKINGS }) : route.fulfill({ status: 404, json: { detail: "Not found." } });
+      }
+      return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+    });
+    await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
+      email: "layout-test@travelian.com", name: "Layout Test", createdAt: new Date().toISOString(),
+      accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
+    })));
+    await page.goto("/admin/bookings");
+    await expect(page.getByText("PNR030")).toBeAttached();
+    const filters = page.locator("main button[role=combobox]");
+    const count = await filters.count();
+    expect(count).toBeGreaterThanOrEqual(5);
+    for (let index = 0; index < count; index++) {
+      const filter = filters.nth(index);
+      await filter.scrollIntoViewIfNeeded();
+      const before = await scrollY(page);
+      await filter.click();
+      expect(await openListBox(page), `filter ${index} opened`).not.toBeNull();
+      expect(await scrollY(page), `filter ${index} left the page still`).toBe(before);
+      await page.keyboard.press("Escape");
+      await expect(page.locator("[data-radix-popper-content-wrapper]")).toHaveCount(0);
+    }
+  });
+}
