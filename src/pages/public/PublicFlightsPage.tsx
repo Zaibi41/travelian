@@ -17,7 +17,7 @@ import { useFlightFares } from "@/hooks/use-flight-fares";
 import { cn } from "@/lib/utils";
 import { SEO } from "@/components/SEO";
 import { TravelersClassPicker, formatTravelers, type TravelersValue } from "@/components/public/TravelersClassPicker";
-import { extractAirportCode, fetchFlightFares, hydrateSooperFareOptions, searchFlights, type FareOption, type TravelianFlight } from "@/lib/travelian-api";
+import { fetchFlightFares, hydrateSooperFareOptions, searchFlights, type FareOption, type TravelianFlight } from "@/lib/travelian-api";
 import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { FlightSearchLoader } from "@/components/public/FlightSearchLoader";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
@@ -159,6 +159,9 @@ function consolidateFlights(list: TravelianFlight[]): TravelianFlight[] {
   return Array.from(byKey.values());
 }
 
+/** "Karachi (KHI)" or "KHI" -> "KHI". */
+const airportCodeOf = (value: string) => (String(value || "").match(/\(([A-Z]{3})\)/i)?.[1] || String(value || "").trim()).toUpperCase();
+
 export default function PublicFlightsPage({ bookingPath = "/booking", adminMode = false }: { bookingPath?: string; adminMode?: boolean } = {}) {
   const { currency: selectedCurrency } = useLocale();
   const [params, setParams] = useSearchParams();
@@ -226,7 +229,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [editTravelers, setEditTravelers] = useState<TravelersValue>(travelers);
   const [editDateOpen, setEditDateOpen] = useState(false);
   const editFares = useFlightFares(editDateOpen, {
-    from: extractAirportCode(editFrom) || editFrom, to: extractAirportCode(editTo) || editTo, adults: editTravelers.adults,
+    from: airportCodeOf(editFrom), to: airportCodeOf(editTo), adults: editTravelers.adults,
     cabin: editTravelers.cabin.toLowerCase().replace(/\s+/g, "_"),
   });
   const [editReturnDateOpen, setEditReturnDateOpen] = useState(false);
