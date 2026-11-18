@@ -230,43 +230,128 @@ export function extractAirportCode(value: string) {
   return match?.[1].toUpperCase() || "";
 }
 
+// ---------- flights through the Travelian gateway (/v1/public/flights/search) ----------
+// Every flight supplier is called from the gateway's static IP (SooperFare only accepts that IP), and the gateway
+// returns selling prices only. The answer is turned into the offer shape this page already shows.
+
+/** Provider label for flights priced by the gateway (never a supplier name on the public site). */
+export const GATEWAY_FLIGHT_PROVIDER = "travelian";
+
+interface GatewayMoney { amount_minor: number; currency: string }
+interface GatewayFare { id: string; name: string; meal?: string; baggage?: string; refund?: string; selling_price?: GatewayMoney }
+interface GatewayFlight {
+  id: string; airline_code?: string; airline_name?: string; flight_number?: string; departure_local?: string; arrival_local?: string;
+  duration_minutes?: number; stops?: number; stop_cities?: string[]; fares: GatewayFare[];
+}
+interface GatewayJourney { direction: "outbound" | "return"; origin: string; destination: string; flights: GatewayFlight[] }
+interface GatewaySearchView { search_id: string; status: "complete" | "unavailable"; notice?: string; journeys: GatewayJourney[] }
+
+function gatewayBaseUrl() {
+  return (import.meta.env.VITE_TRAVELIAN_GATEWAY_BASE_URL?.trim() || "").replace(/\/+$/, "");
+}
+
+const priced = (flight: GatewayFlight) => flight.fares.filter((fare) => fare.selling_price && fare.selling_price.amount_minor > 0);
+const rupees = (money?: GatewayMoney) => (money ? money.amount_minor / 100 : 0);
+
+function minutesText(minutes?: number) {
+  return typeof minutes === "number" && minutes > 0 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : undefined;
+}
+
+function fareOption(fare: GatewayFare, extra?: GatewayFare): FareOption {
+  const total = rupees(fare.selling_price) + rupees(extra?.selling_price);
+  return {
+    tier: fare.name,
+    price: { currency: fare.selling_price?.currency || "PKR", total },
+    bags: fare.baggage || "Baggage info not available",
+    change: "As per airline fare rules",
+    refund: fare.refund || "As per airline fare rules",
+    meal: fare.meal || undefined,
+  };
+}
+
+function gatewaySegment(flight: GatewayFlight, origin: string, destination: string) {
+  return {
+    carrier: flight.airline_code || null, airline: flight.airline_name || null, flightNumber: flight.flight_number || null,
+    origin, destination, departureAirport: origin, arrivalAirport: destination,
+    departureTime: flight.departure_local || null, arrivalTime: flight.arrival_local || null,
+  };
+}
+
+/** Gateway journeys -> offers: one-way, one per flight; round trip, each outbound with the cheapest return of the same airline. */
+export function gatewayOffers(view: GatewaySearchView, cabin: string): FlightOffer[] {
+  const outbound = view.journeys.find((journey) => journey.direction === "outbound");
+  const back = view.journeys.find((journey) => journey.direction === "return");
+  if (!outbound) return [];
+  const offers: FlightOffer[] = [];
+  for (const flight of outbound.flights) {
+    const fares = priced(flight);
+    if (!fares.length) continue;
+    let returnFlight: GatewayFlight | undefined;
+    let returnFare: GatewayFare | undefined;
+    if (back) {
+      for (const candidate of back.flights.filter((item) => item.airline_code && item.airline_code === flight.airline_code)) {
+        const cheapest = priced(candidate).sort((a, b) => rupees(a.selling_price) - rupees(b.selling_price))[0];
+        if (cheapest && (!returnFare || rupees(cheapest.selling_price) < rupees(returnFare.selling_price))) {
+          returnFlight = candidate;
+          returnFare = cheapest;
+        }
+      }
+      if (!returnFlight || !returnFare) continue; // a round trip needs a return on the same airline
+    }
+    const options = fares.map((fare) => fareOption(fare, returnFare)).sort((a, b) => a.price.total - b.price.total);
+    const lowest = options[0];
+    const segments = [gatewaySegment(flight, outbound.origin, outbound.destination)];
+    if (returnFlight && back) segments.push(gatewaySegment(returnFlight, back.origin, back.destination));
+    offers.push({
+      provider: GATEWAY_FLIGHT_PROVIDER,
+      offerId: returnFlight ? `gw-${flight.id}-${returnFlight.id}` : `gw-${flight.id}`,
+      airline: flight.airline_name || flight.airline_code || "Airline",
+      flightNumber: flight.flight_number || "Not specified",
+      origin: outbound.origin, destination: outbound.destination,
+      departureTime: flight.departure_local || "", arrivalTime: flight.arrival_local || "",
+      cabin, fareBrand: lowest.tier, duration: minutesText(flight.duration_minutes), stops: flight.stops ?? 0,
+      baggage: lowest.bags, meal: lowest.meal || null,
+      segments: segments as FlightOffer["segments"],
+      returnDepartureTime: returnFlight?.departure_local || null, returnArrivalTime: returnFlight?.arrival_local || null,
+      price: lowest.price, fareOptions: options,
+    });
+  }
+  return offers;
+}
+
 export async function searchFlights(input: FlightSearchInput, signal?: AbortSignal): Promise<FlightSearchResult> {
   const origin = extractAirportCode(input.from);
   const destination = extractAirportCode(input.to);
-
   if (!origin || !destination) {
     throw new Error("Please use 3-letter airport codes, for example SKT to LHR.");
   }
-
-  const response = await fetch(`${API_BASE_URL}/flights/search`, {
+  if (input.tripType === "multicity") {
+    throw new Error("Multi-city search isn't available online yet. Please contact Travelian.");
+  }
+  const base = gatewayBaseUrl();
+  if (!base) throw new Error("Flight search is unavailable right now.");
+  const cabin = String(input.cabin || "economy").toLowerCase().replace(/\s+/g, "_");
+  const response = await fetch(`${base}/v1/public/flights/search`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
     signal,
     body: JSON.stringify({
-      tripType: input.tripType,
-      origin,
-      destination,
-      departureDate: input.departureDate,
-      returnDate: input.returnDate,
-      segments: input.segments,
-      cabin: input.cabin,
-      passengers: input.passengers,
+      origin, destination, departure_date: input.departureDate,
+      return_date: input.tripType === "roundtrip" ? input.returnDate || null : null,
+      adults: input.passengers.adults, children: input.passengers.children, infants: input.passengers.infants,
+      cabin: ["economy", "premium_economy", "business", "first"].includes(cabin) ? cabin : "economy",
       currency: input.currency || "PKR",
     }),
   });
-
-  const payload = await response.json().catch(() => null) as FlightSearchResponse | { error?: string; details?: string[] } | null;
-  if (!response.ok) {
-    const message = payload && "error" in payload && payload.error ? payload.error : "Flight search failed";
-    const details = payload && "details" in payload && Array.isArray(payload.details) ? `: ${payload.details.join(", ")}` : "";
-    throw new Error(`${message}${details}`);
+  const payload = await response.json().catch(() => null) as GatewaySearchView | { detail?: unknown } | null;
+  if (!response.ok || !payload || !("journeys" in payload)) {
+    const detail = payload && "detail" in payload && typeof payload.detail === "string" ? payload.detail : "Flight search failed. Please try again.";
+    throw new Error(detail);
   }
-
-  const data = payload as FlightSearchResponse;
   return {
-    searchId: data.searchId,
-    providerStatus: data.providerStatus || {},
-    flights: (data.results || []).map(mapOfferToFlight),
+    searchId: payload.search_id,
+    providerStatus: {},
+    flights: gatewayOffers(payload, input.cabin || "Economy").map(mapOfferToFlight),
   };
 }
 
@@ -299,7 +384,8 @@ export async function searchHotels(input: HotelSearchInput, signal?: AbortSignal
 }
 
 function mapOfferToFlight(offer: FlightOffer): TravelianFlight {
-  const preserveAirportTime = safeText(offer.provider).toLowerCase() === "sooperfare";
+  // Local airport times, kept exactly as sent (SooperFare, and every flight priced by the Travelian gateway).
+  const preserveAirportTime = ["sooperfare", GATEWAY_FLIGHT_PROVIDER].includes(safeText(offer.provider).toLowerCase());
   const formatTime = (value: string | null | undefined) => formatFlightDateTime(value, preserveAirportTime);
   const flightNumber = safeText(offer.flightNumber, "Not specified");
   const airline = normalizeAirlineName(safeText(offer.airline, "Airline"));
