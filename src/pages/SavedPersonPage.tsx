@@ -21,6 +21,7 @@ import { GatewayError } from "@/lib/gateway/client";
 import { fetchPerson, removeDocument, type PersonDetail, type SavedDocument } from "@/lib/saved-people/api";
 import { ID_TYPE_LABEL, TITLE_LABEL, fullName, peopleErrorMessage } from "@/lib/saved-people/states";
 import { personPath } from "@/lib/saved-people/routes";
+import { CopyPnr } from "@/components/CopyPnr";
 
 // A saved person: details, documents and bookings (Customers & Travelers). Edit,
 // documents and merge show only when the gateway says the caller may (can_manage, can_merge).
@@ -175,7 +176,7 @@ export default function SavedPersonPage() {
                     onClick={() => navigate(bookingDetailPath(booking.booking_id))}>
                     <td className="px-2.5 py-2"><Link className="whitespace-nowrap font-semibold text-foreground hover:underline" to={bookingDetailPath(booking.booking_id)}
                       onClick={event => event.stopPropagation()}>{booking.booking_id}</Link></td>
-                    <td className="px-2.5 py-2 whitespace-nowrap tabular-nums text-foreground">{booking.pnr ?? "—"}</td>
+                    <td className="px-2.5 py-2 whitespace-nowrap tabular-nums text-foreground">{booking.pnr ?? "—"} <CopyPnr pnr={booking.pnr} /></td>
                     <td className="px-2.5 py-2 text-foreground">{booking.product ? PRODUCT_LABEL[booking.product] ?? booking.product : "—"}</td>
                     <td className="max-w-[12rem] truncate px-2.5 py-2 text-foreground" title={booking.route ?? undefined}>{booking.route ?? "—"}</td>
                     <td className="px-2.5 py-2 whitespace-nowrap tabular-nums text-foreground">{formatDay(booking.departure_local) || "—"}</td>

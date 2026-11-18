@@ -27,6 +27,7 @@ import {
 import { BOOKINGS_TABS, bookingDetailPath, bookingsTabPath, type BookingsTab } from "@/lib/admin-bookings/tabs";
 import { useBookings } from "@/lib/admin-bookings/use-bookings";
 import type { BookingCard, BookingList, BookingPeriod } from "@/lib/admin-bookings/types";
+import { CopyPnr } from "@/components/CopyPnr";
 
 const ANY = "any";
 
@@ -302,10 +303,13 @@ function BookingsTable({ data, loading, flights, filters, onPage }: TableProps) 
               {data.items.map(item => (
                 <tr key={item.booking_id} className="border-b border-border last:border-b-0">
                   <td className={`${TD} max-w-[12rem]`}>
+                    <span className="flex min-w-0 items-center gap-1">
                     <Link to={bookingDetailPath(item.booking_id)} title={item.pnr ?? item.booking_id}
-                      className="block truncate rounded-sm font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
+                      className="block min-w-0 truncate rounded-sm font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
                       {item.pnr ?? item.booking_id}
                     </Link>
+                    <CopyPnr pnr={item.pnr} />
+                    </span>
                     {!flights && <span className="block truncate text-label text-muted-foreground" title={item.booking_id}>{item.booking_id}</span>}
                     {item.sample && <SampleDataBadge className="mt-1" label={item.data_label} />}
                   </td>

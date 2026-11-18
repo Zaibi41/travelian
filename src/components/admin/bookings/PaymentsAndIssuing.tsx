@@ -19,6 +19,7 @@ import {
 } from "@/lib/admin-bookings/payments";
 import type { BookingDetail, BookingPassenger, IssuanceChecklist, IssuanceResult, PaymentMethod, TicketNumber } from "@/lib/admin-bookings/types";
 import { cn } from "@/lib/utils";
+import { CopyPnr } from "@/components/CopyPnr";
 
 // Booking detail > Payments (spec 7, mockup booking-payment-issue): 1 · record the customer's
 // payment, 2 · issue the ticket, then the result. The gateway decides everything (amounts due,
@@ -462,7 +463,7 @@ function IssuanceOutcome({ booking, checklist, result, onResult }: {
   if (status === "issued") {
     return (
       <ResultCard tone="fine" tag="Issued" title="Tickets issued">
-        <p className="text-body text-muted-foreground">PNR {pnr}. Ticket numbers are saved on the Tickets tab.</p>
+        <p className="text-body text-muted-foreground">PNR {pnr} <CopyPnr pnr={pnr} />. Ticket numbers are saved on the Tickets tab.</p>
         <TicketTable booking={booking} tickets={result?.tickets ?? []} />
         <div><Button asChild variant="primary"><Link to={bookingDetailPath(booking.booking_id, "tickets")}>View tickets</Link></Button></div>
       </ResultCard>

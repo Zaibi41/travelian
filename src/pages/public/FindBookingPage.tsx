@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { SEO } from "@/components/SEO";
 import { lookupBooking, PublicBookingError, type BookingLookup } from "@/lib/public-booking";
+import { CopyPnr } from "@/components/CopyPnr";
 
 const STATUS: Record<BookingLookup["status"], { label: string; tone: string }> = {
   requested: { label: "Request received", tone: "bg-warning/10 text-warning" },
@@ -101,7 +102,7 @@ export default function FindBookingPage() {
               <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 <div><dt className="text-muted-foreground">Total</dt><dd className="font-semibold">{rs(result.total)}</dd></div>
                 <div><dt className="text-muted-foreground">Paid</dt><dd className="font-semibold">{rs(result.paid)}</dd></div>
-                {result.airline_pnr && <div><dt className="text-muted-foreground">Airline PNR</dt><dd className="font-mono font-semibold">{result.airline_pnr}</dd></div>}
+                {result.airline_pnr && <div><dt className="text-muted-foreground">Airline PNR</dt><dd className="flex items-center gap-1 font-mono font-semibold">{result.airline_pnr}<CopyPnr pnr={result.airline_pnr} /></dd></div>}
                 {(result.travelers ?? []).length > 0 && <div className="col-span-2 sm:col-span-4"><dt className="text-muted-foreground">Travelers</dt><dd>{result.travelers!.join(", ")}</dd></div>}
                 {(result.tickets ?? []).length > 0 && <div className="col-span-2 sm:col-span-4"><dt className="text-muted-foreground">Ticket numbers</dt><dd className="font-mono">{result.tickets!.join(", ")}</dd></div>}
               </dl>

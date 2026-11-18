@@ -9,6 +9,7 @@ import { confirmPayFastReturn, getPublicBooking, isPayFastReturn, type PublicBoo
 import { downloadETicket } from "@/lib/eticket-pdf";
 import { toast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
+import { CopyPnr } from "@/components/CopyPnr";
 
 function statusClass(status: BookingRecord["status"]) {
   if (status === "confirmed" || status === "ticket_issued" || status === "payment_received") return "bg-success/10 text-success border-0";
@@ -130,7 +131,7 @@ export default function MyBookingsPage() {
                             {statusLabel(b.status)}
                           </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5 font-mono">PNR: {b.pnr} · {b.id}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 font-mono">PNR: {b.pnr} <CopyPnr pnr={b.pnr} className="h-5 w-5" /> · {b.id}</p>
                       </div>
                     </div>
                     <div className="text-right">

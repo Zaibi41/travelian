@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import type { NotificationDeliveryLog } from "@/data/models";
 import { listNotificationLogs } from "@/lib/notification-api";
+import { CopyPnr } from "@/components/CopyPnr";
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string }> = {
   booking: { icon: CalendarCheck, color: "bg-info/10 text-info" },
@@ -130,8 +131,9 @@ export default function NotificationsPage() {
                       <time className="text-helper text-muted-foreground" dateTime={alert.created_at}>{new Date(alert.created_at).toLocaleString()}</time>
                     </div>
                     <p className="text-body text-muted-foreground">
-                      {[d.passenger, d.route, d.fare, d.pnr ? `PNR ${d.pnr}` : "No supplier hold",
-                        d.hold_expires_at ? `expires ${new Date(d.hold_expires_at).toLocaleString()}` : null].filter(Boolean).join(" · ")}
+                      {[d.passenger, d.route, d.fare].filter(Boolean).map(part => `${part} · `).join("")}
+                      {d.pnr ? <>PNR {d.pnr} <CopyPnr pnr={d.pnr} /></> : "No supplier hold"}
+                      {d.hold_expires_at ? ` · expires ${new Date(d.hold_expires_at).toLocaleString()}` : null}
                     </p>
                     {d.note && <p className="text-helper text-muted-foreground">{d.note}</p>}
                   </li>
