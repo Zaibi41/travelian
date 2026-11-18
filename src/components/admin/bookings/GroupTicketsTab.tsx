@@ -10,6 +10,7 @@ import { GatewayError } from "@/lib/gateway/client";
 import { GROUP_TICKETING_LABEL, recordGroupTickets } from "@/lib/admin-search/group-holds";
 import type { BookingDetail, BookingPassenger } from "@/lib/admin-bookings/types";
 import { cn } from "@/lib/utils";
+import { CopyPnr } from "@/components/CopyPnr";
 
 const name = (passenger: BookingPassenger) => `${passenger.title} ${passenger.first_name} ${passenger.last_name}`.trim();
 
@@ -36,7 +37,7 @@ export function GroupTicketsTab({ booking }: { booking: BookingDetail }) {
 function TicketsTable({ finalPnr, travelers }: { finalPnr?: string | null; travelers: BookingPassenger[] }) {
   return (
     <>
-      <p className="text-body text-foreground">Final PNR <span className="font-mono font-semibold">{finalPnr ?? "—"}</span></p>
+      <p className="text-body text-foreground">Final PNR <span className="font-mono font-semibold">{finalPnr ?? "—"}</span> <CopyPnr pnr={finalPnr} /></p>
       <div className="overflow-x-auto">
         <table className={cn(TABLE.table, "min-w-[28rem]")}>
           <thead>

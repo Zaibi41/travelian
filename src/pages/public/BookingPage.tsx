@@ -34,6 +34,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useRole } from "@/contexts/RoleContext";
 import { whatsappUrl } from "@/lib/site-config";
 import { Loader2 } from "lucide-react";
+import { CopyPnr } from "@/components/CopyPnr";
 
 const steps = [
   { id: 1, label: "Traveler Details" },
@@ -1112,7 +1113,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                       {savedBooking.pnr && (
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">PNR</span>
-                          <span className="font-bold font-mono text-foreground">{savedBooking.pnr}</span>
+                          <span className="inline-flex items-center gap-1 font-bold font-mono text-foreground">{savedBooking.pnr}<CopyPnr pnr={savedBooking.pnr} /></span>
                         </div>
                       )}
                       <div className="flex justify-between text-sm">

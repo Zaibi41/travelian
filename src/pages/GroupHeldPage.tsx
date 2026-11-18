@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { FieldLabel, Input } from "@/components/admin/ui/field";
 import { setSellingPrice } from "@/lib/admin-bookings/api";
 import { acceptHeldPrice, departureText, fetchGroupHold, returnFlightText, gatewayMessage, groupBookingPath, releaseGroupHold, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
+import { CopyPnr } from "@/components/CopyPnr";
 
 const SEARCH = "/admin/search?tab=group-ticketing";
 export const groupHoldKey = (bookingId: string) => ["group-holds", bookingId];
@@ -206,7 +207,7 @@ function Held({ view }: { view: GroupHoldView }) {
           <h2 id="booking-details-title" className="font-display text-section font-semibold text-brand-navy">Booking details</h2>
           <dl className="mt-2 flex flex-col">
             <Row label="Booking reference" value={view.booking_id} />
-            {view.pnr && <Row label="PNR" value={view.pnr} />}
+            {view.pnr && <Row label="PNR" value={<span className="inline-flex items-center gap-1">{view.pnr}<CopyPnr pnr={view.pnr} /></span>} />}
             <div className="flex items-start justify-between gap-4 py-2 text-label">
               <dt className="shrink-0 text-muted-foreground">Flight</dt>
               <dd className="min-w-0 text-right font-medium text-foreground">

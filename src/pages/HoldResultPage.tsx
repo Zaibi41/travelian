@@ -14,6 +14,7 @@ import { writeFlightSearch } from "@/lib/admin-search/flights";
 import { HOLD_PATH, type HoldDraft, type HoldMode, type HoldView } from "@/lib/admin-search/hold";
 import type { RequestView } from "@/lib/admin-search/flights";
 import { format } from "date-fns";
+import { CopyPnr } from "@/components/CopyPnr";
 
 export type HoldResultState =
   | { kind: "held"; hold: HoldView; mode: HoldMode }
@@ -93,7 +94,7 @@ function Held({ hold }: { hold: HoldView }) {
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <Fact label="Travelian reference" value={hold.booking_id} />
-          <Fact label="Airline PNR" value={hold.pnr} />
+          <Fact label="Airline PNR" value={<span className="inline-flex max-w-full items-center gap-1"><span className="truncate">{hold.pnr}</span><CopyPnr pnr={hold.pnr} /></span>} />
           <Fact label="Time left" value={timeLeft} />
           <Fact label="Total" value={formatMoney(hold.selling_total)} />
           {/* Cost and profit only when the gateway sends them (cost and margin access); they reflect the airline's price at the hold. */}
