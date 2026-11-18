@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { PASSENGER_LABEL, airlineLabel, parseFlightSearch, repriceFlights, type FlightSearch, type FlightSearchView, type RepriceView } from "@/lib/admin-search/flights";
 import { HOLD_PATH, fareCheckFailure, type FareCheckState, type HoldDraft, type HoldMode } from "@/lib/admin-search/hold";
 import { FareCheckDialog } from "./FareCheckDialog";
-import { FlightsSearch, REASONS, WithReason, type FareSelection } from "./FlightsSearch";
+import { FlightsSearch, type FareSelection } from "./FlightsSearch";
 
 type Selections = Partial<Record<"outbound" | "return", FareSelection>>;
 
@@ -120,23 +120,12 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
       }}
     />
     <FlightsSearch
-      actionNotes={[`Quote: ${REASONS.quote}`, `Fare rules: ${REASONS.fareRules}`]}
       renderFareAction={(pick, search) => {
         const isSelected = picksFor(search)[pick.journey.direction]?.fare.id === pick.fare.id;
         const label = `${pick.flight.flight_number ?? ""} ${pick.fare.name}`.trim();
-        const disabledButton = (name: string, reason: string) => (
-          <WithReason reason={reason}>
-            {describedBy => (
-              <Button type="button" size="sm" variant={name === "Book" ? "primary" : "outline"} disabled aria-describedby={describedBy}
-                aria-label={`${name} ${label}`}>
-                {name}
-              </Button>
-            )}
-          </WithReason>
-        );
         const priced = Boolean(pick.fare.selling_price);
         return (
-          // One Actions cell, right-aligned: Book, Hold and Quote as buttons, then Fare rules and Revalidate as links.
+          // One Actions cell, right-aligned: Book and Hold as buttons, then Revalidate as a link.
           <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5">
             <div className="flex flex-wrap justify-end gap-1.5">
               {pick.fare.booking_mode === "request" ? (
@@ -152,15 +141,8 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
                   {mode === "book" ? "Book" : "Hold"}
                 </Button>
               ))}
-              {disabledButton("Quote", REASONS.quote)}
             </div>
             <div className="flex flex-wrap gap-x-3 gap-y-1">
-              <WithReason reason={REASONS.fareRules}>
-                {describedBy => (
-                  <button type="button" disabled aria-describedby={describedBy} aria-label={`Fare rules ${label}`}
-                    className="cursor-not-allowed text-body font-medium text-muted-foreground">Fare rules</button>
-                )}
-              </WithReason>
               <button
                 type="button"
                 aria-label={`Revalidate ${label}`}
