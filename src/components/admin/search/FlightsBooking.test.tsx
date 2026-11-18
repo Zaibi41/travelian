@@ -93,19 +93,14 @@ describe("fare row actions (mockup)", () => {
     gateway.reprice.mockReset().mockResolvedValue(QUOTE);
   });
 
-  it("shows Quote and Fare rules disabled with the reason; Book, Hold and Revalidate work", async () => {
+  it("has no Quote or Fare rules on a fare; Book, Hold and Revalidate work", async () => {
     renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
     expect(await screen.findByRole("button", { name: "Book PA-1 Y" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Hold PA-1 Y" })).toBeEnabled();
-    for (const [name, reason] of [["Quote", "Quotes aren't available yet"], ["Fare rules", "Not available yet"]]) {
-      const control = await screen.findByRole("button", { name: `${name} PA-1 Y` });
-      expect(control).toBeDisabled();
-      expect(control).toHaveAccessibleDescription(reason);
-    }
+    expect(screen.queryByRole("button", { name: /^(Quote|Fare rules)/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Select/ })).not.toBeInTheDocument();
-    // The reasons are visible text on the card, not only tooltips.
     const card = screen.getByRole("article", { name: /PA-1/ });
-    expect(card).toHaveTextContent("Quote: Quotes aren't available yet · Fare rules: Not available yet");
+    expect(card).not.toHaveTextContent(/Quotes aren't available|Fare rules/);
     expect(card).not.toHaveTextContent("Booking isn't available yet");
     const revalidate = screen.getByRole("button", { name: "Revalidate PA-1 Y" });
     expect(revalidate).toBeEnabled();
