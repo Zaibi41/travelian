@@ -24,7 +24,10 @@ export type BookingProduct = NonNullable<ListParams["product"]>;
 export type BookingCard = NonNullable<ListParams["card"]>;
 
 export type BookingPayment = Schemas["BookingPayment"];
-export type PaymentMethod = BookingPayment["method"];
+/** A payment as shown: also PayFast, which only the gateway records (from a verified PayFast result). */
+export type RecordedPaymentMethod = BookingPayment["method"];
+/** What staff can record by hand and receive into Travelian's accounts. */
+export type PaymentMethod = Exclude<RecordedPaymentMethod, "payfast">;
 export type RecordPaymentBody = Schemas["RecordPaymentRequest"];
 export type IssuanceChecklist = Schemas["IssuanceChecklist"];
 export type IssuanceResult = Schemas["IssuanceResult"];

@@ -22,6 +22,7 @@ const STATUS: Record<GroupHoldView["status"], { label: string; severity: "fine" 
   held: { label: "Held", severity: "action" }, confirmed: { label: "Confirmed", severity: "fine" }, expired: { label: "Expired", severity: "critical" }, released: { label: "Released", severity: "critical" },
   processing: { label: "Issuing", severity: "action" }, issued: { label: "Issued", severity: "fine" }, unknown: { label: "Unknown", severity: "critical" },
   not_recorded: { label: "Not recorded", severity: "critical" },
+  requested: { label: "Requested (website)", severity: "action" },
 };
 
 // Payment and issue tickets, step 4 of 4 (mockup pages 12 and 13): the group booking with

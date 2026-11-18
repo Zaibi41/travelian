@@ -1,6 +1,6 @@
 // Payment and issuing helpers for the booking Payments tab. Input parsing only: the gateway
 // stores, totals and checks every amount (integer paisa); the page never computes money.
-import type { IssuanceStatus, PaymentMethod } from "./types";
+import type { IssuanceStatus, PaymentMethod, RecordedPaymentMethod } from "./types";
 
 export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: "bank_transfer", label: "Bank transfer" },
@@ -8,9 +8,10 @@ export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: "1link", label: "1Link" },
 ];
 
-export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = Object.fromEntries(
-  PAYMENT_METHODS.map(method => [method.value, method.label]),
-) as Record<PaymentMethod, string>;
+export const PAYMENT_METHOD_LABEL: Record<RecordedPaymentMethod, string> = {
+  ...(Object.fromEntries(PAYMENT_METHODS.map(method => [method.value, method.label])) as Record<PaymentMethod, string>),
+  payfast: "PayFast (online)",
+};
 
 /** "15,316", "15316.5", "Rs 15,316.50" -> 1531650 paisa. Exact (string digits, no floating point);
  *  null for anything that isn't a positive amount with at most 2 decimals. */

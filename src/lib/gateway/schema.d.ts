@@ -2508,6 +2508,103 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/bookings/{reference}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Booking */
+        get: operations["get_booking_v1_public_bookings__reference__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/bookings/{reference}/payments/payfast": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Payfast
+         * @description The PayFast checkout form for the amount due. The browser posts `fields` to `action`.
+         */
+        post: operations["start_payfast_v1_public_bookings__reference__payments_payfast_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/group-ticketing/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Book Group
+         * @description Book as a guest. With live booking on, seats are held at the supplier; otherwise a request is saved for staff.
+         */
+        post: operations["book_group_v1_public_group_ticketing_bookings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/group-ticketing/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Groups
+         * @description Group fares with selling prices only. Leave all of origin, destination and date out for everything.
+         */
+        post: operations["search_groups_v1_public_group_ticketing_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/payments/payfast/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Payfast Return
+         * @description The website forwards the parameters PayFast sent the customer back with. Same verification as the notification.
+         */
+        post: operations["payfast_return_v1_public_payments_payfast_return_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ready": {
         parameters: {
             query?: never;
@@ -3027,7 +3124,7 @@ export interface components {
              * Method
              * @enum {string}
              */
-            method: "bank_transfer" | "jazzcash" | "1link";
+            method: "bank_transfer" | "jazzcash" | "1link" | "payfast";
             /**
              * Received At
              * Format: date-time
@@ -3163,7 +3260,7 @@ export interface components {
              * Booking
              * @enum {string}
              */
-            booking: "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded";
+            booking: "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested";
             /**
              * Issuance
              * @enum {string}
@@ -3211,6 +3308,20 @@ export interface components {
              * @description One entry per currency of the paid bookings (PKR when there are none).
              */
             total_sales: components["schemas"]["CurrencyAmount"][];
+        };
+        /** CheckoutView */
+        CheckoutView: {
+            /**
+             * Action
+             * @description PayFast's checkout URL: the browser posts `fields` there as a form.
+             */
+            action: string;
+            /** Fields */
+            fields: {
+                [key: string]: string;
+            };
+            /** Sandbox */
+            sandbox: boolean;
         };
         /** CurrencyAmount */
         CurrencyAmount: {
@@ -4018,7 +4129,7 @@ export interface components {
              * @description held; confirmed (paid, the final PNR is recorded); expired (time limit passed, can't be held again: search again); released; processing (issuing); issued; unknown (issuing outcome unclear); not_recorded (the supplier held but the booking couldn't be completed; only viewers with supplier access can open it).
              * @enum {string}
              */
-            status: "held" | "confirmed" | "expired" | "released" | "processing" | "issued" | "unknown" | "not_recorded";
+            status: "held" | "confirmed" | "expired" | "released" | "processing" | "issued" | "unknown" | "not_recorded" | "requested";
             /**
              * Stock
              * @enum {string}
@@ -4909,6 +5020,127 @@ export interface components {
              */
             status: "responded" | "failed" | "not_configured";
         };
+        /** PublicBookingCreated */
+        PublicBookingCreated: {
+            /**
+             * Access Token
+             * @description Private. Needed with the reference to view or pay this booking. Shown once.
+             */
+            access_token: string;
+            booking: components["schemas"]["PublicBookingView"];
+            /** Reference */
+            reference: string;
+        };
+        /** PublicBookingView */
+        PublicBookingView: {
+            /** Airline */
+            airline?: string | null;
+            /**
+             * Can Pay
+             * @description Online payment can be started now.
+             */
+            can_pay: boolean;
+            /**
+             * Final Pnr
+             * @description The airline booking reference once ticketed.
+             */
+            final_pnr?: string | null;
+            /** Hold Expires At */
+            hold_expires_at?: string | null;
+            /**
+             * Legs
+             * @default []
+             */
+            legs: components["schemas"]["PublicLeg"][];
+            /**
+             * Live
+             * @description True when seats are held at the airline's supplier; false for a request staff will follow up.
+             */
+            live: boolean;
+            paid: components["schemas"]["PublicMoney"];
+            /**
+             * Payment Status
+             * @enum {string}
+             */
+            payment_status: "unpaid" | "part_paid" | "paid";
+            /** Reference */
+            reference: string;
+            /** Route */
+            route?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "requested" | "held" | "confirmed" | "issued" | "expired" | "released" | "processing" | "unknown" | "not_recorded";
+            /**
+             * Tickets
+             * @description Ticket numbers once issued.
+             */
+            tickets?: string[];
+            total: components["schemas"]["PublicMoney"];
+            /**
+             * Travelers
+             * @description Names only.
+             */
+            travelers?: string[];
+        };
+        /**
+         * PublicGroupBookingRequest
+         * @description What a guest sends. The price is never taken from the guest: the gateway prices the fare itself.
+         */
+        PublicGroupBookingRequest: {
+            /** Adults */
+            adults: number;
+            contact: components["schemas"]["CustomerCard"];
+            /**
+             * Fare Terms Acknowledged
+             * @description The guest agreed that this group fare is non-refundable and non-changeable.
+             */
+            fare_terms_acknowledged: boolean;
+            /** Passengers */
+            passengers: components["schemas"]["GroupHoldPassenger"][];
+            /**
+             * Ticket Id
+             * @description GroupTicketView.id from the public search.
+             */
+            ticket_id: string;
+        };
+        /** PublicGroupSearch */
+        PublicGroupSearch: {
+            /**
+             * Adults
+             * @default 1
+             */
+            adults: number;
+            /** Departure Date */
+            departure_date?: string | null;
+            /** Destination */
+            destination?: string | null;
+            /** Origin */
+            origin?: string | null;
+        };
+        /** PublicLeg */
+        PublicLeg: {
+            /** Arrival Time */
+            arrival_time?: string | null;
+            /** Departure Date */
+            departure_date?: string | null;
+            /** Departure Time */
+            departure_time?: string | null;
+            /** Destination */
+            destination?: string | null;
+            /** Flight Number */
+            flight_number?: string | null;
+            /** Origin */
+            origin?: string | null;
+        };
+        /** PublicMoney */
+        PublicMoney: {
+            /** Amount Minor */
+            amount_minor: number;
+            /** Currency */
+            currency: string;
+        };
         /**
          * ReceivingAccount
          * @description A receiving account as Finance > Accounts & Ledgers manages it (active and inactive).
@@ -5052,6 +5284,16 @@ export interface components {
             new_password: string;
             /** Username */
             username: string;
+        };
+        /** ReturnResult */
+        ReturnResult: {
+            /** Reference */
+            reference?: string | null;
+            /**
+             * Result
+             * @description paid, failed, already_paid, already_failed, amount_mismatch, unknown_basket or not_verified.
+             */
+            result: string;
         };
         /** RoleRecord */
         RoleRecord: {
@@ -6118,7 +6360,7 @@ export interface operations {
                 date_type?: "created";
                 /** @description Booking ID or PNR. */
                 q?: string | null;
-                booking_status?: ("held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded") | null;
+                booking_status?: ("held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested") | null;
                 payment_status?: ("paid" | "unpaid" | "part_paid") | null;
                 issuance_status?: ("not_issued" | "requested" | "processing" | "issued" | "unknown") | null;
                 /** @description Requires the supplier names permission. */
@@ -13015,6 +13257,184 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_booking_v1_public_bookings__reference__get: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Booking-Token": string;
+            };
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicBookingView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_payfast_v1_public_bookings__reference__payments_payfast_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Booking-Token": string;
+            };
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckoutView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    book_group_v1_public_group_ticketing_bookings_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicGroupBookingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicBookingCreated"];
+                };
+            };
+            /** @description Fare gone or seats changed. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Check the details. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Too many bookings. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    search_groups_v1_public_group_ticketing_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicGroupSearch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too many searches. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Suppliers unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    payfast_return_v1_public_payments_payfast_return_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnResult"];
                 };
             };
         };

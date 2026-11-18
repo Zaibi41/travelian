@@ -1,6 +1,6 @@
 // LocalStorage-backed booking persistence for Travelian (frontend-only)
 
-export type BookingStatus = "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired";
+export type BookingStatus = "requested" | "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired";
 
 export interface BookingTraveler {
   passengerType?: "adult" | "child" | "infant";
@@ -64,6 +64,9 @@ export interface BookingRecord {
   ticketStatus?: "not_issued" | "issued";
   holdExpiresAt?: string;
   pricing: BookingPricing;
+  /** Booked through the Travelian gateway (public website): its reference, the private token to view and pay it,
+   * and whether seats are held at the supplier (false: a request staff follow up). */
+  gateway?: { reference: string; token: string; live: boolean };
 }
 
 const KEY = "travelian.bookings.v1";
@@ -112,6 +115,17 @@ export function saveBooking(record: Omit<BookingRecord, "id" | "pnr" | "createdA
   list.push(full);
   write(list);
   return full;
+}
+
+/** A booking made through the gateway: stored under the gateway's reference (no made-up PNR). */
+export function saveGatewayBooking(record: Omit<BookingRecord, "id" | "pnr" | "createdAt">, reference: string): BookingRecord {
+  const full: BookingRecord = { ...record, id: reference, pnr: "", createdAt: new Date().toISOString() };
+  write([...read().filter((b) => b.id !== reference), full]);
+  return full;
+}
+
+export function updateBooking(id: string, changes: Partial<BookingRecord>) {
+  write(read().map((b) => (b.id === id ? { ...b, ...changes } : b)));
 }
 
 export function cancelBooking(id: string) {

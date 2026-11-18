@@ -4,15 +4,56 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plane, Download, X, Search, Calendar, MapPin } from "lucide-react";
-import { listBookings, cancelBooking, deleteBooking, type BookingRecord } from "@/lib/booking-store";
+import { listBookings, cancelBooking, deleteBooking, updateBooking, type BookingRecord } from "@/lib/booking-store";
+import { confirmPayFastReturn, getPublicBooking, isPayFastReturn, type PublicBooking } from "@/lib/public-booking";
 import { downloadETicket } from "@/lib/eticket-pdf";
 import { toast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
 
 function statusClass(status: BookingRecord["status"]) {
   if (status === "confirmed" || status === "ticket_issued" || status === "payment_received") return "bg-success/10 text-success border-0";
-  if (status === "held" || status === "pending_payment") return "bg-warning/10 text-warning border-0";
+  if (status === "held" || status === "pending_payment" || status === "requested") return "bg-warning/10 text-warning border-0";
   return "bg-destructive/10 text-destructive border-0";
+}
+
+// Gateway booking state → this page's statuses.
+function fromGateway(view: PublicBooking): Partial<BookingRecord> {
+  const status: BookingRecord["status"] = view.status === "requested" ? "requested"
+    : view.status === "issued" ? "ticket_issued"
+    : view.status === "confirmed" ? "confirmed"
+    : view.status === "expired" ? "expired"
+    : view.status === "released" ? "cancelled"
+    : view.payment_status === "paid" ? "payment_received" : "held";
+  return {
+    status,
+    paymentStatus: view.payment_status === "paid" ? "paid" : "unpaid",
+    ticketStatus: view.status === "issued" ? "issued" : "not_issued",
+    holdExpiresAt: view.hold_expires_at,
+  };
+}
+
+/** After PayFast: let the gateway verify what PayFast sent back, then refresh every gateway booking's status. */
+async function syncGatewayBookings() {
+  const params = new URLSearchParams(window.location.search);
+  if (isPayFastReturn(params)) {
+    try {
+      const { result } = await confirmPayFastReturn(Object.fromEntries(params.entries()));
+      if (result === "paid" || result === "already_paid") toast({ title: "Payment received", description: "Thank you. Travelian will issue your tickets next." });
+      else if (result === "failed" || result === "already_failed") toast({ title: "Payment not completed", description: "No payment was taken. You can try again before the hold time ends.", variant: "destructive" });
+      else toast({ title: "Payment being checked", description: "We couldn't confirm the payment yet. Travelian will check it and update your booking." });
+    } catch {
+      toast({ title: "Payment being checked", description: "We couldn't confirm the payment yet. Travelian will check it and update your booking." });
+    }
+    window.history.replaceState(null, "", window.location.pathname);
+  }
+  for (const booking of listBookings().filter((item) => item.gateway)) {
+    try {
+      const view = await getPublicBooking(booking.gateway!.reference, booking.gateway!.token);
+      updateBooking(booking.id, fromGateway(view));
+    } catch {
+      // keep the last known status
+    }
+  }
 }
 
 function statusLabel(status: BookingRecord["status"]) {
@@ -26,6 +67,7 @@ export default function MyBookingsPage() {
 
   useEffect(() => {
     refresh();
+    void syncGatewayBookings();
     const handler = () => refresh();
     window.addEventListener("travelian:bookings:updated", handler);
     return () => window.removeEventListener("travelian:bookings:updated", handler);
@@ -114,10 +156,12 @@ export default function MyBookingsPage() {
                   )}
 
                   <div className="flex flex-wrap gap-2 mt-4">
-                    <Button size="sm" variant="outline" className="rounded-lg gap-1.5" onClick={() => downloadETicket(b)}>
-                      <Download className="h-3.5 w-3.5" /> E-Ticket
-                    </Button>
-                    {(b.status === "confirmed" || b.status === "held" || b.status === "pending_payment") && (
+                    {(!b.gateway || b.status === "ticket_issued") && (
+                      <Button size="sm" variant="outline" className="rounded-lg gap-1.5" onClick={() => downloadETicket(b)}>
+                        <Download className="h-3.5 w-3.5" /> E-Ticket
+                      </Button>
+                    )}
+                    {!b.gateway && (b.status === "confirmed" || b.status === "held" || b.status === "pending_payment") && (
                       <Button size="sm" variant="outline" className="rounded-lg gap-1.5 text-destructive hover:text-destructive" onClick={() => handleCancel(b.id)}>
                         <X className="h-3.5 w-3.5" /> Cancel
                       </Button>

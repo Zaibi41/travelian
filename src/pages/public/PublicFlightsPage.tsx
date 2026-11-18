@@ -24,8 +24,8 @@ import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
 import { whatsappUrl } from "@/lib/site-config";
 import { airports } from "@/data/airports";
-import { isGroupTicketingProvider, groupTicketToFlight, decodeGroupTicketId } from "@/lib/provider-systems";
-import { fetchGroupTickets, filterGroupTickets } from "@/lib/group-ticketing";
+import { isGroupTicketingProvider, groupTicketToFlight } from "@/lib/provider-systems";
+import { searchPublicGroups, GATEWAY_GROUP_PROVIDER } from "@/lib/public-booking";
 import { normalizeAirlineName, isSameAirline, extractAllAirlines, getAirlineNameFromCarrier } from "@/lib/airline-normalization";
 
 // Preload airports for routeLabel lookup
@@ -335,7 +335,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     const adultsCount = Number(travelers.adults ?? 1);
     const childrenCount = Number(travelers.children ?? 0);
     const infantsCount = Number(travelers.infants ?? 0);
-    const isSingleAdultOnly = adultsCount === 1 && childrenCount === 0 && infantsCount === 0;
+    // Group fares are adults only (any number of adults).
+    const isAdultsOnly = childrenCount === 0 && infantsCount === 0;
 
     Promise.allSettled([
       searchFlights({
@@ -357,14 +358,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           infants: travelers.infants,
         },
       }, controller.signal),
-      (isSingleAdultOnly
-        ? fetchGroupTickets("all", controller.signal).then((groups) => {
-            return filterGroupTickets(groups, {
-              from: originAirport,
-              to: destAirport,
-              dateFrom: departDateStr,
-            });
-          })
+      (isAdultsOnly
+        ? searchPublicGroups({ origin: originAirport, destination: destAirport, departureDate: departDateStr, adults: adultsCount }, controller.signal)
         : Promise.resolve([])),
     ])
       .then(async ([flightsOutcome, groupsOutcome]) => {
@@ -374,48 +369,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           flightsList = flightsOutcome.value.flights;
         }
 
-        if (!isSingleAdultOnly) {
-          flightsList = flightsList.filter((f) =>
-            !isGroupTicketingProvider(f.provider) &&
-            f.fareBrand !== "Group Ticket" &&
-            !f.flightId.startsWith("group-")
-          );
-        }
-
-        if (isSingleAdultOnly && groupsOutcome.status === "fulfilled" && groupsOutcome.value.length > 0) {
-          for (const gt of groupsOutcome.value) {
-            const converted = groupTicketToFlight(gt);
-            const decodedId = decodeGroupTicketId(gt.id).toLowerCase();
-            const gtTimeMatch = String(converted.departureTime).match(/\b(\d{1,2}:\d{2})\b/)?.[1] || "";
-
-            const exists = flightsList.some((lf) => {
-              const lfOffer = String(lf.offerId || "").toLowerCase();
-              const lfFlightId = String(lf.flightId || "").toLowerCase();
-              if (
-                lfOffer === decodedId ||
-                lfFlightId === `group-${decodedId}` ||
-                (decodedId && lfOffer.includes(decodedId)) ||
-                (gt.id && lfOffer.includes(gt.id.toLowerCase()))
-              ) {
-                return true;
-              }
-              const lfTimeMatch = String(lf.departureTime).match(/\b(\d{1,2}:\d{2})\b/)?.[1] || "";
-              if (
-                lf.provider &&
-                converted.provider &&
-                lf.provider.toLowerCase() === converted.provider.toLowerCase() &&
-                gtTimeMatch &&
-                lfTimeMatch === gtTimeMatch
-              ) {
-                return true;
-              }
-              return false;
-            });
-
-            if (!exists) {
-              flightsList.push(converted);
-            }
-          }
+        // Group fares come only from the Travelian gateway (bookable, priced by Travelian); the legacy results' group fares are dropped.
+        flightsList = flightsList.filter((f) =>
+          !isGroupTicketingProvider(f.provider) &&
+          f.fareBrand !== "Group Ticket" &&
+          !f.flightId.startsWith("group-")
+        );
+        if (isAdultsOnly && groupsOutcome.status === "fulfilled") {
+          flightsList.push(...groupsOutcome.value.map(groupTicketToFlight));
         }
 
         if (flightsOutcome.status === "rejected" && flightsList.length === 0) {
@@ -472,10 +433,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const maxPrice = Math.max(700, ...flights.map(f => f.price));
   const priceRange = priceRangeState ?? [0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)];
 
-  const isSingleAdultOnly = Number(travelers.adults ?? 1) === 1 && Number(travelers.children ?? 0) === 0 && Number(travelers.infants ?? 0) === 0;
+  // Group fares are adults only (any number of adults).
+  const isAdultsOnly = Number(travelers.children ?? 0) === 0 && Number(travelers.infants ?? 0) === 0;
 
   let filtered = flights.filter(f => {
-    if (!isSingleAdultOnly) {
+    if (!isAdultsOnly) {
       const isGroup = isGroupTicketingProvider(f.provider) || f.fareBrand === "Group Ticket" || f.flightId.startsWith("group-");
       if (isGroup) return false;
     }
@@ -746,6 +708,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       currency: fare?.price.currency || flight.currency || "PKR",
     });
     if (fare?.tier) query.set("fare", fare.tier);
+    // A group fare from the Travelian gateway: booked and priced by the gateway (the price here is for display only).
+    if (flight.provider === GATEWAY_GROUP_PROVIDER && flight.offerId) query.set("groupTicketId", String(flight.offerId));
     if (Number.isFinite(Number(fare?.price.base))) query.set("baseFare", String(fare?.price.base));
     if (Number.isFinite(Number(fare?.price.taxes))) query.set("taxes", String(fare?.price.taxes));
     if (fare?.amenities?.length) query.set("farePerks", fare.amenities.join("|"));
