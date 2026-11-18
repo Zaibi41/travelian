@@ -7,6 +7,8 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export interface CalendarDay {
   date: string;
+  /** Flights: false while no search for this date has finished (no price, still selectable). */
+  checked?: boolean;
   available: boolean;
   lowest_price?: { amount_minor: number; currency: string } | null;
   fares?: number;
@@ -32,13 +34,14 @@ export function bands(days: CalendarDay[]): Map<string, Band> {
   return new Map(priced.map(([date, amount]) => [date, low === high || amount <= low ? "low" : amount >= high ? "high" : "avg"]));
 }
 
-function Month({ month, byDate, band, selected, today, onPick }: {
+function Month({ month, byDate, band, selected, today, onPick, anyDate }: {
   month: Date;
   byDate: Map<string, CalendarDay>;
   band: Map<string, Band>;
   selected?: string;
   today: string;
   onPick?: (date: string) => void;
+  anyDate?: boolean;
 }) {
   const days = eachDayOfInterval({ start: startOfMonth(month), end: endOfMonth(month) });
   return (
@@ -53,18 +56,20 @@ function Month({ month, byDate, band, selected, today, onPick }: {
           const real = key >= today && info?.available && info.lowest_price ? info.lowest_price : null;
           const tone = real ? band.get(key) ?? "avg" : null;
           const isSelected = selected === key;
-          const label = `${format(day, "EEEE d MMMM")}: ${real ? `from ${shortPrice(real.amount_minor)}` : key < today ? "past date" : "no availability"}`;
+          const selectable = Boolean(real) || (anyDate && key >= today);
+          const label = `${format(day, "EEEE d MMMM")}: ${real ? `from ${shortPrice(real.amount_minor)}` : key < today ? "past date"
+            : anyDate ? (info?.checked ? "no fares found" : "fare not checked yet") : "no availability"}`;
           return (
             <button
               key={key}
               type="button"
-              disabled={!real || !onPick}
+              disabled={!selectable || !onPick}
               aria-label={label}
               aria-pressed={isSelected}
               data-available={real ? "true" : "false"}
-              onClick={() => real && onPick?.(key)}
+              onClick={() => selectable && onPick?.(key)}
               className={`mx-auto flex h-11 w-11 flex-col items-center justify-center rounded-lg leading-tight transition-colors ${
-                isSelected ? "bg-primary text-primary-foreground" : real ? "hover:bg-primary/10" : "cursor-not-allowed text-muted-foreground/50"
+                isSelected ? "bg-primary text-primary-foreground" : real ? "hover:bg-primary/10" : selectable ? "text-foreground hover:bg-muted" : "cursor-not-allowed text-muted-foreground/50"
               }`}
             >
               <span className="text-sm font-semibold">{format(day, "d")}</span>
@@ -77,20 +82,24 @@ function Month({ month, byDate, band, selected, today, onPick }: {
   );
 }
 
-export function GroupFareCalendar({ days, selected, onPick, caption }: {
+export function GroupFareCalendar({ days, selected, onPick, caption, anyDate, checking }: {
   days: CalendarDay[];
   selected?: string;
   onPick?: (date: string) => void;
   caption?: string;
+  /** Flights: every future date can be picked; only dates with a real checked fare show a price. */
+  anyDate?: boolean;
+  /** Flights: more dates are being checked. */
+  checking?: boolean;
 }) {
   const byDate = useMemo(() => new Map(days.map((day) => [day.date, day])), [days]);
   const band = useMemo(() => bands(days), [days]);
   const today = format(new Date(), "yyyy-MM-dd");
   const first = days.length ? startOfMonth(parseISO(days[0].date)) : startOfMonth(new Date());
-  const last = days.length ? startOfMonth(parseISO(days[days.length - 1].date)) : first;
+  const last = anyDate ? addMonths(startOfMonth(new Date()), 11) : days.length ? startOfMonth(parseISO(days[days.length - 1].date)) : first;
   const initial = selected ? startOfMonth(parseISO(selected)) : first;
   const [month, setMonth] = useState(initial < first || initial > last ? first : initial);
-  if (!days.length) return null;
+  if (!days.length && !anyDate) return null;
   const second = addMonths(month, 1);
   const open = days.filter((day) => day.available && day.lowest_price && day.date >= today).length;
   return (
@@ -99,14 +108,16 @@ export function GroupFareCalendar({ days, selected, onPick, caption }: {
         <button type="button" aria-label="Previous month" disabled={!(month > first)} onClick={() => setMonth(addMonths(month, -1))}
           className="rounded-lg border p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-40"><ArrowLeft className="h-4 w-4" /></button>
         <p className="min-w-0 truncate text-xs text-muted-foreground">
-          {caption ? `${caption} · ` : ""}{open ? `${open} date${open === 1 ? "" : "s"} with seats` : "No dates with seats in this period"}
+          {caption ? `${caption} · ` : ""}{anyDate
+            ? (checking ? "Checking fares…" : open ? `Lowest fares found for ${open} date${open === 1 ? "" : "s"}` : "Fares appear as dates are checked")
+            : open ? `${open} date${open === 1 ? "" : "s"} with seats` : "No dates with seats in this period"}
         </p>
         <button type="button" aria-label="Next month" disabled={!(second < last) && !isSameMonth(second, last)} onClick={() => setMonth(addMonths(month, 1))}
           className="rounded-lg border p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-40"><ArrowRight className="h-4 w-4" /></button>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Month month={month} byDate={byDate} band={band} selected={selected} today={today} onPick={onPick} />
-        <div className="hidden sm:block"><Month month={second} byDate={byDate} band={band} selected={selected} today={today} onPick={onPick} /></div>
+        <Month month={month} byDate={byDate} band={band} selected={selected} today={today} onPick={onPick} anyDate={anyDate} />
+        <div className="hidden sm:block"><Month month={second} byDate={byDate} band={band} selected={selected} today={today} onPick={onPick} anyDate={anyDate} /></div>
       </div>
       <p className="mt-3 flex items-center justify-center gap-3 border-t pt-2 text-[11px] text-muted-foreground">
         Lowest fare per adult:

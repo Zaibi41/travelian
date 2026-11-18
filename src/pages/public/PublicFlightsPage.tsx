@@ -11,11 +11,13 @@ import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users, Loader2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
-import { format, addDays } from "date-fns";
+import { format, addDays, parseISO } from "date-fns";
+import { GroupFareCalendar } from "@/components/GroupFareCalendar";
+import { useFlightFares } from "@/hooks/use-flight-fares";
 import { cn } from "@/lib/utils";
 import { SEO } from "@/components/SEO";
 import { TravelersClassPicker, formatTravelers, type TravelersValue } from "@/components/public/TravelersClassPicker";
-import { fetchFlightFares, hydrateSooperFareOptions, searchFlights, type FareOption, type TravelianFlight } from "@/lib/travelian-api";
+import { extractAirportCode, fetchFlightFares, hydrateSooperFareOptions, searchFlights, type FareOption, type TravelianFlight } from "@/lib/travelian-api";
 import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { FlightSearchLoader } from "@/components/public/FlightSearchLoader";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
@@ -223,6 +225,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [editSegments, setEditSegments] = useState<FlightSegment[]>(segments);
   const [editTravelers, setEditTravelers] = useState<TravelersValue>(travelers);
   const [editDateOpen, setEditDateOpen] = useState(false);
+  const editFares = useFlightFares(editDateOpen, {
+    from: extractAirportCode(editFrom) || editFrom, to: extractAirportCode(editTo) || editTo, adults: editTravelers.adults,
+    cabin: editTravelers.cabin.toLowerCase().replace(/\s+/g, "_"),
+  });
   const [editReturnDateOpen, setEditReturnDateOpen] = useState(false);
   const [editSegmentDateOpen, setEditSegmentDateOpen] = useState<number | null>(null);
 
@@ -1963,6 +1969,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   </button>
                 </CalendarPopupTrigger>
                 <CalendarPopupContent title="Select departure date">
+                  {editFares.ready ? (
+                    <div className="w-[min(46rem,calc(100vw-2.5rem))] overflow-y-auto p-3 sm:p-5">
+                      <GroupFareCalendar days={editFares.days} anyDate checking={editFares.checking}
+                        selected={editDate ? format(editDate, "yyyy-MM-dd") : undefined}
+                        onPick={(picked) => { setEditDate(parseISO(picked)); setEditDateOpen(false); }} />
+                    </div>
+                  ) : (
                   <Calendar size="large"
                     mode="single"
                     selected={editDate}
@@ -1973,6 +1986,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     initialFocus
                     className="p-3 sm:p-5 pointer-events-auto"
                   />
+                  )}
                 </CalendarPopupContent>
               </CalendarPopup>
             </div>

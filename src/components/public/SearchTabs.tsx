@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/components/ui/calendar-popup";
 import { Calendar } from "@/components/ui/calendar";
-import { format, startOfDay, addDays } from "date-fns";
+import { format, startOfDay, addDays, parseISO } from "date-fns";
+import { GroupFareCalendar } from "@/components/GroupFareCalendar";
+import { useFlightFares, type FareRoute } from "@/hooks/use-flight-fares";
 import { cn } from "@/lib/utils";
 import { TravelersClassPicker, type TravelersValue } from "@/components/public/TravelersClassPicker";
 import { AirportCombobox } from "@/components/public/AirportCombobox";
@@ -36,8 +38,9 @@ interface MultiCitySegment {
   date: Date | undefined;
 }
 
-function DatePickerField({ id, date, onSelect, placeholder }: { id?: string; date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string }) {
+function DatePickerField({ id, date, onSelect, placeholder, fareRoute }: { id?: string; date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string; fareRoute?: FareRoute }) {
   const [open, setOpen] = useState(false);
+  const fares = useFlightFares(open, fareRoute);
   const today = startOfDay(new Date());
   const selectDate = (nextDate: Date | undefined) => {
     onSelect(nextDate);
@@ -71,7 +74,12 @@ function DatePickerField({ id, date, onSelect, placeholder }: { id?: string; dat
           </button>
         </CalendarPopupTrigger>
         <CalendarPopupContent title={placeholder === "Select date" ? "Select flight date" : `Select ${placeholder.toLowerCase()}`}>
-          {calendar}
+          {fares.ready ? (
+            <div className="w-[min(46rem,calc(100vw-2.5rem))] overflow-y-auto p-3 sm:p-5">
+              <GroupFareCalendar days={fares.days} anyDate checking={fares.checking} selected={date ? format(date, "yyyy-MM-dd") : undefined}
+                onPick={(picked) => selectDate(parseISO(picked))} />
+            </div>
+          ) : calendar}
         </CalendarPopupContent>
       </CalendarPopup>
 
@@ -329,7 +337,7 @@ export function SearchTabs({
                   </div>
                   <div className="min-w-0">
                     <label htmlFor={`${fieldId}-depart`} className="mb-1 block text-xs font-medium text-muted-foreground">Departure Date</label>
-                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
+                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" fareRoute={{ from: fromValue, to: toValue, adults: travelers.adults, cabin: travelers.cabin.toLowerCase().replace(/\s+/g, "_") }} />
                   </div>
                   <Button
                     onClick={handleSearch}
@@ -369,7 +377,7 @@ export function SearchTabs({
                   </div>
                   <div className="min-w-0">
                     <label htmlFor={`${fieldId}-depart`} className="mb-1 block text-xs font-medium text-muted-foreground">Departure Date</label>
-                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" />
+                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" fareRoute={{ from: fromValue, to: toValue, adults: travelers.adults, cabin: travelers.cabin.toLowerCase().replace(/\s+/g, "_") }} />
                   </div>
                   <div className="min-w-0">
                     <label htmlFor={`${fieldId}-return`} className="mb-1 block text-xs font-medium text-muted-foreground">Return Date</label>
