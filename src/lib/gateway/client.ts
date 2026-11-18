@@ -98,7 +98,7 @@ async function errorBody(response: Response): Promise<ErrorBody> {
   }
 }
 
-type Method = "GET" | "POST" | "PATCH" | "DELETE";
+type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 async function send(path: string, init: { method: Method; query?: Record<string, unknown>; body?: unknown; accept?: string }, options: GatewayOptions, renewed = false): Promise<unknown> {
   const baseUrl = (options.baseUrl ?? configuredBaseUrl()).replace(/\/+$/, "");
@@ -199,6 +199,15 @@ export type DeleteResponse<P extends DeletePath> = DeleteOp<P> extends { respons
 
 export function gatewayPatch<P extends PatchPath>(path: P, body: PatchBody<P>, options: GatewayOptions = {}): Promise<PatchResponse<P>> {
   return send(path, { method: "PATCH", body }, options) as Promise<PatchResponse<P>>;
+}
+
+type PutPath = { [P in keyof paths]: paths[P] extends { put: unknown } ? (paths[P]["put"] extends undefined ? never : P) : never }[keyof paths];
+type PutOp<P extends PutPath> = NonNullable<paths[P]["put"]>;
+export type PutBody<P extends PutPath> = PutOp<P> extends { requestBody: { content: { "application/json": infer B } } } ? B : never;
+export type PutResponse<P extends PutPath> = PutOp<P> extends { responses: { 200: { content: { "application/json": infer R } } } } ? R : never;
+
+export function gatewayPut<P extends PutPath>(path: P, body: PutBody<P>, options: GatewayOptions = {}): Promise<PutResponse<P>> {
+  return send(path, { method: "PUT", body }, options) as Promise<PutResponse<P>>;
 }
 
 export function gatewayDelete<P extends DeletePath>(path: P, options: GatewayOptions = {}): Promise<DeleteResponse<P>> {

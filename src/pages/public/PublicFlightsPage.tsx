@@ -23,13 +23,14 @@ import { AirlineLogo } from "@/components/public/AirlineLogo";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
 import { whatsappUrl } from "@/lib/site-config";
-import { airports } from "@/data/airports";
+import { airportByCode, loadPublicAirports } from "@/data/airports";
 import { isGroupTicketingProvider, groupTicketToFlight } from "@/lib/provider-systems";
 import { searchPublicGroups, GATEWAY_GROUP_PROVIDER } from "@/lib/public-booking";
 import { normalizeAirlineName, isSameAirline, extractAllAirlines, getAirlineNameFromCarrier } from "@/lib/airline-normalization";
 
 // Preload airports for routeLabel lookup
-const airportCache = airports;
+// The shared airport list (D36) loads once in the background; labels use it when ready, the popular list before.
+void loadPublicAirports();
 const popularAirportByCode = new Map(
   [
     { code: "LHE", city: "Lahore" },
@@ -833,7 +834,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const routeLabel = (code: string, airportName?: string | null) => {
     const cleanCode = String(code || "").trim().toUpperCase();
     // Show just "IATA City" instead of full airport name for consistency with SooperFare
-    const airport = airportCache?.find(a => a.code === cleanCode) || popularAirportByCode.get(cleanCode);
+    const airport = airportByCode(cleanCode) || popularAirportByCode.get(cleanCode);
     return airport ? `${cleanCode} ${airport.city}` : cleanCode;
   };
   const airportCode = (value?: string | null) => String(value || "").trim().toUpperCase();

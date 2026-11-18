@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { uploadImage } from "@/lib/admin-uploads";
 import { AlertCircle, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/admin/ui/button";
@@ -14,7 +15,7 @@ import { TABLE, describedBy } from "@/components/admin/ui/classes";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GatewayError } from "@/lib/gateway/client";
 import {
-  PAYMENT_METHODS, PAYMENT_METHOD_LABEL, addReceivingAccount, deactivateReceivingAccount, fetchReceivingAccounts, methodFromParam,
+  PAYMENT_METHODS, PAYMENT_METHOD_LABEL, activateReceivingAccount, addReceivingAccount, deactivateReceivingAccount, fetchReceivingAccounts, methodFromParam,
   type PaymentMethod, type ReceivingAccount,
 } from "@/lib/finance/payment-accounts";
 import { cn } from "@/lib/utils";
@@ -122,9 +123,21 @@ function StatusPill({ active }: { active: boolean }) {
 
 /** Table from 640px; below that each account is a card. */
 function AccountsTable({ accounts, onDeactivate }: { accounts: ReceivingAccount[]; onDeactivate: (account: ReceivingAccount) => void }) {
+  const queryClient = useQueryClient();
+  const activate = useMutation({
+    mutationFn: (account: ReceivingAccount) => activateReceivingAccount(account.id),
+    onSuccess: account => {
+      toast.success(`${account.label} is active again.`);
+      void queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
+      void queryClient.invalidateQueries({ queryKey: ["admin-bookings", "payment-accounts"] });
+    },
+    onError: error => toast.error(error.message),
+  });
+  // The Active toggle: Deactivate an active account, Activate an inactive one.
   const action = (account: ReceivingAccount) => account.active
     ? <Button variant="outline" size="sm" onClick={() => onDeactivate(account)} aria-label={`Deactivate ${account.label}`}>Deactivate</Button>
-    : null;
+    : <Button variant="outline" size="sm" disabled={activate.isPending} onClick={() => activate.mutate(account)} aria-label={`Activate ${account.label}`}>Activate</Button>;
+  const details = (account: ReceivingAccount) => [account.bank_name, account.account_title, account.account_number_masked].filter(Boolean).join(" · ");
   return (
     <>
       <div className={cn(TABLE.wrap, "hidden shadow-none sm:block")}>
@@ -140,7 +153,15 @@ function AccountsTable({ accounts, onDeactivate }: { accounts: ReceivingAccount[
           <tbody>
             {accounts.map(account => (
               <tr key={account.id} className={TABLE.row}>
-                <td className={cn(TABLE.td, "max-w-0")}><span className="block truncate font-medium" title={account.label}>{account.label}</span></td>
+                <td className={cn(TABLE.td, "max-w-0")}>
+                  <span className="flex min-w-0 items-center gap-2">
+                    {account.qr_url && <img src={account.qr_url} alt={`QR code for ${account.label}`} className="h-8 w-8 shrink-0 rounded border object-contain" />}
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium" title={account.label}>{account.label}</span>
+                      {details(account) && <span className="block truncate text-label text-muted-foreground" title={details(account)}>{details(account)}</span>}
+                    </span>
+                  </span>
+                </td>
                 <td className={TABLE.td}><Tag tone="navy">{PAYMENT_METHOD_LABEL[account.method]}</Tag></td>
                 <td className={TABLE.td}><StatusPill active={account.active} /></td>
                 <td className={cn(TABLE.td, "text-right")}>{action(account)}</td>
@@ -153,10 +174,11 @@ function AccountsTable({ accounts, onDeactivate }: { accounts: ReceivingAccount[
         {accounts.map(account => (
           <li key={account.id} className="flex flex-col gap-2 rounded-lg border border-border p-3">
             <p className="truncate text-body font-medium" title={account.label}>{account.label}</p>
+            {details(account) && <p className="truncate text-label text-muted-foreground">{details(account)}</p>}
             <div className="flex flex-wrap items-center gap-2">
               <Tag tone="navy">{PAYMENT_METHOD_LABEL[account.method]}</Tag>
               <StatusPill active={account.active} />
-              {account.active && <span className="ml-auto">{action(account)}</span>}
+              <span className="ml-auto">{action(account)}</span>
             </div>
           </li>
         ))}
@@ -170,8 +192,29 @@ function AddAccountDialog({ initialMethod, onClose }: { initialMethod: PaymentMe
   const nameId = useId();
   const [method, setMethod] = useState<PaymentMethod>(initialMethod);
   const [label, setLabel] = useState("");
+  const [bank, setBank] = useState({ bank_name: "", account_title: "", account_number: "" });
+  const [qr, setQr] = useState<{ key: string; url?: string | null } | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const isBank = method === "bank_transfer";
+  const pickQr = async (file?: File) => {
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const uploaded = await uploadImage("payment_qr", file);
+      setQr({ key: uploaded.assetKey, url: uploaded.publicUrl });
+    } catch (problem) {
+      setUploadError(problem instanceof Error ? problem.message : "The image couldn't be uploaded.");
+    } finally {
+      setUploading(false);
+    }
+  };
   const save = useMutation({
-    mutationFn: () => addReceivingAccount(method, label),
+    mutationFn: () => addReceivingAccount(method, label, isBank ? {
+      bank_name: bank.bank_name || null, account_title: bank.account_title || null, account_number: bank.account_number || null,
+      qr_asset_key: qr?.key ?? null,
+    } : {}),
     onSuccess: account => {
       toast.success(`${account.label} added.`);
       void queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
@@ -204,10 +247,31 @@ function AddAccountDialog({ initialMethod, onClose }: { initialMethod: PaymentMe
               aria-describedby={describedBy(nameId, { hint: true, error })}
               onChange={event => { setLabel(event.target.value); if (save.isError) save.reset(); }} />
           </FieldShell>
+          {isBank && (
+            <>
+              {/* Shown to customers who choose bank transfer at checkout (masked number and QR only). */}
+              {([["bank_name", "Bank name", "e.g. Meezan Bank"], ["account_title", "Account title", "As the bank shows it"],
+                 ["account_number", "Account number", "Only the last 4 digits are kept and shown (masked)."]] as const).map(([key, title, hint]) => (
+                <FieldShell key={key} id={`${nameId}-${key}`} label={title} hint={hint}>
+                  <Input id={`${nameId}-${key}`} value={bank[key]} autoComplete="off" maxLength={key === "account_number" ? 40 : 120}
+                    onChange={event => setBank(current => ({ ...current, [key]: event.target.value }))} />
+                </FieldShell>
+              ))}
+              <FieldShell id={`${nameId}-qr`} label="QR code image" hint="PNG, JPEG or WebP, up to 2 MB. Stored in S3; customers see it at checkout."
+                error={uploadError && <span className="text-status-critical-text">{uploadError}</span>}>
+                <div className="flex items-center gap-3">
+                  <Input id={`${nameId}-qr`} type="file" accept="image/png,image/jpeg,image/webp" disabled={uploading}
+                    onChange={event => void pickQr(event.target.files?.[0])} />
+                  {uploading && <span className="text-label text-muted-foreground">Uploading…</span>}
+                  {qr?.url && <img src={qr.url} alt="QR code preview" className="h-12 w-12 rounded border object-contain" />}
+                </div>
+              </FieldShell>
+            </>
+          )}
         </form>
         <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" type="submit" form={`${nameId}-form`} disabled={save.isPending}>
+          <Button variant="primary" type="submit" form={`${nameId}-form`} disabled={save.isPending || uploading}>
             {save.isPending ? "Saving…" : "Save account"}
           </Button>
         </DialogFooter>

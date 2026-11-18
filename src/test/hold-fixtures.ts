@@ -11,12 +11,12 @@ export const STAFF_DRAFT: HoldDraft = {
     journey: { direction: "outbound", origin: "LHE", destination: "KHI", flights: [] },
     flight: { id: "f1", airline_code: "Z8", airline_name: "South Air", flight_number: "Z8266", departure_local: "2026-11-19T00:25",
       arrival_local: "2026-11-19T02:35", duration_minutes: 130, stops: 0, stop_cities: [], fares: [] },
-    fare: { id: "x1", name: "EB", baggage: "No checked baggage", selling_price: rs(13_597) },
+    fare: { id: "x1", name: "EB", baggage: "No checked baggage", selling_price: rs(13_597), booking_mode: "hold" },
   }],
   quote: {
     quote_id: "q1", expires_at: new Date(Date.now() + 9 * 60_000).toISOString(), selling_total: rs(15_316), new_total: rs(15_316),
     passengers: [{ type: "ADT", count: 1, selling_each: rs(13_597) }, { type: "INF", count: 1, selling_each: rs(1_719) }],
-    price_changed: false, booking_enabled: true, new_price_per_adult: rs(13_597),
+    price_changed: false, booking_enabled: true, booking_mode: "hold", new_price_per_adult: rs(13_597),
   },
 };
 

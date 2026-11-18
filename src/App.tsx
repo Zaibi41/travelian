@@ -36,6 +36,7 @@ const TermsPage = lazy(() => import("./pages/public/TermsPage"));
 const CareersPage = lazy(() => import("./pages/public/CareersPage"));
 const UmrahDetailPage = lazy(() => import("./pages/public/UmrahDetailPage"));
 const MyBookingsPage = lazy(() => import("./pages/public/MyBookingsPage"));
+const FindBookingPage = lazy(() => import("./pages/public/FindBookingPage"));
 const BlogDetailPage = lazy(() => import("./pages/public/BlogDetailPage"));
 const DestinationPage = lazy(() => import("./pages/public/DestinationPage"));
 const BookingRequestPage = lazy(() => import("./pages/public/BookingRequestPage"));
@@ -67,6 +68,7 @@ const CouponsPage = lazy(() => import("./pages/CouponsPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const AnnouncementsPage = lazy(() => import("./pages/AnnouncementsPage"));
+const SiteLogoPage = lazy(() => import("./pages/SiteLogoPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookingsRoute = lazy(() => import("./pages/AdminBookingsRoutes").then(m => ({ default: m.BookingsRoute })));
@@ -113,6 +115,7 @@ const App = () => (
             <Route path="/request-booking" element={<PublicLayout><BookingRequestPage /></PublicLayout>} />
             <Route path="/account" element={<PublicLayout><AccountPage /></PublicLayout>} />
             <Route path="/my-bookings" element={<PublicLayout><MyBookingsPage /></PublicLayout>} />
+            <Route path="/find-booking" element={<PublicLayout><FindBookingPage /></PublicLayout>} />
             <Route path="/signin" element={<PublicLayout showFooter={false}><SignInPage /></PublicLayout>} />
             <Route path="/register" element={<PublicLayout showFooter={false}><RegisterPage /></PublicLayout>} />
             <Route path="/auth/callback" element={<PublicLayout showFooter={false}><AuthCallbackPage /></PublicLayout>} />
@@ -173,6 +176,7 @@ const App = () => (
             <Route path="/admin/blog" element={<AdminLayout><BlogPage /></AdminLayout>} />
             <Route path="/admin/notifications" element={<AdminLayout><NotificationsPage /></AdminLayout>} />
             <Route path="/admin/announcements" element={<AdminLayout><AnnouncementsPage /></AdminLayout>} />
+            <Route path="/admin/site-logo" element={<AdminLayout><SiteLogoPage /></AdminLayout>} />
             <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
             <Route path="/admin/customer" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />
             <Route path="/admin/customer/*" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />

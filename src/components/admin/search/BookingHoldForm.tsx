@@ -578,8 +578,10 @@ export function AdminOnlyCost({ provider, source, supplierCost, margin }: {
 export const money = (value?: Money | null) => (value ? formatMoney(value) : null);
 
 /** The right-hand panel: the selected fare, how its price is confirmed, the admin-only block and Hold seats. */
-export function FarePanel({ title, children, pricing, adminOnly, notice, formId, canHold, pending, footnote }: {
+export function FarePanel({ title, children, pricing, adminOnly, notice, formId, canHold, pending, footnote, submitLabel }: {
   title: string;
+  /** Replaces "Hold seats" (restricted airlines: "Send request to book"). */
+  submitLabel?: string;
   children: ReactNode;
   /** Flights: the fare-confirmed badge and timer. Group: "The price is confirmed when the seats are held." */
   pricing: ReactNode;
@@ -599,7 +601,7 @@ export function FarePanel({ title, children, pricing, adminOnly, notice, formId,
       {adminOnly}
       {notice}
       <Button type="submit" form={formId} variant="primary" className="w-full" disabled={!canHold || pending}>
-        {pending ? "Holding seats…" : "Hold seats"}
+        {pending ? (submitLabel ? "Sending…" : "Holding seats…") : (submitLabel ?? "Hold seats")}
       </Button>
       <p className="text-helper text-muted-foreground">{footnote}</p>
     </aside>

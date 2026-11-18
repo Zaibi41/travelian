@@ -632,7 +632,6 @@ export async function fetchGroupTicketDetail(groupId: string, signal?: AbortSign
 
 export function groupTicketWhatsAppMessage(category: string, group: GroupTicket) {
   const display = maskGroupTicketForDisplay(group);
-  const gCode = getSupplierGCode(group);
   const itinerary = display.itinerary?.length
     ? ["", "Itinerary:", ...display.itinerary.map((leg) => `- ${leg.flightDate || "Date TBA"}: ${leg.origin || "Origin TBA"} to ${leg.destination || "Destination TBA"}${leg.departureTime || leg.arrivalTime ? ` (${leg.departureTime || "TBA"} - ${leg.arrivalTime || "TBA"})` : ""}`)]
     : [];
@@ -641,7 +640,6 @@ export function groupTicketWhatsAppMessage(category: string, group: GroupTicket)
     "",
     "I want to inquire about this group ticket:",
     "",
-    `Supplier Code: ${gCode}`,
     `Route: ${display.sector || "Please confirm"}`,
     `Trip Type: ${display.tripType === "round-trip" ? "Return" : "One-Way"}`,
     `Departure Date: ${display.departureDate || "Please confirm"}`,

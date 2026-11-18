@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 import { AdminProfileDialog, type ProfileAction } from "@/components/AdminProfileDialog";
+import { useBookingAlerts } from "@/lib/admin-notifications";
 import { formatPkr, getWalletSummary } from "@/lib/wallet-summary";
 import { ANNOUNCEMENTS_CHANGED, listAdminAnnouncements } from "@/lib/admin-announcements";
 
@@ -73,7 +74,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
 function AdminShell({ children }: { children: React.ReactNode }) {
   const { notifications, agencies, walletLedger, walletDeposits } = useAdmin();
-  const unreadCount = notifications.filter(notification => !notification.read).length;
+  const alerts = useBookingAlerts();
+  const unreadCount = notifications.filter(notification => !notification.read).length + alerts.unseen;
   const [announcements, setAnnouncements] = useState(listAdminAnnouncements);
   const navigate = useNavigate();
   const location = useLocation();

@@ -15,9 +15,10 @@ import { Link, useSearchParams } from "react-router-dom";
 // SeatMap is intentionally paused in the UI for now. Keep the component available for the future seat-selection phase.
 // import { SeatMap } from "@/components/booking/SeatMap";
 import { saveServerBooking } from "@/lib/booking-api";
-import { bookGroupFare, startPayFastCheckout, PublicBookingError } from "@/lib/public-booking";
+import { bookGroupFare, getPaymentMethods, startPayFastCheckout, PublicBookingError, type PaymentMethods } from "@/lib/public-booking";
+import { BankAccounts, HoldCountdown } from "@/components/public/BankTransferDetails";
 import { saveBooking, saveGatewayBooking, type BookingRecord, type BookingTraveler } from "@/lib/booking-store";
-import { createPayFastSession, submitHostedPayment } from "@/lib/payment-api";
+import { submitHostedPayment } from "@/lib/payment-api";
 import { downloadETicket } from "@/lib/eticket-pdf";
 import { toast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
@@ -246,6 +247,13 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const [selectedSeat, setSelectedSeat] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState("card");
+  // B3/B4: what checkout can offer, from the gateway (bank transfer only with an active account; JazzCash only when enabled).
+  const [methods, setMethods] = useState<PaymentMethods | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    getPaymentMethods(controller.signal).then(setMethods).catch(() => setMethods(null));
+    return () => controller.abort();
+  }, []);
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
   const [cardCvv, setCardCvv] = useState("");
@@ -453,12 +461,15 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
   const handlePay = async () => {
     setPayConfirmOpen(false);
+    const online = Boolean(groupTicketId); // only gateway bookings can be paid online (verified by the gateway)
     const saved = await persistBooking({
-      status: "pending_payment",
+      status: online ? "pending_payment" : "held",
       paymentMethod,
-      paymentStatus: "pending",
-      toastTitle: "Redirecting to payment",
-      toastDescription: "Travelian has saved this booking and is opening the secure PayFast checkout.",
+      paymentStatus: online ? "pending" : "unpaid",
+      toastTitle: online ? "Redirecting to payment" : "Booking request saved",
+      toastDescription: online
+        ? "Travelian has saved this booking and is opening the secure PayFast checkout."
+        : "Online payment isn't available for this booking. Travelian's team will contact you to confirm the fare and arrange payment. Nothing has been charged.",
     });
     if (!saved || !["card", "1link"].includes(paymentMethod)) return;
     if (saved.gateway) {
@@ -479,31 +490,8 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
       return;
     }
 
-    try {
-      setProcessing(true);
-      const session = await createPayFastSession({
-        bookingId: saved.id,
-        amount: saved.pricing.total,
-        currency: saved.pricing.currency,
-        customerName: `${saved.travelers[0]?.firstName || ""} ${saved.travelers[0]?.lastName || ""}`.trim() || "Travelian Customer",
-        customerEmail: saved.contact.email,
-        customerPhone: saved.contact.phone,
-        description: `${productCtx.title} ${productCtx.subtitle}`.trim(),
-        method: paymentMethod === "1link" ? "1link" : "card",
-        successUrl: `${window.location.origin}/my-bookings?payment=success&bookingId=${encodeURIComponent(saved.id)}`,
-        failureUrl: `${window.location.origin}/booking?payment=failed&bookingId=${encodeURIComponent(saved.id)}`,
-      });
-      submitHostedPayment(session);
-    } catch (error) {
-      console.error("Unable to start PayFast checkout", error);
-      toast({
-        title: "Online payment unavailable",
-        description: error instanceof Error ? error.message : "Please try again or hold the booking for manual payment.",
-        variant: "destructive",
-      });
-    } finally {
-      setProcessing(false);
-    }
+    // B2: the legacy Lambda checkout marked bookings paid without verifying PayFast, so it is never called. Non-gateway
+    // bookings are saved as requests (above) for Travelian's team to confirm and take payment.
   };
 
   const buildTravelers = (): BookingTraveler[] => {
@@ -538,6 +526,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
         })),
         contact: { firstName: lead?.firstName || "", lastName: lead?.lastName || "", phone: `${phoneCode}${phone}`, email: email.trim() || undefined },
         fareTermsAcknowledged: fareTermsAccepted,
+        paymentMethod: paymentMethod === "bank" ? "bank_transfer" : paymentMethod === "wallet" ? "jazzcash" : "card",
       });
       const booking = result.booking;
       const total = booking.total.amount_minor / 100;
@@ -1002,7 +991,8 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                       { id: "1link", label: "1Link", icon: Wallet, desc: "Pay through PayFast 1Link checkout", badges: ["1Link"] as string[] },
                       { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "Available after wallet payment configuration", badges: ["JazzCash", "Easypaisa"] as string[] },
                       { id: "bank", label: "Bank Transfer", icon: Building2, desc: "Direct bank transfer", badges: [] as string[] },
-                    ]).map(method => (
+                    ]).filter(method => (method.id === "bank" ? Boolean(methods?.bank_transfer) : method.id === "wallet" ? Boolean(methods?.jazzcash) : true))
+                    .map(method => (
                       <div
                         key={method.id}
                         className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${
@@ -1037,6 +1027,13 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                       You will be redirected to PayFast to enter card details securely. Travelian does not collect or store card numbers.
                     </div>
                   )}
+
+                  {paymentMethod === "bank" && methods?.bank_accounts?.length ? (
+                    <div className="rounded-xl border border-primary/10 bg-accent/30 p-4 text-sm text-muted-foreground space-y-3">
+                      <p>Your seats are held at the airline while you transfer the amount. Travelian confirms the payment and then issues your tickets. Pay before the hold time ends, or the booking expires.</p>
+                      <BankAccounts accounts={methods.bank_accounts} />
+                    </div>
+                  ) : null}
 
                   {paymentMethod === "1link" && (
                     <div className="rounded-xl border border-primary/10 bg-accent/30 p-4 text-sm text-muted-foreground">
@@ -1091,6 +1088,16 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                       : "Your reservation has been successfully processed."}
                   </p>
 
+                  {savedBooking.gateway?.live && savedBooking.holdExpiresAt && (
+                    <div className="mx-auto mb-4 max-w-lg text-left"><HoldCountdown until={savedBooking.holdExpiresAt} /></div>
+                  )}
+                  {savedBooking.gateway?.live && savedBooking.paymentMethod === "bank" && methods?.bank_accounts?.length ? (
+                    <div className="mx-auto mb-4 max-w-lg space-y-2 text-left">
+                      <p className="text-sm font-semibold text-foreground">Pay by bank transfer</p>
+                      <p className="text-sm text-muted-foreground">Transfer {savedBooking.pricing.currency === "PKR" ? "Rs" : savedBooking.pricing.currency} {savedBooking.pricing.total.toLocaleString("en-PK")} and use {savedBooking.id} as the reference. Travelian confirms the payment and then issues your tickets.</p>
+                      <BankAccounts accounts={methods.bank_accounts} />
+                    </div>
+                  ) : null}
                   <div className="bg-gradient-to-br from-primary/5 to-accent border rounded-2xl p-6 text-left max-w-lg mx-auto">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">

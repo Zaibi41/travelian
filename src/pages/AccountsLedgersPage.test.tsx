@@ -81,7 +81,7 @@ describe("Accounts & Ledgers: Bank and cash book", () => {
     expect(within(dialog).queryByRole("alert")).not.toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole("button", { name: "Save account" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(api.addReceivingAccount).toHaveBeenLastCalledWith("bank_transfer", "UBL");
+    expect(api.addReceivingAccount).toHaveBeenLastCalledWith("bank_transfer", "UBL", { bank_name: null, account_title: null, account_number: null, qr_asset_key: null });
     expect(api.fetchReceivingAccounts).toHaveBeenCalledTimes(2);   // the list reloads
   });
 

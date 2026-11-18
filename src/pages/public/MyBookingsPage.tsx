@@ -90,9 +90,14 @@ export default function MyBookingsPage() {
         <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">My Bookings</h1>
+            <p className="text-sm text-muted-foreground">Booked on another device? <Link to="/find-booking" className="text-primary underline-offset-2 hover:underline">Find my booking</Link> with your reference and email or phone.</p>
             <p className="text-sm text-muted-foreground mt-1">Manage your trips, download e-tickets, and track upcoming travel.</p>
           </div>
-          <Link to="/"><Button variant="outline" className="rounded-xl gap-2"><Search className="h-4 w-4" /> New Search</Button></Link>
+          <div className="flex flex-wrap gap-2">
+            {/* Booked on another device or browser: find it with the reference and email or phone (no login). */}
+            <Link to="/find-booking"><Button variant="outline" className="rounded-xl gap-2">Find a booking</Button></Link>
+            <Link to="/"><Button variant="outline" className="rounded-xl gap-2"><Search className="h-4 w-4" /> New Search</Button></Link>
+          </div>
         </div>
 
         {bookings.length === 0 ? (

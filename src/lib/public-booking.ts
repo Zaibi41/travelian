@@ -143,10 +143,11 @@ export function toGatewayPassenger(passenger: GuestPassenger) {
   };
 }
 
-export async function bookGroupFare(input: { ticketId: string; passengers: GuestPassenger[]; contact: { firstName: string; lastName: string; phone: string; email?: string }; fareTermsAcknowledged: boolean }) {
+export async function bookGroupFare(input: { ticketId: string; passengers: GuestPassenger[]; contact: { firstName: string; lastName: string; phone: string; email?: string }; fareTermsAcknowledged: boolean; paymentMethod?: "card" | "bank_transfer" | "jazzcash" }) {
   return call<{ reference: string; access_token: string; booking: PublicBooking }>("/group-ticketing/bookings", {
     body: {
       ticket_id: input.ticketId, adults: input.passengers.length, fare_terms_acknowledged: input.fareTermsAcknowledged,
+      payment_method: input.paymentMethod ?? "card",
       contact: { first_name: input.contact.firstName, last_name: input.contact.lastName, phone: input.contact.phone, email: input.contact.email || null },
       passengers: input.passengers.map(toGatewayPassenger),
     },
@@ -168,4 +169,47 @@ export function confirmPayFastReturn(params: Record<string, string>) {
 
 export function isPayFastReturn(params: URLSearchParams) {
   return params.has("validation_hash") || params.has("VALIDATION_HASH") || params.has("err_code") || params.has("basket_id");
+}
+
+// ---------- self-service lookup (reference + email or phone, read-only) ----------
+
+export interface BookingLookup {
+  reference: string;
+  product: string;
+  status: "requested" | "held" | "paid" | "issued" | "expired" | "cancelled";
+  payment_status: "unpaid" | "part_paid" | "paid";
+  total: Money;
+  paid: Money;
+  hold_expires_at?: string;
+  legs?: { flight_number?: string; origin?: string; destination?: string; departure_date?: string; departure_time?: string; arrival_time?: string }[];
+  travelers?: string[];
+  airline_pnr?: string;
+  tickets?: string[];
+  next_steps: string;
+}
+
+export function lookupBooking(reference: string, contact: string, signal?: AbortSignal) {
+  return call<BookingLookup>("/bookings/lookup", { body: { reference: reference.trim(), contact: contact.trim() }, signal });
+}
+
+/** The group fare calendar for one sector (D33): real lowest prices per day, or no availability. */
+export function publicGroupCalendar(origin: string, destination: string, adults = 1, signal?: AbortSignal) {
+  return call<{ origin: string; destination: string; days: { date: string; available: boolean; lowest_price?: Money | null; fares?: number }[] }>(
+    "/group-ticketing/calendar", { body: { origin, destination, adults }, signal });
+}
+
+// ---------- payment methods offered at checkout (from the gateway) ----------
+
+export interface BankAccountDisplay { bank_name?: string | null; account_title?: string | null; account_number_masked?: string | null; qr_url?: string | null }
+export interface PaymentMethods { card: boolean; bank_transfer: boolean; jazzcash: boolean; bank_accounts?: BankAccountDisplay[]; logo_url?: string | null }
+
+export function getPaymentMethods(signal?: AbortSignal) {
+  return call<PaymentMethods>("/payment-methods", { signal });
+}
+
+let siteLogo: Promise<string | null> | null = null;
+/** The admin-uploaded site logo (S3, via the gateway), or null for the built-in one. Fetched once per page load. */
+export function loadSiteLogo(): Promise<string | null> {
+  siteLogo ??= getPaymentMethods().then((methods) => methods.logo_url ?? null).catch(() => null);
+  return siteLogo;
 }

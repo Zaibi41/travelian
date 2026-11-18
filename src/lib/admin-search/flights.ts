@@ -252,6 +252,14 @@ export type HoldRequest = Schemas["HoldRequest"];
 export type HoldPassenger = Schemas["HoldPassenger"];
 export type HoldView = Schemas["HoldView"];
 
+export type RequestView = Schemas["RequestView"];
+
+/** Request to book (restricted airlines): saved for Travelian's team; the gateway never calls a supplier for it. */
+export const requestFlight = (request: HoldRequest, options?: GatewayOptions) =>
+  gatewayPost("/v1/live-ticketing/flights/requests", request, {
+    unavailableMessage: "The request couldn't be sent right now. Try again.", ...options,
+  });
+
 export const holdFlight = (request: HoldRequest, options?: GatewayOptions) =>
   gatewayPost("/v1/live-ticketing/flights/bookings", request, {
     unavailableMessage: "The hold couldn't be placed right now. Check the booking list before trying again.", ...options,

@@ -1,3 +1,4 @@
+import { loadSiteLogo } from "@/lib/public-booking";
 import { PRODUCT_TABS } from "./product-navigation";
 import { useSearchHeaderState } from "@/hooks/use-scroll-reveal";
 import { cn } from "@/lib/utils";
@@ -68,6 +69,9 @@ function LocaleControls({ compact = false }: { compact?: boolean }) {
 }
 
 export function PublicNavbar() {
+  // Website & CMS > Site logo (S3, D38); the built-in logo until one is uploaded or if it can't be loaded.
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  useEffect(() => { void loadSiteLogo().then(setLogoUrl); }, []);
   const [mobileOpen, setMobileOpen] = useState(false);
   const navRef = useRef<HTMLDivElement | null>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -138,7 +142,7 @@ export function PublicNavbar() {
           <nav aria-label="Main navigation">
             <div className={cn("flex items-center gap-4 transition-[height] duration-200 motion-reduce:transition-none lg:grid lg:grid-cols-[1fr_auto_1fr]", "h-14")}>
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex w-fit shrink-0 items-center justify-self-start" aria-label="Travelian home">
-                <img src="/travelian-logo-wordmark.png" alt="Travelian" className={cn("h-8 w-auto max-w-[10rem] object-contain mix-blend-multiply sm:h-9 sm:max-w-[12rem]")} />
+                <img src={logoUrl ?? "/travelian-logo-wordmark.png"} alt="Travelian" className={cn("h-8 w-auto max-w-[10rem] object-contain mix-blend-multiply sm:h-9 sm:max-w-[12rem]")} />
               </Link>
               <div className="hidden h-full items-center justify-center gap-1 lg:flex">{headerState === "sticky" && renderLinks(serviceLinks)}</div>
               <div aria-hidden="true" className="hidden lg:block" />
