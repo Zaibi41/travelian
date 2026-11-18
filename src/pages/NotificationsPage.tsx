@@ -1,3 +1,5 @@
+import { useBookingAlerts } from "@/lib/admin-notifications";
+import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useAdmin } from "@/contexts/AdminStore";
 import { useRole } from "@/contexts/RoleContext";
@@ -65,6 +67,7 @@ function loadSettings(): NotifSettings {
 
 export default function NotificationsPage() {
   const { notifications, markNotificationRead, markAllRead } = useAdmin();
+  const alerts = useBookingAlerts();
   const { currentRole } = useRole();
   const canEditSettings = currentRole === "super_admin" || currentRole === "admin";
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -102,14 +105,41 @@ export default function NotificationsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-page-title font-bold font-display">Notifications</h1>
-          <p className="text-body text-muted-foreground">{unreadCount} unread notifications</p>
+          <p className="text-body text-muted-foreground">{unreadCount + alerts.unseen} unread notifications</p>
         </div>
-        {unreadCount > 0 && (
-          <Button variant="outline" onClick={markAllRead} className="gap-2">
+        {unreadCount + alerts.unseen > 0 && (
+          <Button variant="outline" onClick={() => { markAllRead(); alerts.markSeen(); }} className="gap-2">
             <CheckCheck className="h-4 w-4" /> Mark all read
           </Button>
         )}
       </div>
+
+      {/* Booking alerts from the gateway: every hold and booking request, with what staff need to act on. */}
+      <section aria-labelledby="booking-alerts" className="rounded-xl border bg-card p-4 shadow-card">
+        <h2 id="booking-alerts" className="font-display text-section font-semibold">Booking alerts</h2>
+        {alerts.error ? <p className="mt-2 text-body text-destructive">Booking alerts couldn't be loaded.</p>
+          : alerts.items.length === 0 ? <p className="mt-2 text-body text-muted-foreground">{alerts.isLoading ? "Loading…" : "No booking alerts yet."}</p>
+          : (
+            <ul className="mt-2 divide-y">
+              {alerts.items.map(alert => {
+                const d = alert.details as Record<string, string | null>;
+                return (
+                  <li key={alert.id} className="flex flex-col gap-1 py-2.5">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <Link to={`/admin/bookings?search=${encodeURIComponent(alert.reference || "")}`} className="min-w-0 truncate font-semibold text-teal hover:underline">{alert.title}</Link>
+                      <time className="text-helper text-muted-foreground" dateTime={alert.created_at}>{new Date(alert.created_at).toLocaleString()}</time>
+                    </div>
+                    <p className="text-body text-muted-foreground">
+                      {[d.passenger, d.route, d.fare, d.pnr ? `PNR ${d.pnr}` : "No supplier hold",
+                        d.hold_expires_at ? `expires ${new Date(d.hold_expires_at).toLocaleString()}` : null].filter(Boolean).join(" · ")}
+                    </p>
+                    {d.note && <p className="text-helper text-muted-foreground">{d.note}</p>}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+      </section>
 
       <Tabs defaultValue="inbox" className="space-y-4">
         <TabsList>

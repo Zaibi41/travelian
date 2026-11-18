@@ -30,11 +30,13 @@ import { AirportCombobox } from "@/components/public/AirportCombobox";
 
 import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
 
+import { GroupFareCalendar, type CalendarDay } from "@/components/GroupFareCalendar";
+
+import { publicGroupCalendar, searchPublicGroups } from "@/lib/public-booking";
+
 import {
 
   extractAvailableSectors,
-
-  fetchGroupTickets,
 
   type AvailableSector,
 
@@ -68,6 +70,8 @@ function DatePickerField({
 
   placeholder,
 
+  fareDays,
+
 }: {
 
   date: Date | undefined;
@@ -75,6 +79,10 @@ function DatePickerField({
   onSelect: (date: Date | undefined) => void;
 
   placeholder: string;
+
+  /** B7: the sector's fare calendar from the gateway (real prices only, D33). Without it, the plain calendar. */
+
+  fareDays?: CalendarDay[];
 
 }) {
 
@@ -122,6 +130,18 @@ function DatePickerField({
 
       <CalendarPopupContent title="Select departure date">
 
+        {fareDays && fareDays.length > 0 ? (
+
+          <div className="w-[min(46rem,calc(100vw-2.5rem))] overflow-y-auto p-3 sm:p-5">
+
+            <GroupFareCalendar days={fareDays} selected={date ? formatDateOnly(date) : undefined}
+
+              onPick={(picked) => selectDate(parseDateOnly(picked))} />
+
+          </div>
+
+        ) : (
+
         <Calendar size="large"
 
           mode="single"
@@ -137,6 +157,8 @@ function DatePickerField({
           className="pointer-events-auto p-3 sm:p-5"
 
         />
+
+        )}
 
       </CalendarPopupContent>
 
@@ -204,7 +226,7 @@ export function GroupTicketingSearchBar({
 
     const controller = new AbortController();
 
-    fetchGroupTickets("all", controller.signal)
+    searchPublicGroups({}, controller.signal)
 
       .then((items) => {
 
@@ -217,6 +239,26 @@ export function GroupTicketingSearchBar({
     return () => controller.abort();
 
   }, [initialSectors]);
+
+
+
+  // B7: the fare calendar for the chosen sector, shown in the date picker (real supplier prices only, D33).
+
+  const [fareDays, setFareDays] = useState<CalendarDay[]>([]);
+
+  useEffect(() => {
+
+    setFareDays([]);
+
+    if (!/^[A-Z]{3}$/.test(fromValue) || !/^[A-Z]{3}$/.test(toValue)) return;
+
+    const controller = new AbortController();
+
+    publicGroupCalendar(fromValue, toValue, 1, controller.signal).then((calendar) => setFareDays(calendar.days)).catch(() => setFareDays([]));
+
+    return () => controller.abort();
+
+  }, [fromValue, toValue]);
 
 
 
@@ -459,7 +501,7 @@ export function GroupTicketingSearchBar({
 
           {label("Departure Date (Optional)")}
 
-          <DatePickerField date={dateFrom} onSelect={setDateFrom} placeholder="All departure dates" />
+          <DatePickerField date={dateFrom} onSelect={setDateFrom} placeholder="All departure dates" fareDays={fareDays} />
 
         </div>
 

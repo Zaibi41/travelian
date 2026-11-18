@@ -198,5 +198,7 @@ export function resultRows(groups: GroupInventory[], airline?: string): GroupRes
       };
     }))
     .filter(row => !airline || row.airline === airline)
-    .sort((a, b) => (a.departureDate ?? "").localeCompare(b.departureDate ?? "") || (a.airline ?? "").localeCompare(b.airline ?? ""));
+    // Lowest fare first (no price last), then departure date, then airline.
+    .sort((a, b) => (a.price?.amount_minor ?? Number.MAX_SAFE_INTEGER) - (b.price?.amount_minor ?? Number.MAX_SAFE_INTEGER)
+      || (a.departureDate ?? "").localeCompare(b.departureDate ?? "") || (a.airline ?? "").localeCompare(b.airline ?? ""));
 }

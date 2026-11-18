@@ -11,7 +11,9 @@ import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users, Loader2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
-import { format, addDays } from "date-fns";
+import { format, addDays, parseISO } from "date-fns";
+import { GroupFareCalendar } from "@/components/GroupFareCalendar";
+import { useFlightFares } from "@/hooks/use-flight-fares";
 import { cn } from "@/lib/utils";
 import { SEO } from "@/components/SEO";
 import { TravelersClassPicker, formatTravelers, type TravelersValue } from "@/components/public/TravelersClassPicker";
@@ -23,13 +25,14 @@ import { AirlineLogo } from "@/components/public/AirlineLogo";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
 import { whatsappUrl } from "@/lib/site-config";
-import { airports } from "@/data/airports";
+import { airportByCode, loadPublicAirports } from "@/data/airports";
 import { isGroupTicketingProvider, groupTicketToFlight } from "@/lib/provider-systems";
 import { searchPublicGroups, GATEWAY_GROUP_PROVIDER } from "@/lib/public-booking";
 import { normalizeAirlineName, isSameAirline, extractAllAirlines, getAirlineNameFromCarrier } from "@/lib/airline-normalization";
 
 // Preload airports for routeLabel lookup
-const airportCache = airports;
+// The shared airport list (D36) loads once in the background; labels use it when ready, the popular list before.
+void loadPublicAirports();
 const popularAirportByCode = new Map(
   [
     { code: "LHE", city: "Lahore" },
@@ -156,6 +159,9 @@ function consolidateFlights(list: TravelianFlight[]): TravelianFlight[] {
   return Array.from(byKey.values());
 }
 
+/** "Karachi (KHI)" or "KHI" -> "KHI". */
+const airportCodeOf = (value: string) => (String(value || "").match(/\(([A-Z]{3})\)/i)?.[1] || String(value || "").trim()).toUpperCase();
+
 export default function PublicFlightsPage({ bookingPath = "/booking", adminMode = false }: { bookingPath?: string; adminMode?: boolean } = {}) {
   const { currency: selectedCurrency } = useLocale();
   const [params, setParams] = useSearchParams();
@@ -222,6 +228,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [editSegments, setEditSegments] = useState<FlightSegment[]>(segments);
   const [editTravelers, setEditTravelers] = useState<TravelersValue>(travelers);
   const [editDateOpen, setEditDateOpen] = useState(false);
+  const editFares = useFlightFares(editDateOpen, {
+    from: airportCodeOf(editFrom), to: airportCodeOf(editTo), adults: editTravelers.adults,
+    cabin: editTravelers.cabin.toLowerCase().replace(/\s+/g, "_"),
+  });
   const [editReturnDateOpen, setEditReturnDateOpen] = useState(false);
   const [editSegmentDateOpen, setEditSegmentDateOpen] = useState<number | null>(null);
 
@@ -833,7 +843,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const routeLabel = (code: string, airportName?: string | null) => {
     const cleanCode = String(code || "").trim().toUpperCase();
     // Show just "IATA City" instead of full airport name for consistency with SooperFare
-    const airport = airportCache?.find(a => a.code === cleanCode) || popularAirportByCode.get(cleanCode);
+    const airport = airportByCode(cleanCode) || popularAirportByCode.get(cleanCode);
     return airport ? `${cleanCode} ${airport.city}` : cleanCode;
   };
   const airportCode = (value?: string | null) => String(value || "").trim().toUpperCase();
@@ -1962,6 +1972,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   </button>
                 </CalendarPopupTrigger>
                 <CalendarPopupContent title="Select departure date">
+                  {editFares.ready ? (
+                    <div className="w-[min(46rem,calc(100vw-2.5rem))] overflow-y-auto p-3 sm:p-5">
+                      <GroupFareCalendar days={editFares.days} anyDate checking={editFares.checking}
+                        selected={editDate ? format(editDate, "yyyy-MM-dd") : undefined}
+                        onPick={(picked) => { setEditDate(parseISO(picked)); setEditDateOpen(false); }} />
+                    </div>
+                  ) : (
                   <Calendar size="large"
                     mode="single"
                     selected={editDate}
@@ -1972,6 +1989,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     initialFocus
                     className="p-3 sm:p-5 pointer-events-auto"
                   />
+                  )}
                 </CalendarPopupContent>
               </CalendarPopup>
             </div>

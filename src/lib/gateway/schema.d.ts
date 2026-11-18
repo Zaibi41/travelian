@@ -681,6 +681,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/payment-accounts/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Payment Account
+         * @description Bank name, account title, account number (stored masked) and QR image. Fields left out keep their value.
+         */
+        patch: operations["update_payment_account_v1_admin_finance_payment_accounts__account_id__patch"];
+        trace?: never;
+    };
+    "/v1/admin/finance/payment-accounts/{account_id}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Activate Payment Account
+         * @description Offer the account again (the Active toggle).
+         */
+        post: operations["activate_payment_account_v1_admin_finance_payment_accounts__account_id__activate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/finance/payment-accounts/{account_id}/deactivate": {
         parameters: {
             query?: never;
@@ -721,6 +761,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Notifications
+         * @description Newest first.
+         */
+        get: operations["list_notifications_v1_admin_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/payment-accounts": {
         parameters: {
             query?: never;
@@ -751,6 +811,26 @@ export interface paths {
         /** List Roles */
         get: operations["list_roles_v1_admin_roles_get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/site-assets/{slot}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Site Asset
+         * @description Website & CMS: point a site slot (the logo) at an uploaded image.
+         */
+        put: operations["set_site_asset_v1_admin_site_assets__slot__put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1759,6 +1839,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sign Upload */
+        post: operations["sign_upload_v1_admin_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/users": {
         parameters: {
             query?: never;
@@ -2094,6 +2191,26 @@ export interface paths {
         put?: never;
         /** Create Group Booking */
         post: operations["create_group_booking_v1_group_ticketing_bookings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/group-ticketing/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Group Fare Calendar
+         * @description The fare calendar for one sector (B7): each day's lowest real selling price, or no availability (D33).
+         */
+        get: operations["group_fare_calendar_v1_group_ticketing_calendar_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2471,6 +2588,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/live-ticketing/flights/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Flight
+         * @description Request to book (restricted airlines, D32): saved for staff to arrange; never a supplier hold or booking call.
+         */
+        post: operations["request_flight_v1_live_ticketing_flights_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/live-ticketing/flights/search": {
         parameters: {
             query?: never;
@@ -2502,6 +2639,26 @@ export interface paths {
         get: operations["logo_v1_logos__logo_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/bookings/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lookup Booking
+         * @description Find a booking without logging in: reference + the email or phone used to book. Read-only (D37).
+         */
+        post: operations["lookup_booking_v1_public_bookings_lookup_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2545,6 +2702,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/flights/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Flights
+         * @description Live flights (all airlines Travelian sells), selling price only. Never supplier names, cost or supplier ids.
+         */
+        post: operations["search_flights_v1_public_flights_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/group-ticketing/bookings": {
         parameters: {
             query?: never;
@@ -2565,6 +2742,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/group-ticketing/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Group Calendar
+         * @description Every day for the sector: the lowest real selling price, or no availability. Never an invented price.
+         */
+        post: operations["group_calendar_v1_public_group_ticketing_calendar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/group-ticketing/search": {
         parameters: {
             query?: never;
@@ -2579,6 +2776,26 @@ export interface paths {
          * @description Group fares with selling prices only. Leave all of origin, destination and date out for everything.
          */
         post: operations["search_groups_v1_public_group_ticketing_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/payment-methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Payment Methods
+         * @description What checkout can offer now; bank-transfer accounts (masked number, QR image) and the site logo.
+         */
+        get: operations["payment_methods_v1_public_payment_methods_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2629,6 +2846,15 @@ export interface components {
         /** AddReceivingAccountRequest */
         AddReceivingAccountRequest: {
             /**
+             * Account Number
+             * @description Full number as typed; only a masked form is stored.
+             */
+            account_number?: string | null;
+            /** Account Title */
+            account_title?: string | null;
+            /** Bank Name */
+            bank_name?: string | null;
+            /**
              * Label
              * @description The account's name staff see: 2 to 120 characters after extra spaces are removed. Not the full account number.
              */
@@ -2638,6 +2864,11 @@ export interface components {
              * @enum {string}
              */
             method: "bank_transfer" | "jazzcash" | "1link";
+            /**
+             * Qr Asset Key
+             * @description From POST /v1/admin/uploads (purpose payment_qr).
+             */
+            qr_asset_key?: string | null;
         };
         /** AdminOverview */
         AdminOverview: {
@@ -2769,6 +3000,17 @@ export interface components {
             items: components["schemas"]["AttentionItem"][];
             /** Total */
             total: number;
+        };
+        /** BankAccountView */
+        BankAccountView: {
+            /** Account Number Masked */
+            account_number_masked?: string | null;
+            /** Account Title */
+            account_title?: string | null;
+            /** Bank Name */
+            bank_name?: string | null;
+            /** Qr Url */
+            qr_url?: string | null;
         };
         /** BookingAuditEntry */
         BookingAuditEntry: {
@@ -3309,6 +3551,35 @@ export interface components {
              */
             total_sales: components["schemas"]["CurrencyAmount"][];
         };
+        /** CalendarDay */
+        CalendarDay: {
+            /** Available */
+            available: boolean;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Fares
+             * @default 0
+             */
+            fares: number;
+            /** @description Lowest selling price per adult that day; only when available. */
+            lowest_price?: components["schemas"]["GroupMoney"] | null;
+        };
+        /** CalendarQuery */
+        CalendarQuery: {
+            /**
+             * Adults
+             * @default 1
+             */
+            adults: number;
+            /** Destination */
+            destination: string;
+            /** Origin */
+            origin: string;
+        };
         /** CheckoutView */
         CheckoutView: {
             /**
@@ -3548,6 +3819,13 @@ export interface components {
             /** Baggage */
             baggage?: string | null;
             /**
+             * Booking Mode
+             * @description request: a restricted airline (D32). No supplier hold is ever made; it can only be sent as a request to book.
+             * @default hold
+             * @enum {string}
+             */
+            booking_mode: "hold" | "request";
+            /**
              * Id
              * @description Opaque fare ID, valid until the search expires.
              */
@@ -3780,6 +4058,25 @@ export interface components {
             vendors_queried: string[];
             /** Vendors Succeeded */
             vendors_succeeded: string[];
+        };
+        /** GroupCalendar */
+        GroupCalendar: {
+            /** Days */
+            days: components["schemas"]["CalendarDay"][];
+            /** Destination */
+            destination: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Origin */
+            origin: string;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
         };
         /** GroupDeparture */
         GroupDeparture: {
@@ -4882,6 +5179,59 @@ export interface components {
             /** Username */
             username: string;
         };
+        /** LookupRequest */
+        LookupRequest: {
+            /**
+             * Contact
+             * @description The email or phone number used to book.
+             */
+            contact: string;
+            /** Reference */
+            reference: string;
+        };
+        /** LookupView */
+        LookupView: {
+            /**
+             * Airline Pnr
+             * @description Once tickets are issued.
+             */
+            airline_pnr?: string | null;
+            /** Hold Expires At */
+            hold_expires_at?: string | null;
+            /**
+             * Legs
+             * @default []
+             */
+            legs: components["schemas"]["PublicLeg"][];
+            /** Next Steps */
+            next_steps: string;
+            paid: components["schemas"]["PublicMoney"];
+            /**
+             * Payment Status
+             * @enum {string}
+             */
+            payment_status: "unpaid" | "part_paid" | "paid";
+            /** Product */
+            product: string;
+            /** Reference */
+            reference: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "requested" | "held" | "paid" | "issued" | "expired" | "cancelled";
+            /**
+             * Tickets
+             * @default []
+             */
+            tickets: string[];
+            total: components["schemas"]["PublicMoney"];
+            /**
+             * Travelers
+             * @default []
+             */
+            travelers: string[];
+        };
         /** MergeRequest */
         MergeRequest: {
             /** Merge Into Person Id */
@@ -4902,6 +5252,33 @@ export interface components {
             payment_pending: number;
             /** Pending Issuance */
             pending_issuance: number;
+        };
+        /** NotificationList */
+        NotificationList: {
+            /** Items */
+            items: components["schemas"]["NotificationView"][];
+        };
+        /** NotificationView */
+        NotificationView: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+            /** Emailed */
+            emailed: boolean;
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Reference */
+            reference?: string | null;
+            /** Title */
+            title: string;
         };
         /** OperationCall */
         OperationCall: {
@@ -4981,6 +5358,22 @@ export interface components {
              * @description Active accounts, by method then name. Empty until an administrator adds them.
              */
             accounts: components["schemas"]["PaymentAccount"][];
+        };
+        /** PaymentMethodsView */
+        PaymentMethodsView: {
+            /**
+             * Bank Accounts
+             * @default []
+             */
+            bank_accounts: components["schemas"]["BankAccountView"][];
+            /** Bank Transfer */
+            bank_transfer: boolean;
+            /** Card */
+            card: boolean;
+            /** Jazzcash */
+            jazzcash: boolean;
+            /** Logo Url */
+            logo_url?: string | null;
         };
         /**
          * ProductResults
@@ -5100,6 +5493,13 @@ export interface components {
             /** Passengers */
             passengers: components["schemas"]["GroupHoldPassenger"][];
             /**
+             * Payment Method
+             * @description card: PayFast online. bank_transfer: held at the supplier, paid to Travelian's bank account, recorded by staff (then issued). jazzcash: off until enabled.
+             * @default card
+             * @enum {string}
+             */
+            payment_method: "card" | "bank_transfer" | "jazzcash";
+            /**
              * Ticket Id
              * @description GroupTicketView.id from the public search.
              */
@@ -5146,8 +5546,17 @@ export interface components {
          * @description A receiving account as Finance > Accounts & Ledgers manages it (active and inactive).
          */
         ReceivingAccount: {
+            /**
+             * Account Number Masked
+             * @description Only the last 4 digits; the full number is never stored.
+             */
+            account_number_masked?: string | null;
+            /** Account Title */
+            account_title?: string | null;
             /** Active */
             active: boolean;
+            /** Bank Name */
+            bank_name?: string | null;
             /** Id */
             id: string;
             /** Label */
@@ -5157,6 +5566,16 @@ export interface components {
              * @enum {string}
              */
             method: "bank_transfer" | "jazzcash" | "1link";
+            /**
+             * Qr Asset Key
+             * @description S3 object key of the QR image.
+             */
+            qr_asset_key?: string | null;
+            /**
+             * Qr Url
+             * @description Public URL of the QR image (S3).
+             */
+            qr_url?: string | null;
         };
         /** ReceivingAccountList */
         ReceivingAccountList: {
@@ -5237,6 +5656,13 @@ export interface components {
              */
             booking_enabled: boolean;
             /**
+             * Booking Mode
+             * @description request: restricted airline (D32): send a request to book, never a hold.
+             * @default hold
+             * @enum {string}
+             */
+            booking_mode: "hold" | "request";
+            /**
              * Expires At
              * Format: date-time
              */
@@ -5269,6 +5695,22 @@ export interface components {
             selling_total: components["schemas"]["FlightMoney"];
             /** @description Only with the cost and margin permission. */
             supplier_total?: components["schemas"]["FlightMoney"] | null;
+        };
+        /** RequestView */
+        RequestView: {
+            /** Booking Id */
+            booking_id: string;
+            /**
+             * Message
+             * @default This booking is not held or confirmed. Travelian's team will contact you to confirm the fare and arrange payment; the seats are only booked after that.
+             */
+            message: string;
+            selling_total: components["schemas"]["FlightMoney"];
+            /**
+             * Status
+             * @default requested
+             */
+            status: string;
         };
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
@@ -5615,6 +6057,54 @@ export interface components {
             /** Prices */
             prices: components["schemas"]["SellingPriceItem"][];
         };
+        /** SignUploadRequest */
+        SignUploadRequest: {
+            /**
+             * Content Type
+             * @enum {string}
+             */
+            content_type: "image/png" | "image/jpeg" | "image/webp";
+            /**
+             * Purpose
+             * @enum {string}
+             */
+            purpose: "site_logo" | "payment_qr" | "payment_proof";
+        };
+        /** SignedUploadView */
+        SignedUploadView: {
+            /**
+             * Asset Key
+             * @description Save this key on the record (account QR, site logo). Never a file or local path.
+             */
+            asset_key: string;
+            /** Fields */
+            fields: {
+                [key: string]: string;
+            };
+            /** Max Bytes */
+            max_bytes: number;
+            /** Public Url */
+            public_url?: string | null;
+            /**
+             * Url
+             * @description POST the file here as multipart form data: `fields` first, then `file`.
+             */
+            url: string;
+        };
+        /** SiteAssetRequest */
+        SiteAssetRequest: {
+            /** Asset Key */
+            asset_key: string;
+        };
+        /** SiteAssetView */
+        SiteAssetView: {
+            /** Asset Key */
+            asset_key: string;
+            /** Slot */
+            slot: string;
+            /** Url */
+            url: string;
+        };
         /**
          * SupplierPayment
          * @description The Supplier payment tab. Only sent with the cost and margin permission.
@@ -5646,6 +6136,23 @@ export interface components {
              * @constant
              */
             token_type: "Bearer";
+        };
+        /** UpdateReceivingAccountRequest */
+        UpdateReceivingAccountRequest: {
+            /**
+             * Account Number
+             * @description Full number as typed; only a masked form is stored.
+             */
+            account_number?: string | null;
+            /** Account Title */
+            account_title?: string | null;
+            /** Bank Name */
+            bank_name?: string | null;
+            /**
+             * Qr Asset Key
+             * @description From POST /v1/admin/uploads (purpose payment_qr).
+             */
+            qr_asset_key?: string | null;
         };
         /** UserAdminEvent */
         UserAdminEvent: {
@@ -7703,6 +8210,114 @@ export interface operations {
             };
         };
     };
+    update_payment_account_v1_admin_finance_payment_accounts__account_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateReceivingAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceivingAccount"];
+                };
+            };
+            /** @description Caller is not Super Admin (or Finance, once that role exists). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No account with that id. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    activate_payment_account_v1_admin_finance_payment_accounts__account_id__activate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceivingAccount"];
+                };
+            };
+            /** @description Caller is not Super Admin (or Finance, once that role exists). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No inactive account with that id. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     deactivate_payment_account_v1_admin_finance_payment_accounts__account_id__deactivate_post: {
         parameters: {
             query?: never;
@@ -7789,6 +8404,37 @@ export interface operations {
             };
         };
     };
+    list_notifications_v1_admin_notifications_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_payment_accounts_v1_admin_payment_accounts_get: {
         parameters: {
             query?: never;
@@ -7839,6 +8485,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RoleRecord"][];
+                };
+            };
+        };
+    };
+    set_site_asset_v1_admin_site_assets__slot__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slot: "site_logo";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SiteAssetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteAssetView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -11519,6 +12200,46 @@ export interface operations {
             };
         };
     };
+    sign_upload_v1_admin_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignedUploadView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description S3 not set up. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_users_v1_admin_users_get: {
         parameters: {
             query?: {
@@ -12200,6 +12921,53 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    group_fare_calendar_v1_group_ticketing_calendar_get: {
+        parameters: {
+            query: {
+                origin: string;
+                destination: string;
+                adults?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupCalendar"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role may not search. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
@@ -13176,6 +13944,58 @@ export interface operations {
             };
         };
     };
+    request_flight_v1_live_ticketing_flights_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HoldRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestView"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role may not search. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Quote expired. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Passengers don't match. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     search_flights_v1_live_ticketing_flights_search_post: {
         parameters: {
             query?: never;
@@ -13261,6 +14081,53 @@ export interface operations {
             };
         };
     };
+    lookup_booking_v1_public_bookings_lookup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LookupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LookupView"];
+                };
+            };
+            /** @description No booking with that reference and contact. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too many lookups. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     get_booking_v1_public_bookings__reference__get: {
         parameters: {
             query?: never;
@@ -13327,6 +14194,46 @@ export interface operations {
             };
         };
     };
+    search_flights_v1_public_flights_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlightSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too many searches. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     book_group_v1_public_group_ticketing_bookings_post: {
         parameters: {
             query?: never;
@@ -13369,6 +14276,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    group_calendar_v1_public_group_ticketing_calendar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CalendarQuery"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupCalendar"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
@@ -13416,6 +14356,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    payment_methods_v1_public_payment_methods_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentMethodsView"];
+                };
             };
         };
     };

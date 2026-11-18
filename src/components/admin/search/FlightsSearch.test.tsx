@@ -22,7 +22,7 @@ Element.prototype.hasPointerCapture ??= () => false;
 Element.prototype.releasePointerCapture ??= () => {};
 
 const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" });
-const fare = (id: string, price: number, refund = "Refundable") => ({ id, name: id.toUpperCase(), meal: "Snacks", refund, time_limit: "1 hours for domestic", selling_price: rs(price) });
+const fare = (id: string, price: number, refund = "Refundable") => ({ id, name: id.toUpperCase(), meal: "Snacks", refund, time_limit: "1 hours for domestic", selling_price: rs(price), booking_mode: "hold" as const });
 
 // What the gateway sends staff (D23): opaque IDs and selling prices only.
 const STAFF: FlightSearchView = {
@@ -111,9 +111,9 @@ const LIVE_UAT: FlightSearchView = {
       id: "f-live", airline_code: "Z8", airline_name: "South Air", flight_number: "Z8266",
       departure_local: "2026-11-19T00:25", arrival_local: "2026-11-19T02:35", duration_minutes: 130, stops: 0, stop_cities: [],
       fares: [
-        { id: "x1", name: "EB", baggage: "No checked baggage", selling_price: rs(13_997) },
-        { id: "x2", name: "EV", baggage: "20KG", selling_price: rs(15_671) },
-        { id: "x3", name: "EP", baggage: "30KG", selling_price: rs(17_344) },
+        { id: "x1", name: "EB", baggage: "No checked baggage", selling_price: rs(13_997), booking_mode: "hold" },
+        { id: "x2", name: "EV", baggage: "20KG", selling_price: rs(15_671), booking_mode: "hold" },
+        { id: "x3", name: "EP", baggage: "30KG", selling_price: rs(17_344), booking_mode: "hold" },
       ],
     }],
   }],

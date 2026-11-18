@@ -52,8 +52,8 @@ function resolveAirport(airport: Airport): Airport {
 function loadAirportDataset() {
   if (airportCache) return Promise.resolve(airportCache);
   if (!airportCachePromise) {
-    airportCachePromise = import("@/data/airports").then(module => {
-      airportCache = module.airports.map(resolveAirport);
+    airportCachePromise = import("@/data/airports").then(module => module.loadPublicAirports()).then(list => {
+      airportCache = list.map(resolveAirport);
       return airportCache;
     });
   }

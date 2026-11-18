@@ -12,10 +12,12 @@ import { useBookingDetail } from "@/lib/admin-bookings/use-bookings";
 import type { BookingPassenger } from "@/lib/admin-bookings/types";
 import { writeFlightSearch } from "@/lib/admin-search/flights";
 import { HOLD_PATH, type HoldDraft, type HoldMode, type HoldView } from "@/lib/admin-search/hold";
+import type { RequestView } from "@/lib/admin-search/flights";
 import { format } from "date-fns";
 
 export type HoldResultState =
   | { kind: "held"; hold: HoldView; mode: HoldMode }
+  | { kind: "requested"; request: RequestView }
   | { kind: "problem"; code: string; message: string; extra: Record<string, unknown>; mode: HoldMode; draft?: HoldDraft };
 
 const SEARCH = "/admin/search?tab=flights";
@@ -30,7 +32,8 @@ export default function HoldResultPage() {
         <Link to={SEARCH} className="hover:underline">Search</Link> › <Link to={SEARCH} className="hover:underline">Flights</Link> › Hold flight › Result
       </nav>
       <h1 className="font-display text-page-title font-bold text-foreground">Hold result</h1>
-      {state?.kind === "held" ? <Held hold={state.hold} />
+      {state?.kind === "requested" ? <Requested request={state.request} />
+        : state?.kind === "held" ? <Held hold={state.hold} />
         : state?.kind === "problem" ? <Problem state={state} />
         : (
           <NotAvailableNotice title="No hold to show">
@@ -48,6 +51,24 @@ function Fact({ label, value }: { label: string; value: React.ReactNode }) {
       <p className="text-label text-muted-foreground">{label}</p>
       <p className="truncate text-section font-semibold tabular-nums text-foreground">{value}</p>
     </div>
+  );
+}
+
+function Requested({ request }: { request: RequestView }) {
+  return (
+    <section aria-label="Request sent" className="flex flex-col gap-3 rounded-xl border border-border border-l-4 border-l-status-action bg-card px-card py-3.5 shadow-card">
+      <div className="flex flex-wrap gap-1.5"><StatusBadge severity="action">Request to book: not held</StatusBadge></div>
+      <div>
+        <h2 className="text-section font-semibold text-foreground">Nothing is held or confirmed at the airline</h2>
+        <p className="text-body text-muted-foreground">{request.message}</p>
+      </div>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <Fact label="Travelian reference" value={request.booking_id} />
+        <Fact label="Quoted total" value={formatMoney(request.selling_total)} />
+      </div>
+      <p className="text-body text-muted-foreground">Admins were notified. Contact the customer, confirm the fare and payment, then make the booking in the admin.</p>
+      <div><Link to={`/admin/bookings?search=${encodeURIComponent(request.booking_id)}`} className="font-medium text-teal hover:underline">Open in Bookings</Link></div>
+    </section>
   );
 }
 

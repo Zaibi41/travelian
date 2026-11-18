@@ -139,7 +139,13 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
           // One Actions cell, right-aligned: Book, Hold and Quote as buttons, then Fare rules and Revalidate as links.
           <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5">
             <div className="flex flex-wrap justify-end gap-1.5">
-              {(["book", "hold"] as const).map(mode => (
+              {pick.fare.booking_mode === "request" ? (
+                // Restricted airline (D32): never a supplier hold; Travelian's team confirms the fare and payment.
+                <Button type="button" size="sm" variant="primary" disabled={!priced} title="This airline is booked by Travelian's team: send a request"
+                  aria-label={`Request to book ${label}`} onClick={() => bookOrHold("request", search, pick)}>
+                  Request to book
+                </Button>
+              ) : (["book", "hold"] as const).map(mode => (
                 <Button key={mode} type="button" size="sm" variant={mode === "book" ? "primary" : "outline"} disabled={!priced}
                   title={priced ? undefined : "Price not available"} aria-label={`${mode === "book" ? "Book" : "Hold"} ${label}`}
                   onClick={() => bookOrHold(mode, search, pick)}>

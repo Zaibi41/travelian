@@ -8,7 +8,8 @@ import type { FareView, FlightSearch, FlightView, JourneyView, RepriceView } fro
 export const HOLD_PATH = "/admin/search/flights/hold";
 export const HOLD_RESULT_PATH = "/admin/search/flights/hold/result";
 
-export type HoldMode = "hold" | "book";
+/** request: a restricted airline (D32): sent to Travelian's team as a request to book, never a supplier hold. */
+export type HoldMode = "hold" | "book" | "request";
 
 export interface HoldPick {
   journey: JourneyView;

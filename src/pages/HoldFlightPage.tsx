@@ -9,8 +9,8 @@ import { FareCheckDialog } from "@/components/admin/search/FareCheckDialog";
 import { FareConfirmedTimer, FlightFareDetails, fareProviders } from "@/components/admin/search/SelectedFareSummary";
 import { useCountdown } from "@/components/admin/search/FlightsSearch";
 import { GatewayError } from "@/lib/gateway/client";
-import { holdFlight, repriceFlights, writeFlightSearch } from "@/lib/admin-search/flights";
-import { HOLD_RESULT_PATH, fareCheckFailure, type FareCheckState, type HoldDraft, type HoldRequest } from "@/lib/admin-search/hold";
+import { holdFlight, repriceFlights, requestFlight, writeFlightSearch } from "@/lib/admin-search/flights";
+import { HOLD_RESULT_PATH, fareCheckFailure, type FareCheckState, type HoldDraft, type HoldMode, type HoldRequest } from "@/lib/admin-search/hold";
 
 const FORM_ID = "flight-hold-form";
 const RESULT_CODES = new Set(["booking_off", "not_confirmed_hold", "not_saved", "total_unverified"]);
@@ -34,8 +34,9 @@ export default function HoldFlightPage() {
   const [params] = useSearchParams();
   // The draft changes when the fare is checked again (new quote, accepted price change).
   const [draft, setDraft] = useState<HoldDraft | null>(() => (location.state as HoldDraft | null) ?? null);
-  const mode = params.get("mode") === "book" ? "book" : "hold";
-  const title = mode === "book" ? "Book flight" : "Hold flight";
+  const asked = params.get("mode");
+  const mode: HoldMode = asked === "book" || asked === "request" ? asked : "hold";
+  const title = mode === "request" ? "Request to book" : mode === "book" ? "Book flight" : "Hold flight";
   const results = useMemo(() => (draft ? `/admin/search?${writeFlightSearch(new URLSearchParams("tab=flights"), draft.request).toString()}` : "/admin/search?tab=flights"), [draft]);
   return (
     <BookingHoldLayout backTo={results} title={title} subtitle="Enter the customer and traveler details, then hold the seats.">
@@ -80,6 +81,11 @@ function FlightHold({ draft, mode, results, onDraft }: { draft: HoldDraft; mode:
     setPending(true);
     setErrors(NO_ERRORS);
     try {
+      if (mode === "request" || draft.quote.booking_mode === "request") {
+        const sent = await requestFlight(flightHoldRequest(draft, values));
+        navigate(HOLD_RESULT_PATH, { state: { kind: "requested", request: sent } });
+        return;
+      }
       const hold = await holdFlight(flightHoldRequest(draft, values));
       navigate(HOLD_RESULT_PATH, { state: { kind: "held", hold, mode } });
     } catch (error) {
@@ -109,7 +115,10 @@ function FlightHold({ draft, mode, results, onDraft }: { draft: HoldDraft; mode:
         panel={
           <FarePanel
             title="Selected fare" formId={FORM_ID} canHold={check === null} pending={pending}
-            footnote={mode === "book"
+            submitLabel={mode === "request" || draft.quote.booking_mode === "request" ? "Send request to book" : undefined}
+            footnote={mode === "request" || draft.quote.booking_mode === "request"
+              ? "This airline is booked by Travelian's team. Nothing is held at the airline: the team confirms the fare and payment with the customer, then books it."
+              : mode === "book"
               ? "Holding reserves the seats until the time limit. Payment and issuing happen on the booking's Payments tab."
               : "Holding reserves the seats until the time limit. No payment is taken."}
             pricing={<FareConfirmedTimer draft={draft} />}

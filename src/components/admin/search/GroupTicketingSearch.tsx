@@ -1,6 +1,8 @@
 import { todayIso } from "@/lib/admin-search/date-display";
 import { Fragment, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { GroupFareCalendar, type CalendarDay } from "@/components/GroupFareCalendar";
+import { gatewayGet } from "@/lib/gateway/client";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { Compass } from "lucide-react";
@@ -78,6 +80,16 @@ export function GroupTicketingSearch() {
     queryFn: ({ signal }) => (isCompleteSearch(search) ? searchGroupFares(search, { signal }) : Promise.reject(new Error("incomplete"))),
     enabled: isCompleteSearch(search),
     staleTime: 60_000,
+    retry: 1,
+  });
+
+  // B7: the fare calendar for the chosen sector (real supplier prices only, D33).
+  const sectorChosen = Boolean(search.from && search.to);
+  const calendar = useQuery({
+    queryKey: ["admin-search", "group-calendar", search.from, search.to, search.adults],
+    queryFn: ({ signal }) => gatewayGet("/v1/group-ticketing/calendar", { origin: search.from!, destination: search.to!, adults: search.adults }, { signal }),
+    enabled: sectorChosen,
+    staleTime: 5 * 60_000,
     retry: 1,
   });
 
@@ -186,6 +198,14 @@ export function GroupTicketingSearch() {
           </div>
         </form>
       </section>
+      {sectorChosen && calendar.data && (
+        <GroupFareCalendar
+          days={(calendar.data as { days: CalendarDay[] }).days}
+          selected={search.date}
+          caption={`Fare calendar · ${search.from} → ${search.to}`}
+          onPick={date => commit({ ...search, date })}
+        />
+      )}
 
       {isCompleteSearch(search) && (
         <section aria-label="Results" className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">

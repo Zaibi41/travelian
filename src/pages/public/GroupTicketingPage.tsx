@@ -28,15 +28,14 @@ import { whatsappUrl } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { parseDateOnly } from "@/lib/date-only";
-import { airports } from "@/data/airports";
+import { airportByCode, loadPublicAirports } from "@/data/airports";
+import { searchPublicGroups } from "@/lib/public-booking";
 import { CURRENCIES, useLocale } from "@/contexts/LocaleContext";
 import {
   buildGroupTicketSearchParams,
   extractAvailableSectors,
   fetchGroupTicketDetail,
-  fetchGroupTickets,
   filterGroupTickets,
-  getSupplierGCode,
   groupTicketPrimaryDate,
   groupTicketWhatsAppMessage,
   maskGroupTicketForDisplay,
@@ -49,7 +48,8 @@ function whatsappHref(message: string) {
   return whatsappUrl(message);
 }
 
-const airportCache = airports;
+// The shared airport list (D36) loads once in the background; labels use it when ready, the popular list before.
+void loadPublicAirports();
 const popularAirportByCode = new Map(
   [
     { code: "LHE", city: "Lahore" },
@@ -80,14 +80,14 @@ const popularAirportByCode = new Map(
 function routeLabel(code?: string | null) {
   const cleanCode = String(code || "").trim().toUpperCase();
   if (!cleanCode) return "TBA";
-  const airport = airportCache?.find((a) => a.code === cleanCode) || popularAirportByCode.get(cleanCode);
+  const airport = airportByCode(cleanCode) || popularAirportByCode.get(cleanCode);
   return airport ? `${cleanCode} ${airport.city}` : cleanCode;
 }
 
 function airportCity(code?: string | null) {
   const cleanCode = String(code || "").trim().toUpperCase();
   if (!cleanCode) return "";
-  const airport = airportCache?.find((a) => a.code === cleanCode) || popularAirportByCode.get(cleanCode);
+  const airport = airportByCode(cleanCode) || popularAirportByCode.get(cleanCode);
   return airport?.city || cleanCode;
 }
 
@@ -280,7 +280,6 @@ function GroupCard({
 
   const active = detail || group;
   const display = maskGroupTicketForDisplay(active, index);
-  const gCode = getSupplierGCode(active);
   const isReturn = active.tripType === "round-trip" || Boolean(active.returnDate);
   const message = groupTicketWhatsAppMessage(category, active);
   const formattedPrice = formatFare(active.fare, active.currency, selectedCurrency);
@@ -325,13 +324,6 @@ function GroupCard({
                 {isReturn ? "Return" : "One-Way"}
               </Badge>
 
-              {/* Public G-Code Badge for Travelian staff identification */}
-              <Badge
-                className="rounded-lg bg-primary px-2.5 py-0.5 text-xs font-black tracking-wider text-primary-foreground shadow-sm"
-                title={`Supplier reference code: ${gCode}`}
-              >
-                {gCode}
-              </Badge>
             </div>
           </div>
 
@@ -453,9 +445,6 @@ function GroupCard({
                   </span>
                 ) : null}
               </div>
-              <span className="text-[11px] font-semibold text-primary">
-                Reference Code: {gCode}
-              </span>
             </div>
           )}
         </div>
@@ -478,7 +467,6 @@ function GroupCard({
                   <p className="truncate text-base font-black text-slate-950" title={active.airlineName || "Airline"}>
                     {active.airlineName || active.airlineCode || "Airline"} {group.flightNumber ? `· ${group.flightNumber}` : ""}
                   </p>
-                  <Badge className="bg-primary text-white text-[10px] font-black">{gCode}</Badge>
                 </div>
                 <p className="mt-0.5 truncate text-xs font-semibold text-primary">
                   {active.sector || "Group Flight"} · {isReturn ? "Return Itinerary" : "One-Way Itinerary"}
@@ -601,10 +589,6 @@ function GroupCard({
                       <p className="mt-2 text-sm font-semibold text-foreground">{active.baggage || "Standard Group Baggage"}</p>
                     </div>
                     <div className="rounded-2xl border bg-card p-4">
-                      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Supplier Reference</p>
-                      <p className="mt-2 text-sm font-semibold text-primary font-black">{gCode}</p>
-                    </div>
-                    <div className="rounded-2xl border bg-card p-4">
                       <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Seats Available</p>
                       <p className="mt-2 text-sm font-semibold text-foreground">{active.seatsAvailable ? `${active.seatsAvailable} seats` : "Availability on request"}</p>
                     </div>
@@ -632,7 +616,8 @@ export default function GroupTicketingPage() {
   const load = () => {
     const controller = new AbortController();
     setStatus("loading");
-    fetchGroupTickets("all", controller.signal)
+    // Every group fare through the Travelian gateway (all suppliers, selling prices only), not the legacy feed (A5).
+    searchPublicGroups({}, controller.signal)
       .then((items) => {
         setGroups(items);
         setStatus("success");
@@ -646,13 +631,22 @@ export default function GroupTicketingPage() {
 
   useEffect(load, []);
 
+
   const availableSectors = useMemo(() => extractAvailableSectors(groups), [groups]);
 
   // Filter and sort by departure date ascending
   const filteredGroups = useMemo(() => {
     if (!hasSearchCriteria) return [];
     const matched = filterGroupTickets(groups, searchFilters);
+    // Lowest fare first; fares without a price last; then by departure date.
+    const fare = (group: GroupTicket) => {
+      const value = typeof group.fare === "number" ? group.fare : parseFloat(String(group.fare ?? "").replace(/[^0-9.]/g, ""));
+      return Number.isFinite(value) && value > 0 ? value : Number.POSITIVE_INFINITY;
+    };
     return [...matched].sort((a, b) => {
+      const byFare = fare(a) - fare(b);
+      if (byFare !== 0 && Number.isFinite(byFare)) return byFare;
+      if (fare(a) !== fare(b)) return fare(a) === Number.POSITIVE_INFINITY ? 1 : -1;
       const dA = groupTicketPrimaryDate(a) || "9999-99-99";
       const dB = groupTicketPrimaryDate(b) || "9999-99-99";
       return dA.localeCompare(dB);
@@ -722,7 +716,7 @@ export default function GroupTicketingPage() {
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {filteredGroups.length} available ticket{filteredGroups.length === 1 ? "" : "s"}
-                  {searchFilters.dateFrom ? ` on ${formatFlightDate(searchFilters.dateFrom)}` : " · Sorted by departure date"}
+                  {searchFilters.dateFrom ? ` on ${formatFlightDate(searchFilters.dateFrom)}` : " · Lowest fare first"}
                 </p>
               </div>
 

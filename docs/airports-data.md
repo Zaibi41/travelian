@@ -1,7 +1,10 @@
 # Airport list (flight search suggestions)
 
-`src/data/airports.json` feeds the From and To suggestions on Search > Flights
-(`src/lib/admin-search/airports.ts`, `src/components/admin/search/AirportCombobox.tsx`).
+`src/data/airports.json` is the **only** airport dataset (D36, 19 November 2026). It feeds the From and To suggestions on
+Search > Flights (`src/lib/admin-search/airports.ts`, `src/components/admin/search/AirportCombobox.tsx`) and the public
+site (`src/data/airports.ts` adapts it for `src/components/public/AirportCombobox.tsx` and the route labels). The old
+public copy (8,804 airports) was removed; its 15 airports missing here (e.g. BNP Bannu, CWP Campbellpore, PBI Palm
+Beach) were added (8,815 now); its one "[Duplicate]" entry was not.
 
 - **Source:** a file Zohaib provided on 10 November 2026 (`airports (1).json`, 8,800 airports with
   iata, name, city, country, countryCode, type, lat, lng). **Its origin and licence are not
