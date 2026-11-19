@@ -17,12 +17,9 @@ export function NotAvailableTable({ columns, message }: { columns: string[]; mes
             {columns.map(column => <th key={column} scope="col" className={TABLE.th}>{column}</th>)}
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td colSpan={columns.length} className="px-2.5 py-3 text-body text-muted-foreground">{message}</td>
-          </tr>
-        </tbody>
       </table>
+      {/* Outside the table so it wraps to the card's width on a phone (the columns scroll; the sentence doesn't). */}
+      <p className="sticky left-0 max-w-[min(100%,calc(100vw-4rem))] px-2.5 py-3 text-body text-muted-foreground">{message}</p>
     </div>
   );
 }
