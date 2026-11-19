@@ -43,7 +43,7 @@ export function SeatMap({ selected, onSelect, rows = 12 }: SeatMapProps) {
         <div className="space-y-1.5">
           {Array.from({ length: rows }, (_, i) => i + 1).map(r => (
             <div key={r} className="flex items-center justify-center gap-1">
-              <span className="w-5 text-center text-[10px] text-muted-foreground">{r}</span>
+              <span className="w-5 text-center text-xs text-muted-foreground">{r}</span>
               {cols.map((c, idx) => {
                 const seat = `${r}${c}`;
                 const isTaken = taken.has(seat);
@@ -57,8 +57,8 @@ export function SeatMap({ selected, onSelect, rows = 12 }: SeatMapProps) {
                       disabled={isTaken}
                       onClick={() => onSelect(seat)}
                       className={cn(
-                        "h-7 w-7 rounded-md text-[10px] font-medium border transition-all",
-                        isTaken && "bg-muted-foreground/30 text-muted-foreground/60 cursor-not-allowed border-transparent",
+                        "h-7 w-7 rounded-md text-xs font-medium border transition-all",
+                        isTaken && "bg-muted-foreground/30 text-muted-foreground cursor-not-allowed border-transparent",
                         !isTaken && !isSelected && !premium && "bg-card hover:border-primary hover:bg-primary/5",
                         !isTaken && !isSelected && premium && "bg-gold/20 hover:bg-gold/30 border-gold/40 text-foreground",
                         isSelected && "bg-primary text-primary-foreground border-primary shadow-sm scale-110",

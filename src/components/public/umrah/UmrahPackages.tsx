@@ -295,7 +295,7 @@ function Fact({ icon, label, value }: { icon: React.ReactNode; label: string; va
     <div className="flex items-start gap-2.5 rounded-xl border bg-card p-3">
       <span className="mt-0.5 text-primary">{icon}</span>
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
         <p className="text-sm font-bold text-foreground">{value}</p>
       </div>
     </div>
@@ -305,7 +305,7 @@ function Fact({ icon, label, value }: { icon: React.ReactNode; label: string; va
 function HotelBlock({ city, name, distance }: { city: string; name: string; distance: string }) {
   return (
     <div className="rounded-xl border bg-card p-3">
-      <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-primary">
+      <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-primary">
         <Building2 className="h-3.5 w-3.5" /> {city} hotel
       </p>
       <p className="mt-1 text-sm font-bold text-foreground">{name}</p>
@@ -317,7 +317,7 @@ function HotelBlock({ city, name, distance }: { city: string; name: string; dist
 function Rate({ label, value }: { label: string; value?: number }) {
   return (
     <div className="rounded-lg bg-card p-2.5 text-center shadow-sm">
-      <p className="text-[11px] font-bold uppercase tracking-wide text-primary">{label}</p>
+      <p className="text-xs font-bold uppercase tracking-wide text-primary">{label}</p>
       <p className="mt-1 text-sm font-black text-foreground">{priceValue(value)}</p>
     </div>
   );

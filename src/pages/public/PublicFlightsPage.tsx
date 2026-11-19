@@ -956,24 +956,24 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   };
   const LegTimelineDesktop = ({ leg }: { leg: DisplayJourneyLeg }) => (
     <div className="min-w-0 space-y-1.5">
-      <p className="text-[10px] font-bold uppercase tracking-wide text-primary">{leg.label}</p>
+      <p className="text-xs font-bold uppercase tracking-wide text-primary">{leg.label}</p>
       <div className="flex min-w-0 items-center gap-3">
         <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
           <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(leg.departureTime)}</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(leg.departureTime)}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{formatFlightDate(leg.departureTime)}</p>
           <p className="truncate text-xs text-muted-foreground" title={routeLabel(leg.origin, leg.originAirport)}>{routeLabel(leg.origin, leg.originAirport)}</p>
         </div>
         <div className="flex min-w-[5rem] flex-1 flex-col items-center px-1">
-          <span className="max-w-full truncate text-[10px] font-medium text-muted-foreground">{leg.duration || getDuration(leg.departureTime, leg.arrivalTime)}</span>
+          <span className="max-w-full truncate text-xs font-medium text-muted-foreground">{leg.duration || getDuration(leg.departureTime, leg.arrivalTime)}</span>
           <div className="relative my-1.5 h-px w-full bg-border">
             <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
             <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-primary" />
           </div>
-          {leg.stopText && <span className="max-w-full truncate text-[10px] font-medium text-success" title={leg.stopText}>{leg.stopText}</span>}
+          {leg.stopText && <span className="max-w-full truncate text-xs font-medium text-success" title={leg.stopText}>{leg.stopText}</span>}
         </div>
         <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
           <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(leg.arrivalTime)}</p>
-          <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(leg.arrivalTime)}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{formatFlightDate(leg.arrivalTime)}</p>
           <p className="truncate text-xs text-muted-foreground" title={routeLabel(leg.destination, leg.destinationAirport)}>{routeLabel(leg.destination, leg.destinationAirport)}</p>
         </div>
       </div>
@@ -981,8 +981,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   );
   const LegTimelineMobile = ({ leg }: { leg: DisplayJourneyLeg }) => (
     <div className="min-w-0 rounded-xl bg-muted/40 px-3 py-2">
-      <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-primary">{leg.label}</p>
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+      <p className="mb-1 text-xs font-bold uppercase tracking-wide text-primary">{leg.label}</p>
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <span className="font-bold text-foreground">{formatFlightTime(leg.departureTime)}</span>
         <span className="font-semibold text-foreground">{airportCode(leg.origin)}</span>
         <span aria-hidden="true">──</span>
@@ -1033,7 +1033,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     <div className="grid gap-1 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-4">
                       <p className="text-lg font-black leading-tight text-slate-950">{formatFlightTime(segment.departureTime)}</p>
                       <div className="min-w-0">
-                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Departure</p>
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Departure</p>
                         <p className="truncate text-sm font-bold text-slate-950" title={routeLabel(segment.origin || "", segment.departureAirport)}>
                           {routeLabel(segment.origin || "", segment.departureAirport)}
                         </p>
@@ -1047,7 +1047,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     <div className="grid gap-1 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-4">
                       <p className="text-lg font-black leading-tight text-slate-950">{formatFlightTime(segment.arrivalTime)}</p>
                       <div className="min-w-0">
-                        <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Arrival</p>
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Arrival</p>
                         <p className="truncate text-sm font-bold text-slate-950" title={routeLabel(segment.destination || "", segment.arrivalAirport)}>
                           {routeLabel(segment.destination || "", segment.arrivalAirport)}
                         </p>
@@ -1067,7 +1067,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       </p>
                       <p className="mt-1 text-xs font-semibold text-muted-foreground">Layover duration: {layover?.duration || "TBA"}</p>
                       {(layover?.arrivalTime || layover?.departureTime) && (
-                        <p className="mt-1 text-[11px] text-muted-foreground">
+                        <p className="mt-1 text-xs text-muted-foreground">
                           Arrive {formatFlightTime(layover?.arrivalTime || segment.arrivalTime)} · Depart {formatFlightTime(layover?.departureTime || nextSegment?.departureTime)}
                         </p>
                       )}
@@ -1172,28 +1172,28 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     setParams(next, { replace: true });
                   }}
                   aria-label="Swap origin and destination"
-                  className={cn("h-6 w-6 rounded-full border border-primary-foreground/30 flex items-center justify-center text-primary-foreground/80 hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0")}
+                  className={cn("h-6 w-6 rounded-full border border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0")}
                 >
                   <ArrowLeftRight className="h-3.5 w-3.5" />
                 </button>
                 <span className="min-w-0 max-w-[14rem] truncate font-semibold">{routeLabel(to)}</span>
-                <span className={cn("text-primary-foreground/60 text-xs")}>-</span>
-                <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>{format(departDate, "EEE, MMM d")}</span>
-                {tripType === "roundtrip" && returnDate && <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>to {format(returnDate, "EEE, MMM d")}</span>}
-                {tripType === "multicity" && <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>{segments.length} flights</span>}
-                <span className={cn("text-primary-foreground/60 text-xs")}>-</span>
-                <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>{formatTravelers(travelers)}</span>
-                <span className={cn("text-primary-foreground/60 text-xs")}>-</span>
-                <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>{currency}</span>
+                <span className={cn("text-primary-foreground text-xs")}>-</span>
+                <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{format(departDate, "EEE, MMM d")}</span>
+                {tripType === "roundtrip" && returnDate && <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>to {format(returnDate, "EEE, MMM d")}</span>}
+                {tripType === "multicity" && <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{segments.length} flights</span>}
+                <span className={cn("text-primary-foreground text-xs")}>-</span>
+                <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{formatTravelers(travelers)}</span>
+                <span className={cn("text-primary-foreground text-xs")}>-</span>
+                <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{currency}</span>
                 {apiStatus === "loading" ? (
                   <>
-                    <span className={cn("text-primary-foreground/60 text-xs")}>-</span>
-                    <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>Searching live fares</span>
+                    <span className={cn("text-primary-foreground text-xs")}>-</span>
+                    <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>Searching live fares</span>
                   </>
                 ) : !searchExpired ? (
                   <>
-                    <span className={cn("text-primary-foreground/60 text-xs")}>-</span>
-                    <span className={cn("text-primary-foreground/80 text-xs whitespace-nowrap")}>{filtered.length} live {filtered.length === 1 ? "fare" : "fares"}</span>
+                    <span className={cn("text-primary-foreground text-xs")}>-</span>
+                    <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{filtered.length} live {filtered.length === 1 ? "fare" : "fares"}</span>
                   </>
                 ) : null}
                 <Badge role="timer" aria-label="Search expiry" aria-live="off" className={cn("gap-1 rounded-full border-0 whitespace-nowrap tabular-nums", searchExpired ? "bg-destructive/20 text-primary-foreground" : "bg-primary-foreground/15 text-primary-foreground")}>
@@ -1235,7 +1235,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 )}
               >
                 <span>{format(day.date, "EEE, MMM d")}</span>
-                <span className={cn("text-[10px] mt-0.5", formatDateOnly(day.date) === formatDateOnly(departDate) ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                <span className={cn("text-xs mt-0.5", formatDateOnly(day.date) === formatDateOnly(departDate) ? "text-primary-foreground" : "text-muted-foreground")}>
                   {dateFareLabel(day.date)}
                 </span>
               </button>
@@ -1498,11 +1498,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             <div className="mt-0.5 flex flex-wrap items-center gap-1">
                               {/* Refundable/Non-refundable badge */}
                               {flight.refundable !== undefined && (
-                                <Badge variant={flight.refundable ? "outline" : "secondary"} className={cn("rounded-md border-0 text-[9px] sm:text-[10px]", flight.refundable ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>
+                                <Badge variant={flight.refundable ? "outline" : "secondary"} className={cn("rounded-md border-0 text-xs sm:text-xs", flight.refundable ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600")}>
                                   {flight.refundable ? "Refundable" : "Non-refundable"}
                                 </Badge>
                               )}
-                              {flight.status === 'delayed' && <Badge className="bg-warning/10 text-warning border-0 text-[10px] rounded-md">Delayed</Badge>}
+                              {flight.status === 'delayed' && <Badge className="bg-warning/10 text-warning border-0 text-xs rounded-md">Delayed</Badge>}
                             </div>
                           </div>
                         </div>
@@ -1519,20 +1519,20 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             <div className="flex min-w-0 items-center gap-3">
                               <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
                                 <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
-                                <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
                                 <p className="truncate text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
                               </div>
                               <div className="flex min-w-[5rem] flex-1 flex-col items-center px-1">
-                                <span className="max-w-full truncate text-[10px] font-medium text-muted-foreground">{getFlightDuration(flight)}</span>
+                                <span className="max-w-full truncate text-xs font-medium text-muted-foreground">{getFlightDuration(flight)}</span>
                                 <div className="relative my-1.5 h-px w-full bg-border">
                                   <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
                                   <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-primary" />
                                 </div>
-                                {stopLabel(flight) && <span className="max-w-full truncate text-[10px] font-medium text-success" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
+                                {stopLabel(flight) && <span className="max-w-full truncate text-xs font-medium text-success" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
                               </div>
                               <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
                                 <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
-                                <p className="mt-1 text-[11px] text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
                                 <p className="truncate text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
                               </div>
                             </div>
@@ -1551,21 +1551,21 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
                               <div className="min-w-0 shrink-0 basis-[7.5rem] sm:basis-[8.75rem] text-left">
                                 <p className="text-lg sm:text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
-                                <p className="mt-1 text-[10px] sm:text-[11px] text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
-                                <p className="truncate text-[11px] sm:text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
+                                <p className="mt-1 text-xs sm:text-xs text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
+                                <p className="truncate text-xs sm:text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
                               </div>
                               <div className="flex min-w-[4rem] sm:min-w-[5rem] flex-1 flex-col items-center px-1">
-                                <span className="max-w-full truncate text-[9px] sm:text-[10px] font-medium text-muted-foreground">{getFlightDuration(flight)}</span>
+                                <span className="max-w-full truncate text-xs sm:text-xs font-medium text-muted-foreground">{getFlightDuration(flight)}</span>
                                 <div className="relative my-1.5 h-px w-full bg-border">
                                   <div className="absolute left-0 top-1/2 h-2 w-2 sm:h-2.5 sm:w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
                                   <div className="absolute right-0 top-1/2 h-2 w-2 sm:h-2.5 sm:w-2.5 -translate-y-1/2 rounded-full bg-primary" />
                                 </div>
-                                {stopLabel(flight) && <span className="max-w-full truncate text-[9px] sm:text-[10px] font-medium text-success" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
+                                {stopLabel(flight) && <span className="max-w-full truncate text-xs sm:text-xs font-medium text-success" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
                               </div>
                               <div className="min-w-0 shrink-0 basis-[7.5rem] sm:basis-[8.75rem] text-left">
                                 <p className="text-lg sm:text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
-                                <p className="mt-1 text-[10px] sm:text-[11px] text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
-                                <p className="truncate text-[11px] sm:text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
+                                <p className="mt-1 text-xs sm:text-xs text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
+                                <p className="truncate text-xs sm:text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
                               </div>
                             </div>
                           )}
@@ -1576,7 +1576,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="ml-auto h-7 sm:h-8 shrink-0 rounded-lg px-2.5 sm:px-3 text-[11px] sm:text-xs font-semibold md:mt-1"
+                            className="ml-auto h-7 sm:h-8 shrink-0 rounded-lg px-2.5 sm:px-3 text-xs sm:text-xs font-semibold md:mt-1"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -1596,7 +1596,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             <col className="w-[17%]" />
                             <col className="w-[23%]" />
                           </colgroup>
-                          <thead className="bg-muted/40 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          <thead className="bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             <tr className="border-b">
                               <th className="px-4 py-2 text-left">Fare</th>
                               <th className="px-4 py-2 text-left">
@@ -1782,7 +1782,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               <div className="mb-3 flex items-center justify-between gap-2 md:mb-0 md:justify-start">
                                 <div className="flex items-center gap-2">
                                   <span className="font-bold text-foreground text-sm md:text-sm">{fare.tier}</span>
-                                  {fare.popular && <Badge className="bg-gold text-gold-foreground border-0 text-[10px]">Popular</Badge>}
+                                  {fare.popular && <Badge className="bg-gold text-gold-foreground border-0 text-xs">Popular</Badge>}
                                 </div>
                               </div>
                               
@@ -2147,7 +2147,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
                                 <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
                                   <div>
-                                    <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Total Fare</span>
+                                    <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Total Fare</span>
                                     <p className="text-xl font-black text-primary">
                                       {formatFare(fare.price.total, fare.price.currency || fareDetails.flight.currency)}
                                     </p>

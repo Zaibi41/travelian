@@ -393,7 +393,7 @@ export function GroupTicketingSearchBar({
 
                   >
 
-                    {sec.label} {hasAvailableSectors && <span className="text-[10px] opacity-70 font-normal">({sec.count})</span>}
+                    {sec.label} {hasAvailableSectors && <span className="text-xs opacity-70 font-normal">({sec.count})</span>}
 
                   </button>
 

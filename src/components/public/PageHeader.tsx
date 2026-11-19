@@ -32,7 +32,7 @@ export function PageHeader({ title, tagline, eyebrow, icon, breadcrumb, children
       <div className="travelian-container relative z-10">
         <div className={centered ? "text-center" : "text-left"}>
           {breadcrumb && (
-            <div className={`mb-4 flex text-xs text-primary-foreground/70 ${centered ? "justify-center" : ""}`}>{breadcrumb}</div>
+            <div className={`mb-4 flex text-xs text-primary-foreground ${centered ? "justify-center" : ""}`}>{breadcrumb}</div>
           )}
           {icon && (
             <div
@@ -56,7 +56,7 @@ export function PageHeader({ title, tagline, eyebrow, icon, breadcrumb, children
           </h1>
           {tagline ? (
             <p
-              className={`mt-3 max-w-2xl text-sm leading-7 text-primary-foreground/80 md:text-base ${centered ? "mx-auto" : ""}`}
+              className={`mt-3 max-w-2xl text-sm leading-7 text-primary-foreground md:text-base ${centered ? "mx-auto" : ""}`}
             >
               {tagline}
             </p>

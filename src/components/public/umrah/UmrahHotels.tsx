@@ -60,16 +60,16 @@ export function UmrahHotels({ id, eyebrow, title, description, hotels }: Props) 
               </div>
 
               <div className="rounded-xl border bg-muted/20 p-3">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Starting from rates (SAR / night)</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Starting from rates (SAR / night)</p>
                 <div className="mt-2 grid grid-cols-4 gap-2 text-center">
                   {[["Sharing", hotel.rates.sharing], ["Double", hotel.rates.double], ["Triple", hotel.rates.triple], ["Quad", hotel.rates.quad]].map(([label, value]) => (
                     <div key={label as string}>
-                      <p className="text-[11px] font-bold text-primary">{label as string}</p>
+                      <p className="text-xs font-bold text-primary">{label as string}</p>
                       <p className="text-sm font-black text-foreground">{priceValue(value as number)}</p>
                     </div>
                   ))}
                 </div>
-                <p className="mt-2 text-[11px] text-muted-foreground">{hotel.rateValidity}{hotel.supplier ? ` · ${hotel.supplier}` : ""}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{hotel.rateValidity}{hotel.supplier ? ` · ${hotel.supplier}` : ""}</p>
               </div>
 
               <Button asChild className="h-11 w-full rounded-xl bg-whatsapp font-semibold text-whatsapp-foreground hover:bg-whatsapp-hover">

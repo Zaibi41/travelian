@@ -304,7 +304,7 @@ export function SearchTabs({
                     type="button"
                     onClick={addMultiCitySegment}
                     disabled={multiCitySegments.length >= MAX_MULTI_CITY_FLIGHTS}
-                    className="disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                    className="disabled:cursor-not-allowed disabled:opacity-50 flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-primary transition-colors"
                   >
                     <Plus className="h-4 w-4" /> Add Flight
                   </button>

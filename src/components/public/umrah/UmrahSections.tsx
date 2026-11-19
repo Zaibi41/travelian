@@ -133,7 +133,7 @@ export function UmrahFinalCta() {
       <div className="relative z-10">
         <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-gold ring-1 ring-white/15"><Sparkles className="h-5 w-5" /></span>
         <h2 className="mt-4 font-display text-xl font-black text-primary-foreground md:text-2xl">Need help choosing the right Umrah package?</h2>
-        <p className="mx-auto mt-2 max-w-xl text-sm text-primary-foreground/80">
+        <p className="mx-auto mt-2 max-w-xl text-sm text-primary-foreground">
           Our Umrah desk compares hotels, transport and airline options for your dates and budget, then sends a clear final price.
         </p>
         <a className="mt-6 inline-block" href={whatsappUrl("Assalam o Alaikum Travelian, please help me choose the right Umrah package.")} target="_blank" rel="noreferrer">
@@ -141,7 +141,7 @@ export function UmrahFinalCta() {
             <WhatsAppIcon className="mr-2 h-5 w-5" /> Chat with Travelian on WhatsApp
           </Button>
         </a>
-        <p className="mt-4 flex items-center justify-center gap-2 text-xs text-primary-foreground/70">
+        <p className="mt-4 flex items-center justify-center gap-2 text-xs text-primary-foreground">
           <Building2 className="h-4 w-4" /> Contracted Makkah and Madinah hotels · Own Saudi transport desk
         </p>
       </div>

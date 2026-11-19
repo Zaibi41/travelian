@@ -168,7 +168,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
               {walletSummary && (
                 <Link to="/admin/wallet" aria-label={`Wallet balance ${formatPkr(walletSummary.available)}`} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-2 py-1.5 text-body font-bold text-primary transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-3">
                   <Wallet aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-                  <span className="hidden font-semibold text-primary/80 lg:inline">Wallet</span>
+                  <span className="hidden font-semibold text-primary lg:inline">Wallet</span>
                   <span className="truncate">{formatPkr(walletSummary.available)}</span>
                 </Link>
               )}

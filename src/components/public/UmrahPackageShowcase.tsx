@@ -76,7 +76,7 @@ export function UmrahPackageShowcase({ item, detailMode = false }: UmrahPackageS
         {detailMode && (
           <div className="bg-[#0b2145] px-6 py-8 text-center text-white md:px-10">
             <h1 className="text-3xl font-black tracking-tight md:text-5xl">{item.name}</h1>
-            <p className="mt-2 text-sm font-medium text-white/75 md:text-base">Carefully managed Umrah packages from Travelian inventory</p>
+            <p className="mt-2 text-sm font-medium text-white md:text-base">Carefully managed Umrah packages from Travelian inventory</p>
           </div>
         )}
 
@@ -96,7 +96,7 @@ export function UmrahPackageShowcase({ item, detailMode = false }: UmrahPackageS
             </Badge>
             <div className="absolute inset-x-4 bottom-4 rounded-xl bg-[#0b2145]/88 p-4 text-white shadow-lg backdrop-blur">
               <p className="flex items-center gap-2 text-sm font-bold"><ShieldCheck className="h-5 w-5" /> Trusted by Thousands</p>
-              <p className="mt-1 text-xs text-white/75">Travel with comfort and peace of mind</p>
+              <p className="mt-1 text-xs text-white">Travel with comfort and peace of mind</p>
             </div>
           </div>
 

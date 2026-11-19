@@ -137,7 +137,7 @@ export default function UmrahSamplePage() {
           <h1 className="mt-3 max-w-2xl font-display text-3xl font-black tracking-tight text-primary-foreground md:text-5xl">
             Your Umrah, planned with care
           </h1>
-          <p className="mt-3 max-w-xl text-sm leading-7 text-primary-foreground/80 md:text-base">
+          <p className="mt-3 max-w-xl text-sm leading-7 text-primary-foreground md:text-base">
             Visa, flights, Makkah and Madinah hotels and Saudi transport in one package, with a clear final price before you pay.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
@@ -186,7 +186,7 @@ export default function UmrahSamplePage() {
               <div key={t} className="relative flex flex-col rounded-2xl border bg-card p-5 shadow-card">
                 {t === "Executive" && <Badge className="absolute -top-3 left-5 bg-gold text-gold-foreground hover:bg-gold">Most popular</Badge>}
                 <p className="font-display text-lg font-black text-primary">{t}</p>
-                <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Starting from</p>
+                <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Starting from</p>
                 <p className="font-display text-xl font-black text-foreground">{startingFrom ? `PKR ${priceValue(startingFrom)}` : "On Request"}</p>
                 <ul className="mt-3 space-y-1.5 text-xs text-muted-foreground">
                   <li className="flex gap-2"><MapPin className="h-4 w-4 shrink-0 text-primary" /> {detail?.hotelDistance}</li>
@@ -241,7 +241,7 @@ export default function UmrahSamplePage() {
         <section id="sample-request" className="scroll-mt-24 overflow-hidden rounded-3xl gradient-primary px-5 py-8 text-center md:py-10">
           <ShieldCheck className="mx-auto h-8 w-8 text-gold" />
           <h2 className="mt-2 font-display text-xl font-black text-primary-foreground md:text-2xl">Need a custom Umrah plan?</h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-primary-foreground/80">
+          <p className="mx-auto mt-2 max-w-md text-sm text-primary-foreground">
             Message us on WhatsApp with your dates and budget — our Umrah desk replies with options and a clear final price.
           </p>
           <Button asChild size="lg" className="mt-4 h-12 rounded-xl bg-whatsapp px-6 font-bold text-whatsapp-foreground hover:bg-whatsapp-hover">
@@ -298,7 +298,7 @@ function PackageCard({ offer: o }: { offer: UmrahOffer }) {
 
       <div className="flex flex-col gap-3 border-t bg-muted/30 p-4 md:border-l md:border-t-0">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Starting from</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Starting from</p>
           <p className="font-display text-xl font-black text-primary">{o.startingFrom ? `PKR ${priceValue(o.startingFrom)}` : "On Request"}</p>
         </div>
         <Button asChild className="mt-auto rounded-xl bg-whatsapp font-bold text-whatsapp-foreground hover:bg-whatsapp-hover">
@@ -315,7 +315,7 @@ function HotelLine({ city, name, distance }: { city: string; name: string; dista
       <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent text-primary"><Hotel className="h-3.5 w-3.5" /></span>
       <div className="min-w-0">
         <p className="truncate text-xs font-bold text-foreground"><span className="font-black uppercase text-primary">{city}</span> · {name}</p>
-        <p className="truncate text-[11px] text-muted-foreground">{distance}</p>
+        <p className="truncate text-xs text-muted-foreground">{distance}</p>
       </div>
     </div>
   );

@@ -62,7 +62,7 @@ export default function AccountPage() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-primary-foreground">{session.name}</h1>
-              <p className="text-sm text-primary-foreground/60">{session.email}</p>
+              <p className="text-sm text-primary-foreground">{session.email}</p>
             </div>
           </div>
         </div>

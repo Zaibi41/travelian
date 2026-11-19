@@ -1173,20 +1173,20 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                               <div className="text-left">
                                 <p className="text-lg font-black text-foreground">{bookingTime(segment.departureTime)}</p>
                                 <p className="font-bold text-foreground">{segment.origin || "Origin TBA"}</p>
-                                <p className="text-[11px] text-muted-foreground">{bookingShortDate(segment.departureTime)}</p>
+                                <p className="text-xs text-muted-foreground">{bookingShortDate(segment.departureTime)}</p>
                               </div>
                               <div className="flex min-w-[86px] flex-col items-center">
-                                <div className="mb-1 text-[10px] font-semibold text-primary">{segment.flightNumber || "Flight TBA"}</div>
+                                <div className="mb-1 text-xs font-semibold text-primary">{segment.flightNumber || "Flight TBA"}</div>
                                 <div className="h-px w-full bg-border" />
                               </div>
                               <div className="text-right">
                                 <p className="text-lg font-black text-foreground">{bookingTime(segment.arrivalTime)}</p>
                                 <p className="font-bold text-foreground">{segment.destination || "Destination TBA"}</p>
-                                <p className="text-[11px] text-muted-foreground">{bookingShortDate(segment.arrivalTime)}</p>
+                                <p className="text-xs text-muted-foreground">{bookingShortDate(segment.arrivalTime)}</p>
                               </div>
                             </div>
                             {ctxLayovers[index] && (
-                              <div className="my-3 rounded-full bg-primary/10 px-3 py-1 text-center text-[11px] font-semibold text-primary">
+                              <div className="my-3 rounded-full bg-primary/10 px-3 py-1 text-center text-xs font-semibold text-primary">
                                 Layover in {ctxLayovers[index].location || "connection"} &bull; {ctxLayovers[index].duration || "Duration TBA"}
                               </div>
                             )}
@@ -1204,9 +1204,9 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                 )}
                 <div className="rounded-2xl border bg-white p-3 text-sm">
                   <p className="mb-2 font-bold text-foreground">Fare Summary</p>
-                  {sourceCurrencyLabel && <p className="mb-2 text-[11px] text-muted-foreground">{sourceCurrencyLabel}</p>}
+                  {sourceCurrencyLabel && <p className="mb-2 text-xs text-muted-foreground">{sourceCurrencyLabel}</p>}
                   {isFlight && passengerTotal > 1 && (
-                    <p className="mb-1 text-[11px] text-muted-foreground">{passengerSummary} · fares shown for the whole party</p>
+                    <p className="mb-1 text-xs text-muted-foreground">{passengerSummary} · fares shown for the whole party</p>
                   )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Base Fare{isFlight && passengerTotal > 1 ? ` x ${passengerTotal}` : ""}</span>
@@ -1221,7 +1221,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     <span className="text-foreground font-medium">{formatMoney(addonsTotal)}</span>
                   </div>
                   {isFlight && (
-                    <div className="mt-3 rounded-xl border border-primary/10 bg-accent/40 p-3 text-[11px] text-muted-foreground">
+                    <div className="mt-3 rounded-xl border border-primary/10 bg-accent/40 p-3 text-xs text-muted-foreground">
                       <p className="flex items-start gap-1.5 font-semibold text-foreground">
                         <Info className="mt-0.5 h-3.5 w-3.5 text-primary" />
                         Fare rules summary
@@ -1238,12 +1238,12 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Badge variant="outline" className="gap-1 rounded-full px-2.5 py-1 text-[11px]"><Shield className="h-3 w-3 text-success" /> Live Supplier Fare</Badge>
-                  <Badge variant="outline" className="gap-1 rounded-full px-2.5 py-1 text-[11px]"><Lock className="h-3 w-3 text-success" /> Instant Verification</Badge>
-                  <Badge variant="outline" className="rounded-full px-2.5 py-1 text-[11px]">{passengerSummary}</Badge>
-                  <Badge variant="outline" className="rounded-full px-2.5 py-1 text-[11px]">{ctxCabin}</Badge>
+                  <Badge variant="outline" className="gap-1 rounded-full px-2.5 py-1 text-xs"><Shield className="h-3 w-3 text-success" /> Live Supplier Fare</Badge>
+                  <Badge variant="outline" className="gap-1 rounded-full px-2.5 py-1 text-xs"><Lock className="h-3 w-3 text-success" /> Instant Verification</Badge>
+                  <Badge variant="outline" className="rounded-full px-2.5 py-1 text-xs">{passengerSummary}</Badge>
+                  <Badge variant="outline" className="rounded-full px-2.5 py-1 text-xs">{ctxCabin}</Badge>
                   {ctxFarePerks.slice(0, 4).map((perk) => (
-                    <Badge key={perk} variant="outline" className="gap-1 rounded-full px-2.5 py-1 text-[11px]"><Check className="h-3 w-3 text-success" /> {perk}</Badge>
+                    <Badge key={perk} variant="outline" className="gap-1 rounded-full px-2.5 py-1 text-xs"><Check className="h-3 w-3 text-success" /> {perk}</Badge>
                   ))}
                 </div>
               </CardContent>
