@@ -449,6 +449,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{booking_id}/supplier-cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel At Supplier
+         * @description Cancel a held SooperFare booking at SooperFare (staff confirm first in the admin). The booking is marked Cancelled
+         *     only when SooperFare's own record says so; otherwise it shows "Cancel requested". Logged in the audit trail.
+         */
+        post: operations["cancel_at_supplier_v1_admin_bookings__booking_id__supplier_cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{booking_id}/supplier-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check At Supplier
+         * @description Read-only: what SooperFare shows for this booking now; marks it Cancelled once SooperFare confirms a requested cancel.
+         */
+        post: operations["check_at_supplier_v1_admin_bookings__booking_id__supplier_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{booking_id}/supplier-confirm-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Supplier Confirm Preview
+         * @description The exact request Travelian would send to SooperFare to issue this booking. Read-only: nothing is sent.
+         */
+        get: operations["supplier_confirm_preview_v1_admin_bookings__booking_id__supplier_confirm_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/customers": {
         parameters: {
             query?: never;
@@ -2647,6 +2708,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/booking-links/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Booking By Link
+         * @description The booking a customer email's link opens: read-only (no payment from here), one booking, no login. Links expire at
+         *     the later of 30 days and 2 days after the last travel date.
+         */
+        get: operations["booking_by_link_v1_public_booking_links__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/bookings/lookup": {
         parameters: {
             query?: never;
@@ -3191,6 +3273,11 @@ export interface components {
             created_at?: string | null;
             /** @description Omitted when no customer was saved. */
             customer?: components["schemas"]["BookingCustomer"] | null;
+            /**
+             * Customer Email Problems
+             * @description Customer emails not sent: staff contact the customer.
+             */
+            customer_email_problems?: components["schemas"]["CustomerEmailProblem"][] | null;
             /** Customer Or Agency */
             customer_or_agency?: string | null;
             /** Deadline */
@@ -3257,6 +3344,8 @@ export interface components {
              */
             source: "gateway_bookings";
             statuses: components["schemas"]["BookingStatuses"];
+            /** @description SooperFare bookings, supplier-names permission only. */
+            supplier_booking?: components["schemas"]["SupplierBookingView"] | null;
             /** @description Omitted without the cost and margin permission. */
             supplier_payment?: components["schemas"]["SupplierPayment"] | null;
             /** Updated At */
@@ -3760,6 +3849,24 @@ export interface components {
              * @default true
              */
             save_for_next_time: boolean;
+        };
+        /**
+         * CustomerEmailProblem
+         * @description A customer email whose last attempt wasn't delivered to SES (e.g. the SES sandbox refuses unverified addresses).
+         */
+        CustomerEmailProblem: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Email
+             * @description Which email: booking_held, bank_transfer, payment_received, ticket_issued, ...
+             */
+            email: string;
+            /** Reason */
+            reason?: string | null;
         };
         /** DashboardFilterOptions */
         DashboardFilterOptions: {
@@ -6368,6 +6475,44 @@ export interface components {
             umrah_enabled: boolean;
         };
         /**
+         * SupplierBookingView
+         * @description The supplier's own booking (supplier-names permission only): its ids and, after a cancel request, what it says.
+         */
+        SupplierBookingView: {
+            /**
+             * Booking Id
+             * @description The supplier's booking id (SooperFare: booking uuid).
+             */
+            booking_id: string;
+            /**
+             * Can Cancel
+             * @default false
+             */
+            can_cancel: boolean;
+            /** Cancel At */
+            cancel_at?: string | null;
+            /** Cancel Message */
+            cancel_message?: string | null;
+            /**
+             * Cancel State
+             * @default none
+             * @enum {string}
+             */
+            cancel_state: "none" | "requested" | "confirmed" | "failed";
+            /**
+             * Order Ref
+             * @description The supplier's order reference (SooperFare: order_ref_id, e.g. spa-0rj).
+             */
+            order_ref?: string | null;
+            /**
+             * Status At Supplier
+             * @description The reservation status the supplier last showed.
+             */
+            status_at_supplier?: string | null;
+            /** Supplier */
+            supplier: string;
+        };
+        /**
          * SupplierPayment
          * @description The Supplier payment tab. Only sent with the cost and margin permission.
          */
@@ -7814,6 +7959,176 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    cancel_at_supplier_v1_admin_bookings__booking_id__supplier_cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierBookingView"];
+                };
+            };
+            /** @description Needs the issue tickets permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a held SooperFare booking. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description SooperFare refused or didn't answer; nothing changed. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    check_at_supplier_v1_admin_bookings__booking_id__supplier_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierBookingView"];
+                };
+            };
+            /** @description Caller is not back office, or asked for a field it may not see. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No SooperFare reservation. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description SooperFare couldn't be read. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supplier_confirm_preview_v1_admin_bookings__booking_id__supplier_confirm_preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Caller is not back office, or asked for a field it may not see. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No SooperFare reservation. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
             /** @description Booking data is not available. */
             503: {
@@ -14351,6 +14666,51 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    booking_by_link_v1_public_booking_links__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LookupView"];
+                };
+            };
+            /** @description The link is unknown or has expired. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too many requests. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

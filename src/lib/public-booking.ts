@@ -277,3 +277,8 @@ export function requestPublicFlight(input: {
     },
   });
 }
+
+/** The booking a customer email's signed link opens (read-only, no login). 404 when the link is unknown or expired. */
+export function bookingByLink(token: string, signal?: AbortSignal) {
+  return call<BookingLookup>(`/booking-links/${encodeURIComponent(token)}`, { signal });
+}
