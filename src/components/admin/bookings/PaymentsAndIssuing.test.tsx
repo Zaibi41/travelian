@@ -53,7 +53,7 @@ const BOOKING: BookingDetail = {
 };
 const READY: IssuanceChecklist = {
   issuance_status: "not_issued", blockers: [], full_payment_recorded: true, amount_paid: rs(15_316), amount_due: rs(0),
-  hold_expires_at: SOON, ticketing_enabled: true, can_request: true, can_issue: true,
+  hold_expires_at: SOON, ticketing_enabled: true, can_request: true, can_issue: true, can_check: false,
 };
 
 function renderTab(booking: BookingDetail = BOOKING) {
@@ -251,13 +251,13 @@ describe("2 · Issue the ticket", () => {
 describe("unknown issuance", () => {
   beforeEach(() => api.fetchIssuance.mockResolvedValue({ ...READY, issuance_status: "unknown", can_issue: false, can_request: false }));
 
-  it("blocks issuing; Check PNR again verifies; Mark as issued needs every ticket number and a reason", async () => {
+  it("blocks issuing; Check with supplier verifies; Mark as issued needs every ticket number and a reason", async () => {
     api.verifyIssuance.mockResolvedValue({ result: "unknown", issuance_status: "unknown", message: "Still unclear." });
     api.resolveIssuance.mockResolvedValue({ result: "issued", issuance_status: "issued", message: "Marked as issued.", tickets: [{ position: 1, ticket_number: "214-1" }, { position: 2, ticket_number: "214-2" }] });
     renderTab();
     const card = await screen.findByRole("region", { name: "We can't tell whether the ticket was issued" });
     expect(screen.queryByRole("button", { name: "Issue ticket" })).not.toBeInTheDocument();
-    fireEvent.click(within(card).getByRole("button", { name: "Check PNR again" }));
+    fireEvent.click(within(card).getByRole("button", { name: "Check with supplier" }));
     await waitFor(() => expect(api.verifyIssuance).toHaveBeenCalledWith("TRV-O5QZB5"));
     expect(await within(card).findByRole("alert")).toHaveTextContent("Still unclear.");
 
@@ -284,6 +284,42 @@ describe("unknown issuance", () => {
     fireEvent.change(within(dialog).getByLabelText("Reason"), { target: { value: "Airline says no ticket on the PNR." } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => expect(api.resolveIssuance).toHaveBeenCalledWith("TRV-O5QZB5", { outcome: "not_issued", reason: "Airline says no ticket on the PNR." }));
+  });
+
+  it("shows why it's unknown (the real reason), and Check with supplier records the ticket it finds", async () => {
+    api.fetchIssuance.mockResolvedValue({ ...READY, issuance_status: "unknown", can_issue: false, can_request: false, can_check: true,
+      last_attempt: { at: "2026-11-19T12:37:49Z", outcome: "unknown", reason: "The ticketing request was sent, but the supplier's PNR check afterwards didn't show a ticket number for every passenger, so the result couldn't be confirmed. The supplier accepted the request.", supplier_answer: "accepted the request", pnr_status: "OK" } });
+    api.verifyIssuance.mockResolvedValue({ result: "issued", issuance_status: "issued", message: "The supplier shows the ticket as issued.", tickets: [{ position: 1, ticket_number: "9000000000672" }] });
+    renderTab();
+    const card = await screen.findByRole("region", { name: "We can't tell whether the ticket was issued" });
+    expect(card).toHaveTextContent("Why it's unknown");
+    expect(card).toHaveTextContent("didn't show a ticket number for every passenger");
+    expect(card).toHaveTextContent("PNR status at the supplier: OK");
+    fireEvent.click(within(card).getByRole("button", { name: "Check with supplier" }));
+    expect(await screen.findByRole("region", { name: "Tickets issued" })).toHaveTextContent("9000000000672");
+  });
+});
+
+describe("last issuing attempt", () => {
+  it("a failed attempt shows its reason and offers Check with supplier (read-only); safe to retry is shown", async () => {
+    api.fetchIssuance.mockResolvedValue({ ...READY, can_check: true,
+      last_attempt: { at: "2026-11-18T20:02:28Z", outcome: "aborted", reason: "Not enough balance in the supplier account to pay for the ticket. Nothing was sent to the airline." } });
+    api.verifyIssuance.mockResolvedValue({ result: "not_issued", issuance_status: "not_issued", message: "The supplier shows no ticket and nothing paid. It's safe to issue again." });
+    renderTab();
+    const notice = await screen.findByText("Last issuing attempt didn't issue a ticket");
+    const box = notice.closest("[role=status]") as HTMLElement;
+    expect(box).toHaveTextContent("Not enough balance in the supplier account");
+    fireEvent.click(within(box).getByRole("button", { name: "Check with supplier" }));
+    await waitFor(() => expect(api.verifyIssuance).toHaveBeenCalledWith("TRV-O5QZB5"));
+    expect(await screen.findByRole("region", { name: "The ticket wasn't issued" })).toHaveTextContent("safe to issue again");
+    expect(screen.getByRole("button", { name: "Issue ticket" })).toBeEnabled();
+  });
+
+  it("no Check with supplier when the gateway doesn't allow it", async () => {
+    api.fetchIssuance.mockResolvedValue({ ...READY, last_attempt: { at: "2026-11-18T20:02:28Z", outcome: "checked", reason: "Checked with the supplier: no ticket and nothing paid. It's safe to issue again." } });
+    renderTab();
+    expect(await screen.findByText("Last check with the supplier")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Check with supplier" })).not.toBeInTheDocument();
   });
 });
 

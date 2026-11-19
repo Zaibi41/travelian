@@ -311,6 +311,10 @@ function IssueTicket({ booking, checklist, loading, error, onResult }: {
             </CheckRow>
           </dl>
 
+          {checklist.last_attempt && status !== "issued" && status !== "unknown" && (
+            <LastAttempt booking={booking} checklist={checklist} onResult={onResult} />
+          )}
+
           {checklist.blockers.length > 0 && status !== "issued" && (
             <Notice tone="action" title="Not ready to issue">
               <ul className="list-disc pl-5">{checklist.blockers.map(blocker => <li key={blocker}>{blocker}</li>)}</ul>
@@ -469,7 +473,7 @@ function IssuanceOutcome({ booking, checklist, result, onResult }: {
       </ResultCard>
     );
   }
-  if (status === "unknown") return <UnknownIssuance booking={booking} message={result?.message} onResult={onResult} />;
+  if (status === "unknown") return <UnknownIssuance booking={booking} checklist={checklist} message={result?.message} onResult={onResult} />;
   if (status === "processing") {
     return (
       <ResultCard tone="action" tag="Checking" title="Issuing is in progress">
@@ -502,24 +506,72 @@ function IssuanceOutcome({ booking, checklist, result, onResult }: {
   return null;
 }
 
-function UnknownIssuance({ booking, message, onResult }: { booking: BookingDetail; message?: string; onResult: (result: IssuanceResult) => void }) {
+function useCheckWithSupplier(booking: BookingDetail, onResult: (result: IssuanceResult) => void, failed: string) {
   const queryClient = useQueryClient();
-  const [resolving, setResolving] = useState<"issued" | "not_issued" | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
-  const verify = useMutation({
+  const check = useMutation({
     mutationFn: () => verifyIssuance(booking.booking_id),
     onSuccess: result => { setProblem(result.issuance_status === "unknown" ? result.message : null); onResult(result); void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] }); },
-    onError: failure => setProblem(gatewayMessage(failure, "The PNR couldn't be checked. The issuance stays unknown.")),
+    onError: failure => setProblem(gatewayMessage(failure, failed)),
   });
+  return { check, problem };
+}
+
+/** What the last issuing attempt (or supplier check) did, with the real reason; "Check with supplier" after a failure. */
+function AttemptReason({ attempt }: { attempt: NonNullable<IssuanceChecklist["last_attempt"]> }) {
+  return (
+    <>
+      <p>{attempt.reason}</p>
+      <p className="text-label text-muted-foreground">
+        {[`Last attempt ${formatDateTime(attempt.at)}`, attempt.pnr_status && `PNR status at the supplier: ${attempt.pnr_status}`].filter(Boolean).join(" · ")}
+      </p>
+    </>
+  );
+}
+
+function LastAttempt({ booking, checklist, onResult }: { booking: BookingDetail; checklist: IssuanceChecklist; onResult: (result: IssuanceResult) => void }) {
+  const attempt = checklist.last_attempt!;
+  const { check, problem } = useCheckWithSupplier(booking, onResult, "The PNR couldn't be checked with the supplier. Nothing was changed.");
+  const failed = attempt.outcome === "aborted" || attempt.outcome === "not_issued";
+  return (
+    <Notice tone={failed ? "action" : "info"} title={failed ? "Last issuing attempt didn't issue a ticket" : "Last check with the supplier"}>
+      <div className="flex flex-col gap-2">
+        <AttemptReason attempt={attempt} />
+        {checklist.can_check && (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="outline" size="sm" disabled={check.isPending} onClick={() => check.mutate()}>
+              {check.isPending ? "Checking…" : "Check with supplier"}
+            </Button>
+            <span className="text-label text-muted-foreground">Read-only: looks up the PNR and ticket. Never issues.</span>
+          </div>
+        )}
+        {problem && <p role="alert" className="text-status-critical-text">{problem}</p>}
+      </div>
+    </Notice>
+  );
+}
+
+function UnknownIssuance({ booking, checklist, message, onResult }: {
+  booking: BookingDetail; checklist?: IssuanceChecklist; message?: string; onResult: (result: IssuanceResult) => void;
+}) {
+  const [resolving, setResolving] = useState<"issued" | "not_issued" | null>(null);
+  const { check: verify, problem } = useCheckWithSupplier(booking, onResult, "The PNR couldn't be checked. The issuance stays unknown.");
+  const attempt = checklist?.last_attempt;
   return (
     <ResultCard tone="critical" tag="Unknown issuance" title="We can't tell whether the ticket was issued">
       <p className="text-body text-muted-foreground">
-        Do not issue again. Check the PNR {booking.pnr ?? booking.booking_id} with the airline. Issuing is blocked until someone with permission resolves this.
+        Do not issue again. Check with the supplier first: issuing is blocked until the ticket is found or someone with permission resolves this.
         {message ? ` ${message}` : ""}
       </p>
+      {attempt && (
+        <div className="flex flex-col gap-0.5 rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-body">
+          <p className="font-semibold text-foreground">Why it's unknown</p>
+          <AttemptReason attempt={attempt} />
+        </div>
+      )}
       {booking.can_issue_tickets ? (
         <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" disabled={verify.isPending} onClick={() => verify.mutate()}>{verify.isPending ? "Checking…" : "Check PNR again"}</Button>
+          <Button type="button" variant="primary" disabled={verify.isPending} onClick={() => verify.mutate()}>{verify.isPending ? "Checking…" : "Check with supplier"}</Button>
           <Button type="button" variant="outline" onClick={() => setResolving("issued")}>Mark as issued</Button>
           <Button type="button" variant="outline" onClick={() => setResolving("not_issued")}>Mark as not issued</Button>
         </div>
