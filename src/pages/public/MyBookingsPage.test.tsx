@@ -45,6 +45,14 @@ describe("My Bookings: paid website flights", () => {
     expect(screen.queryByText("confirmed")).not.toBeInTheDocument();
   });
 
+  it("tells the customer the team will contact them when the paid booking couldn't be ticketed", async () => {
+    answer({ status: "paid_not_ticketed" });
+    page();
+    expect(await screen.findByText("Payment received. Our team will contact you shortly about your booking.")).toBeInTheDocument();
+    expect(screen.queryByText(/Issuance pending/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/PNR:/)).not.toBeInTheDocument();
+  });
+
   it("shows the airline's PNR only once issued", async () => {
     answer({ status: "issued", final_pnr: "63B55C", tickets: ["2147483647001"] });
     page();

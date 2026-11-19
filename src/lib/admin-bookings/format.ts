@@ -49,6 +49,8 @@ export const BOOKING_STATUS_LABEL: Record<BookingStatus, string> = {
   requested: "Requested (website)",
   // A paid flight that can't be ticketed (hold expired, fare gone, supplier refused): refund or rebook by hand.
   paid_not_ticketed: "Paid, not ticketed: refund or rebook",
+  // A flight paid in full with an open hold and no ticket yet: staff confirm with the supplier and issue (red alert sent).
+  paid_issuance_pending: "Paid, issuance pending",
 };
 
 export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = { paid: "Paid", unpaid: "Unpaid", part_paid: "Part-paid" };

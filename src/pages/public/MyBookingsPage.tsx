@@ -22,7 +22,8 @@ function statusClass(status: BookingRecord["status"]) {
 function fromGateway(view: PublicBooking, booking: BookingRecord): Partial<BookingRecord> {
   // A paid flight that isn't ticketed yet is "payment received", never "confirmed" (D48): "processing" means the gateway
   // is issuing it, "confirmed" that Travelian's team issues it.
-  const paidFlight = booking.type === "flight" && view.payment_status === "paid" && (view.status === "processing" || view.status === "confirmed");
+  const paidFlight = booking.type === "flight" && view.payment_status === "paid"
+    && (view.status === "processing" || view.status === "confirmed" || view.status === "paid_not_ticketed");
   const status: BookingRecord["status"] = view.status === "requested" ? "requested"
     : view.status === "issued" ? "ticket_issued"
     : paidFlight ? "payment_received"
@@ -34,7 +35,8 @@ function fromGateway(view: PublicBooking, booking: BookingRecord): Partial<Booki
     status,
     paymentStatus: view.payment_status === "paid" ? "paid" : "unpaid",
     ticketStatus: view.status === "issued" ? "issued" : "not_issued",
-    issuance: paidFlight ? (view.status === "processing" ? "in_progress" : "pending") : undefined,
+    // "Issuance pending" only while the hold is valid; once it is lost the team contacts the customer.
+    issuance: paidFlight ? (view.status === "processing" ? "in_progress" : view.status === "paid_not_ticketed" ? "contact" : "pending") : undefined,
     // The airline's own PNR, only once the gateway has the issued ticket (never made up on this page).
     pnr: view.status === "issued" && view.final_pnr ? view.final_pnr : booking.pnr,
     holdExpiresAt: view.hold_expires_at,
@@ -44,6 +46,7 @@ function fromGateway(view: PublicBooking, booking: BookingRecord): Partial<Booki
 const ISSUANCE_NOTE = {
   in_progress: "Payment received. Issuance in progress: we'll notify you when your ticket is ready.",
   pending: "Payment received. Issuance pending: Travelian's team will issue your ticket and notify you.",
+  contact: "Payment received. Our team will contact you shortly about your booking.",
 } as const;
 
 /** After PayFast: let the gateway verify what PayFast sent back, then refresh every gateway booking's status. */

@@ -16,6 +16,7 @@ import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GatewayError } from "@/lib/gateway/client";
 import {
   PAYMENT_METHODS, PAYMENT_METHOD_LABEL, activateReceivingAccount, addReceivingAccount, deactivateReceivingAccount, fetchReceivingAccounts, methodFromParam,
+  updateReceivingAccount,
   type PaymentMethod, type ReceivingAccount,
 } from "@/lib/finance/payment-accounts";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,7 @@ export default function AccountsLedgersPage() {
   const method = methodFromParam(params.get("method"));
   const [adding, setAdding] = useState<PaymentMethod | null>(null);
   const [deactivating, setDeactivating] = useState<ReceivingAccount | null>(null);
+  const [editing, setEditing] = useState<ReceivingAccount | null>(null);
   const accounts = useQuery({ queryKey: ACCOUNTS_KEY, queryFn: ({ signal }) => fetchReceivingAccounts({ signal }) });
   const forbidden = accounts.error instanceof GatewayError && accounts.error.kind === "forbidden";
   const all = accounts.data?.accounts ?? [];
@@ -99,7 +101,7 @@ export default function AccountsLedgersPage() {
                   )
                 ) : (
                   <>
-                    <AccountsTable accounts={shown} onDeactivate={setDeactivating} />
+                    <AccountsTable accounts={shown} onDeactivate={setDeactivating} onEdit={setEditing} />
                     <p className="text-label text-muted-foreground">
                       {count(shown.length, "account")}, {shown.filter(account => account.active).length} active
                     </p>
@@ -113,6 +115,7 @@ export default function AccountsLedgersPage() {
 
       {adding && <AddAccountDialog initialMethod={adding} onClose={() => setAdding(null)} />}
       {deactivating && <DeactivateDialog account={deactivating} onClose={() => setDeactivating(null)} />}
+      {editing && <EditAccountDialog account={editing} onClose={() => setEditing(null)} />}
     </div>
   );
 }
@@ -122,7 +125,9 @@ function StatusPill({ active }: { active: boolean }) {
 }
 
 /** Table from 640px; below that each account is a card. */
-function AccountsTable({ accounts, onDeactivate }: { accounts: ReceivingAccount[]; onDeactivate: (account: ReceivingAccount) => void }) {
+function AccountsTable({ accounts, onDeactivate, onEdit }: {
+  accounts: ReceivingAccount[]; onDeactivate: (account: ReceivingAccount) => void; onEdit: (account: ReceivingAccount) => void;
+}) {
   const queryClient = useQueryClient();
   const activate = useMutation({
     mutationFn: (account: ReceivingAccount) => activateReceivingAccount(account.id),
@@ -134,9 +139,18 @@ function AccountsTable({ accounts, onDeactivate }: { accounts: ReceivingAccount[
     onError: error => toast.error(error.message),
   });
   // The Active toggle: Deactivate an active account, Activate an inactive one.
-  const action = (account: ReceivingAccount) => account.active
+  const toggle = (account: ReceivingAccount) => account.active
     ? <Button variant="outline" size="sm" onClick={() => onDeactivate(account)} aria-label={`Deactivate ${account.label}`}>Deactivate</Button>
     : <Button variant="outline" size="sm" disabled={activate.isPending} onClick={() => activate.mutate(account)} aria-label={`Activate ${account.label}`}>Activate</Button>;
+  // Bank accounts: edit the details customers see at checkout (number, IBAN, QR image: replace or remove).
+  const action = (account: ReceivingAccount) => (
+    <span className="inline-flex flex-wrap justify-end gap-2">
+      {account.method === "bank_transfer" && (
+        <Button variant="outline" size="sm" onClick={() => onEdit(account)} aria-label={`Edit ${account.label}`}>Edit</Button>
+      )}
+      {toggle(account)}
+    </span>
+  );
   // D40: the receiving account is shown in full. An old account saved before that kept only the last 4 digits, so
   // checkout can't offer it until the full number (or IBAN, or a QR image) is added again.
   const details = (account: ReceivingAccount) => [account.bank_name, account.account_title, account.account_number ?? account.account_number_masked,
@@ -152,7 +166,7 @@ function AccountsTable({ accounts, onDeactivate }: { accounts: ReceivingAccount[
               <th scope="col" className={TABLE.th}>Account name</th>
               <th scope="col" className={cn(TABLE.th, "w-36")}>Method</th>
               <th scope="col" className={cn(TABLE.th, "w-28")}>Status</th>
-              <th scope="col" className={cn(TABLE.th, "w-32")}><span className="sr-only">Action</span></th>
+              <th scope="col" className={cn(TABLE.th, "w-48")}><span className="sr-only">Action</span></th>
             </tr>
           </thead>
           <tbody>
@@ -198,23 +212,9 @@ function AddAccountDialog({ initialMethod, onClose }: { initialMethod: PaymentMe
   const [method, setMethod] = useState<PaymentMethod>(initialMethod);
   const [label, setLabel] = useState("");
   const [bank, setBank] = useState({ bank_name: "", account_title: "", account_number: "", iban: "" });
-  const [qr, setQr] = useState<{ key: string; url?: string | null } | null>(null);
+  const [qr, setQr] = useState<UploadedQr | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const isBank = method === "bank_transfer";
-  const pickQr = async (file?: File) => {
-    if (!file) return;
-    setUploading(true);
-    setUploadError(null);
-    try {
-      const uploaded = await uploadImage("payment_qr", file);
-      setQr({ key: uploaded.assetKey, url: uploaded.publicUrl });
-    } catch (problem) {
-      setUploadError(problem instanceof Error ? problem.message : "The image couldn't be uploaded.");
-    } finally {
-      setUploading(false);
-    }
-  };
   const save = useMutation({
     mutationFn: () => addReceivingAccount(method, label, isBank ? {
       bank_name: bank.bank_name || null, account_title: bank.account_title || null, account_number: bank.account_number || null,
@@ -263,15 +263,7 @@ function AddAccountDialog({ initialMethod, onClose }: { initialMethod: PaymentMe
                     onChange={event => setBank(current => ({ ...current, [key]: event.target.value }))} />
                 </FieldShell>
               ))}
-              <FieldShell id={`${nameId}-qr`} label="QR code image" hint="PNG, JPEG or WebP, up to 2 MB. Stored in S3; customers see it at checkout."
-                error={uploadError && <span className="text-status-critical-text">{uploadError}</span>}>
-                <div className="flex items-center gap-3">
-                  <Input id={`${nameId}-qr`} type="file" accept="image/png,image/jpeg,image/webp" disabled={uploading}
-                    onChange={event => void pickQr(event.target.files?.[0])} />
-                  {uploading && <span className="text-label text-muted-foreground">Uploading…</span>}
-                  {qr?.url && <img src={qr.url} alt="QR code preview" className="h-12 w-12 rounded border object-contain" />}
-                </div>
-              </FieldShell>
+              <QrField id={`${nameId}-qr`} value={qr} onChange={setQr} onUploading={setUploading} />
             </>
           )}
         </form>
@@ -279,6 +271,102 @@ function AddAccountDialog({ initialMethod, onClose }: { initialMethod: PaymentMe
           <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
           <Button variant="primary" type="submit" form={`${nameId}-form`} disabled={save.isPending || uploading}>
             {save.isPending ? "Saving…" : "Save account"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+type UploadedQr = { key: string; url?: string | null };
+
+/** The QR image: uploaded to S3 as soon as it is chosen; any failure is shown under the field and nothing is kept. */
+function QrField({ id, value, onChange, onUploading, current, onRemove }: {
+  id: string; value: UploadedQr | null; onChange: (qr: UploadedQr | null) => void; onUploading: (busy: boolean) => void;
+  current?: string | null; onRemove?: () => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const pick = async (file?: File) => {
+    if (!file) return;
+    setUploading(true);
+    onUploading(true);
+    setError(null);
+    try {
+      const uploaded = await uploadImage("payment_qr", file);
+      onChange({ key: uploaded.assetKey, url: uploaded.publicUrl });
+    } catch (problem) {
+      onChange(null);
+      setError(problem instanceof Error ? problem.message : "Image upload failed: the image couldn't be uploaded.");
+    } finally {
+      setUploading(false);
+      onUploading(false);
+    }
+  };
+  const preview = value?.url ?? current;
+  return (
+    <FieldShell id={id} label="QR code image" hint="PNG, JPEG or WebP, up to 2 MB. Stored in S3; customers see it at checkout."
+      error={error && <span className="inline-flex items-start gap-1.5 text-status-critical-text"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{error}</span>}>
+      <div className="flex flex-wrap items-center gap-3">
+        <Input id={id} type="file" accept="image/png,image/jpeg,image/webp" disabled={uploading} className="min-w-0 flex-1"
+          aria-describedby={describedBy(id, { hint: true, error })} onChange={event => void pick(event.target.files?.[0])} />
+        {uploading && <span className="text-label text-muted-foreground">Uploading…</span>}
+        {preview && <img src={preview} alt="QR code preview" className="h-12 w-12 rounded border object-contain" />}
+        {onRemove && current && !value && (
+          <Button type="button" variant="outline" size="sm" onClick={onRemove}>Remove QR</Button>
+        )}
+      </div>
+    </FieldShell>
+  );
+}
+
+function EditAccountDialog({ account, onClose }: { account: ReceivingAccount; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const nameId = useId();
+  const [bank, setBank] = useState({ bank_name: account.bank_name ?? "", account_title: account.account_title ?? "",
+    account_number: account.account_number ?? "", iban: account.iban ?? "" });
+  const [qr, setQr] = useState<UploadedQr | null>(null);
+  const [removeQr, setRemoveQr] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const save = useMutation({
+    // Only changed values are sent; a blank field keeps its value (the gateway never blanks a detail by accident).
+    mutationFn: () => updateReceivingAccount(account.id, {
+      bank_name: bank.bank_name && bank.bank_name !== account.bank_name ? bank.bank_name : null,
+      account_title: bank.account_title && bank.account_title !== account.account_title ? bank.account_title : null,
+      account_number: bank.account_number && bank.account_number !== account.account_number ? bank.account_number : null,
+      iban: bank.iban && bank.iban !== account.iban ? bank.iban : null,
+      qr_asset_key: qr?.key ?? null, remove_qr: removeQr && !qr,
+    }),
+    onSuccess: updated => {
+      toast.success(`${updated.label} updated.`);
+      void queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY });
+      void queryClient.invalidateQueries({ queryKey: ["admin-bookings", "payment-accounts"] });
+      onClose();
+    },
+  });
+  return (
+    <Dialog open onOpenChange={open => !open && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit {account.label}</DialogTitle>
+          <DialogDescription className="sr-only">Edit the bank details customers see at checkout.</DialogDescription>
+        </DialogHeader>
+        <form id={`${nameId}-form`} className="flex flex-col gap-4" onSubmit={event => { event.preventDefault(); save.mutate(); }}>
+          {([["bank_name", "Bank name"], ["account_title", "Account title"], ["account_number", "Account number"], ["iban", "IBAN"]] as const).map(([key, title]) => (
+            <FieldShell key={key} id={`${nameId}-${key}`} label={title}>
+              <Input id={`${nameId}-${key}`} value={bank[key]} autoComplete="off" maxLength={key === "account_number" || key === "iban" ? 60 : 120}
+                onChange={event => setBank(current => ({ ...current, [key]: event.target.value }))} />
+            </FieldShell>
+          ))}
+          <QrField id={`${nameId}-qr`} value={qr} onChange={next => { setQr(next); if (next) setRemoveQr(false); }} onUploading={setUploading}
+            current={removeQr ? null : account.qr_url} onRemove={() => setRemoveQr(true)} />
+          {removeQr && <p role="status" className="text-label text-muted-foreground">The QR image will be removed when you save.</p>}
+          {save.error && <p role="alert" className="text-label text-status-critical-text">{save.error.message}</p>}
+        </form>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="outline" type="button" onClick={onClose}>Cancel</Button>
+          <Button variant="primary" type="submit" form={`${nameId}-form`} disabled={save.isPending || uploading}>
+            {save.isPending ? "Saving…" : "Save changes"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -105,7 +105,7 @@ export async function searchPublicGroups(query: { origin?: string; destination?:
 
 export interface PublicBooking {
   reference: string;
-  status: "requested" | "held" | "confirmed" | "issued" | "expired" | "released" | "processing" | "unknown" | "not_recorded";
+  status: "requested" | "held" | "confirmed" | "issued" | "expired" | "released" | "processing" | "unknown" | "not_recorded" | "paid_not_ticketed";
   payment_status: "unpaid" | "part_paid" | "paid";
   live: boolean;
   can_pay: boolean;

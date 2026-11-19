@@ -696,7 +696,8 @@ export interface paths {
         head?: never;
         /**
          * Update Payment Account
-         * @description Bank name, account title, full account number, IBAN and QR image. Fields left out keep their value.
+         * @description Bank name, account title, full account number, IBAN and QR image. Fields left out keep their value; remove_qr clears
+         *     the QR image.
          */
         patch: operations["update_payment_account_v1_admin_finance_payment_accounts__account_id__patch"];
         trace?: never;
@@ -2734,8 +2735,7 @@ export interface paths {
         put?: never;
         /**
          * Flight Payment Options
-         * @description Which payment methods checkout offers for the chosen fares. Card is never offered for a fare whose tickets can't be
-         *     issued from Travelian (SooperFare today), and the booking route refuses it too.
+         * @description Which payment methods checkout offers for the chosen fares (the booking route applies the same rules).
          */
         post: operations["flight_payment_options_v1_public_flights_payment_options_post"];
         delete?: never;
@@ -3384,6 +3384,11 @@ export interface components {
             /** On Hold */
             on_hold: number;
             /**
+             * Paid Not Issued
+             * @description Flights tab only: paid and no ticket, needing staff (Paid, issuance pending or Paid, not ticketed).
+             */
+            paid_not_issued?: number | null;
+            /**
              * Payment Pending
              * @description Flights tab only: open holds not fully paid and not past their deadline (the dashboard's Payment pending).
              */
@@ -3597,7 +3602,7 @@ export interface components {
              * Booking
              * @enum {string}
              */
-            booking: "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested" | "paid_not_ticketed";
+            booking: "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested" | "paid_not_ticketed" | "paid_issuance_pending";
             /**
              * Issuance
              * @enum {string}
@@ -5419,6 +5424,12 @@ export interface components {
             reference?: string | null;
             /** Title */
             title: string;
+            /**
+             * Urgent
+             * @description A red alert: a customer paid by card and has no ticket. Shown first, in red.
+             * @default false
+             */
+            urgent: boolean;
         };
         /** OperationCall */
         OperationCall: {
@@ -5608,9 +5619,10 @@ export interface components {
             route?: string | null;
             /**
              * Status
+             * @description paid_not_ticketed: paid, and Travelian's team will contact the customer.
              * @enum {string}
              */
-            status: "requested" | "held" | "confirmed" | "issued" | "expired" | "released" | "processing" | "unknown" | "not_recorded";
+            status: "requested" | "held" | "confirmed" | "issued" | "expired" | "released" | "processing" | "unknown" | "not_recorded" | "paid_not_ticketed";
             /**
              * Tickets
              * @description Ticket numbers once issued.
@@ -5644,7 +5656,7 @@ export interface components {
             passengers: components["schemas"]["HoldPassenger"][];
             /**
              * Payment Method
-             * @description Used when the fare is held (see above). card: PayFast online (not for fares whose tickets can't be issued from Travelian). bank_transfer / jazzcash: staff verify the payment and issue. book_only: held now, paid later by arrangement with Travelian's team. Nothing but a verified card payment is ever issued automatically.
+             * @description Used when the fare is held (see above). card: PayFast online. bank_transfer / jazzcash: staff verify the payment and issue. book_only: held now, paid later by arrangement with Travelian's team. Nothing but a verified card payment is ever issued automatically.
              * @default card
              * @enum {string}
              */
@@ -6354,6 +6366,12 @@ export interface components {
              * @description From POST /v1/admin/uploads (purpose payment_qr).
              */
             qr_asset_key?: string | null;
+            /**
+             * Remove Qr
+             * @description Remove the QR image (customers stop seeing it at checkout). Ignored with qr_asset_key.
+             * @default false
+             */
+            remove_qr: boolean;
         };
         /** UserAdminEvent */
         UserAdminEvent: {
@@ -7068,14 +7086,14 @@ export interface operations {
                 date_type?: "created";
                 /** @description Booking ID or PNR. */
                 q?: string | null;
-                booking_status?: ("held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested" | "paid_not_ticketed") | null;
+                booking_status?: ("held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested" | "paid_not_ticketed" | "paid_issuance_pending") | null;
                 payment_status?: ("paid" | "unpaid" | "part_paid") | null;
                 issuance_status?: ("not_issued" | "requested" | "processing" | "issued" | "unknown") | null;
                 /** @description Requires the supplier names permission. */
                 provider?: string | null;
                 agency?: string | null;
                 /** @description List only the rows this card counts. */
-                card?: ("confirmed" | "on_hold" | "cancelled" | "unpaid" | "expiring_soon" | "awaiting_issuance" | "hold_deadlines" | "payment_pending") | null;
+                card?: ("confirmed" | "on_hold" | "cancelled" | "unpaid" | "expiring_soon" | "awaiting_issuance" | "hold_deadlines" | "payment_pending" | "paid_not_issued") | null;
                 limit?: number;
                 offset?: number;
             };
