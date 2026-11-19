@@ -14,6 +14,7 @@ import { ItineraryTab } from "@/components/admin/bookings/ItineraryTab";
 import { DownloadItineraryButton } from "@/components/admin/bookings/DownloadItineraryButton";
 import { GroupNoCancelNotice } from "@/components/admin/bookings/GroupNoCancelNotice";
 import { GroupTicketsTab } from "@/components/admin/bookings/GroupTicketsTab";
+import { SupplierBookingCard } from "@/components/admin/bookings/SupplierBookingCard";
 import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { GROUP_TICKETING_LABEL } from "@/lib/admin-search/group-holds";
 import { SampleDataBadge, StatusChips } from "@/components/admin/bookings/BookingChips";
@@ -92,6 +93,7 @@ export default function AdminBookingDetailPage() {
       <TabLinks label="Booking" tabs={visibleTabs.map(entry => ({ to: bookingDetailPath(booking.booking_id, entry.slug), label: entry.label }))} />
       {detail.error && <DashboardErrorNotice message={errorMessage(detail.error)} />}
       {tab === "overview" && <Overview booking={booking} />}
+      {tab === "overview" && booking.supplier_booking && <SupplierBookingCard booking={booking} />}
       {tab === "fare" && <Fare booking={booking} />}
       {tab === "supplier-payment" && booking.supplier_payment && <SupplierPaymentTab booking={booking} />}
       {tab === "payments" && <PaymentsAndIssuing booking={booking} />}
