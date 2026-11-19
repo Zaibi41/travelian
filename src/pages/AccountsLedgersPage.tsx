@@ -142,10 +142,10 @@ function AccountsTable({ accounts, onDeactivate, onEdit }: {
   const toggle = (account: ReceivingAccount) => account.active
     ? <Button variant="outline" size="sm" onClick={() => onDeactivate(account)} aria-label={`Deactivate ${account.label}`}>Deactivate</Button>
     : <Button variant="outline" size="sm" disabled={activate.isPending} onClick={() => activate.mutate(account)} aria-label={`Activate ${account.label}`}>Activate</Button>;
-  // Bank accounts: edit the details customers see at checkout (number, IBAN, QR image: replace or remove).
+  // Bank and JazzCash accounts: edit the details customers see at checkout (number, IBAN, QR image: replace or remove).
   const action = (account: ReceivingAccount) => (
     <span className="inline-flex flex-wrap justify-end gap-2">
-      {account.method === "bank_transfer" && (
+      {hasCheckoutDetails(account.method) && (
         <Button variant="outline" size="sm" onClick={() => onEdit(account)} aria-label={`Edit ${account.label}`}>Edit</Button>
       )}
       {toggle(account)}
@@ -216,9 +216,9 @@ function AddAccountDialog({ initialMethod, onClose }: { initialMethod: PaymentMe
   const [uploading, setUploading] = useState(false);
   const isBank = method === "bank_transfer";
   const save = useMutation({
-    mutationFn: () => addReceivingAccount(method, label, isBank ? {
-      bank_name: bank.bank_name || null, account_title: bank.account_title || null, account_number: bank.account_number || null,
-      iban: bank.iban || null, qr_asset_key: qr?.key ?? null,
+    mutationFn: () => addReceivingAccount(method, label, hasCheckoutDetails(method) ? {
+      bank_name: (isBank && bank.bank_name) || null, account_title: bank.account_title || null, account_number: bank.account_number || null,
+      iban: (isBank && bank.iban) || null, qr_asset_key: qr?.key ?? null,
     } : {}),
     onSuccess: account => {
       toast.success(`${account.label} added.`);
@@ -252,12 +252,10 @@ function AddAccountDialog({ initialMethod, onClose }: { initialMethod: PaymentMe
               aria-describedby={describedBy(nameId, { hint: true, error })}
               onChange={event => { setLabel(event.target.value); if (save.isError) save.reset(); }} />
           </FieldShell>
-          {isBank && (
+          {hasCheckoutDetails(method) && (
             <>
-              {/* Shown in full to customers who choose bank transfer at checkout, so they can pay (D40). */}
-              {([["bank_name", "Bank name", "e.g. Meezan Bank"], ["account_title", "Account title", "As the bank shows it"],
-                 ["account_number", "Account number", "The full number. Customers see it at checkout to make the transfer."],
-                 ["iban", "IBAN", "e.g. PK36SCBL0000001123456702. Customers see it at checkout."]] as const).map(([key, title, hint]) => (
+              {/* Shown in full to customers who choose bank transfer or JazzCash at checkout, so they can pay (D40). */}
+              {detailFields(method).map(([key, title, hint]) => (
                 <FieldShell key={key} id={`${nameId}-${key}`} label={title} hint={hint}>
                   <Input id={`${nameId}-${key}`} value={bank[key]} autoComplete="off" maxLength={key === "account_number" || key === "iban" ? 60 : 120}
                     onChange={event => setBank(current => ({ ...current, [key]: event.target.value }))} />
@@ -277,6 +275,21 @@ function AddAccountDialog({ initialMethod, onClose }: { initialMethod: PaymentMe
     </Dialog>
   );
 }
+
+/** Bank transfer and JazzCash accounts carry the details customers pay into at checkout (number, QR image). */
+const hasCheckoutDetails = (method: string) => method === "bank_transfer" || method === "jazzcash";
+
+type DetailKey = "bank_name" | "account_title" | "account_number" | "iban";
+const BANK_FIELDS: readonly (readonly [DetailKey, string, string])[] = [
+  ["bank_name", "Bank name", "e.g. Meezan Bank"], ["account_title", "Account title", "As the bank shows it"],
+  ["account_number", "Account number", "The full number. Customers see it at checkout to make the transfer."],
+  ["iban", "IBAN", "e.g. PK36SCBL0000001123456702. Customers see it at checkout."],
+];
+const JAZZCASH_FIELDS: readonly (readonly [DetailKey, string, string])[] = [
+  ["account_title", "Account title", "As JazzCash shows it"],
+  ["account_number", "Account number", "The full JazzCash number. Customers see it at checkout to make the payment."],
+];
+const detailFields = (method: string) => (method === "jazzcash" ? JAZZCASH_FIELDS : BANK_FIELDS);
 
 type UploadedQr = { key: string; url?: string | null };
 
@@ -349,10 +362,10 @@ function EditAccountDialog({ account, onClose }: { account: ReceivingAccount; on
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit {account.label}</DialogTitle>
-          <DialogDescription className="sr-only">Edit the bank details customers see at checkout.</DialogDescription>
+          <DialogDescription className="sr-only">Edit the account details customers see at checkout.</DialogDescription>
         </DialogHeader>
         <form id={`${nameId}-form`} className="flex flex-col gap-4" onSubmit={event => { event.preventDefault(); save.mutate(); }}>
-          {([["bank_name", "Bank name"], ["account_title", "Account title"], ["account_number", "Account number"], ["iban", "IBAN"]] as const).map(([key, title]) => (
+          {detailFields(account.method).map(([key, title]) => (
             <FieldShell key={key} id={`${nameId}-${key}`} label={title}>
               <Input id={`${nameId}-${key}`} value={bank[key]} autoComplete="off" maxLength={key === "account_number" || key === "iban" ? 60 : 120}
                 onChange={event => setBank(current => ({ ...current, [key]: event.target.value }))} />

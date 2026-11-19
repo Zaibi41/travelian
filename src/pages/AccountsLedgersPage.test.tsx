@@ -171,4 +171,42 @@ describe("Accounts & Ledgers: Bank and cash book", () => {
     await waitFor(() => expect(api.updateReceivingAccount).toHaveBeenCalledTimes(2));
     expect(api.updateReceivingAccount.mock.calls[1][1]).toMatchObject({ qr_asset_key: null, remove_qr: true });
   });
+  it("Add a JazzCash account: title, full number and QR image are saved (no bank name or IBAN)", async () => {
+    uploads.uploadImage.mockResolvedValueOnce({ assetKey: "payment-qr/jc.png", publicUrl: "https://assets.example/payment-qr/jc.png" });
+    api.addReceivingAccount.mockResolvedValue({ id: "a-9", method: "jazzcash", label: "JazzCash wallet", active: true });
+    renderPage("/admin/finance/accounts-ledgers?method=jazzcash");
+    fireEvent.click(await screen.findByRole("button", { name: "Add account" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add account" });
+    expect(within(dialog).queryByLabelText("Bank name")).not.toBeInTheDocument();
+    expect(within(dialog).queryByLabelText("IBAN")).not.toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText("Account name"), { target: { value: "JazzCash wallet" } });
+    fireEvent.change(within(dialog).getByLabelText("Account title"), { target: { value: "Travelian" } });
+    fireEvent.change(within(dialog).getByLabelText("Account number"), { target: { value: "03001234567" } });
+    fireEvent.change(within(dialog).getByLabelText("QR code image"), { target: { files: [new File(["x"], "qr.png", { type: "image/png" })] } });
+    expect(await within(dialog).findByAltText("QR code preview")).toHaveAttribute("src", "https://assets.example/payment-qr/jc.png");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save account" }));
+    await waitFor(() => expect(api.addReceivingAccount).toHaveBeenCalled());
+    expect(api.addReceivingAccount.mock.calls[0]).toEqual(["jazzcash", "JazzCash wallet", { bank_name: null, account_title: "Travelian",
+      account_number: "03001234567", iban: null, qr_asset_key: "payment-qr/jc.png" }]);
+  });
+
+  it("Edit a JazzCash account: number and QR image (replace or remove); 1Link has no Edit", async () => {
+    api.fetchReceivingAccounts.mockResolvedValue({ accounts: [
+      { id: "a-2", method: "jazzcash", label: "Wallet", active: true, account_title: "Travelian", account_number: "03001234567",
+        qr_url: "https://assets.example/payment-qr/old.png" },
+      { id: "a-3", method: "1link", label: "One", active: true },
+    ] });
+    api.updateReceivingAccount.mockResolvedValue({ id: "a-2", method: "jazzcash", label: "Wallet", active: true });
+    renderPage();
+    fireEvent.click((await screen.findAllByRole("button", { name: "Edit Wallet" }))[0]);
+    expect(screen.queryByRole("button", { name: "Edit One" })).not.toBeInTheDocument();
+    const dialog = await screen.findByRole("dialog", { name: "Edit Wallet" });
+    expect(within(dialog).queryByLabelText("IBAN")).not.toBeInTheDocument();
+    expect(within(dialog).getByAltText("QR code preview")).toHaveAttribute("src", "https://assets.example/payment-qr/old.png");
+    fireEvent.change(within(dialog).getByLabelText("Account number"), { target: { value: "03111111111" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remove QR" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(api.updateReceivingAccount).toHaveBeenCalledTimes(1));
+    expect(api.updateReceivingAccount.mock.calls[0][1]).toMatchObject({ account_number: "03111111111", qr_asset_key: null, remove_qr: true });
+  });
 });
