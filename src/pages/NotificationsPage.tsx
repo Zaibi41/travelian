@@ -10,7 +10,7 @@ import { Input } from "@/components/admin/ui/field";
 import { Label } from "@/components/admin/ui/field";
 import { Switch } from "@/components/admin/ui/choice";
 import { Textarea } from "@/components/admin/ui/field";
-import { Bell, Building2, Wallet, CalendarCheck, CheckCheck, AlertTriangle, Send, ShieldCheck } from "lucide-react";
+import { Bell, Building2, Wallet, CalendarCheck, CheckCheck, AlertTriangle, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import type { NotificationDeliveryLog } from "@/data/models";
@@ -91,9 +91,6 @@ export default function NotificationsPage() {
     }
   };
 
-  const sendTest = () => {
-    toast.success(`Test notification queued${settings.adminEmail ? ` to ${settings.adminEmail}` : ""}`);
-  };
 
   const providerStatus = useMemo(() => ({
     email: settings.emailEnabled ? "configured" : "disabled",
@@ -118,6 +115,13 @@ export default function NotificationsPage() {
       {/* Booking alerts from the gateway: every hold and booking request, with what staff need to act on. */}
       <section aria-labelledby="booking-alerts" className="rounded-xl border bg-card p-4 shadow-card">
         <h2 id="booking-alerts" className="font-display text-section font-semibold">Booking alerts</h2>
+        {/* D41: honest state while email isn't set up on the server; the alerts below still work. */}
+        {alerts.emailEnabled === false && (
+          <p role="status" className="mt-2 rounded-lg border border-status-action/40 bg-status-action-soft px-3 py-2 text-body text-foreground">
+            <span className="font-semibold">Email alerts aren't set up yet.</span> Booking alerts appear here, but nothing is emailed to staff until
+            email sending is configured on the server.
+          </p>
+        )}
         {alerts.error ? <p className="mt-2 text-body text-destructive">Booking alerts couldn't be loaded.</p>
           : alerts.items.length === 0 ? <p className="mt-2 text-body text-muted-foreground">{alerts.isLoading ? "Loading…" : "No booking alerts yet."}</p>
           : (
@@ -258,7 +262,6 @@ export default function NotificationsPage() {
 
             <div className="flex flex-wrap gap-3">
               <Button onClick={saveSettings} className="gap-2"><Bell className="h-4 w-4" /> Save settings</Button>
-              <Button variant="outline" onClick={sendTest} className="gap-2"><Send className="h-4 w-4" /> Send test notification</Button>
             </div>
           </TabsContent>
         )}

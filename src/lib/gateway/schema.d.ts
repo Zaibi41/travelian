@@ -696,7 +696,7 @@ export interface paths {
         head?: never;
         /**
          * Update Payment Account
-         * @description Bank name, account title, account number (stored masked) and QR image. Fields left out keep their value.
+         * @description Bank name, account title, full account number, IBAN and QR image. Fields left out keep their value.
          */
         patch: operations["update_payment_account_v1_admin_finance_payment_accounts__account_id__patch"];
         trace?: never;
@@ -2702,6 +2702,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/flights/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Flight Calendar
+         * @description Lowest real fare per date (one-way, adults). Unknown dates have no price; a few are checked in the background.
+         */
+        post: operations["flight_calendar_v1_public_flights_calendar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/flights/search": {
         parameters: {
             query?: never;
@@ -2791,7 +2811,7 @@ export interface paths {
         };
         /**
          * Payment Methods
-         * @description What checkout can offer now; bank-transfer accounts (masked number, QR image) and the site logo.
+         * @description What checkout can offer now; bank-transfer accounts (full number, IBAN, QR image) and the site logo.
          */
         get: operations["payment_methods_v1_public_payment_methods_get"];
         put?: never;
@@ -2816,6 +2836,26 @@ export interface paths {
          * @description The website forwards the parameters PayFast sent the customer back with. Same verification as the notification.
          */
         post: operations["payfast_return_v1_public_payments_payfast_return_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/site-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Site Config
+         * @description Switches the website reads at load time, so they change with a server setting and no rebuild.
+         */
+        get: operations["site_config_v1_public_site_config_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2847,13 +2887,18 @@ export interface components {
         AddReceivingAccountRequest: {
             /**
              * Account Number
-             * @description Full number as typed; only a masked form is stored.
+             * @description The full account number, stored and shown in full (D40).
              */
             account_number?: string | null;
             /** Account Title */
             account_title?: string | null;
             /** Bank Name */
             bank_name?: string | null;
+            /**
+             * Iban
+             * @description IBAN; spaces are removed.
+             */
+            iban?: string | null;
             /**
              * Label
              * @description The account's name staff see: 2 to 120 characters after extra spaces are removed. Not the full account number.
@@ -3001,14 +3046,19 @@ export interface components {
             /** Total */
             total: number;
         };
-        /** BankAccountView */
+        /**
+         * BankAccountView
+         * @description The account customers pay into, in full (D40): masking never applies to Travelian's receiving account.
+         */
         BankAccountView: {
-            /** Account Number Masked */
-            account_number_masked?: string | null;
+            /** Account Number */
+            account_number?: string | null;
             /** Account Title */
             account_title?: string | null;
             /** Bank Name */
             bank_name?: string | null;
+            /** Iban */
+            iban?: string | null;
             /** Qr Url */
             qr_url?: string | null;
         };
@@ -3551,23 +3601,6 @@ export interface components {
              */
             total_sales: components["schemas"]["CurrencyAmount"][];
         };
-        /** CalendarDay */
-        CalendarDay: {
-            /** Available */
-            available: boolean;
-            /**
-             * Date
-             * Format: date
-             */
-            date: string;
-            /**
-             * Fares
-             * @default 0
-             */
-            fares: number;
-            /** @description Lowest selling price per adult that day; only when available. */
-            lowest_price?: components["schemas"]["GroupMoney"] | null;
-        };
         /** CalendarQuery */
         CalendarQuery: {
             /**
@@ -3858,6 +3891,56 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** FlightCalendar */
+        FlightCalendar: {
+            /** Days */
+            days: components["schemas"]["FlightCalendarDay"][];
+            /** Destination */
+            destination: string;
+            /** Origin */
+            origin: string;
+            /**
+             * Pending
+             * @description More dates are being checked: ask again in a few seconds.
+             */
+            pending: boolean;
+        };
+        /** FlightCalendarDay */
+        FlightCalendarDay: {
+            /** Available */
+            available: boolean;
+            /**
+             * Checked
+             * @description A real search for this date finished in the last 30 minutes.
+             */
+            checked: boolean;
+            /** Checked At */
+            checked_at?: string | null;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            lowest_price?: components["schemas"]["PublicMoney"] | null;
+        };
+        /** FlightCalendarQuery */
+        FlightCalendarQuery: {
+            /**
+             * Adults
+             * @default 1
+             */
+            adults: number;
+            /**
+             * Cabin
+             * @default economy
+             * @enum {string}
+             */
+            cabin: "economy" | "premium_economy" | "business" | "first";
+            /** Destination */
+            destination: string;
+            /** Origin */
+            origin: string;
+        };
         /** FlightMoney */
         FlightMoney: {
             /**
@@ -4058,25 +4141,6 @@ export interface components {
             vendors_queried: string[];
             /** Vendors Succeeded */
             vendors_succeeded: string[];
-        };
-        /** GroupCalendar */
-        GroupCalendar: {
-            /** Days */
-            days: components["schemas"]["CalendarDay"][];
-            /** Destination */
-            destination: string;
-            /**
-             * End
-             * Format: date
-             */
-            end: string;
-            /** Origin */
-            origin: string;
-            /**
-             * Start
-             * Format: date
-             */
-            start: string;
         };
         /** GroupDeparture */
         GroupDeparture: {
@@ -4892,10 +4956,10 @@ export interface components {
             booking_id: string;
             /**
              * Label
+             * @description Southair UAT holds only; a live SooperFare hold has no label.
              * @default UAT test data
-             * @constant
              */
-            label: "UAT test data";
+            label: "UAT test data" | null;
             /** Pnr */
             pnr: string;
             /** @description selling_total - supplier_cost. Only with the cost and margin permission. */
@@ -5255,6 +5319,11 @@ export interface components {
         };
         /** NotificationList */
         NotificationList: {
+            /**
+             * Email Enabled
+             * @description Alerts are also emailed to staff. False until email is set up on the server (deploy/aws-setup.sh: SES sender and recipients); alerts still appear here.
+             */
+            email_enabled: boolean;
             /** Items */
             items: components["schemas"]["NotificationView"][];
         };
@@ -5547,8 +5616,13 @@ export interface components {
          */
         ReceivingAccount: {
             /**
+             * Account Number
+             * @description The full account number customers pay into (D40: never masked).
+             */
+            account_number?: string | null;
+            /**
              * Account Number Masked
-             * @description Only the last 4 digits; the full number is never stored.
+             * @description Short form for lists (last 4 digits).
              */
             account_number_masked?: string | null;
             /** Account Title */
@@ -5557,6 +5631,11 @@ export interface components {
             active: boolean;
             /** Bank Name */
             bank_name?: string | null;
+            /**
+             * Iban
+             * @description IBAN, upper case, no spaces.
+             */
+            iban?: string | null;
             /** Id */
             id: string;
             /** Label */
@@ -6105,6 +6184,14 @@ export interface components {
             /** Url */
             url: string;
         };
+        /** SiteConfig */
+        SiteConfig: {
+            /**
+             * Umrah Enabled
+             * @description Show Umrah anywhere on the site (D39). Off: every Umrah entry point and URL is hidden.
+             */
+            umrah_enabled: boolean;
+        };
         /**
          * SupplierPayment
          * @description The Supplier payment tab. Only sent with the cost and margin permission.
@@ -6141,13 +6228,18 @@ export interface components {
         UpdateReceivingAccountRequest: {
             /**
              * Account Number
-             * @description Full number as typed; only a masked form is stored.
+             * @description The full account number, stored and shown in full (D40).
              */
             account_number?: string | null;
             /** Account Title */
             account_title?: string | null;
             /** Bank Name */
             bank_name?: string | null;
+            /**
+             * Iban
+             * @description IBAN; spaces are removed.
+             */
+            iban?: string | null;
             /**
              * Qr Asset Key
              * @description From POST /v1/admin/uploads (purpose payment_qr).
@@ -12943,7 +13035,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GroupCalendar"];
+                    "application/json": unknown;
                 };
             };
             /** @description Not signed in. */
@@ -14194,6 +14286,39 @@ export interface operations {
             };
         };
     };
+    flight_calendar_v1_public_flights_calendar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlightCalendarQuery"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlightCalendar"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_flights_v1_public_flights_search_post: {
         parameters: {
             query?: never;
@@ -14298,7 +14423,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GroupCalendar"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -14395,6 +14520,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReturnResult"];
+                };
+            };
+        };
+    };
+    site_config_v1_public_site_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteConfig"];
                 };
             };
         };

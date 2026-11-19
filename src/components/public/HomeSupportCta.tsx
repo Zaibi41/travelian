@@ -2,8 +2,10 @@ import { Phone, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
+import { useSiteSwitches } from "@/lib/site-switches";
 
 export function HomeSupportCta() {
+  const { umrah } = useSiteSwitches(); // D39: Umrah wording only when Umrah is switched on
   return (
     <section className="py-12 md:py-14">
       <div className="travelian-container ">
@@ -19,7 +21,7 @@ export function HomeSupportCta() {
                 Need help planning your journey?
               </h2>
               <p className="mt-2 text-sm md:text-base leading-7 text-primary-foreground/75">
-                Talk to our travel team for flights, Umrah and hotels.
+                {umrah ? "Talk to our travel team for flights, Umrah and hotels." : "Talk to our travel team for flights and hotels."}
               </p>
             </div>
             <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row">

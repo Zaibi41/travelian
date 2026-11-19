@@ -24,6 +24,7 @@ import { AdminProfileDialog, type ProfileAction } from "@/components/AdminProfil
 import { useBookingAlerts } from "@/lib/admin-notifications";
 import { formatPkr, getWalletSummary } from "@/lib/wallet-summary";
 import { ANNOUNCEMENTS_CHANGED, listAdminAnnouncements } from "@/lib/admin-announcements";
+import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 
 /** Admin route guard: with no session, or one known to be expired, no admin page, menu or header
  *  renders. An expired session with a refresh token gets one refresh attempt first; otherwise the
@@ -219,7 +220,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
           </header>
           {/* Bottom padding keeps content scrollable clear of the fixed Move-to-top button. */}
           <main className="flex-1 bg-muted/20 p-4 pb-24 md:p-6 md:pb-24">
-            {!isAuthenticated ? null : allowed ? children : <AccessDeniedPage />}
+            {!isAuthenticated ? null : allowed ? <PageErrorBoundary key={location.pathname}>{children}</PageErrorBoundary> : <AccessDeniedPage />}
           </main>
           {/* No WhatsApp chat button in the admin: it is a public-site help channel. */}
           <MoveToTopButton className="bottom-6" />

@@ -16,8 +16,9 @@ export const fetchReceivingAccounts = (options?: GatewayOptions) =>
 export interface BankDetails {
   bank_name?: string | null;
   account_title?: string | null;
-  /** Full number as typed: the gateway keeps only the last 4 digits (masked). */
+  /** The full account number customers pay into (D40: never masked). */
   account_number?: string | null;
+  iban?: string | null;
   qr_asset_key?: string | null;
 }
 

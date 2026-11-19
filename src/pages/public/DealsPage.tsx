@@ -10,10 +10,12 @@ import { SEO } from "@/components/SEO";
 import { PageHeader } from "@/components/public/PageHeader";
 import { useAdmin } from "@/contexts/AdminStore";
 import type { Hotel } from "@/data/models";
+import { useSiteSwitches } from "@/lib/site-switches";
 
 const flashDeals: Array<{ title: string; discount: string; desc: string; bg: string; expiry: string; category: string; to: string }> = [];
 
 export default function DealsPage() {
+  const { umrah } = useSiteSwitches(); // D39: Umrah wording only when Umrah is switched on
   const { coupons } = useAdmin();
   const today = new Date().toISOString().slice(0, 10);
   const activeCoupons = coupons.filter(c => c.status === 'active' && c.validUntil >= today && isPublicServiceVisible(c.applicableTo));
@@ -33,13 +35,13 @@ export default function DealsPage() {
     <div>
       <SEO
         title="Travel Deals & Promo Codes | Travelian"
-        description="Current Travelian promo codes and travel offers on flights, hotels and Umrah packages. Verified deals only, no expired listings."
+        description={`Current Travelian promo codes and travel offers on flights${umrah ? ", hotels and Umrah packages" : " and hotels"}. Verified deals only, no expired listings.`}
       />
       <PageHeader
         eyebrow="Limited time"
         icon={<Flame className="h-5 w-5" />}
         title="Deals & Promotions"
-        tagline="Active discounts on flights, hotels and Umrah packages — published straight from Travelian inventory, never expired."
+        tagline={`Active discounts on flights${umrah ? ", hotels and Umrah packages" : " and hotels"} — published straight from Travelian inventory, never expired.`}
       />
 
 

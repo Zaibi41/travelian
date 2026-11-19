@@ -171,3 +171,13 @@ Staff record the final PNR and ticket numbers on the booking's Tickets tab
 | --- | --- |
 | Final PNR and ticket numbers from the supplier | Dhillu & Sahi `agent-booking-detail` returns the group PNR only (`data.data.pnr`, `groupdata.pnr`); its documented passenger records (`booking_sub[]`) have no ticket number. Ask Dhillu & Sahi for the final PNR and ticket fields, then read them in `refresh_supplier` (Skypass and Al Haider: check their booking reads the same way) |
 | Paid group holds outliving their hold time | The expiry job still expires a paid group hold that has no final PNR yet at its time limit (unchanged behaviour). Recording the final PNR moves the booking to confirmed, so it no longer expires |
+
+
+## 9. Old Lambda leftovers, SooperFare issuing, Notifications (19 November 2026)
+
+| Item | Needs |
+| --- | --- |
+| Lambda PayFast routes (`POST /payments/payfast/session`, `POST /payments/payfast/callback`) and group feed (`/group-ticketing/groups`, `/group-ticketing/categories`) | Blocked at Caddy with 410 (gateway `deploy/Caddyfile`). Remove them from the Lambda's code and its API Gateway routes when the Lambda is next deployed (needs AWS access). The function itself stays: `/content/*`, legacy flight/hotel search and the journey-reminder schedule still use it |
+| SooperFare ticket issuing | SooperFare's contract for `POST /v1/booking/confirm`: what `txn_ref_id` is, the success answer, where ticket numbers are, and a wallet balance call. Until then Issue ticket refuses SooperFare bookings and staff issue them in SooperFare's portal |
+| Notifications: delivery logs and email/SMS/WhatsApp settings | The page still reads the Lambda's `/content/notification-logs` (fails silently) and keeps channel settings in the browser only. Needs gateway endpoints for delivery logs and notification settings |
+| Receiving accounts: edit an account's details | `PATCH /v1/admin/finance/payment-accounts/{id}` exists; the page has no edit control yet (ask before adding). Until then an old account is deactivated and added again with its full number |

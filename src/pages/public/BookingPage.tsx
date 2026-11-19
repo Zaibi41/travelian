@@ -35,6 +35,7 @@ import { useRole } from "@/contexts/RoleContext";
 import { whatsappUrl } from "@/lib/site-config";
 import { Loader2 } from "lucide-react";
 import { CopyPnr } from "@/components/CopyPnr";
+import { useSiteSwitches } from "@/lib/site-switches";
 
 const steps = [
   { id: 1, label: "Traveler Details" },
@@ -152,6 +153,7 @@ export default function BookingPage({ adminMode = false }: { adminMode?: boolean
 }
 
 function PublicBooking({ params }: { params: URLSearchParams }) {
+  const { umrah: umrahOn } = useSiteSwitches(); // D39
   const { packages, packageLoadStatus } = useAdmin();
   const productCtx = useMemo(() => buildCtx(params, { packages }), [params, packages]);
 
@@ -178,7 +180,7 @@ function PublicBooking({ params }: { params: URLSearchParams }) {
             <div className="flex flex-wrap gap-2 justify-center">
               <Link to="/"><Button className="gradient-primary text-primary-foreground rounded-xl">Search Flights</Button></Link>
               <Link to="/hotels-search"><Button variant="outline" className="rounded-xl">Find Hotels</Button></Link>
-              <Link to="/umrah-packages"><Button variant="outline" className="rounded-xl">Umrah Packages</Button></Link>
+              {umrahOn && <Link to="/umrah-packages"><Button variant="outline" className="rounded-xl">Umrah Packages</Button></Link>}
                           </div>
           </CardContent>
         </Card>
@@ -478,7 +480,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
       try {
         setProcessing(true);
         const checkout = await startPayFastCheckout(saved.gateway.reference, saved.gateway.token);
-        submitHostedPayment({ method: "POST", action: checkout.action, fields: checkout.fields } as Parameters<typeof submitHostedPayment>[0]);
+        submitHostedPayment({ method: "POST", action: checkout.action, fields: checkout.fields });
       } catch (error) {
         toast({
           title: "Online payment unavailable",

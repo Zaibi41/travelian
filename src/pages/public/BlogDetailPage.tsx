@@ -7,8 +7,10 @@ import type { BlogPost } from "@/data/models";
 import { SEO } from "@/components/SEO";
 import { getBlogPost } from "@/lib/content-api";
 import { getBlogImage } from "@/lib/blog-images";
+import { useSiteSwitches } from "@/lib/site-switches";
 
 export default function BlogDetailPage() {
+  const { umrah } = useSiteSwitches(); // D39: Umrah wording only when Umrah is switched on
   const { slug } = useParams();
   const [post, setPost] = useState<BlogPost | null | undefined>(undefined);
 
@@ -51,7 +53,7 @@ export default function BlogDetailPage() {
       <div className="prose prose-sm md:prose-base max-w-none mt-8 text-foreground leading-relaxed space-y-4">
         <p>{post.content || post.excerpt}</p>
         <p>
-          At Travelian we help you plan your journey with flights, hotels and Umrah packages.
+          {umrah ? "At Travelian we help you plan your journey with flights, hotels and Umrah packages." : "At Travelian we help you plan your journey with flights, group tickets and hotels."}
           This article covers the essentials you need to plan with confidence.
         </p>
         <h2 className="text-xl font-semibold mt-6">Key takeaways</h2>
