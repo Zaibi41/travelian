@@ -5396,6 +5396,11 @@ export interface components {
             supplier_balance?: components["schemas"]["BookingMoney"] | null;
             /** Ticketing Enabled */
             ticketing_enabled: boolean;
+            /**
+             * Ticketing Note
+             * @description Why tickets can't be issued from Travelian for this booking: the supplier and the switch.
+             */
+            ticketing_note?: string | null;
         };
         /** IssuanceRequest */
         IssuanceRequest: {

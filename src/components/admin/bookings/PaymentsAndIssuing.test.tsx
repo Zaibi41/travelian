@@ -211,11 +211,13 @@ describe("2 · Issue the ticket", () => {
   });
 
   it("stays disabled with the gateway's blockers; ticketing off is explained", async () => {
-    api.fetchIssuance.mockResolvedValue({ ...READY, full_payment_recorded: false, amount_due: rs(5_000), blockers: ["Full payment isn't recorded yet."], can_issue: false, can_request: false, ticketing_enabled: false });
+    api.fetchIssuance.mockResolvedValue({ ...READY, full_payment_recorded: false, amount_due: rs(5_000), blockers: ["Full payment isn't recorded yet."], can_issue: false, can_request: false, ticketing_enabled: false,
+      ticketing_note: "SooperFare ticketing from Travelian isn't switched on yet (SOOPERFARE_CONFIRM_ENABLED: waiting for the owner to approve the first confirm). Issue in SooperFare's portal, then record the ticket numbers." });
     renderTab();
     expect(await screen.findByText("Full payment isn't recorded yet.")).toBeInTheDocument();
     expect(screen.getByText("Rs 5,000 still due")).toBeInTheDocument();
-    expect(screen.getByText("Ticketing is turned off")).toBeInTheDocument();
+    expect(screen.getByText("Tickets can't be issued from Travelian for this booking")).toBeInTheDocument();
+    expect(screen.getByText(/SooperFare ticketing from Travelian isn't switched on yet/)).toBeInTheDocument();   // which supplier, which switch
     expect(screen.getByRole("button", { name: "Issue ticket" })).toBeDisabled();
   });
 
