@@ -2,6 +2,7 @@ import { SEO } from "@/components/SEO";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { PageHeader } from "@/components/public/PageHeader";
 import { useSiteSwitches } from "@/lib/site-switches";
+import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY } from "@/lib/site-config";
 
 const faqs = [
   { q: "How do I book a flight on Travelian?", a: "Use our flight search on the homepage, select an available fare, and continue with the available booking flow." },
@@ -9,7 +10,7 @@ const faqs = [
   { umrah: true, q: "Do you offer Umrah packages with visa?", a: "Published Umrah packages show the services included in each package. Contact our team when you need a custom option." },
   { q: "What payment methods do you accept?", a: "Available payment methods are confirmed during the booking process. Contact our team if you need payment assistance." },
   { q: "How do I get booking support?", a: "Contact the Travelian team by phone, email or WhatsApp for booking assistance." },
-  { q: "How do I contact support?", a: "Email travelian.pk@gmail.com, call +92 324 4440014 or message us on WhatsApp." },
+  { q: "How do I contact support?", a: `Email ${SUPPORT_EMAIL}, call ${SUPPORT_PHONE_DISPLAY} or message us on WhatsApp.` },
 ];
 
 export default function FaqPage() {

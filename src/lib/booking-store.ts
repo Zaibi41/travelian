@@ -102,13 +102,15 @@ export function getBooking(id: string): BookingRecord | undefined {
   return read().find(b => b.id === id);
 }
 
-export function saveBooking(record: Omit<BookingRecord, "id" | "pnr" | "createdAt" | "status"> & Partial<Pick<BookingRecord, "status">>): BookingRecord {
-  const pnr = generatePNR();
+/** A booking saved only in this browser (no gateway record). It never gets a PNR: only an airline gives one (B19), and
+ *  its status is always the caller's (no default "confirmed"). */
+export function saveBooking(record: Omit<BookingRecord, "id" | "pnr" | "createdAt">): BookingRecord {
+  const code = generatePNR();
   const full: BookingRecord = {
     ...record,
-    id: `TRV-${pnr}`,
-    pnr,
-    status: record.status ?? "confirmed",
+    id: `TRV-REQ-${code}`,
+    pnr: "",
+    status: record.status,
     createdAt: new Date().toISOString(),
   };
   const list = read();

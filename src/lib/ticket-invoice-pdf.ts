@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import type { TravelTicket } from "@/data/models";
+import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY } from "@/lib/site-config";
 
 type InvoiceIcon =
   | "plane"
@@ -307,8 +308,8 @@ function invoiceHtml(ticket: TravelTicket) {
       <div class="footer-zone">
         <div class="thanks"><span>Thank you for choosing Travelian.</span></div>
         <footer class="footer">
-          <div class="footer-item"><span class="footer-icon">${icon("phone")}</span> +92 324 4440014</div>
-          <div class="footer-item"><span class="footer-icon">${icon("mail")}</span> travelian.pk@gmail.com</div>
+          <div class="footer-item"><span class="footer-icon">${icon("phone")}</span> ${SUPPORT_PHONE_DISPLAY}</div>
+          <div class="footer-item"><span class="footer-icon">${icon("mail")}</span> ${SUPPORT_EMAIL}</div>
           <div class="footer-item"><span class="footer-icon">${icon("globe")}</span> www.travelian.pk</div>
         </footer>
       </div>

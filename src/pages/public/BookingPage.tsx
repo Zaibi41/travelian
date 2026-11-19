@@ -15,7 +15,7 @@ import { Link, useSearchParams } from "react-router-dom";
 // SeatMap is intentionally paused in the UI for now. Keep the component available for the future seat-selection phase.
 // import { SeatMap } from "@/components/booking/SeatMap";
 import { saveServerBooking } from "@/lib/booking-api";
-import { bookGroupFare, getPaymentMethods, startPayFastCheckout, PublicBookingError, type PaymentMethods } from "@/lib/public-booking";
+import { bookGroupFare, getPaymentMethods, requestPublicFlight, startPayFastCheckout, PublicBookingError, type PaymentMethods } from "@/lib/public-booking";
 import { BankAccounts, HoldCountdown } from "@/components/public/BankTransferDetails";
 import { saveBooking, saveGatewayBooking, type BookingRecord, type BookingTraveler } from "@/lib/booking-store";
 import { submitHostedPayment } from "@/lib/payment-api";
@@ -272,6 +272,23 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const [nameAcknowledged, setNameAcknowledged] = useState(false);
   // A group fare from the Travelian gateway: booked and priced by the gateway, never by this page.
   const groupTicketId = params.get("groupTicketId") || "";
+  // A live flight fare from the gateway search (B19, D43): sent to the gateway as a booking request by these ids.
+  const gatewaySearchId = params.get("searchId") || "";
+  const gatewayFareIds = (params.get("fareIds") || "").split(",").map((id) => id.trim()).filter(Boolean);
+  const gatewayFlight = Boolean(gatewaySearchId && gatewayFareIds.length);
+  // D45: card / 1Link / bank / JazzCash are offered only where the gateway can actually take that payment for this
+  // booking (today: group fares). Everything else is a request: no payment option, Travelian contacts the customer.
+  const paymentOptions = groupTicketId ? {
+    card: Boolean(methods?.card), bank: Boolean(methods?.bank_transfer), wallet: Boolean(methods?.jazzcash),
+  } : { card: false, bank: false, wallet: false };
+  const canPayHere = paymentOptions.card || paymentOptions.bank || paymentOptions.wallet;
+  const firstMethod = paymentOptions.card ? "card" : paymentOptions.bank ? "bank" : paymentOptions.wallet ? "wallet" : "";
+  useEffect(() => {
+    // Keep the selection on a method this booking can actually use.
+    const usable = (paymentMethod === "card" || paymentMethod === "1link") ? paymentOptions.card
+      : paymentMethod === "bank" ? paymentOptions.bank : paymentMethod === "wallet" ? paymentOptions.wallet : false;
+    if (!usable && firstMethod) setPaymentMethod(firstMethod);
+  }, [paymentMethod, firstMethod, paymentOptions.card, paymentOptions.bank, paymentOptions.wallet]);
   const [fareTermsAccepted, setFareTermsAccepted] = useState(false);
   const [payConfirmOpen, setPayConfirmOpen] = useState(false);
   const { currentRole } = useRole();
@@ -382,25 +399,9 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
   const continueAfterNameConfirmation = () => {
     setNameConfirmationOpen(false);
-    if (recheckAccepted) { setStep(2); return; }
-    // Fare recheck interstitial: deterministic mock based on flight + total so behaviour is testable.
-    setRecheckLoading(true);
-    setRecheckOpen(true);
-    const seed = `${ctxFlightNo}-${grandTotal}-${passengerTotal}`;
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-    const willChange = (hash % 100) < 15; // 15% mocked recheck change
-    window.setTimeout(() => {
-      setRecheckLoading(false);
-      if (willChange) {
-        setRecheckResult({ oldPrice: grandTotal, newPrice: Math.round(grandTotal * 1.02) });
-      } else {
-        setRecheckResult(null);
-        setRecheckAccepted(true);
-        setRecheckOpen(false);
-        setStep(2);
-      }
-    }, 1200);
+    // B19: no simulated "fare confirmed with the airline" step. The gateway reprices a fare for real when the booking or
+    // request is sent; this page never claims a check it didn't make.
+    setStep(2);
   };
 
   const handleContinue = () => {
@@ -466,7 +467,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
     setPayConfirmOpen(false);
     const online = Boolean(groupTicketId); // only gateway bookings can be paid online (verified by the gateway)
     const saved = await persistBooking({
-      status: online ? "pending_payment" : "held",
+      status: online ? "pending_payment" : "requested",
       paymentMethod,
       paymentStatus: online ? "pending" : "unpaid",
       toastTitle: online ? "Redirecting to payment" : "Booking request saved",
@@ -511,6 +512,46 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
       issuanceCountry: passenger.issuanceCountry,
       expiryDate: passenger.expiryDate ? format(passenger.expiryDate, "yyyy-MM-dd") : undefined,
     }));
+  };
+
+  // Live flight fares: sent to the gateway as a booking request (B19, D43, D45). The gateway reprices the fare, saves the
+  // customer and travelers and alerts Travelian's team. Nothing is held or ticketed, no PNR is shown, nothing is charged.
+  const persistGatewayFlightRequest = async (): Promise<BookingRecord | null> => {
+    if (savedBooking?.gateway) return savedBooking;
+    if (!emailValid) {
+      setStep(1);
+      toast({ title: "Enter your email", description: "Travelian sends the fare confirmation and payment details by email.", variant: "destructive" });
+      return null;
+    }
+    setProcessing(true);
+    try {
+      const travelers = buildTravelers();
+      const lead = travelers.find((traveler) => (traveler.passengerType ?? "adult") === "adult") ?? travelers[0];
+      const result = await requestPublicFlight({
+        searchId: gatewaySearchId, fareIds: gatewayFareIds, travelers,
+        contact: { firstName: lead?.firstName || "", lastName: lead?.lastName || "", phoneCode, phone, email: email.trim() },
+      });
+      const total = result.booking.total.amount_minor / 100;
+      const saved = saveGatewayBooking({
+        type: "flight", status: "requested",
+        flight: { airline: ctxAirline, flightNumber: ctxFlightNo, from: ctxFrom, fromCode: ctxFrom, to: ctxTo, toCode: ctxTo, date: ctxDate, cabin: ctxCabin },
+        travelers,
+        contact: { email: email.trim(), phone: `${phoneCode}${phone}`, altPhone: altPhone ? `${altPhoneCode}${altPhone}` : undefined },
+        addons: [], paymentMethod: "request", paymentStatus: "unpaid", ticketStatus: "not_issued",
+        pricing: { base: total, addons: 0, taxes: 0, total, currency: result.booking.total.currency },
+        gateway: { reference: result.reference, token: result.access_token, live: false },
+      }, result.reference);
+      setSavedBooking(saved);
+      setStep(4);
+      toast({ title: "Booking request received", description: `Reference ${result.reference}. Travelian will confirm the fare and arrange payment with you.` });
+      return saved;
+    } catch (error) {
+      const message = error instanceof PublicBookingError ? error.message : "The booking request couldn't be sent. Please try again.";
+      toast({ title: "Booking request not sent", description: message, variant: "destructive" });
+      return null;
+    } finally {
+      setProcessing(false);
+    }
   };
 
   // Group fares: the gateway checks the fare, prices it and (when live booking is on) holds the seats at the supplier;
@@ -581,6 +622,13 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
       return null;
     }
     if (groupTicketId) return persistGatewayGroupBooking(paymentMethod);
+    if (gatewayFlight) return persistGatewayFlightRequest();
+    if (isFlight) {
+      // A flight without the gateway's fare reference can't be priced or requested: never save one from the page's own
+      // price or show it as booked (B19).
+      toast({ title: "Search again to book this flight", description: "This fare's details have expired. Search again and choose the fare.", variant: "destructive" });
+      return null;
+    }
     setProcessing(true);
     try {
       const saved = saveBooking({
@@ -640,11 +688,11 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
   const handleHoldBooking = async () => {
     await persistBooking({
-      status: "held",
+      status: "requested",
       paymentMethod: "hold",
       paymentStatus: "unpaid",
-      toastTitle: "Booking held",
-      toastDescription: "Payment is not required yet. Travelian can process this booking from the booking queue.",
+      toastTitle: "Booking request saved",
+      toastDescription: "Nothing has been charged. Travelian's team will contact you to confirm the fare and arrange payment.",
     });
   };
 
@@ -994,7 +1042,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                       { id: "1link", label: "1Link", icon: Wallet, desc: "Pay through PayFast 1Link checkout", badges: ["1Link"] as string[] },
                       { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "Available after wallet payment configuration", badges: ["JazzCash", "Easypaisa"] as string[] },
                       { id: "bank", label: "Bank Transfer", icon: Building2, desc: "Direct bank transfer", badges: [] as string[] },
-                    ]).filter(method => (method.id === "bank" ? Boolean(methods?.bank_transfer) : method.id === "wallet" ? Boolean(methods?.jazzcash) : true))
+                    ]).filter(method => (method.id === "bank" ? paymentOptions.bank : method.id === "wallet" ? paymentOptions.wallet : paymentOptions.card))
                     .map(method => (
                       <div
                         key={method.id}
@@ -1025,7 +1073,14 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     ))}
                   </div>
 
-                  {paymentMethod === "card" && (
+                  {!canPayHere && (
+                    <div role="status" className="rounded-xl border border-primary/10 bg-accent/30 p-4 text-sm text-muted-foreground">
+                      Online payment isn't available for this booking. Send your booking request and Travelian's team will contact you to
+                      confirm the fare and arrange payment. Nothing is charged and no ticket is issued until then.
+                    </div>
+                  )}
+
+                  {canPayHere && paymentMethod === "card" && (
                     <div className="rounded-xl border border-primary/10 bg-accent/30 p-4 text-sm text-muted-foreground">
                       You will be redirected to PayFast to enter card details securely. Travelian does not collect or store card numbers.
                     </div>
@@ -1038,7 +1093,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     </div>
                   ) : null}
 
-                  {paymentMethod === "1link" && (
+                  {canPayHere && paymentMethod === "1link" && (
                     <div className="rounded-xl border border-primary/10 bg-accent/30 p-4 text-sm text-muted-foreground">
                       You will be redirected to PayFast 1Link checkout. Your booking will stay pending until payment is confirmed.
                     </div>
@@ -1067,9 +1122,11 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                       <Button asChild variant="outline" className="rounded-xl h-11 px-5">
                         <a href={bookingWhatsAppUrl} target="_blank" rel="noreferrer">WhatsApp Help</a>
                       </Button>
-                      <Button onClick={requestPay} disabled={processing} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
-                        {processing ? "Processing..." : `${isCustomer ? "Pay & Book" : "Pay & Issue"} ${formatMoney(grandTotal)}`} <ChevronRight className="h-4 w-4 ml-1" />
-                      </Button>
+                      {canPayHere && (
+                        <Button onClick={requestPay} disabled={processing} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
+                          {processing ? "Processing..." : `Pay & Book ${formatMoney(grandTotal)}`} <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -1082,13 +1139,13 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                   <div className="h-20 w-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-5 animate-scale-in">
                     <Check className="h-10 w-10 text-success" />
                   </div>
-                  <h2 className="text-2xl font-bold text-foreground mb-2">{savedBooking.status === "requested" ? "Booking Request Received" : savedBooking.status === "held" ? "Booking Held" : "Booking Confirmed"}</h2>
+                  <h2 className="text-2xl font-bold text-foreground mb-2">{savedBooking.status === "requested" ? "Booking Request Received" : savedBooking.status === "held" ? "Booking Held" : savedBooking.ticketStatus === "issued" ? "Booking Confirmed" : "Booking Saved"}</h2>
                   <p className="text-muted-foreground mb-6">
                     {savedBooking.status === "requested"
                       ? "Travelian will confirm the fare and seats with you, then send payment details. Nothing has been charged."
                       : savedBooking.status === "held"
                       ? "Your booking request has been saved with payment pending. Travelian will process payment and ticketing next."
-                      : "Your reservation has been successfully processed."}
+                      : "Your booking is saved. You'll receive your ticket only after the payment is verified."}
                   </p>
 
                   {savedBooking.gateway?.live && savedBooking.holdExpiresAt && (
@@ -1107,9 +1164,11 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                         <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
                           <Plane className="h-4 w-4 text-primary-foreground" />
                         </div>
-                        <span className="font-bold text-sm">Travelian E-Ticket</span>
+                        <span className="font-bold text-sm">{savedBooking.ticketStatus === "issued" ? "Travelian E-Ticket" : "Booking summary"}</span>
                       </div>
-                      <Badge className="bg-success/10 text-success border-0 text-xs rounded-md">{savedBooking.status === "requested" ? "Requested" : savedBooking.status === "held" ? "Held" : "Confirmed"}</Badge>
+                      <Badge className={`${savedBooking.ticketStatus === "issued" ? "bg-success/10 text-success" : "bg-muted text-foreground"} border-0 text-xs rounded-md`}>
+                        {savedBooking.ticketStatus === "issued" ? "Ticketed" : savedBooking.status === "requested" ? "Requested" : savedBooking.status === "held" ? "Held" : savedBooking.status === "pending_payment" ? "Awaiting payment" : "Not ticketed"}
+                      </Badge>
                     </div>
                     <div className="space-y-3">
                       {savedBooking.pnr && (
@@ -1158,7 +1217,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                   </p>
                   <div className="flex flex-wrap gap-3 justify-center mt-6">
                     <Button variant="outline" className="rounded-xl gap-2" onClick={() => downloadETicket(savedBooking)}>
-                      <Download className="h-4 w-4" /> Download Receipt
+                      <Download className="h-4 w-4" /> {savedBooking.ticketStatus === "issued" ? "Download E-Ticket" : "Download Summary"}
                     </Button>
                     <Link to="/my-bookings">
                       <Button className="gradient-primary text-primary-foreground rounded-xl">View My Bookings</Button>
@@ -1353,7 +1412,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
           <DialogHeader>
             <DialogTitle>Confirm payment</DialogTitle>
             <DialogDescription>
-              Review the amount before {isCustomer ? "completing your booking" : "issuing the ticket"}.
+              Review the amount. Online payments are made on PayFast; tickets are issued only after the payment is verified.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 text-sm">

@@ -32,39 +32,18 @@ export function rememberAccountRole(email: string, role: UserRole) {
   }
 }
 
-export function accountRoleForEmail(email: string): UserRole | null {
-  const normalized = normalizeEmail(email);
-  if (!normalized) return null;
-  return readStoredAccountRoles()[normalized] || null;
-}
-
-export function roleForEmail(email: string): UserRole | null {
-  const normalized = normalizeEmail(email);
-  if (normalized === "travelian.pk@gmail.com" || normalized.endsWith("@travelian.com")) return "super_admin";
-  if (normalized.includes("+qa@") || normalized.endsWith("@travelian-qa.local")) return "qa";
-  if (normalized.includes("+support@") || normalized.endsWith("@travelian-support.local")) return "internal_support";
-  const storedRole = accountRoleForEmail(normalized);
-  if (storedRole) return storedRole;
-  if (normalized.includes("alhijaz.com") || normalized.includes("safartours.com") || normalized.includes("noortravel.com")) return "agency_owner";
-  return "customer";
-}
-
+// B18 / D42: the role comes only from the signed-in user's Cognito groups (the same token the gateway checks). No email
+// address, domain or browser-saved value ever grants a role here; the gateway decides what each role may see and do.
 export function roleForSession(session: AuthSession | null): UserRole | null {
   if (!session) return null;
-  const groupRole = ROLE_GROUPS.find((role) => session.groups?.includes(role));
-  return groupRole || roleForEmail(session.email);
+  return ROLE_GROUPS.find((role) => session.groups?.includes(role)) || "customer";
 }
 
 export function isAdminPortalRole(role: UserRole | null | undefined) {
   return !!role && ADMIN_PORTAL_ROLES.includes(role);
 }
 
-export function canSwitchRoles(session: AuthSession | null, role: UserRole) {
-  if (role === "super_admin" || role === "qa" || role === "internal_support") return true;
-  const email = session?.email?.trim().toLowerCase() || "";
-  return session?.groups?.some((group) => ["super_admin", "qa", "internal_support"].includes(group)) ||
-    email === "travelian.pk@gmail.com" ||
-    email.endsWith("@travelian.com") ||
-    email.includes("+qa@") ||
-    email.includes("+support@");
+export function canSwitchRoles(session: AuthSession | null, _role?: UserRole) {
+  return Boolean(session?.groups?.some((group) => ["super_admin", "qa", "internal_support"].includes(group)));
 }
+

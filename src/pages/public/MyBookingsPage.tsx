@@ -129,11 +129,15 @@ export default function MyBookingsPage() {
                           <h3 className="font-semibold text-foreground">
                             {b.flight ? `${b.flight.from} → ${b.flight.to}` : b.type.toUpperCase()}
                           </h3>
-                          <Badge className={statusClass(b.status)}>
-                            {statusLabel(b.status)}
+                          {/* B19: a booking saved only in this browser was never booked with an airline: it is a request,
+                              whatever an older version of this page stored for it. */}
+                          <Badge className={b.gateway ? statusClass(b.status) : "bg-warning/10 text-warning border-0"}>
+                            {b.gateway ? statusLabel(b.status) : "Request (not ticketed)"}
                           </Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5 font-mono">PNR: {b.pnr} <CopyPnr pnr={b.pnr} className="h-5 w-5" /> · {b.id}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+                          {b.gateway && b.pnr ? <>PNR: {b.pnr} <CopyPnr pnr={b.pnr} className="h-5 w-5" /> · </> : null}{b.id}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -164,11 +168,15 @@ export default function MyBookingsPage() {
                   )}
 
                   <div className="flex flex-wrap gap-2 mt-4">
-                    {(!b.gateway || b.status === "ticket_issued") && (
-                      <Button size="sm" variant="outline" className="rounded-lg gap-1.5" onClick={() => downloadETicket(b)}>
+                    {b.gateway && b.status === "ticket_issued" ? (
+                      <Button size="sm" variant="outline" className="rounded-lg gap-1.5" onClick={() => downloadETicket({ ...b, ticketStatus: "issued" })}>
                         <Download className="h-3.5 w-3.5" /> E-Ticket
                       </Button>
-                    )}
+                    ) : !b.gateway ? (
+                      <Button size="sm" variant="outline" className="rounded-lg gap-1.5" onClick={() => downloadETicket({ ...b, pnr: "", ticketStatus: "not_issued", paymentStatus: "unpaid" })}>
+                        <Download className="h-3.5 w-3.5" /> Summary
+                      </Button>
+                    ) : null}
                     {!b.gateway && (b.status === "confirmed" || b.status === "held" || b.status === "pending_payment") && (
                       <Button size="sm" variant="outline" className="rounded-lg gap-1.5 text-destructive hover:text-destructive" onClick={() => handleCancel(b.id)}>
                         <X className="h-3.5 w-3.5" /> Cancel

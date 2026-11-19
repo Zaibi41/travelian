@@ -687,7 +687,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return whatsappUrl(message);
   };
 
-  const bookingHref = (flight: TravelianFlight, fare?: { tier: string; price: { base?: number | null; taxes?: number | null; total: number; currency?: string }; amenities?: string[] }) => {
+  const bookingHref = (flight: TravelianFlight, fare?: { tier: string; price: { base?: number | null; taxes?: number | null; total: number; currency?: string }; amenities?: string[]; gatewayFareIds?: string[] }) => {
     if (adminMode) {
       // Admin checkout never takes a price or supplier flight ID from the URL: the gateway
       // must reprice the fare (booking is blocked until it can). Itinerary only.
@@ -720,6 +720,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     if (fare?.tier) query.set("fare", fare.tier);
     // A group fare from the Travelian gateway: booked and priced by the gateway (the price here is for display only).
     if (flight.provider === GATEWAY_GROUP_PROVIDER && flight.offerId) query.set("groupTicketId", String(flight.offerId));
+    // A live flight fare from the gateway: checkout sends a booking request by these ids; the gateway reprices it (B19).
+    const fareIds = fare?.gatewayFareIds ?? flight.fareOptions?.[0]?.gatewayFareIds;
+    if (flight.gatewaySearchId && fareIds?.length) {
+      query.set("searchId", flight.gatewaySearchId);
+      query.set("fareIds", fareIds.join(","));
+    }
     if (Number.isFinite(Number(fare?.price.base))) query.set("baseFare", String(fare?.price.base));
     if (Number.isFinite(Number(fare?.price.taxes))) query.set("taxes", String(fare?.price.taxes));
     if (fare?.amenities?.length) query.set("farePerks", fare.amenities.join("|"));

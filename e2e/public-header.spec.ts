@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 const widths = [1280, 1366, 1440, 1536, 1600, 1920, 2048, 2560, 1024, 768, 375, 320];
-const products = [["Flights", "/"], ["Group Ticketing", "/group-ticketing"], ["Hotels", "/hotels-search"], ["Umrah", "/umrah-packages"]];
+// D39: Umrah is hidden while the gateway switch is off.
+const products = [["Flights", "/"], ["Group Ticketing", "/group-ticketing"], ["Hotels", "/hotels-search"]];
 for (const width of widths) {
   test(`search-driven header states at ${width}px`, async ({ page }) => {
     test.setTimeout(60000);
@@ -53,7 +54,7 @@ for (const width of widths) {
         const navBox = await flight.locator("..").boundingBox();
         expect(Math.abs(navBox!.x + navBox!.width / 2 - width / 2)).toBeLessThan(1);
         const controls = await header.getByLabel("Account and preferences").boundingBox();
-        const last = await header.getByRole("link", { name: "Umrah", exact: true }).boundingBox();
+        const last = await header.getByRole("link", { name: "Hotels", exact: true }).boundingBox();
         expect(last!.x + last!.width).toBeLessThan(controls!.x);
         await expect(header.getByRole("link", { name: "Request a Booking", exact: true })).toHaveCount(0);
       } else {
