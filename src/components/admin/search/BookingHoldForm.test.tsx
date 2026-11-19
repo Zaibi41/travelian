@@ -456,6 +456,32 @@ describe("country dropdowns on the hold form", () => {
       for (const passenger of body.passengers) expect(passenger).not.toHaveProperty("traveler_id");
     });
 
+    it("a saved customer with only a passport fills title, gender, date of birth, nationality, passport and expiry; when the airline needs a CNIC the banner says so", async () => {
+      // The shape of the record behind the bug report (made-up values): MR, Pakistani, one valid passport, no CNIC.
+      const ONLY_PASSPORT = { id: "p-00000009", title: "MR" as const, first_name: "Hafeez", last_name: "Ahmed", date_of_birth: "1988-03-14", nationality: "PAK",
+        phone: "+92 3214567890", email: "hafeez@example.invalid", documents: [{ ...doc("d-00000009", "BX7654321"), document_expiry: "2040-11-07" }], match: "contact" };
+      gateway.people.mockResolvedValue({ results: [ONLY_PASSPORT], can_manage: true, can_merge: false });
+      gateway.hold.mockRejectedValue(new GatewayError("unavailable", "Some details need correcting.", 422, undefined, [
+        { path: ["passengers", 0, "document_number"], message: "This airline needs the traveler's CNIC for this flight: choose CNIC as the ID type and enter the 13 digits." },
+      ]));
+      renderPage(STAFF_DRAFT);
+      await pick(findCustomer(), "haf", "Hafeez Ahmed");
+      const adult = screen.getByRole("region", { name: "Adult 1" });
+      expect(within(adult).getByLabelText("Title *")).toHaveTextContent("Mr");
+      expect(within(adult).getByLabelText("Gender *")).toHaveTextContent("Male");
+      expect(within(adult).getByLabelText("Date of Birth *")).toHaveTextContent("14 Mar 1988");
+      expect(within(adult).getByLabelText("Passport Number *")).toHaveValue("BX7654321");
+      expect(within(adult).getByLabelText("Date of Expiry *")).toHaveTextContent("7 Nov 2040");
+      expect(within(adult).getByRole("combobox", { name: "Nationality *" })).toHaveTextContent("Pakistan");
+      fillInfant();
+      fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+      await waitFor(() => expect(gateway.hold).toHaveBeenCalledOnce());
+      expect(gateway.hold.mock.calls[0][0].passengers[0]).toMatchObject({ title: "MR", date_of_birth: "1988-03-14", nationality: "PAK", id_type: "PSPT",
+        document_number: "BX7654321", document_country: "PAK", document_expiry: "2040-11-07" });
+      expect(await screen.findByText("Check this field: Document number (Adult 1): This airline needs the traveler's CNIC for this flight: choose CNIC as the ID type and enter the 13 digits."))
+        .toBeInTheDocument();
+    });
+
     it("Clear empties the customer card; one character doesn't search; no match says a new customer is saved", async () => {
       gateway.people.mockResolvedValue({ results: [], can_manage: true, can_merge: false });
       renderPage(STAFF_DRAFT);

@@ -446,13 +446,17 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
 
         {(() => {
           // The banner names the fields to fix, in the form's words ("Last Name (Adult 1)"), else the gateway's sentence.
+          // A field whose message says more than "is required" / "isn't valid" (e.g. the airline needs a CNIC) carries it.
           const fields = Object.keys(shown.fields).filter(key => FIELD_LABELS[key.split(".").pop() ?? ""]).map(key => {
             const [scope, position] = key.split(".");
             const where = scope === "contact" ? "Customer" : scope === "passengers" ? cardLabel(Number(position)) : null;
-            return `${FIELD_LABELS[key.split(".").pop()!]}${where ? ` (${where})` : ""}`;
+            const label = `${FIELD_LABELS[key.split(".").pop()!]}${where ? ` (${where})` : ""}`;
+            const said = fieldError(key) ?? "";
+            const plain = !said || /\b(is required|isn't valid)$/.test(said);
+            return plain ? label : `${label}: ${said.replace(/\.$/, "")}`;
           });
           const unique = [...new Set(fields)];
-          const list = unique.length ? `Check ${unique.length === 1 ? "this field" : "these fields"}: ${unique.join(", ")}.` : null;
+          const list = unique.length ? `Check ${unique.length === 1 ? "this field" : "these fields"}: ${unique.join(unique.some(item => item.includes(": ")) ? "; " : ", ")}.` : null;
           // A specific sentence from the gateway ("Sana is under 12 ...") stays; a generic one gives way to the list.
           const generic = !shown.message || /^(some details need correcting|check the customer's details)/i.test(shown.message);
           const text = [generic && list ? null : shown.message, list].filter(Boolean).join(" ");
