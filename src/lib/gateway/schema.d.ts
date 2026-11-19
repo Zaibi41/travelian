@@ -2722,6 +2722,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/flights/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Flight
+         * @description A guest's flight booking, saved as a request for Travelian's team (D43): repriced by the gateway, never held,
+         *     ticketed or charged here, and no PNR is given. Staff are notified and confirm the fare and payment with the customer.
+         */
+        post: operations["request_flight_v1_public_flights_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/flights/search": {
         parameters: {
             query?: never;
@@ -5545,6 +5566,28 @@ export interface components {
              * @description Names only.
              */
             travelers?: string[];
+        };
+        /**
+         * PublicFlightRequest
+         * @description A website flight booking (B19, D43). It is saved as a request: nothing is held or ticketed, no PNR is given and no
+         *     payment is taken here. The gateway reprices the fare itself (the price is never taken from the page); staff confirm
+         *     the fare and payment with the customer, then book and issue from the admin.
+         */
+        PublicFlightRequest: {
+            /** @description Name, phone (code and number) and email: all required. */
+            contact: components["schemas"]["HoldContact"];
+            /**
+             * Fare Ids
+             * @description The chosen fare, and its return fare for a round trip.
+             */
+            fare_ids: string[];
+            /** Passengers */
+            passengers: components["schemas"]["HoldPassenger"][];
+            /**
+             * Search Id
+             * @description From POST /v1/public/flights/search.
+             */
+            search_id: string;
         };
         /**
          * PublicGroupBookingRequest
@@ -14316,6 +14359,58 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    request_flight_v1_public_flights_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicFlightRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicBookingCreated"];
+                };
+            };
+            /** @description The search expired. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The fare is gone or changed. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Check the details. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Too many bookings. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

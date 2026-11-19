@@ -80,6 +80,8 @@ export interface FareOption {
   meal?: string;
   amenities?: string[];
   popular?: boolean;
+  /** Gateway fare ids (outbound, then return): checkout sends these, never a price, to the gateway (B19). */
+  gatewayFareIds?: string[];
 }
 
 export type TravelianFlight = Flight & {
@@ -91,6 +93,8 @@ export type TravelianFlight = Flight & {
   fareOptions?: FareOption[];
   refundable?: boolean;
   rawRef?: FlightOffer["rawRef"];
+  /** The gateway search this flight came from (its fares are booked by reference to it). */
+  gatewaySearchId?: string;
 };
 
 export async function fetchFlightFares(flight: TravelianFlight, signal?: AbortSignal): Promise<FareOption[]> {
@@ -266,6 +270,7 @@ function fareOption(fare: GatewayFare, extra?: GatewayFare): FareOption {
     change: "As per airline fare rules",
     refund: fare.refund || "As per airline fare rules",
     meal: fare.meal || undefined,
+    gatewayFareIds: [fare.id, extra?.id].filter((id): id is string => Boolean(id)),
   };
 }
 
@@ -351,7 +356,7 @@ export async function searchFlights(input: FlightSearchInput, signal?: AbortSign
   return {
     searchId: payload.search_id,
     providerStatus: {},
-    flights: gatewayOffers(payload, input.cabin || "Economy").map(mapOfferToFlight),
+    flights: gatewayOffers(payload, input.cabin || "Economy").map(mapOfferToFlight).map((flight) => ({ ...flight, gatewaySearchId: payload.search_id })),
   };
 }
 

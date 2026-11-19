@@ -13,10 +13,12 @@ for (const width of [1920, 1440, 1366, 1024, 768, 375, 320]) {
     });
     await page.goto("/");
     const tabs = page.getByRole("group", { name: "Travelian products" });
-    const labels = ["Flights", "Group Ticketing", "Hotels", "Umrah"];
+    // D39: Umrah is hidden while the gateway switch is off (the default; the gateway call is not answered here).
+    const labels = ["Flights", "Group Ticketing", "Hotels"];
+    await expect(tabs.getByRole("button", { name: "Umrah", exact: true })).toHaveCount(0);
     const initial = await tabs.boundingBox();
     const cardHeight = await page.locator(".travelian-search-card").evaluate(element => element.getBoundingClientRect().height);
-    for (const [name, path] of [["Hotels", "/hotels-search"], ["Group Ticketing", "/group-ticketing"], ["Umrah", "/umrah-packages"], ["Flights", "/"]]) {
+    for (const [name, path] of [["Hotels", "/hotels-search"], ["Group Ticketing", "/group-ticketing"], ["Flights", "/"]]) {
       await tabs.getByRole("button", { name, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`${path}$`));
       await expect(tabs.getByRole("button")).toHaveText(labels);

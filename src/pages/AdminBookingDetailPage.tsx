@@ -138,6 +138,11 @@ function Overview({ booking }: { booking: BookingDetail }) {
         ["Booking ID", booking.booking_id],
         ["Product", PRODUCT_LABEL[booking.product] ?? booking.product],
         ["Customer or agency", booking.customer_or_agency ?? "—"],
+        // B20: the contact saved with the booking (who pays and is contacted). Passports and dates of birth are on Passengers.
+        ...(booking.customer ? [
+          ["Customer phone", <span className="tabular-nums">{booking.customer.phone}</span>],
+          ["Customer email", <span className="break-all">{booking.customer.email}</span>],
+        ] as [string, React.ReactNode][] : []),
         ["Booking status", BOOKING_STATUS_LABEL[booking.statuses.booking]],
         ["Payment status", PAYMENT_STATUS_LABEL[booking.statuses.payment]],
         ["Issuance status", ISSUANCE_STATUS_LABEL[booking.statuses.issuance]],

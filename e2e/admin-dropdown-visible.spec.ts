@@ -67,7 +67,7 @@ async function open(page: Page, width: number, { changed = false, holdError = fa
     return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
-    email: "layout-test@travelian.com", name: "Layout Test", createdAt: new Date().toISOString(),
+    email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),
     accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
   })));
   await page.goto("/admin/search?tab=flights&from=LHE&to=KHI&date=2026-11-19&infants=1");
@@ -175,7 +175,7 @@ for (const [width, height] of [[1440, 760], [1024, 700], [768, 900], [390, 700]]
       return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
     });
     await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
-      email: "layout-test@travelian.com", name: "Layout Test", createdAt: new Date().toISOString(),
+      email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),
       accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
     })));
     await page.goto("/admin/bookings");

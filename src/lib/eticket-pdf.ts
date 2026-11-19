@@ -15,9 +15,11 @@ export function downloadETicket(b: BookingRecord) {
   doc.text("Travelian", 40, 50);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
-  doc.text("E-Ticket / Booking Confirmation", 40, 70);
+  // B19: only a ticketed booking is an e-ticket; anything else says plainly that it is not a ticket.
+  const ticketed = b.ticketStatus === "issued";
+  doc.text(ticketed ? "E-Ticket" : "Booking summary - not a ticket", 40, 70);
   doc.setFontSize(10);
-  doc.text(`PNR: ${b.pnr}`, W - 40, 50, { align: "right" });
+  if (b.pnr) doc.text(`PNR: ${b.pnr}`, W - 40, 50, { align: "right" });
   doc.text(`Booking ID: ${b.id}`, W - 40, 68, { align: "right" });
 
   y = 130;
@@ -28,7 +30,7 @@ export function downloadETicket(b: BookingRecord) {
   doc.setFontSize(12);
   doc.text(`Status: ${b.status.toUpperCase()}`, 40, y);
   doc.setFont("helvetica", "normal");
-  doc.text(`Issued: ${new Date(b.createdAt).toLocaleString()}`, W - 40, y, { align: "right" });
+  doc.text(`${ticketed ? "Issued" : "Saved"}: ${new Date(b.createdAt).toLocaleString()}`, W - 40, y, { align: "right" });
   y += 24;
 
   // Flight block
@@ -115,7 +117,7 @@ export function downloadETicket(b: BookingRecord) {
   doc.text("Add-ons", 40, y);
   doc.text(`${b.pricing.currency} ${b.pricing.addons.toFixed(2)}`, W - 40, y, { align: "right" }); y += 16;
   doc.setFont("helvetica", "bold");
-  doc.text("Total Paid", 40, y);
+  doc.text(b.paymentStatus === "paid" ? "Total Paid" : "Total Due", 40, y);
   doc.text(`${b.pricing.currency} ${b.pricing.total.toFixed(2)}`, W - 40, y, { align: "right" }); y += 30;
 
   doc.setFont("helvetica", "italic");
@@ -123,7 +125,8 @@ export function downloadETicket(b: BookingRecord) {
   doc.setTextColor(100);
   doc.text("Please carry a valid government ID and arrive at the airport at least 2 hours before departure.", 40, y);
   y += 12;
-  doc.text("This e-ticket is your proof of booking. Travelian - Your Trusted Travel Partner.", 40, y);
+  doc.text(ticketed ? "This e-ticket is your proof of booking. Travelian - Your Trusted Travel Partner."
+    : "Not a ticket. Travelian confirms the fare and payment with you; your ticket is issued only after payment is verified.", 40, y);
 
   doc.save(`Travelian-${b.pnr}.pdf`);
 }

@@ -35,7 +35,7 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     const baseline = await measure();
     expect(baseline.overflow).toBe(false);
     expect(baseline.controlsClearAction).toBe(true);
-    for (const name of ["Group Ticketing", "Hotels", "Umrah", "Flights", "Umrah", "Hotels", "Flights"]) {
+    for (const name of ["Group Ticketing", "Hotels", "Flights", "Hotels", "Flights"]) { // Umrah hidden (D39)
       await tabs.getByRole("button", { name, exact: true }).click();
       await expect.poll(measure).toEqual(baseline);
     }
@@ -47,11 +47,6 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await tabs.getByRole("button", { name: "Umrah", exact: true }).click();
-    await page.getByRole("combobox", { name: "Departure City", exact: true }).focus();
-    await page.keyboard.press("Enter");
-    await expect(page.getByRole("listbox")).toBeVisible();
-    await page.keyboard.press("Escape");
     await tabs.getByRole("button", { name: "Flights", exact: true }).click();
     await page.locator(".unified-search-content").getByRole("combobox").first().click();
     const airports = page.getByRole("listbox");

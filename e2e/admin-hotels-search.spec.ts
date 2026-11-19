@@ -47,7 +47,7 @@ async function openHotels(page: Page, width: number, query = "dest=Dubai&dk=regi
   });
   await page.addInitScript(() => {
     localStorage.setItem("travelian.session.v1", JSON.stringify({
-      email: "layout-test@travelian.com", name: "Layout Test", createdAt: new Date().toISOString(),
+      email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),
       accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
     }));
   });

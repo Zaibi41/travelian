@@ -23,7 +23,7 @@ async function open(page: Page, width = 1440, query = "") {
     return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
-    email: "layout-test@travelian.com", name: "Layout Test", createdAt: new Date().toISOString(),
+    email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),
     accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
   })));
   await page.goto(`/admin/search?tab=flights${query}`);

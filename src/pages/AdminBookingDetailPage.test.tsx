@@ -246,6 +246,14 @@ describe("Passengers and Audit tabs", () => {
     detail.current = ok(HOLD_VIEW);
   });
 
+  it("Overview shows the customer's name, phone and email saved with the booking (B20)", () => {
+    renderAt("/admin/bookings/TRV-1");
+    const overview = screen.getByRole("region", { name: "Overview" });
+    expect(overview).toHaveTextContent("Test Customer");
+    expect(overview).toHaveTextContent("+92 3001234567");
+    expect(overview).toHaveTextContent("ops@example.invalid");
+  });
+
   it("Passengers lists the document number and date of birth in full, with no masking notice and no Reveal", () => {
     renderAt("/admin/bookings/TRV-1/passengers");
     const tab = screen.getByRole("region", { name: "Passengers" });

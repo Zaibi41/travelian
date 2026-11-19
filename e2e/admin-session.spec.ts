@@ -48,7 +48,7 @@ const signedIn = (page: Page) => page.addInitScript(key => {
   if (!sessionStorage.getItem("e2e-seeded")) {
     sessionStorage.setItem("e2e-seeded", "1");
     localStorage.setItem(key, JSON.stringify({
-      email: "staff@travelian.com", name: "Session Test", createdAt: new Date().toISOString(),
+      email: "staff@travelian.com", name: "Session Test", groups: ["super_admin"], createdAt: new Date().toISOString(),
       accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
     }));
   }
@@ -78,7 +78,7 @@ test("no session: /admin/customers shows sign-in and no menu, then returns there
 test("an expired session never shows the shell", async ({ page }) => {
   await mock(page);
   await page.addInitScript(key => localStorage.setItem(key, JSON.stringify({
-    email: "staff@travelian.com", name: "Session Test", createdAt: new Date().toISOString(), accessToken: "old", expiresAt: Date.now() - 60_000,
+    email: "staff@travelian.com", name: "Session Test", groups: ["super_admin"], createdAt: new Date().toISOString(), accessToken: "old", expiresAt: Date.now() - 60_000,
   })), KEY);
   await page.goto("/admin/customers");
   await expect(page.getByText("Your session expired. Sign in again.")).toBeVisible();
@@ -130,7 +130,7 @@ test("already signed in: Sign In on the public site lands on /admin and the form
 test("expired-session redirect from /admin/customers: the form and the message show", async ({ page }) => {
   await mock(page);
   await page.addInitScript(key => localStorage.setItem(key, JSON.stringify({
-    email: "staff@travelian.com", name: "Session Test", createdAt: new Date().toISOString(), accessToken: "old", expiresAt: Date.now() - 60_000,
+    email: "staff@travelian.com", name: "Session Test", groups: ["super_admin"], createdAt: new Date().toISOString(), accessToken: "old", expiresAt: Date.now() - 60_000,
   })), KEY);
   await page.goto("/admin/customers");
   await expect(page.getByLabel("Email")).toBeVisible();

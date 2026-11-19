@@ -226,3 +226,36 @@ export function publicFlightCalendar(origin: string, destination: string, adults
 export function getSiteConfig(signal?: AbortSignal) {
   return call<{ umrah_enabled: boolean }>("/site-config", { signal });
 }
+
+// ---------- website flight booking: a request, never a ticket (B19, D43, D45) ----------
+
+export interface FlightRequestTraveler extends GuestPassenger { passengerType?: "adult" | "child" | "infant"; docType?: "passport" | "cnic" }
+
+const TYPES = { adult: "ADT", child: "CHD", infant: "INF" } as const;
+
+/** A checkout traveler in the gateway's flight shape (passport or CNIC; countries as ISO alpha-3). */
+export function toGatewayFlightPassenger(traveler: FlightRequestTraveler) {
+  const base = toGatewayPassenger(traveler);
+  const cnic = traveler.docType === "cnic";
+  return {
+    type: TYPES[traveler.passengerType ?? "adult"], title: base.title, first_name: base.first_name, last_name: base.last_name,
+    date_of_birth: base.date_of_birth, id_type: cnic ? "NATI" : "PSPT", document_number: base.document_number.replace(/-/g, ""),
+    document_country: cnic ? undefined : base.document_country, document_expiry: cnic ? undefined : base.document_expiry,
+    nationality: base.nationality, save_for_next_time: false,
+  };
+}
+
+/** Sends the chosen gateway fare as a booking request. The gateway reprices it, saves the customer and travelers, and
+ *  alerts Travelian's team. Nothing is held, ticketed or charged, and no PNR is given. */
+export function requestPublicFlight(input: {
+  searchId: string; fareIds: string[]; travelers: FlightRequestTraveler[];
+  contact: { firstName: string; lastName: string; phoneCode: string; phone: string; email: string };
+}) {
+  return call<{ reference: string; access_token: string; booking: PublicBooking }>("/flights/requests", {
+    body: {
+      search_id: input.searchId, fare_ids: input.fareIds, passengers: input.travelers.map(toGatewayFlightPassenger),
+      contact: { first_name: input.contact.firstName, last_name: input.contact.lastName, email: input.contact.email,
+        phone_code: input.contact.phoneCode.replace(/\D/g, ""), phone: input.contact.phone.replace(/\D/g, "").replace(/^0+/, "") },
+    },
+  });
+}
