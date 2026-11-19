@@ -62,6 +62,8 @@ export interface BookingRecord {
   paymentMethod: string;
   paymentStatus?: "unpaid" | "pending" | "paid";
   ticketStatus?: "not_issued" | "issued";
+  /** A paid website flight not yet ticketed: "in_progress" (the gateway is issuing it) or "pending" (Travelian's team issues it). */
+  issuance?: "in_progress" | "pending";
   holdExpiresAt?: string;
   pricing: BookingPricing;
   /** Booked through the Travelian gateway (public website): its reference, the private token to view and pay it,

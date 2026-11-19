@@ -202,7 +202,8 @@ export function publicGroupCalendar(origin: string, destination: string, adults 
 
 /** Travelian's receiving account, in full (D40): customers need the number or IBAN to pay. */
 export interface BankAccountDisplay { bank_name?: string | null; account_title?: string | null; account_number?: string | null; iban?: string | null; qr_url?: string | null }
-export interface PaymentMethods { card: boolean; bank_transfer: boolean; jazzcash: boolean; bank_accounts?: BankAccountDisplay[]; logo_url?: string | null }
+/** `flights`: website flight fares are held and paid here; false: a flight booking is a request (Travelian arranges payment). */
+export interface PaymentMethods { card: boolean; bank_transfer: boolean; jazzcash: boolean; flights?: boolean; bank_accounts?: BankAccountDisplay[]; logo_url?: string | null }
 
 export function getPaymentMethods(signal?: AbortSignal) {
   return call<PaymentMethods>("/payment-methods", { signal });
@@ -227,7 +228,7 @@ export function getSiteConfig(signal?: AbortSignal) {
   return call<{ umrah_enabled: boolean }>("/site-config", { signal });
 }
 
-// ---------- website flight booking: a request, never a ticket (B19, D43, D45) ----------
+// ---------- website flight booking (B19, D43, D45, D48, D49) ----------
 
 export interface FlightRequestTraveler extends GuestPassenger { passengerType?: "adult" | "child" | "infant"; docType?: "passport" | "cnic" }
 
@@ -245,15 +246,19 @@ export function toGatewayFlightPassenger(traveler: FlightRequestTraveler) {
   };
 }
 
-/** Sends the chosen gateway fare as a booking request. The gateway reprices it, saves the customer and travelers, and
- *  alerts Travelian's team. Nothing is held, ticketed or charged, and no PNR is given. */
+/** Sends the chosen gateway fare. The gateway reprices it and saves the customer and travelers. When website flight
+ *  booking is on (PaymentMethods.flights) it holds the fare at the airline (booking.live); the page then pays by card on
+ *  PayFast, or shows the bank account. Otherwise it is a request for Travelian's team. Nothing is ever ticketed here:
+ *  only the gateway issues, after PayFast's verified payment or a staff action. */
 export function requestPublicFlight(input: {
   searchId: string; fareIds: string[]; travelers: FlightRequestTraveler[];
   contact: { firstName: string; lastName: string; phoneCode: string; phone: string; email: string };
+  paymentMethod?: "card" | "bank_transfer" | "jazzcash";
 }) {
   return call<{ reference: string; access_token: string; booking: PublicBooking }>("/flights/requests", {
     body: {
       search_id: input.searchId, fare_ids: input.fareIds, passengers: input.travelers.map(toGatewayFlightPassenger),
+      payment_method: input.paymentMethod ?? "card",
       contact: { first_name: input.contact.firstName, last_name: input.contact.lastName, email: input.contact.email,
         phone_code: input.contact.phoneCode.replace(/\D/g, ""), phone: input.contact.phone.replace(/\D/g, "").replace(/^0+/, "") },
     },

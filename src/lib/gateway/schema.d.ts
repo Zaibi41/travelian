@@ -2714,6 +2714,7 @@ export interface paths {
         /**
          * Flight Calendar
          * @description Lowest real fare per date (one-way, adults). Unknown dates have no price; a few are checked in the background.
+         *     One call per page (date picker or the results page's date strip); the page asks again while `pending`.
          */
         post: operations["flight_calendar_v1_public_flights_calendar_post"];
         delete?: never;
@@ -2733,8 +2734,10 @@ export interface paths {
         put?: never;
         /**
          * Request Flight
-         * @description A guest's flight booking, saved as a request for Travelian's team (D43): repriced by the gateway, never held,
-         *     ticketed or charged here, and no PNR is given. Staff are notified and confirm the fare and payment with the customer.
+         * @description A guest's flight booking, repriced by the gateway. PUBLIC_FLIGHT_BOOKING_ENABLED off (or a restricted airline, or
+         *     booking off for the fare's provider): saved as a request for Travelian's team, never held, ticketed or charged, no PNR.
+         *     On: held at the supplier, then paid by `payment_method`: card through PayFast (issued automatically only after
+         *     PayFast's verified payment, when ticketing is on, D48), or bank transfer / JazzCash (staff verify and issue, D49).
          */
         post: operations["request_flight_v1_public_flights_requests_post"];
         delete?: never;
@@ -3961,6 +3964,11 @@ export interface components {
             destination: string;
             /** Origin */
             origin: string;
+            /**
+             * Start
+             * @description First day (default today). The gateway checks unknown days from here.
+             */
+            start?: string | null;
         };
         /** FlightMoney */
         FlightMoney: {
@@ -5460,6 +5468,12 @@ export interface components {
             bank_transfer: boolean;
             /** Card */
             card: boolean;
+            /**
+             * Flights
+             * @description Website flight fares can be held and paid here (card, bank transfer, JazzCash as above). False: a flight booking is a request and Travelian arranges payment.
+             * @default false
+             */
+            flights: boolean;
             /** Jazzcash */
             jazzcash: boolean;
             /** Logo Url */
@@ -5569,9 +5583,12 @@ export interface components {
         };
         /**
          * PublicFlightRequest
-         * @description A website flight booking (B19, D43). It is saved as a request: nothing is held or ticketed, no PNR is given and no
-         *     payment is taken here. The gateway reprices the fare itself (the price is never taken from the page); staff confirm
-         *     the fare and payment with the customer, then book and issue from the admin.
+         * @description A website flight booking (B19, D43). The gateway reprices the fare itself (the price is never taken from the page).
+         *     With PUBLIC_FLIGHT_BOOKING_ENABLED off, or for a restricted airline (D32), or when booking is off for the fare's
+         *     provider, it is saved as a request: nothing is held or ticketed, no PNR is given and no payment is taken; staff
+         *     confirm the fare and payment with the customer. Otherwise the fare is held at the supplier and paid by
+         *     `payment_method` (card: PayFast, then issued automatically when ticketing is on, D48; bank transfer and JazzCash:
+         *     held until staff verify the money and issue by hand, D49).
          */
         PublicFlightRequest: {
             /** @description Name, phone (code and number) and email: all required. */
@@ -5583,6 +5600,13 @@ export interface components {
             fare_ids: string[];
             /** Passengers */
             passengers: components["schemas"]["HoldPassenger"][];
+            /**
+             * Payment Method
+             * @description Used when the fare is held (see above). card: PayFast online. bank_transfer / jazzcash: staff verify the payment and issue; nothing is confirmed automatically.
+             * @default card
+             * @enum {string}
+             */
+            payment_method: "card" | "bank_transfer" | "jazzcash";
             /**
              * Search Id
              * @description From POST /v1/public/flights/search.
@@ -14407,6 +14431,13 @@ export interface operations {
             };
             /** @description Too many bookings. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The fare couldn't be held; nothing was charged. */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };

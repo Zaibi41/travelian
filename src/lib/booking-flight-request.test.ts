@@ -44,5 +44,26 @@ describe("website flight booking", () => {
     expect(body.passengers[0]).toMatchObject({ type: "ADT", id_type: "NATI", document_number: "3520112345671", nationality: "PAK" });
     expect(body.passengers[1]).toMatchObject({ type: "CHD", title: "MASTER", id_type: "PSPT", document_number: "AB1234567", document_country: "PAK" });
     expect(toGatewayFlightPassenger({ title: "Mrs", firstName: "A", lastName: "B" }).type).toBe("ADT");
+    expect(body.payment_method).toBe("card"); // the default; the gateway decides whether it is held and payable
+  });
+
+  it("sends the chosen payment method and nothing that could confirm or ticket the booking", async () => {
+    vi.stubEnv("VITE_TRAVELIAN_GATEWAY_BASE_URL", "https://gw.example.test");
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ reference: "TRV-F-1", access_token: "t".repeat(20),
+      booking: { reference: "TRV-F-1", status: "held", payment_status: "unpaid", live: true, can_pay: false,
+        total: { amount_minor: 2207000, currency: "PKR" }, paid: { amount_minor: 0, currency: "PKR" } } }), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    for (const method of ["bank_transfer", "jazzcash"] as const) {
+      await requestPublicFlight({
+        searchId: "search-123456", fareIds: ["fare-out"], paymentMethod: method,
+        contact: { firstName: "Test", lastName: "Guest", phoneCode: "92", phone: "3001234567", email: "guest@example.invalid" },
+        travelers: [{ passengerType: "adult", title: "Mr", firstName: "Test", lastName: "Guest", dob: "1990-01-01", docType: "cnic", docNumber: "3520112345671" }],
+      });
+    }
+    const bodies = fetchMock.mock.calls.map((call) => JSON.parse(String((call as unknown as [string, RequestInit])[1].body)));
+    expect(bodies.map((body) => body.payment_method)).toEqual(["bank_transfer", "jazzcash"]);
+    for (const body of bodies) {
+      for (const field of ["paid", "payment_status", "status", "pnr", "tickets", "price", "total"]) expect(body).not.toHaveProperty(field);
+    }
   });
 });
