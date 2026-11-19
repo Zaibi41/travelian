@@ -214,7 +214,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [calculatorTaxes, setCalculatorTaxes] = useState("");
   const [calculatorServiceFee, setCalculatorServiceFee] = useState("");
   const [searchRefreshKey, setSearchRefreshKey] = useState(0);
-  const [dateFareMap, setDateFareMap] = useState<Record<string, { price: number; currency: string } | null>>({});
   const [modalFaresLoading, setModalFaresLoading] = useState(false);
   const [modalFaresError, setModalFaresError] = useState<string | null>(null);
   const [modalFaresCache, setModalFaresCache] = useState<Record<string, FareOption[]>>({});
@@ -756,57 +755,17 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     });
   }, [departDate]);
 
-  useEffect(() => {
-    if (tripType === "multicity") {
-      setDateFareMap({});
-      return;
-    }
-
-    const controller = new AbortController();
-    const selectedKey = formatDateOnly(departDate);
-    const candidateDates = dateFlexDays
-      .map((day) => formatDateOnly(day.date))
-      .filter((dateKey) => dateKey !== selectedKey);
-
-    if (!candidateDates.length) return () => controller.abort();
-
-    setDateFareMap(Object.fromEntries(candidateDates.map((dateKey) => [dateKey, null])));
-
-    (async () => {
-      for (const dateKey of candidateDates) {
-        if (controller.signal.aborted) return;
-        try {
-          const result = await searchFlights({
-            from,
-            to,
-            tripType,
-            departureDate: dateKey,
-            returnDate: returnDate ? formatDateOnly(returnDate) : undefined,
-            segments: [],
-            cabin: travelers.cabin,
-            currency,
-            passengers: {
-              adults: travelers.adults,
-              children: travelers.children,
-              infants: travelers.infants,
-            },
-          }, controller.signal);
-          const best = result.flights.reduce<TravelianFlight | null>((currentBest, flight) => (
-            !currentBest || flight.price < currentBest.price ? flight : currentBest
-          ), null);
-          if (controller.signal.aborted) return;
-          setDateFareMap((current) => ({
-            ...current,
-            [dateKey]: best ? { price: best.price, currency: best.currency || currency } : null,
-          }));
-        } catch {
-          if (controller.signal.aborted) return;
-        }
-      }
-    })();
-
-    return () => controller.abort();
-  }, [dateFlexDays, departDate, from, to, tripType, returnDate, travelers, currency]);
+  // B24 / D46: the date strip reads the gateway's fare calendar (one call, asked again while the gateway checks the
+  // missing dates itself) instead of running a live search per date, which used up the public search limit (429s).
+  // The calendar is one-way, so a round trip shows the dates without prices.
+  const stripFares = useFlightFares(tripType === "oneway", {
+    from: airportCodeOf(from), to: airportCodeOf(to), adults: travelers.adults,
+    cabin: travelers.cabin.toLowerCase().replace(/\s+/g, "_"), start: formatDateOnly(dateFlexDays[0].date),
+  });
+  const dateFareMap = useMemo<Record<string, { price: number; currency: string } | null>>(() => Object.fromEntries(
+    stripFares.days.filter((day) => day.available && day.lowest_price)
+      .map((day) => [day.date, { price: day.lowest_price!.amount_minor / 100, currency: day.lowest_price!.currency }]),
+  ), [stripFares.days]);
 
   const airlineOptions = useMemo(() => {
     const set = new Set<string>();
