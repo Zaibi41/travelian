@@ -75,3 +75,15 @@ export const resolveIssuance = (bookingId: string, body: ResolveIssuanceBody, op
 /** Travelian's active receiving accounts (where customer payments arrive), for "Received into". */
 export const fetchPaymentAccounts = (options?: GatewayOptions) =>
   gatewayGet("/v1/admin/payment-accounts", undefined, { ...options, unavailableMessage: "The receiving accounts couldn't be loaded." });
+
+/** SooperFare bookings: ask SooperFare to cancel. Marked Cancelled only when SooperFare's own record confirms it. */
+export const cancelAtSupplier = (bookingId: string, options?: GatewayOptions) =>
+  gatewayPost("/v1/admin/bookings/{booking_id}/supplier-cancel", undefined as never, {
+    ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "SooperFare couldn't be reached. Nothing was changed.",
+  });
+
+/** SooperFare bookings: read what SooperFare shows now (read-only); confirms a requested cancel once SooperFare has applied it. */
+export const checkAtSupplier = (bookingId: string, options?: GatewayOptions) =>
+  gatewayPost("/v1/admin/bookings/{booking_id}/supplier-check", undefined as never, {
+    ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "SooperFare couldn't be reached. Nothing was changed.",
+  });
