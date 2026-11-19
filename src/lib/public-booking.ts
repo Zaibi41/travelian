@@ -241,7 +241,7 @@ export function toGatewayFlightPassenger(traveler: FlightRequestTraveler) {
     type: TYPES[traveler.passengerType ?? "adult"], title: base.title, first_name: base.first_name, last_name: base.last_name,
     date_of_birth: base.date_of_birth, id_type: cnic ? "NATI" : "PSPT", document_number: base.document_number.replace(/-/g, ""),
     document_country: cnic ? undefined : base.document_country, document_expiry: cnic ? undefined : base.document_expiry,
-    nationality: base.nationality, save_for_next_time: false,
+    nationality: base.nationality, // saved to (or matched with) Customers & Travelers by the gateway (B23)
   };
 }
 
