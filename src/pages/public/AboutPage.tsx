@@ -6,18 +6,19 @@ import { Button } from "@/components/ui/button";
 import { SearchPageHero, PageSection } from "@/components/public/SearchPageShell";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { whatsappUrl } from "@/lib/site-config";
+import { useSiteSwitches } from "@/lib/site-switches";
 
 const services = [
   { icon: Plane, title: "Flight Booking", desc: "Search available domestic and international flight fares.", to: "/flights-search" },
   { icon: Tickets, title: "Group Ticketing", desc: "Explore available group flight inventory and travel dates.", to: "/group-ticketing" },
   { icon: Hotel, title: "Hotel Booking", desc: "Search available hotel rates for your destination.", to: "/hotels-search" },
-  { icon: Package, title: "Umrah Packages", desc: "Browse published Umrah packages with package details.", to: "/umrah-packages" },
+  { icon: Package, title: "Umrah Packages", desc: "Browse published Umrah packages with package details.", to: "/umrah-packages", umrah: true },
 ];
 
 const why = [
   { icon: Shield, title: "Booking Support", desc: "Assistance from search through ticketing." },
   { icon: Headphones, title: "Customer Support", desc: "Help with travel service inquiries." },
-  { icon: Zap, title: "Travel Assistance", desc: "Support for flights, hotels and Umrah packages." },
+  { icon: Zap, title: "Travel Assistance", desc: "Support for flights, hotels and Umrah packages.", noUmrah: "Support for flights, hotels and group travel." },
 ];
 
 const steps = [
@@ -28,15 +29,17 @@ const steps = [
 ];
 
 export default function AboutPage() {
+  const { umrah } = useSiteSwitches(); // D39: Umrah wording only when Umrah is switched on
   return (
     <div>
-      <SEO title="About Travelian | Flights, Hotels & Umrah" description="Learn about Travelian and our support for flight bookings, group ticketing, hotels and Umrah travel." />
-      <SearchPageHero title="About Travelian" description="Building a modern travel platform for flights, hotels, Umrah and group travel." />
+      <SEO title={umrah ? "About Travelian | Flights, Hotels & Umrah" : "About Travelian | Flights & Hotels"}
+        description={umrah ? "Learn about Travelian and our support for flight bookings, group ticketing, hotels and Umrah travel." : "Learn about Travelian and our support for flight bookings, group ticketing and hotels."} />
+      <SearchPageHero title="About Travelian" description={umrah ? "Building a modern travel platform for flights, hotels, Umrah and group travel." : "Building a modern travel platform for flights, hotels and group travel."} />
 
       <PageSection>
           <h2 className="text-xl md:text-2xl font-bold font-display text-foreground mb-4">Who We Are</h2>
           <p className="max-w-3xl text-sm text-muted-foreground leading-7">
-            Travelian provides travel management services for flights, hotels and Umrah packages.
+            {umrah ? "Travelian provides travel management services for flights, hotels and Umrah packages." : "Travelian provides travel management services for flights, group tickets and hotels."}
             Our team helps travelers and agencies find available options and continue through the appropriate booking process.
           </p>
       </PageSection>
@@ -47,7 +50,7 @@ export default function AboutPage() {
             <p className="text-sm text-muted-foreground mt-2">Everything you need to plan, book and travel.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {services.map(service => (
+            {services.filter(service => umrah || !("umrah" in service)).map(service => (
               <Link to={service.to} key={service.title}>
                 <Card className="h-full rounded-xl border-border/70 shadow-card transition-shadow hover:shadow-md group">
                   <CardContent className="p-5">
@@ -68,7 +71,7 @@ export default function AboutPage() {
             <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Why Choose Us</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {why.map(item => (
+            {why.map(item => ("noUmrah" in item && !umrah ? { ...item, desc: item.noUmrah } : item)).map(item => (
               <Card key={item.title} className="rounded-xl border-border/70 text-center shadow-card">
                 <CardContent className="p-5">
                   <div className="h-11 w-11 rounded-xl bg-accent flex items-center justify-center mx-auto mb-3">

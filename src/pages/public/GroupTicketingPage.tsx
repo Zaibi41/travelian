@@ -34,7 +34,6 @@ import { CURRENCIES, useLocale } from "@/contexts/LocaleContext";
 import {
   buildGroupTicketSearchParams,
   extractAvailableSectors,
-  fetchGroupTicketDetail,
   filterGroupTickets,
   groupTicketPrimaryDate,
   groupTicketWhatsAppMessage,
@@ -255,27 +254,8 @@ function GroupCard({
   useEffect(() => {
     if (!detailOpen || detail) return;
 
-    if (group.itinerary?.length) {
-      setDetail(group);
-      return;
-    }
-
-    let cancelled = false;
-    setLoadingDetail(true);
-    fetchGroupTicketDetail(group.id)
-      .then((loaded) => {
-        if (!cancelled) setDetail(loaded);
-      })
-      .catch(() => {
-        if (!cancelled) setDetail(group);
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingDetail(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+    // Fares come from the gateway with their itinerary; the old Lambda detail lookup is gone (B14).
+    setDetail(group);
   }, [detailOpen, detail, group]);
 
   const active = detail || group;

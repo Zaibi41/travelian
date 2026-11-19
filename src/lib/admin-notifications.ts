@@ -42,5 +42,7 @@ export function useBookingAlerts() {
     }
     window.dispatchEvent(new Event("travelian:alerts:seen"));
   };
-  return { items, unseen, markSeen, isLoading: query.isLoading, error: query.error };
+  // Whether the gateway also emails these alerts (false until email is set up on the server: aws-setup.sh, SES).
+  const emailEnabled = query.data ? query.data.email_enabled : undefined;
+  return { items, unseen, markSeen, isLoading: query.isLoading, error: query.error, emailEnabled };
 }

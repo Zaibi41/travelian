@@ -5,14 +5,21 @@ import { PublicFooter } from "./PublicFooter";
 import { WhatsAppIcon } from "./WhatsAppIcon";
 import { MoveToTopButton } from "@/components/MoveToTopButton";
 import { whatsappUrl } from "@/lib/site-config";
+import { PageErrorBoundary } from "@/components/PageErrorBoundary";
+import { isUmrahPath, useSiteSwitches } from "@/lib/site-switches";
+import NotFound from "@/pages/NotFound";
 
 export function PublicLayout({ children, showFooter = true }: { children: React.ReactNode; showFooter?: boolean }) {
   const { pathname, search } = useLocation();
+  const { loaded, umrah } = useSiteSwitches();
   if (!isPublicPathVisible(pathname + search)) return <Navigate to="/" replace />;
+  // D39: with Umrah switched off, its URLs show the normal "page not found" state, never a working page.
+  const hidden = isUmrahPath(pathname + search) && !umrah;
+  const page = hidden ? (loaded ? <NotFound /> : null) : children;
   return (
     <div className={showFooter ? "min-h-screen overflow-x-hidden flex flex-col" : "h-dvh overflow-hidden flex flex-col"}>
       <PublicNavbar />
-      <main className={showFooter ? "min-w-0 flex-1 overflow-x-hidden" : "flex-1 min-h-0 overflow-hidden"}>{children}</main>
+      <main className={showFooter ? "min-w-0 flex-1 overflow-x-hidden" : "flex-1 min-h-0 overflow-hidden"}><PageErrorBoundary key={pathname}>{page}</PageErrorBoundary></main>
       {showFooter && (
         <>
         <MoveToTopButton />

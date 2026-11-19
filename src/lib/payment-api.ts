@@ -1,42 +1,13 @@
-import { API_BASE_URL } from "./api-config";
+// Sends the customer to a hosted payment page (PayFast) by posting the checkout form the gateway prepared
+// (POST /v1/public/bookings/{reference}/payments/payfast). The old Lambda PayFast session is gone (B14).
 
-export interface PayFastSessionInput {
-  bookingId: string;
-  amount: number;
-  currency: string;
-  customerName: string;
-  customerEmail?: string;
-  customerPhone: string;
-  description: string;
-  method: "card" | "1link";
-  successUrl: string;
-  failureUrl: string;
-}
-
-export interface PayFastSession {
-  provider: "payfast";
-  paymentId: string;
-  bookingId: string;
-  basketId: string;
-  method: "POST";
+export interface HostedPaymentForm {
+  method?: "POST";
   action: string;
   fields: Record<string, string | number | boolean | null | undefined>;
 }
 
-export async function createPayFastSession(input: PayFastSessionInput): Promise<PayFastSession> {
-  const response = await fetch(`${API_BASE_URL}/payments/payfast/session`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new Error(payload?.error || "Unable to start online payment");
-  }
-  return payload.item;
-}
-
-export function submitHostedPayment(session: PayFastSession) {
+export function submitHostedPayment(session: HostedPaymentForm) {
   const form = document.createElement("form");
   form.method = session.method || "POST";
   form.action = session.action;

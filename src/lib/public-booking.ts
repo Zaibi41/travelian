@@ -200,7 +200,8 @@ export function publicGroupCalendar(origin: string, destination: string, adults 
 
 // ---------- payment methods offered at checkout (from the gateway) ----------
 
-export interface BankAccountDisplay { bank_name?: string | null; account_title?: string | null; account_number_masked?: string | null; qr_url?: string | null }
+/** Travelian's receiving account, in full (D40): customers need the number or IBAN to pay. */
+export interface BankAccountDisplay { bank_name?: string | null; account_title?: string | null; account_number?: string | null; iban?: string | null; qr_url?: string | null }
 export interface PaymentMethods { card: boolean; bank_transfer: boolean; jazzcash: boolean; bank_accounts?: BankAccountDisplay[]; logo_url?: string | null }
 
 export function getPaymentMethods(signal?: AbortSignal) {
@@ -219,4 +220,9 @@ export function publicFlightCalendar(origin: string, destination: string, adults
   return call<{ origin: string; destination: string; pending: boolean;
     days: { date: string; checked: boolean; available: boolean; lowest_price?: Money | null; checked_at?: string }[] }>(
     "/flights/calendar", { body: { origin, destination, adults, cabin }, signal });
+}
+
+/** Site switches from the gateway (D39): read at page load, so they change with a server setting and no rebuild. */
+export function getSiteConfig(signal?: AbortSignal) {
+  return call<{ umrah_enabled: boolean }>("/site-config", { signal });
 }

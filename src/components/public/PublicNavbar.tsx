@@ -1,5 +1,5 @@
 import { loadSiteLogo } from "@/lib/public-booking";
-import { PRODUCT_TABS } from "./product-navigation";
+import { PRODUCT_TABS, useProductTabs } from "./product-navigation";
 import { useSearchHeaderState } from "@/hooks/use-scroll-reveal";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
@@ -16,7 +16,6 @@ import {
 import { CURRENCIES, LANGUAGES, useLocale } from "@/contexts/LocaleContext";
 import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
 
-const serviceLinks = PRODUCT_TABS;
 const quickLinks = [
   { label: "About Us", href: "/about", icon: Info, match: ["/about"] },
 ];
@@ -69,6 +68,7 @@ function LocaleControls({ compact = false }: { compact?: boolean }) {
 }
 
 export function PublicNavbar() {
+  const serviceLinks = useProductTabs(); // Umrah only when switched on (D39)
   // Website & CMS > Site logo (S3, D38); the built-in logo until one is uploaded or if it can't be loaded.
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   useEffect(() => { void loadSiteLogo().then(setLogoUrl); }, []);

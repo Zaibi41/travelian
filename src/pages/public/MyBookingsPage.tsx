@@ -10,6 +10,7 @@ import { downloadETicket } from "@/lib/eticket-pdf";
 import { toast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
 import { CopyPnr } from "@/components/CopyPnr";
+import { useSiteSwitches } from "@/lib/site-switches";
 
 function statusClass(status: BookingRecord["status"]) {
   if (status === "confirmed" || status === "ticket_issued" || status === "payment_received") return "bg-success/10 text-success border-0";
@@ -62,6 +63,7 @@ function statusLabel(status: BookingRecord["status"]) {
 }
 
 export default function MyBookingsPage() {
+  const { umrah } = useSiteSwitches(); // D39: Umrah wording only when Umrah is switched on
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
 
   const refresh = () => setBookings(listBookings());
@@ -86,7 +88,7 @@ export default function MyBookingsPage() {
 
   return (
     <div className="bg-muted/20 min-h-screen">
-      <SEO title="My Bookings - Travelian" description="View, manage and download your Travelian flight, hotel and Umrah bookings." />
+      <SEO title="My Bookings - Travelian" description={`View, manage and download your Travelian flight${umrah ? ", hotel and Umrah" : " and hotel"} bookings.`} />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
           <div>

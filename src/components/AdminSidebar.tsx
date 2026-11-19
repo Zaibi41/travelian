@@ -3,6 +3,7 @@ import { ChevronRight, Globe } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
+import { useSiteSwitches } from "@/lib/site-switches";
 import { getInternalSidebarForRole, getNavigationForRole, isInternalRole, sidebarPathFor, type AdminNavItem } from "@/lib/admin-navigation";
 
 interface SidebarSection {
@@ -21,6 +22,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
+const UMRAH_ADMIN_PATH = "/admin/packages";
+
 export function AdminSidebar() {
   const { state, isMobile } = useSidebar();
   const collapsed = state === "collapsed" && !isMobile;
@@ -28,11 +31,15 @@ export function AdminSidebar() {
   const { currentRole } = useRole();
   // Internal roles: the 14 spec menus. Agency and customer roles: unchanged sidebar.
   const internal = isInternalRole(currentRole);
+  const { umrah } = useSiteSwitches();
   const sections = useMemo<SidebarSection[]>(
-    () => internal
+    () => (internal
       ? getInternalSidebarForRole(currentRole).map((menu) => ({ category: menu.title, items: menu.items, icon: menu.icon }))
-      : getNavigationForRole(currentRole),
-    [currentRole, internal],
+      : getNavigationForRole(currentRole))
+      // D39: "Umrah Packages" is hidden with the rest of Umrah until the gateway's switch is on.
+      .map((section) => ({ ...section, items: section.items.filter((navItem) => umrah || navItem.url !== UMRAH_ADMIN_PATH) }))
+      .filter((section) => section.items.length > 0),
+    [currentRole, internal, umrah],
   );
   const currentPath = sidebarPathFor(location.pathname);
   const isPathActive = (path: string) =>

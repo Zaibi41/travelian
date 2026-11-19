@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SEO } from "@/components/SEO";
+import { useSiteSwitches } from "@/lib/site-switches";
 
 const destinationMap: Record<string, {
   name: string;
@@ -57,6 +58,7 @@ const destinationMap: Record<string, {
 };
 
 export default function DestinationPage() {
+  const { umrah } = useSiteSwitches(); // D39: no "Umrah packages" highlight while Umrah is switched off
   const { slug = "makkah" } = useParams();
   const destination = destinationMap[slug] || destinationMap.makkah;
 
@@ -86,7 +88,7 @@ export default function DestinationPage() {
 
       <section className="py-12 bg-muted/30">
         <div className="travelian-container grid gap-5 md:grid-cols-3">
-          {destination.highlights.map((highlight, index) => {
+          {destination.highlights.filter(highlight => umrah || highlight !== "Umrah packages").map((highlight, index) => {
             const Icon = index === 0 ? Hotel : index === 1 ? Plane : Star;
             return (
               <Card key={highlight} className="border-0 shadow-card">

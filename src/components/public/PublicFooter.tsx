@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import { BriefcaseBusiness, Building2, CircleHelp, Facebook, Globe, Instagram, Mail, MapPin, Music2, Phone, Youtube } from "lucide-react";
 import { SITE_DISPLAY, SITE_URL, SOCIAL_LINKS, SUPPORT_ADDRESS, SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from "@/lib/site-config";
-import { PRODUCT_TABS } from "./product-navigation";
+import { useProductTabs } from "./product-navigation";
+import { useSiteSwitches } from "@/lib/site-switches";
 
 const socialIcons = { facebook: Facebook, instagram: Instagram, youtube: Youtube, tiktok: Music2 };
-const navigationGroups = [
-  { id: "products", title: "Products", icon: BriefcaseBusiness, links: PRODUCT_TABS.map(product => ({ label: product.label, href: product.href })) },
+const navigationGroups = (products: ReturnType<typeof useProductTabs>) => [
+  { id: "products", title: "Products", icon: BriefcaseBusiness, links: products.map(product => ({ label: product.label, href: product.href })) },
   { id: "company", title: "Company", icon: Building2, links: [{ label: "About", href: "/about" }, { label: "Contact", href: "/contact" }] },
   { id: "support", title: "Support & Policies", icon: CircleHelp, links: [
     { label: "FAQ", href: "/faq" },
@@ -16,6 +17,8 @@ const navigationGroups = [
 ];
 
 export function PublicFooter() {
+  const products = useProductTabs();
+  const { umrah } = useSiteSwitches();
   const scrollToTop = () => {
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }));
   };
@@ -27,7 +30,7 @@ export function PublicFooter() {
             <Link to="/" onClick={scrollToTop} aria-label="Travelian home" className="mb-3 inline-flex w-fit rounded bg-white p-1.5">
               <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-9 w-auto max-w-[9rem] object-contain" />
             </Link>
-            <p className="mb-2 text-sm leading-relaxed text-sidebar-muted">Flights, group tickets, hotels and Umrah all in one Travelian platform.</p>
+            <p className="mb-2 text-sm leading-relaxed text-sidebar-muted">{umrah ? "Flights, group tickets, hotels and Umrah all in one Travelian platform." : "Flights, group tickets and hotels all in one Travelian platform."}</p>
             <div aria-label="Travelian social profiles" className="flex gap-1">
               {SOCIAL_LINKS.map(social => {
                 const Icon = socialIcons[social.id];
@@ -36,7 +39,7 @@ export function PublicFooter() {
             </div>
           </div>
 
-          {navigationGroups.map(group => (
+          {navigationGroups(products).map(group => (
             <nav key={group.id} aria-labelledby={`footer-${group.id}`} className={`min-w-0 ${group.id === "support" ? "col-span-2 sm:col-span-1" : ""}`}>
               <h2 id={`footer-${group.id}`} className="mb-1 flex items-center gap-2 text-sm font-semibold text-sidebar-accent-foreground"><group.icon aria-hidden="true" className="h-4 w-4 shrink-0 text-sidebar-primary" />{group.title}</h2>
               <ul className={`text-sm ${group.id === "products" ? "font-medium text-sidebar-foreground" : "text-sidebar-muted"}`}>

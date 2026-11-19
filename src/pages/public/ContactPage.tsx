@@ -11,6 +11,7 @@ import { SEO } from "@/components/SEO";
 import { SearchPageHero, PageSection } from "@/components/public/SearchPageShell";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { SUPPORT_ADDRESS, SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
+import { useSiteSwitches } from "@/lib/site-switches";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
@@ -20,6 +21,7 @@ const schema = z.object({
 });
 
 export default function ContactPage() {
+  const { umrah } = useSiteSwitches(); // D39: Umrah wording only when Umrah is switched on
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -52,8 +54,9 @@ export default function ContactPage() {
 
   return (
     <div>
-      <SEO title="Contact Travelian | Flights, Umrah & Hotel Support" description="Talk to the Travelian team about flights, Umrah packages and hotels. Call, WhatsApp or send us a message and we reply within 24 hours." />
-      <SearchPageHero title="Contact Travelian" description="We're here to help with flights, hotels, Umrah and booking support." />
+      <SEO title={umrah ? "Contact Travelian | Flights, Umrah & Hotel Support" : "Contact Travelian | Flights & Hotel Support"}
+        description={`Talk to the Travelian team about flights, ${umrah ? "Umrah packages and hotels" : "group tickets and hotels"}. Call, WhatsApp or send us a message and we reply within 24 hours.`} />
+      <SearchPageHero title="Contact Travelian" description={umrah ? "We're here to help with flights, hotels, Umrah and booking support." : "We're here to help with flights, hotels and booking support."} />
       <PageSection>
         <div className="grid items-start gap-6 lg:grid-cols-[0.85fr_1.15fr]">
           <div className="space-y-5">

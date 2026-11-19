@@ -1,4 +1,3 @@
-import { API_BASE_URL as API_BASE } from "./api-config";
 import { GROUP_FARE_CUSTOMER_LINE } from "./group-fare-terms";
 import { listPublicGroupTicketingCollections } from "@/lib/group-ticketing-collections-api";
 import { normalizeAirlineName } from "@/lib/airline-normalization";
@@ -576,23 +575,6 @@ export function normalizeGroupTicket(input: unknown): GroupTicket {
   };
 }
 
-async function request(path: string, signal?: AbortSignal) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: { Accept: "application/json" },
-    signal,
-  });
-  if (!response.ok) throw new Error("Group ticketing service is unavailable.");
-  return response.json();
-}
-
-export async function fetchGroupTickets(category = ALL_GROUPS_SLUG, signal?: AbortSignal): Promise<GroupTicket[]> {
-  const query = new URLSearchParams({ category });
-  const payload = await request(`/group-ticketing/groups?${query.toString()}`, signal);
-  const groups = unwrapArray(payload).map(normalizeGroupTicket).filter((group) => group.id);
-
-  return groups;
-}
-
 export interface GroupTicketCategory {
   slug: string;
   label: string;
@@ -614,20 +596,6 @@ export function deriveGroupTicketCategories(groups: GroupTicket[]): GroupTicketC
     bySlug.set(slug, { slug, label, count: 1, image: group.categoryImage });
   });
   return Array.from(bySlug.values()).sort((a, b) => a.label.localeCompare(b.label));
-}
-
-export async function fetchGroupTicketCategories(signal?: AbortSignal): Promise<GroupTicketCategory[]> {
-  const payload = await request("/group-ticketing/categories", signal);
-  const categories = unwrapArray(payload) as GroupTicketCategory[];
-  if (categories.length) return categories;
-  const groups = await fetchGroupTickets(ALL_GROUPS_SLUG, signal);
-  return deriveGroupTicketCategories(groups);
-}
-
-export async function fetchGroupTicketDetail(groupId: string, signal?: AbortSignal): Promise<GroupTicket> {
-  const payload = await request(`/group-ticketing/groups/${encodeURIComponent(groupId)}`, signal);
-  const data = (payload && typeof payload === "object" && "group" in payload ? (payload as Record<string, unknown>).group : payload && typeof payload === "object" && "result" in payload ? (payload as Record<string, unknown>).result : payload);
-  return normalizeGroupTicket(data);
 }
 
 export function groupTicketWhatsAppMessage(category: string, group: GroupTicket) {

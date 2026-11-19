@@ -1,5 +1,6 @@
 // Bank transfer details shown to customers (B3): Travelian's active account(s) from Accounts & Ledgers via the gateway
-// (masked number and the QR image in S3), and the real hold countdown (D29: the supplier's expiry, never extended).
+// (bank, title, full account number and IBAN, D40, and the QR image in S3), and the real hold countdown (D29: the
+// supplier's expiry, never extended).
 import { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
 import type { BankAccountDisplay } from "@/lib/public-booking";
@@ -13,8 +14,9 @@ export function BankAccounts({ accounts }: { accounts: BankAccountDisplay[] }) {
           <dl className="min-w-0 space-y-1 text-sm">
             {account.bank_name && <div><dt className="inline text-muted-foreground">Bank: </dt><dd className="inline font-semibold text-foreground">{account.bank_name}</dd></div>}
             {account.account_title && <div><dt className="inline text-muted-foreground">Account title: </dt><dd className="inline font-semibold text-foreground">{account.account_title}</dd></div>}
-            {account.account_number_masked && <div><dt className="inline text-muted-foreground">Account: </dt><dd className="inline font-mono text-foreground">{account.account_number_masked}</dd></div>}
-            <p className="text-xs text-muted-foreground">Scan the QR code to pay. Use your booking reference as the payment reference.</p>
+            {account.account_number && <div><dt className="inline text-muted-foreground">Account number: </dt><dd className="inline break-all font-mono font-semibold text-foreground">{account.account_number}</dd></div>}
+            {account.iban && <div><dt className="inline text-muted-foreground">IBAN: </dt><dd className="inline break-all font-mono font-semibold text-foreground">{account.iban}</dd></div>}
+            <p className="text-xs text-muted-foreground">{account.qr_url ? "Transfer to this account or scan the QR code." : "Transfer to this account."} Use your booking reference as the payment reference.</p>
           </dl>
         </li>
       ))}

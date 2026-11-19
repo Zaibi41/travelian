@@ -15,7 +15,8 @@ const entries: SitemapEntry[] = [
   { path: "/", changefreq: "daily", priority: "1.0" },
   { path: "/hotels-search", changefreq: "daily", priority: "0.9" },
   { path: "/flights-search", changefreq: "daily", priority: "0.9" },
-  { path: "/umrah-packages", changefreq: "weekly", priority: "0.8" },
+  // D39: Umrah is hidden; listed again when built with SITEMAP_UMRAH=true (the sitemap is a static file).
+  ...(process.env.SITEMAP_UMRAH === "true" ? [{ path: "/umrah-packages", changefreq: "weekly" as const, priority: "0.8" }] : []),
   { path: "/deals", changefreq: "daily", priority: "0.8" },
   { path: "/blog-public", changefreq: "weekly", priority: "0.6" },
   { path: "/about", changefreq: "monthly", priority: "0.5" },

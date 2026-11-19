@@ -9,13 +9,15 @@ import { HomeHowItWorks } from "@/components/public/HomeHowItWorks";
 import { HomePopularLinks } from "@/components/public/HomePopularLinks";
 import { HomeFaq } from "@/components/public/HomeFaq";
 import { HomeSupportCta } from "@/components/public/HomeSupportCta";
+import { useSiteSwitches } from "@/lib/site-switches";
 
 export default function HomePage() {
+  const { umrah } = useSiteSwitches(); // D39: Umrah wording only when Umrah is switched on
   return (
     <div>
       <SEO
-        title="Travelian | Flights, Group Tickets, Hotels & Umrah"
-        description="Search flights and group tickets, hotels and Umrah packages with Travelian."
+        title={umrah ? "Travelian | Flights, Group Tickets, Hotels & Umrah" : "Travelian | Flights, Group Tickets & Hotels"}
+        description={umrah ? "Search flights and group tickets, hotels and Umrah packages with Travelian." : "Search flights, group tickets and hotels with Travelian."}
         jsonLd={[
           {
             "@context": "https://schema.org",
@@ -48,7 +50,7 @@ export default function HomePage() {
           },
         ]}
       />
-      <SearchPageHero title={<><span className="text-xl sm:hidden">Book travel with Travelian</span><span className="hidden sm:inline sm:text-2xl md:text-[1.75rem]">Book Flights, Group Tickets, Hotels &amp; Umrah</span></>} support={<ProductValuePills product="flights" />}>
+      <SearchPageHero title={<><span className="text-xl sm:hidden">Book travel with Travelian</span><span className="hidden sm:inline sm:text-2xl md:text-[1.75rem]">{umrah ? "Book Flights, Group Tickets, Hotels & Umrah" : "Book Flights, Group Tickets & Hotels"}</span></>} support={<ProductValuePills product="flights" />}>
         <div className="home-search"><SearchTabs /></div>
       </SearchPageHero>
 

@@ -137,7 +137,12 @@ function AccountsTable({ accounts, onDeactivate }: { accounts: ReceivingAccount[
   const action = (account: ReceivingAccount) => account.active
     ? <Button variant="outline" size="sm" onClick={() => onDeactivate(account)} aria-label={`Deactivate ${account.label}`}>Deactivate</Button>
     : <Button variant="outline" size="sm" disabled={activate.isPending} onClick={() => activate.mutate(account)} aria-label={`Activate ${account.label}`}>Activate</Button>;
-  const details = (account: ReceivingAccount) => [account.bank_name, account.account_title, account.account_number_masked].filter(Boolean).join(" · ");
+  // D40: the receiving account is shown in full. An old account saved before that kept only the last 4 digits, so
+  // checkout can't offer it until the full number (or IBAN, or a QR image) is added again.
+  const details = (account: ReceivingAccount) => [account.bank_name, account.account_title, account.account_number ?? account.account_number_masked,
+    account.iban && `IBAN ${account.iban}`,
+    account.method === "bank_transfer" && !account.account_number && !account.iban && !account.qr_url && "Not shown at checkout: full account number missing",
+  ].filter(Boolean).join(" · ");
   return (
     <>
       <div className={cn(TABLE.wrap, "hidden shadow-none sm:block")}>
@@ -192,7 +197,7 @@ function AddAccountDialog({ initialMethod, onClose }: { initialMethod: PaymentMe
   const nameId = useId();
   const [method, setMethod] = useState<PaymentMethod>(initialMethod);
   const [label, setLabel] = useState("");
-  const [bank, setBank] = useState({ bank_name: "", account_title: "", account_number: "" });
+  const [bank, setBank] = useState({ bank_name: "", account_title: "", account_number: "", iban: "" });
   const [qr, setQr] = useState<{ key: string; url?: string | null } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -213,7 +218,7 @@ function AddAccountDialog({ initialMethod, onClose }: { initialMethod: PaymentMe
   const save = useMutation({
     mutationFn: () => addReceivingAccount(method, label, isBank ? {
       bank_name: bank.bank_name || null, account_title: bank.account_title || null, account_number: bank.account_number || null,
-      qr_asset_key: qr?.key ?? null,
+      iban: bank.iban || null, qr_asset_key: qr?.key ?? null,
     } : {}),
     onSuccess: account => {
       toast.success(`${account.label} added.`);
@@ -249,11 +254,12 @@ function AddAccountDialog({ initialMethod, onClose }: { initialMethod: PaymentMe
           </FieldShell>
           {isBank && (
             <>
-              {/* Shown to customers who choose bank transfer at checkout (masked number and QR only). */}
+              {/* Shown in full to customers who choose bank transfer at checkout, so they can pay (D40). */}
               {([["bank_name", "Bank name", "e.g. Meezan Bank"], ["account_title", "Account title", "As the bank shows it"],
-                 ["account_number", "Account number", "Only the last 4 digits are kept and shown (masked)."]] as const).map(([key, title, hint]) => (
+                 ["account_number", "Account number", "The full number. Customers see it at checkout to make the transfer."],
+                 ["iban", "IBAN", "e.g. PK36SCBL0000001123456702. Customers see it at checkout."]] as const).map(([key, title, hint]) => (
                 <FieldShell key={key} id={`${nameId}-${key}`} label={title} hint={hint}>
-                  <Input id={`${nameId}-${key}`} value={bank[key]} autoComplete="off" maxLength={key === "account_number" ? 40 : 120}
+                  <Input id={`${nameId}-${key}`} value={bank[key]} autoComplete="off" maxLength={key === "account_number" || key === "iban" ? 60 : 120}
                     onChange={event => setBank(current => ({ ...current, [key]: event.target.value }))} />
                 </FieldShell>
               ))}

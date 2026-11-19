@@ -1,6 +1,7 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useSiteSwitches } from "@/lib/site-switches";
 
-const faqs = [
+const FAQS = [
   {
     q: "How do I book a flight with Travelian?",
     a: "Search your route, compare available fare options, and contact our team through WhatsApp or support channels to confirm your booking.",
@@ -18,6 +19,7 @@ const faqs = [
     a: "Yes. You can contact a Travelian consultant on WhatsApp, phone, or email before confirming your booking.",
   },
   {
+    id: "umrah",
     q: "Do you help with Umrah packages and hotels?",
     a: "Yes. Travelian provides support for Umrah packages, hotels and flights.",
   },
@@ -28,6 +30,9 @@ const faqs = [
 ];
 
 export function HomeFaq() {
+  const { umrah } = useSiteSwitches(); // D39
+  const faqs = umrah ? FAQS : FAQS.map(f => "id" in f && f.id === "umrah"
+    ? { q: "Do you help with hotels?", a: "Yes. Travelian provides support for hotels and flights." } : f);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
