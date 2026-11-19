@@ -15,6 +15,7 @@ import { DownloadItineraryButton } from "@/components/admin/bookings/DownloadIti
 import { GroupNoCancelNotice } from "@/components/admin/bookings/GroupNoCancelNotice";
 import { GroupTicketsTab } from "@/components/admin/bookings/GroupTicketsTab";
 import { EmailNotSentNotice } from "@/components/admin/bookings/EmailNotSentNotice";
+import { SupplierBookingCard } from "@/components/admin/bookings/SupplierBookingCard";
 import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { GROUP_TICKETING_LABEL } from "@/lib/admin-search/group-holds";
 import { SampleDataBadge, StatusChips } from "@/components/admin/bookings/BookingChips";
@@ -94,6 +95,7 @@ export default function AdminBookingDetailPage() {
       {detail.error && <DashboardErrorNotice message={errorMessage(detail.error)} />}
       {tab === "overview" && <EmailNotSentNotice booking={booking} />}
       {tab === "overview" && <Overview booking={booking} />}
+      {tab === "overview" && booking.supplier_booking && <SupplierBookingCard booking={booking} />}
       {tab === "fare" && <Fare booking={booking} />}
       {tab === "supplier-payment" && booking.supplier_payment && <SupplierPaymentTab booking={booking} />}
       {tab === "payments" && <PaymentsAndIssuing booking={booking} />}
