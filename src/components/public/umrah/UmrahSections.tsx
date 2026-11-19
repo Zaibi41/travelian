@@ -131,7 +131,7 @@ export function UmrahFinalCta() {
         style={{ backgroundImage: "radial-gradient(circle at 1px 1px, hsl(0 0% 100%) 1px, transparent 0)", backgroundSize: "22px 22px" }} />
       <div className="absolute -bottom-20 left-1/2 h-56 w-72 -translate-x-1/2 rounded-full bg-gold/15 blur-3xl" aria-hidden="true" />
       <div className="relative z-10">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-gold ring-1 ring-white/15"><Sparkles className="h-5 w-5" /></span>
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-gold-on-dark ring-1 ring-white/15"><Sparkles className="h-5 w-5" /></span>
         <h2 className="mt-4 font-display text-xl font-black text-primary-foreground md:text-2xl">Need help choosing the right Umrah package?</h2>
         <p className="mx-auto mt-2 max-w-xl text-sm text-primary-foreground">
           Our Umrah desk compares hotels, transport and airline options for your dates and budget, then sends a clear final price.

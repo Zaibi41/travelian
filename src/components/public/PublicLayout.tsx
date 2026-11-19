@@ -37,7 +37,7 @@ export function PublicLayout({ children, showFooter = true }: { children: React.
           </span>
           <span className="hidden sm:flex flex-col leading-tight">
             <span className="text-sm font-bold">Chat with Travelian</span>
-            <span className="text-xs font-medium text-gold">Online support</span>
+            <span className="text-xs font-medium text-gold-on-dark">Online support</span>
           </span>
         </a>
 
