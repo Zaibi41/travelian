@@ -5517,9 +5517,15 @@ export interface components {
              * @default []
              */
             bank_accounts: components["schemas"]["BankAccountView"][];
-            /** Bank Transfer */
+            /**
+             * Bank Transfer
+             * @description Only when an active bank account with a full account number exists.
+             */
             bank_transfer: boolean;
-            /** Card */
+            /**
+             * Card
+             * @description Card / 1Link through PayFast: only when PayFast is on production (never UAT test payments).
+             */
             card: boolean;
             /**
              * Flights
@@ -5527,8 +5533,16 @@ export interface components {
              * @default false
              */
             flights: boolean;
-            /** Jazzcash */
+            /**
+             * Jazzcash
+             * @description Only with JAZZCASH_ENABLED and an active JazzCash account with a full account number.
+             */
             jazzcash: boolean;
+            /**
+             * Jazzcash Accounts
+             * @description Where customers send a JazzCash payment.
+             */
+            jazzcash_accounts?: components["schemas"]["BankAccountView"][];
             /** Logo Url */
             logo_url?: string | null;
         };

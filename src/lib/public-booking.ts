@@ -203,7 +203,10 @@ export function publicGroupCalendar(origin: string, destination: string, adults 
 /** Travelian's receiving account, in full (D40): customers need the number or IBAN to pay. */
 export interface BankAccountDisplay { bank_name?: string | null; account_title?: string | null; account_number?: string | null; iban?: string | null; qr_url?: string | null }
 /** `flights`: website flight fares are held and paid here; false: a flight booking is a request (Travelian arranges payment). */
-export interface PaymentMethods { card: boolean; bank_transfer: boolean; jazzcash: boolean; flights?: boolean; bank_accounts?: BankAccountDisplay[]; logo_url?: string | null }
+export interface PaymentMethods {
+  card: boolean; bank_transfer: boolean; jazzcash: boolean; flights?: boolean;
+  bank_accounts?: BankAccountDisplay[]; jazzcash_accounts?: BankAccountDisplay[]; logo_url?: string | null;
+}
 
 export function getPaymentMethods(signal?: AbortSignal) {
   return call<PaymentMethods>("/payment-methods", { signal });

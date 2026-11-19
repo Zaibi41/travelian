@@ -1124,6 +1124,13 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     </div>
                   ) : null}
 
+                  {paymentMethod === "wallet" && methods?.jazzcash_accounts?.length ? (
+                    <div className="rounded-xl border border-primary/10 bg-accent/30 p-4 text-sm text-muted-foreground space-y-3">
+                      <p>Your seats are held at the airline while you send the amount by JazzCash. Travelian confirms the payment and then issues your tickets. Pay before the hold time ends, or the booking expires.</p>
+                      <BankAccounts accounts={methods.jazzcash_accounts} />
+                    </div>
+                  ) : null}
+
                   {canPayHere && paymentMethod === "1link" && (
                     <div className="rounded-xl border border-primary/10 bg-accent/30 p-4 text-sm text-muted-foreground">
                       You will be redirected to PayFast 1Link checkout. Your booking will stay pending until payment is confirmed.
@@ -1187,6 +1194,13 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                       <p className="text-sm font-semibold text-foreground">Pay by bank transfer</p>
                       <p className="text-sm text-muted-foreground">Transfer {savedBooking.pricing.currency === "PKR" ? "Rs" : savedBooking.pricing.currency} {savedBooking.pricing.total.toLocaleString("en-PK")} and use {savedBooking.id} as the reference. Travelian confirms the payment and then issues your tickets.</p>
                       <BankAccounts accounts={methods.bank_accounts} />
+                    </div>
+                  ) : null}
+                  {savedBooking.gateway?.live && savedBooking.paymentMethod === "wallet" && methods?.jazzcash_accounts?.length ? (
+                    <div className="mx-auto mb-4 max-w-lg space-y-2 text-left">
+                      <p className="text-sm font-semibold text-foreground">Pay by JazzCash</p>
+                      <p className="text-sm text-muted-foreground">Send {savedBooking.pricing.currency === "PKR" ? "Rs" : savedBooking.pricing.currency} {savedBooking.pricing.total.toLocaleString("en-PK")} by JazzCash and use {savedBooking.id} as the reference. Travelian confirms the payment and then issues your tickets.</p>
+                      <BankAccounts accounts={methods.jazzcash_accounts} />
                     </div>
                   ) : null}
                   <div className="bg-gradient-to-br from-primary/5 to-accent border rounded-2xl p-6 text-left max-w-lg mx-auto">
