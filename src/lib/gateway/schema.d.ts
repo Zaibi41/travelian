@@ -2631,6 +2631,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/live-ticketing/flights/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Flight Calendar
+         * @description Admin Search > Flights date picker: the same fare calendar as the website (lowest real selling price per adult
+         *     per date; unknown dates have no price and a few are checked in the background; ask again while `pending`).
+         *     The website's call is rate-limited by IP; this one is for signed-in staff.
+         */
+        post: operations["flight_calendar_v1_live_ticketing_flights_calendar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/live-ticketing/flights/reprice": {
         parameters: {
             query?: never;
@@ -14468,6 +14490,53 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    flight_calendar_v1_live_ticketing_flights_calendar_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlightCalendarQuery"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlightCalendar"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role may not search. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

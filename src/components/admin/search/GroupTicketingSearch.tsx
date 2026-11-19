@@ -93,6 +93,16 @@ export function GroupTicketingSearch() {
     retry: 1,
   });
 
+  // The same calendar for the sector being typed, inside the Departure Date popup (as on the website's group search).
+  const draftSector = Boolean(draft.from && draft.to);
+  const draftCalendar = useQuery({
+    queryKey: ["admin-search", "group-calendar", draft.from, draft.to, search.adults],
+    queryFn: ({ signal }) => gatewayGet("/v1/group-ticketing/calendar", { origin: draft.from!, destination: draft.to!, adults: search.adults }, { signal }),
+    enabled: draftSector,
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
+
   const options = inventoryOptions(inventory.data?.data ?? []);
   const airports = (side: "from" | "to") => [...new Set(options.sectors.map(sector => sector[side]))].sort();
   // Suggested routes: real sectors only, the 4 with the most departures (inventoryOptions sorts by count).
@@ -192,7 +202,8 @@ export function GroupTicketingSearch() {
             </div>
             <div data-size="date" className="flex min-w-0 flex-col gap-1">
               <FieldLabel htmlFor="group-date">Departure Date</FieldLabel>
-              <DayFirstDateField id="group-date" variant="search" calendarTitle="Select departure date" min={todayIso()} value={draft.date} onChange={date => setDraft({ ...draft, date })} />
+              <DayFirstDateField id="group-date" variant="search" calendarTitle="Select departure date" min={todayIso()} value={draft.date} onChange={date => setDraft({ ...draft, date })}
+                fares={draftSector && draftCalendar.data ? { days: (draftCalendar.data as { days: CalendarDay[] }).days } : undefined} />
             </div>
             <div data-size="submit"><SearchSubmitButton label="Search group fares" disabled={!canSearch} /></div>
           </div>

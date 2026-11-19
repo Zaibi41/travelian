@@ -264,3 +264,8 @@ export const holdFlight = (request: HoldRequest, options?: GatewayOptions) =>
   gatewayPost("/v1/live-ticketing/flights/bookings", request, {
     unavailableMessage: "The hold couldn't be placed right now. Check the booking list before trying again.", ...options,
   });
+
+/** The website's fare calendar for the admin date picker (lowest real selling price per adult per date; ask again while
+ *  `pending`). Same arguments as the website's call, so the shared hook takes either. */
+export const adminFlightCalendar = (origin: string, destination: string, adults: number, cabin: string, signal?: AbortSignal, start?: string) =>
+  gatewayPost("/v1/live-ticketing/flights/calendar", { origin, destination, adults, cabin: cabin as "economy" | "premium_economy" | "business" | "first", ...(start ? { start } : {}) }, { signal });
