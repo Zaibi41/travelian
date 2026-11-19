@@ -85,7 +85,8 @@ export default function GroupHoldPage() {
       ) : (
         <BookingHoldColumns
           form={<BookingHoldForm formId={FORM_ID} counts={{ adults, children: 0, infants: 0 }} canSubmit={canHold && !pending}
-            onSubmit={values => void submit(values)} errors={errors} defaultSelling={fare?.selling_price ?? null} />}
+            onSubmit={values => void submit(values)} errors={errors} defaultSelling={fare?.selling_price ?? null}
+            travelDate={fare?.departure_date ?? undefined} />}
           panel={
             <FarePanel
               title="Selected group fare" formId={FORM_ID} canHold={canHold} pending={pending}

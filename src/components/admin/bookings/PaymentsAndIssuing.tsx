@@ -5,7 +5,6 @@ import { Button } from "@/components/admin/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
 import { FieldLabel, Input, Textarea } from "@/components/admin/ui/field";
 import { LabeledSelect } from "@/components/admin/ui/LabeledSelect";
-import { DayFirstDateField } from "@/components/admin/ui/DayFirstDateField";
 import { Notice } from "@/components/admin/ui/feedback";
 import { TABLE } from "@/components/admin/ui/classes";
 import { StatusBadge, Tag } from "@/components/admin/ui/StatusBadge";
@@ -20,6 +19,7 @@ import {
 import type { BookingDetail, BookingPassenger, IssuanceChecklist, IssuanceResult, PaymentMethod, TicketNumber } from "@/lib/admin-bookings/types";
 import { cn } from "@/lib/utils";
 import { CopyPnr } from "@/components/CopyPnr";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 
 // Booking detail > Payments (spec 7, mockup booking-payment-issue): 1 · record the customer's
 // payment, 2 · issue the ticket, then the result. The gateway decides everything (amounts due,
@@ -179,7 +179,7 @@ function RecordPayment({ booking }: { booking: BookingDetail }) {
             </div>
             <div className="flex min-w-0 flex-col gap-1">
               <FieldLabel htmlFor="payment-date">Received on</FieldLabel>
-              <DayFirstDateField id="payment-date" value={date} max={today()} onChange={setDate} />
+              <DatePickerField id="payment-date" appearance="admin" value={date} max={today()} placeholder="Select date" onChange={setDate} />
             </div>
             <div className="flex min-w-0 flex-col gap-1">
               <FieldLabel htmlFor="payment-time">Time (24-hour)</FieldLabel>

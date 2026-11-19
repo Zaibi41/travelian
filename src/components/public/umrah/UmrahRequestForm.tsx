@@ -10,6 +10,8 @@ import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { SectionHeading } from "@/components/public/SectionHeading";
 import { whatsappUrl } from "@/lib/site-config";
 import { UMRAH_DEPARTURE_CITIES, UMRAH_DURATIONS } from "@/data/services/umrah";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { todayIso } from "@/lib/date-iso";
 
 const initial = {
   name: "",
@@ -90,7 +92,7 @@ export function UmrahRequestForm() {
             <Input className="h-11 rounded-xl border-muted bg-muted/30" maxLength={60} value={form.city} onChange={(e) => set("city")(e.target.value)} placeholder="e.g. Faisalabad" />
           </Field>
           <Field label="Expected travel date" error={errors.travelDate}>
-            <Input type="date" className="h-11 rounded-xl border-muted bg-muted/30" value={form.travelDate} onChange={(e) => set("travelDate")(e.target.value)} />
+            <DatePickerField ariaLabel="Expected travel date" className="border-muted bg-muted/30" value={form.travelDate} min={todayIso()} placeholder="Select travel date" onChange={(value) => set("travelDate")(value ?? "")} />
           </Field>
           <Field label="Departure city">
             <Picker value={form.departureCity} onChange={set("departureCity")} options={UMRAH_DEPARTURE_CITIES} />

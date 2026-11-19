@@ -16,6 +16,8 @@ import {
 } from "@/lib/saved-people/api";
 import { ID_TYPE_LABEL, TITLE_LABEL, fullName, mergeProblem, peopleErrorMessage, saveStateFrom, type SaveState } from "@/lib/saved-people/states";
 import { SavedDocuments } from "./SavedDocuments";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { todayIso } from "@/lib/date-iso";
 
 // Dialogs for Customers & Travelers. Values shown are the gateway's, in full;
 // the gateway checks every rule again (duplicates, document numbers, permissions).
@@ -77,8 +79,8 @@ function DocumentFields({ prefix, draft, onChange }: { prefix: string; draft: Do
           onChange={event => set({ document_number: event.target.value })} />
       </Field>
       <Field id={`${prefix}-expiry`} label={draft.id_type === "PSPT" ? "Document expiry" : "Document expiry (optional)"}>
-        <Input id={`${prefix}-expiry`} type="date" value={draft.document_expiry} className="h-control text-body"
-          onChange={event => set({ document_expiry: event.target.value })} />
+        <DatePickerField id={`${prefix}-expiry`} appearance="admin" value={draft.document_expiry} placeholder="Select expiry date"
+          onChange={value => set({ document_expiry: value ?? "" })} />
       </Field>
     </div>
   );
@@ -247,7 +249,7 @@ export function PersonFormDialog({ open, onOpenChange, person, onSaved }: {
               </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field id={id("dob")} label="Date of birth">
-                  <Input id={id("dob")} type="date" value={draft.date_of_birth} className="h-control text-body" onChange={event => set({ date_of_birth: event.target.value })} />
+                  <DatePickerField id={id("dob")} appearance="admin" value={draft.date_of_birth} max={todayIso()} placeholder="Select date of birth" onChange={value => set({ date_of_birth: value ?? "" })} />
                 </Field>
                 <Field id={id("nationality")} label="Nationality">
                   <CountrySelect id={id("nationality")} value={draft.nationality} onChange={code => set({ nationality: code })} />

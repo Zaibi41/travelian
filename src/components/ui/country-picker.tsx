@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { phoneCodes } from "@/data/phone-codes";
 
 interface CountryPickerProps {
+  id?: string;
   value: string;
   onChange: (country: string) => void;
   placeholder?: string;
@@ -15,7 +16,7 @@ interface CountryPickerProps {
  * Searchable country selector showing full country list with flags.
  * Typing jumps to matches (e.g. "P" → Pakistan).
  */
-export function CountryPicker({ value, onChange, placeholder = "Select country", className }: CountryPickerProps) {
+export function CountryPicker({ id, value, onChange, placeholder = "Select country", className }: CountryPickerProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -37,6 +38,7 @@ export function CountryPicker({ value, onChange, placeholder = "Select country",
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
+          id={id}
           type="button"
           className={cn(
             "flex items-center gap-2 w-full h-11 bg-background border border-input rounded-xl px-3 text-sm text-left transition-colors hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-ring",

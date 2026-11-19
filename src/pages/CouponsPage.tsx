@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { useRole } from "@/contexts/RoleContext";
 import { toast } from "sonner";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 
 export default function CouponsPage() {
   const { currentRole } = useRole();
@@ -123,8 +124,8 @@ export default function CouponsPage() {
               <div className="space-y-2"><Label>Max Uses</Label><Input type="number" value={form.maxUses || ''} onChange={e => setForm(p => ({ ...p, maxUses: Number(e.target.value) }))} /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label>Valid From</Label><Input type="date" value={form.validFrom} onChange={e => setForm(p => ({ ...p, validFrom: e.target.value }))} /></div>
-              <div className="space-y-2"><Label>Valid Until</Label><Input type="date" value={form.validUntil} onChange={e => setForm(p => ({ ...p, validUntil: e.target.value }))} /></div>
+              <div className="space-y-2"><Label htmlFor="coupon-valid-from">Valid From</Label><DatePickerField id="coupon-valid-from" appearance="admin" value={form.validFrom} max={form.validUntil || undefined} placeholder="Select date" onChange={value => setForm(p => ({ ...p, validFrom: value ?? "" }))} /></div>
+              <div className="space-y-2"><Label htmlFor="coupon-valid-until">Valid Until</Label><DatePickerField id="coupon-valid-until" appearance="admin" value={form.validUntil} min={form.validFrom || undefined} placeholder="Select date" onChange={value => setForm(p => ({ ...p, validUntil: value ?? "" }))} /></div>
             </div>
             <div className="space-y-2">
               <Label>Applicable To</Label>

@@ -15,6 +15,8 @@ import { UmrahPackage } from "@/data/models";
 import { getRandomPackageImage, uploadPackageImage } from "@/lib/package-image-api";
 import { isPackageExpired } from "@/lib/package-availability";
 import { toast } from "sonner";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { todayIso } from "@/lib/date-iso";
 
 const defaultForm = {
   title: "",
@@ -290,7 +292,7 @@ export default function PackagesPage() {
             <div className="space-y-2"><Label>Package type</Label><Select value={form.type} onValueChange={(value) => setField("type", value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="economy">Economy</SelectItem><SelectItem value="star">Star</SelectItem><SelectItem value="premium">Premium</SelectItem><SelectItem value="custom">Custom</SelectItem></SelectContent></Select></div>
             <div className="space-y-2"><Label>Duration</Label><Input value={form.duration} onChange={(event) => setField("duration", event.target.value)} placeholder="21 days" /></div>
             <div className="space-y-2"><Label>Status</Label><Select value={form.status} onValueChange={(value) => setField("status", value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active">Active / Published</SelectItem><SelectItem value="draft">Draft</SelectItem></SelectContent></Select></div>
-            <div className="space-y-2"><Label>Package expiry date</Label><Input type="date" value={form.expiresAt} onChange={(event) => setField("expiresAt", event.target.value)} /></div>
+            <div className="space-y-2"><Label htmlFor="package-expiry">Package expiry date</Label><DatePickerField id="package-expiry" appearance="admin" value={form.expiresAt} min={todayIso()} placeholder="Select expiry date" onChange={(value) => setField("expiresAt", value ?? "")} /></div>
             <div className="space-y-2"><Label>Starting price</Label><Input type="number" value={form.price} onChange={(event) => setField("price", event.target.value)} /></div>
             <div className="space-y-2"><Label>Departure city</Label><Input value={form.departureCity} onChange={(event) => setField("departureCity", event.target.value)} placeholder="LHE" /></div>
             <div className="space-y-2"><Label>Makkah hotel</Label><Input value={form.makkahHotel} onChange={(event) => setField("makkahHotel", event.target.value)} /></div>
