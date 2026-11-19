@@ -297,7 +297,8 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   // Mock wallet balance for B2B precheck (real value will come from Cloud later).
   const walletBalance = isAgency ? 250000 : 1000000;
 
-  const docType = "passport" as const;
+  // B27: each traveler travels on a passport or a Pakistani CNIC / B-form (the gateway accepts both: PSPT or NATI).
+  const usesPassport = (passenger: PassengerForm) => (passenger.docType ?? "passport") === "passport";
 
   const [passengerForms, setPassengerForms] = useState<PassengerForm[]>(() =>
     passengerLabels.map((passenger) => createPassengerForm(passenger.type, passenger.label)),
@@ -313,7 +314,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   // Validation touch tracking
   const [touched, setTouched] = useState(false);
 
-  const requiresPassport = true;
 
   useEffect(() => {
     setPassengerForms((current) =>
@@ -331,7 +331,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   };
 
   const passengerDocValid = (passenger: PassengerForm) => {
-    if (requiresPassport) return /^[A-Z0-9]{6,12}$/i.test(passenger.docNumber);
+    if (usesPassport(passenger)) return /^[A-Z0-9]{6,12}$/i.test(passenger.docNumber);
     return /^\d{13}$/.test(passenger.docNumber.replace(/-/g, ""));
   };
 
@@ -342,7 +342,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
     passenger.dob &&
     passenger.docNumber.trim() &&
     passengerDocValid(passenger) &&
-    (!requiresPassport || passenger.expiryDate),
+    (!usesPassport(passenger) || passenger.expiryDate),
   );
 
   const toggleAddon = (id: string) => {
@@ -368,18 +368,18 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
       if (!passenger.firstName.trim()) e[`passenger-${index}-firstName`] = "First name is required";
       if (!passenger.lastName.trim()) e[`passenger-${index}-lastName`] = "Last name is required";
       if (!passenger.dob) e[`passenger-${index}-dob`] = "Date of birth is required";
-      if (!passenger.docNumber.trim()) e[`passenger-${index}-docNumber`] = `${requiresPassport ? "Passport" : "CNIC"} number is required`;
-      else if (!passengerDocValid(passenger)) e[`passenger-${index}-docNumber`] = requiresPassport
+      if (!passenger.docNumber.trim()) e[`passenger-${index}-docNumber`] = `${usesPassport(passenger) ? "Passport" : "CNIC"} number is required`;
+      else if (!passengerDocValid(passenger)) e[`passenger-${index}-docNumber`] = usesPassport(passenger)
         ? "Enter a valid passport number (6-12 letters/digits)"
         : "Enter a valid 13-digit CNIC";
-      if (requiresPassport && !passenger.expiryDate) e[`passenger-${index}-expiryDate`] = "Expiry date is required";
+      if (usesPassport(passenger) && !passenger.expiryDate) e[`passenger-${index}-expiryDate`] = "Expiry date is required";
     });
     if (email.trim() && !emailValid) e.email = "Enter a valid email address";
     if (!phone.trim()) e.phone = "Mobile number is required";
     else if (!phoneValid) e.phone = "Enter a valid numeric phone (6-15 digits)";
     if (!altPhoneValid) e.altPhone = "Enter a valid numeric phone (6-15 digits)";
     return e;
-  }, [passengerForms, requiresPassport, email, emailValid, phone, phoneValid, altPhoneValid]);
+  }, [passengerForms, email, emailValid, phone, phoneValid, altPhoneValid]);
 
   const isStep1Valid = Object.keys(errors).length === 0;
 
@@ -506,7 +506,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
       lastName: passenger.lastName.trim(),
       gender: passenger.gender,
       dob: passenger.dob ? format(passenger.dob, "yyyy-MM-dd") : undefined,
-      docType,
+      docType: passenger.docType ?? "passport",
       docNumber: passenger.docNumber,
       nationality: passenger.nationality,
       issuanceCountry: passenger.issuanceCountry,
@@ -845,7 +845,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                           {touched && errors[`passenger-${index}-lastName`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-lastName`]}</p>}
                         </div>
                         <p id={nameHelperId} className="md:col-span-2 -mt-2 text-xs text-muted-foreground">
-                          Name must match exactly as shown on your {requiresPassport ? "passport" : "CNIC"}.
+                          Name must match exactly as shown on your {usesPassport(passenger) ? "passport" : "CNIC"}.
                         </p>
 
                         <div data-error-key={`passenger-${index}-dob`}>
@@ -862,20 +862,33 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                           </div>
                           {touched && errors[`passenger-${index}-dob`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-dob`]}</p>}
                         </div>
+                        <div>
+                          <Label className="text-sm font-medium">Document *</Label>
+                          <Select value={passenger.docType ?? "passport"}
+                            onValueChange={(value) => updatePassenger(index, { docType: value as PassengerForm["docType"], docNumber: "", expiryDate: undefined })}>
+                            <SelectTrigger className="mt-1.5 h-11 rounded-xl" aria-label={`Document for ${passenger.label}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
+                              <SelectItem value="passport">Passport</SelectItem>
+                              <SelectItem value="cnic">CNIC / B-form (Pakistan)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                         <div data-error-key={`passenger-${index}-docNumber`}>
                           <Label className="text-sm font-medium">
-                            {requiresPassport ? "Passport Number *" : "CNIC Number *"}
+                            {usesPassport(passenger) ? "Passport Number *" : "CNIC / B-form Number *"}
                           </Label>
                           <Input
-                            placeholder={requiresPassport ? "e.g. AB1234567" : "e.g. 3520112345671"}
+                            placeholder={usesPassport(passenger) ? "e.g. AB1234567" : "e.g. 3520112345671"}
                             className="mt-1.5 h-11 rounded-xl"
                             value={passenger.docNumber}
-                            onChange={e => updatePassenger(index, { docNumber: requiresPassport ? e.target.value.toUpperCase() : e.target.value.replace(/[^\d]/g, "") })}
-                            maxLength={requiresPassport ? 12 : 13}
+                            onChange={e => updatePassenger(index, { docNumber: usesPassport(passenger) ? e.target.value.toUpperCase() : e.target.value.replace(/[^\d]/g, "") })}
+                            maxLength={usesPassport(passenger) ? 12 : 13}
                             aria-describedby={docHelperId}
                           />
                           <p id={docHelperId} className="mt-1 text-xs text-muted-foreground">
-                            {requiresPassport ? "Use the passport number without spaces." : "Use 13 digits without dashes."}
+                            {usesPassport(passenger) ? "Use the passport number without spaces." : "Use 13 digits without dashes."}
                           </p>
                           {touched && errors[`passenger-${index}-docNumber`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-docNumber`]}</p>}
                         </div>
@@ -885,7 +898,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                             <CountryPicker value={passenger.nationality} onChange={(value) => updatePassenger(index, { nationality: value })} />
                           </div>
                         </div>
-                        {requiresPassport && (
+                        {usesPassport(passenger) && (
                           <>
                             <div>
                               <Label className="text-sm font-medium">Country of Issuance *</Label>
@@ -972,7 +985,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
                 <div className="flex items-start gap-2 p-3 bg-accent/50 rounded-xl border border-primary/10">
                   <AlertCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-                  <p id="passport-match-hint" className="text-xs text-muted-foreground">Name must match exactly as shown on your {requiresPassport ? "passport" : "CNIC"}.</p>
+                  <p id="passport-match-hint" className="text-xs text-muted-foreground">Name must match exactly as shown on each traveler's passport or CNIC.</p>
                 </div>
                 <div className="grid gap-2 rounded-2xl border bg-card p-3 text-xs text-muted-foreground sm:grid-cols-3">
                   <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-success" /> Secure SSL checkout</span>
@@ -1479,6 +1492,7 @@ function flightNumbersForDisplay(value: string) {
 
 interface PassengerForm {
   passengerType: "adult" | "child" | "infant";
+  docType?: "passport" | "cnic";
   label: string;
   title: string;
   firstName: string;

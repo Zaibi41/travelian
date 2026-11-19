@@ -3,7 +3,7 @@ import { useRole } from "@/contexts/RoleContext";
 import { isInternalRole } from "@/lib/admin-navigation";
 import AdminBookingsPage from "./AdminBookingsPage";
 import AdminBookingDetailPage from "./AdminBookingDetailPage";
-import FlightBookingsPage from "./FlightBookingsPage";
+import FlightOperationsPage from "./FlightOperationsPage";
 import GroupBookingPage from "./GroupBookingPage";
 import RoadmapPlaceholderPage from "./RoadmapPlaceholderPage";
 
@@ -38,10 +38,13 @@ export function LegacyRequestsRoute() {
 
 const FLIGHT_MENU_BY_TAB: Record<string, string> = { issued: "Invoices", refund: "Refunds" };
 
-/** /admin/flight-bookings: the old flight screen for internal roles, the menu placeholder for everyone else. */
+/** /admin/flight-bookings: Flight Operations (the gateway's group departures queue) for internal roles; Refunds,
+ *  Invoices and agency roles get the menu placeholder (no approved screen yet). B26: the old screen that changed
+ *  bookings through the legacy Lambda store is retired; payments and issuing are on each booking in Bookings. */
 export function FlightBookingsRoute() {
   const { currentRole } = useRole();
   const [params] = useSearchParams();
-  if (isInternalRole(currentRole)) return <FlightBookingsPage />;
-  return <RoadmapPlaceholderPage title={FLIGHT_MENU_BY_TAB[params.get("tab") ?? ""] ?? "Flight Operations"} />;
+  const menu = FLIGHT_MENU_BY_TAB[params.get("tab") ?? ""];
+  if (isInternalRole(currentRole) && !menu) return <FlightOperationsPage />;
+  return <RoadmapPlaceholderPage title={menu ?? "Flight Operations"} />;
 }

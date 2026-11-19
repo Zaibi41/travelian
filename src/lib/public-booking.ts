@@ -216,10 +216,10 @@ export function loadSiteLogo(): Promise<string | null> {
 }
 
 /** Flight fare calendar: the lowest real fare per date from recent searches; unchecked dates have no price. */
-export function publicFlightCalendar(origin: string, destination: string, adults: number, cabin: string, signal?: AbortSignal) {
+export function publicFlightCalendar(origin: string, destination: string, adults: number, cabin: string, signal?: AbortSignal, start?: string) {
   return call<{ origin: string; destination: string; pending: boolean;
     days: { date: string; checked: boolean; available: boolean; lowest_price?: Money | null; checked_at?: string }[] }>(
-    "/flights/calendar", { body: { origin, destination, adults, cabin }, signal });
+    "/flights/calendar", { body: { origin, destination, adults, cabin, ...(start ? { start } : {}) }, signal });
 }
 
 /** Site switches from the gateway (D39): read at page load, so they change with a server setting and no rebuild. */
