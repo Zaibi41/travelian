@@ -15,7 +15,7 @@ import { Link, useSearchParams } from "react-router-dom";
 // SeatMap is intentionally paused in the UI for now. Keep the component available for the future seat-selection phase.
 // import { SeatMap } from "@/components/booking/SeatMap";
 import { saveServerBooking } from "@/lib/booking-api";
-import { bookGroupFare, getPaymentMethods, requestPublicFlight, startPayFastCheckout, PublicBookingError, type PaymentMethods } from "@/lib/public-booking";
+import { bookGroupFare, getFlightPaymentOptions, getPaymentMethods, requestPublicFlight, startPayFastCheckout, PublicBookingError, type FlightPaymentOptions, type PaymentMethods } from "@/lib/public-booking";
 import { BankAccounts, HoldCountdown } from "@/components/public/BankTransferDetails";
 import { saveBooking, saveGatewayBooking, type BookingRecord, type BookingTraveler } from "@/lib/booking-store";
 import { submitHostedPayment } from "@/lib/payment-api";
@@ -279,9 +279,20 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   // D45: card / 1Link / bank / JazzCash are offered only where the gateway can actually take that payment for this
   // booking: group fares, and live flight fares once the gateway holds them (methods.flights). Everything else is a
   // request: no payment option, Travelian contacts the customer.
-  const flightPayable = gatewayFlight && Boolean(methods?.flights);
-  const paymentOptions = groupTicketId || flightPayable ? {
+  // Flights: the gateway says per fare whether it is held and which methods it takes (no card where issuing isn't wired).
+  const [flightOptions, setFlightOptions] = useState<FlightPaymentOptions | null>(null);
+  const fareIdsKey = gatewayFareIds.join(",");
+  useEffect(() => {
+    if (!gatewayFlight || !methods?.flights) { setFlightOptions(null); return; }
+    const controller = new AbortController();
+    getFlightPaymentOptions(gatewaySearchId, fareIdsKey.split(","), controller.signal).then(setFlightOptions).catch(() => setFlightOptions(null));
+    return () => controller.abort();
+  }, [gatewayFlight, gatewaySearchId, fareIdsKey, methods?.flights]);
+  const flightPayable = gatewayFlight && Boolean(flightOptions?.held);
+  const paymentOptions = groupTicketId ? {
     card: Boolean(methods?.card), bank: Boolean(methods?.bank_transfer), wallet: Boolean(methods?.jazzcash),
+  } : flightPayable ? {
+    card: Boolean(flightOptions?.card), bank: Boolean(flightOptions?.bank_transfer), wallet: Boolean(flightOptions?.jazzcash),
   } : { card: false, bank: false, wallet: false };
   const canPayHere = paymentOptions.card || paymentOptions.bank || paymentOptions.wallet;
   const firstMethod = paymentOptions.card ? "card" : paymentOptions.bank ? "bank" : paymentOptions.wallet ? "wallet" : "";
@@ -533,7 +544,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
       const result = await requestPublicFlight({
         searchId: gatewaySearchId, fareIds: gatewayFareIds, travelers,
         contact: { firstName: lead?.firstName || "", lastName: lead?.lastName || "", phoneCode, phone, email: email.trim() },
-        paymentMethod: paymentMethod === "bank" ? "bank_transfer" : paymentMethod === "wallet" ? "jazzcash" : "card",
+        paymentMethod: paymentMethod === "bank" ? "bank_transfer" : paymentMethod === "wallet" ? "jazzcash" : paymentMethod === "hold" ? "book_only" : "card",
       });
       const total = result.booking.total.amount_minor / 100;
       const live = result.booking.live;

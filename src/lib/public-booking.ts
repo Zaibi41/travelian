@@ -246,6 +246,14 @@ export function toGatewayFlightPassenger(traveler: FlightRequestTraveler) {
   };
 }
 
+/** What checkout may offer for the chosen fares, decided by the gateway (D45). `held: false`: the booking is a request.
+ *  Card is never offered for a fare whose tickets can't be issued from Travelian; the gateway refuses it too. */
+export interface FlightPaymentOptions { held: boolean; card: boolean; bank_transfer: boolean; jazzcash: boolean }
+
+export function getFlightPaymentOptions(searchId: string, fareIds: string[], signal?: AbortSignal) {
+  return call<FlightPaymentOptions>("/flights/payment-options", { body: { search_id: searchId, fare_ids: fareIds }, signal });
+}
+
 /** Sends the chosen gateway fare. The gateway reprices it and saves the customer and travelers. When website flight
  *  booking is on (PaymentMethods.flights) it holds the fare at the airline (booking.live); the page then pays by card on
  *  PayFast, or shows the bank account. Otherwise it is a request for Travelian's team. Nothing is ever ticketed here:
@@ -253,7 +261,7 @@ export function toGatewayFlightPassenger(traveler: FlightRequestTraveler) {
 export function requestPublicFlight(input: {
   searchId: string; fareIds: string[]; travelers: FlightRequestTraveler[];
   contact: { firstName: string; lastName: string; phoneCode: string; phone: string; email: string };
-  paymentMethod?: "card" | "bank_transfer" | "jazzcash";
+  paymentMethod?: "card" | "bank_transfer" | "jazzcash" | "book_only";
 }) {
   return call<{ reference: string; access_token: string; booking: PublicBooking }>("/flights/requests", {
     body: {

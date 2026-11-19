@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { saveBooking } from "./booking-store";
-import { requestPublicFlight, toGatewayFlightPassenger } from "./public-booking";
+import { getFlightPaymentOptions, requestPublicFlight, toGatewayFlightPassenger } from "./public-booking";
 
 // B19 / D43 / D45: the website never makes up a PNR or a confirmed status, and a flight is booked by the gateway's fare
 // ids as a request (the gateway prices it; nothing is held, ticketed or charged).
@@ -65,5 +65,16 @@ describe("website flight booking", () => {
     for (const body of bodies) {
       for (const field of ["paid", "payment_status", "status", "pnr", "tickets", "price", "total"]) expect(body).not.toHaveProperty(field);
     }
+  });
+
+  it("asks the gateway which methods a fare takes (no card where it can't be issued) by fare ids only", async () => {
+    vi.stubEnv("VITE_TRAVELIAN_GATEWAY_BASE_URL", "https://gw.example.test");
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ held: true, card: false, bank_transfer: true, jazzcash: false }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const options = await getFlightPaymentOptions("search-123456", ["fare-out"]);
+    expect(options.card).toBe(false);
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://gw.example.test/v1/public/flights/payment-options");
+    expect(JSON.parse(String(init.body))).toEqual({ search_id: "search-123456", fare_ids: ["fare-out"] });
   });
 });

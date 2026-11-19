@@ -2723,6 +2723,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/flights/payment-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Flight Payment Options
+         * @description Which payment methods checkout offers for the chosen fares. Card is never offered for a fare whose tickets can't be
+         *     issued from Travelian (SooperFare today), and the booking route refuses it too.
+         */
+        post: operations["flight_payment_options_v1_public_flights_payment_options_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/flights/requests": {
         parameters: {
             query?: never;
@@ -3576,7 +3597,7 @@ export interface components {
              * Booking
              * @enum {string}
              */
-            booking: "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested";
+            booking: "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested" | "paid_not_ticketed";
             /**
              * Issuance
              * @enum {string}
@@ -3979,6 +4000,27 @@ export interface components {
             amount_minor: number;
             /** Currency */
             currency: string;
+        };
+        /** FlightPaymentOptions */
+        FlightPaymentOptions: {
+            /** Bank Transfer */
+            bank_transfer: boolean;
+            /** Card */
+            card: boolean;
+            /**
+             * Held
+             * @description The fare will be held at the airline and paid here. False: it is sent as a request (no payment).
+             */
+            held: boolean;
+            /** Jazzcash */
+            jazzcash: boolean;
+        };
+        /** FlightPaymentQuery */
+        FlightPaymentQuery: {
+            /** Fare Ids */
+            fare_ids: string[];
+            /** Search Id */
+            search_id: string;
         };
         /** FlightSearchRequest */
         FlightSearchRequest: {
@@ -5602,11 +5644,11 @@ export interface components {
             passengers: components["schemas"]["HoldPassenger"][];
             /**
              * Payment Method
-             * @description Used when the fare is held (see above). card: PayFast online. bank_transfer / jazzcash: staff verify the payment and issue; nothing is confirmed automatically.
+             * @description Used when the fare is held (see above). card: PayFast online (not for fares whose tickets can't be issued from Travelian). bank_transfer / jazzcash: staff verify the payment and issue. book_only: held now, paid later by arrangement with Travelian's team. Nothing but a verified card payment is ever issued automatically.
              * @default card
              * @enum {string}
              */
-            payment_method: "card" | "bank_transfer" | "jazzcash";
+            payment_method: "card" | "bank_transfer" | "jazzcash" | "book_only";
             /**
              * Search Id
              * @description From POST /v1/public/flights/search.
@@ -7026,7 +7068,7 @@ export interface operations {
                 date_type?: "created";
                 /** @description Booking ID or PNR. */
                 q?: string | null;
-                booking_status?: ("held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested") | null;
+                booking_status?: ("held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested" | "paid_not_ticketed") | null;
                 payment_status?: ("paid" | "unpaid" | "part_paid") | null;
                 issuance_status?: ("not_issued" | "requested" | "processing" | "issued" | "unknown") | null;
                 /** @description Requires the supplier names permission. */
@@ -14383,6 +14425,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    flight_payment_options_v1_public_flights_payment_options_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlightPaymentQuery"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlightPaymentOptions"];
+                };
+            };
+            /** @description The search expired. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too many requests. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
