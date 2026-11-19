@@ -696,7 +696,8 @@ export interface paths {
         head?: never;
         /**
          * Update Payment Account
-         * @description Bank name, account title, full account number, IBAN and QR image. Fields left out keep their value.
+         * @description Bank name, account title, full account number, IBAN and QR image. Fields left out keep their value; remove_qr clears
+         *     the QR image.
          */
         patch: operations["update_payment_account_v1_admin_finance_payment_accounts__account_id__patch"];
         trace?: never;
@@ -2714,8 +2715,29 @@ export interface paths {
         /**
          * Flight Calendar
          * @description Lowest real fare per date (one-way, adults). Unknown dates have no price; a few are checked in the background.
+         *     One call per page (date picker or the results page's date strip); the page asks again while `pending`.
          */
         post: operations["flight_calendar_v1_public_flights_calendar_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/flights/payment-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Flight Payment Options
+         * @description Which payment methods checkout offers for the chosen fares (the booking route applies the same rules).
+         */
+        post: operations["flight_payment_options_v1_public_flights_payment_options_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2733,8 +2755,10 @@ export interface paths {
         put?: never;
         /**
          * Request Flight
-         * @description A guest's flight booking, saved as a request for Travelian's team (D43): repriced by the gateway, never held,
-         *     ticketed or charged here, and no PNR is given. Staff are notified and confirm the fare and payment with the customer.
+         * @description A guest's flight booking, repriced by the gateway. PUBLIC_FLIGHT_BOOKING_ENABLED off (or a restricted airline, or
+         *     booking off for the fare's provider): saved as a request for Travelian's team, never held, ticketed or charged, no PNR.
+         *     On: held at the supplier, then paid by `payment_method`: card through PayFast (issued automatically only after
+         *     PayFast's verified payment, when ticketing is on, D48), or bank transfer / JazzCash (staff verify and issue, D49).
          */
         post: operations["request_flight_v1_public_flights_requests_post"];
         delete?: never;
@@ -3360,6 +3384,11 @@ export interface components {
             /** On Hold */
             on_hold: number;
             /**
+             * Paid Not Issued
+             * @description Flights tab only: paid and no ticket, needing staff (Paid, issuance pending or Paid, not ticketed).
+             */
+            paid_not_issued?: number | null;
+            /**
              * Payment Pending
              * @description Flights tab only: open holds not fully paid and not past their deadline (the dashboard's Payment pending).
              */
@@ -3573,7 +3602,7 @@ export interface components {
              * Booking
              * @enum {string}
              */
-            booking: "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested";
+            booking: "held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested" | "paid_not_ticketed" | "paid_issuance_pending";
             /**
              * Issuance
              * @enum {string}
@@ -3961,6 +3990,11 @@ export interface components {
             destination: string;
             /** Origin */
             origin: string;
+            /**
+             * Start
+             * @description First day (default today). The gateway checks unknown days from here.
+             */
+            start?: string | null;
         };
         /** FlightMoney */
         FlightMoney: {
@@ -3971,6 +4005,27 @@ export interface components {
             amount_minor: number;
             /** Currency */
             currency: string;
+        };
+        /** FlightPaymentOptions */
+        FlightPaymentOptions: {
+            /** Bank Transfer */
+            bank_transfer: boolean;
+            /** Card */
+            card: boolean;
+            /**
+             * Held
+             * @description The fare will be held at the airline and paid here. False: it is sent as a request (no payment).
+             */
+            held: boolean;
+            /** Jazzcash */
+            jazzcash: boolean;
+        };
+        /** FlightPaymentQuery */
+        FlightPaymentQuery: {
+            /** Fare Ids */
+            fare_ids: string[];
+            /** Search Id */
+            search_id: string;
         };
         /** FlightSearchRequest */
         FlightSearchRequest: {
@@ -5369,6 +5424,12 @@ export interface components {
             reference?: string | null;
             /** Title */
             title: string;
+            /**
+             * Urgent
+             * @description A red alert: a customer paid by card and has no ticket. Shown first, in red.
+             * @default false
+             */
+            urgent: boolean;
         };
         /** OperationCall */
         OperationCall: {
@@ -5456,12 +5517,32 @@ export interface components {
              * @default []
              */
             bank_accounts: components["schemas"]["BankAccountView"][];
-            /** Bank Transfer */
+            /**
+             * Bank Transfer
+             * @description Only when an active bank account with a full account number exists.
+             */
             bank_transfer: boolean;
-            /** Card */
+            /**
+             * Card
+             * @description Card / 1Link through PayFast: only when PayFast is on production (never UAT test payments).
+             */
             card: boolean;
-            /** Jazzcash */
+            /**
+             * Flights
+             * @description Website flight fares can be held and paid here (card, bank transfer, JazzCash as above). False: a flight booking is a request and Travelian arranges payment.
+             * @default false
+             */
+            flights: boolean;
+            /**
+             * Jazzcash
+             * @description Only with JAZZCASH_ENABLED and an active JazzCash account with a full account number.
+             */
             jazzcash: boolean;
+            /**
+             * Jazzcash Accounts
+             * @description Where customers send a JazzCash payment.
+             */
+            jazzcash_accounts?: components["schemas"]["BankAccountView"][];
             /** Logo Url */
             logo_url?: string | null;
         };
@@ -5552,9 +5633,10 @@ export interface components {
             route?: string | null;
             /**
              * Status
+             * @description paid_not_ticketed: paid, and Travelian's team will contact the customer.
              * @enum {string}
              */
-            status: "requested" | "held" | "confirmed" | "issued" | "expired" | "released" | "processing" | "unknown" | "not_recorded";
+            status: "requested" | "held" | "confirmed" | "issued" | "expired" | "released" | "processing" | "unknown" | "not_recorded" | "paid_not_ticketed";
             /**
              * Tickets
              * @description Ticket numbers once issued.
@@ -5569,9 +5651,12 @@ export interface components {
         };
         /**
          * PublicFlightRequest
-         * @description A website flight booking (B19, D43). It is saved as a request: nothing is held or ticketed, no PNR is given and no
-         *     payment is taken here. The gateway reprices the fare itself (the price is never taken from the page); staff confirm
-         *     the fare and payment with the customer, then book and issue from the admin.
+         * @description A website flight booking (B19, D43). The gateway reprices the fare itself (the price is never taken from the page).
+         *     With PUBLIC_FLIGHT_BOOKING_ENABLED off, or for a restricted airline (D32), or when booking is off for the fare's
+         *     provider, it is saved as a request: nothing is held or ticketed, no PNR is given and no payment is taken; staff
+         *     confirm the fare and payment with the customer. Otherwise the fare is held at the supplier and paid by
+         *     `payment_method` (card: PayFast, then issued automatically when ticketing is on, D48; bank transfer and JazzCash:
+         *     held until staff verify the money and issue by hand, D49).
          */
         PublicFlightRequest: {
             /** @description Name, phone (code and number) and email: all required. */
@@ -5583,6 +5668,13 @@ export interface components {
             fare_ids: string[];
             /** Passengers */
             passengers: components["schemas"]["HoldPassenger"][];
+            /**
+             * Payment Method
+             * @description Used when the fare is held (see above). card: PayFast online. bank_transfer / jazzcash: staff verify the payment and issue. book_only: held now, paid later by arrangement with Travelian's team. Nothing but a verified card payment is ever issued automatically.
+             * @default card
+             * @enum {string}
+             */
+            payment_method: "card" | "bank_transfer" | "jazzcash" | "book_only";
             /**
              * Search Id
              * @description From POST /v1/public/flights/search.
@@ -6288,6 +6380,12 @@ export interface components {
              * @description From POST /v1/admin/uploads (purpose payment_qr).
              */
             qr_asset_key?: string | null;
+            /**
+             * Remove Qr
+             * @description Remove the QR image (customers stop seeing it at checkout). Ignored with qr_asset_key.
+             * @default false
+             */
+            remove_qr: boolean;
         };
         /** UserAdminEvent */
         UserAdminEvent: {
@@ -7002,14 +7100,14 @@ export interface operations {
                 date_type?: "created";
                 /** @description Booking ID or PNR. */
                 q?: string | null;
-                booking_status?: ("held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested") | null;
+                booking_status?: ("held" | "pending_payment" | "payment_received" | "confirmed" | "ticket_issued" | "cancelled" | "expired" | "hold_unrecorded" | "requested" | "paid_not_ticketed" | "paid_issuance_pending") | null;
                 payment_status?: ("paid" | "unpaid" | "part_paid") | null;
                 issuance_status?: ("not_issued" | "requested" | "processing" | "issued" | "unknown") | null;
                 /** @description Requires the supplier names permission. */
                 provider?: string | null;
                 agency?: string | null;
                 /** @description List only the rows this card counts. */
-                card?: ("confirmed" | "on_hold" | "cancelled" | "unpaid" | "expiring_soon" | "awaiting_issuance" | "hold_deadlines" | "payment_pending") | null;
+                card?: ("confirmed" | "on_hold" | "cancelled" | "unpaid" | "expiring_soon" | "awaiting_issuance" | "hold_deadlines" | "payment_pending" | "paid_not_issued") | null;
                 limit?: number;
                 offset?: number;
             };
@@ -14362,6 +14460,53 @@ export interface operations {
             };
         };
     };
+    flight_payment_options_v1_public_flights_payment_options_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlightPaymentQuery"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlightPaymentOptions"];
+                };
+            };
+            /** @description The search expired. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too many requests. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     request_flight_v1_public_flights_requests_post: {
         parameters: {
             query?: never;
@@ -14407,6 +14552,13 @@ export interface operations {
             };
             /** @description Too many bookings. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The fare couldn't be held; nothing was charged. */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };

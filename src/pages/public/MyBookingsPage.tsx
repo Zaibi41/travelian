@@ -19,9 +19,14 @@ function statusClass(status: BookingRecord["status"]) {
 }
 
 // Gateway booking state → this page's statuses.
-function fromGateway(view: PublicBooking): Partial<BookingRecord> {
+function fromGateway(view: PublicBooking, booking: BookingRecord): Partial<BookingRecord> {
+  // A paid flight that isn't ticketed yet is "payment received", never "confirmed" (D48): "processing" means the gateway
+  // is issuing it, "confirmed" that Travelian's team issues it.
+  const paidFlight = booking.type === "flight" && view.payment_status === "paid"
+    && (view.status === "processing" || view.status === "confirmed" || view.status === "paid_not_ticketed");
   const status: BookingRecord["status"] = view.status === "requested" ? "requested"
     : view.status === "issued" ? "ticket_issued"
+    : paidFlight ? "payment_received"
     : view.status === "confirmed" ? "confirmed"
     : view.status === "expired" ? "expired"
     : view.status === "released" ? "cancelled"
@@ -30,9 +35,19 @@ function fromGateway(view: PublicBooking): Partial<BookingRecord> {
     status,
     paymentStatus: view.payment_status === "paid" ? "paid" : "unpaid",
     ticketStatus: view.status === "issued" ? "issued" : "not_issued",
+    // "Issuance pending" only while the hold is valid; once it is lost the team contacts the customer.
+    issuance: paidFlight ? (view.status === "processing" ? "in_progress" : view.status === "paid_not_ticketed" ? "contact" : "pending") : undefined,
+    // The airline's own PNR, only once the gateway has the issued ticket (never made up on this page).
+    pnr: view.status === "issued" && view.final_pnr ? view.final_pnr : booking.pnr,
     holdExpiresAt: view.hold_expires_at,
   };
 }
+
+const ISSUANCE_NOTE = {
+  in_progress: "Payment received. Issuance in progress: we'll notify you when your ticket is ready.",
+  pending: "Payment received. Issuance pending: Travelian's team will issue your ticket and notify you.",
+  contact: "Payment received. Our team will contact you shortly about your booking.",
+} as const;
 
 /** After PayFast: let the gateway verify what PayFast sent back, then refresh every gateway booking's status. */
 async function syncGatewayBookings() {
@@ -48,14 +63,18 @@ async function syncGatewayBookings() {
     }
     window.history.replaceState(null, "", window.location.pathname);
   }
+  let issuing = false;
   for (const booking of listBookings().filter((item) => item.gateway)) {
     try {
       const view = await getPublicBooking(booking.gateway!.reference, booking.gateway!.token);
-      updateBooking(booking.id, fromGateway(view));
+      const changes = fromGateway(view, booking);
+      updateBooking(booking.id, changes);
+      issuing ||= changes.issuance === "in_progress";
     } catch {
       // keep the last known status
     }
   }
+  return issuing;
 }
 
 function statusLabel(status: BookingRecord["status"]) {
@@ -70,10 +89,17 @@ export default function MyBookingsPage() {
 
   useEffect(() => {
     refresh();
-    void syncGatewayBookings();
+    // While the gateway is issuing a paid flight, check again a few times so the ticket shows without a reload.
+    let checks = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const sync = () => void syncGatewayBookings().then((issuing) => {
+      refresh();
+      if (issuing && checks++ < 6) timer = setTimeout(sync, 10000);
+    });
+    sync();
     const handler = () => refresh();
     window.addEventListener("travelian:bookings:updated", handler);
-    return () => window.removeEventListener("travelian:bookings:updated", handler);
+    return () => { window.removeEventListener("travelian:bookings:updated", handler); if (timer) clearTimeout(timer); };
   }, []);
 
   const handleCancel = (id: string) => {
@@ -138,6 +164,9 @@ export default function MyBookingsPage() {
                         <p className="text-xs text-muted-foreground mt-0.5 font-mono">
                           {b.gateway && b.pnr ? <>PNR: {b.pnr} <CopyPnr pnr={b.pnr} className="h-5 w-5" /> · </> : null}{b.id}
                         </p>
+                        {b.gateway && b.status === "payment_received" && b.issuance && (
+                          <p role="status" className="text-xs text-muted-foreground mt-1">{ISSUANCE_NOTE[b.issuance]}</p>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">

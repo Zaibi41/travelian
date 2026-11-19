@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { HelmetProvider } from "react-helmet-async";
 import { LocaleProvider } from "@/contexts/LocaleContext";
 
@@ -46,6 +46,9 @@ function renderAdmin() {
 }
 
 describe("admin legacy flight results", () => {
+  // The airport fields lazy-load the large airports dataset on first render (AirportCombobox). Loaded here, once, so the
+  // first test's 4 s wait measures the page, not ~3.5 s of loading that dataset (it overran under a full parallel run).
+  beforeAll(async () => { await import("@/data/airports"); }, 30_000);
   beforeEach(() => { vi.clearAllMocks(); newSearch(); });
 
   it("has no 0–700 price range before results, then starts from the results", async () => {

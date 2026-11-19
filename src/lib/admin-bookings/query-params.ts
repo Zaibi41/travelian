@@ -18,10 +18,13 @@ export interface BookingsFilters {
   page: number;
 }
 
-const BOOKING_STATUSES: BookingStatus[] = ["held", "pending_payment", "payment_received", "confirmed", "ticket_issued", "cancelled", "expired"];
+// "Paid, issuance pending" and "Paid, not ticketed" added 19 Nov 2026 (approved spec change).
+const BOOKING_STATUSES: BookingStatus[] = ["held", "pending_payment", "payment_received", "paid_issuance_pending", "paid_not_ticketed", "confirmed",
+  "ticket_issued", "cancelled", "expired"];
 const PAYMENT_STATUSES: PaymentStatus[] = ["paid", "part_paid", "unpaid"];
 const ISSUANCE_STATUSES: IssuanceStatus[] = ["not_issued", "requested", "processing", "issued", "unknown"];
-const CARDS: BookingCard[] = ["confirmed", "on_hold", "cancelled", "unpaid", "expiring_soon", "awaiting_issuance", "hold_deadlines", "payment_pending"];
+const CARDS: BookingCard[] = ["confirmed", "on_hold", "cancelled", "unpaid", "expiring_soon", "awaiting_issuance", "hold_deadlines", "payment_pending",
+  "paid_not_issued"];
 
 const pick = <T extends string>(value: string | null, allowed: T[]) => (allowed.includes(value as T) ? (value as T) : undefined);
 const text = (value: string | null) => value?.trim() || undefined;

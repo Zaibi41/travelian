@@ -15,7 +15,7 @@ import { Link, useSearchParams } from "react-router-dom";
 // SeatMap is intentionally paused in the UI for now. Keep the component available for the future seat-selection phase.
 // import { SeatMap } from "@/components/booking/SeatMap";
 import { saveServerBooking } from "@/lib/booking-api";
-import { bookGroupFare, getPaymentMethods, requestPublicFlight, startPayFastCheckout, PublicBookingError, type PaymentMethods } from "@/lib/public-booking";
+import { bookGroupFare, getFlightPaymentOptions, getPaymentMethods, requestPublicFlight, startPayFastCheckout, PublicBookingError, type FlightPaymentOptions, type PaymentMethods } from "@/lib/public-booking";
 import { BankAccounts, HoldCountdown } from "@/components/public/BankTransferDetails";
 import { saveBooking, saveGatewayBooking, type BookingRecord, type BookingTraveler } from "@/lib/booking-store";
 import { submitHostedPayment } from "@/lib/payment-api";
@@ -277,9 +277,22 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const gatewayFareIds = (params.get("fareIds") || "").split(",").map((id) => id.trim()).filter(Boolean);
   const gatewayFlight = Boolean(gatewaySearchId && gatewayFareIds.length);
   // D45: card / 1Link / bank / JazzCash are offered only where the gateway can actually take that payment for this
-  // booking (today: group fares). Everything else is a request: no payment option, Travelian contacts the customer.
+  // booking: group fares, and live flight fares once the gateway holds them (methods.flights). Everything else is a
+  // request: no payment option, Travelian contacts the customer.
+  // Flights: the gateway says per fare whether it is held and which methods it takes (no card where issuing isn't wired).
+  const [flightOptions, setFlightOptions] = useState<FlightPaymentOptions | null>(null);
+  const fareIdsKey = gatewayFareIds.join(",");
+  useEffect(() => {
+    if (!gatewayFlight || !methods?.flights) { setFlightOptions(null); return; }
+    const controller = new AbortController();
+    getFlightPaymentOptions(gatewaySearchId, fareIdsKey.split(","), controller.signal).then(setFlightOptions).catch(() => setFlightOptions(null));
+    return () => controller.abort();
+  }, [gatewayFlight, gatewaySearchId, fareIdsKey, methods?.flights]);
+  const flightPayable = gatewayFlight && Boolean(flightOptions?.held);
   const paymentOptions = groupTicketId ? {
     card: Boolean(methods?.card), bank: Boolean(methods?.bank_transfer), wallet: Boolean(methods?.jazzcash),
+  } : flightPayable ? {
+    card: Boolean(flightOptions?.card), bank: Boolean(flightOptions?.bank_transfer), wallet: Boolean(flightOptions?.jazzcash),
   } : { card: false, bank: false, wallet: false };
   const canPayHere = paymentOptions.card || paymentOptions.bank || paymentOptions.wallet;
   const firstMethod = paymentOptions.card ? "card" : paymentOptions.bank ? "bank" : paymentOptions.wallet ? "wallet" : "";
@@ -465,7 +478,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
   const handlePay = async () => {
     setPayConfirmOpen(false);
-    const online = Boolean(groupTicketId); // only gateway bookings can be paid online (verified by the gateway)
+    const online = Boolean(groupTicketId) || flightPayable; // only gateway bookings can be paid online (verified by the gateway)
     const saved = await persistBooking({
       status: online ? "pending_payment" : "requested",
       paymentMethod,
@@ -514,9 +527,10 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
     }));
   };
 
-  // Live flight fares: sent to the gateway as a booking request (B19, D43, D45). The gateway reprices the fare, saves the
-  // customer and travelers and alerts Travelian's team. Nothing is held or ticketed, no PNR is shown, nothing is charged.
-  const persistGatewayFlightRequest = async (): Promise<BookingRecord | null> => {
+  // Live flight fares (B19, D43, D45, D48, D49). The gateway reprices the fare and saves the customer and travelers. With
+  // website flight booking on it holds the fare at the airline (card then goes to PayFast; bank transfer / JazzCash wait for
+  // Travelian to confirm the money); otherwise it is a request. This page never confirms, tickets or shows a PNR itself.
+  const persistGatewayFlightRequest = async (paymentMethod: string): Promise<BookingRecord | null> => {
     if (savedBooking?.gateway) return savedBooking;
     if (!emailValid) {
       setStep(1);
@@ -530,20 +544,24 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
       const result = await requestPublicFlight({
         searchId: gatewaySearchId, fareIds: gatewayFareIds, travelers,
         contact: { firstName: lead?.firstName || "", lastName: lead?.lastName || "", phoneCode, phone, email: email.trim() },
+        paymentMethod: paymentMethod === "bank" ? "bank_transfer" : paymentMethod === "wallet" ? "jazzcash" : paymentMethod === "hold" ? "book_only" : "card",
       });
       const total = result.booking.total.amount_minor / 100;
+      const live = result.booking.live;
       const saved = saveGatewayBooking({
-        type: "flight", status: "requested",
+        type: "flight", status: live ? "held" : "requested", holdExpiresAt: live ? result.booking.hold_expires_at : undefined,
         flight: { airline: ctxAirline, flightNumber: ctxFlightNo, from: ctxFrom, fromCode: ctxFrom, to: ctxTo, toCode: ctxTo, date: ctxDate, cabin: ctxCabin },
         travelers,
         contact: { email: email.trim(), phone: `${phoneCode}${phone}`, altPhone: altPhone ? `${altPhoneCode}${altPhone}` : undefined },
-        addons: [], paymentMethod: "request", paymentStatus: "unpaid", ticketStatus: "not_issued",
+        addons: [], paymentMethod: live ? paymentMethod : "request", paymentStatus: "unpaid", ticketStatus: "not_issued",
         pricing: { base: total, addons: 0, taxes: 0, total, currency: result.booking.total.currency },
-        gateway: { reference: result.reference, token: result.access_token, live: false },
+        gateway: { reference: result.reference, token: result.access_token, live },
       }, result.reference);
       setSavedBooking(saved);
       setStep(4);
-      toast({ title: "Booking request received", description: `Reference ${result.reference}. Travelian will confirm the fare and arrange payment with you.` });
+      toast(live
+        ? { title: "Fare held", description: `Booking ${result.reference} is held. Pay before the time limit to keep it.` }
+        : { title: "Booking request received", description: `Reference ${result.reference}. Travelian will confirm the fare and arrange payment with you.` });
       return saved;
     } catch (error) {
       const message = error instanceof PublicBookingError ? error.message : "The booking request couldn't be sent. Please try again.";
@@ -622,7 +640,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
       return null;
     }
     if (groupTicketId) return persistGatewayGroupBooking(paymentMethod);
-    if (gatewayFlight) return persistGatewayFlightRequest();
+    if (gatewayFlight) return persistGatewayFlightRequest(paymentMethod);
     if (isFlight) {
       // A flight without the gateway's fare reference can't be priced or requested: never save one from the page's own
       // price or show it as booked (B19).
@@ -1106,6 +1124,13 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     </div>
                   ) : null}
 
+                  {paymentMethod === "wallet" && methods?.jazzcash_accounts?.length ? (
+                    <div className="rounded-xl border border-primary/10 bg-accent/30 p-4 text-sm text-muted-foreground space-y-3">
+                      <p>Your seats are held at the airline while you send the amount by JazzCash. Travelian confirms the payment and then issues your tickets. Pay before the hold time ends, or the booking expires.</p>
+                      <BankAccounts accounts={methods.jazzcash_accounts} />
+                    </div>
+                  ) : null}
+
                   {canPayHere && paymentMethod === "1link" && (
                     <div className="rounded-xl border border-primary/10 bg-accent/30 p-4 text-sm text-muted-foreground">
                       You will be redirected to PayFast 1Link checkout. Your booking will stay pending until payment is confirmed.
@@ -1169,6 +1194,13 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                       <p className="text-sm font-semibold text-foreground">Pay by bank transfer</p>
                       <p className="text-sm text-muted-foreground">Transfer {savedBooking.pricing.currency === "PKR" ? "Rs" : savedBooking.pricing.currency} {savedBooking.pricing.total.toLocaleString("en-PK")} and use {savedBooking.id} as the reference. Travelian confirms the payment and then issues your tickets.</p>
                       <BankAccounts accounts={methods.bank_accounts} />
+                    </div>
+                  ) : null}
+                  {savedBooking.gateway?.live && savedBooking.paymentMethod === "wallet" && methods?.jazzcash_accounts?.length ? (
+                    <div className="mx-auto mb-4 max-w-lg space-y-2 text-left">
+                      <p className="text-sm font-semibold text-foreground">Pay by JazzCash</p>
+                      <p className="text-sm text-muted-foreground">Send {savedBooking.pricing.currency === "PKR" ? "Rs" : savedBooking.pricing.currency} {savedBooking.pricing.total.toLocaleString("en-PK")} by JazzCash and use {savedBooking.id} as the reference. Travelian confirms the payment and then issues your tickets.</p>
+                      <BankAccounts accounts={methods.jazzcash_accounts} />
                     </div>
                   ) : null}
                   <div className="bg-gradient-to-br from-primary/5 to-accent border rounded-2xl p-6 text-left max-w-lg mx-auto">

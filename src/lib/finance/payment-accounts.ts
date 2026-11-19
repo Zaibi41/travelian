@@ -20,6 +20,8 @@ export interface BankDetails {
   account_number?: string | null;
   iban?: string | null;
   qr_asset_key?: string | null;
+  /** Edit only: remove the QR image (customers stop seeing it at checkout). */
+  remove_qr?: boolean;
 }
 
 export const addReceivingAccount = (method: PaymentMethod, label: string, details: BankDetails = {}, options?: GatewayOptions) =>
@@ -38,7 +40,7 @@ export function methodFromParam(value: string | null): PaymentMethod | null {
 }
 
 export const updateReceivingAccount = (accountId: string, details: BankDetails, options?: GatewayOptions) =>
-  gatewayPatch("/v1/admin/finance/payment-accounts/{account_id}", details, {
+  gatewayPatch("/v1/admin/finance/payment-accounts/{account_id}", { ...details, remove_qr: details.remove_qr ?? false }, {
     ...options, pathParams: { account_id: accountId }, unavailableMessage: "The account couldn't be updated right now. Nothing was changed.",
   });
 

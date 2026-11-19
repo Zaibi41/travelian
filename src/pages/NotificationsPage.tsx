@@ -128,10 +128,14 @@ export default function NotificationsPage() {
             <ul className="mt-2 divide-y">
               {alerts.items.map(alert => {
                 const d = alert.details as Record<string, string | null>;
+                // Red alert: a customer paid by card and has no ticket. Red stripe plus the word "Urgent" (never colour alone).
                 return (
-                  <li key={alert.id} className="flex flex-col gap-1 py-2.5">
+                  <li key={alert.id} className={`flex flex-col gap-1 py-2.5 ${alert.urgent ? "-mx-2 rounded-md border-l-4 border-l-status-critical bg-status-critical-soft px-2" : ""}`}>
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <Link to={`/admin/bookings?search=${encodeURIComponent(alert.reference || "")}`} className="min-w-0 truncate font-semibold text-teal hover:underline">{alert.title}</Link>
+                      <span className="flex min-w-0 items-baseline gap-2">
+                        {alert.urgent && <span className="shrink-0 rounded bg-destructive px-1.5 text-label font-semibold uppercase text-destructive-foreground">Urgent</span>}
+                        <Link to={`/admin/bookings?search=${encodeURIComponent(alert.reference || "")}`} className={`min-w-0 truncate font-semibold hover:underline ${alert.urgent ? "text-status-critical-text" : "text-teal"}`}>{alert.title}</Link>
+                      </span>
                       <time className="text-helper text-muted-foreground" dateTime={alert.created_at}>{new Date(alert.created_at).toLocaleString()}</time>
                     </div>
                     <p className="text-body text-muted-foreground">
@@ -139,7 +143,16 @@ export default function NotificationsPage() {
                       {d.pnr ? <>PNR {d.pnr} <CopyPnr pnr={d.pnr} /></> : "No supplier hold"}
                       {d.hold_expires_at ? ` · expires ${new Date(d.hold_expires_at).toLocaleString()}` : null}
                     </p>
-                    {d.note && <p className="text-helper text-muted-foreground">{d.note}</p>}
+                    {alert.urgent ? (
+                      <dl className="grid grid-cols-1 gap-x-4 gap-y-0.5 text-helper sm:grid-cols-2">
+                        {([["Amount received", d.amount], ["PayFast transaction", d.payfast_transaction_id], ["Supplier", d.supplier],
+                           ["Hold status", d.hold_status], ["Travel date", d.travel_date], ["Reason", d.reason]] as const)
+                          .filter(([, value]) => value).map(([label, value]) => (
+                            <div key={label} className="flex min-w-0 gap-1"><dt className="shrink-0 text-muted-foreground">{label}:</dt><dd className="min-w-0 break-words text-foreground">{value}</dd></div>
+                          ))}
+                      </dl>
+                    ) : null}
+                    {d.note && <p className={`text-helper ${alert.urgent ? "font-semibold text-foreground" : "text-muted-foreground"}`}>{alert.urgent ? "Booked and payment received. Confirm with supplier, issue the ticket, and share it with the customer." : d.note}</p>}
                   </li>
                 );
               })}

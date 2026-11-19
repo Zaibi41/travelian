@@ -117,7 +117,7 @@ function Cards({ cards, flights, filters }: { cards: BookingList["cards"]; fligh
     const next = serializeBookingsFilters({ ...filters, card: card === filters.card ? undefined : card, page: 1 }).toString();
     return next ? `?${next}` : "?";
   };
-  const card = (name: BookingCard, label: string, value: number, severity?: "action") => (
+  const card = (name: BookingCard, label: string, value: number, severity?: "action" | "critical") => (
     <StatusKpiCard
       label={label}
       value={count(value)}
@@ -137,6 +137,8 @@ function Cards({ cards, flights, filters }: { cards: BookingList["cards"]; fligh
         {cards.awaiting_issuance != null && card("awaiting_issuance", "Awaiting issuance", cards.awaiting_issuance, "action")}
         {cards.payment_pending != null && card("payment_pending", "Payment pending", cards.payment_pending, "action")}
         {card("expiring_soon", expiringLabel, cards.expiring_soon, "action")}
+        {/* Paid by the customer, no ticket: Paid, issuance pending + Paid, not ticketed (approved 19 Nov 2026). */}
+        {cards.paid_not_issued != null && card("paid_not_issued", "Paid, not ticketed", cards.paid_not_issued, "critical")}
       </div>
     );
   }
