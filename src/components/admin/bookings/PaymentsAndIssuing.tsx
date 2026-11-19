@@ -321,7 +321,9 @@ function IssueTicket({ booking, checklist, loading, error, onResult }: {
             </Notice>
           )}
           {!checklist.ticketing_enabled && status !== "issued" && (
-            <Notice title="Ticketing is turned off">Tickets can't be issued until ticketing is turned on. Payments and issuance requests still work.</Notice>
+            <Notice title="Tickets can't be issued from Travelian for this booking">
+              {checklist.ticketing_note ?? "Ticketing is switched off for this supplier. Payments and issuance requests still work."}
+            </Notice>
           )}
 
           {admin && (
