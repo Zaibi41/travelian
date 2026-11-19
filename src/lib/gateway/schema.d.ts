@@ -354,7 +354,8 @@ export interface paths {
         put?: never;
         /**
          * Verify Issuance
-         * @description For an unknown issuance: check the PNR with the supplier again (read-only) and settle it if clear.
+         * @description Check with supplier (read-only) after an unknown or failed issuance: tickets found -> recorded; no ticket and
+         *     nothing paid -> safe to issue again; unclear -> unknown. Never sends a ticketing request.
          */
         post: operations["verify_issuance_v1_admin_bookings__booking_id__issuance_verify_post"];
         delete?: never;
@@ -5214,6 +5215,37 @@ export interface components {
             scopes: string[];
         };
         /**
+         * IssuanceAttempt
+         * @description The last issuing attempt or supplier check, with its real reason in plain words.
+         */
+        IssuanceAttempt: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "issued" | "not_issued" | "unknown" | "aborted" | "checked";
+            /**
+             * Pnr Status
+             * @description The PNR status code the supplier showed afterwards (e.g. OK, BK).
+             */
+            pnr_status?: string | null;
+            /**
+             * Reason
+             * @description What happened, in plain words (no supplier names).
+             */
+            reason: string;
+            /**
+             * Supplier Answer
+             * @description What the supplier answered to the ticketing request, in plain words.
+             */
+            supplier_answer?: string | null;
+        };
+        /**
          * IssuanceChecklist
          * @description What stands between this booking and a ticket. Supplier fields only with the cost and margin permission.
          */
@@ -5225,6 +5257,12 @@ export interface components {
              * @description Why issuing (or requesting) isn't possible now; empty when it is.
              */
             blockers: string[];
+            /**
+             * Can Check
+             * @description Check with supplier is available (unknown or failed issuance; read-only).
+             * @default false
+             */
+            can_check: boolean;
             /**
              * Can Issue
              * @description This viewer may issue now: permission, ticketing on, no blockers.
@@ -5241,6 +5279,8 @@ export interface components {
              * @enum {string}
              */
             issuance_status: "not_issued" | "requested" | "processing" | "issued" | "unknown";
+            /** @description The last issuing attempt or supplier check, with its reason. */
+            last_attempt?: components["schemas"]["IssuanceAttempt"] | null;
             /** @description Only with the cost and margin permission. */
             margin?: components["schemas"]["BookingMoney"] | null;
             /** @description Only with the cost and margin permission. */
@@ -5524,7 +5564,7 @@ export interface components {
             bank_transfer: boolean;
             /**
              * Card
-             * @description Card / 1Link through PayFast: only when PayFast is on production (never UAT test payments).
+             * @description Card / 1Link through PayFast: on production PayFast, or UAT with PAYFAST_ALLOW_UAT (testing).
              */
             card: boolean;
             /**
