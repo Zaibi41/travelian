@@ -7,8 +7,12 @@ import { publicFlightCalendar } from "@/lib/public-booking";
 /** start: the first date (default today); the gateway checks unknown dates from there. */
 export interface FareRoute { from: string; to: string; adults: number; cabin: string; start?: string }
 
-/** The flight fare calendar while the picker is open (real fares only; dates being checked fill in). */
-export function useFlightFares(open: boolean, route?: FareRoute) {
+type CalendarFetch = (origin: string, destination: string, adults: number, cabin: string, signal?: AbortSignal, start?: string) =>
+  Promise<{ days: CalendarDay[]; pending: boolean }>;
+
+/** The flight fare calendar while the picker is open (real fares only; dates being checked fill in). `fetch`: the
+ *  website's call by default; admin Search passes its signed-in one (same calendar). */
+export function useFlightFares(open: boolean, route?: FareRoute, fetch: CalendarFetch = publicFlightCalendar) {
   const [days, setDays] = useState<CalendarDay[]>([]);
   const [checking, setChecking] = useState(false);
   const ready = Boolean(route && /^[A-Z]{3}$/.test(route.from) && /^[A-Z]{3}$/.test(route.to) && route.from !== route.to);
@@ -19,7 +23,7 @@ export function useFlightFares(open: boolean, route?: FareRoute) {
     let tries = 0;
     let timer: number | undefined;
     const load = () => {
-      publicFlightCalendar(route!.from, route!.to, route!.adults, route!.cabin, controller.signal, route!.start)
+      fetch(route!.from, route!.to, route!.adults, route!.cabin, controller.signal, route!.start)
         .then((calendar) => {
           setDays(calendar.days);
           setChecking(calendar.pending);

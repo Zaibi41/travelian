@@ -15,6 +15,7 @@ import { LabeledSelect } from "@/components/admin/ui/LabeledSelect";
 import { AirportCombobox } from "@/components/admin/ui/AirportCombobox";
 import { RouteRow, SEARCH_FIELD, SearchSubmitButton } from "@/components/admin/ui/search-form";
 import { DayFirstDateField } from "@/components/admin/ui/DayFirstDateField";
+import { useFlightFares, type FareRoute } from "@/hooks/use-flight-fares";
 import { formatDay, todayIso } from "@/lib/admin-search/date-display";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GatewayError } from "@/lib/gateway/client";
@@ -22,7 +23,7 @@ import { formatMoney } from "@/lib/admin-bookings/format";
 import { cn } from "@/lib/utils";
 import {
   DEFAULT_FILTERS, airlineLabel, baggageOptions, filterFlights, formatDuration, isCompleteFlightSearch, isRefundable, parseFlightSearch,
-  SORT_OPTIONS, priceBands, searchFlights, stopsLabel, writeFlightSearch,
+  SORT_OPTIONS, adminFlightCalendar, priceBands, searchFlights, stopsLabel, writeFlightSearch,
   type FareView, type FlightSearch, type FlightSearchView, type FlightView, type JourneyView, type ResultFilters,
 } from "@/lib/admin-search/flights";
 
@@ -152,7 +153,8 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
                 onSwap={() => setDraft({ ...draft, from: draft.to, to: draft.from })}
               />
             </div>
-            <div data-size="date"><DateInput id="flight-date" label="Departure date" value={draft.date} min={todayIso()} onChange={date => setDraft({ ...draft, date })} /></div>
+            <div data-size="date"><DateInput id="flight-date" label="Departure date" value={draft.date} min={todayIso()} onChange={date => setDraft({ ...draft, date })}
+              fareRoute={draft.from && draft.to ? { from: draft.from, to: draft.to, adults: draft.adults, cabin: "economy" } : undefined} /></div>
             {draft.trip === "roundtrip" && (
               <div data-size="date"><DateInput id="flight-return" label="Return date" value={draft.returnDate} min={draft.date} onChange={returnDate => setDraft({ ...draft, returnDate })} /></div>
             )}
@@ -187,11 +189,15 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
   );
 }
 
-function DateInput({ id, label, value, min, onChange }: { id: string; label: string; value?: string; min?: string; onChange: (value?: string) => void }) {
+/** fareRoute (Departure date, as on the website): the website's fare calendar opens in the popup. */
+function DateInput({ id, label, value, min, onChange, fareRoute }: { id: string; label: string; value?: string; min?: string; onChange: (value?: string) => void; fareRoute?: FareRoute }) {
+  const [open, setOpen] = useState(false);
+  const fares = useFlightFares(open, fareRoute, adminFlightCalendar);
   return (
     <div className="relative flex min-w-0 flex-col gap-1">
       <label htmlFor={id} className="text-label font-medium text-muted-foreground">{label}</label>
-      <DayFirstDateField id={id} value={value} min={min} variant="search" calendarTitle={`Select ${label.toLowerCase()}`} onChange={onChange} />
+      <DayFirstDateField id={id} value={value} min={min} variant="search" calendarTitle={`Select ${label.toLowerCase()}`} onChange={onChange}
+        onOpenChange={setOpen} fares={fares.ready ? { days: fares.days, checking: fares.checking, anyDate: true } : undefined} />
     </div>
   );
 }

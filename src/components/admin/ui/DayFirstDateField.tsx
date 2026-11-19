@@ -6,6 +6,7 @@ import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/compon
 import { formatDay, parseDayFirst } from "@/lib/admin-search/date-display";
 import { cn } from "@/lib/utils";
 import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/components/ui/calendar-popup";
+import { GroupFareCalendar, type CalendarDay } from "@/components/GroupFareCalendar";
 
 interface DayFirstDateFieldProps {
   id: string;
@@ -29,16 +30,25 @@ interface DayFirstDateFieldProps {
   placeholder?: string;
   /** Title of the search calendar popup, e.g. "Select departure date". */
   calendarTitle?: string;
+  /** Search variant: the website's fare calendar in the popup (prices per date). anyDate: every future date can be
+   *  picked (flights); otherwise only dates with fares (group). Without days the plain calendar shows. */
+  fares?: { days: CalendarDay[]; checking?: boolean; anyDate?: boolean };
+  /** The popup opened or closed (the flight fare calendar loads only while it's open). */
+  onOpenChange?: (open: boolean) => void;
 }
 
 const iso = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 /** A date shown day first ("24 Nov 2026") whatever the browser language. Type it (24/11/2026,
  *  24 Nov 2026) or pick it from the calendar; the value stays ISO. */
-export function DayFirstDateField({ id, value, onChange, min, max, disabled, invalid, describedBy, fromYear = 2024, toYear = 2035, className, inputClassName, variant = "default", placeholder, calendarTitle = "Select a date" }: DayFirstDateFieldProps) {
+export function DayFirstDateField({ id, value, onChange, min, max, disabled, invalid, describedBy, fromYear = 2024, toYear = 2035, className, inputClassName, variant = "default", placeholder, calendarTitle = "Select a date", fares, onOpenChange }: DayFirstDateFieldProps) {
   const [text, setText] = useState(formatDay(value));
   const [unreadable, setUnreadable] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpenState] = useState(false);
+  const setOpen = (next: boolean) => {
+    setOpenState(next);
+    onOpenChange?.(next);
+  };
   useEffect(() => {
     setText(formatDay(value));
     setUnreadable(false);
@@ -120,6 +130,13 @@ export function DayFirstDateField({ id, value, onChange, min, max, disabled, inv
             <CalendarPopupTrigger asChild>{iconButton}</CalendarPopupTrigger>
           </div>
           <CalendarPopupContent title={calendarTitle}>
+            {fares && (fares.anyDate || fares.days.length > 0) ? (
+              // The website's fare calendar (src/components/GroupFareCalendar), sized as on the website's search.
+              <div className="w-[min(46rem,calc(100vw-2.5rem))] overflow-y-auto p-3 sm:p-5">
+                <GroupFareCalendar days={fares.days} anyDate={fares.anyDate} checking={fares.checking} selected={value}
+                  onPick={date => { if (!min || date >= min) { onChange(date); setOpen(false); } }} />
+              </div>
+            ) : (
             <Calendar
               size="large"
               mode="single"
@@ -132,6 +149,7 @@ export function DayFirstDateField({ id, value, onChange, min, max, disabled, inv
               initialFocus
               className="pointer-events-auto p-3 sm:p-5"
             />
+            )}
           </CalendarPopupContent>
         </CalendarPopup>
         {unreadable && <p id={errorId} className="text-label text-status-critical-text">Enter the date day first, e.g. 24 Nov 2026.</p>}
