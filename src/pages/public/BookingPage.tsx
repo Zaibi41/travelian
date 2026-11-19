@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AdvancedDatePicker } from "@/components/ui/advanced-date-picker";
+import { PassengerFields } from "@/components/booking/PassengerFields";
+import { createPassengerDetails, passengerComplete, passengerErrors, type PassengerDetails } from "@/lib/passenger-details";
 import { CountryCodePicker } from "@/components/ui/country-code-picker";
-import { CountryPicker } from "@/components/ui/country-picker";
 import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Search, Info } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 // SeatMap is intentionally paused in the UI for now. Keep the component available for the future seat-selection phase.
@@ -46,7 +46,6 @@ const steps = [
 
 const addons: Array<{ id: string; name: string; desc: string; price: number; popular?: boolean }> = [];
 
-const currentYear = new Date().getFullYear();
 const RATE_PER_USD: Record<string, number> = {
   ...Object.fromEntries(CURRENCIES.map((currency) => [currency.code, currency.rate])),
   INR: 83,
@@ -211,6 +210,14 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const ctxFromCode = productCtx.extra?.fromCode || "";
   const ctxToCode = productCtx.extra?.toCode || "";
   const ctxDate = productCtx.extra?.date || format(addDays(new Date(), 14), "MMM dd, yyyy");
+  // The travel date (ISO) when the booking has one: passport expiry must be after it.
+  const travelDateIso = useMemo(() => {
+    const raw = productCtx.extra?.date;
+    if (!raw) return undefined;
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? undefined : format(parsed, "yyyy-MM-dd");
+  }, [productCtx.extra?.date]);
   const ctxCabin = productCtx.extra?.cabin || "Economy";
   const ctxFarePerks = productCtx.extra?.farePerks || [];
   const ctxLayovers = productCtx.extra?.layovers || [];
@@ -311,8 +318,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const walletBalance = isAgency ? 250000 : 1000000;
 
   // B27: each traveler travels on a passport or a Pakistani CNIC / B-form (the gateway accepts both: PSPT or NATI).
-  const usesPassport = (passenger: PassengerForm) => (passenger.docType ?? "passport") === "passport";
-
+  // The fields, order, labels and checks are shared with the admin hold form (lib/passenger-details, PassengerFields).
   const [passengerForms, setPassengerForms] = useState<PassengerForm[]>(() =>
     passengerLabels.map((passenger) => createPassengerForm(passenger.type, passenger.label)),
   );
@@ -343,20 +349,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
     setPassengerForms((current) => current.map((passenger, passengerIndex) => passengerIndex === index ? { ...passenger, ...patch } : passenger));
   };
 
-  const passengerDocValid = (passenger: PassengerForm) => {
-    if (usesPassport(passenger)) return /^[A-Z0-9]{6,12}$/i.test(passenger.docNumber);
-    return /^\d{13}$/.test(passenger.docNumber.replace(/-/g, ""));
-  };
-
-  const passengerComplete = (passenger: PassengerForm) => Boolean(
-    passenger.gender &&
-    passenger.firstName.trim() &&
-    passenger.lastName.trim() &&
-    passenger.dob &&
-    passenger.docNumber.trim() &&
-    passengerDocValid(passenger) &&
-    (!usesPassport(passenger) || passenger.expiryDate),
-  );
 
   const toggleAddon = (id: string) => {
     setSelectedAddons(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -377,22 +369,14 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
     passengerForms.forEach((passenger, index) => {
-      if (!passenger.gender) e[`passenger-${index}-gender`] = "Gender is required";
-      if (!passenger.firstName.trim()) e[`passenger-${index}-firstName`] = "First name is required";
-      if (!passenger.lastName.trim()) e[`passenger-${index}-lastName`] = "Last name is required";
-      if (!passenger.dob) e[`passenger-${index}-dob`] = "Date of birth is required";
-      if (!passenger.docNumber.trim()) e[`passenger-${index}-docNumber`] = `${usesPassport(passenger) ? "Passport" : "CNIC"} number is required`;
-      else if (!passengerDocValid(passenger)) e[`passenger-${index}-docNumber`] = usesPassport(passenger)
-        ? "Enter a valid passport number (6-12 letters/digits)"
-        : "Enter a valid 13-digit CNIC";
-      if (usesPassport(passenger) && !passenger.expiryDate) e[`passenger-${index}-expiryDate`] = "Expiry date is required";
+      for (const [field, message] of Object.entries(passengerErrors(passenger, travelDateIso))) e[`passenger-${index}-${field}`] = message as string;
     });
     if (email.trim() && !emailValid) e.email = "Enter a valid email address";
     if (!phone.trim()) e.phone = "Mobile number is required";
     else if (!phoneValid) e.phone = "Enter a valid numeric phone (6-15 digits)";
     if (!altPhoneValid) e.altPhone = "Enter a valid numeric phone (6-15 digits)";
     return e;
-  }, [passengerForms, email, emailValid, phone, phoneValid, altPhoneValid]);
+  }, [passengerForms, email, emailValid, phone, phoneValid, altPhoneValid, travelDateIso]);
 
   const isStep1Valid = Object.keys(errors).length === 0;
 
@@ -442,7 +426,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
         altPhone?: string;
       };
       if (Array.isArray(draft.passengerForms) && draft.passengerForms.length === passengerLabels.length) {
-        setPassengerForms(draft.passengerForms);
+        setPassengerForms(draft.passengerForms.map((passenger) => ({ ...passenger, dob: draftDay(passenger.dob), expiryDate: draftDay(passenger.expiryDate) })));
       }
       if (draft.email) setEmail(draft.email);
       if (draft.phoneCode) setPhoneCode(draft.phoneCode);
@@ -518,12 +502,12 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
       firstName: passenger.firstName.trim(),
       lastName: passenger.lastName.trim(),
       gender: passenger.gender,
-      dob: passenger.dob ? format(passenger.dob, "yyyy-MM-dd") : undefined,
+      dob: passenger.dob || undefined,
       docType: passenger.docType ?? "passport",
       docNumber: passenger.docNumber,
       nationality: passenger.nationality,
       issuanceCountry: passenger.issuanceCountry,
-      expiryDate: passenger.expiryDate ? format(passenger.expiryDate, "yyyy-MM-dd") : undefined,
+      expiryDate: passenger.expiryDate || undefined,
     }));
   };
 
@@ -792,9 +776,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                 </Card>
 
                 {passengerForms.map((passenger, index) => {
-                  const isComplete = passengerComplete(passenger);
-                  const nameHelperId = `passenger-${index}-name-helper`;
-                  const docHelperId = `passenger-${index}-document-helper`;
+                  const isComplete = passengerComplete(passenger, travelDateIso);
                   return (
                   <Card key={`${passenger.passengerType}-${index}`} className="shadow-card border-0">
                     <CardContent className="p-6">
@@ -811,136 +793,15 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div>
-                          <Label className="text-sm font-medium">Title *</Label>
-                          <Select value={passenger.title} onValueChange={(value) => updatePassenger(index, { title: value })}>
-                            <SelectTrigger className="mt-1.5 h-11 rounded-xl">
-                              <SelectValue placeholder="Select title" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="mr">Mr</SelectItem>
-                              <SelectItem value="ms">Ms</SelectItem>
-                              <SelectItem value="mrs">Mrs</SelectItem>
-                              <SelectItem value="master">Master</SelectItem>
-                              <SelectItem value="miss">Miss</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div data-error-key={`passenger-${index}-gender`}>
-                          <Label className="text-sm font-medium">Gender *</Label>
-                          <Select value={passenger.gender} onValueChange={(value) => updatePassenger(index, { gender: value })}>
-                            <SelectTrigger className="mt-1.5 h-11 rounded-xl">
-                              <SelectValue placeholder="Select gender" />
-                            </SelectTrigger>
-                            <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
-                              <SelectItem value="male">Male</SelectItem>
-                              <SelectItem value="female">Female</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          {touched && errors[`passenger-${index}-gender`] && <p className="mt-1 text-xs text-destructive">{errors[`passenger-${index}-gender`]}</p>}
-                        </div>
-                        <div data-error-key={`passenger-${index}-firstName`}>
-                          <Label className="text-sm font-medium">First Name *</Label>
-                          <Input
-                            placeholder="Given Name"
-                            className="mt-1.5 h-11 rounded-xl"
-                            value={passenger.firstName}
-                            onChange={e => updatePassenger(index, { firstName: e.target.value })}
-                            aria-describedby={nameHelperId}
-                          />
-                          {touched && errors[`passenger-${index}-firstName`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-firstName`]}</p>}
-                        </div>
-                        <div data-error-key={`passenger-${index}-lastName`}>
-                          <Label className="text-sm font-medium">Last Name *</Label>
-                          <Input
-                            placeholder="Surnames"
-                            className="mt-1.5 h-11 rounded-xl"
-                            value={passenger.lastName}
-                            onChange={e => updatePassenger(index, { lastName: e.target.value })}
-                            aria-describedby={nameHelperId}
-                          />
-                          {touched && errors[`passenger-${index}-lastName`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-lastName`]}</p>}
-                        </div>
-                        <p id={nameHelperId} className="md:col-span-2 -mt-2 text-xs text-muted-foreground">
-                          Name must match exactly as shown on your {usesPassport(passenger) ? "passport" : "CNIC"}.
-                        </p>
-
-                        <div data-error-key={`passenger-${index}-dob`}>
-                          <Label className="text-sm font-medium">Date of Birth *</Label>
-                          <div className="mt-1.5">
-                            <AdvancedDatePicker
-                              date={passenger.dob}
-                              onSelect={(date) => updatePassenger(index, { dob: date })}
-                              placeholder="Select date of birth"
-                              fromYear={1925}
-                              toYear={currentYear}
-                              disabled={(d) => d > new Date()}
-                            />
-                          </div>
-                          {touched && errors[`passenger-${index}-dob`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-dob`]}</p>}
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">Document *</Label>
-                          <Select value={passenger.docType ?? "passport"}
-                            onValueChange={(value) => updatePassenger(index, { docType: value as PassengerForm["docType"], docNumber: "", expiryDate: undefined })}>
-                            <SelectTrigger className="mt-1.5 h-11 rounded-xl" aria-label={`Document for ${passenger.label}`}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
-                              <SelectItem value="passport">Passport</SelectItem>
-                              <SelectItem value="cnic">CNIC / B-form (Pakistan)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div data-error-key={`passenger-${index}-docNumber`}>
-                          <Label className="text-sm font-medium">
-                            {usesPassport(passenger) ? "Passport Number *" : "CNIC / B-form Number *"}
-                          </Label>
-                          <Input
-                            placeholder={usesPassport(passenger) ? "e.g. AB1234567" : "e.g. 3520112345671"}
-                            className="mt-1.5 h-11 rounded-xl"
-                            value={passenger.docNumber}
-                            onChange={e => updatePassenger(index, { docNumber: usesPassport(passenger) ? e.target.value.toUpperCase() : e.target.value.replace(/[^\d]/g, "") })}
-                            maxLength={usesPassport(passenger) ? 12 : 13}
-                            aria-describedby={docHelperId}
-                          />
-                          <p id={docHelperId} className="mt-1 text-xs text-muted-foreground">
-                            {usesPassport(passenger) ? "Use the passport number without spaces." : "Use 13 digits without dashes."}
-                          </p>
-                          {touched && errors[`passenger-${index}-docNumber`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-docNumber`]}</p>}
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">Nationality *</Label>
-                          <div className="mt-1.5">
-                            <CountryPicker value={passenger.nationality} onChange={(value) => updatePassenger(index, { nationality: value })} />
-                          </div>
-                        </div>
-                        {usesPassport(passenger) && (
-                          <>
-                            <div>
-                              <Label className="text-sm font-medium">Country of Issuance *</Label>
-                              <div className="mt-1.5">
-                                <CountryPicker value={passenger.issuanceCountry} onChange={(value) => updatePassenger(index, { issuanceCountry: value })} />
-                              </div>
-                            </div>
-                            <div className="md:col-span-2" data-error-key={`passenger-${index}-expiryDate`}>
-                              <Label className="text-sm font-medium">Date of Expiry *</Label>
-                              <div className="mt-1.5">
-                                <AdvancedDatePicker
-                                  date={passenger.expiryDate}
-                                  onSelect={(date) => updatePassenger(index, { expiryDate: date })}
-                                  placeholder="Select expiry date"
-                                  fromYear={currentYear}
-                                  toYear={currentYear + 25}
-                                  disabled={(d) => d < new Date()}
-                                />
-                              </div>
-                              {touched && errors[`passenger-${index}-expiryDate`] && <p className="text-xs text-destructive mt-1">{errors[`passenger-${index}-expiryDate`]}</p>}
-                            </div>
-                          </>
-                        )}
-                      </div>
+                      <PassengerFields
+                        idPrefix={`passenger-${index}`}
+                        value={passenger}
+                        onChange={(patch) => updatePassenger(index, patch)}
+                        travelDate={travelDateIso}
+                        errors={touched ? Object.fromEntries(Object.entries(errors)
+                          .filter(([key]) => key.startsWith(`passenger-${index}-`))
+                          .map(([key, message]) => [key.slice(`passenger-${index}-`.length), message])) : {}}
+                      />
                     </CardContent>
                   </Card>
                   );
@@ -1522,33 +1383,15 @@ function flightNumbersForDisplay(value: string) {
   return String(value || "Flight TBA").replace(/\s*\/\s*/g, " • ");
 }
 
-interface PassengerForm {
-  passengerType: "adult" | "child" | "infant";
-  docType?: "passport" | "cnic";
-  label: string;
-  title: string;
-  firstName: string;
-  lastName: string;
-  gender: string;
-  dob?: Date;
-  docNumber: string;
-  nationality: string;
-  issuanceCountry: string;
-  expiryDate?: Date;
-}
+type PassengerForm = PassengerDetails;
+const createPassengerForm = createPassengerDetails;
 
-function createPassengerForm(passengerType: PassengerForm["passengerType"], label: string): PassengerForm {
-  return {
-    passengerType,
-    label,
-    title: passengerType === "adult" ? "mr" : "master",
-    firstName: "",
-    lastName: "",
-    gender: "",
-    docNumber: "",
-    nationality: "Pakistan",
-    issuanceCountry: "Pakistan",
-  };
+/** A draft date saved by an older version (a Date as a UTC timestamp) or now (ISO day) -> ISO day in local time. */
+function draftDay(value?: string) {
+  if (!value) return undefined;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : format(date, "yyyy-MM-dd");
 }
 
 function ServiceBookingRequest({ productCtx }: { productCtx: ProductCtx }) {

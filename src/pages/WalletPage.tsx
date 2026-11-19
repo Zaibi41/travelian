@@ -12,6 +12,8 @@ import { Label } from "@/components/admin/ui/field";
 import { Textarea } from "@/components/admin/ui/field";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { DatePickerField } from "@/components/ui/date-picker-field";
+import { todayIso } from "@/lib/date-iso";
 
 type DepositMethod = "card" | "1link" | "bank_transfer";
 type AdjustmentType = "credit" | "debit";
@@ -294,7 +296,7 @@ export default function WalletPage() {
                 <p className="text-muted-foreground">Transfer to the owner/business account configured by finance, then submit the transaction reference for Super Admin verification.</p>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2"><Label>Transfer date</Label><Input type="date" value={transferDate} onChange={event => setTransferDate(event.target.value)} /></div>
+                <div className="space-y-2"><Label htmlFor="transfer-date">Transfer date</Label><DatePickerField id="transfer-date" appearance="admin" value={transferDate} max={todayIso()} placeholder="Select transfer date" onChange={value => setTransferDate(value ?? "")} /></div>
                 <div className="space-y-2"><Label>Proof URL / file path</Label><Input value={proofUrl} onChange={event => setProofUrl(event.target.value)} placeholder="Receipt URL or uploaded proof path" /></div>
               </div>
             </TabsContent>

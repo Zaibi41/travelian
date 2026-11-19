@@ -111,7 +111,8 @@ function FlightHold({ draft, mode, results, onDraft }: { draft: HoldDraft; mode:
   return (
     <>
       <BookingHoldColumns
-        form={<BookingHoldForm formId={FORM_ID} counts={counts} canSubmit={!pending && check === null} onSubmit={values => void submit(values)} errors={errors} />}
+        form={<BookingHoldForm formId={FORM_ID} counts={counts} canSubmit={!pending && check === null} onSubmit={values => void submit(values)} errors={errors}
+          travelDate={(draft.request.trip === "roundtrip" && draft.request.returnDate) || draft.request.date || undefined} />}
         panel={
           <FarePanel
             title="Selected fare" formId={FORM_ID} canHold={check === null} pending={pending}

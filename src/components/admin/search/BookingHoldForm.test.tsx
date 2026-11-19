@@ -17,8 +17,13 @@ vi.mock("@/lib/admin-search/flights", async importOriginal => ({
 import HoldFlightPage from "@/pages/HoldFlightPage";
 import GroupHoldPage from "@/pages/GroupHoldPage";
 import { ADMIN_DRAFT, STAFF_DRAFT } from "@/test/hold-fixtures";
+import { chooseOption, pickDate } from "@/test/pick-date";
 
 globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+// Each hold test fills whole traveler cards through the real calendars and dropdowns: slower than typing.
+vi.setConfig({ testTimeout: 20_000 });
+Element.prototype.hasPointerCapture ??= () => false;
+Element.prototype.releasePointerCapture ??= () => {};
 // cmdk scrolls the active option into view; jsdom has no layout.
 Element.prototype.scrollIntoView ??= function scrollIntoView() {};
 
@@ -47,6 +52,8 @@ const renderPage = (draft: HoldDraft, mode = "hold") =>
 
 const type = (label: string, value: string, within_: HTMLElement = document.body) =>
   fireEvent.change(within(within_).getByLabelText(label), { target: { value } });
+/** Pick a date in a card's date field (the shared calendar: no typing). */
+const date = (label: string, iso: string, within_: HTMLElement) => pickDate(within(within_).getByLabelText(label), iso);
 
 /** Open a country dropdown on a card, type to search, and pick an option by its name. */
 function chooseCountry(card: HTMLElement, label: string, search: string, option: string) {
@@ -58,24 +65,35 @@ function chooseCountry(card: HTMLElement, label: string, search: string, option:
 
 function fillCustomer() {
   const customer = screen.getByRole("region", { name: "Customer" });
-  type("Given name", "Test", customer);
-  type("Surname", "Customer", customer);
-  type("Phone", "+92 300 1234567", customer);
-  type("Email", "ops@example.invalid", customer);
+  type("First Name *", "Test", customer);
+  type("Last Name *", "Customer", customer);
+  type("Mobile Number *", "+92 300 1234567", customer);
+  type("Email *", "ops@example.invalid", customer);
+}
+
+/** A traveler card's required fields, as on the website: gender, date of birth, passport number and expiry (and the
+ *  names unless the card mirrors the customer). */
+function fillTraveler(card: HTMLElement, { first, last, dob, passport, expiry = "2031-01-01", gender = "Male" }:
+  { first?: string; last?: string; dob: string; passport?: string; expiry?: string; gender?: string }) {
+  if (first !== undefined) type("First Name *", first, card);
+  if (last !== undefined) type("Last Name *", last, card);
+  chooseOption(within(card).getByRole("combobox", { name: "Gender *" }), gender);
+  date("Date of Birth *", dob, card);
+  if (passport !== undefined) type("Passport Number *", passport, card);
+  date("Date of Expiry *", expiry, card);
 }
 
 /** The infant's required fields (STAFF_DRAFT is 1 adult and 1 infant). */
 function fillInfant() {
-  const infant = screen.getByRole("region", { name: "Infant 1" });
-  type("Given name", "Baby", infant);
-  type("Surname", "Passenger", infant);
-  type("Date of birth", "2026-01-01", infant);
+  fillTraveler(screen.getByRole("region", { name: "Infant 1" }), { first: "Baby", last: "Passenger", dob: "2026-01-01", passport: "BB1234567" });
 }
 
-/** Everything the form needs before it calls the gateway: the customer (who is Adult 1), Adult 1's birth date, the infant. */
+/** Everything the form needs before it calls the gateway: the customer (who is Adult 1, with their passport), Adult 1's
+ *  other details, the infant. */
 function fillRequired() {
   fillCustomer();
-  type("Date of birth", "1990-01-01", screen.getByRole("region", { name: "Adult 1" }));
+  type("Passport Number", "AB1234567", screen.getByRole("region", { name: "Customer" }));
+  fillTraveler(screen.getByRole("region", { name: "Adult 1" }), { dob: "1990-01-01" });
   fillInfant();
 }
 
@@ -87,26 +105,48 @@ describe("Shared booking form on the Flights hold page", () => {
     result.state = null;
   });
 
-  it("has the Group customer section and one card per traveler from the search counts, with empty identity fields", () => {
+  it("has the customer section and one card per traveler with the website's passenger fields, empty", () => {
     renderPage(STAFF_DRAFT);
     const customer = screen.getByRole("region", { name: "Customer" });
-    for (const label of ["Find saved customer", "Given name", "Surname", "Phone", "Email", "Document type", "Document number"]) expect(within(customer).getByLabelText(label)).toBeInTheDocument();
+    for (const label of ["Search existing customer", "First Name *", "Last Name *", "Mobile Number *", "Email *", "Document", "Passport Number"]) {
+      expect(within(customer).getByLabelText(label)).toBeInTheDocument();
+    }
     expect(within(customer).getByRole("checkbox", { name: "The customer is also Adult 1" })).toBeChecked();
     expect(within(customer).getByRole("checkbox", { name: "Save this customer for next time" })).toBeChecked();
     const adult = screen.getByRole("region", { name: "Adult 1" });
     const infant = screen.getByRole("region", { name: "Infant 1" });
-    for (const label of ["Date of birth", "Document number", "Document expiry"]) expect(within(infant).getByLabelText(label)).toHaveValue("");
-    for (const label of ["Given name", "Surname", "Date of birth", "Document expiry"]) expect(within(adult).getByLabelText(label)).toHaveValue("");
-    for (const label of ["Title", "Gender", "Nationality", "Document type", "Issuing country"]) expect(within(adult).getByLabelText(label)).toBeInTheDocument();
-    expect(within(adult).getByLabelText("Title")).toHaveTextContent("Mr");
-    expect(within(infant).getByLabelText("Title")).toHaveTextContent("Master");
-    expect(adult).toHaveTextContent("12 or over on the travel date");
-    expect(infant).toHaveTextContent("Under 2 on the travel date");
+    // The website checkout's fields, in its order (lib/passenger-details).
+    const labels = (card: HTMLElement) => Array.from(card.querySelectorAll("label")).map(label => label.textContent);
+    expect(labels(infant)).toEqual(["Use saved traveler", "Title *", "Gender *", "First Name *", "Last Name *", "Date of Birth *", "Document *",
+      "Passport Number *", "Nationality *", "Country of Issuance *", "Date of Expiry *", "Travels with", "Save this traveler for next time"]);
+    for (const label of ["First Name *", "Last Name *", "Passport Number *"]) expect(within(infant).getByLabelText(label)).toHaveValue("");
+    for (const label of ["Date of Birth *", "Date of Expiry *"]) expect(within(adult).getByLabelText(label)).toHaveTextContent(/^Select/);
+    expect(within(adult).getByLabelText("Title *")).toHaveTextContent("Mr");
+    expect(within(infant).getByLabelText("Title *")).toHaveTextContent("Master");
+    expect(adult).toHaveTextContent("12+ years");
+    expect(infant).toHaveTextContent("Under 2 years");
     expect(within(infant).getByLabelText("Travels with")).toHaveTextContent("Adult 1");
-    expect(within(infant).queryByLabelText("Nationality")).not.toBeInTheDocument();
-    expect(within(adult).getByRole("combobox", { name: "Use saved traveler, Adult 1" })).toBeInTheDocument();
+    expect(within(adult).queryByRole("combobox", { name: "Use saved traveler, Adult 1" })).not.toBeInTheDocument(); // Adult 1 is the customer
+    expect(within(infant).getByRole("combobox", { name: "Use saved traveler, Infant 1" })).toBeInTheDocument();
     expect(screen.queryByText(/never shown in full|show masked/)).not.toBeInTheDocument();   // no masking notice
     expect(screen.getByText("Holding reserves the seats until the time limit. No payment is taken.")).toBeInTheDocument();
+  });
+
+  it("checks each traveler as the website does before calling the gateway (gender, passport format, expiry after the travel date)", async () => {
+    renderPage(STAFF_DRAFT);
+    fillCustomer();
+    type("Passport Number", "AB12", screen.getByRole("region", { name: "Customer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+    const adult = screen.getByRole("region", { name: "Adult 1" });
+    expect(await within(adult).findByText("Gender is required")).toBeInTheDocument();
+    expect(within(adult).getByText("Enter a valid passport number (6-12 letters/digits)")).toBeInTheDocument();
+    expect(within(adult).getByText("Date of birth is required")).toBeInTheDocument();
+    expect(within(adult).getByText("Expiry date is required")).toBeInTheDocument();
+    expect(gateway.hold).not.toHaveBeenCalled();
+    // Expiry days on or before the travel date (19 Nov 2026) can't be picked.
+    fireEvent.click(within(adult).getByLabelText("Date of Expiry *"));
+    const nineteenth = Array.from(screen.getByRole("dialog").querySelectorAll("button")).find(button => button.textContent === "19");
+    expect(nineteenth).toBeDisabled();
   });
 
   it("Book opens the same page titled Book flight, with Hold seats and the Payments tab note", () => {
@@ -120,17 +160,13 @@ describe("Shared booking form on the Flights hold page", () => {
     gateway.hold.mockResolvedValue({ booking_id: "TRV-ABC123", pnr: "5D8242", selling_total: rs(15_316), label: "UAT test data", warnings: [] });
     renderPage({ ...STAFF_DRAFT, acceptPriceChange: true });
     fillCustomer();
-    type("Document number", "AB1234567", screen.getByRole("region", { name: "Customer" }));
+    type("Passport Number", "AB1234567", screen.getByRole("region", { name: "Customer" }));
     const adult = screen.getByRole("region", { name: "Adult 1" });
-    expect(within(adult).getByLabelText("Given name")).toHaveValue("Test");
-    expect(within(adult).getByLabelText("Document number")).toHaveValue("AB1234567");
-    type("Date of birth", "1990-01-01", adult);
-    chooseCountry(adult, "Nationality", "united arab", "United Arab Emirates");
-    type("Document expiry", "2031-01-01", adult);
-    const infant = screen.getByRole("region", { name: "Infant 1" });
-    type("Given name", "Baby", infant);
-    type("Surname", "Passenger", infant);
-    type("Date of birth", "2026-01-01", infant);
+    expect(within(adult).getByLabelText("First Name *")).toHaveValue("Test");
+    expect(within(adult).getByLabelText("Passport Number *")).toHaveValue("AB1234567");
+    chooseCountry(adult, "Nationality *", "united arab", "United Arab Emirates");
+    fillTraveler(adult, { dob: "1990-01-01" });
+    fillInfant();
     fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
     await waitFor(() => expect(gateway.hold).toHaveBeenCalledTimes(1));
     const request = gateway.hold.mock.calls[0][0];
@@ -142,7 +178,8 @@ describe("Shared booking form on the Flights hold page", () => {
     expect(request.passengers[0]).not.toHaveProperty("gender");
     expect(request.passengers[0]).toMatchObject({ type: "ADT", title: "MR", first_name: "Test", last_name: "Customer", date_of_birth: "1990-01-01",
       id_type: "PSPT", document_number: "AB1234567", document_country: "PAK", nationality: "ARE", document_expiry: "2031-01-01" });
-    expect(request.passengers[1]).toMatchObject({ type: "INF", title: "MASTER", first_name: "Baby", travels_with: 0, document_country: "PAK", nationality: null, document_number: null });
+    expect(request.passengers[1]).toMatchObject({ type: "INF", title: "MASTER", first_name: "Baby", travels_with: 0, document_country: "PAK", nationality: "PAK",
+      document_number: "BB1234567", document_expiry: "2031-01-01", date_of_birth: "2026-01-01" });
     expect(await screen.findByRole("heading", { name: "Result page" })).toBeInTheDocument();
     expect(result.state).toMatchObject({ kind: "held", hold: { pnr: "5D8242" } });
   });
@@ -157,10 +194,10 @@ describe("Shared booking form on the Flights hold page", () => {
     fillRequired();
     fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
     // In the form's words under each field, and the banner lists the fields by label.
-    expect(await screen.findByLabelText("Email", { selector: "input" })).toHaveAccessibleDescription("Email isn't valid");
-    expect(screen.getByText("Check these fields: Email (Customer), Given name (Adult 1).")).toBeInTheDocument();
+    expect(await screen.findByLabelText("Email *", { selector: "input" })).toHaveAccessibleDescription("Email isn't valid");
+    expect(screen.getByText("Check these fields: Email (Customer), First Name (Adult 1).")).toBeInTheDocument();
     const adult = screen.getByRole("region", { name: "Adult 1" });
-    expect(within(adult).getByLabelText("Given name")).toHaveAttribute("aria-invalid", "true");
+    expect(within(adult).getByLabelText("First Name *")).toHaveAttribute("aria-invalid", "true");
     expect(within(adult).getByRole("alert")).toHaveTextContent("passport number, issuing country, passport expiry required for a passport.");
     expect(screen.queryByRole("heading", { name: "Result page" })).not.toBeInTheDocument();
   });
@@ -226,47 +263,46 @@ describe("Shared booking form on the Flights hold page", () => {
   });
 });
 
-describe("the customer is also Adult 1: given name and surname, editable both ways", () => {
+describe("the customer is also Adult 1: first and last name and document, editable both ways", () => {
   beforeEach(() => {
     gateway.hold.mockReset();
     gateway.people.mockReset();
   });
 
-  it("a two-word given name and a surname fill Adult 1 one-to-one; both stay editable and a change on either side updates the other", () => {
+  it("the customer's names and passport fill Adult 1 one-to-one; both stay editable and a change on either side updates the other", () => {
     renderPage(STAFF_DRAFT);
     const customer = screen.getByRole("region", { name: "Customer" });
     const adult = screen.getByRole("region", { name: "Adult 1" });
-    type("Given name", "Ali Hassan", customer);
-    type("Surname", "Raza", customer);
-    expect(within(adult).getByLabelText("Given name")).toHaveValue("Ali Hassan");
-    expect(within(adult).getByLabelText("Surname")).toHaveValue("Raza");
-    for (const label of ["Given name", "Surname", "Document number"]) expect(within(adult).getByLabelText(label)).not.toHaveAttribute("readonly");
-    type("Surname", "Raza Khan", adult);                                       // edited on Adult 1 ...
-    expect(within(customer).getByLabelText("Surname")).toHaveValue("Raza Khan");  // ... shows on the customer
-    type("Document number", "AB1234567", customer);
-    expect(within(adult).getByLabelText("Document number")).toHaveValue("AB1234567");
+    type("First Name *", "Ali Hassan", customer);
+    type("Last Name *", "Raza", customer);
+    expect(within(adult).getByLabelText("First Name *")).toHaveValue("Ali Hassan");
+    expect(within(adult).getByLabelText("Last Name *")).toHaveValue("Raza");
+    for (const label of ["First Name *", "Last Name *", "Passport Number *"]) expect(within(adult).getByLabelText(label)).not.toHaveAttribute("readonly");
+    type("Last Name *", "Raza Khan", adult);                                        // edited on Adult 1 ...
+    expect(within(customer).getByLabelText("Last Name *")).toHaveValue("Raza Khan"); // ... shows on the customer
+    type("Passport Number", "AB1234567", customer);
+    expect(within(adult).getByLabelText("Passport Number *")).toHaveValue("AB1234567");
   });
 
-  it("a one-word name: Adult 1's Surname is empty and editable; Hold stops before the gateway with 'Surname is required' under the field", async () => {
+  it("a missing last name: Hold stops before the gateway with 'Last name is required' under both fields", async () => {
     renderPage(STAFF_DRAFT);
     const customer = screen.getByRole("region", { name: "Customer" });
     const adult = screen.getByRole("region", { name: "Adult 1" });
-    type("Given name", "Customer", customer);
-    type("Phone", "+92 300 1234567", customer);
-    type("Email", "ops@example.invalid", customer);
-    type("Date of birth", "1990-01-01", adult);
+    type("First Name *", "Customer", customer);
+    type("Mobile Number *", "+92 300 1234567", customer);
+    type("Email *", "ops@example.invalid", customer);
+    type("Passport Number", "AB1234567", customer);
+    fillTraveler(adult, { dob: "1990-01-01" });
     fillInfant();
-    const surname = within(adult).getByLabelText("Surname");
-    expect(surname).toHaveValue("");
-    expect(surname).not.toHaveAttribute("readonly");
+    const lastName = within(adult).getByLabelText("Last Name *");
+    expect(lastName).toHaveValue("");
     fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
-    expect(await within(adult).findByText("Surname is required")).toBeInTheDocument();
-    expect(surname).toHaveAccessibleDescription("Surname is required");
-    expect(within(customer).getByLabelText("Surname")).toHaveAccessibleDescription("Surname is required");
-    expect(screen.getByText("Check these fields: Surname (Customer), Surname (Adult 1).")).toBeInTheDocument();
+    expect(await within(adult).findByText("Last name is required")).toBeInTheDocument();
+    expect(within(customer).getByLabelText("Last Name *")).toHaveAccessibleDescription("Last Name is required");
+    expect(screen.getByText("Check these fields: Last Name (Customer), Last Name (Adult 1).")).toBeInTheDocument();
     expect(screen.queryByText(/last_name|Required:/)).not.toBeInTheDocument();
     expect(gateway.hold).not.toHaveBeenCalled();
-    type("Surname", "Raza", adult);                                             // fixed on Adult 1, filled for the customer too
+    type("Last Name *", "Raza", adult);                                              // fixed on Adult 1, filled for the customer too
     gateway.hold.mockResolvedValue({ booking_id: "TRV-1", pnr: "ABC123", selling_total: rs(15_316), label: "UAT test data", warnings: [] });
     fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
     await waitFor(() => expect(gateway.hold).toHaveBeenCalledOnce());
@@ -274,28 +310,30 @@ describe("the customer is also Adult 1: given name and surname, editable both wa
     expect(gateway.hold.mock.calls[0][0].passengers[0]).toMatchObject({ first_name: "Customer", last_name: "Raza" });
   });
 
-  it("the gateway's 'Required: last_name' becomes 'Surname is required' under the field", async () => {
+  it("the gateway's 'Required: last_name' becomes 'Last Name is required' under the field", async () => {
     gateway.hold.mockRejectedValue(new GatewayError("unavailable", "Some details need correcting.", 422, "invalid_customer",
       [{ path: ["contact", "last_name"], message: "Required: last_name." }]));
     renderPage(STAFF_DRAFT);
     fillRequired();
     fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
-    const surname = within(screen.getByRole("region", { name: "Customer" })).getByLabelText("Surname");
-    await waitFor(() => expect(surname).toHaveAccessibleDescription("Surname is required"));
-    expect(screen.getByText("Check this field: Surname (Customer).")).toBeInTheDocument();
+    const lastName = within(screen.getByRole("region", { name: "Customer" })).getByLabelText("Last Name *");
+    await waitFor(() => expect(lastName).toHaveAccessibleDescription("Last Name is required"));
+    expect(screen.getByText("Check this field: Last Name (Customer).")).toBeInTheDocument();
   });
 
-  it("Document type is locked only for a saved traveler; a typed traveler (Adult 1 mirrored, or the infant) can change it", async () => {
-    gateway.people.mockResolvedValue({ results: [{ id: "p-00000009", title: "MISS", first_name: "Baby", last_name: "Khan", date_of_birth: "2026-03-02", documents: [
-      { id: "d-00000009", id_type: "PSPT", document_country: "PAK", document_number: "AB1230999", document_expiry: "2031-01-01", document_validity: "valid" }],
-      match: "name" }], can_manage: true, can_merge: false });
+  it("CNIC instead of a passport: no issuing country or expiry; 13 digits sent as NATI with Pakistan", async () => {
+    gateway.hold.mockResolvedValue({ booking_id: "TRV-1", pnr: "ABC123", selling_total: rs(15_316), label: "UAT test data", warnings: [] });
     renderPage(STAFF_DRAFT);
-    expect(within(screen.getByRole("region", { name: "Adult 1" })).getByRole("combobox", { name: "Document type" })).toBeEnabled();
+    fillRequired();
     const infant = screen.getByRole("region", { name: "Infant 1" });
-    expect(within(infant).getByRole("combobox", { name: "Document type" })).toBeEnabled();
-    fireEvent.change(within(infant).getByRole("combobox", { name: "Use saved traveler, Infant 1" }), { target: { value: "Baby" } });
-    fireEvent.click(await screen.findByRole("option", { name: /^Baby Khan/ }));
-    expect(within(screen.getByRole("region", { name: "Infant 1" })).getByRole("combobox", { name: "Document type" })).toBeDisabled();
+    chooseOption(within(infant).getByRole("combobox", { name: "Document for Infant 1" }), "CNIC / B-form (Pakistan)");
+    expect(within(infant).queryByLabelText("Date of Expiry *")).not.toBeInTheDocument();
+    expect(within(infant).queryByLabelText("Country of Issuance *")).not.toBeInTheDocument();
+    type("CNIC / B-form Number *", "35201-1234567-1", infant);
+    expect(within(infant).getByLabelText("CNIC / B-form Number *")).toHaveValue("3520112345671");
+    fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+    await waitFor(() => expect(gateway.hold).toHaveBeenCalledOnce());
+    expect(gateway.hold.mock.calls[0][0].passengers[1]).toMatchObject({ id_type: "NATI", document_number: "3520112345671", document_country: "PAK", document_expiry: null });
   });
 });
 
@@ -305,19 +343,18 @@ describe("country dropdowns on the hold form", () => {
     gateway.reprice.mockReset();
   });
 
-  it("default to Pakistan on every traveler card (issuing country; nationality for adults and children)", () => {
+  it("default to Pakistan on every traveler card (nationality and country of issuance, as on the website)", () => {
     renderPage({ ...STAFF_DRAFT, request: { ...STAFF_DRAFT.request, adults: 1, children: 1, infants: 1 } });
     for (const name of ["Adult 1", "Child 1", "Infant 1"]) {
       const card = screen.getByRole("region", { name });
-      expect(within(card).getByRole("combobox", { name: "Issuing country" })).toHaveTextContent("Pakistan");
-      if (name !== "Infant 1") expect(within(card).getByRole("combobox", { name: "Nationality" })).toHaveTextContent("Pakistan");
+      expect(within(card).getByRole("combobox", { name: "Country of Issuance *" })).toHaveTextContent("Pakistan");
+      expect(within(card).getByRole("combobox", { name: "Nationality *" })).toHaveTextContent("Pakistan");
     }
-    expect(within(screen.getByRole("region", { name: "Infant 1" })).queryByRole("combobox", { name: "Nationality" })).not.toBeInTheDocument();
   });
 
   it("search filters by country name and by common names", () => {
     renderPage(STAFF_DRAFT);
-    fireEvent.click(within(screen.getByRole("region", { name: "Adult 1" })).getByRole("combobox", { name: "Issuing country" }));
+    fireEvent.click(within(screen.getByRole("region", { name: "Adult 1" })).getByRole("combobox", { name: "Country of Issuance *" }));
     const input = screen.getByRole("combobox", { name: "Search country" });
     fireEvent.change(input, { target: { value: "saudi" } });
     expect(screen.getAllByRole("option").map(option => option.textContent)).toEqual(["Saudi Arabia"]);
@@ -331,7 +368,7 @@ describe("country dropdowns on the hold form", () => {
     gateway.hold.mockResolvedValue({ booking_id: "TRV-ABC123", pnr: "5D8242", selling_total: STAFF_DRAFT.quote.new_total, label: "UAT test data", warnings: [] });
     renderPage(STAFF_DRAFT);
     const infant = screen.getByRole("region", { name: "Infant 1" });
-    const trigger = within(infant).getByRole("combobox", { name: "Issuing country" });
+    const trigger = within(infant).getByRole("combobox", { name: "Country of Issuance *" });
     trigger.focus();
     fireEvent.keyDown(trigger, { key: "Enter" });
     fireEvent.click(trigger);
@@ -353,7 +390,7 @@ describe("country dropdowns on the hold form", () => {
     renderPage(STAFF_DRAFT);
     fillRequired();
     fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
-    const field = await within(screen.getByRole("region", { name: "Adult 1" })).findByRole("combobox", { name: "Nationality" });
+    const field = await within(screen.getByRole("region", { name: "Adult 1" })).findByRole("combobox", { name: "Nationality *" });
     await waitFor(() => expect(field).toHaveAccessibleDescription("Nationality isn't valid"));
     expect(field).toHaveAttribute("aria-invalid", "true");
   });
@@ -371,68 +408,55 @@ describe("country dropdowns on the hold form", () => {
       fireEvent.change(input, { target: { value: query } });
       fireEvent.click(await screen.findByRole("option", { name: new RegExp(`^${who}`) }));
     }
-    const findCustomer = () => within(screen.getByRole("region", { name: "Customer" })).getByRole("combobox", { name: "Find saved customer" });
+    const findCustomer = () => within(screen.getByRole("region", { name: "Customer" })).getByRole("combobox", { name: "Search existing customer" });
 
-    it("finds customers by mobile number, lists every match and sends only the saved ids; the gateway fills the details", async () => {
+    it("Search existing customer by mobile number lists every match; picking fills the form (editable) and the hold sends the id with the values", async () => {
       gateway.people.mockResolvedValue({ results: [ALI, SARA], can_manage: true, can_merge: false });
       gateway.hold.mockResolvedValue({ booking_id: "TRV-1", pnr: "ABC123", selling_total: rs(15_316) });
       renderPage(STAFF_DRAFT);
       const customer = screen.getByRole("region", { name: "Customer" });
       expect(within(customer).queryByRole("button", { name: "Find" })).not.toBeInTheDocument();   // live search, no Find button
       fireEvent.change(findCustomer(), { target: { value: "3001234567" } });
-      const list = await screen.findByRole("listbox", { name: "Find saved customer results" });
+      const list = await screen.findByRole("listbox", { name: "Search existing customer results" });
       expect(gateway.people).toHaveBeenCalledWith("3001234567", expect.anything());
       expect(within(list).getAllByRole("option")).toHaveLength(2);
       expect(list).toHaveTextContent("Ali KhanPassport AB1234567 · +92 3001234567 · ali@example.invalid");
       fireEvent.click(within(list).getByRole("option", { name: /^Ali Khan/ }));
 
-      expect(customer).toHaveTextContent("Ali Khan");
-      expect(customer).toHaveTextContent("Passport AB1234567");
-      expect(within(customer).queryByLabelText("Email")).not.toBeInTheDocument();
-      // The customer is Adult 1: the saved customer becomes the saved traveler (one document, chosen automatically).
+      // Filled, and still editable.
+      expect(customer).toHaveTextContent("Filled from existing customer: Ali Khan");
+      expect(within(customer).getByLabelText("First Name *")).toHaveValue("Ali");
+      expect(within(customer).getByLabelText("Mobile Number *")).toHaveValue("+92 3001234567");
+      expect(within(customer).getByLabelText("Email *")).toHaveValue("ali@example.invalid");
+      expect(within(customer).getByLabelText("Passport Number")).toHaveValue("AB1234567");
+      expect(customer).toHaveTextContent("Changes to the phone, email or document are saved to this customer's record.");
+      type("Email *", "ali.new@example.invalid", customer);
+      // The customer is Adult 1: Adult 1 is filled from the same record (date of birth, nationality, passport expiry).
       const adult = screen.getByRole("region", { name: "Adult 1" });
-      expect(adult).toHaveTextContent("Ali Khan");
-      expect(adult).toHaveTextContent("Saved customer");
-      expect(within(adult).queryByLabelText("Document number")).not.toBeInTheDocument();
-      // The infant: a saved traveler with two documents; one must be chosen.
+      expect(within(adult).getByLabelText("First Name *")).toHaveValue("Ali");
+      expect(within(adult).getByLabelText("Date of Birth *")).toHaveTextContent("31 Jan 1990");
+      expect(within(adult).getByLabelText("Date of Expiry *")).toHaveTextContent("1 Jan 2031");
+      expect(within(adult).getByLabelText("Gender *")).toHaveTextContent("Male");
+      // The infant: a saved traveler fills its card too (the passport still valid is used).
       const infant = screen.getByRole("region", { name: "Infant 1" });
       gateway.people.mockResolvedValue({ results: [SARA], can_manage: true, can_merge: false });
       await pick(within(infant).getByRole("combobox", { name: "Use saved traveler, Infant 1" }), "Sara", "Sara Khan");
-      fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
-      expect(await within(infant).findByRole("alert")).toHaveTextContent("Choose which saved document travels.");
-      expect(gateway.hold).not.toHaveBeenCalled();
-      fireEvent.click(within(infant).getByRole("radio", { name: "Passport AB1230222" }));
+      expect(infant).toHaveTextContent("Filled from saved traveler: Sara Khan");
+      expect(within(infant).getByLabelText("Passport Number *")).toHaveValue("AB1230111");
       fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
 
       await waitFor(() => expect(gateway.hold).toHaveBeenCalledOnce());
       const body = gateway.hold.mock.calls[0][0];
-      expect(body.customer).toEqual({ customer_id: "p-00000001", save_for_next_time: true });
-      expect(body.passengers[0]).toEqual({ type: "ADT", title: "MR", traveler_id: "p-00000001", document_id: "d-00000001", save_for_next_time: true });
-      expect(body.passengers[1]).toMatchObject({ type: "INF", traveler_id: "p-00000002", document_id: "d-00000003", travels_with: 0 });
-      // No identity value is ever sent with a saved person.
-      for (const passenger of body.passengers) for (const field of ["first_name", "last_name", "date_of_birth", "document_number", "document_expiry", "nationality"]) {
-        expect(passenger).not.toHaveProperty(field);
-      }
+      expect(body.customer).toEqual({ customer_id: "p-00000001", first_name: "Ali", last_name: "Khan", phone: "+92 3001234567",
+        email: "ali.new@example.invalid", id_type: "PSPT", document_number: "AB1234567", save_for_next_time: true });
+      // Travelers go as their (checked) details; the gateway links them to the saved person by the document number.
+      expect(body.passengers[0]).toMatchObject({ type: "ADT", title: "MR", first_name: "Ali", last_name: "Khan", date_of_birth: "1990-01-31",
+        document_number: "AB1234567", document_expiry: "2031-01-01", nationality: "PAK", save_for_next_time: true });
+      expect(body.passengers[1]).toMatchObject({ type: "INF", title: "MRS", first_name: "Sara", document_number: "AB1230111", travels_with: 0 });
+      for (const passenger of body.passengers) expect(passenger).not.toHaveProperty("traveler_id");
     });
 
-    it("a saved customer (with phone and email saved) is picked and the hold goes through with no missing-field errors", async () => {
-      gateway.people.mockResolvedValue({ results: [ALI], can_manage: true, can_merge: false });
-      gateway.hold.mockResolvedValue({ booking_id: "TRV-2", pnr: "XYZ123", selling_total: rs(15_316), label: "UAT test data", warnings: [] });
-      renderPage(STAFF_DRAFT);
-      const customer = screen.getByRole("region", { name: "Customer" });
-      await pick(findCustomer(), "3001234567", "Ali Khan");
-      expect(customer).toHaveTextContent("Passport AB1234567");
-      expect(customer).toHaveTextContent("+92 3001234567 · ali@example.invalid");    // the saved phone and email, in full
-      expect(within(customer).queryByLabelText("Phone")).not.toBeInTheDocument();     // nothing to retype
-      fillInfant();
-      fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
-      expect(await screen.findByRole("heading", { name: "Result page" })).toBeInTheDocument();
-      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-      // Only the id: the gateway loads the saved phone and email; no empty value is sent that could blank them.
-      expect(gateway.hold.mock.calls[0][0].customer).toEqual({ customer_id: "p-00000001", save_for_next_time: true });
-    });
-
-    it("Type details instead goes back to the typed form; one character doesn't search; no match says to type the details", async () => {
+    it("Clear empties the customer card; one character doesn't search; no match says a new customer is saved", async () => {
       gateway.people.mockResolvedValue({ results: [], can_manage: true, can_merge: false });
       renderPage(STAFF_DRAFT);
       const customer = screen.getByRole("region", { name: "Customer" });
@@ -440,32 +464,25 @@ describe("country dropdowns on the hold form", () => {
       await new Promise(resolve => setTimeout(resolve, 400));
       expect(gateway.people).not.toHaveBeenCalled();
       fireEvent.change(findCustomer(), { target: { value: "3009999999" } });
-      expect(await screen.findByRole("option", { name: "No saved customer matches. Type the details below to add one." })).toBeInTheDocument();
+      expect(await screen.findByRole("option", { name: "No customer matches. Type the details below: a new customer is saved with the booking." })).toBeInTheDocument();
 
       gateway.people.mockResolvedValue({ results: [ALI], can_manage: true, can_merge: false });
       await pick(findCustomer(), "Ali", "Ali Khan");
-      fireEvent.click(within(customer).getByRole("button", { name: "Type details instead" }));
-      expect(within(customer).getByLabelText("Email")).toBeInTheDocument();
-      expect(customer).not.toHaveTextContent("Saved customer");
+      expect(within(customer).getByLabelText("First Name *")).toHaveValue("Ali");
+      fireEvent.click(within(customer).getByRole("button", { name: "Clear existing customer" }));
+      expect(within(customer).getByLabelText("First Name *")).toHaveValue("");
+      expect(customer).not.toHaveTextContent("Filled from existing customer");
+      expect(within(customer).getByRole("checkbox", { name: "Save this customer for next time" })).toBeChecked();
     });
 
-    it("a saved customer without phone or email: the gateway's field errors bring those fields back, typed values are sent", async () => {
+    it("an existing customer without phone or email: the form asks for them before calling the gateway", async () => {
       gateway.people.mockResolvedValue({ results: [{ ...ALI, phone: undefined, email: undefined }], can_manage: true, can_merge: false });
-      gateway.hold.mockRejectedValueOnce(new GatewayError("unavailable", "The saved customer has no phone or email. Add them for this booking.", 422, "contact_incomplete",
-        [{ path: ["contact", "phone"], message: "Required." }, { path: ["contact", "email"], message: "Required." }]));
       renderPage(STAFF_DRAFT);
       const customer = screen.getByRole("region", { name: "Customer" });
       await pick(findCustomer(), "Ali", "Ali Khan");
-      expect(customer).toHaveTextContent("Ali Khan");
-      fillInfant();
       fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
-      expect(await within(customer).findByLabelText("Phone")).toHaveAccessibleDescription("Phone is required");
-      type("Phone", "+92 300 1234567", customer);
-      type("Email", "ali@example.invalid", customer);
-      gateway.hold.mockResolvedValue({ booking_id: "TRV-1", pnr: "ABC123", selling_total: rs(15_316) });
-      fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
-      await waitFor(() => expect(gateway.hold).toHaveBeenCalledTimes(2));
-      expect(gateway.hold.mock.calls[1][0].customer).toEqual({ customer_id: "p-00000001", phone: "+92 300 1234567", email: "ali@example.invalid", save_for_next_time: true });
+      expect(await within(customer).findByLabelText("Mobile Number *")).toHaveAccessibleDescription("Mobile Number is required");
+      expect(gateway.hold).not.toHaveBeenCalled();
     });
   });
 });
@@ -495,8 +512,8 @@ describe("one shared booking form on both hold routes", () => {
       expect(screen.getByRole("listitem", { current: "step" })).toHaveTextContent("Traveler details");
       expect(screen.getByRole("form", { name: "Traveler details" })).toBeInTheDocument();
       const customer = screen.getByRole("region", { name: "Customer" });
-      expect(within(customer).getAllByText(/Find saved customer|Given name|Surname|Phone|Email|Document type|Document number/).map(node => node.textContent))
-        .toEqual(["Find saved customer", "Given name", "Surname", "Phone", "Email", "Document type", "Document number"]);
+      expect(Array.from(customer.querySelectorAll("label")).map(node => node.textContent).slice(0, 7))
+        .toEqual(["Search existing customer", "First Name *", "Last Name *", "Mobile Number *", "Email *", "Document", "Passport Number"]);
       expect(screen.queryByText(/never shown in full|show masked/)).not.toBeInTheDocument();   // no masking notice
       const panel = await screen.findByRole("complementary");
       expect(within(panel).getByRole("button", { name: "Hold seats" })).toHaveAttribute("form");
@@ -585,9 +602,9 @@ describe("live search for saved customers and travelers (both hold pages)", () =
   for (const [page, open] of [["Flights", () => renderPage(STAFF_DRAFT)], ["Group", renderGroup]] as const) {
     it(`${page}: typing 'tar' lists matches with name, document, phone and email in full; arrow keys and Enter choose; the customer fills in`, async () => {
       open();
-      const input = within(screen.getByRole("region", { name: "Customer" })).getByRole("combobox", { name: "Find saved customer" });
+      const input = within(screen.getByRole("region", { name: "Customer" })).getByRole("combobox", { name: "Search existing customer" });
       fireEvent.change(input, { target: { value: "tar" } });
-      const list = await screen.findByRole("listbox", { name: "Find saved customer results" });
+      const list = await screen.findByRole("listbox", { name: "Search existing customer results" });
       await waitFor(() => expect(gateway.people).toHaveBeenCalledWith("tar", expect.anything()));
       expect(within(list).getAllByRole("option").map(option => option.textContent)).toEqual([
         "Usman TariqPassport AB1234967 · +92 3009876234 · usman@example.invalid", "Sana TariqPassport AB1230111"]);
@@ -598,14 +615,15 @@ describe("live search for saved customers and travelers (both hold pages)", () =
       fireEvent.keyDown(input, { key: "Enter" });
       await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
       const customer = screen.getByRole("region", { name: "Customer" });
-      expect(customer).toHaveTextContent("Usman Tariq");
-      expect(customer).toHaveTextContent("+92 3009876234 · usman@example.invalid");
-      expect(screen.getByRole("region", { name: "Adult 1" })).toHaveTextContent("Saved customer");   // the customer is Adult 1
+      expect(customer).toHaveTextContent("Filled from existing customer: Usman Tariq");
+      expect(within(customer).getByLabelText("Mobile Number *")).toHaveValue("+92 3009876234");
+      expect(within(customer).getByLabelText("Email *")).toHaveValue("usman@example.invalid");
+      expect(within(screen.getByRole("region", { name: "Adult 1" })).getByLabelText("First Name *")).toHaveValue("Usman");   // the customer is Adult 1
     });
 
     it(`${page}: Esc closes the list; a traveler card searches by name and fills in the saved traveler`, async () => {
       open();
-      const input = within(screen.getByRole("region", { name: "Customer" })).getByRole("combobox", { name: "Find saved customer" });
+      const input = within(screen.getByRole("region", { name: "Customer" })).getByRole("combobox", { name: "Search existing customer" });
       fireEvent.change(input, { target: { value: "usm" } });
       await screen.findByRole("listbox");
       fireEvent.keyDown(input, { key: "Escape" });
@@ -615,10 +633,10 @@ describe("live search for saved customers and travelers (both hold pages)", () =
       fireEvent.change(within(second).getByRole("combobox", { name: `Use saved traveler, ${label}` }), { target: { value: "sana" } });
       fireEvent.click(await screen.findByRole("option", { name: /^Sana Tariq/ }));
       const card = screen.getByRole("region", { name: label });
-      expect(card).toHaveTextContent("Sana Tariq");
-      expect(card).toHaveTextContent("Passport AB1230111");
-      expect(within(card).queryByLabelText("Given name")).not.toBeInTheDocument();      // the server holds the identity
-      expect(within(card).getByRole("combobox", { name: "Document type" })).toBeDisabled();
+      expect(card).toHaveTextContent("Filled from saved traveler: Sana Tariq");
+      expect(within(card).getByLabelText("First Name *")).toHaveValue("Sana");            // filled, still editable
+      expect(within(card).getByLabelText("Passport Number *")).toHaveValue("AB1230111");
+      expect(within(card).getByRole("combobox", { name: `Document for ${label}` })).toBeEnabled();
     });
   }
 });

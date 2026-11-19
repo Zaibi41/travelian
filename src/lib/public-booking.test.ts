@@ -1,3 +1,4 @@
+import { phoneCodes } from "@/data/phone-codes";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { countryCode, getPublicBooking, searchPublicGroups, toGatewayPassenger, GATEWAY_GROUP_PROVIDER, isPayFastReturn, PublicBookingError } from "./public-booking";
 
@@ -21,6 +22,8 @@ describe("public booking client", () => {
     expect(countryCode("Pakistan")).toBe("PAK");
     expect(countryCode("pak")).toBe("PAK");
     expect(countryCode("")).toBeUndefined();
+    // Every name the country picker shows maps to a code (aliases: "UAE", "Turkey", "Vietnam", "South Korea").
+    for (const { country } of phoneCodes) expect(countryCode(country), country).toMatch(/^[A-Z]{3}$/);
     const passenger = toGatewayPassenger({ title: "ms", firstName: " Sara ", lastName: "Khan", gender: "female", dob: "1990-01-01",
       docNumber: "ab 1234567", nationality: "Pakistan", expiryDate: "2030-01-01" });
     expect(passenger).toMatchObject({ type: "ADT", title: "MISS", first_name: "Sara", gender: "F", document_number: "AB1234567",

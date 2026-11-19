@@ -12,8 +12,12 @@ const PopoverAnchor = PopoverPrimitive.Anchor;
 
 const PopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = "center", sideOffset = 4, style, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content> & {
+    /** Fixed-size content (the date picker's calendar): never capped and scrolled; opens above the field when there is
+     *  more room there (e.g. the last field of a dialog). Every other popover opens below its field. */
+    flip?: boolean;
+  }
+>(({ className, align = "center", sideOffset = 4, style, flip = false, ...props }, ref) => {
   const below = useBelowField(ref);
   return (
   <PopoverPrimitive.Portal>
@@ -28,8 +32,8 @@ const PopoverContent = React.forwardRef<
       {...props}
       side="bottom"
       avoidCollisions
-      collisionPadding={below.collisionPadding}
-      style={{ ...style, maxHeight: "min(24rem, var(--travelian-dropdown-available-height, calc(100dvh - 2rem)))", overflowY: style?.overflowY ?? "auto", "--radix-popover-content-available-height": "var(--travelian-dropdown-available-height, calc(100dvh - 2rem))" } as React.CSSProperties}
+      collisionPadding={flip ? props.collisionPadding ?? 12 : below.collisionPadding}
+      style={flip ? { ...style, maxHeight: "none", overflowY: "visible" } : { ...style, maxHeight: "min(24rem, var(--travelian-dropdown-available-height, calc(100dvh - 2rem)))", overflowY: style?.overflowY ?? "auto", "--radix-popover-content-available-height": "var(--travelian-dropdown-available-height, calc(100dvh - 2rem))" } as React.CSSProperties}
     />
   </PopoverPrimitive.Portal>
 );

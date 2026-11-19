@@ -20,10 +20,13 @@ vi.mock("@/lib/saved-people/api", async importOriginal => ({
 }));
 
 import GroupHoldPage from "./GroupHoldPage";
+import { chooseOption, pickDate } from "@/test/pick-date";
 import GroupHeldPage from "./GroupHeldPage";
 import GroupBookingPage from "./GroupBookingPage";
 
 globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+// Each hold test fills whole traveler cards through the real calendars and dropdowns: slower than typing.
+vi.setConfig({ testTimeout: 20_000 });
 Element.prototype.hasPointerCapture ??= () => false;
 Element.prototype.releasePointerCapture ??= () => {};
 Element.prototype.scrollIntoView ??= function scrollIntoView() {};
@@ -89,19 +92,25 @@ const termsBox = () => screen.getByRole("checkbox", { name: TERMS_TEXT });
 
 const customerField = (label: string) => within(screen.getByRole("region", { name: "Customer" })).getByLabelText(label);
 
+/** A traveler card's required fields, as on the website (names only when the card isn't the customer's). */
+function fillTraveler(card: HTMLElement, { first, last, dob, passport }: { first?: string; last?: string; dob: string; passport?: string }) {
+  if (first !== undefined) fireEvent.change(within(card).getByLabelText("First Name *"), { target: { value: first } });
+  if (last !== undefined) fireEvent.change(within(card).getByLabelText("Last Name *"), { target: { value: last } });
+  if (passport !== undefined) fireEvent.change(within(card).getByLabelText("Passport Number *"), { target: { value: passport } });
+  chooseOption(within(card).getByRole("combobox", { name: "Gender *" }), "Male");
+  pickDate(within(card).getByLabelText("Date of Birth *"), dob);
+  pickDate(within(card).getByLabelText("Date of Expiry *"), "2031-01-01");
+}
+
 async function fillTravelers() {
   fireEvent.click(termsBox());
-  fireEvent.change(customerField("Given name"), { target: { value: "Ali" } });
-  fireEvent.change(customerField("Surname"), { target: { value: "Raza" } });
-  fireEvent.change(screen.getByLabelText("Phone"), { target: { value: "+92 300 1234567" } });
-  fireEvent.change(screen.getByLabelText("Email"), { target: { value: "ali.raza@example.invalid" } });
-  fireEvent.change(within(screen.getByRole("region", { name: "Customer" })).getByLabelText("Document number"), { target: { value: "AB1234567" } });
-  const adult2 = screen.getByRole("region", { name: "Adult 2" });
-  fireEvent.change(within(adult2).getByLabelText("Given name"), { target: { value: "Sana" } });
-  fireEvent.change(within(adult2).getByLabelText("Surname"), { target: { value: "Raza" } });
-  fireEvent.change(within(adult2).getByLabelText("Document number"), { target: { value: "CD7654321" } });
-  fireEvent.change(within(screen.getByRole("region", { name: "Adult 1" })).getByLabelText("Date of birth"), { target: { value: "1988-04-12" } });
-  fireEvent.change(within(adult2).getByLabelText("Date of birth"), { target: { value: "1990-09-23" } });
+  fireEvent.change(customerField("First Name *"), { target: { value: "Ali" } });
+  fireEvent.change(customerField("Last Name *"), { target: { value: "Raza" } });
+  fireEvent.change(customerField("Mobile Number *"), { target: { value: "+92 300 1234567" } });
+  fireEvent.change(customerField("Email *"), { target: { value: "ali.raza@example.invalid" } });
+  fireEvent.change(customerField("Passport Number"), { target: { value: "AB1234567" } });
+  fillTraveler(screen.getByRole("region", { name: "Adult 1" }), { dob: "1988-04-12" });
+  fillTraveler(screen.getByRole("region", { name: "Adult 2" }), { first: "Sana", last: "Raza", dob: "1990-09-23", passport: "CD7654321" });
 }
 
 describe("Hold group seats (step 2)", () => {
@@ -126,12 +135,12 @@ describe("Hold group seats (step 2)", () => {
     fireEvent.click(termsBox());
     expect(within(fare).getByRole("button", { name: "Hold seats" })).toBeEnabled();
     // Adult 1's name and passport come from the customer while "The customer is also Adult 1" is ticked.
-    fireEvent.change(customerField("Given name"), { target: { value: "Ali" } });
-    fireEvent.change(customerField("Surname"), { target: { value: "Raza" } });
+    fireEvent.change(customerField("First Name *"), { target: { value: "Ali" } });
+    fireEvent.change(customerField("Last Name *"), { target: { value: "Raza" } });
     const adult1 = screen.getByRole("region", { name: "Adult 1" });
-    expect(within(adult1).getByLabelText("Given name")).toHaveValue("Ali");
-    expect(within(adult1).getByLabelText("Surname")).toHaveValue("Raza");
-    expect(within(adult1).getByLabelText("Given name")).not.toHaveAttribute("readonly");  // editable, kept in step with the customer
+    expect(within(adult1).getByLabelText("First Name *")).toHaveValue("Ali");
+    expect(within(adult1).getByLabelText("Last Name *")).toHaveValue("Raza");
+    expect(within(adult1).getByLabelText("First Name *")).not.toHaveAttribute("readonly");  // editable, kept in step with the customer
   });
 
   it("hold success: sends adults only with the customer card, then opens Seats held with the gateway's price", async () => {
@@ -193,8 +202,8 @@ describe("Hold group seats (step 2)", () => {
     fireEvent.click(within(fare).getByRole("button", { name: "Hold seats" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("The supplier didn't confirm the hold. Check with the supplier before trying again.");
     expect(location.current).toContain("/admin/search/group-ticketing/hold");
-    expect(customerField("Given name")).toHaveValue("Ali");
-    expect(customerField("Surname")).toHaveValue("Raza");
+    expect(customerField("First Name *")).toHaveValue("Ali");
+    expect(customerField("Last Name *")).toHaveValue("Raza");
     expect(within(fare).getByRole("button", { name: "Hold seats" })).toBeEnabled();
   });
 
@@ -245,36 +254,40 @@ describe("Hold group seats (step 2)", () => {
     expect(gateway.holdGroupSeats).not.toHaveBeenCalled();
   });
 
-  it("finds a saved customer by passport number first; full values, no reveal; the hold sends the id only", async () => {
+  it("Search existing customer by passport number; full values, no reveal; picking fills the form and the hold sends the id with the values", async () => {
     gateway.holdGroupSeats.mockResolvedValue(HELD);
     renderAt(HOLD_URL);
     const fare = await screen.findByRole("complementary", { name: "Selected group fare" });
     await within(fare).findByText("Fly Jinnah");
-    fireEvent.change(screen.getByRole("combobox", { name: "Find saved customer" }), { target: { value: "AB1234567" } });
-    const list = await screen.findByRole("listbox", { name: "Find saved customer results" });
+    fireEvent.change(screen.getByRole("combobox", { name: "Search existing customer" }), { target: { value: "AB1234567" } });
+    const list = await screen.findByRole("listbox", { name: "Search existing customer results" });
     await waitFor(() => expect(people.searchPeople).toHaveBeenCalledWith("AB1234567", expect.anything()));
     expect(list).toHaveTextContent("Ali Raza");
     expect(list).toHaveTextContent("AB1234567");
     expect(list).not.toHaveTextContent(/Reveal/);
     fireEvent.click(within(list).getByRole("option", { name: /^Ali Raza/ }));
     await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
-    expect(screen.getByRole("region", { name: "Customer" })).toHaveTextContent("Saved customer");
-    expect(within(screen.getByRole("region", { name: "Customer" })).queryByLabelText("Given name")).not.toBeInTheDocument();
-    // Adult 1 is the saved customer (ticked by default): full values on the card, no typed identity.
+    const customer = screen.getByRole("region", { name: "Customer" });
+    expect(customer).toHaveTextContent("Filled from existing customer: Ali Raza");
+    expect(customerField("First Name *")).toHaveValue("Ali");
+    // Adult 1 is the customer (ticked by default): filled from the same record, still editable.
     const adult1 = screen.getByRole("region", { name: "Adult 1" });
-    expect(adult1).toHaveTextContent("AB1234567");
-    expect(within(adult1).queryByLabelText("Document number")).not.toBeInTheDocument();
-    const adult2 = screen.getByRole("region", { name: "Adult 2" });
-    fireEvent.change(within(adult2).getByLabelText("Given name"), { target: { value: "Sana" } });
-    fireEvent.change(within(adult2).getByLabelText("Surname"), { target: { value: "Raza" } });
-    fireEvent.change(within(adult2).getByLabelText("Date of birth"), { target: { value: "1990-09-23" } });
+    expect(within(adult1).getByLabelText("Passport Number *")).toHaveValue("AB1234567");
+    expect(customerField("Mobile Number *")).toHaveValue("+92 3001234567");
+    expect(customerField("Email *")).toHaveValue("ali@example.invalid");
+    expect(within(adult1).getByLabelText("Gender *")).toHaveTextContent("Male");               // from the saved title (Mr)
+    // The saved record has no date of birth or passport expiry: staff add them (they are saved to the record).
+    expect(within(adult1).getByLabelText("Date of Birth *")).toHaveTextContent("Select date of birth");
+    pickDate(within(adult1).getByLabelText("Date of Birth *"), "1988-04-12");
+    pickDate(within(adult1).getByLabelText("Date of Expiry *"), "2031-01-01");
+    fillTraveler(screen.getByRole("region", { name: "Adult 2" }), { first: "Sana", last: "Raza", dob: "1990-09-23", passport: "CD7654321" });
     fireEvent.click(termsBox());
     fireEvent.click(within(fare).getByRole("button", { name: "Hold seats" }));
     await waitFor(() => expect(gateway.holdGroupSeats).toHaveBeenCalled());
     const body = gateway.holdGroupSeats.mock.calls[0][0];
-    expect(body.contact).toEqual({ customer_id: "p-00000001", save_for_next_time: true });
-    expect(body.passengers[0]).toEqual({ type: "ADT", title: "MR", gender: "M", traveler_id: "p-00000001", document_id: "d-00000001", save_for_next_time: true });
-    expect(JSON.stringify(body)).not.toContain("AB1234567");
+    expect(body.contact).toMatchObject({ customer_id: "p-00000001", first_name: "Ali", last_name: "Raza", document_number: "AB1234567", save_for_next_time: true });
+    expect(body.passengers[0]).toMatchObject({ type: "ADT", title: "MR", gender: "M", first_name: "Ali", document_number: "AB1234567", save_for_next_time: true });
+    expect(body.passengers[0]).not.toHaveProperty("traveler_id");
   });
 });
 

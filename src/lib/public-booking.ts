@@ -126,7 +126,9 @@ export function countryCode(value?: string): string | undefined {
   const text = (value || "").trim();
   if (!text) return undefined;
   const upper = text.toUpperCase();
-  const match = countries.find((country) => country.code === upper || country.name.toLowerCase() === text.toLowerCase());
+  const lower = text.toLowerCase();
+  const match = countries.find((country) => country.code === upper || country.name.toLowerCase() === lower
+    || country.aliases?.some((alias) => alias.toLowerCase() === lower)); // the picker says "UAE", "Turkey", "Vietnam", "South Korea"
   return match?.code;
 }
 
