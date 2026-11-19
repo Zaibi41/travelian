@@ -2708,6 +2708,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/booking-links/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Booking By Link
+         * @description The booking a customer email's link opens: read-only (no payment from here), one booking, no login. Links expire at
+         *     the later of 30 days and 2 days after the last travel date.
+         */
+        get: operations["booking_by_link_v1_public_booking_links__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/bookings/lookup": {
         parameters: {
             query?: never;
@@ -3252,6 +3273,11 @@ export interface components {
             created_at?: string | null;
             /** @description Omitted when no customer was saved. */
             customer?: components["schemas"]["BookingCustomer"] | null;
+            /**
+             * Customer Email Problems
+             * @description Customer emails not sent: staff contact the customer.
+             */
+            customer_email_problems?: components["schemas"]["CustomerEmailProblem"][] | null;
             /** Customer Or Agency */
             customer_or_agency?: string | null;
             /** Deadline */
@@ -3823,6 +3849,24 @@ export interface components {
              * @default true
              */
             save_for_next_time: boolean;
+        };
+        /**
+         * CustomerEmailProblem
+         * @description A customer email whose last attempt wasn't delivered to SES (e.g. the SES sandbox refuses unverified addresses).
+         */
+        CustomerEmailProblem: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Email
+             * @description Which email: booking_held, bank_transfer, payment_received, ticket_issued, ...
+             */
+            email: string;
+            /** Reason */
+            reason?: string | null;
         };
         /** DashboardFilterOptions */
         DashboardFilterOptions: {
@@ -14622,6 +14666,51 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    booking_by_link_v1_public_booking_links__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LookupView"];
+                };
+            };
+            /** @description The link is unknown or has expired. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too many requests. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

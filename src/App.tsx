@@ -37,6 +37,7 @@ const CareersPage = lazy(() => import("./pages/public/CareersPage"));
 const UmrahDetailPage = lazy(() => import("./pages/public/UmrahDetailPage"));
 const MyBookingsPage = lazy(() => import("./pages/public/MyBookingsPage"));
 const FindBookingPage = lazy(() => import("./pages/public/FindBookingPage"));
+const BookingLinkPage = lazy(() => import("./pages/public/BookingLinkPage"));
 const BlogDetailPage = lazy(() => import("./pages/public/BlogDetailPage"));
 const DestinationPage = lazy(() => import("./pages/public/DestinationPage"));
 const BookingRequestPage = lazy(() => import("./pages/public/BookingRequestPage"));
@@ -116,6 +117,7 @@ const App = () => (
             <Route path="/account" element={<PublicLayout><AccountPage /></PublicLayout>} />
             <Route path="/my-bookings" element={<PublicLayout><MyBookingsPage /></PublicLayout>} />
             <Route path="/find-booking" element={<PublicLayout><FindBookingPage /></PublicLayout>} />
+            <Route path="/my-bookings/view/:token" element={<PublicLayout><BookingLinkPage /></PublicLayout>} />
             <Route path="/signin" element={<PublicLayout showFooter={false}><SignInPage /></PublicLayout>} />
             <Route path="/register" element={<PublicLayout showFooter={false}><RegisterPage /></PublicLayout>} />
             <Route path="/auth/callback" element={<PublicLayout showFooter={false}><AuthCallbackPage /></PublicLayout>} />
