@@ -25,7 +25,7 @@ export function PackageImage({ src, alt, className, imageClassName }: PackageIma
           onError={() => setFailed(true)}
         />
       ) : (
-        <Package className="h-14 w-14 text-primary/70" aria-label="Travelian package image placeholder" />
+        <Package className="h-14 w-14 text-primary" aria-label="Travelian package image placeholder" />
       )}
     </div>
   );

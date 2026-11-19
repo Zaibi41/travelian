@@ -18,7 +18,7 @@ export function ProductValuePills({ product }: { product: Product }) {
   return (
     <ul aria-label="Travelian value highlights" className="flex flex-wrap items-center justify-center gap-2">
       {values.map(value => (
-        <li key={value.label} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1.5 text-[11px] font-medium text-primary-foreground/90 ring-1 ring-white/15 sm:text-xs">
+        <li key={value.label} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1.5 text-xs font-medium text-primary-foreground ring-1 ring-white/15 sm:text-xs">
           <value.icon aria-hidden="true" className="h-3.5 w-3.5 text-gold" />
           {value.label}
         </li>

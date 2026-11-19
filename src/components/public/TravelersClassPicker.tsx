@@ -151,11 +151,11 @@ export function TravelersClassPicker({
                     <p className="mt-0.5 text-xs text-muted-foreground">{passenger.sub}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <button type="button" disabled={value[passenger.key] <= passenger.min} aria-label={`Decrease ${passenger.label}`} onClick={() => update({ [passenger.key]: Math.max(passenger.min, value[passenger.key] - 1) })} className="flex h-9 w-9 items-center justify-center rounded-md border border-primary/20 text-primary transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:border-border disabled:bg-muted/40 disabled:text-muted-foreground/40">
+                    <button type="button" disabled={value[passenger.key] <= passenger.min} aria-label={`Decrease ${passenger.label}`} onClick={() => update({ [passenger.key]: Math.max(passenger.min, value[passenger.key] - 1) })} className="flex h-9 w-9 items-center justify-center rounded-md border border-primary/20 text-primary transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:border-border disabled:bg-muted/40 disabled:text-muted-foreground">
                       <Minus className="h-4 w-4" />
                     </button>
                     <span className="w-5 text-center text-sm font-semibold tabular-nums">{value[passenger.key]}</span>
-                    <button type="button" disabled={total >= MAX_TRAVELERS || value[passenger.key] >= passenger.max} aria-label={`Increase ${passenger.label}`} onClick={() => { if (total < MAX_TRAVELERS) update({ [passenger.key]: Math.min(passenger.max, value[passenger.key] + 1) }); }} className="flex h-9 w-9 items-center justify-center rounded-md border border-primary/20 text-primary transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:border-border disabled:bg-muted/40 disabled:text-muted-foreground/40">
+                    <button type="button" disabled={total >= MAX_TRAVELERS || value[passenger.key] >= passenger.max} aria-label={`Increase ${passenger.label}`} onClick={() => { if (total < MAX_TRAVELERS) update({ [passenger.key]: Math.min(passenger.max, value[passenger.key] + 1) }); }} className="flex h-9 w-9 items-center justify-center rounded-md border border-primary/20 text-primary transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:border-border disabled:bg-muted/40 disabled:text-muted-foreground">
                       <Plus className="h-4 w-4" />
                     </button>
                   </div>

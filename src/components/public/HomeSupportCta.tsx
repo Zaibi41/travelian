@@ -14,13 +14,13 @@ export function HomeSupportCta() {
           <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-teal/20 blur-3xl" aria-hidden="true" />
           <div className="relative flex flex-col items-start gap-6 md:flex-row md:items-center md:justify-between">
             <div className="max-w-2xl">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-gold ring-1 ring-white/15">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-gold ring-1 ring-white/15">
                 <MessageCircle className="h-3 w-3" /> Travel support
               </span>
               <h2 className="mt-4 text-xl md:text-2xl font-bold font-display tracking-tight text-primary-foreground">
                 Need help planning your journey?
               </h2>
-              <p className="mt-2 text-sm md:text-base leading-7 text-primary-foreground/75">
+              <p className="mt-2 text-sm md:text-base leading-7 text-primary-foreground">
                 {umrah ? "Talk to our travel team for flights, Umrah and hotels." : "Talk to our travel team for flights and hotels."}
               </p>
             </div>

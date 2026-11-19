@@ -46,7 +46,7 @@ export function HomeSupplierNetwork() {
                   </span>
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-white">{category.title}</h3>
-                    <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-white/65">{category.text}</p>
+                    <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-white">{category.text}</p>
                   </div>
                 </div>
               </div>
@@ -60,7 +60,7 @@ export function HomeSupplierNetwork() {
               </Link>
             </Button>
 
-            <p className="flex items-start gap-2 text-xs leading-6 text-white/65">
+            <p className="flex items-start gap-2 text-xs leading-6 text-white">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-teal" />
               Fare and availability depend on live supplier response and contracted access.
             </p>

@@ -28,7 +28,7 @@ export function HomeHowItWorks() {
     <section className="py-12 md:py-14">
       <div className="travelian-container ">
         <div className="mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-accent-foreground">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-accent-foreground">
             Simple process
           </span>
           <h2 className="mt-3 text-2xl md:text-3xl font-bold font-display tracking-tight text-foreground">
@@ -54,7 +54,7 @@ export function HomeHowItWorks() {
                   <s.icon className="h-4 w-4" />
                 </div>
                 <h3 className="min-w-0 flex-1 text-sm font-bold font-display text-foreground">{s.title}</h3>
-                <span className="text-xl font-black font-display leading-none text-muted-foreground/30 transition-colors group-hover:text-gold/50">
+                <span className="text-xl font-black font-display leading-none text-muted-foreground transition-colors group-hover:text-gold">
                   {String(i + 1).padStart(2, "0")}
                 </span>
               </div>

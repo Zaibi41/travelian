@@ -62,8 +62,8 @@
   --teal-foreground: 0 0% 100%;        /* 5.53:1 */
   --teal-soft: 185 60% 94%;            /* #E7F7F9 */
 
-  --border: 217 30% 90%;               /* #DEE4ED */
-  --input: 217 30% 90%;
+  --border: 218 22% 86%;               /* #D3D9E3 (was #DEE4ED: faint on TVs) */
+  --input: 219 13% 60%;                /* #8C95A6 field borders 3.0:1 */
   --ring: var(--brand-navy);
 
   /* Status */
@@ -79,7 +79,7 @@
   --status-critical: var(--destructive);
   --status-critical-text: 0 72% 42%;   /* #B81E1E  5.67:1 on soft */
   --status-critical-soft: 0 86% 96%;   /* #FEECEC */
-  --status-action: var(--warning);
+  --status-action: 37 97% 39%;         /* #C27803 amber stripe 3.5:1 on white (was #F59F0A, 2.1:1) */
   --status-action-text: 38 90% 28%;    /* #885907  5.38:1 on soft */
   --status-action-soft: 38 92% 92%;    /* #FDF0D8 */
   --status-fine: var(--success);

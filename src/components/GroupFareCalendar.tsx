@@ -48,7 +48,7 @@ function Month({ month, byDate, band, selected, today, onPick, anyDate }: {
     <div className="min-w-0">
       <p className="mb-2 rounded-lg bg-muted/50 py-2 text-center text-sm font-semibold text-foreground">{format(month, "MMMM yyyy")}</p>
       <div className="grid grid-cols-7 gap-y-1 text-center">
-        {WEEKDAYS.map((weekday) => <span key={weekday} className="py-1 text-[11px] font-semibold text-muted-foreground">{weekday}</span>)}
+        {WEEKDAYS.map((weekday) => <span key={weekday} className="py-1 text-xs font-semibold text-muted-foreground">{weekday}</span>)}
         {Array.from({ length: getDay(days[0]) }, (_, index) => <span key={`pad-${index}`} />)}
         {days.map((day) => {
           const key = format(day, "yyyy-MM-dd");
@@ -69,11 +69,11 @@ function Month({ month, byDate, band, selected, today, onPick, anyDate }: {
               data-available={real ? "true" : "false"}
               onClick={() => selectable && onPick?.(key)}
               className={`mx-auto flex h-11 w-11 flex-col items-center justify-center rounded-lg leading-tight transition-colors ${
-                isSelected ? "bg-primary text-primary-foreground" : real ? "hover:bg-primary/10" : selectable ? "text-foreground hover:bg-muted" : "cursor-not-allowed text-muted-foreground/50"
+                isSelected ? "bg-primary text-primary-foreground" : real ? "hover:bg-primary/10" : selectable ? "text-foreground hover:bg-muted" : "cursor-not-allowed text-muted-foreground"
               }`}
             >
               <span className="text-sm font-semibold">{format(day, "d")}</span>
-              {real && <span className={`text-[10px] font-semibold ${isSelected ? "text-primary-foreground" : BAND_TEXT[tone!]}`}>{shortPrice(real.amount_minor)}</span>}
+              {real && <span className={`text-xs font-semibold ${isSelected ? "text-primary-foreground" : BAND_TEXT[tone!]}`}>{shortPrice(real.amount_minor)}</span>}
             </button>
           );
         })}
@@ -119,7 +119,7 @@ export function GroupFareCalendar({ days, selected, onPick, caption, anyDate, ch
         <Month month={month} byDate={byDate} band={band} selected={selected} today={today} onPick={onPick} anyDate={anyDate} />
         <div className="hidden sm:block"><Month month={second} byDate={byDate} band={band} selected={selected} today={today} onPick={onPick} anyDate={anyDate} /></div>
       </div>
-      <p className="mt-3 flex items-center justify-center gap-3 border-t pt-2 text-[11px] text-muted-foreground">
+      <p className="mt-3 flex items-center justify-center gap-3 border-t pt-2 text-xs text-muted-foreground">
         Lowest fare per adult:
         {(["low", "avg", "high"] as const).map((key) => (
           <span key={key} className="inline-flex items-center gap-1"><span className={`h-2 w-2 rounded-full ${BAND_DOT[key]}`} />{key === "avg" ? "Avg" : key[0].toUpperCase() + key.slice(1)}</span>

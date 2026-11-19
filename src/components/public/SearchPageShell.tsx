@@ -8,7 +8,7 @@ export function SearchPageHero({ title, description, children, support, compact 
   return (
     <section className={cn("relative isolate", compact ? "bg-sidebar gradient-hero py-2" : "travelian-hero-background py-6")}>
       <div className={cn(compact ? "px-4 md:px-6" : SEARCH_PAGE_CONTAINER, "relative")}>
-        {title && <div className={cn("text-center", children && "mb-4 md:mb-5")}><h1 className="font-display text-xl sm:text-2xl md:text-[1.75rem] font-bold leading-7 sm:leading-8 md:leading-9 tracking-tight text-primary-foreground">{title}</h1>{description && <p className="mt-2 text-sm text-primary-foreground/75">{description}</p>}</div>}
+        {title && <div className={cn("text-center", children && "mb-4 md:mb-5")}><h1 className="font-display text-xl sm:text-2xl md:text-[1.75rem] font-bold leading-7 sm:leading-8 md:leading-9 tracking-tight text-primary-foreground">{title}</h1>{description && <p className="mt-2 text-sm text-primary-foreground">{description}</p>}</div>}
         {children}
         {support && <div className="mt-4">{support}</div>}
       </div>

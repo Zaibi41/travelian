@@ -56,10 +56,10 @@ export default function DealsPage() {
             {flashDeals.filter(deal => isPublicPathVisible(deal.to)).map((deal, i) => (
               <Link to={deal.to} key={i} className={`${deal.bg} rounded-2xl p-5 text-primary-foreground relative overflow-hidden hover:scale-[1.02] transition-transform block`}>
                 <div className="absolute top-0 right-0 w-24 h-24 bg-primary-foreground/5 rounded-full -mr-8 -mt-8" />
-                <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 text-[10px] mb-2">{deal.category}</Badge>
+                <Badge className="bg-primary-foreground/20 text-primary-foreground border-0 text-xs mb-2">{deal.category}</Badge>
                 <h3 className="font-bold text-sm mb-1">{deal.title}</h3>
                 <p className="text-2xl font-extrabold mb-1">{deal.discount}</p>
-                <p className="text-xs text-primary-foreground/70 mb-3">{deal.desc}</p>
+                <p className="text-xs text-primary-foreground mb-3">{deal.desc}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs flex items-center gap-1"><Clock className="h-3 w-3" /> {deal.expiry}</span>
                   <Button size="sm" variant="secondary" className="text-xs h-7" tabIndex={-1}>Grab Deal</Button>
@@ -86,7 +86,7 @@ export default function DealsPage() {
                       <p className="text-2xl font-extrabold text-primary">
                         {coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `PKR ${coupon.discountValue}`}
                       </p>
-                      <p className="text-[10px] text-muted-foreground">OFF</p>
+                      <p className="text-xs text-muted-foreground">OFF</p>
                     </div>
                   </div>
                   <h3 className="font-semibold text-foreground text-sm">{coupon.description}</h3>
@@ -123,7 +123,7 @@ export default function DealsPage() {
               <Link to={`/hotel/${hotel.hotelId}`} key={hotel.hotelId}>
                 <Card className="overflow-hidden hover:shadow-elevated transition-all group">
                   <div className="h-40 bg-gradient-to-br from-primary/5 to-accent flex items-center justify-center relative">
-                    <HotelIcon className="h-12 w-12 text-primary/40 transition-transform group-hover:scale-110" />
+                    <HotelIcon className="h-12 w-12 text-primary transition-transform group-hover:scale-110" />
                     <button className="absolute top-3 right-3 h-7 w-7 rounded-full bg-foreground/20 backdrop-blur-sm flex items-center justify-center text-primary-foreground">
                       <Heart className="h-3.5 w-3.5" />
                     </button>

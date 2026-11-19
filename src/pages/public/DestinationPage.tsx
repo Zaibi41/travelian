@@ -72,8 +72,8 @@ export default function DestinationPage() {
           <div className="max-w-2xl text-white">
             <Badge className="mb-4 bg-white/20 text-white border-white/20">Travelian Destination</Badge>
             <h1 className="text-4xl md:text-6xl font-extrabold font-display">{destination.name}</h1>
-            <p className="mt-2 text-lg text-white/80 flex items-center gap-2"><MapPin className="h-5 w-5" /> {destination.country}</p>
-            <p className="mt-5 text-base md:text-lg text-white/85 leading-relaxed">{destination.summary}</p>
+            <p className="mt-2 text-lg text-white flex items-center gap-2"><MapPin className="h-5 w-5" /> {destination.country}</p>
+            <p className="mt-5 text-base md:text-lg text-white leading-relaxed">{destination.summary}</p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Button className="gradient-primary text-primary-foreground rounded-xl" asChild>
                 <Link to={`/hotels-search?destination=${encodeURIComponent(destination.name)}`}>Find Hotels <ArrowRight className="h-4 w-4 ml-2" /></Link>

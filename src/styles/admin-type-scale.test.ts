@@ -91,16 +91,19 @@ describe("admin colours stay as they are", () => {
     expect(value("teal")).toBe("var(--brand-teal)");
   });
 
-  it("navy, surfaces, borders and status colours are unchanged", () => {
+  // Borders and the amber stripe changed on purpose (Part 4, TV-readable contrast, approved 20 Nov 2026).
+  it("navy, surfaces, borders and status colours are the approved values", () => {
     expect({
       navy: value("brand-navy"), primary: value("primary"), sidebar: value("sidebar-background"), background: value("background"),
       foreground: value("foreground"), border: value("border"), muted: value("muted-foreground"), ring: value("ring"),
       critical: value("status-critical-text"), criticalSoft: value("status-critical-soft"), action: value("status-action-text"),
       actionSoft: value("status-action-soft"), fine: value("status-fine-text"), fineSoft: value("status-fine-soft"),
+      stripe: value("status-action"), input: value("input"),
     }).toEqual({
       navy: "216.8 100% 18.2%", primary: "var(--brand-navy)", sidebar: "var(--brand-navy)", background: "217 33% 97%",
-      foreground: "222 47% 11%", border: "217 30% 90%", muted: "217 12% 42%", ring: "var(--brand-navy)",
+      foreground: "222 47% 11%", border: "218 22% 86%", muted: "217 12% 42%", ring: "var(--brand-navy)",
       critical: "0 72% 42%", criticalSoft: "0 86% 96%", action: "38 90% 28%", actionSoft: "38 92% 92%", fine: "152 60% 28%", fineSoft: "152 50% 93%",
+      stripe: "37 97% 39%", input: "219 13% 60%",
     });
   });
 
