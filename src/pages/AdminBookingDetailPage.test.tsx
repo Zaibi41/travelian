@@ -177,7 +177,7 @@ describe("Booking detail", () => {
     renderAt("/admin/bookings/TRV-1/passengers");
     const table = screen.getByRole("table");
     expect(within(table).getByRole("columnheader", { name: "Document" })).toBeInTheDocument();
-    expect(table).toHaveTextContent("Not available yet. The gateway doesn't record passengers for bookings yet.");
+    expect(table.parentElement).toHaveTextContent("Not available yet. The gateway doesn't record passengers for bookings yet.");
   });
 
   it("itinerary: the flights as held, day-first local times, Fare instead of Cabin; older bookings say they weren't recorded", () => {
@@ -202,7 +202,7 @@ describe("Booking detail", () => {
     unmount();
     detail.current = ok(ADMIN_VIEW);
     renderAt("/admin/bookings/TRV-1/itinerary");
-    expect(screen.getByRole("table")).toHaveTextContent("Not recorded for this booking. Flights are saved with holds placed from 14 November 2026.");
+    expect(screen.getByRole("table").parentElement).toHaveTextContent("Not recorded for this booking. Flights are saved with holds placed from 14 November 2026.");
   });
 
   it("tickets: no supplier response column; before issuing it says no tickets yet", () => {
