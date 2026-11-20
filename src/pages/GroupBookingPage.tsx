@@ -11,7 +11,8 @@ import { DownloadItineraryButton } from "@/components/admin/bookings/DownloadIti
 import { HeldPriceDialog, ReleaseFailedNotice, SupplierNotice } from "./GroupHeldPage";
 import { GroupPaymentsTab, groupHoldKey } from "@/components/admin/search/GroupPaymentsTab";
 import { GroupNoCancelNotice } from "@/components/admin/bookings/GroupNoCancelNotice";
-import { GatewayError } from "@/lib/gateway/client";
+import { GatewayError, gatewayAssetUrl } from "@/lib/gateway/client";
+import { AirlineLogo } from "@/components/admin/ui/AirlineLogo";
 import { formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
 import { acknowledgedBy } from "@/lib/group-fare-terms";
 import { GROUP_BOOKING_TABS, GROUP_TICKETING_LABEL, departureText, fetchGroupHold, groupBookingPath, returnFlightText, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
@@ -97,6 +98,19 @@ function FieldTable({ label, rows }: { label: string; rows: [string, React.React
   );
 }
 
+/** The airline's logo (own file, then the gateway's logo, then the airline code) next to "Airline, sector". */
+function FlightCell({ view }: { view: GroupHoldView }) {
+  const text = [view.flight.airline, view.flight.sector].filter(Boolean).join(", ") || "—";
+  const outbound = (view.flight.legs ?? []).find(leg => leg.direction !== "return");
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      <AirlineLogo airline={view.flight.airline ?? ""} flightNumber={outbound?.flight_number ?? undefined}
+        imageUrl={gatewayAssetUrl(view.flight.logo_url)} className="h-9 w-9 rounded-xl" />
+      <span className="min-w-0 truncate" title={text}>{text}</span>
+    </span>
+  );
+}
+
 function Details({ view }: { view: GroupHoldView }) {
   const status = STATUS[view.status];
   const source = sourceLine(view.group_source);
@@ -109,7 +123,7 @@ function Details({ view }: { view: GroupHoldView }) {
       ...(view.ticketing_status ? [["Ticketing", <StatusBadge key="ticketing" severity={view.ticketing_status === "ticketed" ? "fine" : "action"}>
         {GROUP_TICKETING_LABEL[view.ticketing_status]}</StatusBadge>] as [string, React.ReactNode]] : []),
       ["Hold expires", view.hold_expires_at ? formatDateTime(view.hold_expires_at) : "—"],
-      ["Flight", [view.flight.airline, view.flight.sector].filter(Boolean).join(", ") || "—"],
+      ["Flight", <FlightCell key="flight" view={view} />],
       ["Departure", departureText(view.flight.departure_date, view.flight.departure_time) ?? "—"],
       ...(returnFlightText(view.flight) ? [["Return", <span key="return" title={returnFlightText(view.flight) ?? undefined}>{returnFlightText(view.flight)}</span>] as [string, React.ReactNode]] : []),
       ["Stock", view.stock === "owned" ? "Owned" : "Supplier"],

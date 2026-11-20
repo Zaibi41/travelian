@@ -61,6 +61,14 @@ describe.each([
     expect(screen.getByRole("img", { name: "South Air logo" })).toHaveTextContent(/^Z8$/);
   });
 
+  it("uses a separately given airline code (gateway airline_code) for the logo file or the badge", () => {
+    const { unmount } = render(<AirlineLogo airline="South Air" code="Z8" />);
+    expect(screen.getByRole("img")).toHaveAttribute("src", "/airline-logos/south-air.png");
+    unmount();
+    render(<AirlineLogo airline="Some New Airline" code="x3" />);
+    expect(screen.getByRole("img", { name: "Some New Airline logo" })).toHaveTextContent(/^X3$/);
+  });
+
   it("shows the plane icon only when the airline code is unknown", () => {
     const { container } = render(<AirlineLogo airline="Unknown Air" flightNumber="Not specified" />);
     expect(screen.getByRole("img", { name: "Unknown Air logo" })).toHaveTextContent("");

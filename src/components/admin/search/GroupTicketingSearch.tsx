@@ -42,7 +42,7 @@ function GroupAirlineLogo({ row }: { row: GroupResultRow }) {
       airline={row.airline ?? ""}
       flightNumber={row.flightNumber ?? undefined}
       imageUrl={gatewayAssetUrl(row.logoUrl)}
-      className="h-6 w-6 rounded-sm border-border bg-none bg-card shadow-none ring-0"
+      className="h-9 w-9 rounded-xl sm:h-10 sm:w-10"
     />
   );
 }

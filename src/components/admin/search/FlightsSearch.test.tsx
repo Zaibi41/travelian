@@ -140,6 +140,8 @@ describe("admin Flights search, live Southair shape", () => {
       expect(row).not.toHaveTextContent(/info not available|Not available yet|Hold time not available/);
     }
     expect(results).not.toHaveTextContent("Baggage info not available");
+    // #75: Travelian's own South Air logo, same tile as the website (not the bare code)
+    expect(within(results).getAllByRole("img", { name: "South Air logo" })[0]).toHaveAttribute("src", "/airline-logos/south-air.png");
     expect(document.body.innerHTML).not.toMatch(/southair/i);
     expect(document.body.innerHTML).not.toMatch(/Nill Baggage|HIGHLIGHT|\bACC\b|\bHASH\b|\bNLD\b|feature_code|Validity/);
   });

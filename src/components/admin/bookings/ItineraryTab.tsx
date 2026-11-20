@@ -4,6 +4,7 @@ import { formatDay } from "@/lib/admin-search/date-display";
 import type { BookingDetail } from "@/lib/admin-bookings/types";
 import { baggageText, underBaggageLabel } from "@/lib/baggage";
 import { cn } from "@/lib/utils";
+import { AirlineLogo } from "@/components/admin/ui/AirlineLogo";
 
 // Booking detail > Itinerary (mockup booking-detail-itinerary): the flights as the gateway saved
 // them when the booking was held. Columns as in the mockup; "Fare" instead of "Cabin" because the
@@ -55,7 +56,13 @@ export function ItineraryTab({ segments }: { segments: Segment[] }) {
                 <td className={cn(TABLE.td, "align-top whitespace-nowrap")}>{place(segment.destination)}</td>
                 <td className={cn(TABLE.td, "align-top whitespace-nowrap tabular-nums")}>{localTime(segment.departure_local)}</td>
                 <td className={cn(TABLE.td, "align-top whitespace-nowrap tabular-nums")}>{localTime(segment.arrival_local)}</td>
-                <td className={cn(TABLE.td, "align-top max-w-[16rem]")}><span className="block truncate" title={airline}>{airline}</span></td>
+                <td className={cn(TABLE.td, "align-top max-w-[16rem]")}>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <AirlineLogo airline={segment.airline_name ?? segment.airline_code ?? ""} flightNumber={segment.flight_number ?? undefined}
+                      code={segment.airline_code} className="h-9 w-9 rounded-xl" />
+                    <span className="min-w-0 truncate" title={airline}>{airline}</span>
+                  </span>
+                </td>
                 <td className={cn(TABLE.td, "align-top")}>{segment.fare_name ?? "—"}</td>
                 <td className={cn(TABLE.td, "align-top max-w-[12rem]")}>
                   <span className="block truncate" title={baggageText(segment.baggage, segment.baggage_detail).detail}>{underBaggageLabel(baggageText(segment.baggage, segment.baggage_detail).short)}</span>
