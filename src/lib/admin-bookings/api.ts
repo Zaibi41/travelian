@@ -10,12 +10,14 @@ export const fetchBookingDetail = (bookingId: string, options?: GatewayOptions) 
 /** The booking's itinerary (Flights and Group Ticketing), fetched with the user's token, then saved as
  *  "<booking reference>.pdf" or, as an image of the same document, "<booking reference>-itinerary.png". The gateway
  *  leaves supplier names, group ids, cost and profit out. */
-export async function downloadItinerary(bookingId: string, options?: GatewayOptions, format: "pdf" | "png" = "pdf") {
+export async function downloadItinerary(bookingId: string, options?: GatewayOptions, format: "pdf" | "png" = "pdf", withFare = true) {
+  const query = { ...(format === "png" ? { format: "png" as const } : {}), ...(withFare ? {} : { fare: false }) };
   const file = await gatewayGetFile("/v1/admin/bookings/{booking_id}/itinerary.pdf", format === "png" ? "image/png" : "application/pdf", {
     ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "The itinerary can't be downloaded right now.",
-  }, format === "png" ? { format: "png" } : undefined);
+  }, Object.keys(query).length ? query : undefined);
   const safe = bookingId.replace(/[^A-Za-z0-9._-]/g, "_");
-  saveFile(file, format === "png" ? `${safe}-itinerary.png` : `${safe}.pdf`);
+  const suffix = withFare ? "" : "-no-fare";  // issue #18: a print without fare
+  saveFile(file, format === "png" ? `${safe}-itinerary${suffix}.png` : `${safe}${suffix}.pdf`);
 }
 
 export function saveFile(file: Blob, name: string) {

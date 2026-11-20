@@ -46,4 +46,16 @@ describe("downloadItinerary", () => {
       .rejects.toMatchObject({ kind: "not_found", message: "Booking not found." });
     expect(click).not.toHaveBeenCalled();
   });
+
+  it("without fare (#18): fare=false, saved as <reference>-no-fare.pdf", async () => {
+    const pdf = new Blob(["%PDF-1.4 test"], { type: "application/pdf" });
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(pdf, { status: 200, headers: { "Content-Type": "application/pdf" } }));
+    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:nofare");
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+    const names: string[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) { names.push(this.download); });
+    await downloadItinerary("TRV-43", { baseUrl: "http://gw", accessToken: "t", fetchImpl }, "pdf", false);
+    expect(fetchImpl.mock.calls[0][0]).toBe("http://gw/v1/admin/bookings/TRV-43/itinerary.pdf?fare=false");
+    expect(names).toEqual(["TRV-43-no-fare.pdf"]);
+  });
 });

@@ -7888,6 +7888,8 @@ export interface operations {
             query?: {
                 /** @description pdf (default) or png: the same document as one image. */
                 format?: "pdf" | "png";
+                /** @description false: print without fare (no fare column, no Total / Paid / Due), issue #18. */
+                fare?: boolean;
             };
             header?: never;
             path: {
