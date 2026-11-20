@@ -4,6 +4,7 @@
 // only the selling price, never supplier cost.
 
 import { gatewayGet, gatewayPost, type GatewayOptions } from "@/lib/gateway/client";
+import { groupBaggageText, type BaggageText } from "@/lib/baggage";
 import type { components } from "@/lib/gateway/schema";
 
 export type GroupInventory = components["schemas"]["GroupView"];
@@ -112,21 +113,9 @@ export const isCompleteSearch = (search: GroupSearch): boolean =>
   Boolean(search.from || search.to || search.date) && !(search.from && search.from === search.to);
 
 /** "20" / "20 kg" / 20 -> 20; empty or not a number -> null. */
-function kilos(value: unknown): number | null {
-  const text = String(value ?? "").toLowerCase().replace("kg", "").trim();
-  if (!text || !/^\d+(\.\d+)?$/.test(text)) return null;
-  return Number(text);
-}
-
-/** Baggage as shown in results, hand carry first: hand carry 7 and checked 20 -> "7+20 kg";
- *  checked 0 or empty with hand carry 7 -> "7 kg"; 20 alone -> "20 kg". Null when the provider sends neither. Display only. */
-export function baggageText(checked: unknown, handCarry: unknown): string | null {
-  const bag = kilos(checked);
-  const hand = kilos(handCarry);
-  if ((bag === null || bag === 0) && hand) return `${hand} kg`;
-  if (bag && hand) return `${hand}+${bag} kg`;
-  if (bag) return `${bag} kg`;
-  return null;
+/** Group baggage as shown (#36), hand carry first: "7+20 kg"; the gateway's label when sent. Display only. */
+export function ticketBaggage(item: { baggage?: unknown; hand_carry?: unknown; baggage_label?: string | null; baggage_detail?: string | null }): BaggageText {
+  return groupBaggageText(item.baggage, item.hand_carry, item.baggage_label, item.baggage_detail);
 }
 
 export interface GroupResultLeg {
@@ -136,7 +125,7 @@ export interface GroupResultLeg {
   departureDate?: string | null;
   departureTime?: string | null;
   arrivalTime?: string | null;
-  baggage: string | null;
+  baggage: BaggageText;
   meal?: "Yes" | "No" | null;
 }
 
@@ -152,7 +141,7 @@ export interface GroupResultRow {
   airline?: string | null;
   flightNumber?: string | null;
   seatsLeft?: number | null;
-  baggage?: string | null;
+  baggage: BaggageText;
   meal?: "Yes" | "No" | null;
   /** The outbound flight's arrival time (HH:MM), when the provider sends it. */
   arrivalTime?: string | null;
@@ -183,13 +172,13 @@ export function resultRows(groups: GroupInventory[], airline?: string): GroupRes
         airline: (ticket.airline ?? group.airline)?.trim() || null,
         flightNumber: ticket.flight_number ?? null,
         seatsLeft: ticket.remaining,
-        baggage: baggageText(ticket.baggage, ticket.hand_carry),
+        baggage: ticketBaggage(ticket),
         meal: ticket.meal ?? null,
         arrivalTime: outbound.length ? outbound[outbound.length - 1].arrival_time ?? null : null,
         returnLeg: back ? {
           flightNumber: back.flight_number, route: back.origin && back.destination ? `${back.origin} - ${back.destination}` : null,
           departureDate: back.departure_date, departureTime: back.departure_time, arrivalTime: legs.filter(leg => leg.direction === "return").at(-1)?.arrival_time ?? null,
-          baggage: baggageText(back.baggage, back.hand_carry), meal: back.meal ?? null,
+          baggage: ticketBaggage(back), meal: back.meal ?? null,
         } : null,
         stock: ticket.stock,
         canHold: Boolean(ticket.can_hold),

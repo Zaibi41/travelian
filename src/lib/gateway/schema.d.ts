@@ -3753,8 +3753,16 @@ export interface components {
              * @description Local time at the destination.
              */
             arrival_local?: string | null;
-            /** Baggage */
+            /**
+             * Baggage
+             * @description Short, hand carry first: '7 kg', '7+20 kg', or 'Baggage: check with airline'.
+             */
             baggage?: string | null;
+            /**
+             * Baggage Detail
+             * @description In full words, e.g. '7 kg hand carry + 20 kg checked'.
+             */
+            baggage_detail?: string | null;
             /**
              * Departure Local
              * @description Local time at the origin, e.g. 2026-11-19T00:25.
@@ -4103,8 +4111,16 @@ export interface components {
         };
         /** FareView */
         FareView: {
-            /** Baggage */
+            /**
+             * Baggage
+             * @description Short, hand carry first: '7 kg' (hand carry only), '7+20 kg', '7+1×23 kg', '7 kg + 1 pc', or 'Baggage: check with airline'.
+             */
             baggage?: string | null;
+            /**
+             * Baggage Detail
+             * @description In full words, e.g. '7 kg hand carry + 20 kg checked'.
+             */
+            baggage_detail?: string | null;
             /**
              * Booking Mode
              * @description request: a restricted airline (D32). No supplier hold is ever made; it can only be sent as a request to book.
@@ -4526,8 +4542,16 @@ export interface components {
         GroupHoldFlight: {
             /** Airline */
             airline?: string | null;
-            /** Baggage */
+            /**
+             * Baggage
+             * @description Short, hand carry first: '7+20 kg', or 'Baggage: check with airline'.
+             */
             baggage?: string | null;
+            /**
+             * Baggage Detail
+             * @description In full words, e.g. '7 kg hand carry + 20 kg checked'.
+             */
+            baggage_detail?: string | null;
             /** Departure Date */
             departure_date?: string | null;
             /** Departure Time */
@@ -4851,6 +4875,16 @@ export interface components {
              * @description Checked baggage in kg, e.g. '20'.
              */
             baggage?: string | null;
+            /**
+             * Baggage Detail
+             * @description In full words, e.g. '7 kg hand carry + 20 kg checked'.
+             */
+            baggage_detail?: string | null;
+            /**
+             * Baggage Label
+             * @description Baggage as shown, hand carry first: '7+20 kg', or 'Baggage: check with airline'.
+             */
+            baggage_label?: string | null;
             /** Departure Date */
             departure_date?: string | null;
             /** Departure Time */
@@ -5014,6 +5048,16 @@ export interface components {
              * @description Checked baggage of the outbound leg in kg.
              */
             baggage?: string | number | null;
+            /**
+             * Baggage Detail
+             * @description In full words, e.g. '7 kg hand carry + 20 kg checked'.
+             */
+            baggage_detail?: string | null;
+            /**
+             * Baggage Label
+             * @description Outbound baggage as shown, hand carry first: '7+20 kg', or 'Baggage: check with airline'.
+             */
+            baggage_label?: string | null;
             /**
              * Can Hold
              * @description Whether Hold seats can be used on this fare: its source holds seats and it has a price.

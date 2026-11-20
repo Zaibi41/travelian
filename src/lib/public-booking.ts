@@ -2,6 +2,7 @@
 // reference plus the private token the gateway issued when it was made. Prices and what a guest sees are decided
 // by the gateway; this module only sends and displays.
 import { countries } from "@/data/countries";
+import { groupBaggageText } from "@/lib/baggage";
 import type { GroupTicket } from "@/lib/group-ticketing";
 import type { RequiredDocument } from "@/lib/passenger-details";
 
@@ -51,10 +52,11 @@ interface Money { amount_minor: number; currency: string }
 interface PublicLeg {
   direction?: string; flight_number?: string; origin?: string; destination?: string;
   departure_date?: string; departure_time?: string; arrival_date?: string; arrival_time?: string; baggage?: string;
+  hand_carry?: string; baggage_label?: string; baggage_detail?: string;
 }
 interface PublicTicket {
   id: string; sector?: string; airline?: string; flight_number?: string; departure_date?: string; departure_time?: string;
-  baggage?: string; hand_carry?: string; meal?: string; ticket_type?: string; legs?: PublicLeg[]; selling_price?: Money;
+  baggage?: string; hand_carry?: string; baggage_label?: string; baggage_detail?: string; meal?: string; ticket_type?: string; legs?: PublicLeg[]; selling_price?: Money;
   fare_terms?: { notice?: string; refund?: string };
 }
 interface PublicGroup { id: string; sector?: string; airline?: string; logo_url?: string; tickets: PublicTicket[] }
@@ -75,7 +77,8 @@ function logoUrl(path?: string) {
 function toGroupTicket(group: PublicGroup, ticket: PublicTicket): GroupTicket {
   const legs = ticket.legs || [];
   const returning = legs.some((leg) => leg.direction === "return");
-  const baggage = [ticket.baggage, ticket.hand_carry].filter(Boolean).join("+");
+  // #36: hand carry first ("7+20 kg"), from the gateway's label when it sent one.
+  const baggage = groupBaggageText(ticket.baggage, ticket.hand_carry, ticket.baggage_label, ticket.baggage_detail);
   return {
     id: ticket.id,
     provider: GATEWAY_GROUP_PROVIDER,
@@ -85,12 +88,13 @@ function toGroupTicket(group: PublicGroup, ticket: PublicTicket): GroupTicket {
     tripType: returning ? "round-trip" : "one-way",
     itinerary: legs.map((leg, index) => ({
       sequence: index + 1, flightNumber: leg.flight_number, flightDate: leg.departure_date, origin: leg.origin,
-      destination: leg.destination, baggage: leg.baggage, departureTime: leg.departure_time, arrivalTime: leg.arrival_time,
+      destination: leg.destination, baggage: groupBaggageText(leg.baggage, leg.hand_carry, leg.baggage_label, leg.baggage_detail).short, departureTime: leg.departure_time, arrivalTime: leg.arrival_time,
     })),
     departureDate: ticket.departure_date,
     returnDate: legs.find((leg) => leg.direction === "return")?.departure_date,
     flightNumber: ticket.flight_number,
-    baggage: baggage ? `${baggage} kg` : undefined,
+    baggage: baggage.short,
+    baggageDetail: baggage.detail,
     fare: ticket.selling_price ? ticket.selling_price.amount_minor / 100 : undefined,
     currency: ticket.selling_price?.currency || "PKR",
     status: "available",

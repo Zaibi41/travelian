@@ -10,7 +10,8 @@ import {
   passengerText, type BookingValues, type FormErrors,
 } from "@/components/admin/search/BookingHoldForm";
 import { GatewayError } from "@/lib/gateway/client";
-import { baggageText, parseGroupSearch, sourceLine } from "@/lib/admin-search/group-ticketing";
+import { parseGroupSearch, sourceLine, ticketBaggage } from "@/lib/admin-search/group-ticketing";
+import { underBaggageLabel } from "@/lib/baggage";
 import { departureText, fetchGroupTicket, gatewayMessage, groupHeldPath, groupResultsPath, holdGroupSeats, type GroupHoldRequest } from "@/lib/admin-search/group-holds";
 
 const FORM_ID = "group-hold-form";
@@ -69,7 +70,7 @@ export default function GroupHoldPage() {
     }
   };
 
-  const baggage = fare ? baggageText(fare.baggage, fare.hand_carry) : null;
+  const baggage = fare ? underBaggageLabel(ticketBaggage(fare).detail) : null;
   return (
     <BookingHoldLayout backTo={results} title="Hold group seats" subtitle="Enter the customer and traveler details, then hold the seats.">
       {!ticketId ? (

@@ -2,6 +2,7 @@ import type { Flight } from "@/data/models";
 import { normalizeAirlineName } from "./airline-normalization";
 
 import { API_BASE_URL } from "./api-config";
+import { baggageText } from "./baggage";
 
 export interface FlightSearchInput {
   tripType: "oneway" | "roundtrip" | "multicity";
@@ -74,7 +75,10 @@ export interface FareOption {
     taxes?: number | null;
     total: number;
   };
+  /** Baggage, short form ("7+20 kg"; #36). */
   bags: string;
+  /** Baggage in full words, for tooltips and fare details ("7 kg hand carry + 20 kg checked"). */
+  bagsDetail?: string;
   change: string;
   refund: string;
   meal?: string;
@@ -242,7 +246,7 @@ export function extractAirportCode(value: string) {
 export const GATEWAY_FLIGHT_PROVIDER = "travelian";
 
 interface GatewayMoney { amount_minor: number; currency: string }
-interface GatewayFare { id: string; name: string; meal?: string; baggage?: string; refund?: string; selling_price?: GatewayMoney }
+interface GatewayFare { id: string; name: string; meal?: string; baggage?: string; baggage_detail?: string; refund?: string; selling_price?: GatewayMoney }
 interface GatewayFlight {
   id: string; airline_code?: string; airline_name?: string; flight_number?: string; departure_local?: string; arrival_local?: string;
   duration_minutes?: number; stops?: number; stop_cities?: string[]; fares: GatewayFare[];
@@ -261,12 +265,21 @@ function minutesText(minutes?: number) {
   return typeof minutes === "number" && minutes > 0 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : undefined;
 }
 
+/** A round trip's baggage: one value when both flights have the same allowance, else outbound / return. */
+function fareBags(fare: GatewayFare, back?: GatewayFare) {
+  const out = baggageText(fare.baggage, fare.baggage_detail);
+  if (!back) return { bags: out.short, bagsDetail: out.detail };
+  const ret = baggageText(back.baggage, back.baggage_detail);
+  if (out.short === ret.short) return { bags: out.short, bagsDetail: out.detail };
+  return { bags: `${out.short} / ${ret.short}`, bagsDetail: `Outbound: ${out.detail}. Return: ${ret.detail}.` };
+}
+
 function fareOption(fare: GatewayFare, extra?: GatewayFare): FareOption {
   const total = rupees(fare.selling_price) + rupees(extra?.selling_price);
   return {
     tier: fare.name,
     price: { currency: fare.selling_price?.currency || "PKR", total },
-    bags: fare.baggage || "Baggage info not available",
+    ...fareBags(fare, extra),
     change: "As per airline fare rules",
     refund: fare.refund || "As per airline fare rules",
     meal: fare.meal || undefined,

@@ -1,4 +1,5 @@
 import { GROUP_FARE_CUSTOMER_LINE } from "./group-fare-terms";
+import { baggageText, groupBaggageText, underBaggageLabel } from "@/lib/baggage";
 import { listPublicGroupTicketingCollections } from "@/lib/group-ticketing-collections-api";
 import { normalizeAirlineName } from "@/lib/airline-normalization";
 
@@ -192,7 +193,10 @@ export interface GroupTicket {
   departureDate?: string;
   returnDate?: string;
   flightNumber?: string;
+  /** Short form, hand carry first ("7+20 kg"; #36). */
   baggage?: string;
+  /** Full words ("7 kg hand carry + 20 kg checked"). */
+  baggageDetail?: string;
   seatsAvailable?: number | string;
   fare?: number | string;
   currency?: string;
@@ -506,6 +510,13 @@ function titleize(input: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+/** Supplier group baggage sends checked first ("20+7" = 20 kg checked, 7 kg hand carry); shown hand carry first (#36). */
+function legacyGroupBaggage(raw: unknown): string | undefined {
+  if (raw === null || raw === undefined || raw === "") return undefined;
+  const pair = String(raw).match(/^\s*(\d+)\s*\+\s*(\d+)\s*(kgs?)?\s*$/i);
+  return pair ? groupBaggageText(pair[1], pair[2]).short : baggageText(raw).short;
+}
+
 function normalizeLeg(input: unknown): GroupTicketLeg {
   const record = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
   return {
@@ -515,7 +526,7 @@ function normalizeLeg(input: unknown): GroupTicketLeg {
     flightDate: value(record, ["flight_date", "flightDate", "date", "departure_date"]) as string | undefined,
     origin: value(record, ["origin", "from", "departure"]) as string | undefined,
     destination: value(record, ["destination", "to", "arrival"]) as string | undefined,
-    baggage: value(record, ["baggage", "bags"]) as string | undefined,
+    baggage: legacyGroupBaggage(value(record, ["baggage", "bags"])),
     departureTime: value(record, ["dept_time", "departure_time", "departureTime"]) as string | undefined,
     arrivalTime: value(record, ["arv_time", "arrival_time", "arrivalTime"]) as string | undefined,
   };
@@ -564,7 +575,7 @@ export function normalizeGroupTicket(input: unknown): GroupTicket {
     departureDate: (value(record, ["dept_date", "departure_date", "departureDate", "effective_dept_date"]) || firstDetail.flightDate) as string | undefined,
     returnDate: roundTrip ? (value(record, ["return_date", "returnDate"]) || lastDetail.flightDate) as string | undefined : undefined,
     flightNumber: (value(record, ["flight_no", "flight_number", "flightNumber"]) || firstDetail.flightNumber) as string | undefined,
-    baggage: (value(record, ["baggage", "bagage", "bags"]) || firstDetail.baggage) as string | undefined,
+    baggage: legacyGroupBaggage(value(record, ["baggage", "bagage", "bags"]) || firstDetail.baggage),
     seatsAvailable: value(record, ["seats", "available_seats", "available_no_of_pax", "seatsAvailable"]) as number | string | undefined,
     fare: value(record, ["fare", "price", "amount", "selling_price"]) as number | string | undefined,
     currency: String(value(record, ["currency"]) || "PKR"),
@@ -612,7 +623,7 @@ export function groupTicketWhatsAppMessage(category: string, group: GroupTicket)
     `Trip Type: ${display.tripType === "round-trip" ? "Return" : "One-Way"}`,
     `Departure Date: ${display.departureDate || "Please confirm"}`,
     ...(display.returnDate ? [`Return Date: ${display.returnDate}`] : []),
-    `Baggage: ${display.baggage || "Please confirm"}`,
+    `Baggage: ${underBaggageLabel(baggageText(display.baggage, display.baggageDetail).short)}`,
     `Seats Available: ${display.seatsAvailable || "Please confirm"}`,
     `Fare: ${display.fare ? `${display.currency || "PKR"} ${display.fare}` : "Please confirm"}`,
     ...itinerary,

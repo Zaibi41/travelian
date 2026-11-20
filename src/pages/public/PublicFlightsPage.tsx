@@ -29,6 +29,7 @@ import { airportByCode, loadPublicAirports } from "@/data/airports";
 import { isGroupTicketingProvider, groupTicketToFlight } from "@/lib/provider-systems";
 import { searchPublicGroups, GATEWAY_GROUP_PROVIDER } from "@/lib/public-booking";
 import { normalizeAirlineName, isSameAirline, extractAllAirlines, getAirlineNameFromCarrier } from "@/lib/airline-normalization";
+import { BAGGAGE_UNKNOWN, baggageFilterOptions, baggageText, checkedText, handCarryText, underBaggageLabel, type BaggageText } from "@/lib/baggage";
 
 // Preload airports for routeLabel lookup
 // The shared airport list (D36) loads once in the background; labels use it when ready, the popular list before.
@@ -66,6 +67,8 @@ type DisplayFare = {
   tier: string;
   price: { currency?: string; total: number; base?: number | null; taxes?: number | null };
   bags?: string | null;
+  /** Baggage in full words (#36). */
+  bagsDetail?: string | null;
   meal?: string | null;
   refund?: string | null;
   change?: string | null;
@@ -75,6 +78,13 @@ type DisplayFare = {
   amenities?: string[];
 };
 type FareDetailsTab = "options" | "flight" | "rules" | "baggage";
+
+/** A fare's baggage as shown (#36): the gateway's short form and full words; never a guessed hand carry. */
+const fareBaggage = (fare: { bags?: string | null; bagsDetail?: string | null } | undefined, flight: { baggage?: string | null }): BaggageText =>
+  fare?.bags ? baggageText(fare.bags, fare.bagsDetail) : baggageText(flight.baggage);
+/** Every fare's baggage on a flight (the Baggage filter matches a flight when any of its fares matches). */
+const flightBaggages = (flight: TravelianFlight): BaggageText[] =>
+  flight.fareOptions?.length ? flight.fareOptions.map(fare => fareBaggage(fare, flight)) : [fareBaggage(undefined, flight)];
 type ItinerarySegment = NonNullable<TravelianFlight["segments"]>[number];
 type DisplayJourneyLeg = {
   key: string;
@@ -194,6 +204,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [selectedStops, setSelectedStops] = useState<string[]>([]);
   const [selectedDepartureTimes, setSelectedDepartureTimes] = useState<string[]>([]);
+  const [selectedBaggage, setSelectedBaggage] = useState<string[]>([]);
   const [sort, setSort] = useState("price-asc");
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
   const [departDate, setDepartDate] = useState<Date>(initDate);
@@ -276,6 +287,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     setSelectedAirlines([]);
     setSelectedStops([]);
     setSelectedDepartureTimes([]);
+    setSelectedBaggage([]);
     setSelectedFlight(null);
     setParams(new URLSearchParams({
       from: effectiveFrom,
@@ -314,6 +326,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   };
   const toggleStopFilter = (value: string) => setSelectedStops(prev => prev.includes(value) ? prev.filter(x => x !== value) : [...prev, value]);
   const toggleDepartureTimeFilter = (value: string) => setSelectedDepartureTimes(prev => prev.includes(value) ? prev.filter(x => x !== value) : [...prev, value]);
+  const toggleBaggageFilter = (value: string) => setSelectedBaggage(prev => prev.includes(value) ? prev.filter(x => x !== value) : [...prev, value]);
 
   const [, setProviderUpdateCounter] = useState(0);
   useEffect(() => {
@@ -478,6 +491,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       const departureKey = hour < 6 ? "early" : hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening";
       if (!selectedDepartureTimes.includes(departureKey)) return false;
     }
+    if (selectedBaggage.length > 0 && !flightBaggages(f).some(baggage => selectedBaggage.includes(baggage.short))) return false;
     return true;
   });
 
@@ -561,14 +575,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return meal === "No Meal" ? "No Meal" : "Meal";
   };
 
-  const baggageLabel = (fare: DisplayFare, flight: TravelianFlight) => {
-    if (/nil baggage/i.test(fare.tier)) return "7 KG";
-    const baggage = cleanFareText(fare.bags || flight.baggage, "7 KG");
-    return /^nil(?: baggage)?$/i.test(baggage) ? "7 KG" : baggage;
-  };
+  // Shown under a "Baggage" heading: "Check with airline" rather than repeating "Baggage:".
+  const baggageLabel = (fare: DisplayFare, flight: TravelianFlight) => underBaggageLabel(fareBaggage(fare, flight).short);
+  const baggageWords = (fare: DisplayFare, flight: TravelianFlight) => fareBaggage(fare, flight).detail;
 
   const hasMeal = (fare: DisplayFare, flight: TravelianFlight) => mealLabel(fare, flight) !== "No Meal";
-  const hasBaggage = (fare: DisplayFare, flight: TravelianFlight) => baggageLabel(fare, flight) !== "No Baggage";
+  const hasBaggage = (fare: DisplayFare, flight: TravelianFlight) => fareBaggage(fare, flight).known;
 
   const fareRows = (flight: TravelianFlight): DisplayFare[] => {
     if (flight.fareOptions?.length) {
@@ -576,6 +588,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         tier: cleanFareTier(fare.tier, flight.fareBrand || "Fare option", flight),
         price: fare.price,
         bags: fare.bags,
+        bagsDetail: fare.bagsDetail,
         meal: fare.meal || flight.meal,
         refund: fare.refund,
         change: fare.change,
@@ -792,10 +805,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     { value: "afternoon", label: "Afternoon (12-18)" },
     { value: "evening", label: "Evening (18-24)" },
   ];
+  const baggageOptions = baggageFilterOptions(flights.flatMap(flightBaggages));
   const activeFilterLabels = [
     ...selectedAirlines.map((airline) => ({ key: `airline-${airline}`, label: airline, onRemove: () => toggleAirline(airline) })),
     ...selectedStops.map((value) => ({ key: `stop-${value}`, label: stopOptions.find((option) => option.value === value)?.label || value, onRemove: () => toggleStopFilter(value) })),
     ...selectedDepartureTimes.map((value) => ({ key: `departure-${value}`, label: departureTimeOptions.find((option) => option.value === value)?.label || value, onRemove: () => toggleDepartureTimeFilter(value) })),
+    ...selectedBaggage.map((value) => ({ key: `baggage-${value}`, label: value === BAGGAGE_UNKNOWN ? value : `Baggage ${baggageOptions.find((option) => option.value === value)?.label || value}`, onRemove: () => toggleBaggageFilter(value) })),
     ...(search ? [{ key: "search", label: `Search: ${search}`, onRemove: () => setSearch("") }] : []),
   ];
   const hasFilterChanges = activeFilterLabels.length > 0 || priceRange[0] > 0 || priceRange[1] < maxPrice;
@@ -1301,7 +1316,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 {formatFare(priceRange[0], currency)} - {formatFare(priceRange[1], currency)}
               </span>
             ) : null}
-            <Button variant="ghost" size="sm" className="h-7 rounded-full text-xs" onClick={() => { setSelectedAirlines([]); setSelectedStops([]); setSelectedDepartureTimes([]); setPriceRange([0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)]); setSearch(""); }}>
+            <Button variant="ghost" size="sm" className="h-7 rounded-full text-xs" onClick={() => { setSelectedAirlines([]); setSelectedStops([]); setSelectedDepartureTimes([]); setSelectedBaggage([]); setPriceRange([0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)]); setSearch(""); }}>
               Clear all
             </Button>
           </div>
@@ -1419,6 +1434,20 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 </div>
               </CardContent>
             </Card>
+            {baggageOptions.length > 0 && <Card className="shadow-card border-0">
+              <CardContent className="p-4">
+                <h3 id="baggage-filter" className="font-semibold text-foreground text-sm mb-3">Baggage</h3>
+                {/* #36: built from the fares in these results, in the short form, lightest first. */}
+                <div role="group" aria-labelledby="baggage-filter" className="space-y-2.5">
+                  {baggageOptions.map(option => (
+                    <label key={option.value} className="flex min-w-0 cursor-pointer items-center gap-2" title={option.label}>
+                      <Checkbox checked={selectedBaggage.includes(option.value)} onCheckedChange={() => toggleBaggageFilter(option.value)} aria-label={underBaggageLabel(option.label)} />
+                      <span className="min-w-0 truncate text-xs text-muted-foreground">{underBaggageLabel(option.label)}</span>
+                    </label>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>}
             <Card className="shadow-card border-0">
               <CardContent className="p-4">
                 <h3 className="font-semibold text-foreground text-sm mb-3">Airlines</h3>
@@ -1472,7 +1501,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               const isGroup = isGroupTicketingProvider(flight.provider) || flight.fareBrand === "Group Ticket" || flight.flightId.startsWith("group-");
               const hasFareOptions = (flight.fareOptions || []).length > 0;
               const fareOptionsOpen = selectedFlight === flight.flightId;
-              const displayFares = fareRows(flight);
+              const allFares = fareRows(flight);
+              const matchingFares = selectedBaggage.length ? allFares.filter(fare => selectedBaggage.includes(fareBaggage(fare, flight).short)) : allFares;
+              const displayFares = matchingFares.length ? matchingFares : allFares;
               const primaryFare = displayFares[0];
               const visibleFares = fareOptionsOpen ? displayFares : displayFares.slice(0, 1);
               const hiddenFareCount = Math.max(0, displayFares.length - 1);
@@ -1635,9 +1666,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                   </p>
                                 </td>
                                 <td className="px-4 py-3 align-middle">
-                                  <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={baggageLabel(fare, flight)}>
-                                    <Luggage className={cn("h-3.5 w-3.5 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
-                                    <span className="truncate">{baggageLabel(fare, flight)}</span>
+                                  <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={baggageWords(fare, flight)}>
+                                    <Luggage aria-hidden="true" className={cn("h-3.5 w-3.5 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
+                                    <span className="truncate" aria-hidden="true">{baggageLabel(fare, flight)}</span>
+                                    <span className="sr-only">{baggageWords(fare, flight)}</span>
                                   </p>
                                 </td>
                                 <td className="overflow-hidden px-3 py-3 text-center align-middle">
@@ -1679,9 +1711,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                     : <UtensilsCrossed className="h-4 w-4 shrink-0 text-muted-foreground" />}
                                   <span className="truncate">{mealLabel(fare, flight)}</span>
                                 </p>
-                                <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={baggageLabel(fare, flight)}>
-                                  <Luggage className={cn("h-4 w-4 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
-                                  <span className="truncate">{baggageLabel(fare, flight)}</span>
+                                <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={baggageWords(fare, flight)}>
+                                  <Luggage aria-hidden="true" className={cn("h-4 w-4 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
+                                  <span className="truncate" aria-hidden="true">{baggageLabel(fare, flight)}</span>
+                                  <span className="sr-only">{baggageWords(fare, flight)}</span>
                                 </p>
                               </div>
                               
@@ -1793,7 +1826,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               <div className="mb-3 grid grid-cols-2 gap-3 text-xs md:mb-0 md:contents">
                                 <span className="flex items-center gap-1.5 text-muted-foreground md:text-sm">
                                   <Luggage className="h-3.5 w-3.5 text-primary shrink-0" /> 
-                                  <span className="truncate">{fare.bags || flight.baggage || "Baggage TBA"}</span>
+                                  <span className="truncate" title={fareBaggage(fare, flight).detail}>{baggageLabel(fare, flight)}</span>
                                 </span>
                                 <span className="flex items-center gap-1.5 text-muted-foreground md:text-sm">
                                   <Coffee className="h-3.5 w-3.5 text-primary shrink-0" /> 
@@ -1842,7 +1875,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   ))}
                 </div>
                 <div className="flex flex-wrap justify-center gap-2">
-                  <Button variant="outline" className="rounded-lg" onClick={() => { setSelectedAirlines([]); setSelectedStops([]); setSelectedDepartureTimes([]); setPriceRange([0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)]); setSearch(""); }}>
+                  <Button variant="outline" className="rounded-lg" onClick={() => { setSelectedAirlines([]); setSelectedStops([]); setSelectedDepartureTimes([]); setSelectedBaggage([]); setPriceRange([0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)]); setSearch(""); }}>
                     Clear All Filters
                   </Button>
                   <a href={whatsappUrl(`Hello Travelian,\n\nPlease check live fares for ${from} to ${to} on ${format(departDate, "MMM dd, yyyy")}.\n\nTravelers: ${formatTravelers(travelers)}\nCurrency: ${currency}`)} target="_blank" rel="noreferrer">
@@ -2131,7 +2164,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 <div className="grid grid-cols-2 gap-3 py-3 sm:grid-cols-3">
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     <Luggage className={cn("h-4 w-4 shrink-0", hasBaggage(fare, fareDetails.flight) ? "text-emerald-600" : "text-slate-400")} />
-                                    <span className="truncate font-medium text-slate-700">{baggageLabel(fare, fareDetails.flight)}</span>
+                                    <span className="truncate font-medium text-slate-700" title={baggageWords(fare, fareDetails.flight)}>{baggageLabel(fare, fareDetails.flight)}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     {hasMeal(fare, fareDetails.flight) ? (
@@ -2235,9 +2268,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 {fareDetailsTab === "baggage" && (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <InfoBox title="Fare" value={fareDetails.fare.tier} />
-                    <InfoBox title="Cabin baggage" value={hasBaggage(fareDetails.fare, fareDetails.flight) ? baggageLabel(fareDetails.fare, fareDetails.flight) : "No Baggage"} />
-                    <InfoBox title="Checked baggage" value={hasBaggage(fareDetails.fare, fareDetails.flight) ? baggageLabel(fareDetails.fare, fareDetails.flight) : "No Baggage"} />
-                    <InfoBox title="Pieces / weight" value={hasBaggage(fareDetails.fare, fareDetails.flight) ? baggageLabel(fareDetails.fare, fareDetails.flight) : "Baggage details are not available."} />
+                    <InfoBox title="Hand carry" value={handCarryText(fareBaggage(fareDetails.fare, fareDetails.flight))} />
+                    <InfoBox title="Checked baggage" value={checkedText(fareBaggage(fareDetails.fare, fareDetails.flight))} />
+                    <InfoBox title="Allowance" value={fareBaggage(fareDetails.fare, fareDetails.flight).detail} />
                   </div>
                 )}
               </div>
@@ -2270,7 +2303,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               <JourneyTimeline flight={detailsFlight} />
 
               <div className="grid gap-3 md:grid-cols-3">
-                <InfoBox title="Baggage" value={detailsFlight.baggage && !/^nil(?: baggage)?$/i.test(detailsFlight.baggage.trim()) ? detailsFlight.baggage : "7 KG"} />
+                <InfoBox title="Baggage" value={underBaggageLabel(fareBaggage(fareRows(detailsFlight)[0], detailsFlight).detail)} />
                 <InfoBox title="Meal" value={detailsFlight.meal || "Meal info not available"} />
                 <InfoBox title="Fare" value={formatFare(detailsFlight.price, detailsFlight.currency)} />
               </div>
@@ -2279,7 +2312,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
                   {fareRows(detailsFlight).length ? fareRows(detailsFlight).map((fare) => (
                     <p key={fare.tier}>
-                      <span className="font-semibold text-foreground">{fare.tier}:</span> Refund: {fare.refund || "On request"} · Change: {fare.change || "On request"} · Bags: {fare.bags || detailsFlight.baggage || "TBA"}
+                      <span className="font-semibold text-foreground">{fare.tier}:</span> Refund: {fare.refund || "On request"} · Change: {fare.change || "On request"} · Baggage: {underBaggageLabel(fareBaggage(fare, detailsFlight).short)}
                     </p>
                   )) : (
                     <p>Fare rules, cancellation, date change, and supplier remarks are shown when returned by the live API.</p>

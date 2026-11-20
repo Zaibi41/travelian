@@ -604,7 +604,7 @@ describe("one shared booking form on both hold routes", () => {
     const group = await screen.findByRole("complementary", { name: "Selected group fare" });
     await within(group).findByText("Fly Jinnah");
     expect(group).toHaveTextContent("The price is confirmed when the seats are held.");
-    expect(group).toHaveTextContent("Baggage7+20 kg");
+    expect(group).toHaveTextContent("Baggage7 kg hand carry + 20 kg checked"); // #36: full words on the hold page
     expect(group).not.toHaveTextContent(/Valid for|Fare confirmed/);
   });
 

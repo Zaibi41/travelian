@@ -15,6 +15,7 @@ import { DayFirstDateField } from "@/components/admin/ui/DayFirstDateField";
 import { FieldLabel, RouteRow, SEARCH_FIELD, SearchSubmitButton } from "@/components/admin/ui/search-form";
 import { SectorAirportSelect } from "@/components/admin/ui/SectorAirportSelect";
 import { Chip } from "@/components/admin/ui/feedback";
+import { underBaggageLabel } from "@/lib/baggage";
 import { cn } from "@/lib/utils";
 import { GatewayError, gatewayAssetUrl } from "@/lib/gateway/client";
 import { GROUP_FARE_NOTICE, GROUP_FARE_REFUND } from "@/lib/group-fare-terms";
@@ -274,8 +275,8 @@ export function GroupTicketingSearch() {
                         </td>
                         <td className="px-2.5 py-2 align-top tabular-nums text-foreground">{row.seatsLeft ?? "—"}</td>
                         <td className="max-w-[12rem] px-2.5 py-2 align-top">
-                          <span className="block truncate text-foreground" title={row.baggage ?? undefined}>{row.baggage ?? "Baggage info not available"}</span>
-                          {back && <span className="block truncate text-label text-muted-foreground">Return {back.baggage ?? "baggage info not available"}</span>}
+                          <span className={cn("block truncate", row.baggage.known ? "text-foreground" : "text-muted-foreground")} title={row.baggage.detail}>{underBaggageLabel(row.baggage.short)}</span>
+                          {back && <span className="block truncate text-label text-muted-foreground" title={back.baggage.detail}>Return {back.baggage.known ? back.baggage.short : "baggage: check with airline"}</span>}
                         </td>
                         <td className="whitespace-nowrap px-2.5 py-2 align-top text-foreground">
                           {row.meal === "Yes" ? "Meal" : row.meal === "No" ? "No Meal" : <span className="text-muted-foreground">Meal info not available</span>}

@@ -1,7 +1,8 @@
 import { format } from "date-fns";
 import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { formatMoney } from "@/lib/admin-bookings/format";
-import { airlineLabel, formatDuration, stopsLabel } from "@/lib/admin-search/flights";
+import { airlineLabel, fareBaggage, formatDuration, stopsLabel } from "@/lib/admin-search/flights";
+import { underBaggageLabel } from "@/lib/baggage";
 import { travelerCount, type HoldDraft } from "@/lib/admin-search/hold";
 import { day, time, useCountdown } from "./FlightsSearch";
 
@@ -29,7 +30,7 @@ export function FlightFareDetails({ draft }: { draft: HoldDraft }) {
         {([
           ["Date", draft.picks.map(pick => day(pick.flight.departure_local)).filter(Boolean).join(" · ") || "—"],
           ["Fare", draft.picks.map(pick => pick.fare.name).join(" · ")],
-          ["Baggage", draft.picks.map(pick => pick.fare.baggage ?? "Baggage info not available").join(" · ")],
+          ["Baggage", draft.picks.map(pick => underBaggageLabel(fareBaggage(pick.fare).short)).join(" · ")],
           ...(quote.new_price_per_adult ? [["Price per adult", formatMoney(quote.new_price_per_adult)] as [string, string]] : []),
           ["Travelers", String(travelerCount(quote))],
         ] as [string, string][]).map(([label, value]) => (

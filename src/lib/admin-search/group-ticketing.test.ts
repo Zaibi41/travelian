@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { baggageText, inventoryOptions, isCompleteSearch, parseGroupSearch, resultRows, searchGroupFares, sectorCodes, sourceLine, writeGroupSearch, type GroupInventory } from "./group-ticketing";
+import { ticketBaggage, inventoryOptions, isCompleteSearch, parseGroupSearch, resultRows, searchGroupFares, sectorCodes, sourceLine, writeGroupSearch, type GroupInventory } from "./group-ticketing";
 
 const ticket = (id: string, overrides: Record<string, unknown> = {}) => ({
   id, sector: "LHE - DMM", departure_date: "2026-11-13", departure_time: "09:45", airline: "Airblue", remaining: 9, baggage: "20 KG",
@@ -22,32 +22,34 @@ describe("group ticketing search helpers", () => {
     expect(options.sectors).toEqual([{ from: "LHE", to: "DMM", count: 2 }, { from: "KHI", to: "JED", count: 1 }]);
     expect(options.airlines).toEqual(["Airblue", "PIA", "Serene Air"]);
   });
-  it("baggage rule, hand carry first: empty or 0 with hand carry 7 -> 7 kg; checked 20 and hand carry 7 -> 7+20 kg; nothing -> null", () => {
-    expect(baggageText("", "7")).toBe("7 kg");
-    expect(baggageText("0", "7")).toBe("7 kg");
-    expect(baggageText(0, 7)).toBe("7 kg");
-    expect(baggageText(null, "7")).toBe("7 kg");
-    expect(baggageText("20", "7")).toBe("7+20 kg");
-    expect(baggageText("30", "10")).toBe("10+30 kg");
-    expect(baggageText("20 KG", null)).toBe("20 kg");
-    expect(baggageText("", "")).toBeNull();
-    expect(baggageText(null, null)).toBeNull();
-    expect(baggageText("see supplier", null)).toBeNull();
+  it("baggage, hand carry first (#36): 0 checked + 7 -> 7 kg; 20 + 7 -> 7+20 kg; no checked value is not read as none; unknown says so", () => {
+    const shown = (baggage: unknown, hand_carry: unknown) => ticketBaggage({ baggage, hand_carry }).short;
+    expect(shown("0", "7")).toBe("7 kg");
+    expect(shown(0, 7)).toBe("7 kg");
+    expect(shown("", "7")).toBe("7 kg hand carry");
+    expect(shown(null, "7")).toBe("7 kg hand carry");
+    expect(shown("20", "7")).toBe("7+20 kg");
+    expect(shown("30", "10")).toBe("10+30 kg");
+    expect(shown("20 KG", null)).toBe("20 kg checked");
+    expect(shown("", "")).toBe("Baggage: check with airline");
+    expect(shown("see supplier", null)).toBe("Baggage: check with airline");
+    expect(ticketBaggage({ baggage: "20", hand_carry: "7", baggage_label: "7+20 kg", baggage_detail: "7 kg hand carry + 20 kg checked" }).detail)
+      .toBe("7 kg hand carry + 20 kg checked");
   });
   it("builds rows with the listing price, logo, flight number, meal and the return leg, earliest first, with an airline filter", () => {
     const rows = resultRows(GROUPS);
     expect(rows.map(row => row.id)).toEqual(["t2", "t1", "t3"]);
     expect(Object.keys(rows[0]).sort()).toEqual(["airline", "arrivalTime", "baggage", "canHold", "departureDate", "departureTime", "flightNumber", "id", "logoUrl",
       "holdUnavailableReason", "meal", "price", "returnLeg", "seatsLeft", "sector", "source", "stock"].sort());
-    expect(rows[0]).toMatchObject({ logoUrl: "/v1/logos/abc", price: { amount_minor: 9_975_000, currency: "PKR" }, baggage: "20 kg", returnLeg: null });
-    expect(rows[2]).toMatchObject({ airline: "PIA", baggage: null });
+    expect(rows[0]).toMatchObject({ logoUrl: "/v1/logos/abc", price: { amount_minor: 9_975_000, currency: "PKR" }, baggage: { short: "20 kg checked" }, returnLeg: null });
+    expect(rows[2]).toMatchObject({ airline: "PIA", baggage: { short: "Baggage: check with airline", known: false } });
     const twoWay = resultRows([{ id: "g3", sector: "ISB - JED", tickets: [ticket("t4", {
       flight_number: "9P700", meal: "No", baggage: "20", hand_carry: "7", can_hold: true, stock: "supplier",
       legs: [{ direction: "outbound", flight_number: "9P700", baggage: "20", hand_carry: "7" },
         { direction: "return", flight_number: "9P701", origin: "JED", destination: "ISB", departure_date: "2026-12-06", departure_time: "11:05", baggage: "30", hand_carry: "10", meal: "No" }],
     })] }] as unknown as GroupInventory[])[0];
-    expect(twoWay).toMatchObject({ flightNumber: "9P700", meal: "No", baggage: "7+20 kg", canHold: true, stock: "supplier",
-      returnLeg: { flightNumber: "9P701", route: "JED - ISB", departureTime: "11:05", baggage: "10+30 kg", meal: "No" } });
+    expect(twoWay).toMatchObject({ flightNumber: "9P700", meal: "No", baggage: { short: "7+20 kg" }, canHold: true, stock: "supplier",
+      returnLeg: { flightNumber: "9P701", route: "JED - ISB", departureTime: "11:05", baggage: { short: "10+30 kg", detail: "10 kg hand carry + 30 kg checked" }, meal: "No" } });
     expect(resultRows(GROUPS, "Serene Air").map(row => row.id)).toEqual(["t2"]);
   });
   it("Source line from the gateway's group_source; none when the gateway leaves it out (no supplier access)", () => {
