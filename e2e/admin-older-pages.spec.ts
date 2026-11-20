@@ -14,7 +14,7 @@ const PAGES: [string, string][] = [
   ["/admin/requests", "Bookings"], ["/admin/wallet", "Wallets"], ["/admin/payments", "Payments"], ["/admin/users", "User Management"],
   ["/admin/rbac", "Access Control (RBAC)"], ["/admin/provider-systems", "Provider Systems"], ["/admin/group-ticketing", "Group Ticketing Collections"],
   ["/admin/coupons", "Coupons & Deals"], ["/admin/blog", "Blog Management"], ["/admin/notifications", "Notifications"],
-  ["/admin/announcements", "Announcements"], ["/admin/attention-queue", "Attention Queue"],
+  ["/admin/attention-queue", "Attention Queue"],
 ];
 
 for (const width of [1280, 390]) {

@@ -68,7 +68,6 @@ const RBACPage = lazy(() => import("./pages/RBACPage"));
 const CouponsPage = lazy(() => import("./pages/CouponsPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
-const AnnouncementsPage = lazy(() => import("./pages/AnnouncementsPage"));
 const SiteLogoPage = lazy(() => import("./pages/SiteLogoPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -177,7 +176,8 @@ const App = () => (
             <Route path="/admin/coupons" element={<AdminLayout><CouponsPage /></AdminLayout>} />
             <Route path="/admin/blog" element={<AdminLayout><BlogPage /></AdminLayout>} />
             <Route path="/admin/notifications" element={<AdminLayout><NotificationsPage /></AdminLayout>} />
-            <Route path="/admin/announcements" element={<AdminLayout><AnnouncementsPage /></AdminLayout>} />
+            {/* Hidden until announcements are stored in the gateway and shown to all staff (#73). */}
+            <Route path="/admin/announcements" element={<Navigate to="/admin" replace />} />
             <Route path="/admin/site-logo" element={<AdminLayout><SiteLogoPage /></AdminLayout>} />
             <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
             <Route path="/admin/customer" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />

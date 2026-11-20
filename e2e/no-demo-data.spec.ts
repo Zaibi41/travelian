@@ -58,3 +58,11 @@ for (const width of [1440, 390]) {
     if (!BEFORE) expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
   });
 }
+
+test("Announcements is hidden: not in the menu, and its address opens the dashboard", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("travelian.admin.announcements.v1", JSON.stringify([{ id: "x", message: "Old", createdAt: "2026-01-01" }])));
+  await open(page, "/admin/announcements", 1440);
+  await expect(page).toHaveURL(/\/admin$/);
+  await expect(page.getByRole("link", { name: "Announcements" })).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem("travelian.admin.announcements.v1"))).toBeNull();
+});
