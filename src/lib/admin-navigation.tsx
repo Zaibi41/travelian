@@ -66,6 +66,8 @@ export interface AdminNavItem {
   url: string;
   icon: ComponentType<{ className?: string }>;
   roles: UserRole[];
+  /** Kept in the menu so staff know it's coming; the page says it isn't built yet (#73). */
+  comingSoon?: boolean;
 }
 
 export interface AdminNavSection {
@@ -84,8 +86,11 @@ const customerRoles: UserRole[] = ["customer"];
 /** Finance > Accounts & Ledgers: the gateway's FINANCE_ACCOUNT_ROLES (Super Admin; Finance once that role exists). */
 const financeAccountRoles: UserRole[] = ["super_admin"];
 
+/** Pages that show a "Not built yet" notice until the gateway serves them (#73: Wallets #68, Payments #69). */
+const COMING_SOON = new Set(["/admin/wallet", "/admin/payments"]);
+
 function item(title: string, url: string, icon: AdminNavItem["icon"], roles: UserRole[]): AdminNavItem {
-  return { title, url, icon, roles };
+  return COMING_SOON.has(url) ? { title, url, icon, roles, comingSoon: true } : { title, url, icon, roles };
 }
 
 export const adminNavigation: AdminNavSection[] = [

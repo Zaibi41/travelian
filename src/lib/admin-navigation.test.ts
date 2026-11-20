@@ -159,3 +159,12 @@ describe("flight hold pages", () => {
     expect(adminPageTitle("super_admin", "/admin/search/flights/hold")).toBe("Hold flight");
   });
 });
+
+describe("Finance: Wallets and Payments stay in the menu, marked Coming soon (#73)", () => {
+  it("marks only Wallets and Payments", () => {
+    const finance = getInternalSidebarForRole("super_admin").find(menu => menu.title === "Finance")!;
+    expect(finance.items.map(item => [item.title, !!item.comingSoon])).toEqual([
+      ["Wallets", true], ["Payments", true], ["Reconciliation", false], ["Accounts & Ledgers", false],
+    ]);
+  });
+});

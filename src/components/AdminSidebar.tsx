@@ -97,7 +97,7 @@ export function AdminSidebar() {
               <SidebarMenuButton
                   asChild
                   isActive={item.menuActive ?? isActive(item.category, item.url, item.title)}
-                  tooltip={item.title}
+                  tooltip={item.comingSoon ? `${item.title} (coming soon)` : item.title}
                   className="mx-auto h-10 w-10 rounded-xl p-0 data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:shadow-sm hover:bg-sidebar-accent/80"
                 >
                   <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-sidebar-primary-foreground" className="flex h-full w-full items-center justify-center">
@@ -133,6 +133,7 @@ export function AdminSidebar() {
                         <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground font-bold">
                           {!internal && <item.icon className="h-5 w-5 shrink-0" />}
                           <span className="min-w-0 break-words">{internal ? section.category : item.title}</span>
+                          {!internal && item.comingSoon && <ComingSoon />}
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -168,6 +169,7 @@ export function AdminSidebar() {
                             <NavLink to={item.url} end={item.url === "/admin"} activeClassName="text-primary-foreground font-semibold">
                               {!internal && <item.icon className="h-5 w-5 shrink-0" />}
                               <span>{item.title}</span>
+                              {item.comingSoon && <ComingSoon />}
                             </NavLink>
                           </SidebarMenuButton>
                         </SidebarMenuItem>
@@ -196,5 +198,14 @@ export function AdminSidebar() {
         )}
       </div>
     </Sidebar>
+  );
+}
+
+/** "Coming soon" next to a menu item whose page isn't built yet (#73). Read as part of the link's name. */
+function ComingSoon() {
+  return (
+    <span className="ml-auto shrink-0 rounded-full border border-current/30 px-1.5 py-px text-label font-semibold leading-tight opacity-90">
+      <span className="sr-only"> </span>Coming soon
+    </span>
   );
 }

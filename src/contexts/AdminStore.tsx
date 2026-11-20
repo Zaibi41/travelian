@@ -1,9 +1,8 @@
 import { useLocation } from "react-router-dom";
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from "react";
 import {
-  Booking, Flight, Hotel, Agency, WalletTransaction, Notification,
+  Booking, Flight, Hotel, Agency, Notification,
   TravelTicket, User, UmrahPackage, Coupon, BlogPost, BookingStatus,
-  WalletLedgerEntry, WalletDepositRequest, PaymentWebhookEvent, WalletMethod,
 } from "@/data/models";
 import {
   listPackages as listRemotePackages,
@@ -28,37 +27,12 @@ export interface FlightSearchLog {
   status: 'found' | 'not_found';
 }
 
-// Payment Link
-export interface PaymentLink {
-  id: string;
-  bookingId: string;
-  customerName: string;
-  customerEmail: string;
-  amount: number;
-  status: 'pending' | 'paid' | 'expired';
-  createdAt: string;
-  expiresAt: string;
-  paymentMethod?: string;
-  link: string;
-}
-
-// Payment Config
-export interface PaymentConfig {
-  cardEnabled: boolean;
-  walletEnabled: boolean;
-  bankTransferEnabled: boolean;
-  visaEnabled: boolean;
-  mastercardEnabled: boolean;
-  testMode: boolean;
-}
-
 interface AdminState {
   // Data
   bookings: Booking[];
   flights: Flight[];
   hotels: Hotel[];
   agencies: Agency[];
-  transactions: WalletTransaction[];
   notifications: Notification[];
   tickets: TravelTicket[];
   users: User[];
@@ -67,11 +41,6 @@ interface AdminState {
   coupons: Coupon[];
   blogPosts: BlogPost[];
   flightSearchLogs: FlightSearchLog[];
-  paymentLinks: PaymentLink[];
-  paymentConfig: PaymentConfig;
-  walletLedger: WalletLedgerEntry[];
-  walletDeposits: WalletDepositRequest[];
-  paymentWebhookEvents: PaymentWebhookEvent[];
 
   /** Load CMS hotel inventory when a page needs it (avoids /content/hotels on every route). */
   loadHotelContent: () => void;
@@ -101,29 +70,6 @@ interface AdminState {
   deleteTicket: (id: string) => void;
   issueTicketForBooking: (bookingId: string) => void;
 
-  // Wallet actions
-  addWalletFunds: (agencyId: string, amount: number, desc: string) => void;
-  deductWalletFunds: (agencyId: string, amount: number, desc: string) => void;
-  createWalletDeposit: (input: {
-    agencyId: string;
-    amount: number;
-    method: 'card' | '1link' | 'bank_transfer';
-    reference?: string;
-    transferDate?: string;
-    proofUrl?: string;
-    notes?: string;
-    requestedBy: string;
-  }) => WalletDepositRequest | undefined;
-  approveWalletDeposit: (depositId: string, approvedBy: string) => void;
-  rejectWalletDeposit: (depositId: string, rejectedBy: string, reason: string) => void;
-  manualWalletAdjustment: (input: {
-    agencyId: string;
-    type: 'credit' | 'debit';
-    amount: number;
-    reason: string;
-    createdBy: string;
-  }) => boolean;
-
   // Notification actions
   addNotification: (n: Omit<Notification, 'id'>) => void;
   markNotificationRead: (id: string) => void;
@@ -147,32 +93,21 @@ interface AdminState {
   // Flight search log
   addFlightSearchLog: (log: FlightSearchLog) => void;
 
-  // Payment links
-  addPaymentLink: (pl: PaymentLink) => void;
-  updatePaymentLink: (id: string, data: Partial<PaymentLink>) => void;
-
-  // Payment config
-  updatePaymentConfig: (cfg: Partial<PaymentConfig>) => void;
 
 }
 
 const AdminContext = createContext<AdminState | undefined>(undefined);
 
 const initialSearchLogs: FlightSearchLog[] = [];
-const initialPaymentLinks: PaymentLink[] = [];
-const WALLET_LEDGER_STORAGE_KEY = "travelian:wallet-ledger";
-const WALLET_DEPOSITS_STORAGE_KEY = "travelian:wallet-deposits";
-const PAYMENT_WEBHOOK_STORAGE_KEY = "travelian:payment-webhook-events";
+/** Browser keys the old fake Finance → Wallets / Payments screens wrote (#73). Cleared on load, so no fake balance or
+ *  ledger stays in a browser; the real data will come from the gateway (#68, #69). */
+export const RETIRED_FINANCE_KEYS = ["travelian:wallet-ledger", "travelian:wallet-deposits", "travelian:payment-webhook-events"];
 
-function loadStoredArray<T>(key: string): T[] {
-  if (typeof window === "undefined") return [];
+export function clearRetiredFinanceData() {
   try {
-    const raw = window.localStorage.getItem(key);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    for (const key of RETIRED_FINANCE_KEYS) window.localStorage.removeItem(key);
   } catch {
-    return [];
+    // storage blocked: nothing to clear
   }
 }
 
@@ -186,7 +121,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [flights, setFlights] = useState<Flight[]>([]);
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [agencies, setAgencies] = useState<Agency[]>([]);
-  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [tickets, setTickets] = useState<TravelTicket[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -194,14 +128,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [blogPosts] = useState<BlogPost[]>([]);
   const [flightSearchLogs, setFlightSearchLogs] = useState<FlightSearchLog[]>(initialSearchLogs);
-  const [paymentLinks, setPaymentLinks] = useState<PaymentLink[]>(initialPaymentLinks);
-  const [paymentConfig, setPaymentConfig] = useState<PaymentConfig>({
-    cardEnabled: true, walletEnabled: true, bankTransferEnabled: true,
-    visaEnabled: true, mastercardEnabled: true, testMode: true,
-  });
-  const [walletLedger, setWalletLedger] = useState<WalletLedgerEntry[]>(() => loadStoredArray<WalletLedgerEntry>(WALLET_LEDGER_STORAGE_KEY));
-  const [walletDeposits, setWalletDeposits] = useState<WalletDepositRequest[]>(() => loadStoredArray<WalletDepositRequest>(WALLET_DEPOSITS_STORAGE_KEY));
-  const [paymentWebhookEvents, setPaymentWebhookEvents] = useState<PaymentWebhookEvent[]>(() => loadStoredArray<PaymentWebhookEvent>(PAYMENT_WEBHOOK_STORAGE_KEY));
   const hotelContentRequestedRef = useRef(false);
 
   const loadHotelContent = useCallback(() => {
@@ -228,17 +154,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   }, [needsUmrah]);
 
   // Hotel content is loaded on demand via loadHotelContent (Home, admin hotel search).
-  useEffect(() => {
-    window.localStorage.setItem(WALLET_LEDGER_STORAGE_KEY, JSON.stringify(walletLedger));
-  }, [walletLedger]);
-
-  useEffect(() => {
-    window.localStorage.setItem(WALLET_DEPOSITS_STORAGE_KEY, JSON.stringify(walletDeposits));
-  }, [walletDeposits]);
-
-  useEffect(() => {
-    window.localStorage.setItem(PAYMENT_WEBHOOK_STORAGE_KEY, JSON.stringify(paymentWebhookEvents));
-  }, [paymentWebhookEvents]);
+  useEffect(clearRetiredFinanceData, []);
 
   // Booking
   const updateBookingStatus = useCallback((id: string, status: BookingStatus) => {
@@ -295,155 +211,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }, ...p]);
   }, [bookings]);
 
-  // Wallet
-  const ledgerBalanceForAgency = useCallback((agencyId: string, ledger = walletLedger) => (
-    ledger
-      .filter(entry => entry.agencyId === agencyId && entry.status === 'approved')
-      .reduce((sum, entry) => sum + (entry.type === 'credit' ? entry.amount : -entry.amount), 0)
-  ), [walletLedger]);
-
-  const syncAgencyWalletBalance = useCallback((agencyId: string, balance: number) => {
-    setAgencies(p => p.map(a => a.agencyId === agencyId ? { ...a, walletBalance: Math.max(0, balance) } : a));
-  }, []);
-
-  const appendLedgerEntry = useCallback((entry: Omit<WalletLedgerEntry, 'ledgerId' | 'createdAt' | 'balanceAfter'>) => {
-    setWalletLedger(previous => {
-      const currentBalance = ledgerBalanceForAgency(entry.agencyId, previous);
-      const balanceAfter = Math.max(0, currentBalance + (entry.type === 'credit' ? entry.amount : -entry.amount));
-      const nextEntry: WalletLedgerEntry = {
-        ...entry,
-        ledgerId: `wl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        createdAt: new Date().toISOString(),
-        balanceAfter,
-      };
-      syncAgencyWalletBalance(entry.agencyId, balanceAfter);
-      return [nextEntry, ...previous];
-    });
-  }, [ledgerBalanceForAgency, syncAgencyWalletBalance]);
-
-  const createApprovedLedgerCreditForDeposit = useCallback((deposit: WalletDepositRequest, approvedBy: string) => {
-    appendLedgerEntry({
-      agencyId: deposit.agencyId,
-      agencyName: deposit.agencyName,
-      type: 'credit',
-      amount: deposit.amount,
-      method: deposit.method,
-      status: 'approved',
-      reference: deposit.providerReference || deposit.reference,
-      description: `${deposit.method === '1link' ? '1Link' : deposit.method === 'card' ? 'Card' : 'Bank transfer'} wallet deposit`,
-      createdBy: deposit.requestedBy,
-      approvedBy,
-      approvedAt: new Date().toISOString(),
-      depositRequestId: deposit.depositId,
-    });
-  }, [appendLedgerEntry]);
-
-  const addWalletFunds = useCallback((agencyId: string, amount: number, desc: string) => {
-    setAgencies(p => p.map(a => a.agencyId === agencyId ? { ...a, walletBalance: a.walletBalance + amount } : a));
-    const agency = agencies.find(a => a.agencyId === agencyId);
-    const balance = (agency?.walletBalance || 0) + amount;
-    setTransactions(p => [...p, { transactionId: `t${Date.now()}`, agencyId, agencyName: agency?.agencyName || '', type: 'credit', amount, description: desc, balanceAfter: balance, createdAt: new Date().toISOString().split('T')[0] }]);
-    setNotifications(p => [{ id: `n${Date.now()}`, title: 'Wallet Top-up', message: `$${amount.toLocaleString()} added to ${agency?.agencyName}`, type: 'wallet', read: false, createdAt: new Date().toISOString() }, ...p]);
-  }, [agencies]);
-
-  const deductWalletFunds = useCallback((agencyId: string, amount: number, desc: string) => {
-    setAgencies(p => p.map(a => a.agencyId === agencyId ? { ...a, walletBalance: Math.max(0, a.walletBalance - amount) } : a));
-    const agency = agencies.find(a => a.agencyId === agencyId);
-    const balance = Math.max(0, (agency?.walletBalance || 0) - amount);
-    setTransactions(p => [...p, { transactionId: `t${Date.now()}`, agencyId, agencyName: agency?.agencyName || '', type: 'debit', amount, description: desc, balanceAfter: balance, createdAt: new Date().toISOString().split('T')[0] }]);
-  }, [agencies]);
-
-  const createWalletDeposit = useCallback((input: {
-    agencyId: string;
-    amount: number;
-    method: 'card' | '1link' | 'bank_transfer';
-    reference?: string;
-    transferDate?: string;
-    proofUrl?: string;
-    notes?: string;
-    requestedBy: string;
-  }) => {
-    const agency = agencies.find(a => a.agencyId === input.agencyId);
-    if (!agency || input.amount <= 0) return undefined;
-    const now = new Date().toISOString();
-    const providerReference = input.method === 'bank_transfer' ? input.reference?.trim() : `${input.method.toUpperCase()}-${Date.now()}`;
-    const duplicateProcessed = providerReference
-      ? paymentWebhookEvents.some(event => event.providerReference === providerReference && event.status === 'processed')
-      : false;
-    const deposit: WalletDepositRequest = {
-      depositId: `wd-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      agencyId: agency.agencyId,
-      agencyName: agency.agencyName,
-      amount: input.amount,
-      method: input.method,
-      status: input.method === 'bank_transfer' ? 'pending' : duplicateProcessed ? 'cancelled' : 'approved',
-      reference: input.reference?.trim() || providerReference || `DEP-${Date.now()}`,
-      providerReference,
-      transferDate: input.transferDate,
-      proofUrl: input.proofUrl,
-      notes: input.notes,
-      requestedBy: input.requestedBy,
-      approvedBy: input.method === 'bank_transfer' ? undefined : 'payment-webhook',
-      createdAt: now,
-      approvedAt: input.method === 'bank_transfer' ? undefined : now,
-    };
-    setWalletDeposits(previous => [deposit, ...previous]);
-    if (input.method !== 'bank_transfer' && providerReference) {
-      const event: PaymentWebhookEvent = {
-        eventId: `pwe-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        provider: input.method,
-        providerReference,
-        depositRequestId: deposit.depositId,
-        status: duplicateProcessed ? 'duplicate' : 'processed',
-        receivedAt: now,
-      };
-      setPaymentWebhookEvents(previous => [event, ...previous]);
-      if (!duplicateProcessed) createApprovedLedgerCreditForDeposit(deposit, 'payment-webhook');
-    }
-    return deposit;
-  }, [agencies, createApprovedLedgerCreditForDeposit, paymentWebhookEvents]);
-
-  const approveWalletDeposit = useCallback((depositId: string, approvedBy: string) => {
-    const deposit = walletDeposits.find(item => item.depositId === depositId);
-    if (!deposit || deposit.status !== 'pending') return;
-    const approvedAt = new Date().toISOString();
-    setWalletDeposits(previous => previous.map(item => item.depositId === depositId ? { ...item, status: 'approved', approvedBy, approvedAt } : item));
-    createApprovedLedgerCreditForDeposit({ ...deposit, status: 'approved', approvedBy, approvedAt }, approvedBy);
-  }, [createApprovedLedgerCreditForDeposit, walletDeposits]);
-
-  const rejectWalletDeposit = useCallback((depositId: string, rejectedBy: string, reason: string) => {
-    setWalletDeposits(previous => previous.map(item => item.depositId === depositId && item.status === 'pending'
-      ? { ...item, status: 'rejected', rejectedBy, rejectionReason: reason, rejectedAt: new Date().toISOString() }
-      : item));
-  }, []);
-
-  const manualWalletAdjustment = useCallback((input: {
-    agencyId: string;
-    type: 'credit' | 'debit';
-    amount: number;
-    reason: string;
-    createdBy: string;
-  }) => {
-    const agency = agencies.find(a => a.agencyId === input.agencyId);
-    if (!agency || input.amount <= 0 || !input.reason.trim()) return false;
-    const currentBalance = ledgerBalanceForAgency(input.agencyId);
-    if (input.type === 'debit' && input.amount > currentBalance) return false;
-    appendLedgerEntry({
-      agencyId: agency.agencyId,
-      agencyName: agency.agencyName,
-      type: input.type,
-      amount: input.amount,
-      method: 'manual',
-      status: 'approved',
-      reference: `MANUAL-${Date.now()}`,
-      description: input.reason.trim(),
-      createdBy: input.createdBy,
-      approvedBy: input.createdBy,
-      approvedAt: new Date().toISOString(),
-    });
-    return true;
-  }, [agencies, appendLedgerEntry, ledgerBalanceForAgency]);
-
   // Notifications
   const addNotification = useCallback((n: Omit<Notification, 'id'>) => setNotifications(p => [{ ...n, id: `n${Date.now()}` }, ...p]), []);
   const markNotificationRead = useCallback((id: string) => setNotifications(p => p.map(n => n.id === id ? { ...n, read: true } : n)), []);
@@ -486,39 +253,21 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Payment links
-  const addPaymentLink = useCallback((pl: PaymentLink) => setPaymentLinks(p => [...p, pl]), []);
-  const updatePaymentLink = useCallback((id: string, data: Partial<PaymentLink>) => {
-    setPaymentLinks(p => p.map(pl => pl.id === id ? { ...pl, ...data } : pl));
-    if (data.status === 'paid') {
-      const link = paymentLinks.find(pl => pl.id === id);
-      if (link) {
-        setNotifications(p => [{ id: `n${Date.now()}`, title: 'Payment Received', message: `Payment of $${link.amount.toLocaleString()} received from ${link.customerName}`, type: 'booking', read: false, createdAt: new Date().toISOString() }, ...p]);
-      }
-    }
-  }, [paymentLinks]);
-
-  // Payment config
-  const updatePaymentConfig = useCallback((cfg: Partial<PaymentConfig>) => setPaymentConfig(p => ({ ...p, ...cfg })), []);
-
   return (
     <AdminContext.Provider value={{
-      bookings, flights, hotels, agencies, transactions, notifications, tickets, users,
-      packageLoadStatus, packages, coupons, blogPosts, flightSearchLogs, paymentLinks,
-      paymentConfig, walletLedger, walletDeposits, paymentWebhookEvents,
+      bookings, flights, hotels, agencies, notifications, tickets, users,
+      packageLoadStatus, packages, coupons, blogPosts, flightSearchLogs,
       loadHotelContent,
       updateBookingStatus, addBooking, deleteBooking,
       addFlight, updateFlight, deleteFlight,
       addHotel, updateHotel, deleteHotel,
       addAgency, updateAgency,
       addTicket, updateTicket, deleteTicket, issueTicketForBooking,
-      addWalletFunds, deductWalletFunds, createWalletDeposit, approveWalletDeposit, rejectWalletDeposit, manualWalletAdjustment,
       addNotification, markNotificationRead, markAllRead,
       addUser, updateUser, deleteUser,
       addPackage, updatePackage, deletePackage,
       addCoupon, updateCoupon, deleteCoupon,
-      addFlightSearchLog, addPaymentLink, updatePaymentLink,
-      updatePaymentConfig,
+      addFlightSearchLog,
     }}>
       {children}
     </AdminContext.Provider>
