@@ -89,12 +89,12 @@ export function SupplierBookingCard({ booking }: { booking: BookingDetail }) {
       )}
       <div className="flex flex-wrap gap-2">
         {supplier.can_rehold && (
-          <Button type="button" variant="primary" disabled={busy} onClick={() => { setProblem(null); setReholdProblem(null); setReholding(true); }}>Re-hold at SooperFare</Button>
+          <Button type="button" className="h-11 sm:h-10" variant="primary" disabled={busy} onClick={() => { setProblem(null); setReholdProblem(null); setReholding(true); }}>Re-hold at SooperFare</Button>
         )}
         {supplier.can_cancel && supplier.cancel_state !== "confirmed" && (
-          <Button type="button" variant="outline" disabled={busy} onClick={() => { setProblem(null); setConfirming(true); }}>Cancel at SooperFare</Button>
+          <Button type="button" className="h-11 sm:h-10" variant="outline" disabled={busy} onClick={() => { setProblem(null); setConfirming(true); }}>Cancel at SooperFare</Button>
         )}
-        <Button type="button" variant="outline" disabled={busy} onClick={() => check.mutate()}>{check.isPending ? "Checking…" : "Check with SooperFare"}</Button>
+        <Button type="button" className="h-11 sm:h-10" variant="outline" disabled={busy} onClick={() => check.mutate()}>{check.isPending ? "Checking…" : "Check with SooperFare"}</Button>
       </div>
       {note && !problem && <p role="status" className="text-body text-muted-foreground">{note}</p>}
       {problem && <p role="alert" className="text-body text-status-critical-text">{problem}</p>}
@@ -108,8 +108,8 @@ export function SupplierBookingCard({ booking }: { booking: BookingDetail }) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" disabled={cancel.isPending} onClick={() => setConfirming(false)}>Keep booking</Button>
-            <Button type="button" variant="destructive" disabled={cancel.isPending} onClick={() => cancel.mutate()}>{cancel.isPending ? "Cancelling…" : "Cancel at SooperFare"}</Button>
+            <Button type="button" className="h-11 sm:h-10" variant="outline" disabled={cancel.isPending} onClick={() => setConfirming(false)}>Keep booking</Button>
+            <Button type="button" className="h-11 sm:h-10" variant="destructive" disabled={cancel.isPending} onClick={() => cancel.mutate()}>{cancel.isPending ? "Cancelling…" : "Cancel at SooperFare"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -125,8 +125,8 @@ export function SupplierBookingCard({ booking }: { booking: BookingDetail }) {
           </DialogHeader>
           {reholdProblem && <p role="alert" className="text-body text-status-critical-text">{reholdProblem}</p>}
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" disabled={rehold.isPending} onClick={closeRehold}>{newPrice ? "Don't hold" : "Cancel"}</Button>
-            <Button type="button" variant="primary" disabled={rehold.isPending} onClick={() => rehold.mutate(newPrice?.next.amount_minor)}>
+            <Button type="button" className="h-11 sm:h-10" variant="outline" disabled={rehold.isPending} onClick={closeRehold}>{newPrice ? "Don't hold" : "Cancel"}</Button>
+            <Button type="button" className="h-11 sm:h-10" variant="primary" disabled={rehold.isPending} onClick={() => rehold.mutate(newPrice?.next.amount_minor)}>
               {rehold.isPending ? "Holding…" : newPrice ? `Hold at ${formatMoney(newPrice.next)}` : "Re-hold at SooperFare"}
             </Button>
           </DialogFooter>
