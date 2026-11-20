@@ -15,6 +15,7 @@ import { DayFirstDateField } from "@/components/admin/ui/DayFirstDateField";
 import { FieldLabel, RouteRow, SEARCH_FIELD, SearchSubmitButton } from "@/components/admin/ui/search-form";
 import { SectorAirportSelect } from "@/components/admin/ui/SectorAirportSelect";
 import { Chip } from "@/components/admin/ui/feedback";
+import { AirlineLogo } from "@/components/admin/ui/AirlineLogo";
 import { underBaggageLabel } from "@/lib/baggage";
 import { cn } from "@/lib/utils";
 import { GatewayError, gatewayAssetUrl } from "@/lib/gateway/client";
@@ -25,7 +26,7 @@ import { formatMoney } from "@/lib/admin-bookings/format";
 import { groupHoldFormPath } from "@/lib/admin-search/group-holds";
 import {
   fetchGroupInventory, inventoryOptions, isCompleteSearch, parseGroupSearch, resultRows, searchGroupFares, writeGroupSearch,
-  type GroupSearch,
+  type GroupResultRow, type GroupSearch,
 } from "@/lib/admin-search/group-ticketing";
 
 const ANY = "any";
@@ -34,12 +35,16 @@ const HOLD_OFF_REASON = "Holding isn't available for this provider";
 const errorMessage = (error: unknown) =>
   error instanceof GatewayError ? error.message : "Group fares couldn't be loaded. Try again in a few minutes.";
 
-/** Logo served by the gateway (never the supplier's host); hidden if it fails to load. */
-function AirlineLogo({ path }: { path?: string | null }) {
-  const [failed, setFailed] = useState(false);
-  const src = gatewayAssetUrl(path);
-  if (!src || failed) return null;
-  return <img src={src} alt="" width={24} height={24} loading="lazy" onError={() => setFailed(true)} className="h-6 w-6 shrink-0 rounded-sm border border-border bg-card object-contain" />;
+/** Travelian's own logo file first, then the gateway-served logo (never the supplier's host), then the airline code. */
+function GroupAirlineLogo({ row }: { row: GroupResultRow }) {
+  return (
+    <AirlineLogo
+      airline={row.airline ?? ""}
+      flightNumber={row.flightNumber ?? undefined}
+      imageUrl={gatewayAssetUrl(row.logoUrl)}
+      className="h-6 w-6 rounded-sm border-border bg-none bg-card shadow-none ring-0"
+    />
+  );
 }
 
 /** " 06:40–10:05", " 06:40", or "" when the provider sent no time. */
@@ -266,7 +271,7 @@ export function GroupTicketingSearch() {
                         </td>
                         <td className="max-w-[16rem] px-2.5 py-2 align-top">
                           <span className="flex min-w-0 items-center gap-2">
-                            <AirlineLogo path={row.logoUrl} />
+                            <GroupAirlineLogo row={row} />
                             <span className="min-w-0">
                               <span className="block truncate font-semibold text-foreground" title={row.airline ?? undefined}>{row.airline ?? "—"}</span>
                               {row.flightNumber && <span className="block truncate text-label text-muted-foreground">{row.flightNumber}{back?.flightNumber ? ` / ${back.flightNumber}` : ""}</span>}

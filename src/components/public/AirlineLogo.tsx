@@ -18,10 +18,14 @@ const airlineCodes: Record<string, string> = {
   tk: "TK",
   ul: "UL",
   xy: "XY",
+  z8: "Z8",
   pia: "PK",
   "pakistan international airlines": "PK",
   airsial: "PF",
   "air sial": "PF",
+  "south air": "Z8",
+  southair: "Z8",
+  "south air international regional airways limited": "Z8",
   flyadeal: "F3",
   "fly adeal": "F3",
   "fly jinnah": "9P",
@@ -62,6 +66,7 @@ const localAirlineLogos: Record<string, string> = {
   ov: "/airline-logos/salam-air.png",
   pa: "/airline-logos/airblue.png",
   pf: "/airline-logos/airsial.png",
+  z8: "/airline-logos/south-air.png",
   pk: "/airline-logos/pia.png",
   qr: "/airline-logos/qatar-airways.png",
   sv: "/airline-logos/saudia.png",
@@ -74,6 +79,9 @@ const localAirlineLogos: Record<string, string> = {
   "air china": "/airline-logos/air-china.png",
   airsial: "/airline-logos/airsial.png",
   "air sial": "/airline-logos/airsial.png",
+  "south air": "/airline-logos/south-air.png",
+  southair: "/airline-logos/south-air.png",
+  "south air international regional airways limited": "/airline-logos/south-air.png",
   amadeus: "/airline-logos/amadeus.png",
   "azerbaijan airlines": "/airline-logos/azerbaijan-airlines.png",
   azerbaijan: "/airline-logos/azerbaijan-airlines.png",
@@ -113,8 +121,9 @@ const localAirlineLogos: Record<string, string> = {
 
 function resolveCode(airline: string, flightNumber?: string) {
   const flightText = String(flightNumber || "").trim();
-  const flightPrefix = flightText.match(/^[A-Z0-9]{2}/i)?.[0]?.toUpperCase();
-  if (flightPrefix) return flightPrefix;
+  // An airline code is two letters/digits (at least one letter) followed by the flight's digits: "Z8266", "PK 303".
+  const flightPrefix = flightText.match(/^([A-Z0-9]{2})[\s-]*\d/i)?.[1]?.toUpperCase();
+  if (flightPrefix && /[A-Z]/.test(flightPrefix)) return flightPrefix;
   return airlineCodes[String(airline || "").toLowerCase()] || "";
 }
 
@@ -156,9 +165,15 @@ export function AirlineLogo({
     );
   }
 
+  // No logo file and no (working) supplier image: the airline's IATA code as a badge, never an empty box.
+  // The plane icon is only for a flight whose airline code is unknown.
   return (
-    <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/15", className)}>
-      <Plane className="h-6 w-6" />
+    <div
+      role="img"
+      aria-label={`${airlineName} logo`}
+      className={cn("flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/15", className)}
+    >
+      {code ? <span className="text-xs font-bold leading-none tracking-wide">{code}</span> : <Plane className="h-1/2 w-1/2" aria-hidden="true" />}
     </div>
   );
 }

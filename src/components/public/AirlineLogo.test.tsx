@@ -30,10 +30,40 @@ describe.each([
     expect(screen.getByRole("img")).toHaveAttribute("src", "/v1/logos/abc");
   });
 
-  it("uses the supplier image for an airline without a logo file, then the plane icon if it fails", () => {
-    const { container } = render(<AirlineLogo airline="Unknown Air" flightNumber="ZZ 1" imageUrl="/v1/logos/zz" />);
+  it.each([
+    ["South Air", "Z8266"],
+    ["South Air International Regional Airways Limited", "Z8 267"],
+    ["Airline", "Z8266"],
+    ["South Air", undefined],
+  ])("%s %s uses Travelian's South Air file", (airline, flightNumber) => {
+    render(<AirlineLogo airline={airline} flightNumber={flightNumber} imageUrl="/v1/logos/z8" />);
+    expect(screen.getByRole("img")).toHaveAttribute("src", "/airline-logos/south-air.png");
+  });
+
+  it("uses the supplier image for an airline without a logo file, then the IATA code badge if it fails", () => {
+    render(<AirlineLogo airline="Unknown Air" flightNumber="ZZ 1" imageUrl="/v1/logos/zz" />);
+    expect(screen.getByRole("img")).toHaveAttribute("src", "/v1/logos/zz");
     fireEvent.error(screen.getByRole("img"));
-    expect(screen.queryByRole("img")).toBeNull();
+    const badge = screen.getByRole("img", { name: "Unknown Air logo" });
+    expect(badge.tagName).toBe("DIV");
+    expect(badge).toHaveTextContent(/^ZZ$/);
+  });
+
+  it("shows the IATA code badge when there is no logo file and no supplier image", () => {
+    render(<AirlineLogo airline="Unknown Air" flightNumber="X3 1200" />);
+    expect(screen.getByRole("img", { name: "Unknown Air logo" })).toHaveTextContent(/^X3$/);
+  });
+
+  it("falls back to the code badge when both our file and the supplier image fail", () => {
+    render(<AirlineLogo airline="South Air" flightNumber="Z8266" imageUrl="/v1/logos/z8" />);
+    fireEvent.error(screen.getByRole("img"));
+    fireEvent.error(screen.getByRole("img"));
+    expect(screen.getByRole("img", { name: "South Air logo" })).toHaveTextContent(/^Z8$/);
+  });
+
+  it("shows the plane icon only when the airline code is unknown", () => {
+    const { container } = render(<AirlineLogo airline="Unknown Air" flightNumber="Not specified" />);
+    expect(screen.getByRole("img", { name: "Unknown Air logo" })).toHaveTextContent("");
     expect(container.querySelector("svg")).not.toBeNull();
   });
 });
