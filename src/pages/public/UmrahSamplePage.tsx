@@ -123,7 +123,7 @@ export default function UmrahSamplePage() {
 
   return (
     <>
-      <SEO title="Umrah Packages (Sample) | Travelian" description="Preview of the redesigned Travelian Umrah packages page." />
+      <SEO title="Umrah Packages | Travelian" description="Travelian Umrah packages: compare packages and ask for a custom Umrah on WhatsApp." />
 
       {/* HERO */}
       <section className="relative isolate">

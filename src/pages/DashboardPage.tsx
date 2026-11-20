@@ -40,7 +40,7 @@ export default function DashboardPage() {
         <h1 className="font-display text-page-title font-bold text-foreground">{isAgency ? "Agency Dashboard" : "Dashboard"}</h1>
         {/* Gateway flags imported (test) bookings so they're never mistaken for live figures. */}
         {summary.data?.contains_sample_data && (
-          <Tag>Sample data</Tag>
+          <Tag>Includes imported bookings</Tag>
         )}
       </div>
 

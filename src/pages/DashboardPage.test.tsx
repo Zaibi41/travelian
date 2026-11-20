@@ -174,12 +174,12 @@ describe("DashboardPage", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("VITE_TRAVELIAN_GATEWAY_BASE_URL");
   });
 
-  it("labels imported bookings as Sample data, and only then", () => {
+  it("says when imported bookings are included, and only then", () => {
     renderPage();
-    expect(screen.queryByText("Sample data")).not.toBeInTheDocument();
+    expect(screen.queryByText("Includes imported bookings")).not.toBeInTheDocument();
     setData({ summary: ok({ ...summary([0, 0, 0]), contains_sample_data: true }) });
     renderPage();
-    expect(screen.getByText("Sample data")).toBeInTheDocument();
+    expect(screen.getByText("Includes imported bookings")).toBeInTheDocument();
   });
 
   it("shows one message when the booking source is unavailable everywhere", () => {
