@@ -1,6 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
-import { Bell, ChevronDown, Globe, KeyRound, LogOut, Megaphone, Pencil, UserRound } from "lucide-react";
+import { Bell, ChevronDown, Globe, KeyRound, LogOut, Pencil, UserRound } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -22,7 +22,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 
 import { AdminProfileDialog, type ProfileAction } from "@/components/AdminProfileDialog";
 import { useBookingAlerts } from "@/lib/admin-notifications";
-import { ANNOUNCEMENTS_CHANGED, listAdminAnnouncements } from "@/lib/admin-announcements";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 
 /** Admin route guard: with no session, or one known to be expired, no admin page, menu or header
@@ -76,13 +75,11 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const { notifications } = useAdmin();
   const alerts = useBookingAlerts();
   const unreadCount = notifications.filter(notification => !notification.read).length + alerts.unseen;
-  const [announcements, setAnnouncements] = useState(listAdminAnnouncements);
   const navigate = useNavigate();
   const location = useLocation();
   const { currentRole, currentUser } = useRole();
-  // Super Admin top bar: sidebar toggle and user menu only. The announcement ticker stays for other roles. The Wallet
-  // chip is gone until wallets come from the gateway (#73: it showed a balance kept only in the browser).
-  const isSuperAdmin = currentRole === "super_admin";
+  // Top bar: sidebar toggle and user menu. No announcement ticker or Wallet chip (#73): announcements and wallets are
+  // kept only in the browser today and the ticker showed demo messages; they return when the gateway serves them.
   const accountTriggerRef = useRef<HTMLButtonElement>(null);
   const [profileAction, setProfileAction] = useState<ProfileAction | null>(null);
   const profileActionRef = useRef(profileAction);
@@ -101,15 +98,6 @@ function AdminShell({ children }: { children: React.ReactNode }) {
     return () => root.removeAttribute("data-app-theme");
   }, []);
 
-  useEffect(() => {
-    const update = () => setAnnouncements(listAdminAnnouncements());
-    window.addEventListener(ANNOUNCEMENTS_CHANGED, update);
-    window.addEventListener("storage", update);
-    return () => {
-      window.removeEventListener(ANNOUNCEMENTS_CHANGED, update);
-      window.removeEventListener("storage", update);
-    };
-  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) return;                       // useAdminSession redirects
@@ -145,19 +133,6 @@ function AdminShell({ children }: { children: React.ReactNode }) {
             <div className="flex shrink-0 items-center gap-2">
               <SidebarTrigger />
             </div>
-            {!isSuperAdmin && announcements.length > 0 && <div className="mx-2 flex min-w-0 flex-1 items-center gap-2 overflow-hidden text-label text-primary sm:mx-4" role="region" aria-label="Announcements">
-              <Megaphone aria-hidden="true" className="h-4 w-4 shrink-0" />
-              <div className="min-w-0 flex-1 overflow-hidden">
-                <div className="admin-announcement-scroll flex w-max items-center whitespace-nowrap font-medium motion-reduce:!animate-none" style={{ animationDuration: `${Math.max(18, announcements.length * 10)}s` }}>
-                  {[0, 1].map(copy => <div key={copy} aria-hidden={copy === 1 ? true : undefined} className={`flex w-max shrink-0 items-center gap-5 pr-5 ${copy === 1 ? "motion-reduce:hidden" : ""}`}>
-                    {announcements.map((item, index) => <span key={item.id} className="flex items-center gap-5">
-                      {index > 0 && <span aria-hidden="true" className="h-1 w-1 shrink-0 rounded-full bg-primary/50" />}
-                      <span>{item.message}</span>
-                    </span>)}
-                  </div>)}
-                </div>
-              </div>
-            </div>}
             <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
