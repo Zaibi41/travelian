@@ -2,8 +2,10 @@
 import { writeFileSync } from "fs";
 import { resolve } from "path";
 import { isPublicPathVisible } from "../src/lib/public-services";
+import { SITE_URL } from "../src/lib/site-config";
 
-const BASE_URL = "https://travelian.pk";
+// VITE_SITE_URL from the shell when set (this runs in Node, outside Vite), else the app's default.
+const BASE_URL = (process.env.VITE_SITE_URL?.trim() || SITE_URL).replace(/\/+$/, "");
 
 interface SitemapEntry {
   path: string;

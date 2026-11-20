@@ -6,9 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { UmrahPackage } from "@/data/models";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
-import { whatsappUrl } from "@/lib/site-config";
+import { whatsappUrl, SITE_URL } from "@/lib/site-config";
 
-const siteBase = "https://www.travelian.pk";
 
 function formatPrice(value?: number) {
   return value && value > 0 ? `PKR ${value.toLocaleString()}` : "On request";
@@ -52,7 +51,7 @@ function getWhatsAppMessage(item: UmrahPackage) {
     `Makkah Hotel: ${item.makkahHotel || item.hotelOptions?.[0]?.makkahHotel || "Please confirm"}`,
     `Madinah Hotel: ${item.madinahHotel || item.hotelOptions?.[0]?.madinahHotel || "Please confirm"}`,
     `Starting Price: ${formatPrice(item.basePrice)}`,
-    `Package URL: ${siteBase}/umrah/${item.packageId}`,
+    `Package URL: ${SITE_URL}/umrah/${item.packageId}`,
     "",
     "Please share availability and booking details.",
   ].join("\n");

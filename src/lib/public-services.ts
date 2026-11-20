@@ -1,3 +1,4 @@
+import { SITE_URL } from "./site-config";
 // Keep retired service URLs and legacy coupons hidden.
 
 export function isPublicServiceVisible(service: string): boolean {
@@ -7,7 +8,7 @@ export function isPublicServiceVisible(service: string): boolean {
 }
 
 export function isPublicPathVisible(href: string): boolean {
-  const url = new URL(href, "https://travelian.pk");
+  const url = new URL(href, SITE_URL);
   const path = url.pathname.toLowerCase();
   if (/^\/(visa-services|visa|study-abroad)(\/|$)/.test(path)) return false;
   if (/^\/(tour-packages|tour)(\/|$)/.test(path)) return false;

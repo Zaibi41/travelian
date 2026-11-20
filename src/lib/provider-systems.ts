@@ -1,4 +1,5 @@
 import type { TravelianFlight } from "@/lib/travelian-api";
+import { API_BASE_URL } from "@/lib/api-config";
 import { BAGGAGE_UNKNOWN, baggageText, underBaggageLabel } from "@/lib/baggage";
 import { normalizeAirlineName } from "@/lib/airline-normalization";
 import {
@@ -6,6 +7,9 @@ import {
   groupTicketOriginCode,
   groupTicketDestinationCode,
 } from "@/lib/group-ticketing";
+
+/** Shown as the endpoint label: the configured API host (VITE_TRAVELIAN_API_BASE_URL), not a fixed name. */
+const API_HOST = new URL(API_BASE_URL).host;
 
 export interface ProviderSystem {
   id: string;
@@ -30,7 +34,7 @@ export const INITIAL_PROVIDERS: ProviderSystem[] = [
     status: "healthy",
     enabled: true,
     secretId: "travelian/providers/skypass",
-    endpoint: "api.travelian.pk/skypass/tickets",
+    endpoint: `${API_HOST}/skypass/tickets`,
     priority: 1,
     lastChecked: "Live API verified",
     isGroupTicketing: true,
@@ -43,7 +47,7 @@ export const INITIAL_PROVIDERS: ProviderSystem[] = [
     status: "healthy",
     enabled: true,
     secretId: "travelian/providers/alhaider",
-    endpoint: "api.travelian.pk/alhaider/tickets",
+    endpoint: `${API_HOST}/alhaider/tickets`,
     priority: 2,
     lastChecked: "Live API verified",
     isGroupTicketing: true,
@@ -56,7 +60,7 @@ export const INITIAL_PROVIDERS: ProviderSystem[] = [
     status: "healthy",
     enabled: true,
     secretId: "travelian/providers/dhilluandsahi",
-    endpoint: "api.travelian.pk/dhilluandsahi/tickets",
+    endpoint: `${API_HOST}/dhilluandsahi/tickets`,
     priority: 3,
     lastChecked: "Live API verified",
     isGroupTicketing: true,
@@ -69,7 +73,7 @@ export const INITIAL_PROVIDERS: ProviderSystem[] = [
     status: "healthy",
     enabled: true,
     secretId: "travelian/providers/travelntours",
-    endpoint: "api.travelian.pk/travelntours/tickets",
+    endpoint: `${API_HOST}/travelntours/tickets`,
     priority: 4,
     lastChecked: "Live API verified",
     isGroupTicketing: true,
@@ -82,7 +86,7 @@ export const INITIAL_PROVIDERS: ProviderSystem[] = [
     status: "healthy",
     enabled: true,
     secretId: "travelian/providers/sooperfare",
-    endpoint: "api.travelian.pk/flights/search",
+    endpoint: `${API_HOST}/flights/search`,
     priority: 5,
     lastChecked: "Live GDS verified",
     isGroupTicketing: false,
@@ -95,7 +99,7 @@ export const INITIAL_PROVIDERS: ProviderSystem[] = [
     status: "not_configured",
     enabled: true,
     secretId: "travelian/providers/travelport",
-    endpoint: "api.travelian.pk/flights/search",
+    endpoint: `${API_HOST}/flights/search`,
     priority: 6,
     lastChecked: "Replace placeholder OAuth credentials",
     isGroupTicketing: false,
@@ -108,7 +112,7 @@ export const INITIAL_PROVIDERS: ProviderSystem[] = [
     status: "not_configured",
     enabled: false,
     secretId: "travelian/providers/airsial",
-    endpoint: "api.travelian.pk/flights/search",
+    endpoint: `${API_HOST}/flights/search`,
     priority: 7,
     lastChecked: "Pending credentials",
     isGroupTicketing: false,
@@ -121,7 +125,7 @@ export const INITIAL_PROVIDERS: ProviderSystem[] = [
     status: "not_configured",
     enabled: false,
     secretId: "travelian/providers/flyadeal",
-    endpoint: "api.travelian.pk/flights/search",
+    endpoint: `${API_HOST}/flights/search`,
     priority: 8,
     lastChecked: "Pending credentials",
     isGroupTicketing: false,
@@ -134,7 +138,7 @@ export const INITIAL_PROVIDERS: ProviderSystem[] = [
     status: "not_configured",
     enabled: false,
     secretId: "travelian/providers/pia",
-    endpoint: "api.travelian.pk/flights/search",
+    endpoint: `${API_HOST}/flights/search`,
     priority: 9,
     lastChecked: "Pending credentials",
     isGroupTicketing: false,
@@ -147,7 +151,7 @@ export const INITIAL_PROVIDERS: ProviderSystem[] = [
     status: "not_configured",
     enabled: false,
     secretId: "travelian/providers/travelport",
-    endpoint: "api.travelian.pk/hotels/search",
+    endpoint: `${API_HOST}/hotels/search`,
     priority: 1,
     lastChecked: "Waiting for Travelport OAuth credentials",
     isGroupTicketing: false,
@@ -160,7 +164,7 @@ export const INITIAL_PROVIDERS: ProviderSystem[] = [
     status: "not_configured",
     enabled: false,
     secretId: "travelian/providers/travelport",
-    endpoint: "api.travelian.pk/transfers/search",
+    endpoint: `${API_HOST}/transfers/search`,
     priority: 1,
     lastChecked: "Waiting for Travelport OAuth credentials",
     isGroupTicketing: false,

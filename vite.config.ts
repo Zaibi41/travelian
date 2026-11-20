@@ -21,6 +21,8 @@ export default defineConfig(({ mode, command, isPreview }) => {
     throw new Error("VITE_TRAVELIAN_GATEWAY_BASE_URL must use HTTP or HTTPS");
   }
   if (gatewayTarget?.hostname === "localhost") gatewayTarget.hostname = "127.0.0.1";
+  // index.html's absolute links (og:image, twitter:image) use the same site address as the app (src/lib/site-config.ts).
+  const siteUrl = (env.VITE_SITE_URL?.trim() || "https://travelian.pk").replace(/\/+$/, "");
   return {
     define: {
       global: "globalThis",
@@ -40,7 +42,7 @@ export default defineConfig(({ mode, command, isPreview }) => {
         overlay: false,
       },
     },
-    plugins: [react()],
+    plugins: [react(), { name: "travelian-site-url", transformIndexHtml: (html: string) => html.replaceAll("%SITE_URL%", siteUrl) }],
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),

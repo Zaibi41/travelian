@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 import { docsShot } from "./support/docs-shot";
 import { expectRowAligned } from "./support/row-alignment";
 
@@ -50,12 +50,12 @@ async function openFlights(page: Page, width: number, query = "from=LHE&to=KHI&d
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
     const url = gatewayView(route.request().url());
-    if (url.port === "8000") {
+    if (isGateway(url)) {
       if (url.pathname === "/v1/live-ticketing/flights/search") return route.fulfill({ json: query.includes("roundtrip") ? ROUND : SEARCH });
       if (url.pathname === "/v1/live-ticketing/flights/reprice") return route.fulfill({ json: QUOTE });
       return route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
-    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+    return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(() => {
     localStorage.setItem("travelian.session.v1", JSON.stringify({

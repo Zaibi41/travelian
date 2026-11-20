@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
 // Search date fields (Flights departure and return, Group Ticketing departure), as on the public
 // site: clicking the field opens the calendar as a centred popup with a title, a close button and
@@ -17,11 +17,11 @@ async function open(page: Page, width: number, tab: "flights" | "group-ticketing
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
     const url = gatewayView(route.request().url());
-    if (url.port === "8000") {
+    if (isGateway(url)) {
       if (url.pathname === "/v1/group-ticketing/inventory") return route.fulfill({ json: INVENTORY });
       return route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
-    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+    return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
     email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),

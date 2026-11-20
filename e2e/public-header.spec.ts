@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { isLocal } from "./support/gateway";
 
 const widths = [1280, 1366, 1440, 1536, 1600, 1920, 2048, 2560, 1024, 768, 375, 320];
 // D39: Umrah is hidden while the gateway switch is off.
@@ -7,7 +8,7 @@ for (const width of widths) {
   test(`search-driven header states at ${width}px`, async ({ page }) => {
     test.setTimeout(60000);
     await page.setViewportSize({ width, height: 900 });
-    await page.route("**/*", route => ["localhost", "127.0.0.1"].includes(new URL(route.request().url()).hostname)
+    await page.route("**/*", route => isLocal(route.request().url())
       ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } }));
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
@@ -91,7 +92,7 @@ test("search-driven header respects reduced motion", async ({ page }) => {
 
 
 test("sticky product links reset correctly and deep reload restores sticky", async ({ page }) => {
-  await page.route("**/*", route => ["localhost", "127.0.0.1"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } }));
+  await page.route("**/*", route => isLocal(route.request().url()) ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } }));
   await page.goto("/");
   const panel = page.locator("[data-header-state]");
   for (const [name, path] of [...products.slice(1), products[0]]) {

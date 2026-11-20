@@ -8,10 +8,9 @@ import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { UmrahPackageShowcase } from "@/components/public/UmrahPackageShowcase";
 import { useAdmin } from "@/contexts/AdminStore";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
-import { whatsappUrl } from "@/lib/site-config";
+import { whatsappUrl, SITE_URL } from "@/lib/site-config";
 import { findSeedUmrahOffer, umrahOfferToPackage } from "@/data/services/umrah-adapter";
 
-const siteBase = "https://travelian.pk";
 
 function formatPrice(value?: number) {
   return value && value > 0 ? `PKR ${value.toLocaleString()}` : "On request";
@@ -55,7 +54,7 @@ export default function UmrahDetailPage() {
     `Madinah Hotel: ${item.madinahHotel || item.hotelOptions?.[0]?.madinahHotel || "Please confirm"}`,
     `Room Sharing: ${item.roomSharing || "Please confirm"}`,
     `Price From: ${formatPrice(item.basePrice)}`,
-    `Package URL: ${siteBase}/umrah/${item.packageId}`,
+    `Package URL: ${SITE_URL}/umrah/${item.packageId}`,
     "",
     "Please share availability and booking details.",
   ].join("\n");

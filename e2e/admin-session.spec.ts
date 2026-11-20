@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { APP_URL, gatewayView, isGateway, isLocal } from "./support/gateway";
 
 // Sign-in guard and expired sessions. Intercepted gateway and Cognito answers only (made-up
 // tokens); nothing reaches a real gateway or Cognito.
@@ -31,7 +31,7 @@ async function mock(page: Page, { searchStatus = 200 } = {}) {
       }
       return route.fulfill({ status: 400, contentType: "application/x-amz-json-1.1", body: JSON.stringify({ __type: "NotAuthorizedException", message: "No." }) });
     }
-    if (url.port === "8000") {
+    if (isGateway(url)) {
       if (url.pathname === "/v1/admin/customers") {
         // The 401 answers the search; the list the page loads on open (no q) still works.
         return searchStatus === 401 && url.searchParams.has("q")
@@ -40,7 +40,7 @@ async function mock(page: Page, { searchStatus = 200 } = {}) {
       }
       return route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
-    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+    return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
   });
 }
 
@@ -104,7 +104,7 @@ test("a redirect to another site is ignored after sign-in", async ({ page }) => 
   await page.goto(`/signin?redirect=${encodeURIComponent("//evil.example/admin")}`);
   await signIn(page);
   await expect(page).toHaveURL(/\/admin$/);
-  expect(new URL(page.url()).host).toBe("localhost:8080");
+  expect(new URL(page.url()).host).toBe(APP_URL.host);
 });
 
 test("already signed in: Sign In on the public site lands on /admin and the form never appears", async ({ page }) => {

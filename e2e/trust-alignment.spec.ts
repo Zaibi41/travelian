@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { isLocal } from "./support/gateway";
 
 const sizes = [1280, 1366, 1440, 1536, 1600, 1920, 2048, 2560, 1024, 768, 640, 375, 320].map(width => ({ width, scale: 1 }));
 sizes.push({ width: 1536, scale: 1.25 }, { width: 1280, scale: 1.5 });
@@ -6,9 +7,9 @@ for (const { width, scale } of sizes) {
   test(`canonical trust geometry at ${width}px and DPR ${scale}`, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width, height: 900 }, deviceScaleFactor: scale });
     const page = await context.newPage();
-    await page.route("**/*", route => ["localhost", "127.0.0.1"].includes(new URL(route.request().url()).hostname)
+    await page.route("**/*", route => isLocal(route.request().url())
       ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } }));
-    await page.goto("http://localhost:8080/");
+    await page.goto("/");
     const trust = page.getByRole("region", { name: "Booking confidence" });
     await expect(trust.getByRole("listitem")).toHaveCount(3);
     const geometry = await trust.evaluate(section => {

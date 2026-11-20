@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 import { expectReadableText } from "./support/type-scale";
 
 // One type scale across the admin: no text under 12px, labels and tables at least 13px, no
@@ -29,12 +29,12 @@ async function open(page: Page, width: number, path: string) {
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
     const url = gatewayView(route.request().url());
-    if (url.port === "8000") {
+    if (isGateway(url)) {
       if (url.pathname === "/v1/live-ticketing/flights/search") return route.fulfill({ json: SEARCH });
       if (url.pathname === "/v1/admin/bookings") return route.fulfill({ json: LIST });
       return route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
-    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+    return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
     email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),

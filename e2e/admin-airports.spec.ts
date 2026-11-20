@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
 // Search > Flights origin and destination suggestions: the airport list is in the frontend,
 // so typing makes no request. Local-only session and intercepted gateway answers.
@@ -13,14 +13,14 @@ async function open(page: Page, width = 1440, query = "") {
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
     const url = gatewayView(route.request().url());
-    if (url.port === "8000") {
+    if (isGateway(url)) {
       if (url.pathname === "/v1/live-ticketing/flights/search") {
         searches.push(route.request());
         return route.fulfill({ json: SEARCH });
       }
       return route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
-    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+    return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
     email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),

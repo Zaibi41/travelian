@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
 // #73: Finance → Wallets and Payments ran on fake data kept in the browser. Until #68/#69 they show a notice, the
 // fake data is gone (and its old browser keys are cleared), and the menu marks them "Coming soon".
@@ -14,8 +14,8 @@ async function open(page: Page, path: string, width: number, role = "admin") {
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
     const url = gatewayView(route.request().url());
-    if (url.port === "8000") return route.fulfill({ status: 404, json: { detail: "Not found." } });
-    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+    if (isGateway(url)) return route.fulfill({ status: 404, json: { detail: "Not found." } });
+    return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(([role, keys]) => {
     localStorage.setItem("travelian.session.v1", JSON.stringify({

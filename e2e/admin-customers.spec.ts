@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 import { docsShot } from "./support/docs-shot";
 import { expectReadableText } from "./support/type-scale";
 
@@ -36,7 +36,7 @@ async function open(page: Page, width: number, path: string, { canManage = true,
   await page.route("**/*", route => {
     const request = route.request();
     const url = gatewayView(request.url());
-    if (url.port === "8000") {
+    if (isGateway(url)) {
       if (forbidden) return route.fulfill({ status: 403, json: { detail: "Back office only.", code: "not_allowed" } });
       if (request.method() === "POST") posts.push(request);
       if (url.pathname === "/v1/admin/customers" && request.method() === "GET") {
@@ -54,7 +54,7 @@ async function open(page: Page, width: number, path: string, { canManage = true,
       if (detail) return route.fulfill({ json: { ...DETAIL, id: detail[1], can_manage: canManage, can_merge: canMerge, ...(detail[1] === "p-00000003" ? { first_name: "New", last_name: "Person" } : {}) } });
       return route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
-    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+    return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
     email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),
@@ -158,7 +158,7 @@ test("opens with the 50 most recent people, before any search", async ({ page })
   const asked: URL[] = [];
   page.on("request", request => {
     const url = gatewayView(request.url());
-    if (url.port === "8000" && url.pathname === "/v1/admin/customers") asked.push(url);
+    if (isGateway(url) && url.pathname === "/v1/admin/customers") asked.push(url);
   });
   await open(page, 1440, "/admin/customers");
   const list = page.getByRole("region", { name: "Customers" });

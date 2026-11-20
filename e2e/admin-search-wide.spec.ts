@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 import { docsShot } from "./support/docs-shot";
 
 // Admin Search (Flights and Group Ticketing) from a laptop to a 32-inch monitor: no sideways page scroll,
@@ -36,12 +36,12 @@ async function open(page: Page, width: number, height: number, url: string) {
   await page.setViewportSize({ width, height });
   await page.route("**/*", route => {
     const target = gatewayView(route.request().url());
-    if (target.port === "8000") {
+    if (isGateway(target)) {
       if (target.pathname === "/v1/live-ticketing/flights/search") return route.fulfill({ json: FLIGHTS });
       if (target.pathname === "/v1/group-ticketing/inventory" || target.pathname === "/v1/group-ticketing/search") return route.fulfill({ json: GROUP });
       return route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
-    return ["localhost", "127.0.0.1"].includes(target.hostname) ? route.continue() : route.fulfill({ json: {} });
+    return isLocal(target) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
     email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),

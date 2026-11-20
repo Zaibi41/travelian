@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
 // Finance > Accounts & Ledgers, "Bank and cash book" (receiving accounts). Local-only session and
 // made-up gateway answers; nothing reaches a real gateway.
@@ -16,14 +16,14 @@ async function open(page: Page, width: number, query = "") {
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
     const url = gatewayView(route.request().url());
-    if (url.port === "8000") {
+    if (isGateway(url)) {
       if (url.pathname === "/v1/admin/finance/payment-accounts" && route.request().method() === "GET") return route.fulfill({ json: { accounts: ACCOUNTS } });
       if (url.pathname === "/v1/admin/finance/payment-accounts") {
         return route.fulfill({ status: 422, json: { detail: "The account name must be 2 to 120 characters." } });
       }
       return route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
-    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+    return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
     email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),
