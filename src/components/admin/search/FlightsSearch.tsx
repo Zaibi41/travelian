@@ -189,15 +189,15 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
   );
 }
 
-/** fareRoute (Departure date, as on the website): the website's fare calendar opens in the popup. */
+/** fareRoute (Departure date, as on the website): the website's fare calendar opens in the popup. Its prices load in
+ *  the background as soon as From and To are both set (#55), so they are there when the calendar opens. */
 function DateInput({ id, label, value, min, onChange, fareRoute }: { id: string; label: string; value?: string; min?: string; onChange: (value?: string) => void; fareRoute?: FareRoute }) {
-  const [open, setOpen] = useState(false);
-  const fares = useFlightFares(open, fareRoute, adminFlightCalendar);
+  const fares = useFlightFares(true, fareRoute, adminFlightCalendar);
   return (
     <div className="relative flex min-w-0 flex-col gap-1">
       <label htmlFor={id} className="text-label font-medium text-muted-foreground">{label}</label>
       <DayFirstDateField id={id} value={value} min={min} variant="search" calendarTitle={`Select ${label.toLowerCase()}`} onChange={onChange}
-        onOpenChange={setOpen} fares={fares.ready ? { days: fares.days, checking: fares.checking, anyDate: true } : undefined} />
+        fares={fares.ready ? { days: fares.days, checking: fares.checking, anyDate: true, status: fares.status } : undefined} />
     </div>
   );
 }

@@ -31,9 +31,10 @@ interface DayFirstDateFieldProps {
   /** Title of the search calendar popup, e.g. "Select departure date". */
   calendarTitle?: string;
   /** Search variant: the website's fare calendar in the popup (prices per date). anyDate: every future date can be
-   *  picked (flights); otherwise only dates with fares (group). Without days the plain calendar shows. */
-  fares?: { days: CalendarDay[]; checking?: boolean; anyDate?: boolean };
-  /** The popup opened or closed (the flight fare calendar loads only while it's open). */
+   *  picked (flights); otherwise only dates with fares (group). Without days the plain calendar shows. status: loading
+   *  (the price slots shimmer) or error ("Prices unavailable"); either way every future date can be picked. */
+  fares?: { days: CalendarDay[]; checking?: boolean; anyDate?: boolean; status?: "idle" | "loading" | "ready" | "error" };
+  /** The popup opened or closed. */
   onOpenChange?: (open: boolean) => void;
 }
 
@@ -130,10 +131,11 @@ export function DayFirstDateField({ id, value, onChange, min, max, disabled, inv
             <CalendarPopupTrigger asChild>{iconButton}</CalendarPopupTrigger>
           </div>
           <CalendarPopupContent title={calendarTitle}>
-            {fares && (fares.anyDate || fares.days.length > 0) ? (
+            {fares && (fares.anyDate || fares.days.length > 0 || fares.status === "loading" || fares.status === "error") ? (
               // The website's fare calendar (src/components/GroupFareCalendar), sized as on the website's search.
               <div className="w-[min(46rem,calc(100vw-2.5rem))] overflow-y-auto p-3 sm:p-5">
                 <GroupFareCalendar days={fares.days} anyDate={fares.anyDate} checking={fares.checking} selected={value}
+                  status={fares.status === "loading" || fares.status === "error" ? fares.status : "ready"}
                   onPick={date => { if (!min || date >= min) { onChange(date); setOpen(false); } }} />
               </div>
             ) : (

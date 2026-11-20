@@ -40,7 +40,8 @@ interface MultiCitySegment {
 
 function DatePickerField({ id, date, onSelect, placeholder, fareRoute }: { id?: string; date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string; fareRoute?: FareRoute }) {
   const [open, setOpen] = useState(false);
-  const fares = useFlightFares(open, fareRoute);
+  // #55: the fares load in the background once From and To are both set, so they are there when the calendar opens.
+  const fares = useFlightFares(true, fareRoute);
   const today = startOfDay(new Date());
   const selectDate = (nextDate: Date | undefined) => {
     onSelect(nextDate);
@@ -77,6 +78,7 @@ function DatePickerField({ id, date, onSelect, placeholder, fareRoute }: { id?: 
           {fares.ready ? (
             <div className="w-[min(46rem,calc(100vw-2.5rem))] overflow-y-auto p-3 sm:p-5">
               <GroupFareCalendar days={fares.days} anyDate checking={fares.checking} selected={date ? format(date, "yyyy-MM-dd") : undefined}
+                status={fares.status === "loading" || fares.status === "error" ? fares.status : "ready"}
                 onPick={(picked) => selectDate(parseISO(picked))} />
             </div>
           ) : calendar}

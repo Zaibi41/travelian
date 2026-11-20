@@ -2,6 +2,7 @@ import { todayIso } from "@/lib/admin-search/date-display";
 import { Fragment, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { GroupFareCalendar, type CalendarDay } from "@/components/GroupFareCalendar";
+import { useFareCalendars } from "@/hooks/use-flight-fares";
 import { gatewayGet } from "@/lib/gateway/client";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -83,25 +84,21 @@ export function GroupTicketingSearch() {
     retry: 1,
   });
 
-  // B7: the fare calendar for the chosen sector (real supplier prices only, D33).
+  // B7: the fare calendar for the chosen sector (real supplier prices only, D33), and the same calendar for the sector
+  // being chosen, inside the Departure Date popup (as on the website's group search). #55: no cache; each loads in the
+  // background once From and To are set (debounced, a change aborts the old request) and is kept only while this
+  // form shows that sector. When both are the same sector, one request serves both.
   const sectorChosen = Boolean(search.from && search.to);
-  const calendar = useQuery({
-    queryKey: ["admin-search", "group-calendar", search.from, search.to, search.adults],
-    queryFn: ({ signal }) => gatewayGet("/v1/group-ticketing/calendar", { origin: search.from!, destination: search.to!, adults: search.adults }, { signal }),
-    enabled: sectorChosen,
-    staleTime: 5 * 60_000,
-    retry: 1,
-  });
-
-  // The same calendar for the sector being typed, inside the Departure Date popup (as on the website's group search).
   const draftSector = Boolean(draft.from && draft.to);
-  const draftCalendar = useQuery({
-    queryKey: ["admin-search", "group-calendar", draft.from, draft.to, search.adults],
-    queryFn: ({ signal }) => gatewayGet("/v1/group-ticketing/calendar", { origin: draft.from!, destination: draft.to!, adults: search.adults }, { signal }),
-    enabled: draftSector,
-    staleTime: 5 * 60_000,
-    retry: 1,
+  const calendarKey = (from?: string, to?: string) => (from && to ? `${from}-${to}-${search.adults}` : null);
+  const searchKey = calendarKey(search.from, search.to);
+  const draftKey = calendarKey(draft.from, draft.to);
+  const fareCalendar = useFareCalendars([searchKey, draftKey], (key, signal) => {
+    const [origin, destination, adults] = key.split("-");
+    return gatewayGet("/v1/group-ticketing/calendar", { origin, destination, adults: Number(adults) }, { signal }) as Promise<{ days: CalendarDay[] }>;
   });
+  const calendar = fareCalendar(searchKey);
+  const draftCalendar = fareCalendar(draftKey);
 
   const options = inventoryOptions(inventory.data?.data ?? []);
   const airports = (side: "from" | "to") => [...new Set(options.sectors.map(sector => sector[side]))].sort();
@@ -203,15 +200,15 @@ export function GroupTicketingSearch() {
             <div data-size="date" className="flex min-w-0 flex-col gap-1">
               <FieldLabel htmlFor="group-date">Departure Date</FieldLabel>
               <DayFirstDateField id="group-date" variant="search" calendarTitle="Select departure date" min={todayIso()} value={draft.date} onChange={date => setDraft({ ...draft, date })}
-                fares={draftSector && draftCalendar.data ? { days: (draftCalendar.data as { days: CalendarDay[] }).days } : undefined} />
+                fares={draftSector ? draftCalendar : undefined} />
             </div>
             <div data-size="submit"><SearchSubmitButton label="Search group fares" disabled={!canSearch} /></div>
           </div>
         </form>
       </section>
-      {sectorChosen && calendar.data && (
+      {sectorChosen && calendar.status === "ready" && (
         <GroupFareCalendar
-          days={(calendar.data as { days: CalendarDay[] }).days}
+          days={calendar.days}
           selected={search.date}
           caption={`Fare calendar · ${search.from} → ${search.to}`}
           onPick={date => commit({ ...search, date })}
