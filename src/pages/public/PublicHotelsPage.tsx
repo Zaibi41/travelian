@@ -86,7 +86,7 @@ export default function PublicHotelsPage() {
     return () => controller.abort();
   }, [searchValues, hasSearch, currency, retry]);
 
-  let filtered = apiHotels.filter(h => {
+  const filtered = apiHotels.filter(h => {
     if (starFilter.length > 0 && !starFilter.includes(h.starRating)) return false;
     if (h.pricePerNight < priceRange[0] || (priceRange[1] < 100000 && h.pricePerNight > priceRange[1])) return false;
     if (selectedAmenities.length > 0) {

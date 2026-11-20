@@ -112,7 +112,7 @@ function buildPackage(form: UmrahForm): Omit<UmrahPackage, "packageId"> {
 }
 
 function createPackageId() {
-  const g: any = typeof crypto !== "undefined" ? crypto : undefined;
+  const g: Partial<Crypto> | undefined = typeof crypto !== "undefined" ? crypto : undefined;
   if (g && typeof g.randomUUID === "function") {
     return g.randomUUID();
   }

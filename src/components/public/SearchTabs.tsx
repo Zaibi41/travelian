@@ -225,7 +225,7 @@ export function SearchTabs({
 
   const updateSegment = (index: number, field: keyof MultiCitySegment, value: string | Date | undefined) => {
     const updated = [...multiCitySegments];
-    (updated[index] as any)[field] = value;
+    updated[index] = { ...updated[index], [field]: value };
     setMultiCitySegments(updated);
   };
 

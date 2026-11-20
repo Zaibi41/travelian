@@ -41,8 +41,8 @@ export function clearSession() {
   window.dispatchEvent(new Event("travelian:session"));
 }
 
-export function useSessionEvent(cb: () => void) {
-  // For React: subscribe to storage + custom session event
+/** Subscribe to session changes (this tab's session event and other tabs' storage). Returns the unsubscribe function. */
+export function onSessionEvent(cb: () => void) {
   const handler = () => cb();
   window.addEventListener("travelian:session", handler);
   window.addEventListener("storage", handler);

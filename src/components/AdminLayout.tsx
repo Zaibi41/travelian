@@ -5,7 +5,7 @@ import { Button } from "@/components/admin/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-import { clearSession, getSession, useSessionEvent } from "@/lib/auth-session";
+import { clearSession, getSession, onSessionEvent } from "@/lib/auth-session";
 import { sessionState, signInUrl } from "@/lib/auth-guard";
 import { isUserSignOut, markUserSignOut, renewSession } from "@/lib/session-renewal";
 import { cognitoLogoutUrl } from "@/lib/cognito-auth";
@@ -40,7 +40,7 @@ export function useAdminSession(): boolean {
   const redirected = useRef(false);
   const [renewing, setRenewing] = useState(false);
 
-  useEffect(() => useSessionEvent(() => setSessionState(getSession())), []);
+  useEffect(() => onSessionEvent(() => setSessionState(getSession())), []);
 
   useEffect(() => {
     if (state === "valid") {
