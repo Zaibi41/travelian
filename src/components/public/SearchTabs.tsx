@@ -12,7 +12,7 @@ import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/com
 import { Calendar } from "@/components/ui/calendar";
 import { format, startOfDay, addDays, parseISO } from "date-fns";
 import { GroupFareCalendar } from "@/components/GroupFareCalendar";
-import { useFlightFares, type FareRoute } from "@/hooks/use-flight-fares";
+import { useFlightFares } from "@/hooks/use-flight-fares";
 import { cn } from "@/lib/utils";
 import { TravelersClassPicker, type TravelersValue } from "@/components/public/TravelersClassPicker";
 import { AirportCombobox } from "@/components/public/AirportCombobox";
@@ -38,10 +38,9 @@ interface MultiCitySegment {
   date: Date | undefined;
 }
 
-function DatePickerField({ id, date, onSelect, placeholder, fareRoute }: { id?: string; date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string; fareRoute?: FareRoute }) {
+/** fares: the Departure date's fare calendar (#55), loaded by the form in the background once From and To are set. */
+function DatePickerField({ id, date, onSelect, placeholder, fares }: { id?: string; date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string; fares?: ReturnType<typeof useFlightFares> }) {
   const [open, setOpen] = useState(false);
-  // #55: the fares load in the background once From and To are both set, so they are there when the calendar opens.
-  const fares = useFlightFares(true, fareRoute);
   const today = startOfDay(new Date());
   const selectDate = (nextDate: Date | undefined) => {
     onSelect(nextDate);
@@ -75,7 +74,7 @@ function DatePickerField({ id, date, onSelect, placeholder, fareRoute }: { id?: 
           </button>
         </CalendarPopupTrigger>
         <CalendarPopupContent title={placeholder === "Select date" ? "Select flight date" : `Select ${placeholder.toLowerCase()}`}>
-          {fares.ready ? (
+          {fares?.ready ? (
             <div className="w-[min(46rem,calc(100vw-2.5rem))] overflow-y-auto p-3 sm:p-5">
               <GroupFareCalendar days={fares.days} anyDate checking={fares.checking} selected={date ? format(date, "yyyy-MM-dd") : undefined}
                 status={fares.status === "loading" || fares.status === "error" ? fares.status : "ready"}
@@ -130,6 +129,10 @@ export function SearchTabs({
     { from: "", to: "", date: undefined },
   ]);
   const navigate = useNavigate();
+  // #55: the Departure date's fares load in the background as soon as From and To are both set (kept here, in the
+  // form, so switching One-way / Round-trip doesn't ask again for the same route).
+  const departFares = useFlightFares(activeTab === "flights" && tripType !== "multicity",
+    { from: fromValue, to: toValue, adults: travelers.adults, cabin: travelers.cabin.toLowerCase().replace(/\s+/g, "_") });
 
   const today = new Date(); today.setHours(0, 0, 0, 0);
 
@@ -339,7 +342,7 @@ export function SearchTabs({
                   </div>
                   <div className="min-w-0">
                     <label htmlFor={`${fieldId}-depart`} className="mb-1 block text-xs font-medium text-muted-foreground">Departure Date</label>
-                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" fareRoute={{ from: fromValue, to: toValue, adults: travelers.adults, cabin: travelers.cabin.toLowerCase().replace(/\s+/g, "_") }} />
+                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" fares={departFares} />
                   </div>
                   <Button
                     onClick={handleSearch}
@@ -379,7 +382,7 @@ export function SearchTabs({
                   </div>
                   <div className="min-w-0">
                     <label htmlFor={`${fieldId}-depart`} className="mb-1 block text-xs font-medium text-muted-foreground">Departure Date</label>
-                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" fareRoute={{ from: fromValue, to: toValue, adults: travelers.adults, cabin: travelers.cabin.toLowerCase().replace(/\s+/g, "_") }} />
+                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" fares={departFares} />
                   </div>
                   <div className="min-w-0">
                     <label htmlFor={`${fieldId}-return`} className="mb-1 block text-xs font-medium text-muted-foreground">Return Date</label>
