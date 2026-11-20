@@ -260,7 +260,7 @@ describe("Passengers and Audit tabs", () => {
     expect(within(tab).getAllByRole("columnheader").map(h => h.textContent)).toEqual(
       ["Passenger name", "Type", "Document", "Date of birth", "Nationality", "Ticket number"]);
     const [adult, infant] = within(tab).getAllByRole("row").slice(1);
-    expect(adult).toHaveTextContent("MR Test Passenger");
+    expect(adult).toHaveTextContent("Mr Test Passenger");
     expect(adult).toHaveTextContent("Passport AB1234567");
     expect(adult).toHaveTextContent("31 Jan 1990");
     expect(infant).toHaveTextContent("AB7654321");
@@ -292,7 +292,7 @@ describe("Passengers and Audit tabs", () => {
       const save = within(tab).getByRole("button", { name: "Save" });
       expect(save).toBeDisabled();                                                        // the final PNR first
       fireEvent.change(within(tab).getByLabelText("Final PNR"), { target: { value: "k9qx2l" } });
-      fireEvent.change(within(tab).getByLabelText("Ticket number, MR Test Passenger"), { target: { value: "214 2345678901" } });
+      fireEvent.change(within(tab).getByLabelText("Ticket number, Mr Test Passenger"), { target: { value: "214 2345678901" } });
       fireEvent.click(save);
       await waitFor(() => expect(groupApi.recordGroupTickets).toHaveBeenCalledWith("TRV-1", {
         final_pnr: "K9QX2L", tickets: [{ position: 0, ticket_number: "2142345678901" }, { position: 1, ticket_number: null }] }));

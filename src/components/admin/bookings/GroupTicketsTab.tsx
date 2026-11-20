@@ -11,8 +11,9 @@ import { GROUP_TICKETING_LABEL, recordGroupTickets } from "@/lib/admin-search/gr
 import type { BookingDetail, BookingPassenger } from "@/lib/admin-bookings/types";
 import { cn } from "@/lib/utils";
 import { CopyPnr } from "@/components/CopyPnr";
+import { titleText } from "@/lib/passenger-details";
 
-const name = (passenger: BookingPassenger) => `${passenger.title} ${passenger.first_name} ${passenger.last_name}`.trim();
+const name = (passenger: BookingPassenger) => `${titleText(passenger.title)} ${passenger.first_name} ${passenger.last_name}`.trim();
 
 /** A group booking's Tickets tab: the airline's final PNR and each traveler's ticket number. Staff with the gateway's
  *  can_edit_group_tickets type them in; everyone else reads them. Ticketed (final PNR and every ticket number) is the

@@ -24,6 +24,7 @@ import { downloadETicket } from "@/lib/eticket-pdf";
 import { downloadTicketInvoice } from "@/lib/ticket-invoice-pdf";
 import { bookingReportPeriods, filterRecordsByPeriod, type BookingReportPeriod } from "@/lib/booking-report-period";
 import { INITIAL_PROVIDERS } from "@/lib/provider-systems";
+import { titleText } from "@/lib/passenger-details";
 
 const statusOptions: { value: BookingRequestStatus; label: string }[] = [
   { value: "new", label: "New" },
@@ -892,7 +893,7 @@ export default function BookingRequestsPage() {
                               <div className="min-w-0">
                                 <div className="font-semibold">
                                   <span className="mr-2 text-helper font-normal text-muted-foreground">{index + 1}.</span>
-                                  {[traveler.title, traveler.firstName, traveler.lastName].filter(Boolean).join(" ")}
+                                  {[titleText(traveler.title), traveler.firstName, traveler.lastName].filter(Boolean).join(" ")}
                                 </div>
                                 {traveler.ticketNumber && <div className="mt-0.5 truncate font-mono text-helper text-muted-foreground">Ticket {traveler.ticketNumber}</div>}
                               </div>

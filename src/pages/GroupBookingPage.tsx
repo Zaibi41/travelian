@@ -16,6 +16,7 @@ import { formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
 import { acknowledgedBy } from "@/lib/group-fare-terms";
 import { GROUP_BOOKING_TABS, GROUP_TICKETING_LABEL, departureText, fetchGroupHold, groupBookingPath, returnFlightText, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
 import { sourceLine } from "@/lib/admin-search/group-ticketing";
+import { titleText } from "@/lib/passenger-details";
 
 const BOOKINGS = "/admin/bookings/group-ticketing";
 const STATUS: Record<GroupHoldView["status"], { label: string; severity: "fine" | "action" | "critical" }> = {
@@ -130,7 +131,7 @@ function Details({ view }: { view: GroupHoldView }) {
 function Travelers({ view }: { view: GroupHoldView }) {
   return (
     <FieldTable label="Travelers" rows={view.travelers.length
-      ? view.travelers.map((traveler, index) => [`Adult ${index + 1}`, <span key={traveler.position}>{traveler.title} {travelerLine(traveler)}{traveler.ticket_number ? `, ticket ${traveler.ticket_number}` : ""}</span>])
+      ? view.travelers.map((traveler, index) => [`Adult ${index + 1}`, <span key={traveler.position}>{titleText(traveler.title)} {travelerLine(traveler)}{traveler.ticket_number ? `, ticket ${traveler.ticket_number}` : ""}</span>])
       : [["Travelers", "—"]]} />
   );
 }
