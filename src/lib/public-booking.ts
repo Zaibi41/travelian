@@ -61,6 +61,11 @@ interface PublicGroup { id: string; sector?: string; airline?: string; logo_url?
 /** Marks group fares that are booked through the gateway (GroupTicket.provider). */
 export const GATEWAY_GROUP_PROVIDER = "travelian-group";
 
+/** A gateway path (/v1/...) as an absolute URL on the configured gateway. */
+export function publicGatewayUrl(path: string) {
+  return /^https?:/i.test(path) ? path : `${baseUrl()}${path}`;
+}
+
 function logoUrl(path?: string) {
   if (!path) return undefined;
   return /^https?:/i.test(path) ? path : `${baseUrl()}${path}`;
@@ -203,7 +208,11 @@ export function publicGroupCalendar(origin: string, destination: string, adults 
 // ---------- payment methods offered at checkout (from the gateway) ----------
 
 /** Travelian's receiving account, in full (D40): customers need the number or IBAN to pay. */
-export interface BankAccountDisplay { bank_name?: string | null; account_title?: string | null; account_number?: string | null; iban?: string | null; qr_url?: string | null }
+export interface BankAccountDisplay {
+  bank_name?: string | null; account_title?: string | null; account_number?: string | null; iban?: string | null; qr_url?: string | null;
+  /** Gateway path that sends the QR image as a file download (works in every browser; the S3 image itself can't be downloaded cross-site). */
+  qr_download_url?: string | null;
+}
 /** `flights`: website flight fares are held and paid here; false: a flight booking is a request (Travelian arranges payment). */
 export interface PaymentMethods {
   card: boolean; bank_transfer: boolean; jazzcash: boolean; flights?: boolean;

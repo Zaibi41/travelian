@@ -6,7 +6,7 @@
 import { useEffect, useId, useState } from "react";
 import { Check, Clock, Copy, Download, Maximize2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import type { BankAccountDisplay } from "@/lib/public-booking";
+import { publicGatewayUrl, type BankAccountDisplay } from "@/lib/public-booking";
 import { cn } from "@/lib/utils";
 
 function CopyButton({ value, label }: { value: string; label: string }) {
@@ -35,7 +35,7 @@ function CopyButton({ value, label }: { value: string; label: string }) {
   };
   return (
     <button type="button" onClick={copy} aria-label={copied ? `${label} copied` : `Copy ${label.toLowerCase()}`}
-      className={cn("inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      className={cn("inline-flex h-11 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 sm:h-9 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         copied ? "border-success/40 bg-success/10 text-success" : "border-border bg-background text-primary hover:border-primary/40 hover:bg-primary/5")}>
       {copied ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Copy className="h-3.5 w-3.5" aria-hidden="true" />}
       {copied ? "Copied" : "Copy"}
@@ -43,8 +43,8 @@ function CopyButton({ value, label }: { value: string; label: string }) {
   );
 }
 
-/** Download the QR image. The image is on another domain without CORS, so a blob download may be refused; then it
- *  opens in a new tab (save it from there). */
+/** Download the QR image when the gateway gave no download link: the image is on another domain without CORS, so a
+ *  blob download may be refused; then it opens in a new tab (save it from there). */
 async function downloadQr(url: string, name: string) {
   try {
     const response = await fetch(url, { mode: "cors" });
@@ -64,6 +64,16 @@ async function downloadQr(url: string, name: string) {
 
 const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "account";
 
+/** Download QR: a plain link to the gateway's download (Content-Disposition: attachment), so Chrome, Safari on iPhone and
+ *  Android save the file without leaving checkout; the older in-page download only when there is no such link. */
+function DownloadQr({ account, fileName, className }: { account: BankAccountDisplay & { qr_url: string }; fileName: string; className: string }) {
+  const content = <><Download className="h-4 w-4" aria-hidden="true" /> Download QR</>;
+  if (account.qr_download_url) {
+    return <a href={publicGatewayUrl(account.qr_download_url)} download={fileName} className={className}>{content}</a>;
+  }
+  return <button type="button" onClick={() => downloadQr(account.qr_url, fileName)} className={className}>{content}</button>;
+}
+
 function QrCode({ account }: { account: BankAccountDisplay & { qr_url: string } }) {
   const [enlarged, setEnlarged] = useState(false);
   const who = account.account_title ?? account.bank_name ?? "Travelian";
@@ -77,10 +87,8 @@ function QrCode({ account }: { account: BankAccountDisplay & { qr_url: string } 
           <Maximize2 className="h-3 w-3" aria-hidden="true" /> Tap to enlarge
         </span>
       </button>
-      <button type="button" onClick={() => downloadQr(account.qr_url, fileName)}
-        className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        <Download className="h-4 w-4" aria-hidden="true" /> Download QR
-      </button>
+      <DownloadQr account={account} fileName={fileName}
+        className="inline-flex h-11 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold text-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
       <Dialog open={enlarged} onOpenChange={setEnlarged}>
         <DialogContent className="max-h-[90vh] w-[calc(100vw-2rem)] max-w-lg overflow-y-auto">
           <DialogHeader>
@@ -88,10 +96,8 @@ function QrCode({ account }: { account: BankAccountDisplay & { qr_url: string } 
             <DialogDescription>{[account.bank_name, account.account_title].filter(Boolean).join(" · ")}</DialogDescription>
           </DialogHeader>
           <img src={account.qr_url} alt={`QR code to pay ${who}, enlarged`} className="mx-auto w-full max-w-[26rem] rounded-lg border bg-white object-contain p-2" />
-          <button type="button" onClick={() => downloadQr(account.qr_url, fileName)}
-            className="mx-auto inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <Download className="h-4 w-4" aria-hidden="true" /> Download QR
-          </button>
+          <DownloadQr account={account} fileName={fileName}
+            className="mx-auto inline-flex h-11 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" />
         </DialogContent>
       </Dialog>
     </div>
