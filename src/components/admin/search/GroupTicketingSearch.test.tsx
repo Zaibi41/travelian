@@ -88,3 +88,24 @@ describe("Group Ticketing search with any one field, and return tickets", () => 
     expect(within(row).getByRole("button", { name: /Hold seats/ })).toBeEnabled();
   });
 });
+
+describe("Group Ticketing results: airline logo", () => {
+  beforeEach(() => {
+    gateway.inventory.mockReset().mockResolvedValue({ data: [] });
+    gateway.search.mockReset();
+  });
+
+  it("uses Travelian's own logo file before the gateway's logo", async () => {
+    gateway.search.mockResolvedValue(view({ airline: "South Air", flight_number: "Z8266", logo_url: "/v1/logos/z8" }));
+    renderAt();
+    const results = await screen.findByRole("region", { name: "Results" });
+    expect(await within(results).findByRole("img", { name: "South Air logo" })).toHaveAttribute("src", "/airline-logos/south-air.png");
+  });
+
+  it("an airline with no logo file and no gateway logo shows its IATA code, not an empty box", async () => {
+    gateway.search.mockResolvedValue(view({ airline: "Unknown Air", flight_number: "X3 1200" }));
+    renderAt();
+    const results = await screen.findByRole("region", { name: "Results" });
+    expect(await within(results).findByRole("img", { name: "Unknown Air logo" })).toHaveTextContent(/^X3$/);
+  });
+});

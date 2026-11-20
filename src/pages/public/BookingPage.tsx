@@ -1155,7 +1155,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                 <div className="mb-4 flex gap-3 border-b pb-4">
                   <div className="shrink-0">
                     {isFlight ? (
-                      <AirlineLogo airline={ctxAirline || productCtx.title} flightNumber={ctxFlightNo} />
+                      <AirlineLogo airline={ctxAirline || productCtx.title} flightNumber={ctxFlightNo} imageUrl={productCtx.extra?.airlineImage} />
                     ) : (
                       <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-accent text-2xl">
                         {productCtx.emoji}
