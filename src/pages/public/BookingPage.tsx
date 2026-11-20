@@ -67,7 +67,7 @@ interface ProductCtx {
   emoji: string;
   base: number;
   currency: string;
-  extra?: { airline?: string; flightNumber?: string; from?: string; to?: string; fromCode?: string; toCode?: string; date?: string; cabin?: string; airlineImage?: string; fareTier?: string; farePerks?: string[]; layovers?: BookingLayover[]; segments?: BookingSegment[]; baseFare?: number | null; taxes?: number | null };
+  extra?: { airline?: string; flightNumber?: string; from?: string; to?: string; fromCode?: string; toCode?: string; date?: string; returnDate?: string; cabin?: string; airlineImage?: string; fareTier?: string; farePerks?: string[]; layovers?: BookingLayover[]; segments?: BookingSegment[]; baseFare?: number | null; taxes?: number | null };
 }
 
 type BookingLayover = {
@@ -101,6 +101,7 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
     const from = params.get("from") || "";
     const to = params.get("to") || "";
     const date = params.get("date") || "";
+    const returnDate = params.get("return") || "";
     const cabin = params.get("cabin") || "Economy";
     const fareTier = params.get("fare") || "";
     const airlineImage = params.get("airlineImage") || "";
@@ -120,7 +121,7 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
       emoji: "",
       base: price,
       currency,
-      extra: { airline, flightNumber, from, to, date, cabin, airlineImage, fareTier, farePerks, layovers, segments, baseFare: Number.isFinite(baseFare) ? baseFare : null, taxes: Number.isFinite(taxes) ? taxes : null },
+      extra: { airline, flightNumber, from, to, date, returnDate, cabin, airlineImage, fareTier, farePerks, layovers, segments, baseFare: Number.isFinite(baseFare) ? baseFare : null, taxes: Number.isFinite(taxes) ? taxes : null },
     };
   }
   if (type === "hotel") {
@@ -210,14 +211,19 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const ctxFromCode = productCtx.extra?.fromCode || "";
   const ctxToCode = productCtx.extra?.toCode || "";
   const ctxDate = productCtx.extra?.date || format(addDays(new Date(), 14), "MMM dd, yyyy");
-  // The travel date (ISO) when the booking has one: passport expiry must be after it.
+  // The last travel date (ISO) when the booking has one: the return date of a round trip, else the latest flight day,
+  // else the departure date. Passport expiry must be after it, and ages are taken on it (issue #52, airline rule).
   const travelDateIso = useMemo(() => {
-    const raw = productCtx.extra?.date;
-    if (!raw) return undefined;
-    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
-    const parsed = new Date(raw);
-    return Number.isNaN(parsed.getTime()) ? undefined : format(parsed, "yyyy-MM-dd");
-  }, [productCtx.extra?.date]);
+    const iso = (raw?: string | null) => {
+      if (!raw) return undefined;
+      if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+      const parsed = new Date(raw);
+      return Number.isNaN(parsed.getTime()) ? undefined : format(parsed, "yyyy-MM-dd");
+    };
+    const days = [productCtx.extra?.date, productCtx.extra?.returnDate, ...(productCtx.extra?.segments ?? []).map(segment => segment.departureTime)]
+      .map(iso).filter((day): day is string => Boolean(day));
+    return days.length ? days.sort()[days.length - 1] : undefined;
+  }, [productCtx.extra?.date, productCtx.extra?.returnDate, productCtx.extra?.segments]);
   const ctxCabin = productCtx.extra?.cabin || "Economy";
   const ctxFarePerks = productCtx.extra?.farePerks || [];
   const ctxLayovers = productCtx.extra?.layovers || [];
