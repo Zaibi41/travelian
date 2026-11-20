@@ -25,7 +25,7 @@ import { todayIso } from "@/lib/date-iso";
 const DIALOG = "flex max-h-[85vh] w-[calc(100%-2rem)] max-w-lg flex-col gap-3 overflow-hidden";
 const BODY = "-mx-1 flex min-h-0 flex-col gap-3 overflow-y-auto px-1 pb-1";
 type Title = NonNullable<PersonCreate["title"]>;
-const TITLES: Title[] = ["MR", "MRS", "MISS", "MASTER"];
+const TITLES: Title[] = ["MR", "MRS", "MASTER", "MISS"];  // #11 order (Ms isn't stored separately yet)
 const NONE = "none";
 
 function Field({ id, label, children, className }: { id: string; label: string; children: React.ReactNode; className?: string }) {

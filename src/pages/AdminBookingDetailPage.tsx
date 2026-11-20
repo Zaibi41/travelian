@@ -29,6 +29,7 @@ import { DETAIL_TABS, bookingDetailPath, type DetailTabSlug } from "@/lib/admin-
 import { useBookingDetail } from "@/lib/admin-bookings/use-bookings";
 import { setSellingPrice } from "@/lib/admin-bookings/api";
 import type { BookingAuditEntry, BookingDetail, BookingPassenger } from "@/lib/admin-bookings/types";
+import { titleText } from "@/lib/passenger-details";
 
 // Tabs the gateway doesn't record yet: the mockup's columns with a not-available row
 // (docs/backend-todo.md, Booking detail). No "Edit booking" (decided 2026-11-09).
@@ -272,7 +273,7 @@ function Passengers({ booking }: { booking: BookingDetail }) {
           </thead>
           <tbody>
             {passengers.map(passenger => {
-              const name = [passenger.title, passenger.first_name, passenger.last_name].filter(Boolean).join(" ");
+              const name = [titleText(passenger.title), passenger.first_name, passenger.last_name].filter(Boolean).join(" ");
               const type = PASSENGER_TYPE[passenger.type] + (passenger.type === "INF" && passenger.infant_of_position != null ? ` (with passenger ${passenger.infant_of_position + 1})` : "");
               return (
                 <tr key={passenger.position} className="border-b border-border last:border-b-0">

@@ -20,6 +20,7 @@ import type { BookingDetail, BookingPassenger, IssuanceChecklist, IssuanceResult
 import { cn } from "@/lib/utils";
 import { CopyPnr } from "@/components/CopyPnr";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import { titleText } from "@/lib/passenger-details";
 
 // Booking detail > Payments (spec 7, mockup booking-payment-issue): 1 · record the customer's
 // payment, 2 · issue the ticket, then the result. The gateway decides everything (amounts due,
@@ -34,7 +35,7 @@ function gatewayMessage(error: unknown, fallback: string) {
   return error instanceof GatewayError ? error.message : fallback;
 }
 
-const name = (passenger: BookingPassenger) => `${passenger.title} ${passenger.first_name} ${passenger.last_name}`.trim();
+const name = (passenger: BookingPassenger) => `${titleText(passenger.title)} ${passenger.first_name} ${passenger.last_name}`.trim();
 const travelersOf = (booking: BookingDetail) => [...(booking.passengers ?? [])].sort((a, b) => a.position - b.position);
 
 export function PaymentsAndIssuing({ booking }: { booking: BookingDetail }) {

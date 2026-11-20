@@ -46,3 +46,11 @@ describe("CNIC up front", () => {
   });
 });
 
+
+describe("#11 salutations", () => {
+  it("lists Mr, Mrs, Ms, Mstr, Miss and prints stored titles the same way", async () => {
+    const { TITLE_OPTIONS, titleText } = await import("./passenger-details");
+    expect(TITLE_OPTIONS.map(([, text]) => text)).toEqual(["Mr", "Mrs", "Ms", "Mstr", "Miss"]);
+    expect(["MR", "MRS", "MS", "MASTER", "MISS", "mr", null].map(titleText)).toEqual(["Mr", "Mrs", "Ms", "Mstr", "Miss", "Mr", ""]);
+  });
+});

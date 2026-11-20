@@ -78,4 +78,4 @@ export function fullName(person: { title?: string | null; first_name: string; la
 
 export const ID_TYPE_LABEL: Record<string, string> = { PSPT: "Passport", NATI: "National ID" };
 export const VALIDITY_LABEL: Record<string, string> = { valid: "Valid", expiring: "Expiring within 6 months", expired: "Expired" };
-export const TITLE_LABEL: Record<string, string> = { MR: "Mr", MRS: "Mrs", MISS: "Miss", MASTER: "Master" };
+export const TITLE_LABEL: Record<string, string> = { MR: "Mr", MRS: "Mrs", MS: "Ms", MASTER: "Mstr", MISS: "Miss" };

@@ -170,8 +170,8 @@ describe("2 · Issue the ticket", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Issue now" }));
     const issued = await screen.findByRole("region", { name: "Tickets issued" });
     expect(api.issueTicket).toHaveBeenCalledOnce();
-    expect(issued).toHaveTextContent("MR Ali Khan214-0000000001");
-    expect(issued).toHaveTextContent("MR Sara Khan214-0000000002");
+    expect(issued).toHaveTextContent("Mr Ali Khan214-0000000001");
+    expect(issued).toHaveTextContent("Mr Sara Khan214-0000000002");
     expect(within(issued).getByRole("link", { name: "View tickets" })).toHaveAttribute("href", "/admin/bookings/TRV-O5QZB5/tickets");
   });
 
@@ -265,10 +265,10 @@ describe("unknown issuance", () => {
 
     fireEvent.click(within(card).getByRole("button", { name: "Mark as issued" }));
     const dialog = screen.getByRole("dialog", { name: "Mark as issued" });
-    fireEvent.change(within(dialog).getByLabelText("Ticket number, MR Ali Khan"), { target: { value: "214-1" } });
+    fireEvent.change(within(dialog).getByLabelText("Ticket number, Mr Ali Khan"), { target: { value: "214-1" } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     expect(within(dialog).getByRole("alert")).toHaveTextContent("Give a ticket number for every traveler.");
-    fireEvent.change(within(dialog).getByLabelText("Ticket number, MR Sara Khan"), { target: { value: "214-2" } });
+    fireEvent.change(within(dialog).getByLabelText("Ticket number, Mr Sara Khan"), { target: { value: "214-2" } });
     fireEvent.change(within(dialog).getByLabelText("Reason"), { target: { value: "Airline confirmed both tickets by phone." } });
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     await waitFor(() => expect(api.resolveIssuance).toHaveBeenCalledWith("TRV-O5QZB5", {
@@ -329,6 +329,6 @@ describe("Tickets tab", () => {
   it("lists every traveler's ticket number once issued", () => {
     render(<TicketsTab booking={{ ...BOOKING, passengers: [traveler(1, "Ali", "214-0000000001"), traveler(2, "Sara", "214-0000000002")] }} />);
     const rows = screen.getAllByRole("row").slice(1);
-    expect(rows.map(row => row.textContent)).toEqual(["MR Ali Khan214-0000000001Issued", "MR Sara Khan214-0000000002Issued"]);
+    expect(rows.map(row => row.textContent)).toEqual(["Mr Ali Khan214-0000000001Issued", "Mr Sara Khan214-0000000002Issued"]);
   });
 });

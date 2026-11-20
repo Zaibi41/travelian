@@ -122,7 +122,7 @@ describe("Shared booking form on the Flights hold page", () => {
     for (const label of ["First Name *", "Last Name *", "Passport Number *"]) expect(within(infant).getByLabelText(label)).toHaveValue("");
     for (const label of ["Date of Birth *", "Date of Expiry *"]) expect(within(adult).getByLabelText(label)).toHaveTextContent(/^Select/);
     expect(within(adult).getByLabelText("Title *")).toHaveTextContent("Mr");
-    expect(within(infant).getByLabelText("Title *")).toHaveTextContent("Master");
+    expect(within(infant).getByLabelText("Title *")).toHaveTextContent("Mstr");
     expect(adult).toHaveTextContent("12+ years");
     expect(infant).toHaveTextContent("Under 2 years");
     expect(within(infant).getByLabelText("Travels with")).toHaveTextContent("Adult 1");

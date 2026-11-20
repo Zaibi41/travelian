@@ -22,7 +22,12 @@ export interface PassengerDetails {
   expiryDate?: string;
 }
 
-export const TITLE_OPTIONS = [["mr", "Mr"], ["ms", "Ms"], ["mrs", "Mrs"], ["master", "Master"], ["miss", "Miss"]] as const;
+/** Issue #11: Mr, Mrs, Ms, Mstr, Miss everywhere (Mstr is the gateway's MASTER; Ms travels as MISS). */
+export const TITLE_OPTIONS = [["mr", "Mr"], ["mrs", "Mrs"], ["ms", "Ms"], ["master", "Mstr"], ["miss", "Miss"]] as const;
+
+const TITLE_WORDS: Record<string, string> = { MR: "Mr", MRS: "Mrs", MS: "Ms", MSTR: "Mstr", MASTER: "Mstr", MISS: "Miss" };
+/** A stored title (MR, MASTER, mr, ...) as people read it: Mr, Mrs, Ms, Mstr, Miss. */
+export const titleText = (code?: string | null) => (code ? TITLE_WORDS[code.trim().toUpperCase()] ?? code : "");
 
 /** The website's title words to the gateway's (Ms travels as MISS). */
 export const GATEWAY_TITLE: Record<string, "MR" | "MRS" | "MISS" | "MASTER"> = { mr: "MR", mrs: "MRS", ms: "MISS", miss: "MISS", master: "MASTER" };
