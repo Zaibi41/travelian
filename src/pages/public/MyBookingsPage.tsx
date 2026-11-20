@@ -1,9 +1,10 @@
+import { PaymentSlipUpload } from "@/components/public/PaymentSlipUpload";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plane, Download, X, Search, Calendar, MapPin } from "lucide-react";
+import { Plane, Download, X, Search, Calendar, MapPin, Upload } from "lucide-react";
 import { listBookings, cancelBooking, deleteBooking, updateBooking, type BookingRecord } from "@/lib/booking-store";
 import { confirmPayFastReturn, getPublicBooking, isPayFastReturn, type PublicBooking } from "@/lib/public-booking";
 import { downloadETicket } from "@/lib/eticket-pdf";
@@ -82,6 +83,7 @@ function statusLabel(status: BookingRecord["status"]) {
 }
 
 export default function MyBookingsPage() {
+  const [slipFor, setSlipFor] = useState<string | null>(null);
   const { umrah } = useSiteSwitches(); // D39: Umrah wording only when Umrah is switched on
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
 
@@ -211,12 +213,24 @@ export default function MyBookingsPage() {
                         <X className="h-3.5 w-3.5" /> Cancel
                       </Button>
                     )}
+                    {b.gateway?.live && (b.status === "held" || b.status === "pending_payment") && (b.paymentMethod === "bank" || b.paymentMethod === "wallet") && (
+                      <Button size="sm" variant="outline" className="rounded-lg gap-1.5" aria-expanded={slipFor === b.id}
+                        onClick={() => setSlipFor(slipFor === b.id ? null : b.id)}>
+                        <Upload className="h-3.5 w-3.5" /> Upload payment slip
+                      </Button>
+                    )}
                     {b.status === "cancelled" && (
                       <Button size="sm" variant="ghost" className="rounded-lg text-muted-foreground" onClick={() => handleDelete(b.id)}>
                         Remove
                       </Button>
                     )}
                   </div>
+                  {slipFor === b.id && b.gateway && (
+                    <div className="mt-3">
+                      <PaymentSlipUpload reference={b.gateway.reference} access={{ token: b.gateway.token }}
+                        details={{ method: b.paymentMethod === "wallet" ? "jazzcash" : "bank_transfer", amountMinor: Math.round(b.pricing.total * 100), via: "my_bookings" }} />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

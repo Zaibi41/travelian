@@ -39,7 +39,8 @@ const shot = async (page: Page, name: string) => {
 };
 
 for (const width of [1440, 390]) {
-  for (const [path, name, heading] of [["/admin/wallet", "wallets", "Wallets"], ["/admin/payments", "payments", "Payments"]] as const) {
+  // Payments is built (#69, e2e/finance-payments.spec.ts); Wallets keeps the notice until #68.
+  for (const [path, name, heading] of [["/admin/wallet", "wallets", "Wallets"]] as const) {
     test(`${path} at ${width}px: a not-built notice, no fake numbers`, async ({ page }) => {
       await open(page, path, width);
       await shot(page, `${name}-${width}`);
@@ -59,7 +60,7 @@ for (const width of [1440, 390]) {
   }
 }
 
-test("the Finance menu keeps Wallets and Payments, marked Coming soon", async ({ page }) => {
+test("the Finance menu keeps Wallets marked Coming soon; Payments is built", async ({ page }) => {
   await open(page, "/admin/wallet", 1440, "super_admin");
   const finance = page.getByRole("button", { name: /^Finance/ });
   await finance.waitFor();
@@ -68,6 +69,6 @@ test("the Finance menu keeps Wallets and Payments, marked Coming soon", async ({
   await shot(page, "menu-1440");
   if (BEFORE) return;
   await expect(page.getByRole("link", { name: "Wallets Coming soon" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Payments Coming soon" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Payments", exact: true })).toBeVisible(); // built (#69): no tag
   await expect(page.getByRole("link", { name: "Accounts & Ledgers", exact: true })).toBeVisible(); // built: no tag
 });

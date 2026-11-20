@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { CopyPnr } from "@/components/CopyPnr";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { titleText } from "@/lib/passenger-details";
+import { SlipPreview } from "@/components/admin/finance/SlipReviewDialog";
 
 // Booking detail > Payments (spec 7, mockup booking-payment-issue): 1 · record the customer's
 // payment, 2 · issue the ticket, then the result. The gateway decides everything (amounts due,
@@ -51,12 +52,62 @@ export function PaymentsAndIssuing({ booking }: { booking: BookingDetail }) {
         <RecordPayment booking={booking} />
         <IssueTicket booking={booking} checklist={checklist.data} loading={checklist.isPending} error={checklist.error} onResult={setResult} />
       </div>
+      <CustomerSlips booking={booking} />
       <IssuanceOutcome booking={booking} checklist={checklist.data} result={result} onResult={setResult} />
       <Notice>
         After any issuing error the PNR is always checked first. Every step (payment recorded, issuance requested, issued, checked,
         resolved) appears on the Audit tab with who did it and when.
       </Notice>
     </div>
+  );
+}
+
+// ---------- The customer's chosen account and payment slips (#76, gateway#56) ----------
+
+const SLIP_STATUS: Record<NonNullable<BookingDetail["payment_slips"]>[number]["status"], [string, "action" | "fine" | "critical"]> = {
+  awaiting_check: ["Awaiting check", "action"], confirmed: ["Confirmed", "fine"], rejected: ["Rejected", "critical"],
+};
+
+function CustomerSlips({ booking }: { booking: BookingDetail }) {
+  const [viewing, setViewing] = useState<string | null>(null);
+  const slips = booking.payment_slips ?? [];
+  if (!booking.chosen_account && !slips.length) return null;
+  return (
+    <section aria-labelledby="customer-slips" className={CARD}>
+      <h2 id="customer-slips" className="text-section-title font-semibold font-display">Customer payment</h2>
+      {booking.chosen_account && <p className="text-body">Customer chose to pay into: <strong className="font-semibold">{booking.chosen_account}</strong></p>}
+      {slips.length > 0 && (
+        <ul className="flex flex-col gap-2" aria-label="Payment slips">
+          {slips.map(slip => (
+            <li key={slip.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-body">
+              <span className="min-w-0">
+                <span className="font-semibold tabular-nums">{formatMoney(slip.amount)}</span>{" "}
+                <span className="text-muted-foreground">{PAYMENT_METHOD_LABEL[slip.method]}{slip.account_label ? ` into ${slip.account_label}` : ""}</span>
+                <span className="block text-label text-muted-foreground">
+                  Uploaded {formatDateTime(slip.submitted_at)}{slip.payer_reference ? ` · ref ${slip.payer_reference}` : ""}
+                  {slip.rejection_reason ? ` · ${slip.rejection_reason}` : ""}
+                </span>
+              </span>
+              <span className="flex items-center gap-2">
+                <StatusBadge severity={SLIP_STATUS[slip.status][1]}>{SLIP_STATUS[slip.status][0]}</StatusBadge>
+                <Button variant="outline" size="sm" onClick={() => setViewing(slip.id)}>View slip</Button>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {slips.some(slip => slip.status === "awaiting_check") && (
+        <p className="text-label text-muted-foreground">
+          Confirm or reject slips in <Link to="/admin/payments?tab=awaiting" className="font-medium text-primary underline-offset-2 hover:underline">Finance → Payments</Link>.
+        </p>
+      )}
+      <Dialog open={!!viewing} onOpenChange={open => !open && setViewing(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader><DialogTitle>Payment slip</DialogTitle><DialogDescription>{booking.booking_id}</DialogDescription></DialogHeader>
+          {viewing && <SlipPreview slipId={viewing} />}
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 }
 
@@ -210,7 +261,10 @@ function RecordPayment({ booking }: { booking: BookingDetail }) {
                   <td className={cn(TABLE.td, "whitespace-nowrap tabular-nums")}>{formatDateTime(payment.received_at)}</td>
                   <td className={TABLE.td}>{PAYMENT_METHOD_LABEL[payment.method]}</td>
                   <td className={cn(TABLE.td, "max-w-[10rem] truncate")} title={payment.reference}>{payment.reference}</td>
-                  <td className={cn(TABLE.td, "whitespace-nowrap tabular-nums")}>{formatMoney(payment.amount)}</td>
+                  <td className={cn(TABLE.td, "whitespace-nowrap tabular-nums")}>
+                    {formatMoney(payment.amount)}
+                    {payment.card_fee && <span className="block text-label text-muted-foreground">+ card fee {formatMoney(payment.card_fee)}</span>}
+                  </td>
                   <td className={TABLE.td}>{recordedByLabel(payment.recorded_by_role)}</td>
                 </tr>
               ))}

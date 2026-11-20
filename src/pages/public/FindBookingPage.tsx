@@ -65,7 +65,7 @@ export default function FindBookingPage() {
         </Card>
 
         {result && (
-          <BookingLookupResult result={result} />
+          <BookingLookupResult result={result} contact={contact} />
         )}
         <p className="text-sm text-muted-foreground">Bookings made in this browser are also in <Link to="/my-bookings" className="text-primary underline-offset-2 hover:underline">My Bookings</Link>.</p>
       </div>

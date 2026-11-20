@@ -62,3 +62,32 @@ describe("Download QR", () => {
     expect(screen.queryByRole("button", { name: /Download QR/ })).not.toBeInTheDocument();
   });
 });
+
+describe("BankAccounts (#76)", () => {
+  const account = (n: number) => ({ id: `a${n}`, bank_name: `Bank ${n}`, account_title: "Travelian", account_number: `00112345670${n}` });
+  it("shows amount and reference with Copy and remembers the chosen account", async () => {
+    const { fireEvent } = await import("@testing-library/react");
+    const chosen: string[] = [];
+    render(<BankAccounts accounts={[account(1), account(2)]} facts={{ amount: "Rs 46,700", reference: "TRV-AB12CD" }} onChoose={a => chosen.push(a.id!)} />);
+    expect(screen.getByText("Rs 46,700")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy reference" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy amount to transfer" })).toBeInTheDocument();
+    expect(screen.getByText("Put this reference in the transfer note.")).toBeInTheDocument();
+    expect(screen.getByText("Same bank: faster transfer.")).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Bank 2"));
+    expect(chosen).toEqual(["a2"]);
+  });
+  it("switches to a dropdown above 6 accounts", () => {
+    render(<BankAccounts accounts={[1, 2, 3, 4, 5, 6, 7].map(account)} />);
+    expect(screen.getByRole("combobox", { name: "Choose the account to pay into" })).toBeInTheDocument();
+    expect(screen.queryAllByRole("radio")).toHaveLength(0);
+  });
+});
+
+describe("bank initials", () => {
+  it("uses the bank's acronym or its first letters", async () => {
+    const { bankInitials } = await import("./BankTransferDetails");
+    expect(["Habib Bank Limited (HBL)", "United Bank Limited - UBL", "Meezan Bank", "JazzCash", "Bank Al-Habib"].map(bankInitials))
+      .toEqual(["HBL", "UBL", "MB", "J", "BA"]);
+  });
+});
