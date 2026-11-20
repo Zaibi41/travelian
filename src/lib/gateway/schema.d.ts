@@ -747,6 +747,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Finance Access
+         * @description Whether the caller may open Finance screens (the menu uses it; the gateway still checks every call).
+         */
+        get: operations["finance_access_v1_admin_finance_access_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/audit-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Audit Log
+         * @description Every finance action, newest first. Read-only. Dates are whole days in Pakistan time.
+         */
+        get: operations["audit_log_v1_admin_finance_audit_log_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/bookings/{reference}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Booking Finance
+         * @description A booking's profit (selling + fees charged - supplier charge - payment fees - refunds), supplier charges, fees and refunds.
+         */
+        get: operations["booking_finance_v1_admin_finance_bookings__reference__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/bookings/{reference}/refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Refund
+         * @description Record that a customer is owed a refund (status requested). Moves no money. Audited.
+         */
+        post: operations["request_refund_v1_admin_finance_bookings__reference__refunds_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/bookings/{reference}/supplier-charges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Supplier Charge
+         * @description Record what the supplier actually charged (tickets issued in a supplier portal), or correct it with a negative amount. Audited.
+         *     Needs the cost and margin permission too.
+         */
+        post: operations["add_supplier_charge_v1_admin_finance_bookings__reference__supplier_charges_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/finance/payment-accounts": {
         parameters: {
             query?: never;
@@ -826,6 +927,97 @@ export interface paths {
          * @description Stop offering the account for new payments. Payments already recorded keep it.
          */
         post: operations["deactivate_payment_account_v1_admin_finance_payment_accounts__account_id__deactivate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/payments/{payment_id}/fees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Payment Fee
+         * @description Record what a payment cost Travelian (e.g. the PayFast fee from its statement), or correct it. Audited.
+         */
+        post: operations["add_payment_fee_v1_admin_finance_payments__payment_id__fees_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Refunds */
+        get: operations["list_refunds_v1_admin_finance_refunds_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/refunds/{refund_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Refund */
+        post: operations["approve_refund_v1_admin_finance_refunds__refund_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/refunds/{refund_id}/paid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark Refund Paid
+         * @description Record a payout staff already made (bank, JazzCash or the PayFast portal). The gateway sends no money.
+         */
+        post: operations["mark_refund_paid_v1_admin_finance_refunds__refund_id__paid_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/refunds/{refund_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject Refund */
+        post: operations["reject_refund_v1_admin_finance_refunds__refund_id__reject_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3102,6 +3294,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AddPaymentFeeRequest */
+        AddPaymentFeeRequest: {
+            /**
+             * Amount Minor
+             * @description Paisa. Negative corrects an earlier fee.
+             */
+            amount_minor: number;
+            /** Reason */
+            reason: string;
+        };
         /** AddReceivingAccountRequest */
         AddReceivingAccountRequest: {
             /**
@@ -3133,6 +3335,20 @@ export interface components {
              * @description From POST /v1/admin/uploads (purpose payment_qr).
              */
             qr_asset_key?: string | null;
+        };
+        /** AddSupplierChargeRequest */
+        AddSupplierChargeRequest: {
+            /**
+             * Amount Minor
+             * @description Paisa. Negative corrects an earlier charge.
+             */
+            amount_minor: number;
+            /** Reason */
+            reason: string;
+            /** Supplier Reference */
+            supplier_reference?: string | null;
+            /** Traveler Position */
+            traveler_position?: number | null;
         };
         /** AdminOverview */
         AdminOverview: {
@@ -3262,6 +3478,44 @@ export interface components {
         AttentionQueue: {
             /** Items */
             items: components["schemas"]["AttentionItem"][];
+            /** Total */
+            total: number;
+        };
+        /** AuditEntryView */
+        AuditEntryView: {
+            /** Action */
+            action: string;
+            /**
+             * Actor Role
+             * @description The actor's role, or 'system' for automatic entries.
+             */
+            actor_role?: string | null;
+            /** Actor User Id */
+            actor_user_id?: string | null;
+            /** After */
+            after?: unknown;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Before */
+            before?: unknown;
+            /** Booking Reference */
+            booking_reference?: string | null;
+            /** Entity Id */
+            entity_id?: string | null;
+            /** Entity Type */
+            entity_type: string;
+            /** Id */
+            id: number;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** AuditLogPage */
+        AuditLogPage: {
+            /** Entries */
+            entries: components["schemas"]["AuditEntryView"][];
             /** Total */
             total: number;
         };
@@ -3495,6 +3749,24 @@ export interface components {
             per_passenger?: components["schemas"]["FarePerPassenger"][] | null;
             /** @description Omitted without the cost and margin permission, or when unknown. */
             supplier_cost?: components["schemas"]["BookingMoney"] | null;
+        };
+        /** BookingFinanceView */
+        BookingFinanceView: {
+            /** Payment Fees */
+            payment_fees: components["schemas"]["PaymentFeeView"][];
+            /** @description Only with the cost and margin permission (left out otherwise). */
+            profit?: components["schemas"]["ProfitView"] | null;
+            /** Reference */
+            reference: string;
+            /** @description Received and not yet refunded (card fees excluded: they are not refunded). */
+            refundable: components["schemas"]["BookingMoney"];
+            /** Refunds */
+            refunds: components["schemas"]["RefundView"][];
+            /**
+             * Supplier Charges
+             * @description Only with the cost and margin permission.
+             */
+            supplier_charges?: components["schemas"]["SupplierChargeView"][] | null;
         };
         /** BookingGroupDetails */
         BookingGroupDetails: {
@@ -4160,6 +4432,14 @@ export interface components {
             label: string;
             /** Value */
             value: string;
+        };
+        /** FinanceAccess */
+        FinanceAccess: {
+            /**
+             * Finance
+             * @description The caller has the Finance permission (Super Admin always; staff when granted).
+             */
+            finance: boolean;
         };
         /** FlightCalendar */
         FlightCalendar: {
@@ -5672,6 +5952,16 @@ export interface components {
              */
             travelers: string[];
         };
+        /** MarkRefundPaidRequest */
+        MarkRefundPaidRequest: {
+            /**
+             * Paid At
+             * Format: date-time
+             */
+            paid_at: string;
+            /** Payout Reference */
+            payout_reference: string;
+        };
         /** MergeRequest */
         MergeRequest: {
             /** Merge Into Person Id */
@@ -5810,6 +6100,28 @@ export interface components {
              */
             accounts: components["schemas"]["PaymentAccount"][];
         };
+        /** PaymentFeeView */
+        PaymentFeeView: {
+            amount: components["schemas"]["BookingMoney"];
+            /** Id */
+            id: string;
+            /** Payment Id */
+            payment_id: string;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Recorded By User Id */
+            recorded_by_user_id?: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "recorded" | "estimated" | "settlement";
+        };
         /** PaymentMethodsView */
         PaymentMethodsView: {
             /**
@@ -5873,6 +6185,28 @@ export interface components {
             total_bookings: number;
             /** Total Sales */
             total_sales: components["schemas"]["CurrencyAmount"][];
+        };
+        /** ProfitView */
+        ProfitView: {
+            /** @description Fees the customer paid on top of the fare (card fee). */
+            fees_charged: components["schemas"]["BookingMoney"];
+            /**
+             * Missing
+             * @description Parts not recorded yet; shown as 'Not recorded'.
+             */
+            missing?: "payment_fees"[];
+            payment_fees: components["schemas"]["BookingMoney"];
+            /** @description Null = 'Profit: not known' (no real supplier cost). */
+            profit?: components["schemas"]["BookingMoney"] | null;
+            refunds: components["schemas"]["BookingMoney"];
+            selling: components["schemas"]["BookingMoney"];
+            /** @description Null when not known. */
+            supplier_charge?: components["schemas"]["BookingMoney"] | null;
+            /**
+             * Supplier Charge Basis
+             * @enum {string}
+             */
+            supplier_charge_basis: "recorded" | "quoted" | "not_known";
         };
         /** ProviderStatus */
         ProviderStatus: {
@@ -6140,6 +6474,58 @@ export interface components {
              */
             refresh_token: string;
         };
+        /** RefundList */
+        RefundList: {
+            /** Refunds */
+            refunds: components["schemas"]["RefundView"][];
+            /** Total */
+            total: number;
+        };
+        /** RefundView */
+        RefundView: {
+            amount: components["schemas"]["BookingMoney"];
+            /** Approved At */
+            approved_at?: string | null;
+            /** Approved By User Id */
+            approved_by_user_id?: string | null;
+            /** Booking Reference */
+            booking_reference: string;
+            /** Customer Name */
+            customer_name?: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "bank_transfer" | "jazzcash" | "1link" | "payfast";
+            /** Paid At */
+            paid_at?: string | null;
+            /** Paid By User Id */
+            paid_by_user_id?: string | null;
+            /** Payout Reference */
+            payout_reference?: string | null;
+            /** Reason */
+            reason: string;
+            /** Rejected At */
+            rejected_at?: string | null;
+            /** Rejected By User Id */
+            rejected_by_user_id?: string | null;
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+            /**
+             * Requested At
+             * Format: date-time
+             */
+            requested_at: string;
+            /** Requested By User Id */
+            requested_by_user_id?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "requested" | "approved" | "paid" | "rejected";
+        };
         /**
          * ReholdBody
          * @description Re-hold at SooperFare.
@@ -6158,6 +6544,11 @@ export interface components {
              * @description The new hold in plain words: new PNR and when it expires.
              */
             message: string;
+        };
+        /** RejectRefundRequest */
+        RejectRefundRequest: {
+            /** Reason */
+            reason: string;
         };
         /** ReportBucket */
         ReportBucket: {
@@ -6233,6 +6624,21 @@ export interface components {
             selling_total: components["schemas"]["FlightMoney"];
             /** @description Only with the cost and margin permission. */
             supplier_total?: components["schemas"]["FlightMoney"] | null;
+        };
+        /** RequestRefundRequest */
+        RequestRefundRequest: {
+            /**
+             * Amount Minor
+             * @description Paisa, at most what was received and not yet refunded.
+             */
+            amount_minor: number;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "bank_transfer" | "jazzcash" | "1link" | "payfast";
+            /** Reason */
+            reason: string;
         };
         /** RequestView */
         RequestView: {
@@ -6716,6 +7122,32 @@ export interface components {
             status_at_supplier?: string | null;
             /** Supplier */
             supplier: string;
+        };
+        /** SupplierChargeView */
+        SupplierChargeView: {
+            amount: components["schemas"]["BookingMoney"];
+            /** Id */
+            id: string;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Recorded By User Id */
+            recorded_by_user_id?: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "issuance" | "manual" | "supplier_report";
+            /** Supplier Reference */
+            supplier_reference?: string | null;
+            /** Traveler Name */
+            traveler_name?: string | null;
+            /** Traveler Position */
+            traveler_position?: number | null;
         };
         /**
          * SupplierPayment
@@ -9032,6 +9464,267 @@ export interface operations {
             };
         };
     };
+    finance_access_v1_admin_finance_access_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceAccess"];
+                };
+            };
+            /** @description Not back office. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    audit_log_v1_admin_finance_audit_log_get: {
+        parameters: {
+            query?: {
+                action?: string | null;
+                entity_type?: string | null;
+                booking_reference?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogPage"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    booking_finance_v1_admin_finance_bookings__reference__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingFinanceView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    request_refund_v1_admin_finance_bookings__reference__refunds_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestRefundRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description More than can be refunded. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    add_supplier_charge_v1_admin_finance_bookings__reference__supplier_charges_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddSupplierChargeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingFinanceView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Charges would go below zero. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Amount zero, reason missing or unknown traveler. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_all_payment_accounts_v1_admin_finance_payment_accounts_get: {
         parameters: {
             query?: never;
@@ -9255,6 +9948,301 @@ export interface operations {
             };
             /** @description No active account with that id. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    add_payment_fee_v1_admin_finance_payments__payment_id__fees_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                payment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddPaymentFeeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentFeeView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Payment not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Fees would go below zero. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_refunds_v1_admin_finance_refunds_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundList"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    approve_refund_v1_admin_finance_refunds__refund_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refund_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Refund not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not in 'requested'. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    mark_refund_paid_v1_admin_finance_refunds__refund_id__paid_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refund_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkRefundPaidRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Refund not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not approved. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reject_refund_v1_admin_finance_refunds__refund_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refund_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectRefundRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Refund not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already paid or rejected. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
