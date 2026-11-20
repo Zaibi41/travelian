@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BookingList, BookingListItem } from "@/lib/admin-bookings/types";
@@ -7,10 +7,11 @@ import { GatewayError } from "@/lib/gateway/client";
 const role = { current: "super_admin" };
 vi.mock("@/contexts/RoleContext", () => ({ useRole: () => ({ currentRole: role.current }) }));
 
-const list = { current: {} as Record<string, unknown>, product: undefined as string | undefined };
+const list = { current: {} as Record<string, unknown>, product: undefined as string | undefined, q: undefined as string | undefined };
 vi.mock("@/lib/admin-bookings/use-bookings", () => ({
-  useBookings: (product: string | undefined) => {
+  useBookings: (product: string | undefined, filters: { q?: string }) => {
     list.product = product;
+    list.q = filters.q;
     return list.current;
   },
 }));
@@ -187,6 +188,54 @@ function Where() {
   const location = useLocation();
   return <p>at {location.pathname}</p>;
 }
+
+function Url() {
+  const location = useLocation();
+  return <p data-testid="url">{location.pathname}{location.search}</p>;
+}
+
+describe("Bookings search in the URL (#54)", () => {
+  beforeEach(() => {
+    role.current = "super_admin";
+    list.current = ok(ADMIN_LIST);
+  });
+  const renderAt = (url: string) =>
+    render(<MemoryRouter initialEntries={[url]}><AdminBookingsPage /><Url /></MemoryRouter>);
+
+  it("?search=REF (notification and hold links) fills the search box and filters the list", () => {
+    renderAt("/admin/bookings?search=TRV-ABC123");
+    expect(screen.getByLabelText("Search")).toHaveValue("TRV-ABC123");
+    expect(list.q).toBe("TRV-ABC123");
+  });
+
+  it("?q= still works and wins over ?search=", () => {
+    renderAt("/admin/bookings?q=PNR1&search=OTHER");
+    expect(screen.getByLabelText("Search")).toHaveValue("PNR1");
+    expect(list.q).toBe("PNR1");
+  });
+
+  it("typing a search and pressing Enter keeps it in the URL; clearing it removes it", () => {
+    renderAt("/admin/bookings?payment_status=unpaid");
+    const box = screen.getByLabelText("Search");
+    fireEvent.change(box, { target: { value: " TRV-ABC123 " } });
+    fireEvent.submit(box.closest("form")!);
+    expect(screen.getByTestId("url")).toHaveTextContent("/admin/bookings?q=TRV-ABC123&payment_status=unpaid");
+    expect(list.q).toBe("TRV-ABC123");
+    fireEvent.change(box, { target: { value: "" } });
+    fireEvent.blur(box);
+    expect(screen.getByTestId("url")).toHaveTextContent(/^\/admin\/bookings\?payment_status=unpaid$/);
+    expect(list.q).toBeUndefined();
+  });
+
+  it("a search with no match says so and offers Clear search", () => {
+    list.current = ok({ ...STAFF_LIST, items: [], total: 0 });
+    renderAt("/admin/bookings?search=NOPE99");
+    expect(screen.getByText(/No bookings match/)).toHaveTextContent("No bookings match NOPE99.");
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+    expect(screen.getByTestId("url")).toHaveTextContent(/^\/admin\/bookings$/);
+    expect(screen.getByLabelText("Search")).toHaveValue("");
+  });
+});
 
 describe("old /admin/requests bookings screen", () => {
   const renderRequests = () =>

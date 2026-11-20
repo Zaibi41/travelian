@@ -17,6 +17,11 @@ describe("bookings URL filters", () => {
     expect(serializeBookingsFilters(filters).toString()).toBe(query);
     expect(serializeBookingsFilters({ period: "all", page: 1 }).toString()).toBe("");
   });
+  it("reads ?search= as the search (q wins) and always writes q", () => {
+    expect(parseBookingsFilters(new URLSearchParams("search=TRV-1")).q).toBe("TRV-1");
+    expect(parseBookingsFilters(new URLSearchParams("q=A&search=B")).q).toBe("A");
+    expect(serializeBookingsFilters(parseBookingsFilters(new URLSearchParams("search=TRV-1"))).toString()).toBe("q=TRV-1");
+  });
   it("turns the page into an offset", () => {
     expect(bookingListParams("flight", { period: "all", page: 3 })).toMatchObject({ product: "flight", limit: 50, offset: 100 });
   });
