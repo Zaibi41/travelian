@@ -136,7 +136,7 @@ describe("admin Flights search, live Southair shape", () => {
       "30 kg checked30 kg checked; hand carry: check with airline"]);
     for (const row of rows) {
       const cells = within(row).getAllByRole("cell").map(cell => cell.textContent);
-      expect([cells[1], cells[3], cells[4]]).toEqual(["—Not available", "—Not available", "—Not available"]);  // meal, refund, hold left (dash; screen readers hear "Not available")
+      expect([cells[1], cells[3], cells[4]]).toEqual(["No Meal", "—Not available", "—Not available"]);  // meal says No Meal; refund, hold left (dash; screen readers hear "Not available")
       expect(row).not.toHaveTextContent(/info not available|Not available yet|Hold time not available/);
     }
     expect(results).not.toHaveTextContent("Baggage info not available");
