@@ -51,6 +51,16 @@ describe("internal sidebar: 14 spec menus", () => {
     expect(canAccessAdminPath("super_admin", "/admin/notifications")).toBe(true);
   });
 
+  it("hides Announcements until a real, gateway-stored feature exists", () => {
+    for (const role of ALL_ROLES) {
+      expect(canAccessAdminPath(role, "/admin/announcements")).toBe(false);
+      const titles = getNavigationForRole(role).flatMap((section) => section.items.map((item) => item.title));
+      expect(titles).not.toContain("Announcements");
+    }
+    const titles = getInternalSidebarForRole("super_admin").flatMap((menu) => menu.items.map((item) => item.title));
+    expect(titles).not.toContain("Announcements");
+  });
+
   it("has retired Secret Manager and Document Center completely", () => {
     for (const role of ALL_ROLES) {
       expect(canAccessAdminPath(role, "/admin/secrets")).toBe(false);
