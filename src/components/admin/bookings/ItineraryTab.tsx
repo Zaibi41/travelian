@@ -2,6 +2,7 @@ import { useAirports } from "@/hooks/use-airports";
 import { TABLE } from "@/components/admin/ui/classes";
 import { formatDay } from "@/lib/admin-search/date-display";
 import type { BookingDetail } from "@/lib/admin-bookings/types";
+import { baggageText, underBaggageLabel } from "@/lib/baggage";
 import { cn } from "@/lib/utils";
 
 // Booking detail > Itinerary (mockup booking-detail-itinerary): the flights as the gateway saved
@@ -57,7 +58,7 @@ export function ItineraryTab({ segments }: { segments: Segment[] }) {
                 <td className={cn(TABLE.td, "align-top max-w-[16rem]")}><span className="block truncate" title={airline}>{airline}</span></td>
                 <td className={cn(TABLE.td, "align-top")}>{segment.fare_name ?? "—"}</td>
                 <td className={cn(TABLE.td, "align-top max-w-[12rem]")}>
-                  <span className="block truncate" title={segment.baggage ?? undefined}>{segment.baggage || "Baggage info not available"}</span>
+                  <span className="block truncate" title={baggageText(segment.baggage, segment.baggage_detail).detail}>{underBaggageLabel(baggageText(segment.baggage, segment.baggage_detail).short)}</span>
                 </td>
               </tr>
             );

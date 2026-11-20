@@ -44,7 +44,7 @@ describe("public booking client", () => {
     expect(request[1].headers.Authorization).toBeUndefined(); // no login on the public site
     expect(tickets).toHaveLength(1); // a fare without a price is not offered
     expect(tickets[0]).toMatchObject({ id: "t-1", provider: GATEWAY_GROUP_PROVIDER, fare: 178000, tripType: "round-trip", returnDate: "2026-12-21",
-      baggage: "20+10 kg", airlineLogo: "https://api.example.test/v1/logos/abc" });
+      baggage: "10+20 kg", airlineLogo: "https://api.example.test/v1/logos/abc" });
   });
 
   it("opens a booking only with its private token and reports the gateway's message", async () => {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { baggageText, underBaggageLabel } from "@/lib/baggage";
 import { Link, useSearchParams } from "react-router-dom";
 import { endOfDay, format, startOfDay } from "date-fns";
 import { Bell, CalendarDays, ClipboardCheck, Download, Eye, FileText, Loader2, MoreHorizontal, Search, ArrowUpDown, PencilLine, SlidersHorizontal, X } from "lucide-react";
@@ -867,7 +868,7 @@ export default function BookingRequestsPage() {
                       <BookingDetailField label="Airline">{viewing.flightDetails.airline || "—"}</BookingDetailField>
                       <BookingDetailField label="Flight number"><span className="font-mono">{viewing.flightDetails.flightNumber || "—"}</span></BookingDetailField>
                       <BookingDetailField label="Duration">{viewing.flightDetails.duration || "—"}</BookingDetailField>
-                      <BookingDetailField label="Baggage">{viewing.flightDetails.baggage || "Baggage info not available"}</BookingDetailField>
+                      <BookingDetailField label="Baggage">{underBaggageLabel(baggageText(viewing.flightDetails.baggage).detail)}</BookingDetailField>
                       <BookingDetailField label="Cabin class">{viewing.flightDetails.cabinClass || "—"}</BookingDetailField>
                       <BookingDetailField label="Departure">{viewing.flightDetails.departureAt ? new Date(viewing.flightDetails.departureAt).toLocaleString() : "—"}</BookingDetailField>
                       <BookingDetailField label="Arrival">{viewing.flightDetails.arrivalAt ? new Date(viewing.flightDetails.arrivalAt).toLocaleString() : "—"}</BookingDetailField>

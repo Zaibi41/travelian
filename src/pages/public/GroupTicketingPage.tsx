@@ -56,6 +56,7 @@ import { parseDateOnly } from "@/lib/date-only";
 import { airportByCode, loadPublicAirports } from "@/data/airports";
 
 import { searchPublicGroups } from "@/lib/public-booking";
+import { baggageText, underBaggageLabel } from "@/lib/baggage";
 
 import { CURRENCIES, useLocale } from "@/contexts/LocaleContext";
 
@@ -736,9 +737,9 @@ function GroupCard({
 
                   <span className="flex items-center gap-1">
 
-                    <Luggage className="h-3.5 w-3.5 text-emerald-600" />
+                    <Luggage aria-hidden="true" className="h-3.5 w-3.5 text-emerald-600" />
 
-                    {active.baggage || "Baggage included"}
+                    <span title={baggageText(active.baggage, active.baggageDetail).detail}>{baggageText(active.baggage, active.baggageDetail).short}</span>
 
                   </span>
 
@@ -828,7 +829,7 @@ function GroupCard({
 
                   <Luggage className="h-3.5 w-3.5 text-emerald-600" />
 
-                  Baggage: <strong className="text-foreground">{active.baggage || "Allowance confirmed upon booking"}</strong>
+                  Baggage: <strong className="text-foreground" title={baggageText(active.baggage, active.baggageDetail).detail}>{underBaggageLabel(baggageText(active.baggage, active.baggageDetail).short)}</strong>
 
                 </span>
 
@@ -1128,7 +1129,7 @@ function GroupCard({
 
                       <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Baggage Allowance</p>
 
-                      <p className="mt-2 text-sm font-semibold text-foreground">{active.baggage || "Standard Group Baggage"}</p>
+                      <p className="mt-2 text-sm font-semibold text-foreground">{underBaggageLabel(baggageText(active.baggage, active.baggageDetail).detail)}</p>
 
                     </div>
 

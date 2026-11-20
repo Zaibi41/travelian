@@ -1,4 +1,5 @@
 import type { TravelianFlight } from "@/lib/travelian-api";
+import { BAGGAGE_UNKNOWN, baggageText, underBaggageLabel } from "@/lib/baggage";
 import { normalizeAirlineName } from "@/lib/airline-normalization";
 import {
   type GroupTicket,
@@ -358,11 +359,12 @@ export function groupTicketToFlight(group: GroupTicket): TravelianFlight {
           currency: group.currency || "PKR",
           total: fareNum,
         },
-        bags: group.baggage || "Standard baggage",
+        bags: group.baggage || BAGGAGE_UNKNOWN,
+        bagsDetail: group.baggageDetail,
         change: group.terms || "Subject to Travelian terms",
         refund: group.cancellationRules || "Non-refundable",
         amenities: [
-          group.baggage ? `Baggage: ${group.baggage}` : "Baggage info not available",
+          `Baggage: ${underBaggageLabel(baggageText(group.baggage, group.baggageDetail).short)}`,
           group.seatsAvailable ? `${group.seatsAvailable} seats available` : "Limited seats available",
         ],
       },

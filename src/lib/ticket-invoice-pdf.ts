@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { checkedText, formatBaggage, handCarryText } from "@/lib/baggage";
 import html2canvas from "html2canvas";
 import type { TravelTicket } from "@/data/models";
 import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY } from "@/lib/site-config";
@@ -288,11 +289,11 @@ function invoiceHtml(ticket: TravelTicket) {
       <div class="card baggage-card">
         <div class="baggage-item">
           <div class="baggage-icon">${icon("briefcase")}</div>
-          <div><div class="info-label">Checked Baggage</div><div class="baggage-value">${ticket.checkinBaggageKg == null ? "Not specified" : `${escapeHtml(ticket.checkinBaggageKg)} KG`}</div></div>
+          <div><div class="info-label">Checked Baggage</div><div class="baggage-value">${ticket.checkinBaggageKg == null ? "Check with airline" : escapeHtml(checkedText(formatBaggage({ checkedKg: ticket.checkinBaggageKg })))}</div></div>
         </div>
         <div class="baggage-item">
           <div class="baggage-icon">${icon("carryOn")}</div>
-          <div><div class="info-label">Cabin Baggage</div><div class="baggage-value">${ticket.cabinBaggageKg == null ? "Not specified" : `${escapeHtml(ticket.cabinBaggageKg)} KG`}</div></div>
+          <div><div class="info-label">Cabin Baggage</div><div class="baggage-value">${ticket.cabinBaggageKg == null ? "Check with airline" : escapeHtml(handCarryText(formatBaggage({ handKg: ticket.cabinBaggageKg })))}</div></div>
         </div>
       </div>
 

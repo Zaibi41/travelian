@@ -21,7 +21,7 @@ describe("Hold flight page: Selected fare", () => {
     renderHoldPage(STAFF_DRAFT);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Hold flight");
     const summary = screen.getByRole("complementary", { name: "Selected fare" });
-    for (const text of ["South Air", "Z8266", "00:25", "02:35", "LHE", "KHI", "02h 10m · Non-stop", "EB", "No checked baggage", "Rs 13,597", "Rs 15,316", "Fare confirmed at 10:05"]) {
+    for (const text of ["South Air", "Z8266", "00:25", "02:35", "LHE", "KHI", "02h 10m · Non-stop", "EB", "No checked bag", "Rs 13,597", "Rs 15,316", "Fare confirmed at 10:05"]) {
       expect(summary).toHaveTextContent(text);
     }
     expect(within(summary).getByText(/^Valid for \d\d:\d\d$/)).toBeInTheDocument();

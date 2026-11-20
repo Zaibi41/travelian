@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { FlightSearchView } from "@/lib/admin-search/flights";
-import { filterFlights, DEFAULT_FILTERS, parseFlightSearch, writeFlightSearch, isCompleteFlightSearch, baggageOptions, priceBands, NO_BAGGAGE_INFO } from "@/lib/admin-search/flights";
+import { filterFlights, DEFAULT_FILTERS, parseFlightSearch, writeFlightSearch, isCompleteFlightSearch, baggageOptions, priceBands } from "@/lib/admin-search/flights";
 
 const gateway = vi.hoisted(() => ({ search: vi.fn() }));
 vi.mock("@/lib/admin-search/flights", async importOriginal => ({ ...(await importOriginal<object>()), searchFlights: gateway.search }));
@@ -130,7 +130,10 @@ describe("admin Flights search, live Southair shape", () => {
     expect(results).toHaveTextContent("Non-stop");
     fireEvent.click(within(results).getByRole("button", { name: "Show 1 more fares" }));
     const rows = within(results).getAllByRole("row").slice(1);
-    expect(rows.map(row => within(row).getAllByRole("cell")[2].textContent)).toEqual(["No checked baggage", "20KG", "30KG"]);
+    // #36: the short form with the full words for screen readers (Southair sends no hand carry: none is assumed).
+    expect(rows.map(row => within(row).getAllByRole("cell")[2].textContent)).toEqual([
+      "No checked bagNo checked bag; hand carry: check with airline", "20 kg checked20 kg checked; hand carry: check with airline",
+      "30 kg checked30 kg checked; hand carry: check with airline"]);
     for (const row of rows) {
       const cells = within(row).getAllByRole("cell").map(cell => cell.textContent);
       expect([cells[1], cells[3], cells[4]]).toEqual(["—Not available", "—Not available", "—Not available"]);  // meal, refund, hold left (dash; screen readers hear "Not available")
@@ -305,13 +308,18 @@ describe("mockup elements (Search > Flights)", () => {
 
 describe("filter helpers (real data only)", () => {
   const flights = LIVE_UAT.journeys[0].flights;
-  it("baggage options are the values in the results, plus 'not available' only when some fare lacks it", () => {
-    expect(baggageOptions(flights).map(o => o.label)).toEqual(["20KG", "30KG", "No checked baggage"]);
+  it("baggage options are the results' baggage in the short form, lightest first; 'check with airline' only when some fare lacks it (#36)", () => {
+    // Older gateway text (before #36) is read the same way as the new short form.
+    expect(baggageOptions(flights).map(o => o.label)).toEqual(["No checked bag", "20 kg checked", "30 kg checked"]);
     const missing = structuredClone(flights);
     delete missing[0].fares[0].baggage;
-    expect(baggageOptions(missing).map(o => o.value)).toContain(NO_BAGGAGE_INFO);
-    expect(filterFlights(flights, { ...DEFAULT_FILTERS, baggage: "20KG" })[0].fares.map(f => f.name)).toEqual(["EV"]);
-    expect(filterFlights(missing, { ...DEFAULT_FILTERS, baggage: NO_BAGGAGE_INFO })[0].fares.map(f => f.name)).toEqual(["EB"]);
+    expect(baggageOptions(missing).map(o => o.value)).toContain("Baggage: check with airline");
+    expect(filterFlights(flights, { ...DEFAULT_FILTERS, baggage: "20 kg checked" })[0].fares.map(f => f.name)).toEqual(["EV"]);
+    expect(filterFlights(missing, { ...DEFAULT_FILTERS, baggage: "Baggage: check with airline" })[0].fares.map(f => f.name)).toEqual(["EB"]);
+    const sent = structuredClone(flights);
+    Object.assign(sent[0].fares[1], { baggage: "7+20 kg", baggage_detail: "7 kg hand carry + 20 kg checked" });
+    Object.assign(sent[0].fares[0], { baggage: "7 kg", baggage_detail: "7 kg hand carry only, no checked bag" });
+    expect(baggageOptions(sent).map(o => o.label)).toEqual(["7 kg (hand carry only)", "7+20 kg", "30 kg checked"]);
   });
 
   it("price bands span the real selling prices and filter fares", () => {

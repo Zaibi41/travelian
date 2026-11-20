@@ -3,6 +3,7 @@
 // supplier name and cost only with permission. This page shows the selling price only.
 
 import { gatewayPost, type GatewayOptions } from "@/lib/gateway/client";
+import { baggageFilterOptions, baggageText, underBaggageLabel } from "@/lib/baggage";
 import type { components } from "@/lib/gateway/schema";
 
 type Schemas = components["schemas"];
@@ -110,7 +111,7 @@ export interface ResultFilters {
   stops: StopsFilter;
   time: TimeFilter;
   refund: RefundFilter;
-  /** "any", a baggage text from the results, or NO_BAGGAGE_INFO. */
+  /** "any", or a baggage short form from the results ("7 kg", "7+20 kg", "Baggage: check with airline"). */
   baggage: string;
   /** "any" or a PriceBand value ("lo-hi" in minor units). */
   price: string;
@@ -121,20 +122,12 @@ export interface ResultFilters {
 
 export const DEFAULT_FILTERS: ResultFilters = { airline: "any", stops: "any", time: "any", refund: "any", baggage: "any", price: "any", provider: "any", sort: "price" };
 
-export const NO_BAGGAGE_INFO = "__none__";
+/** A fare's baggage as shown (#36): the gateway's short form and full words. */
+export const fareBaggage = (fare: FareView) => baggageText(fare.baggage, fare.baggage_detail);
 
-/** Baggage values present in the results (no invented options). */
+/** Baggage values present in the results (no invented options), in the short form, lightest first. */
 export function baggageOptions(flights: FlightView[]) {
-  const values = new Set<string>();
-  let missing = false;
-  for (const fare of flights.flatMap(flight => flight.fares)) {
-    if (fare.baggage) values.add(fare.baggage);
-    else missing = true;
-  }
-  return [
-    ...[...values].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).map(value => ({ value, label: value })),
-    ...(missing ? [{ value: NO_BAGGAGE_INFO, label: "Baggage info not available" }] : []),
-  ];
+  return baggageFilterOptions(flights.flatMap(flight => flight.fares).map(fareBaggage)).map(option => ({ ...option, label: underBaggageLabel(option.label) }));
 }
 
 export interface PriceBand { value: string; label: string; min: number; max: number }
@@ -204,7 +197,7 @@ export function filterFlights(flights: FlightView[], filters: ResultFilters): Fl
       ...flight,
       fares: flight.fares
         .filter(fare => filters.refund === "any" || isRefundable(fare) === (filters.refund === "refundable"))
-        .filter(fare => filters.baggage === "any" || (filters.baggage === NO_BAGGAGE_INFO ? !fare.baggage : fare.baggage === filters.baggage))
+        .filter(fare => filters.baggage === "any" || fareBaggage(fare).short === filters.baggage)
         .filter(fare => inBand(filters.price, fare))
         .filter(fare => filters.provider === "any" || fare.supplier === filters.provider),
     }))

@@ -202,7 +202,7 @@ describe("Booking detail", () => {
     expect(outbound).toHaveTextContent("20 kg");
     expect(back).toHaveTextContent("Return1 stop via ISB · 3h 05m");
     expect(back).toHaveTextContent("Z8 · Z8267");
-    expect(back).toHaveTextContent("Baggage info not available");
+    expect(back).toHaveTextContent("Check with airline"); // #36: unknown baggage
     unmount();
     detail.current = ok(ADMIN_VIEW);
     renderAt("/admin/bookings/TRV-1/itinerary");

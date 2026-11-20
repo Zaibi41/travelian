@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, Minus, Plane, Plus, Users, X } from "lucide-react";
+import { ChevronDown, Luggage, Minus, Plane, Plus, Users, X } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/admin/ui/dialog";
 import { Input } from "@/components/admin/ui/field";
@@ -20,9 +20,10 @@ import { formatDay, todayIso } from "@/lib/admin-search/date-display";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
+import { underBaggageLabel } from "@/lib/baggage";
 import { cn } from "@/lib/utils";
 import {
-  DEFAULT_FILTERS, airlineLabel, baggageOptions, filterFlights, formatDuration, isCompleteFlightSearch, isRefundable, parseFlightSearch,
+  DEFAULT_FILTERS, airlineLabel, baggageOptions, fareBaggage, filterFlights, formatDuration, isCompleteFlightSearch, isRefundable, parseFlightSearch,
   SORT_OPTIONS, adminFlightCalendar, priceBands, searchFlights, stopsLabel, writeFlightSearch,
   type FareView, type FlightSearch, type FlightSearchView, type FlightView, type JourneyView, type ResultFilters,
 } from "@/lib/admin-search/flights";
@@ -543,6 +544,18 @@ function FlightDetails({ journey, flight }: { journey: JourneyView; flight: Flig
 }
 
 /** A missing value is a dash (its meaning for screen readers), never a "not available" sentence. */
+/** Short form with a bag icon; full words on hover and for screen readers (#36). */
+function BaggageCell({ fare }: { fare: FareView }) {
+  const baggage = fareBaggage(fare);
+  return (
+    <span className={cn("flex min-w-0 items-center gap-1", !baggage.known && "text-muted-foreground")} title={baggage.detail}>
+      <Luggage aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+      <span className="truncate" aria-hidden="true">{underBaggageLabel(baggage.short)}</span>
+      <span className="sr-only">{baggage.detail}</span>
+    </span>
+  );
+}
+
 function Missing({ value }: { value?: string | null }) {
   if (!value) return <span className="text-muted-foreground"><span aria-hidden="true">—</span><span className="sr-only">Not available</span></span>;
   return <span className="line-clamp-2 break-words" title={value}>{value}</span>;
@@ -601,7 +614,7 @@ function FlightCard({ journey, flight, data, renderFareAction, actionNotes }: {
                 <tr key={fare.id} className="border-t border-border align-middle">
                   <td className="px-2.5 py-2 font-semibold text-foreground">{fare.name}</td>
                   <td className="max-w-[9rem] px-2.5 py-2"><Missing value={fare.meal} /></td>
-                  <td className="max-w-[9rem] px-2.5 py-2"><Missing value={fare.baggage} /></td>
+                  <td className="max-w-[9rem] px-2.5 py-2"><BaggageCell fare={fare} /></td>
                   <td className="max-w-[9rem] px-2.5 py-2">
                     {refundable === null ? <Missing value={null} />
                       : <StatusBadge severity={refundable ? "fine" : "critical"}>{refundable ? "Refundable" : "Non-refundable"}</StatusBadge>}
