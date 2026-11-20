@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createPassengerDetails, passengerComplete, passengerErrors } from "./passenger-details";
+import { ageOn, createPassengerDetails, dobFareNote, kindForAge, passengerComplete, passengerErrors } from "./passenger-details";
 
 const complete = { ...createPassengerDetails("adult", "Adult 1"), gender: "male", firstName: "Ali", lastName: "Raza", dob: "1990-01-31",
   docNumber: "AB1234567", expiryDate: "2031-01-01" };
@@ -52,5 +52,53 @@ describe("#11 salutations", () => {
     const { TITLE_OPTIONS, titleText } = await import("./passenger-details");
     expect(TITLE_OPTIONS.map(([, text]) => text)).toEqual(["Mr", "Mrs", "Ms", "Mstr", "Miss"]);
     expect(["MR", "MRS", "MS", "MASTER", "MISS", "mr", null].map(titleText)).toEqual(["Mr", "Mrs", "Ms", "Mstr", "Miss", "Mr", ""]);
+  });
+});
+
+describe("age on the last travel date (issue #52)", () => {
+  const child = { ...createPassengerDetails("child", "Child 1"), gender: "female", firstName: "Misbah", lastName: "Khan",
+    docNumber: "AB1234567", expiryDate: "2031-01-01" };
+  const infant = { ...child, passengerType: "infant" as const, label: "Infant 1" };
+
+  it("counts whole years, the birthday on the day itself", () => {
+    expect(ageOn("2014-12-10", "2026-12-09")).toBe(11);
+    expect(ageOn("2014-12-10", "2026-12-10")).toBe(12);
+    expect(ageOn("2016-02-29", "2026-02-28")).toBe(9);
+    expect(ageOn("2016-02-29", "2026-03-01")).toBe(10);
+    expect([1, 2, 11, 12].map(kindForAge)).toEqual(["infant", "child", "child", "adult"]);
+  });
+
+  it("says the age and fare type as soon as the date of birth is picked", () => {
+    expect(dobFareNote({ ...child, dob: "2017-03-05" }, "2026-12-10")).toEqual({
+      text: "Will be 9 on the travel date (10 Dec 2026), that's a Child fare.", matches: true });
+    expect(dobFareNote({ ...child, dob: "2017-03-05" }, undefined)).toBeNull();
+    expect(dobFareNote({ ...child, dob: undefined }, "2026-12-10")).toBeNull();
+  });
+
+  it("turning 12 before the travel date: an Adult fare, refused for a child", () => {
+    // 11 today (21 Nov 2026), 12 on the 10 Dec flight.
+    const turning12 = { ...child, dob: "2014-12-01" };
+    const note = dobFareNote(turning12, "2026-12-10");
+    expect(note?.matches).toBe(false);
+    expect(note?.text).toMatch(/^Will be 12 on the travel date \(10 Dec 2026\), that's an Adult fare, not Child\./);
+    expect(passengerErrors(turning12, "2026-12-10").dob).toBe(note?.text);
+    expect(passengerErrors(turning12, "2026-11-30").dob).toBeUndefined();
+  });
+
+  it("turning 2 before the travel date: a Child fare, refused for an infant", () => {
+    const turning2 = { ...infant, dob: "2024-12-05" };
+    expect(passengerErrors(turning2, "2026-12-04").dob).toBeUndefined();
+    expect(dobFareNote(turning2, "2026-12-04")?.text).toBe("Will be 1 on the travel date (4 Dec 2026), that's an Infant fare.");
+    expect(passengerErrors(turning2, "2026-12-05").dob).toMatch(/that's a Child fare, not Infant/);
+  });
+
+  it("round trip: the age is taken on the return date, not the departure date", () => {
+    const turns12OnTrip = { ...child, dob: "2014-12-15" };
+    expect(passengerErrors(turns12OnTrip, "2026-12-10").dob).toBeUndefined(); // departure 10 Dec: still 11
+    expect(passengerErrors(turns12OnTrip, "2026-12-20").dob).toMatch(/Will be 12 .*Adult fare/); // return 20 Dec: 12
+  });
+
+  it("an infant under 1 reads 'under 1'", () => {
+    expect(dobFareNote({ ...infant, dob: "2026-06-01" }, "2026-12-10")?.text).toBe("Will be under 1 on the travel date (10 Dec 2026), that's an Infant fare.");
   });
 });

@@ -439,7 +439,8 @@ describe("country dropdowns on the hold form", () => {
       expect(within(adult).getByLabelText("Gender *")).toHaveTextContent("Male");
       // The infant: a saved traveler fills its card too (the passport still valid is used).
       const infant = screen.getByRole("region", { name: "Infant 1" });
-      gateway.people.mockResolvedValue({ results: [SARA], can_manage: true, can_merge: false });
+      // Under 2 on the travel date (issue #52: an adult's date of birth on an infant card is refused before Hold).
+      gateway.people.mockResolvedValue({ results: [{ ...SARA, date_of_birth: "2025-06-15" }], can_manage: true, can_merge: false });
       await pick(within(infant).getByRole("combobox", { name: "Use saved traveler, Infant 1" }), "Sara", "Sara Khan");
       expect(infant).toHaveTextContent("Filled from saved traveler: Sara Khan");
       expect(within(infant).getByLabelText("Passport Number *")).toHaveValue("AB1230111");
