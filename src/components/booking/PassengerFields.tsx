@@ -1,10 +1,11 @@
+import { useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CountryPicker } from "@/components/ui/country-picker";
 import { CountrySelect } from "@/components/admin/search/CountrySelect";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { addDaysIso, todayIso } from "@/lib/date-iso";
-import { TITLE_OPTIONS, usesPassport, type PassengerDetails, type PassengerField } from "@/lib/passenger-details";
+import { REQUIRED_DOC_TEXT, TITLE_OPTIONS, usesPassport, type DocType, type PassengerDetails, type PassengerField } from "@/lib/passenger-details";
 import { cn } from "@/lib/utils";
 
 // One passenger's fields, shared by the website checkout and the admin hold form so both ask for the same things in
@@ -32,7 +33,7 @@ const STYLES = {
   },
 } as const;
 
-export function PassengerFields({ idPrefix, value, onChange, errors = {}, appearance = "public", travelDate }: {
+export function PassengerFields({ idPrefix, value, onChange, errors = {}, appearance = "public", travelDate, requiredDoc }: {
   /** Unique per passenger, e.g. "passenger-0": field ids and the data-error-key of each field ("passenger-0-firstName"). */
   idPrefix: string;
   value: PassengerDetails;
@@ -42,9 +43,15 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
   appearance?: "public" | "admin";
   /** The last travel date (ISO): passport expiry must be after it, so earlier days can't be picked. */
   travelDate?: string;
+  /** The document the airline asks for on this fare (the gateway's fare check): only that one can be chosen. */
+  requiredDoc?: DocType;
 }) {
   const s = STYLES[appearance];
   const passport = usesPassport(value);
+  // The airline's document for this fare is chosen for the traveler as soon as it is known (CNIC up front).
+  useEffect(() => {
+    if (requiredDoc && (value.docType ?? "passport") !== requiredDoc) onChange({ docType: requiredDoc, docNumber: "", expiryDate: undefined });
+  }, [requiredDoc, value.docType]); // eslint-disable-line react-hooks/exhaustive-deps
   const id = (field: string) => `${idPrefix}-${field}`;
   const describedBy = (field: string, helper?: boolean) =>
     [helper ? `${id(field)}-helper` : null, errors[field] ? `${id(field)}-error` : null].filter(Boolean).join(" ") || undefined;
@@ -117,14 +124,16 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
         <label htmlFor={id("docType")} className={s.label}>Document *</label>
         <Select value={value.docType ?? "passport"}
           onValueChange={docType => onChange({ docType: docType as PassengerDetails["docType"], docNumber: "", expiryDate: undefined })}>
-          <SelectTrigger id={id("docType")} className={s.control} aria-label={`Document for ${value.label}`}>
+          <SelectTrigger id={id("docType")} className={s.control} aria-label={`Document for ${value.label}`}
+            aria-describedby={requiredDoc ? `${id("docType")}-required` : undefined}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
-            <SelectItem value="passport">Passport</SelectItem>
-            <SelectItem value="cnic">CNIC / B-form (Pakistan)</SelectItem>
+            <SelectItem value="passport" disabled={requiredDoc === "cnic"}>Passport</SelectItem>
+            <SelectItem value="cnic" disabled={requiredDoc === "passport"}>CNIC / B-form (Pakistan)</SelectItem>
           </SelectContent>
         </Select>
+        {requiredDoc && <p id={`${id("docType")}-required`} className={cn("mt-1", s.helper)}>{REQUIRED_DOC_TEXT[requiredDoc]}</p>}
         {error("docType")}
       </div>
       <div data-error-key={id("docNumber")}>

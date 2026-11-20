@@ -2851,6 +2851,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/flights/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Flight Documents
+         * @description Which travelers must give a CNIC (or a passport) for the chosen fares, so checkout asks for it before submitting.
+         */
+        post: operations["flight_documents_v1_public_flights_documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/flights/payment-options": {
         parameters: {
             query?: never;
@@ -4173,6 +4193,14 @@ export interface components {
              * @description First day (default today). The gateway checks unknown days from here.
              */
             start?: string | null;
+        };
+        /** FlightDocuments */
+        FlightDocuments: {
+            /**
+             * Documents
+             * @description Travelers whose airline asks for that document on this fare. Empty: no specific document known (the booking route still checks).
+             */
+            documents: components["schemas"]["RequiredDocument"][];
         };
         /** FlightMoney */
         FlightMoney: {
@@ -6118,6 +6146,11 @@ export interface components {
              */
             booking_mode: "hold" | "request";
             /**
+             * Documents
+             * @description Travelers who must give a CNIC or a passport for this fare; ask for it before the hold.
+             */
+            documents?: components["schemas"]["RequiredDocument"][];
+            /**
              * Expires At
              * Format: date-time
              */
@@ -6166,6 +6199,28 @@ export interface components {
              * @default requested
              */
             status: string;
+        };
+        /**
+         * RequiredDocument
+         * @description A traveler whose airline asks for a specific document on this fare (SooperFare's quote: required_fields).
+         */
+        RequiredDocument: {
+            /**
+             * Document
+             * @description cnic: a Pakistani CNIC / B-form (13 digits); passport: a passport.
+             * @enum {string}
+             */
+            document: "cnic" | "passport";
+            /**
+             * Number
+             * @description 1 for the first traveler of this type, 2 for the second, ... (booking order).
+             */
+            number: number;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "ADT" | "CHD" | "INF";
         };
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
@@ -15067,6 +15122,60 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    flight_documents_v1_public_flights_documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlightPaymentQuery"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlightDocuments"];
+                };
+            };
+            /** @description The search expired. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Too many requests. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The airline's rules couldn't be read; the booking route still checks them. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
