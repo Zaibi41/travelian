@@ -7,16 +7,10 @@ export interface AdminAnnouncement {
 const STORAGE_KEY = "travelian.admin.announcements.v1";
 export const ANNOUNCEMENTS_CHANGED = "travelian:announcements-changed";
 
-const sampleAnnouncements: AdminAnnouncement[] = [
-  { id: "sample-airblue", message: "Demo: Airblue ticket prices are Rs 200 lower on selected routes.", createdAt: "2026-01-03T00:00:00.000Z" },
-  { id: "sample-groups", message: "Demo: New group ticketing seats are available for Lahore to Jeddah.", createdAt: "2026-01-02T00:00:00.000Z" },
-  { id: "sample-umrah", message: "Demo: Explore the latest Umrah packages in Travelian.", createdAt: "2026-01-01T00:00:00.000Z" },
-];
-
 export function listAdminAnnouncements(): AdminAnnouncement[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === null) return sampleAnnouncements;
+    if (stored === null) return []; // no demo messages (#73)
     const parsed: unknown = JSON.parse(stored);
     if (!Array.isArray(parsed)) return [];
     return parsed.filter((item): item is AdminAnnouncement =>

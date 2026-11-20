@@ -321,9 +321,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const [payConfirmOpen, setPayConfirmOpen] = useState(false);
   const { currentRole } = useRole();
   const isCustomer = currentRole === "customer";
-  const isAgency = currentRole === "agency_owner" || currentRole === "agency_staff";
-  // Mock wallet balance for B2B precheck (real value will come from Cloud later).
-  const walletBalance = isAgency ? 250000 : 1000000;
 
   // B27: each traveler travels on a passport or a Pakistani CNIC / B-form (the gateway accepts both: PSPT or NATI).
   // The fields, order, labels and checks are shared with the admin hold form (lib/passenger-details, PassengerFields).
@@ -1335,21 +1332,12 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Method</span><span className="font-semibold capitalize">{paymentMethod === "1link" ? "1Link" : paymentMethod}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">Payable</span><span className="font-bold text-foreground">{formatMoney(grandTotal)}</span></div>
-            {paymentMethod === "wallet" && (
-              <>
-                <div className="flex justify-between"><span className="text-muted-foreground">Wallet balance</span><span>{displayCurrency} {walletBalance.toLocaleString()}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">After payment</span><span>{displayCurrency} {(walletBalance - Math.round(displayAmount(grandTotal))).toLocaleString()}</span></div>
-                {walletBalance < Math.round(displayAmount(grandTotal)) && (
-                  <p className="text-xs text-destructive">Insufficient wallet balance. Top up before proceeding.</p>
-                )}
-              </>
-            )}
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setPayConfirmOpen(false)} disabled={processing}>Cancel</Button>
             <Button
               onClick={handlePay}
-              disabled={processing || (paymentMethod === "wallet" && walletBalance < Math.round(displayAmount(grandTotal)))}
+              disabled={processing}
               className="gradient-primary text-primary-foreground"
             >
               {processing ? "Processing..." : `Confirm ${formatMoney(grandTotal)}`}

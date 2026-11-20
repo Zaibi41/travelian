@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/
 import { Button } from "@/components/admin/ui/button";
 import { Input } from "@/components/admin/ui/field";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Building2, Search, Plus, Wallet, Users, MoreHorizontal, CheckCircle, XCircle, Ban, Pencil, Network, Mail, MapPin } from "lucide-react";
+import { Building2, Search, Plus, Users, MoreHorizontal, CheckCircle, XCircle, Ban, Pencil, Network, Mail, MapPin } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/admin/ui/field";
@@ -251,8 +251,8 @@ export default function AgenciesPage() {
                 {agency.parentAgencyId && (
                   <p className="text-helper text-muted-foreground">Parent: {parentName(agency)}</p>
                 )}
-                <div className="grid grid-cols-3 gap-2 text-helper">
-                  <Metric icon={Wallet} value={`Rs ${agency.walletBalance.toLocaleString()}`} />
+                {/* No wallet balance until real agency wallets exist (#73); it was always Rs 0. */}
+                <div className="grid grid-cols-2 gap-2 text-helper">
                   <Metric icon={Users} value={`${agencyUsers.length} users`} />
                   <Metric icon={Network} value={`${subAgencies.length} subs`} />
                 </div>
@@ -277,7 +277,6 @@ export default function AgenciesPage() {
                 <Info label="Status"><StatusBadge status={selectedAgency.status} /></Info>
                 <Info label="Type">{selectedAgency.agencyType === "sub" ? "Sub agency" : "Main agency"}</Info>
                 <Info label="Commission">{selectedAgency.commissionRate}%</Info>
-                <Info label="Wallet">Rs {selectedAgency.walletBalance.toLocaleString()}</Info>
                 <Info label="Bookings">{selectedAgency.totalBookings}</Info>
                 <Info label="Users">{users.filter(u => u.agencyId === selectedAgency.agencyId).length}</Info>
               </div>
