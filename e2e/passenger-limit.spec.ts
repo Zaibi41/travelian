@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { isLocal } from "./support/gateway";
 
 for (const width of [1440, 1024, 768, 375, 320]) {
   test(`traveler total is capped at nine at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 850 });
-    await page.route("**/*", route => ["localhost", "127.0.0.1"].includes(new URL(route.request().url()).hostname)
+    await page.route("**/*", route => isLocal(route.request().url())
       ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } }));
     await page.goto("/");
     await page.getByRole("button", { name: "1 Traveler", exact: true }).click();

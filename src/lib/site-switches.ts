@@ -3,6 +3,7 @@
 // Fetched once per page load and shared by every component (no provider needed).
 import { useSyncExternalStore } from "react";
 import { getSiteConfig } from "@/lib/public-booking";
+import { SITE_URL } from "./site-config";
 
 interface Switches { loaded: boolean; umrah: boolean }
 
@@ -38,7 +39,7 @@ export function setSiteSwitchesForTest(next: Partial<Switches>) {
 
 /** Umrah pages and Umrah booking or request URLs (/umrah-packages, /umrah/…, /umrah-sample, ?type=umrah). */
 export function isUmrahPath(href: string): boolean {
-  const url = new URL(href, "https://travelian.pk");
+  const url = new URL(href, SITE_URL);
   const path = url.pathname.toLowerCase();
   if (/^\/(umrah-packages|umrah|umrah-sample)(\/|$)/.test(path)) return true;
   if (/^\/(booking|request-booking)\/?$/.test(path)) {

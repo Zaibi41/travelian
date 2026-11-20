@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { isLocal } from "./support/gateway";
 
 for (const width of [1920, 1440, 1366, 1024, 768, 375, 320]) {
   test(`canonical product navigation at ${width}px`, async ({ page }) => {
@@ -6,8 +7,7 @@ for (const width of [1920, 1440, 1366, 1024, 768, 375, 320]) {
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.route("**/*", route => {
-      const host = new URL(route.request().url()).hostname;
-      return host === "localhost" || host === "127.0.0.1"
+            return isLocal(route.request().url())
         ? route.continue()
         : route.fulfill({ json: { items: [], groups: [], results: [] } });
     });

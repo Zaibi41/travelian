@@ -474,8 +474,6 @@ export function buildGroupTicketSearchParams(values: GroupTicketSearchParams): U
 
 
 const ALL_GROUPS_SLUG = "all";
-const SITE_BASE = "https://www.travelian.pk";
-
 function unwrapArray(payload: unknown): unknown[] {
   if (Array.isArray(payload)) return payload;
   if (payload && typeof payload === "object") {

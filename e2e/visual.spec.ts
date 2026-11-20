@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
 // Visual regression for the shared design system (docs/design-system.md): the main public pages
 // and the main admin screens at 1280, 1440 and 390px. A change that breaks the shared look (a
@@ -70,11 +70,11 @@ async function open(page: Page, width: number, path: string, signedIn: boolean) 
   await page.clock.setFixedTime(NOW);
   await page.route("**/*", route => {
     const url = gatewayView(route.request().url());
-    if (url.port === "8000") {
+    if (isGateway(url)) {
       const body = GATEWAY[url.pathname];
       return body ? route.fulfill({ json: body }) : route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
-    if (["localhost", "127.0.0.1"].includes(url.hostname)) return route.continue();
+    if (isLocal(url)) return route.continue();
     if (route.request().resourceType() === "font" || url.hostname.includes("fonts.")) return route.fulfill({ status: 404, body: "" });
     return route.fulfill({ json: { items: [], groups: [], results: [] } });
   });

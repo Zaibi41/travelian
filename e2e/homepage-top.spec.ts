@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { isLocal } from "./support/gateway";
 
 for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 768], [768, 1024], [640, 900], [375, 812], [320, 740]]) {
   test(`homepage prioritizes stable search and route discovery at ${width}px`, async ({ page }) => {
     test.setTimeout(60000);
     await page.setViewportSize({ width, height });
     await page.route("**/*", route => {
-      const host = new URL(route.request().url()).hostname;
-      return host === "localhost" || host === "127.0.0.1" ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } });
+            return isLocal(route.request().url()) ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } });
     });
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
@@ -73,8 +73,7 @@ for (const width of [1440, 1024, 320]) {
   test(`homepage controls remain usable across flight modes and products at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.route("**/*", route => {
-      const host = new URL(route.request().url()).hostname;
-      return host === "localhost" || host === "127.0.0.1" ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } });
+            return isLocal(route.request().url()) ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } });
     });
     await page.goto("/");
     await page.getByRole("button", { name: "Round-trip", exact: true }).click();

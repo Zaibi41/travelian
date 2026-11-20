@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 import { expectReadableText } from "./support/type-scale";
 
 // Booking detail > Payments: record the customer's payment, then issue the ticket (confirm, once),
@@ -43,7 +43,7 @@ async function open(page: Page, width: number, tab = "payments") {
   await page.route("**/*", route => {
     const request = route.request();
     const url = gatewayView(request.url());
-    if (url.port === "8000") {
+    if (isGateway(url)) {
       if (request.method() === "POST") posts.push(request);
       if (url.pathname === "/v1/admin/payment-accounts") {
         return route.fulfill({ json: { accounts: [
@@ -65,7 +65,7 @@ async function open(page: Page, width: number, tab = "payments") {
       }
       return route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
-    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+    return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
     email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),

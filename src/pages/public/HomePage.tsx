@@ -10,6 +10,7 @@ import { HomePopularLinks } from "@/components/public/HomePopularLinks";
 import { HomeFaq } from "@/components/public/HomeFaq";
 import { HomeSupportCta } from "@/components/public/HomeSupportCta";
 import { useSiteSwitches } from "@/lib/site-switches";
+import { SITE_URL } from "@/lib/site-config";
 
 export default function HomePage() {
   const { umrah } = useSiteSwitches(); // D39: Umrah wording only when Umrah is switched on
@@ -23,8 +24,8 @@ export default function HomePage() {
             "@context": "https://schema.org",
             "@type": "Organization",
             name: "Travelian",
-            url: "https://travelian.pk",
-            logo: "https://travelian.pk/travelian-logo-wordmark.png",
+            url: SITE_URL,
+            logo: `${SITE_URL}/travelian-logo-wordmark.png`,
             sameAs: [
               "https://www.facebook.com/Travelian.pk/",
               "https://www.instagram.com/travelian.pk/",
@@ -41,10 +42,10 @@ export default function HomePage() {
             "@context": "https://schema.org",
             "@type": "WebSite",
             name: "Travelian",
-            url: "https://travelian.pk",
+            url: SITE_URL,
             potentialAction: {
               "@type": "SearchAction",
-              target: "https://travelian.pk/flights-search?from={search_term_string}",
+              target: `${SITE_URL}/flights-search?from={search_term_string}`,
               "query-input": "required name=search_term_string",
             },
           },

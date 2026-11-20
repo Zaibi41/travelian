@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 import { expectReadableText } from "./support/type-scale";
 import { docsShot } from "./support/docs-shot";
 import { expectRowAligned } from "./support/row-alignment";
@@ -40,7 +40,7 @@ async function open(page: Page, width: number, { paid = false, changed = false }
   await page.setViewportSize({ width, height: width < 600 ? 844 : 900 });
   await page.route("**/*", route => {
     const url = gatewayView(route.request().url());
-    if (url.port === "8000") {
+    if (isGateway(url)) {
       const path = url.pathname;
       if (path === "/v1/group-ticketing/inventory" || path === "/v1/group-ticketing/search") return route.fulfill({ json: INVENTORY });
       if (path === "/v1/group-ticketing/tickets/t1") return route.fulfill({ json: TICKETS[0] });
@@ -56,7 +56,7 @@ async function open(page: Page, width: number, { paid = false, changed = false }
       if (path === "/v1/admin/payment-accounts") return route.fulfill({ json: ACCOUNTS });
       return route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
-    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+    return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
     email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { SITE_URL, SOCIAL_LINKS, SUPPORT_ADDRESS, SUPPORT_EMAIL, SUPPORT_PHONE_TEL } from "../src/lib/site-config";
+import { isLocal } from "./support/gateway";
 
 const products = [["Flights", "/"], ["Group Ticketing", "/group-ticketing"], ["Hotels", "/hotels-search"], ["Umrah", "/umrah-packages"]];
 const policies = [["FAQ", "/faq"], ["Terms & Conditions", "/terms"], ["Privacy Policy", "/privacy"], ["Refund / Cancellation Policy", "/terms"]];
@@ -7,7 +8,7 @@ const policies = [["FAQ", "/faq"], ["Terms & Conditions", "/terms"], ["Privacy P
 for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 768], [768, 1024], [375, 812], [320, 740]]) {
   test(`footer information and responsive layout at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height });
-    await page.route("**/*", route => ["localhost", "127.0.0.1"].includes(new URL(route.request().url()).hostname)
+    await page.route("**/*", route => isLocal(route.request().url())
       ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } }));
     await page.goto("/");
     const footer = page.getByRole("contentinfo");
@@ -44,7 +45,7 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
 }
 
 test("footer links reach existing product, company, and legal pages", async ({ page }) => {
-  await page.route("**/*", route => ["localhost", "127.0.0.1"].includes(new URL(route.request().url()).hostname)
+  await page.route("**/*", route => isLocal(route.request().url())
     ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } }));
   await page.goto("/");
   for (const [name, path] of [...products.slice(1), ["About", "/about"], ["Contact", "/contact"], ...policies]) {

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 import { expectReadableText } from "./support/type-scale";
 import { docsShot } from "./support/docs-shot";
 
@@ -49,7 +49,7 @@ async function open(page: Page, width: number, { changed = false, holdError = fa
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
     const url = gatewayView(route.request().url());
-    if (url.port === "8000") {
+    if (isGateway(url)) {
       if (["/v1/admin/customers", "/v1/admin/customers/search", "/v1/admin/travelers/search"].includes(url.pathname)) return route.fulfill({ json: { results: PEOPLE, can_manage: true, can_merge: false } });
       if (url.pathname === "/v1/live-ticketing/flights/bookings") holdBodies.push(route.request().postDataJSON());
       if (url.pathname === "/v1/live-ticketing/flights/search") return route.fulfill({ json: SEARCH });
@@ -64,7 +64,7 @@ async function open(page: Page, width: number, { changed = false, holdError = fa
       if (url.pathname === "/v1/admin/bookings/TRV-PE49ZP") return route.fulfill({ json: DETAIL });
       return route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
-    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+    return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
     email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),
@@ -169,10 +169,10 @@ for (const [width, height] of [[1440, 760], [1024, 700], [768, 900], [390, 700]]
     await page.setViewportSize({ width, height });
     await page.route("**/*", route => {
       const url = gatewayView(route.request().url());
-      if (url.port === "8000") {
+      if (isGateway(url)) {
         return url.pathname === "/v1/admin/bookings" ? route.fulfill({ json: BOOKINGS }) : route.fulfill({ status: 404, json: { detail: "Not found." } });
       }
-      return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+      return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
     });
     await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
       email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),

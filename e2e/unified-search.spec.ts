@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { isLocal } from "./support/gateway";
 
 for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 768], [768, 1024], [640, 900], [375, 812], [320, 740]]) {
   test(`product switching preserves hero geometry at ${width}px`, async ({ page }) => {
     test.setTimeout(60000);
     await page.setViewportSize({ width, height });
     await page.route("**/*", route => {
-      const host = new URL(route.request().url()).hostname;
-      if (host === "localhost" || host === "127.0.0.1") return route.continue();
+            if (isLocal(route.request().url())) return route.continue();
       return route.fulfill({ json: { items: [], groups: [], results: [] } });
     });
     const errors: string[] = [];

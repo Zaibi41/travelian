@@ -21,7 +21,9 @@ export function whatsappUrlFor(phoneDigits: string, message?: string) {
 }
 
 export const SUPPORT_ADDRESS = "589-J2, Johar Town, Lahore";
-export const SITE_URL = "https://travelian.pk";
+// The public site's address: VITE_SITE_URL, else the production site (also used by scripts/generate-sitemap.ts,
+// where import.meta.env doesn't exist, hence the optional access).
+export const SITE_URL = (import.meta.env?.VITE_SITE_URL?.trim() || "https://travelian.pk").replace(/\/+$/, "");
 export const SITE_DISPLAY = "www.travelian.pk";
 export const SOCIAL_LINKS = [
   { id: "facebook", label: "Facebook", href: "https://www.facebook.com/Travelian.pk/" },

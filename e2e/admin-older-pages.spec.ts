@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
 // Older admin pages (Agencies, Users, RBAC, Wallet, …) on the admin design system: each renders
 // its heading with no page error, no text under 12px and no sideways scroll, at 1280 and 390px.
@@ -26,8 +26,8 @@ for (const width of [1280, 390]) {
       await page.setViewportSize({ width, height: 900 });
       await page.route("**/*", route => {
         const url = gatewayView(route.request().url());
-        if (url.port === "8000") return route.fulfill({ status: 404, json: { detail: "Not found." } });
-        return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } });
+        if (isGateway(url)) return route.fulfill({ status: 404, json: { detail: "Not found." } });
+        return isLocal(url) ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } });
       });
       await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
         email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),

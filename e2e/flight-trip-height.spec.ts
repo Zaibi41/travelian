@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
+import { isLocal } from "./support/gateway";
 
 for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 768], [768, 1024], [375, 812], [320, 740]]) {
   test(`flight trip forms collapse after multi-city at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height });
-    await page.route("**/*", route => ["localhost", "127.0.0.1"].includes(new URL(route.request().url()).hostname)
+    await page.route("**/*", route => isLocal(route.request().url())
       ? route.continue() : route.fulfill({ json: { items: [], groups: [], results: [] } }));
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
