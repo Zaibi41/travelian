@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, Luggage, Minus, Plane, Plus, Users, X } from "lucide-react";
+import { ChevronDown, Luggage, Minus, Plus, Users, X } from "lucide-react";
+import { AirlineLogo } from "@/components/admin/ui/AirlineLogo";
 import { Button } from "@/components/admin/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/admin/ui/dialog";
 import { Input } from "@/components/admin/ui/field";
@@ -100,7 +101,7 @@ interface FlightsSearchProps {
 // Search > Flights (spec 6, D26, mockup search-flights) on the gateway's live search (Southair).
 // Shown but disabled, with the reason (REASONS): Multi-city, cabins other than Economy, Refundable
 // filter without refund data, Fare rules, Book, Hold, Quote. Hidden until there is data
-// (docs/backend-todo.md, Search): Quotes pending card, "Staff fare" tag, airline logos.
+// (docs/backend-todo.md, Search): Quotes pending card, "Staff fare" tag, gateway-served logos (airlines without our logo file show their code).
 export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: FlightsSearchProps) {
   const [params, setParams] = useSearchParams();
   const search = parseFlightSearch(params);
@@ -501,12 +502,12 @@ function StatusLine({ data }: { data: FlightSearchView }) {
 
 const VISIBLE_FARES = 2;
 
-/** Neutral placeholder: the gateway sends no logo for live flights, and supplier-hosted logos are never used. */
-function LogoPlaceholder({ flight }: { flight: FlightView }) {
+/** Travelian's own logo file, else the airline code badge (the gateway sends no logo for live flights, and
+ *  supplier-hosted logos are never used). Same tile size as the website's flight cards. */
+function FlightAirlineLogo({ flight }: { flight: FlightView }) {
   return (
-    <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border bg-muted text-label font-semibold text-muted-foreground">
-      {flight.airline_code ?? <Plane className="h-4 w-4" />}
-    </span>
+    <AirlineLogo airline={airlineLabel(flight)} flightNumber={flight.flight_number ?? undefined} code={flight.airline_code}
+      className="h-11 w-11 rounded-xl sm:h-12 sm:w-12" />
   );
 }
 
@@ -572,7 +573,7 @@ function FlightCard({ journey, flight, data, renderFareAction, actionNotes }: {
   return (
     <article aria-label={`${airlineLabel(flight)} ${flight.flight_number ?? ""}`} className="min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-card">
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-3 py-2.5 lg:grid-cols-[auto_minmax(8rem,12rem)_minmax(0,1fr)_auto]">
-        <span className="col-start-1 row-start-1"><LogoPlaceholder flight={flight} /></span>
+        <span className="col-start-1 row-start-1"><FlightAirlineLogo flight={flight} /></span>
         <div className="col-start-2 row-start-1 min-w-0">
           <p className="truncate font-semibold text-foreground" title={airlineLabel(flight)}>{airlineLabel(flight)}</p>
           <p className="truncate text-label text-muted-foreground">{flight.flight_number ?? "—"}</p>

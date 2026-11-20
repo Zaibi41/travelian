@@ -120,29 +120,34 @@ const localAirlineLogos: Record<string, string> = {
   "turkish airlines": "/airline-logos/turkish-airlines.png",
 };
 
-function resolveCode(airline: string, flightNumber?: string) {
+function resolveCode(airline: string, flightNumber?: string, airlineCode?: string | null) {
   const flightText = String(flightNumber || "").trim();
   // An airline code is two letters/digits (at least one letter) followed by the flight's digits: "Z8266", "PK 303".
   const flightPrefix = flightText.match(/^([A-Z0-9]{2})[\s-]*\d/i)?.[1]?.toUpperCase();
   if (flightPrefix && /[A-Z]/.test(flightPrefix)) return flightPrefix;
+  const given = String(airlineCode || "").trim().toUpperCase();
+  if (/^[A-Z0-9]{2}$/.test(given) && /[A-Z]/.test(given)) return given;
   return airlineCodes[String(airline || "").toLowerCase()] || "";
 }
 
 export function AirlineLogo({
   airline,
   flightNumber,
+  code: airlineCode,
   imageUrl,
   className,
 }: {
   airline: string;
   flightNumber?: string;
+  /** The airline's IATA code when the data has it separately (e.g. the gateway's airline_code). */
+  code?: string | null;
   imageUrl?: string | null;
   className?: string;
 }) {
   const [failedSources, setFailedSources] = useState<string[]>([]);
   const airlineName = String(airline || "Airline");
   const normalizedAirline = airlineName.toLowerCase().trim();
-  const code = resolveCode(airline, flightNumber);
+  const code = resolveCode(airline, flightNumber, airlineCode);
   const localLogo = localAirlineLogos[normalizedAirline] || localAirlineLogos[code.toLowerCase()];
   const remoteLogo = String(imageUrl || "").trim();
   // Travelian's own logo file wins over a supplier-sent image, so an airline looks the same on every page;
