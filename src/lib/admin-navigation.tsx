@@ -264,7 +264,7 @@ export const adminNavigation: AdminNavSection[] = [
     items: [
       item("Roles & Permissions", "/admin/rbac", Shield, platformOwnerRoles),
       item("General Settings", "/admin/settings", Settings, internalAdminRoles),
-      item("Audit Log", "/admin/roadmap/audit-log", FileText, platformOwnerRoles),
+      item("Audit Log", "/admin/audit-log", FileText, platformOwnerRoles),
       item("System Logs & Jobs", "/admin/roadmap/system-logs-jobs", CloudCog, platformOwnerRoles),
       item("Reconciliation", "/admin/roadmap/reconciliation", Receipt, platformOwnerRoles),
       item("Payment Providers", "/admin/roadmap/payment-providers", CreditCard, platformOwnerRoles),
@@ -344,7 +344,7 @@ const internalSidebarMenus: SidebarMenuEntry[] = [
     number: "11", title: "Users & Access", icon: UserCog, items: [
       item("Users & Staff", "/admin/users", UserCog, internalAdminRoles),
       item("Roles & Permissions", "/admin/rbac", Shield, platformOwnerRoles),
-      item("Audit Log", "/admin/roadmap/audit-log", FileText, platformOwnerRoles),
+      item("Audit Log", "/admin/audit-log", FileText, platformOwnerRoles),
     ],
   },
   { number: "12", title: "Reports", icon: BarChart3, items: [item("Reports", "/admin/reports", BarChart3, [...internalAdminRoles, "staff"])] },
@@ -371,7 +371,8 @@ export function getInternalSidebarForRole(role: UserRole): SidebarMenuEntry[] {
 
 // Renamed placeholder URLs (2026-11-06). Old URLs redirect; they get the same access as the new ones.
 const RENAMED_ADMIN_PATHS: Record<string, string> = {
-  "/admin/roadmap/audit-logs": "/admin/roadmap/audit-log",
+  "/admin/roadmap/audit-logs": "/admin/audit-log",
+  "/admin/roadmap/audit-log": "/admin/audit-log",
   "/admin/roadmap/webhook-logs": "/admin/roadmap/system-logs-jobs",
   "/admin/roadmap/payment-gateways": "/admin/roadmap/payment-providers",
 };

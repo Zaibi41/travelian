@@ -174,8 +174,9 @@ function Fare({ booking }: { booking: BookingDetail }) {
   }
   if (booking.fare.supplier_cost) rows.push(["Supplier cost", formatMoney(booking.fare.supplier_cost)]);
   if (booking.fare.margin) rows.push(["Profit", formatMoney(booking.fare.margin)]);
-  // No real supplier cost (e.g. an imported booking): n/a, never a profit of 0. Sent only with cost access.
-  if (booking.fare.cost_unknown) rows.push(["Supplier cost", "n/a"], ["Profit", "n/a"]);
+  // No real supplier cost (an imported booking, or an old one whose cost was filled in as the selling price):
+  // "Not known", never a profit of 0 (travelian#91). Sent only with cost access.
+  if (booking.fare.cost_unknown) rows.push(["Supplier cost", "Not known"], ["Profit", "Not known"]);
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
       <section aria-label="Fare" className="overflow-x-auto rounded-xl border border-border bg-card px-card py-3.5 shadow-card">

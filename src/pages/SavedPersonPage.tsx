@@ -197,7 +197,7 @@ export default function SavedPersonPage() {
                           {booking.supplier_cost ? formatMoney(booking.supplier_cost) : booking.cost_unknown ? "Not recorded" : "—"}
                         </td>
                         <td className="px-2.5 py-2 whitespace-nowrap tabular-nums text-foreground">
-                          {booking.profit ? formatMoney(booking.profit) : booking.cost_unknown ? "Not recorded" : "—"}
+                          {booking.profit ? formatMoney(booking.profit) : booking.cost_unknown ? "Not known" : "—"}
                         </td>
                       </>
                     )}
