@@ -10,6 +10,7 @@ const airlineCodes: Record<string, string> = {
   f3: "F3",
   fz: "FZ",
   g9: "G9",
+  gf: "GF",
   ov: "OV",
   pf: "PF",
   pk: "PK",
@@ -32,6 +33,7 @@ const airlineCodes: Record<string, string> = {
   saudia: "SV",
   "saudi airline": "SV",
   "air arabia": "G9",
+  "gulf air": "GF",
   flynas: "XY",
   "salam air": "OV",
   salamair: "OV",
@@ -55,6 +57,7 @@ const localAirlineLogos: Record<string, string> = {
   f3: "/airline-logos/flyadeal.png",
   fz: "/airline-logos/flydubai.png",
   g9: "/airline-logos/air-arabia.png",
+  gf: "/airline-logos/gulf-air.png",
   j9: "/airline-logos/jazeera-airways.png",
   ku: "/airline-logos/kuwait-airways.png",
   ov: "/airline-logos/salam-air.png",
@@ -84,6 +87,7 @@ const localAirlineLogos: Record<string, string> = {
   "fly dubai": "/airline-logos/flydubai.png",
   "fly jinnah": "/airline-logos/fly-jinnah.png",
   flynas: "/airline-logos/flynas.png",
+  "gulf air": "/airline-logos/gulf-air.png",
   "jazeera airways": "/airline-logos/jazeera-airways.png",
   "kuwait airways": "/airline-logos/kuwait-airways.png",
   "oman air": "/airline-logos/oman-air.png",
@@ -126,49 +130,31 @@ export function AirlineLogo({
   imageUrl?: string | null;
   className?: string;
 }) {
-  const [failed, setFailed] = useState(false);
+  const [failedSources, setFailedSources] = useState<string[]>([]);
   const airlineName = String(airline || "Airline");
   const normalizedAirline = airlineName.toLowerCase().trim();
   const code = resolveCode(airline, flightNumber);
   const localLogo = localAirlineLogos[normalizedAirline] || localAirlineLogos[code.toLowerCase()];
   const remoteLogo = String(imageUrl || "").trim();
+  // Travelian's own logo file wins over a supplier-sent image, so an airline looks the same on every page;
+  // the supplier image is only used for airlines we have no file for (or if our file fails to load).
+  const logoSource = [localLogo, remoteLogo].find((source) => source && !failedSources.includes(source));
   // Same look as the public logo tile; its colours are admin tokens with the same values
   // (--logo-tile-*, src/styles/admin-tokens.css).
   const logoShell = "flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[hsl(var(--logo-tile-border))] bg-gradient-to-br from-card via-card to-[hsl(var(--logo-tile-fade))] shadow-[var(--logo-tile-shadow)] ring-1 ring-[hsl(var(--logo-tile-ink)/0.05)]";
   const logoImage = "max-h-10 w-[86%] object-contain drop-shadow-[0_1px_1px_hsl(var(--logo-tile-ink)/0.16)] [filter:saturate(1.12)_contrast(1.08)]";
 
-  if (remoteLogo && !failed) {
+  if (logoSource) {
     return (
       <div className={cn(logoShell, className)}>
         <img
-          src={remoteLogo}
+          key={logoSource}
+          src={logoSource}
           alt={`${airlineName} logo`}
           className={logoImage}
           loading="lazy"
-          onError={() => setFailed(true)}
+          onError={() => setFailedSources((sources) => [...sources, logoSource])}
         />
-      </div>
-    );
-  }
-
-  if (localLogo && !failed) {
-    return (
-      <div className={cn(logoShell, className)}>
-        <img
-          src={localLogo}
-          alt={`${airlineName} logo`}
-          className={logoImage}
-          loading="lazy"
-          onError={() => setFailed(true)}
-        />
-      </div>
-    );
-  }
-
-  if (!code || failed) {
-    return (
-      <div className={cn("flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/15", className)}>
-        <Plane className="h-6 w-6" />
       </div>
     );
   }
