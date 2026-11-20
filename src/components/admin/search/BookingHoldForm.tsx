@@ -17,7 +17,8 @@ import { fullName } from "@/lib/saved-people/states";
 import { formatMoney } from "@/lib/admin-bookings/format";
 import { countryCode } from "@/lib/public-booking";
 import {
-  AGE_TEXT, FORM_TITLE, GATEWAY_TITLE, createPassengerDetails, passengerErrors, usesPassport, type PassengerDetails, type PassengerKind,
+  AGE_TEXT, FORM_TITLE, GATEWAY_TITLE, createPassengerDetails, passengerErrors, requiredDocuments, usesPassport, type DocType, type PassengerDetails,
+  type PassengerKind, type RequiredDocument,
 } from "@/lib/passenger-details";
 import { cn } from "@/lib/utils";
 
@@ -83,15 +84,20 @@ export function initialTravelers({ adults, children, infants }: PassengerCounts)
   ];
 }
 
-/** The saved document to fill from: a passport still valid, else any passport, else the first document. */
-function bestDocument(person: PersonSummary) {
+/** The saved document to fill from: the one the airline asks for on this fare (a saved CNIC when it needs a CNIC),
+ *  else a passport still valid, else any passport, else the first document. */
+function bestDocument(person: PersonSummary, prefer?: DocType) {
+  if (prefer === "cnic") {
+    const cnic = person.documents.find(document => document.id_type === "NATI");
+    if (cnic) return cnic;
+  }
   const passports = person.documents.filter(document => document.id_type === "PSPT");
   return passports.find(document => document.document_validity !== "expired") ?? passports[0] ?? person.documents[0];
 }
 
-/** A saved person into the card's fields (everything stays editable). */
-export function detailsFromPerson(person: PersonSummary, current: PassengerDetails): PassengerDetails {
-  const document = bestDocument(person);
+/** A saved person into the card's fields (everything stays editable). `prefer`: the document this fare needs. */
+export function detailsFromPerson(person: PersonSummary, current: PassengerDetails, prefer?: DocType): PassengerDetails {
+  const document = bestDocument(person, prefer);
   const title = person.title ? FORM_TITLE[person.title] ?? current.title : current.title;
   const gender = title === "mr" || title === "master" ? "male" : title === "mrs" || title === "miss" || title === "ms" ? "female" : current.gender;
   return {
@@ -215,7 +221,7 @@ export function passengerText({ adults, children, infants }: PassengerCounts) {
 
 // Customer, then one card per traveler, then (Group) the selling price. The Hold seats button sits
 // in the fare panel and submits this form by its id.
-export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, defaultSelling, travelDate }: {
+export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, defaultSelling, travelDate, documents }: {
   formId: string;
   counts: PassengerCounts;
   canSubmit: boolean;
@@ -226,6 +232,8 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
   defaultSelling?: Money | null;
   /** The last travel date (ISO): passports must be valid after it. */
   travelDate?: string;
+  /** From the fare check: travelers whose airline needs a CNIC (or a passport) on this fare, asked for before the hold. */
+  documents?: RequiredDocument[] | null;
 }) {
   const [customer, setCustomer] = useState<BookingCustomer>(blankCustomer);
   const [travelers, setTravelers] = useState<BookingTraveler[]>(() => initialTravelers(counts));
@@ -236,6 +244,7 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
   const fieldError = (key: string) => shown.fields[key]?.map(message => (localErrors ? message : fieldMessage(key, message))).join(" ");
   const sellingText = selling ?? (defaultSelling ? String(Math.round(defaultSelling.amount_minor / 100)) : "");
   const adults = travelers.filter(traveler => traveler.type === "ADT").length;
+  const requiredDocs = requiredDocuments(travelers.map(traveler => traveler.details), documents);
   const setTraveler = (index: number, change: Partial<BookingTraveler>) =>
     setTravelers(current => current.map((traveler, i) => (i === index ? { ...traveler, ...change } : traveler)));
   const setDetails = (index: number, patch: Partial<PassengerDetails>) =>
@@ -266,13 +275,13 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
 
   /** Search existing customer: fill the customer card (and Adult 1 when the customer travels), all still editable. */
   const pickCustomer = (person: PersonSummary) => {
-    const document = bestDocument(person);
+    const document = bestDocument(person, customer.alsoAdult1 ? requiredDocs[0] : undefined);
     setCustomer(current => ({
       ...current, saved: person, first_name: person.first_name, last_name: person.last_name, phone: person.phone ?? "", email: person.email ?? "",
       id_type: document?.id_type === "NATI" ? "NATI" : "PSPT", document_number: document?.document_number ?? "",
     }));
     if (customer.alsoAdult1 && travelers[0]) {
-      const { firstName: _first, lastName: _last, docType: _type, docNumber: _number, ...rest } = detailsFromPerson(person, travelers[0].details);
+      const { firstName: _first, lastName: _last, docType: _type, docNumber: _number, ...rest } = detailsFromPerson(person, travelers[0].details, requiredDocs[0]);
       setDetails(0, rest);
     }
     setLocalErrors(null);
@@ -286,7 +295,7 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
       if (!customer[name].trim()) fields[`contact.${name}`] = [`${FIELD_LABELS[name]} is required`];
     }
     travelers.forEach((traveler, index) => {
-      for (const [field, message] of Object.entries(passengerErrors(shownDetails(index, traveler, customer), travelDate))) {
+      for (const [field, message] of Object.entries(passengerErrors(shownDetails(index, traveler, customer), travelDate, requiredDocs[index]))) {
         fields[`passengers.${index}.${TO_GATEWAY[field] ?? field}`] = [message as string];
       }
     });
@@ -400,12 +409,12 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
                     <FieldLabel htmlFor={id("find")}>Use saved traveler</FieldLabel>
                     <PersonTypeahead id={id("find")} label={`Use saved traveler, ${label}`} kind="traveler" placeholder="Name or passport or CNIC number"
                       emptyText="No saved traveler matches. Type the details below."
-                      onPick={person => setTraveler(index, { picked: person, details: detailsFromPerson(person, traveler.details) })} />
+                      onPick={person => setTraveler(index, { picked: person, details: detailsFromPerson(person, traveler.details, requiredDocs[index]) })} />
                   </div>
                 )
               )}
               {fieldError(`passengers.${index}`) && <p role="alert" className="text-body text-status-critical-text">{fieldError(`passengers.${index}`)}</p>}
-              <PassengerFields idPrefix={`traveler-${index}`} appearance="admin" travelDate={travelDate}
+              <PassengerFields idPrefix={`traveler-${index}`} appearance="admin" travelDate={travelDate} requiredDoc={requiredDocs[index]}
                 value={shownDetails(index, traveler, customer)} onChange={patch => changeTraveler(index, patch)} errors={travelerErrors(index)} />
               {traveler.type === "INF" && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

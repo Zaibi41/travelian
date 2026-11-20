@@ -66,17 +66,41 @@ const dayText = (iso: string) => {
   return new Date(year, month - 1, day).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 };
 
+/** A traveler whose airline asks for a specific document on this fare (the gateway's fare check: documents). */
+export interface RequiredDocument { type: "ADT" | "CHD" | "INF"; number: number; document: DocType }
+
+const GATEWAY_KIND: Record<PassengerKind, RequiredDocument["type"]> = { adult: "ADT", child: "CHD", infant: "INF" };
+
+/** The document each passenger (in form order) must give, from the gateway's list (numbered per passenger type). */
+export function requiredDocuments(passengers: Pick<PassengerDetails, "passengerType">[], documents?: RequiredDocument[] | null): (DocType | undefined)[] {
+  const seen: Partial<Record<PassengerKind, number>> = {};
+  return passengers.map(({ passengerType }) => {
+    const number = (seen[passengerType] = (seen[passengerType] ?? 0) + 1);
+    return documents?.find(d => d.type === GATEWAY_KIND[passengerType] && d.number === number)?.document;
+  });
+}
+
+export const REQUIRED_DOC_TEXT: Record<DocType, string> = {
+  cnic: "This airline needs the traveler's CNIC / B-form for this flight.",
+  passport: "This airline needs the traveler's passport for this flight.",
+};
+
 /** What's missing or wrong, per field (empty when complete). `travelDate`: the last travel date (ISO), so the passport
- *  must still be valid then. */
-export function passengerErrors(passenger: PassengerDetails, travelDate?: string): Partial<Record<PassengerField, string>> {
+ *  must still be valid then. `requiredDoc`: the document the airline asks for on this fare (CNIC up front). */
+export function passengerErrors(passenger: PassengerDetails, travelDate?: string, requiredDoc?: DocType): Partial<Record<PassengerField, string>> {
   const errors: Partial<Record<PassengerField, string>> = {};
   const passport = usesPassport(passenger);
+  if (requiredDoc && (passenger.docType ?? "passport") !== requiredDoc) {
+    errors.docNumber = requiredDoc === "cnic" ? `${REQUIRED_DOC_TEXT.cnic} Choose CNIC / B-form and enter the 13 digits.`
+      : `${REQUIRED_DOC_TEXT.passport} Choose Passport and enter its details.`;
+  }
   if (!passenger.gender) errors.gender = "Gender is required";
   if (!passenger.firstName.trim()) errors.firstName = "First name is required";
   if (!passenger.lastName.trim()) errors.lastName = "Last name is required";
   if (!passenger.dob) errors.dob = "Date of birth is required";
   else if (passenger.dob >= today()) errors.dob = "Date of birth must be in the past";
-  if (!passenger.docNumber.trim()) errors.docNumber = `${passport ? "Passport" : "CNIC"} number is required`;
+  if (errors.docNumber) { /* the wrong document type: said above */ }
+  else if (!passenger.docNumber.trim()) errors.docNumber = `${passport ? "Passport" : "CNIC"} number is required`;
   else if (!passengerDocValid(passenger)) errors.docNumber = passport ? "Enter a valid passport number (6-12 letters/digits)" : "Enter a valid 13-digit CNIC";
   if (passport) {
     if (!passenger.expiryDate) errors.expiryDate = "Expiry date is required";
@@ -86,4 +110,5 @@ export function passengerErrors(passenger: PassengerDetails, travelDate?: string
   return errors;
 }
 
-export const passengerComplete = (passenger: PassengerDetails, travelDate?: string) => Object.keys(passengerErrors(passenger, travelDate)).length === 0;
+export const passengerComplete = (passenger: PassengerDetails, travelDate?: string, requiredDoc?: DocType) =>
+  Object.keys(passengerErrors(passenger, travelDate, requiredDoc)).length === 0;

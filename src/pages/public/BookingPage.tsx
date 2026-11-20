@@ -8,14 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PassengerFields } from "@/components/booking/PassengerFields";
-import { createPassengerDetails, passengerComplete, passengerErrors, type PassengerDetails } from "@/lib/passenger-details";
+import { createPassengerDetails, passengerComplete, passengerErrors, requiredDocuments, type PassengerDetails, type RequiredDocument } from "@/lib/passenger-details";
 import { CountryCodePicker } from "@/components/ui/country-code-picker";
 import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Search, Info } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 // SeatMap is intentionally paused in the UI for now. Keep the component available for the future seat-selection phase.
 // import { SeatMap } from "@/components/booking/SeatMap";
 import { saveServerBooking } from "@/lib/booking-api";
-import { bookGroupFare, getFlightPaymentOptions, getPaymentMethods, requestPublicFlight, startPayFastCheckout, PublicBookingError, type FlightPaymentOptions, type PaymentMethods } from "@/lib/public-booking";
+import { bookGroupFare, getFlightDocuments, getFlightPaymentOptions, getPaymentMethods, requestPublicFlight, startPayFastCheckout, PublicBookingError, type FlightPaymentOptions, type PaymentMethods } from "@/lib/public-booking";
 import { BankAccounts, HoldCountdown } from "@/components/public/BankTransferDetails";
 import { saveBooking, saveGatewayBooking, type BookingRecord, type BookingTraveler } from "@/lib/booking-store";
 import { submitHostedPayment } from "@/lib/payment-api";
@@ -295,6 +295,14 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
     getFlightPaymentOptions(gatewaySearchId, fareIdsKey.split(","), controller.signal).then(setFlightOptions).catch(() => setFlightOptions(null));
     return () => controller.abort();
   }, [gatewayFlight, gatewaySearchId, fareIdsKey, methods?.flights]);
+  // CNIC up front: the gateway reads which travelers the airline needs a CNIC (or passport) from, before submit.
+  const [fareDocuments, setFareDocuments] = useState<RequiredDocument[] | null>(null);
+  useEffect(() => {
+    if (!gatewayFlight) { setFareDocuments(null); return; }
+    const controller = new AbortController();
+    getFlightDocuments(gatewaySearchId, fareIdsKey.split(","), controller.signal).then(answer => setFareDocuments(answer.documents)).catch(() => setFareDocuments(null));
+    return () => controller.abort();
+  }, [gatewayFlight, gatewaySearchId, fareIdsKey]);
   const flightPayable = gatewayFlight && Boolean(flightOptions?.held);
   const paymentOptions = groupTicketId ? {
     card: Boolean(methods?.card), bank: Boolean(methods?.bank_transfer), wallet: Boolean(methods?.jazzcash),
@@ -329,6 +337,8 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const [phone, setPhone] = useState("");
   const [altPhoneCode, setAltPhoneCode] = useState("+92");
   const [altPhone, setAltPhone] = useState("");
+
+  const requiredDocs = useMemo(() => requiredDocuments(passengerForms, fareDocuments), [passengerForms, fareDocuments]);
 
   // Validation touch tracking
   const [touched, setTouched] = useState(false);
@@ -369,14 +379,14 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
     passengerForms.forEach((passenger, index) => {
-      for (const [field, message] of Object.entries(passengerErrors(passenger, travelDateIso))) e[`passenger-${index}-${field}`] = message as string;
+      for (const [field, message] of Object.entries(passengerErrors(passenger, travelDateIso, requiredDocs[index]))) e[`passenger-${index}-${field}`] = message as string;
     });
     if (email.trim() && !emailValid) e.email = "Enter a valid email address";
     if (!phone.trim()) e.phone = "Mobile number is required";
     else if (!phoneValid) e.phone = "Enter a valid numeric phone (6-15 digits)";
     if (!altPhoneValid) e.altPhone = "Enter a valid numeric phone (6-15 digits)";
     return e;
-  }, [passengerForms, email, emailValid, phone, phoneValid, altPhoneValid, travelDateIso]);
+  }, [passengerForms, email, emailValid, phone, phoneValid, altPhoneValid, travelDateIso, requiredDocs]);
 
   const isStep1Valid = Object.keys(errors).length === 0;
 
@@ -776,7 +786,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                 </Card>
 
                 {passengerForms.map((passenger, index) => {
-                  const isComplete = passengerComplete(passenger, travelDateIso);
+                  const isComplete = passengerComplete(passenger, travelDateIso, requiredDocs[index]);
                   return (
                   <Card key={`${passenger.passengerType}-${index}`} className="shadow-card border-0">
                     <CardContent className="p-6">
@@ -798,6 +808,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                         value={passenger}
                         onChange={(patch) => updatePassenger(index, patch)}
                         travelDate={travelDateIso}
+                        requiredDoc={requiredDocs[index]}
                         errors={touched ? Object.fromEntries(Object.entries(errors)
                           .filter(([key]) => key.startsWith(`passenger-${index}-`))
                           .map(([key, message]) => [key.slice(`passenger-${index}-`.length), message])) : {}}

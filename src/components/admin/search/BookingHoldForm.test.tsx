@@ -482,6 +482,41 @@ describe("country dropdowns on the hold form", () => {
         .toBeInTheDocument();
     });
 
+    it("CNIC up front: when the fare needs a CNIC, Adult 1 asks for it, a saved CNIC is used, and no hold goes without one", async () => {
+      const CNIC_DRAFT = { ...STAFF_DRAFT, quote: { ...STAFF_DRAFT.quote, documents: [{ type: "ADT" as const, number: 1, document: "cnic" as const }] } };
+      const BOTH = { id: "p-00000010", title: "MR" as const, first_name: "Hafeez", last_name: "Ahmed", date_of_birth: "1988-03-14", nationality: "PAK",
+        phone: "+92 3214567890", email: "hafeez@example.invalid", match: "contact",
+        documents: [doc("d-00000010", "BX7654321"), { id: "d-00000011", id_type: "NATI" as const, document_country: "PAK", document_number: "3520112345671",
+          document_expiry: null, document_validity: "no_expiry" as const }] };
+      const NO_CNIC = { ...BOTH, id: "p-00000012", first_name: "Bilal", documents: [doc("d-00000012", "BX0000001")] };
+      gateway.hold.mockResolvedValue({ booking_id: "TRV-1", pnr: "ABC123", selling_total: rs(15_316) });
+      const { unmount } = renderPage(CNIC_DRAFT);
+      const adult = () => screen.getByRole("region", { name: "Adult 1" });
+      // Before anything is typed: CNIC is chosen and the reason shown.
+      expect(await within(adult()).findByLabelText("CNIC / B-form Number *")).toBeInTheDocument();
+      expect(adult()).toHaveTextContent("This airline needs the traveler's CNIC / B-form for this flight.");
+      // A saved customer with a passport and a CNIC: the CNIC is filled.
+      gateway.people.mockResolvedValue({ results: [BOTH], can_manage: true, can_merge: false });
+      await pick(findCustomer(), "haf", "Hafeez Ahmed");
+      expect(within(adult()).getByLabelText("CNIC / B-form Number *")).toHaveValue("3520112345671");
+      fillInfant();
+      fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+      await waitFor(() => expect(gateway.hold).toHaveBeenCalledOnce());
+      expect(gateway.hold.mock.calls[0][0].passengers[0]).toMatchObject({ id_type: "NATI", document_number: "3520112345671" });
+      expect(gateway.hold.mock.calls[0][0].customer).toMatchObject({ id_type: "NATI", document_number: "3520112345671" });
+      unmount();
+      // Only a passport saved: CNIC stays the document, empty, and Hold says what is missing (no gateway call).
+      gateway.hold.mockClear();
+      gateway.people.mockResolvedValue({ results: [NO_CNIC], can_manage: true, can_merge: false });
+      renderPage(CNIC_DRAFT);
+      await pick(findCustomer(), "bil", "Bilal Ahmed");
+      expect(within(adult()).getByLabelText("CNIC / B-form Number *")).toHaveValue("");
+      fillInfant();
+      fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
+      expect(await within(adult()).findByText(/CNIC \/ B-form Number is required|CNIC number is required/)).toBeInTheDocument();
+      expect(gateway.hold).not.toHaveBeenCalled();
+    });
+
     it("Clear empties the customer card; one character doesn't search; no match says a new customer is saved", async () => {
       gateway.people.mockResolvedValue({ results: [], can_manage: true, can_merge: false });
       renderPage(STAFF_DRAFT);

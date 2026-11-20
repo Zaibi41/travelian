@@ -27,3 +27,22 @@ describe("passenger checks (website checkout and admin hold form)", () => {
     expect(passengerErrors({ ...complete, expiryDate: "2001-01-01" }).expiryDate).toBe("This passport has expired");
   });
 });
+
+describe("CNIC up front", () => {
+  it("numbers the gateway's list per passenger type, in form order", async () => {
+    const { requiredDocuments } = await import("./passenger-details");
+    const forms = [{ passengerType: "adult" as const }, { passengerType: "adult" as const }, { passengerType: "child" as const }, { passengerType: "infant" as const }];
+    expect(requiredDocuments(forms, [{ type: "ADT", number: 2, document: "cnic" }, { type: "CHD", number: 1, document: "passport" }]))
+      .toEqual([undefined, "cnic", "passport", undefined]);
+    expect(requiredDocuments(forms, null)).toEqual([undefined, undefined, undefined, undefined]);
+  });
+
+  it("a passport where the airline needs a CNIC is an error on the document, saying what to do", async () => {
+    const { createPassengerDetails, passengerErrors } = await import("./passenger-details");
+    const passenger = { ...createPassengerDetails("adult", "Adult 1"), docType: "passport" as const, docNumber: "AB1234567", expiryDate: "2035-01-01" };
+    expect(passengerErrors(passenger, undefined, "cnic").docNumber).toBe(
+      "This airline needs the traveler's CNIC / B-form for this flight. Choose CNIC / B-form and enter the 13 digits.");
+    expect(passengerErrors({ ...passenger, docType: "cnic", docNumber: "3520112345671" }, undefined, "cnic").docNumber).toBeUndefined();
+  });
+});
+

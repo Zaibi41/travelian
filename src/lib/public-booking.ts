@@ -3,6 +3,7 @@
 // by the gateway; this module only sends and displays.
 import { countries } from "@/data/countries";
 import type { GroupTicket } from "@/lib/group-ticketing";
+import type { RequiredDocument } from "@/lib/passenger-details";
 
 export class PublicBookingError extends Error {
   constructor(message: string, readonly status: number, readonly code?: string, readonly fieldErrors: { path: (string | number)[]; message: string }[] = []) {
@@ -266,6 +267,11 @@ export interface FlightPaymentOptions { held: boolean; card: boolean; bank_trans
 
 export function getFlightPaymentOptions(searchId: string, fareIds: string[], signal?: AbortSignal) {
   return call<FlightPaymentOptions>("/flights/payment-options", { body: { search_id: searchId, fare_ids: fareIds }, signal });
+}
+
+/** Which travelers must give a CNIC (or a passport) for the chosen fares, so the form asks for it before submit. */
+export function getFlightDocuments(searchId: string, fareIds: string[], signal?: AbortSignal) {
+  return call<{ documents: RequiredDocument[] }>("/flights/documents", { body: { search_id: searchId, fare_ids: fareIds }, signal });
 }
 
 /** Sends the chosen gateway fare. The gateway reprices it and saves the customer and travelers. When website flight
