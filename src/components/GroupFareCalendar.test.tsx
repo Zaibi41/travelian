@@ -18,8 +18,8 @@ describe("GroupFareCalendar", () => {
   it("never renders a price for a date the supplier didn't return", () => {
     render(<GroupFareCalendar days={days} onPick={() => {}} />);
     const cell = (label: RegExp) => screen.getByRole("button", { name: label });
-    expect(cell(/Tuesday 1 December: from 59k/)).toHaveAttribute("data-available", "true");
-    expect(cell(/Friday 4 December: from 106k/)).toHaveAttribute("data-available", "true");
+    expect(cell(/Tuesday 1 December: from Rs 59,000/)).toHaveAttribute("data-available", "true");
+    expect(cell(/Friday 4 December: from Rs 106,000/)).toHaveAttribute("data-available", "true");
     for (const empty of [/Wednesday 2 December: no availability/, /Thursday 3 December: no availability/, /Monday 7 December: no availability/]) {
       const button = cell(empty);
       expect(button).toBeDisabled();
@@ -39,7 +39,22 @@ describe("GroupFareCalendar", () => {
     fireEvent.click(screen.getByRole("button", { name: /Tuesday 1 December/ }));
     expect(pick).toHaveBeenCalledExactlyOnceWith("2026-12-01");
     expect(screen.getByText("Lowest fare per adult:")).toBeInTheDocument();
+    expect(screen.getByText("Cheapest Rs 59,000")).toBeInTheDocument();
+    for (const label of ["Low", "Avg", "High"]) expect(screen.getByText(label)).toBeInTheDocument();
     expect(shortPrice(5_900_000)).toBe("59k") ;
+  });
+
+  it("prices all within 5% of each other: one colour, and only Low in the legend", () => {
+    const close = [
+      { date: "2026-12-01", available: true, lowest_price: { amount_minor: 1_850_000, currency: "PKR" } },
+      { date: "2026-12-02", available: true, lowest_price: { amount_minor: 1_900_000, currency: "PKR" } },
+    ];
+    render(<GroupFareCalendar days={close} onPick={() => {}} />);
+    expect(bands(close)).toEqual(new Map([["2026-12-01", "low"], ["2026-12-02", "low"]]));
+    expect(screen.getByText("Cheapest Rs 18,500")).toBeInTheDocument();
+    expect(screen.getByText("Low")).toBeInTheDocument();
+    expect(screen.queryByText("Avg")).not.toBeInTheDocument();
+    expect(screen.queryByText("High")).not.toBeInTheDocument();
   });
 
   it("a sector with nothing is all greyed out", () => {

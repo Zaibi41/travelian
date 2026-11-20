@@ -229,7 +229,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [editSegments, setEditSegments] = useState<FlightSegment[]>(segments);
   const [editTravelers, setEditTravelers] = useState<TravelersValue>(travelers);
   const [editDateOpen, setEditDateOpen] = useState(false);
-  const editFares = useFlightFares(editDateOpen, {
+  // #55: while Modify Search is open, its fares load in the background once From and To are set.
+  const editFares = useFlightFares(modifyOpen, {
     from: airportCodeOf(editFrom), to: airportCodeOf(editTo), adults: editTravelers.adults,
     cabin: editTravelers.cabin.toLowerCase().replace(/\s+/g, "_"),
   });
@@ -1942,6 +1943,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   {editFares.ready ? (
                     <div className="w-[min(46rem,calc(100vw-2.5rem))] overflow-y-auto p-3 sm:p-5">
                       <GroupFareCalendar days={editFares.days} anyDate checking={editFares.checking}
+                        status={editFares.status === "loading" || editFares.status === "error" ? editFares.status : "ready"}
                         selected={editDate ? format(editDate, "yyyy-MM-dd") : undefined}
                         onPick={(picked) => { setEditDate(parseISO(picked)); setEditDateOpen(false); }} />
                     </div>
