@@ -89,6 +89,8 @@ type DisplayJourneyLeg = {
   stopText?: string;
 };
 const SEARCH_RESULT_TTL_SECONDS = 900;
+/** Sections hidden on purpose (kept for later, not shown): see CLAUDE.md "Do Not Re-add Removed Features". */
+const SHOW_HIDDEN_SECTIONS = false;
 
 const sortOptions = [
   { value: "price-asc", label: "Price - Low to High" },
@@ -445,7 +447,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   // Group fares are adults only (any number of adults).
   const isAdultsOnly = Number(travelers.children ?? 0) === 0 && Number(travelers.infants ?? 0) === 0;
 
-  let filtered = flights.filter(f => {
+  const filtered = flights.filter(f => {
     if (!isAdultsOnly) {
       const isGroup = isGroupTicketingProvider(f.provider) || f.fareBrand === "Group Ticket" || f.flightId.startsWith("group-");
       if (isGroup) return false;
@@ -1245,7 +1247,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       </div>
 
       <div className={cn(adminMode ? "px-4 md:px-6 py-5" : "travelian-container py-6")}>
-        {false && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm">
+        {SHOW_HIDDEN_SECTIONS && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm">
           <div>
             <p className="text-sm font-semibold text-foreground">
               {apiStatus === "loading"
@@ -1305,7 +1307,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         )}
 
         {/* Sort Tags */}
-        {false && !searchExpired && <div className="flex items-center gap-3 mb-6 overflow-x-auto scrollbar-hide">
+        {SHOW_HIDDEN_SECTIONS && !searchExpired && <div className="flex items-center gap-3 mb-6 overflow-x-auto scrollbar-hide">
           {[
             { id: "best", label: "Best", sub: bestFlight ? formatFare(bestFlight.price, bestFlight.currency) : "" },
             { id: "price-asc", label: "Cheapest", sub: bestFlight ? formatFare(bestFlight.price, bestFlight.currency) : "" },
@@ -1721,7 +1723,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       </div>
                       <div className="hidden">
                         <div className="flex flex-col gap-2">
-                          {false && (
+                          {SHOW_HIDDEN_SECTIONS && (
                             <>
                               {searchExpired ? (
                                 <Button className="rounded-xl h-11 px-5" onClick={revalidateSearch}>Revalidate Fare</Button>
@@ -1769,7 +1771,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       </div>
                     </div>
 
-                    {false && hasFareOptions && fareOptionsOpen && (
+                    {SHOW_HIDDEN_SECTIONS && hasFareOptions && fareOptionsOpen && (
                       <div className="mt-5 border-t pt-4 animate-fade-in">
                         <div className="mb-2 flex items-center justify-between gap-3">
                           <p className="text-sm font-semibold text-foreground">Fare options</p>

@@ -20,6 +20,7 @@ export const EXPIRED_MESSAGE = "Your session expired. Sign in again.";
  *  else (a full URL, //host, javascript:, a backslash trick, a path outside /admin) is refused. */
 export function safeReturnPath(raw: string | null | undefined): string | null {
   if (!raw || raw.length > 2048) return null;
+  // eslint-disable-next-line no-control-regex -- refusing control characters (and backslashes) is the point of this check
   if (!raw.startsWith("/") || raw.startsWith("//") || /[\\\u0000-\u001f]/.test(raw)) return null;
   let url: URL;
   try {
