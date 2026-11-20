@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { RETIRED_FINANCE_KEYS, clearRetiredFinanceData } from "./AdminStore";
+import { RETIRED_FINANCE_KEYS, clearRetiredFinanceData } from "./retired-finance-data";
 
 describe("old fake Finance data (#73)", () => {
   it("is cleared from the browser; other keys stay", () => {

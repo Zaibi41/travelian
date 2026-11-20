@@ -4,6 +4,7 @@ import {
   Booking, Flight, Hotel, Agency, Notification,
   TravelTicket, User, UmrahPackage, Coupon, BlogPost, BookingStatus,
 } from "@/data/models";
+import { clearRetiredFinanceData } from "@/lib/retired-finance-data";
 import {
   listPackages as listRemotePackages,
   savePackage as saveRemotePackage,
@@ -99,17 +100,6 @@ interface AdminState {
 const AdminContext = createContext<AdminState | undefined>(undefined);
 
 const initialSearchLogs: FlightSearchLog[] = [];
-/** Browser keys the old fake Finance → Wallets / Payments screens wrote (#73). Cleared on load, so no fake balance or
- *  ledger stays in a browser; the real data will come from the gateway (#68, #69). */
-export const RETIRED_FINANCE_KEYS = ["travelian:wallet-ledger", "travelian:wallet-deposits", "travelian:payment-webhook-events"];
-
-export function clearRetiredFinanceData() {
-  try {
-    for (const key of RETIRED_FINANCE_KEYS) window.localStorage.removeItem(key);
-  } catch {
-    // storage blocked: nothing to clear
-  }
-}
 
 export function AdminProvider({ children }: { children: ReactNode }) {
   const { pathname, search } = useLocation();
