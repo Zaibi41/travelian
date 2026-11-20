@@ -22,8 +22,10 @@ function read(test: Case): BaggageParts {
   switch (test.source) {
     case "parts": return { handKg: input.hand_kg, checkedKg: input.checked_kg, pieces: input.pieces, pieceKg: input.piece_kg };
     case "southair": {
+      // The gateway reads Southair; its fares include 7 kg hand carry when the checked text is understood.
       const checked = parseBaggageText(input.checked);
-      return { ...checked, handKg: input.hand_carry ? parseBaggageText(`${input.hand_carry} hand carry`).handKg : checked.handKg };
+      if (!formatBaggage(strip(checked)).known) return {};
+      return { ...checked, handKg: input.hand_carry ? parseBaggageText(`${input.hand_carry} hand carry`).handKg : checked.handKg ?? 7 };
     }
     case "sooperfare": return sooperfare(input.policies);
     case "group": return groupBaggageParts(input.checked, input.hand_carry);

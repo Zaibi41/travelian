@@ -15,8 +15,9 @@ const BAGS = {
   hand: ["No checked baggage, 7 kg hand carry", "7 kg", "7 kg hand carry only, no checked bag"],
   b20: ["20 kg checked, 7 kg hand carry", "7+20 kg", "7 kg hand carry + 20 kg checked"],
   b30: ["30 kg checked, 7 kg hand carry", "7+30 kg", "7 kg hand carry + 30 kg checked"],
-  sa20: ["20KG", "20 kg checked", "20 kg checked; hand carry: check with airline"],
-  pc: ["1 PC 23KG", "1×23 kg checked", "1 checked piece of up to 23 kg; hand carry: check with airline"],
+  // Southair: 7 kg hand carry included (#36, owner 20 Nov 2026).
+  sa20: ["20KG", "7+20 kg", "7 kg hand carry + 20 kg checked"],
+  pc: ["1 PC 23KG", "7+1×23 kg", "7 kg hand carry + 1 checked piece of up to 23 kg"],
   none: [null, "Baggage: check with airline", "Baggage: check with airline"],
 } as const;
 type Bag = keyof typeof BAGS;
@@ -77,7 +78,7 @@ for (const width of [1440, 390]) {
     if (BEFORE) return;
     expect(await noSideScroll(page)).toBe(0);
     const main = page.locator("main");
-    for (const text of ["7 kg", "7+20 kg", "7+30 kg", "20 kg checked", "Check with airline"]) {
+    for (const text of ["7 kg", "7+20 kg", "7+30 kg", "Check with airline"]) {
       await expect(main.getByText(text, { exact: true }).first()).toBeAttached();
     }
     // The old guess "7 KG" for a fare with no hand-carry value, and raw supplier codes, are gone.
@@ -94,11 +95,11 @@ test("website Baggage filter lists the fares' baggage, lightest first, and filte
   await filter.scrollIntoViewIfNeeded();
   await shot(page, "public-filter-1440");
   const labels = await filter.getByRole("checkbox").evaluateAll(boxes => boxes.map(box => box.closest("label")?.textContent?.trim()));
-  expect(labels).toEqual(["7 kg (hand carry only)", "7+20 kg", "7+30 kg", "20 kg checked", "1×23 kg checked", "Check with airline"]);
+  expect(labels).toEqual(["7 kg (hand carry only)", "7+20 kg", "7+1×23 kg", "7+30 kg", "Check with airline"]);
   await filter.getByRole("checkbox", { name: "7+20 kg" }).check();
   const main = page.locator("main");
   await expect(main.getByText("08:00", { exact: true }).locator("visible=true").first()).toBeVisible();
-  await expect(main.getByText("13:25", { exact: true })).toHaveCount(0);
+  await expect(main.getByText("13:25", { exact: true }).locator("visible=true")).toHaveCount(1); // Southair EV is 7+20 kg too
   await expect(main.getByText("19:10", { exact: true })).toHaveCount(0);
 });
 
