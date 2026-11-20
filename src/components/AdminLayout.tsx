@@ -78,8 +78,8 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentRole, currentUser } = useRole();
-  // Top bar: sidebar toggle and user menu. No announcement ticker or Wallet chip (#73): announcements and wallets are
-  // kept only in the browser today and the ticker showed demo messages; they return when the gateway serves them.
+  // Top bar: sidebar toggle and user menu. No announcement ticker or Wallet chip (#73): they return when the gateway
+  // serves announcements and wallets.
   const accountTriggerRef = useRef<HTMLButtonElement>(null);
   const [profileAction, setProfileAction] = useState<ProfileAction | null>(null);
   const profileActionRef = useRef(profileAction);

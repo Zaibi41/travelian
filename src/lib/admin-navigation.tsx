@@ -229,7 +229,6 @@ export const adminNavigation: AdminNavSection[] = [
   {
     category: "Website & CMS",
     items: [
-      item("Announcements", "/admin/announcements", Megaphone, ["super_admin"]),
       item("Blog / News", "/admin/blog", PenTool, internalAdminRoles),
       item("Site logo", "/admin/site-logo", Megaphone, ["super_admin"]),
     ],
@@ -351,7 +350,6 @@ const internalSidebarMenus: SidebarMenuEntry[] = [
   { number: "12", title: "Reports", icon: BarChart3, items: [item("Reports", "/admin/reports", BarChart3, [...internalAdminRoles, "staff"])] },
   {
     number: "13", title: "Website & CMS", icon: Megaphone, items: [
-      item("Announcements", "/admin/announcements", Megaphone, ["super_admin"]),
       item("Blog / News", "/admin/blog", PenTool, internalAdminRoles),
       item("Site logo", "/admin/site-logo", Megaphone, ["super_admin"]),
     ],

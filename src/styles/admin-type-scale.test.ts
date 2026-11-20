@@ -23,7 +23,7 @@ const sources = {
     "/src/pages/AgenciesPage.tsx", "/src/pages/PackagesPage.tsx", "/src/pages/UsersPage.tsx", "/src/pages/RBACPage.tsx",
     "/src/pages/HotelsPage.tsx", "/src/pages/FlightsPage.tsx", "/src/pages/FlightOperationsPage.tsx", "/src/pages/BookingRequestsPage.tsx",
     "/src/pages/WalletPage.tsx", "/src/pages/PaymentsPage.tsx", "/src/pages/CouponsPage.tsx", "/src/pages/BlogPage.tsx",
-    "/src/pages/NotificationsPage.tsx", "/src/pages/AnnouncementsPage.tsx", "/src/pages/SettingsPage.tsx", "/src/pages/ProviderSystemsPage.tsx",
+    "/src/pages/NotificationsPage.tsx", "/src/pages/SettingsPage.tsx", "/src/pages/ProviderSystemsPage.tsx",
     "/src/pages/GroupTicketingCollectionsPage.tsx", "/src/pages/ReportsPage.tsx", "/src/pages/CustomerPortalPage.tsx",
     "/src/pages/RoadmapPlaceholderPage.tsx", "/src/pages/AdminBookingsRoutes.tsx", "/src/components/AdminHotelSearchPanel.tsx",
   ], { query: "?raw", import: "default", eager: true }),
