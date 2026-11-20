@@ -124,6 +124,10 @@ export interface PublicBooking {
   hold_expires_at?: string;
   final_pnr?: string;
   tickets?: string[];
+  /** Card / 1Link fee on the amount due and the total PayFast charges (worked out by the gateway, #74). */
+  card_fee?: CardFee | null;
+  /** The receiving account the customer chose (#76). */
+  chosen_account_id?: string | null;
 }
 
 export interface GuestPassenger {
@@ -214,6 +218,8 @@ export function publicGroupCalendar(origin: string, destination: string, adults 
 
 /** Travelian's receiving account, in full (D40): customers need the number or IBAN to pay. */
 export interface BankAccountDisplay {
+  /** Sent back as the chosen account (#76). */
+  id?: string | null;
   bank_name?: string | null; account_title?: string | null; account_number?: string | null; iban?: string | null; qr_url?: string | null;
   /** Gateway path that sends the QR image as a file download (works in every browser; the S3 image itself can't be downloaded cross-site). */
   qr_download_url?: string | null;
@@ -300,4 +306,65 @@ export function requestPublicFlight(input: {
 /** The booking a customer email's signed link opens (read-only, no login). 404 when the link is unknown or expired. */
 export function bookingByLink(token: string, signal?: AbortSignal) {
   return call<BookingLookup>(`/booking-links/${encodeURIComponent(token)}`, { signal });
+}
+
+// ---------- card fee, chosen account, payment slips (#74, #76, gateway#56) ----------
+
+export interface CardFee { percent: string; fee: Money; total: Money }
+
+/** The card / 1Link fee for an amount, worked out by the gateway (display only; PayFast's charge is worked out again
+ *  from the booking when payment starts). null when no fee applies or it can't be loaded. */
+export async function getCardFee(amountMinor: number, product: "flight" | "group" | "hotel" | "umrah", signal?: AbortSignal): Promise<CardFee | null> {
+  if (!(amountMinor > 0)) return null;
+  const fee = await call<CardFee | null>("/card-fee", { body: { amount_minor: Math.round(amountMinor), product }, signal });
+  return fee && fee.fee.amount_minor > 0 ? fee : null;
+}
+
+/** How the customer proves access: the checkout token, or (My Bookings) the email / phone the booking was made with. */
+export interface BookingAccess { token?: string; contact?: string }
+
+const bookingPath = (reference: string, rest: string) => `/bookings/${encodeURIComponent(reference)}${rest}`;
+
+export function chooseReceivingAccount(reference: string, accountId: string, access: BookingAccess) {
+  return call<null>(bookingPath(reference, "/chosen-account"), { body: { account_id: accountId, contact: access.contact }, token: access.token });
+}
+
+export const SLIP_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"] as const;
+export const SLIP_MAX_BYTES = 5 * 1024 * 1024;
+
+/** A file the gateway will accept, or the reason it won't (checked again by S3 and the gateway). */
+export function slipFileProblem(file: File): string | null {
+  if (!(SLIP_TYPES as readonly string[]).includes(file.type)) return "Choose a JPG, PNG, WebP or PDF file.";
+  if (file.size <= 0) return "This file is empty.";
+  if (file.size > SLIP_MAX_BYTES) return "The file must be 5 MB or smaller.";
+  return null;
+}
+
+export interface SlipDetails { method: "bank_transfer" | "jazzcash"; accountId?: string | null; amountMinor: number; payerReference?: string; via: "checkout" | "my_bookings" }
+
+/** Upload the slip straight to private storage (signed by the gateway), then save it as "awaiting check". */
+export async function uploadPaymentSlip(reference: string, file: File, details: SlipDetails, access: BookingAccess,
+                                        onProgress?: (percent: number) => void): Promise<{ status: "awaiting_check"; message: string }> {
+  const problem = slipFileProblem(file);
+  if (problem) throw new PublicBookingError(problem, 422, "invalid_file");
+  const signed = await call<{ url: string; fields: Record<string, string>; asset_key: string }>(
+    bookingPath(reference, "/payment-slips/upload"), { body: { content_type: file.type, contact: access.contact }, token: access.token });
+  await new Promise<void>((resolve, reject) => {
+    const form = new FormData();
+    for (const [key, value] of Object.entries(signed.fields)) form.append(key, value);
+    form.append("file", file);
+    const request = new XMLHttpRequest();
+    request.open("POST", signed.url);
+    request.upload.onprogress = (event) => { if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100)); };
+    request.onload = () => (request.status >= 200 && request.status < 300 ? resolve()
+      : reject(new PublicBookingError("The slip couldn't be uploaded. Check the file and try again.", request.status, "upload_failed")));
+    request.onerror = () => reject(new PublicBookingError("The slip couldn't be uploaded. Check your connection and try again.", 0, "network"));
+    request.send(form);
+  });
+  onProgress?.(100);
+  return call(bookingPath(reference, "/payment-slips"), {
+    token: access.token,
+    body: { method: details.method, account_id: details.accountId ?? null, amount_minor: details.amountMinor, payer_reference: details.payerReference || null,
+            asset_key: signed.asset_key, via: details.via, contact: access.contact },
+  });
 }

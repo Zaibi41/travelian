@@ -161,11 +161,11 @@ describe("flight hold pages", () => {
   });
 });
 
-describe("Finance: Wallets and Payments stay in the menu, marked Coming soon (#73)", () => {
-  it("marks only Wallets and Payments", () => {
+describe("Finance: Wallets stays in the menu marked Coming soon (#73); Payments is built (#69)", () => {
+  it("marks only Wallets", () => {
     const finance = getInternalSidebarForRole("super_admin").find(menu => menu.title === "Finance")!;
     expect(finance.items.map(item => [item.title, !!item.comingSoon])).toEqual([
-      ["Wallets", true], ["Payments", true], ["Reconciliation", false], ["Accounts & Ledgers", false],
+      ["Wallets", true], ["Payments", false], ["Reconciliation", false], ["Accounts & Ledgers", false],
     ]);
   });
 });

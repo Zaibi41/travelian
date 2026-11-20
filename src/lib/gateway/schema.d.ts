@@ -933,6 +933,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Payments
+         * @description Every payment across bookings (and slips awaiting a check or rejected), newest first, with totals per day and method
+         *     (confirmed money only). Dates are whole days in Pakistan time; default All.
+         */
+        get: operations["list_payments_v1_admin_finance_payments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/payments.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Payments
+         * @description The same list as /payments with the same filters, as CSV (amounts in rupees with paisa). Audited as an export.
+         */
+        get: operations["export_payments_v1_admin_finance_payments_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/finance/payments/{payment_id}/fees": {
         parameters: {
             query?: never;
@@ -962,6 +1003,26 @@ export interface paths {
         };
         /** List Refunds */
         get: operations["list_refunds_v1_admin_finance_refunds_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/refunds-due": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Refunds Due
+         * @description Paid bookings that can't be travelled on with no refund recorded yet, and refunds requested or approved.
+         */
+        get: operations["refunds_due_v1_admin_finance_refunds_due_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1018,6 +1079,104 @@ export interface paths {
         put?: never;
         /** Reject Refund */
         post: operations["reject_refund_v1_admin_finance_refunds__refund_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/settings/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Payment Settings */
+        get: operations["payment_settings_v1_admin_finance_settings_payments_get"];
+        /**
+         * Update Payment Settings
+         * @description Change the card fee rate or whether it applies to group fares. Each change is audited; new checkouts use it.
+         */
+        put: operations["update_payment_settings_v1_admin_finance_settings_payments_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/slips/{slip_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Slip */
+        get: operations["get_slip_v1_admin_finance_slips__slip_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/slips/{slip_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Slip
+         * @description The money arrived: record the payment (amount, account and reference as received) and confirm the slip. Audited.
+         */
+        post: operations["confirm_slip_v1_admin_finance_slips__slip_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/slips/{slip_id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Slip Link
+         * @description A signed link to the private slip file, valid for 5 minutes.
+         */
+        get: operations["slip_link_v1_admin_finance_slips__slip_id__link_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/slips/{slip_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject Slip
+         * @description The money didn't arrive (or the slip is wrong): reject it with a reason. Nothing is recorded as paid. Audited.
+         */
+        post: operations["reject_slip_v1_admin_finance_slips__slip_id__reject_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3008,6 +3167,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/bookings/{reference}/chosen-account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Choose Account
+         * @description Remember which receiving account the customer chose (staff see it on the booking's Payments tab).
+         */
+        post: operations["choose_account_v1_public_bookings__reference__chosen_account_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/bookings/{reference}/payment-slips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Submit Slip
+         * @description Save the uploaded slip as "awaiting check" and alert staff. The payment counts only after staff confirm it.
+         */
+        post: operations["submit_slip_v1_public_bookings__reference__payment_slips_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/bookings/{reference}/payment-slips/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign Slip Upload
+         * @description A one-time signed upload (10 minutes) for the slip file: JPG, PNG, WebP or PDF, at most 5 MB, private.
+         */
+        post: operations["sign_slip_upload_v1_public_bookings__reference__payment_slips_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/bookings/{reference}/payments/payfast": {
         parameters: {
             query?: never;
@@ -3022,6 +3241,27 @@ export interface paths {
          * @description The PayFast checkout form for the amount due. The browser posts `fields` to `action`.
          */
         post: operations["start_payfast_v1_public_bookings__reference__payments_payfast_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/card-fee": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Card Fee Quote
+         * @description The card / 1Link fee shown before payment ("Card fee (3%): Rs X · Total Rs Y"). Display only: the amount PayFast is
+         *     charged is worked out again by the gateway from the booking when payment starts (travelian#74).
+         */
+        post: operations["card_fee_quote_v1_public_card_fee_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3533,6 +3773,11 @@ export interface components {
             /** Iban */
             iban?: string | null;
             /**
+             * Id
+             * @description Send it back as the chosen account (travelian#76).
+             */
+            id?: string | null;
+            /**
              * Qr Download Url
              * @description Gateway path that downloads the QR image as a file (every browser, no S3 CORS).
              */
@@ -3619,6 +3864,11 @@ export interface components {
              * @default false
              */
             can_set_selling_price: boolean;
+            /**
+             * Chosen Account
+             * @description The receiving account the customer chose at checkout (travelian#76).
+             */
+            chosen_account?: string | null;
             /** Created At */
             created_at?: string | null;
             /** @description Omitted when no customer was saved. */
@@ -3661,6 +3911,11 @@ export interface components {
              * @description The Passengers tab. Omitted when no travelers were saved.
              */
             passengers?: components["schemas"]["app__schemas__admin_bookings__BookingPassenger"][] | null;
+            /**
+             * Payment Slips
+             * @description Customer payment slips. Omitted when none.
+             */
+            payment_slips?: components["schemas"]["BookingSlip"][] | null;
             /**
              * Payments
              * @description The Payments tab. Omitted when no payment is recorded.
@@ -3918,6 +4173,8 @@ export interface components {
          */
         BookingPayment: {
             amount: components["schemas"]["BookingMoney"];
+            /** @description Card fee the customer paid on top of this payment (travelian#74). */
+            card_fee?: components["schemas"]["BookingMoney"] | null;
             /** Id */
             id: string;
             /**
@@ -4062,6 +4319,38 @@ export interface components {
             /** Stops */
             stops?: number | null;
         };
+        /**
+         * BookingSlip
+         * @description A customer's payment slip (gateway#56). The file opens through /v1/admin/finance/slips/{id}/link.
+         */
+        BookingSlip: {
+            /** Account Label */
+            account_label?: string | null;
+            amount: components["schemas"]["BookingMoney"];
+            /** Content Type */
+            content_type: string;
+            /** Id */
+            id: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "bank_transfer" | "jazzcash";
+            /** Payer Reference */
+            payer_reference?: string | null;
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "awaiting_check" | "confirmed" | "rejected";
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+        };
         /** BookingStatuses */
         BookingStatuses: {
             /**
@@ -4129,6 +4418,31 @@ export interface components {
             /** Origin */
             origin: string;
         };
+        /** CardFeeQuery */
+        CardFeeQuery: {
+            /**
+             * Amount Minor
+             * @description The amount to pay (paisa), as shown by the gateway's own price.
+             */
+            amount_minor: number;
+            /**
+             * Product
+             * @default flight
+             * @enum {string}
+             */
+            product: "flight" | "group" | "hotel" | "umrah";
+        };
+        /** CardFeeView */
+        CardFeeView: {
+            fee: components["schemas"]["PublicMoney"];
+            /**
+             * Percent
+             * @description e.g. "3%"
+             */
+            percent: string;
+            /** @description Amount due plus the fee: what the card is charged. */
+            total: components["schemas"]["PublicMoney"];
+        };
         /** CheckoutView */
         CheckoutView: {
             /**
@@ -4142,6 +4456,36 @@ export interface components {
             };
             /** Sandbox */
             sandbox: boolean;
+        };
+        /** ChooseAccountRequest */
+        ChooseAccountRequest: {
+            /** Account Id */
+            account_id: string;
+            /**
+             * Contact
+             * @description My Bookings: the email or phone the booking was made with.
+             */
+            contact?: string | null;
+        };
+        /** ConfirmSlipRequest */
+        ConfirmSlipRequest: {
+            /**
+             * Account Id
+             * @description The receiving account it arrived in.
+             */
+            account_id: string;
+            /**
+             * Amount Minor
+             * @description What actually arrived (paisa).
+             */
+            amount_minor: number;
+            /** Payer Reference */
+            payer_reference?: string | null;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
         };
         /** CurrencyAmount */
         CurrencyAmount: {
@@ -4440,6 +4784,81 @@ export interface components {
              * @description The caller has the Finance permission (Super Admin always; staff when granted).
              */
             finance: boolean;
+        };
+        /** FinancePaymentList */
+        FinancePaymentList: {
+            awaiting: components["schemas"]["BookingMoney"];
+            /** Awaiting Count */
+            awaiting_count: number;
+            confirmed: components["schemas"]["BookingMoney"];
+            /** Confirmed Count */
+            confirmed_count: number;
+            /** Daily Totals */
+            daily_totals: components["schemas"]["PaymentDayTotal"][];
+            /** Payments */
+            payments: components["schemas"]["FinancePaymentRow"][];
+            /** Total */
+            total: number;
+        };
+        /** FinancePaymentRow */
+        FinancePaymentRow: {
+            /** Account Id */
+            account_id?: string | null;
+            /** Account Label */
+            account_label?: string | null;
+            amount: components["schemas"]["BookingMoney"];
+            /**
+             * At
+             * Format: date-time
+             * @description Received (payment) or submitted (slip).
+             */
+            at: string;
+            /** Booking Reference */
+            booking_reference: string;
+            /** @description Card fee the customer paid on top (travelian#74). */
+            card_fee: components["schemas"]["BookingMoney"];
+            /**
+             * Chosen Account Id
+             * @description The account the customer chose at checkout.
+             */
+            chosen_account_id?: string | null;
+            /** Customer Name */
+            customer_name?: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Is Test
+             * @default false
+             */
+            is_test: boolean;
+            /**
+             * Kind
+             * @description payment: money recorded; slip: a customer's slip still awaiting a check, or rejected.
+             * @enum {string}
+             */
+            kind: "payment" | "slip";
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "bank_transfer" | "jazzcash" | "1link" | "payfast";
+            /** Payer Reference */
+            payer_reference?: string | null;
+            /** @description What the payment cost Travelian. Null = not recorded yet. */
+            payment_fee?: components["schemas"]["BookingMoney"] | null;
+            /** Pnr */
+            pnr?: string | null;
+            /** Product */
+            product: string;
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+            /** Slip Id */
+            slip_id?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "awaiting_check" | "confirmed" | "rejected";
         };
         /** FlightCalendar */
         FlightCalendar: {
@@ -6099,6 +6518,23 @@ export interface components {
              */
             accounts: components["schemas"]["PaymentAccount"][];
         };
+        /** PaymentDayTotal */
+        PaymentDayTotal: {
+            amount: components["schemas"]["BookingMoney"];
+            card_fee: components["schemas"]["BookingMoney"];
+            /** Count */
+            count: number;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "bank_transfer" | "jazzcash" | "1link" | "payfast";
+        };
         /** PaymentFeeView */
         PaymentFeeView: {
             amount: components["schemas"]["BookingMoney"];
@@ -6156,6 +6592,22 @@ export interface components {
             jazzcash_accounts?: components["schemas"]["BankAccountView"][];
             /** Logo Url */
             logo_url?: string | null;
+        };
+        /** PaymentSettings */
+        PaymentSettings: {
+            /**
+             * Card Fee Bps
+             * @description Card / 1Link fee in basis points (300 = 3%).
+             */
+            card_fee_bps: number;
+            /** Card Fee On Group */
+            card_fee_on_group: boolean;
+            /**
+             * Card Fee Refunded
+             * @description Always false: the fee is not refunded (owner, 20 Nov 2026).
+             * @default false
+             */
+            card_fee_refunded: boolean;
         };
         /**
          * ProductResults
@@ -6237,6 +6689,13 @@ export interface components {
              * @description Online payment can be started now.
              */
             can_pay: boolean;
+            /** @description When card / 1Link payment is possible: the fee on the amount due and the total PayFast will charge. Calculated by the gateway (travelian#74). */
+            card_fee?: components["schemas"]["CardFeeView"] | null;
+            /**
+             * Chosen Account Id
+             * @description The receiving account the customer chose for bank transfer / JazzCash.
+             */
+            chosen_account_id?: string | null;
             /**
              * Final Pnr
              * @description The airline booking reference once ticketed.
@@ -6473,6 +6932,31 @@ export interface components {
              */
             refresh_token: string;
         };
+        /** RefundDue */
+        RefundDue: {
+            /** Booking Reference */
+            booking_reference: string;
+            /** Booking Status */
+            booking_status: string;
+            /** Customer Name */
+            customer_name?: string | null;
+            /**
+             * Is Test
+             * @default false
+             */
+            is_test: boolean;
+            paid: components["schemas"]["BookingMoney"];
+            /** Pnr */
+            pnr?: string | null;
+            /** Product */
+            product: string;
+            /**
+             * Reason
+             * @description Why the booking couldn't be travelled on (e.g. hold_expired), when recorded.
+             */
+            reason?: string | null;
+            refundable: components["schemas"]["BookingMoney"];
+        };
         /** RefundList */
         RefundList: {
             /** Refunds */
@@ -6525,6 +7009,19 @@ export interface components {
              */
             status: "requested" | "approved" | "paid" | "rejected";
         };
+        /** RefundsDueView */
+        RefundsDueView: {
+            /**
+             * Open
+             * @description Refunds requested or approved, not paid yet.
+             */
+            open: components["schemas"]["RefundView"][];
+            /**
+             * Owed
+             * @description Paid bookings with no refund recorded yet.
+             */
+            owed: components["schemas"]["RefundDue"][];
+        };
         /**
          * ReholdBody
          * @description Re-hold at SooperFare.
@@ -6546,6 +7043,11 @@ export interface components {
         };
         /** RejectRefundRequest */
         RejectRefundRequest: {
+            /** Reason */
+            reason: string;
+        };
+        /** RejectSlipRequest */
+        RejectSlipRequest: {
             /** Reason */
             reason: string;
         };
@@ -7078,6 +7580,125 @@ export interface components {
              */
             umrah_enabled: boolean;
         };
+        /** SlipLink */
+        SlipLink: {
+            /** Content Type */
+            content_type: string;
+            /** Expires In Seconds */
+            expires_in_seconds: number;
+            /**
+             * Url
+             * @description Signed link to the private file; expires.
+             */
+            url: string;
+        };
+        /** SlipSubmitRequest */
+        SlipSubmitRequest: {
+            /** Account Id */
+            account_id?: string | null;
+            /** Amount Minor */
+            amount_minor: number;
+            /** Asset Key */
+            asset_key: string;
+            /**
+             * Contact
+             * @description My Bookings: the email or phone the booking was made with.
+             */
+            contact?: string | null;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "bank_transfer" | "jazzcash";
+            /** Payer Reference */
+            payer_reference?: string | null;
+            /**
+             * Via
+             * @default checkout
+             * @enum {string}
+             */
+            via: "checkout" | "my_bookings";
+        };
+        /** SlipSubmitted */
+        SlipSubmitted: {
+            /** Message */
+            message: string;
+            /**
+             * Status
+             * @constant
+             */
+            status: "awaiting_check";
+        };
+        /** SlipUploadRequest */
+        SlipUploadRequest: {
+            /**
+             * Contact
+             * @description My Bookings: the email or phone the booking was made with.
+             */
+            contact?: string | null;
+            /**
+             * Content Type
+             * @enum {string}
+             */
+            content_type: "image/jpeg" | "image/png" | "image/webp" | "application/pdf";
+        };
+        /** SlipUploadView */
+        SlipUploadView: {
+            /** Asset Key */
+            asset_key: string;
+            /** Fields */
+            fields: {
+                [key: string]: string;
+            };
+            /** Max Bytes */
+            max_bytes: number;
+            /** Url */
+            url: string;
+        };
+        /** SlipView */
+        SlipView: {
+            /** Account Id */
+            account_id?: string | null;
+            /** Account Label */
+            account_label?: string | null;
+            amount: components["schemas"]["BookingMoney"];
+            /** Booking Reference */
+            booking_reference: string;
+            /** Content Type */
+            content_type: string;
+            /** Id */
+            id: string;
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "bank_transfer" | "jazzcash";
+            /** Payer Reference */
+            payer_reference?: string | null;
+            /** Payment Id */
+            payment_id?: string | null;
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+            /** Reviewed At */
+            reviewed_at?: string | null;
+            /** Reviewed By User Id */
+            reviewed_by_user_id?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "awaiting_check" | "confirmed" | "rejected";
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /**
+             * Submitted Via
+             * @enum {string}
+             */
+            submitted_via: "checkout" | "my_bookings";
+        };
         /**
          * SupplierBookingView
          * @description The supplier's own booking (supplier-names permission only): its ids and, after a cancel request, what it says.
@@ -7179,6 +7800,15 @@ export interface components {
              * @constant
              */
             token_type: "Bearer";
+        };
+        /** UpdatePaymentSettings */
+        UpdatePaymentSettings: {
+            /** Card Fee Bps */
+            card_fee_bps?: number | null;
+            /** Card Fee On Group */
+            card_fee_on_group?: boolean | null;
+            /** Reason */
+            reason?: string | null;
         };
         /** UpdateReceivingAccountRequest */
         UpdateReceivingAccountRequest: {
@@ -9970,6 +10600,108 @@ export interface operations {
             };
         };
     };
+    list_payments_v1_admin_finance_payments_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                method?: string | null;
+                status?: string | null;
+                account_id?: string | null;
+                q?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancePaymentList"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    export_payments_v1_admin_finance_payments_csv_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                method?: string | null;
+                status?: string | null;
+                account_id?: string | null;
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     add_payment_fee_v1_admin_finance_payments__payment_id__fees_post: {
         parameters: {
             query?: never;
@@ -10070,6 +10802,40 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    refunds_due_v1_admin_finance_refunds_due_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RefundsDueView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Database not available. */
             503: {
@@ -10255,6 +11021,311 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    payment_settings_v1_admin_finance_settings_payments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentSettings"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_payment_settings_v1_admin_finance_settings_payments_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePaymentSettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentSettings"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_slip_v1_admin_finance_slips__slip_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlipView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    confirm_slip_v1_admin_finance_slips__slip_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmSlipRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlipView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    slip_link_v1_admin_finance_slips__slip_id__link_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlipLink"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reject_slip_v1_admin_finance_slips__slip_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slip_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectSlipRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlipView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Database not available. */
             503: {
@@ -16148,6 +17219,165 @@ export interface operations {
             };
         };
     };
+    choose_account_v1_public_bookings__reference__chosen_account_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Booking-Token"?: string | null;
+            };
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChooseAccountRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    submit_slip_v1_public_bookings__reference__payment_slips_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Booking-Token"?: string | null;
+            };
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlipSubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlipSubmitted"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    sign_slip_upload_v1_public_bookings__reference__payment_slips_upload_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Booking-Token"?: string | null;
+            };
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SlipUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SlipUploadView"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     start_payfast_v1_public_bookings__reference__payments_payfast_post: {
         parameters: {
             query?: never;
@@ -16169,6 +17399,46 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["CheckoutView"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    card_fee_quote_v1_public_card_fee_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CardFeeQuery"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardFeeView"];
+                };
+            };
+            /** @description No fee applies. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
