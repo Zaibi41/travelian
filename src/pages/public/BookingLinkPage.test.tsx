@@ -49,3 +49,14 @@ describe("Email not sent (admin)", () => {
     expect(screen.getByText(/SES sandbox/)).toBeInTheDocument();
   });
 });
+
+describe("Email not sent: the hold-ended and cancelled emails (gateway#52)", () => {
+  it("names them in plain words", () => {
+    render(<EmailNotSentNotice booking={{ customer_email_problems: [
+      { email: "hold_expired", at: "2026-11-21T10:00:00Z", reason: "failed (Throttling)" },
+      { email: "booking_cancelled", at: "2026-11-21T11:00:00Z", reason: "failed (Throttling)" }] } as unknown as BookingDetail} />);
+    expect(screen.getByText("2 emails not sent to the customer")).toBeInTheDocument();
+    expect(screen.getByText("Hold ended")).toBeInTheDocument();
+    expect(screen.getByText("Booking cancelled")).toBeInTheDocument();
+  });
+});

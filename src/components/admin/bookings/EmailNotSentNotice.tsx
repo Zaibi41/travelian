@@ -5,7 +5,7 @@ import type { BookingDetail } from "@/lib/admin-bookings/types";
 const EMAIL_LABEL: Record<string, string> = {
   booking_held: "Seats held (pay by card)", book_only_held: "Seats held (Book Only)", bank_transfer: "Bank transfer details",
   jazzcash: "JazzCash details", payment_received: "Payment received", ticket_issued: "E-ticket", issuance_pending: "Ticket being issued",
-  paid_not_ticketed: "Couldn't issue: refund or rebook",
+  paid_not_ticketed: "Couldn't issue: refund or rebook", hold_expired: "Hold ended", booking_cancelled: "Booking cancelled",
 };
 
 /** Customer emails that weren't delivered (e.g. SES sandbox): staff contact the customer instead. */
