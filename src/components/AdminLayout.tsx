@@ -1,6 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
-import { Bell, ChevronDown, Globe, KeyRound, LogOut, Megaphone, Pencil, UserRound, Wallet } from "lucide-react";
+import { Bell, ChevronDown, Globe, KeyRound, LogOut, Megaphone, Pencil, UserRound } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -22,7 +22,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 
 import { AdminProfileDialog, type ProfileAction } from "@/components/AdminProfileDialog";
 import { useBookingAlerts } from "@/lib/admin-notifications";
-import { formatPkr, getWalletSummary } from "@/lib/wallet-summary";
 import { ANNOUNCEMENTS_CHANGED, listAdminAnnouncements } from "@/lib/admin-announcements";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 
@@ -74,21 +73,16 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 }
 
 function AdminShell({ children }: { children: React.ReactNode }) {
-  const { notifications, agencies, walletLedger, walletDeposits } = useAdmin();
+  const { notifications } = useAdmin();
   const alerts = useBookingAlerts();
   const unreadCount = notifications.filter(notification => !notification.read).length + alerts.unseen;
   const [announcements, setAnnouncements] = useState(listAdminAnnouncements);
   const navigate = useNavigate();
   const location = useLocation();
   const { currentRole, currentUser } = useRole();
-  // Super Admin top bar: sidebar toggle and user menu only. The announcement
-  // ticker and Wallet chip stay for other roles (wallets are B2B agency only).
+  // Super Admin top bar: sidebar toggle and user menu only. The announcement ticker stays for other roles. The Wallet
+  // chip is gone until wallets come from the gateway (#73: it showed a balance kept only in the browser).
   const isSuperAdmin = currentRole === "super_admin";
-  const canViewWallet = !isSuperAdmin && canAccessAdminPath(currentRole, "/admin/wallet") &&
-    (currentRole !== "agency_owner" && currentRole !== "agency_staff" || !!currentUser.agencyId);
-  const walletSummary = canViewWallet
-    ? getWalletSummary(agencies, walletLedger, walletDeposits, currentRole, currentUser.agencyId)
-    : null;
   const accountTriggerRef = useRef<HTMLButtonElement>(null);
   const [profileAction, setProfileAction] = useState<ProfileAction | null>(null);
   const profileActionRef = useRef(profileAction);
@@ -165,13 +159,6 @@ function AdminShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>}
             <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
-              {walletSummary && (
-                <Link to="/admin/wallet" aria-label={`Wallet balance ${formatPkr(walletSummary.available)}`} className="flex min-w-0 items-center gap-1.5 rounded-lg border border-primary/25 bg-primary/10 px-2 py-1.5 text-body font-bold text-primary transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:gap-2 sm:px-3">
-                  <Wallet aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-                  <span className="hidden font-semibold text-primary lg:inline">Wallet</span>
-                  <span className="truncate">{formatPkr(walletSummary.available)}</span>
-                </Link>
-              )}
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button ref={accountTriggerRef} variant="ghost" aria-label="Open account menu" className="h-11 gap-2 rounded-xl px-2">

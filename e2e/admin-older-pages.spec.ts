@@ -11,7 +11,7 @@ test.use({ launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } });
 const PAGES: [string, string][] = [
   ["/admin/agencies", "Agency Management"], ["/admin/packages", "Umrah Package Management"], ["/admin/reports", "Reports"],
   ["/admin/hotels", "Hotel Inventory & Pricing"], ["/admin/flights", "Flight Pricing & Rules"], ["/admin/flight-bookings", "Flight Operations"],
-  ["/admin/requests", "Bookings"], ["/admin/wallet", "Wallet Ledger"], ["/admin/payments", "Payment Management"], ["/admin/users", "User Management"],
+  ["/admin/requests", "Bookings"], ["/admin/wallet", "Wallets"], ["/admin/payments", "Payments"], ["/admin/users", "User Management"],
   ["/admin/rbac", "Access Control (RBAC)"], ["/admin/provider-systems", "Provider Systems"], ["/admin/group-ticketing", "Group Ticketing Collections"],
   ["/admin/coupons", "Coupons & Deals"], ["/admin/blog", "Blog Management"], ["/admin/notifications", "Notifications"],
   ["/admin/announcements", "Announcements"], ["/admin/attention-queue", "Attention Queue"],
