@@ -2842,7 +2842,7 @@ export interface paths {
         put?: never;
         /**
          * Hold Flight
-         * @description Hold only (no ticketing, no payment), when booking is turned on. Saved as UAT test data.
+         * @description Hold only (no ticketing, no payment), when booking is turned on.
          */
         post: operations["hold_flight_v1_live_ticketing_flights_bookings_post"];
         delete?: never;
@@ -3681,7 +3681,7 @@ export interface components {
             /** Sample */
             sample: boolean;
             /** Sample Label */
-            sample_label?: ("Sample data" | "UAT test data") | null;
+            sample_label?: "Imported" | null;
             /**
              * Sections Not Available
              * @description Tabs whose data the gateway doesn't record yet; the page shows them as not available.
@@ -3801,10 +3801,10 @@ export interface components {
             offset: number;
             /**
              * Sample Label
-             * @default Sample data
+             * @default Imported
              * @constant
              */
-            sample_label: "Sample data";
+            sample_label: "Imported";
             /**
              * Source
              * @default gateway_bookings
@@ -3878,9 +3878,9 @@ export interface components {
             customer_or_agency?: string | null;
             /**
              * Data Label
-             * @description Label for test rows.
+             * @description "Imported" for rows from a one-time import.
              */
-            data_label?: ("Sample data" | "UAT test data") | null;
+            data_label?: "Imported" | null;
             /** Expires At */
             expires_at?: string | null;
             /** Pnr */
@@ -3897,7 +3897,7 @@ export interface components {
             provider?: string | null;
             /**
              * Sample
-             * @description True for test rows (one-time import or supplier UAT).
+             * @description True for rows from a one-time import.
              */
             sample: boolean;
             statuses: components["schemas"]["BookingStatuses"];
@@ -5568,10 +5568,9 @@ export interface components {
             booking_id: string;
             /**
              * Label
-             * @description Southair UAT holds only; a live SooperFare hold has no label.
-             * @default UAT test data
+             * @description Not used: holds carry no label (issue #79).
              */
-            label: "UAT test data" | null;
+            label?: string | null;
             /** Pnr */
             pnr: string;
             /** @description selling_total - supplier_cost. Only with the cost and margin permission. */

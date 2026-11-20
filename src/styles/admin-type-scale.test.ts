@@ -21,7 +21,7 @@ const sources = {
     "/src/pages/CustomersTravelersPage.tsx", "/src/pages/SavedPersonPage.tsx",
     // Older admin pages (moved to the admin components and the type scale on 11 November 2026).
     "/src/pages/AgenciesPage.tsx", "/src/pages/PackagesPage.tsx", "/src/pages/UsersPage.tsx", "/src/pages/RBACPage.tsx",
-    "/src/pages/HotelsPage.tsx", "/src/pages/FlightsPage.tsx", "/src/pages/FlightOperationsPage.tsx", "/src/pages/BookingRequestsPage.tsx",
+    "/src/pages/HotelsPage.tsx", "/src/pages/FlightsPage.tsx", "/src/pages/FlightOperationsPage.tsx",
     "/src/pages/WalletPage.tsx", "/src/pages/PaymentsPage.tsx", "/src/pages/CouponsPage.tsx", "/src/pages/BlogPage.tsx",
     "/src/pages/NotificationsPage.tsx", "/src/pages/SettingsPage.tsx", "/src/pages/ProviderSystemsPage.tsx",
     "/src/pages/GroupTicketingCollectionsPage.tsx", "/src/pages/ReportsPage.tsx", "/src/pages/CustomerPortalPage.tsx",
@@ -52,7 +52,6 @@ const PUBLIC_IMPORT_EXCEPTIONS = new Set(["/src/pages/AdminSearchPage.tsx", "/sr
 const PALETTE_EXCEPTIONS: Record<string, string[]> = {
   "/src/pages/WalletPage.tsx": ["text-amber-600"],
   "/src/pages/ProviderSystemsPage.tsx": ["border-blue-200 bg-blue-50 text-blue-700", "text-blue-600"],
-  "/src/pages/BookingRequestsPage.tsx": ["bg-amber-500 text-white hover:bg-amber-500/90"],
 };
 const PALETTE_RULE = "Tailwind palette colour (use a colour token)";
 const allowedPalette = (file: string, line: string) => (PALETTE_EXCEPTIONS[file] ?? []).some(classes => line.includes(classes));

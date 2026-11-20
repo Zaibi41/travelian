@@ -33,7 +33,7 @@ function row(id: string, overrides: Partial<BookingListItem> = {}): BookingListI
 
 // Plain staff: the gateway leaves supplier names out entirely (D23).
 const STAFF_LIST: BookingList = {
-  source: "gateway_bookings", contains_sample_data: true, sample_label: "Sample data",
+  source: "gateway_bookings", contains_sample_data: true, sample_label: "Imported",
   cards: { all_bookings: 18, confirmed: 3, on_hold: 2, cancelled: 4, unpaid: 0, expiring_soon: 1, expiring_window_hours: 2 },
   filter_options: { agencies: [{ value: "ag-1", label: "Karachi Travels" }] },
   total: 2, limit: 50, offset: 0,
@@ -104,8 +104,8 @@ describe("Bookings register", () => {
   it("labels sample rows and truncates long agency names", () => {
     renderPage();
     const rows = screen.getAllByRole("row").slice(1);
-    expect(within(rows[0]).queryByText("Sample data")).not.toBeInTheDocument();
-    expect(within(rows[1]).getByText("Sample data")).toBeInTheDocument();
+    expect(within(rows[0]).queryByText("Imported")).not.toBeInTheDocument();
+    expect(within(rows[1]).getByText("Imported")).toBeInTheDocument();
     expect(within(rows[1]).getByTitle(/A Very Long Agency Name/)).toHaveClass("truncate");
   });
 

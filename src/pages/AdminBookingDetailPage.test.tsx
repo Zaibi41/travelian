@@ -219,9 +219,9 @@ describe("Booking detail", () => {
   });
 
   it("labels sample bookings and reports missing ones", () => {
-    detail.current = ok({ ...ADMIN_VIEW, sample: true, sample_label: "Sample data" });
+    detail.current = ok({ ...ADMIN_VIEW, sample: true, sample_label: "Imported" });
     const { unmount } = renderAt("/admin/bookings/TRV-1");
-    expect(screen.getByText("Sample data")).toBeInTheDocument();
+    expect(screen.getByText("Imported")).toBeInTheDocument();
     unmount();
     detail.current = { data: undefined, error: new GatewayError("not_found", "x"), isPending: false };
     renderAt("/admin/bookings/NOPE");
