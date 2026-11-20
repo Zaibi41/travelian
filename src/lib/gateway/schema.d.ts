@@ -510,6 +510,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{booking_id}/supplier-rehold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rehold At Supplier
+         * @description Re-hold at SooperFare: the same flights and fare again for a booking whose hold is gone (expired, or paid but not
+         *     ticketed), with the saved travelers. Same selling total only, unless staff accept the new total shown in a 409
+         *     price_changed. Only after SooperFare's own record shows the old reservation is no longer active. Logged in the audit trail.
+         */
+        post: operations["rehold_at_supplier_v1_admin_bookings__booking_id__supplier_rehold_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/customers": {
         parameters: {
             query?: never;
@@ -6014,6 +6036,25 @@ export interface components {
              */
             refresh_token: string;
         };
+        /**
+         * ReholdBody
+         * @description Re-hold at SooperFare.
+         */
+        ReholdBody: {
+            /**
+             * Accept Total Minor
+             * @description The new selling total (minor units) staff saw and accepted, after a 409 price_changed. Leave out to hold only at the same total.
+             */
+            accept_total_minor?: number | null;
+        };
+        /** ReholdResult */
+        ReholdResult: {
+            /**
+             * Message
+             * @description The new hold in plain words: new PNR and when it expires.
+             */
+            message: string;
+        };
         /** ReportBucket */
         ReportBucket: {
             /** Bookings */
@@ -6516,6 +6557,12 @@ export interface components {
              * @default false
              */
             can_cancel: boolean;
+            /**
+             * Can Rehold
+             * @description Re-hold at SooperFare is offered: the hold is gone (expired, or paid but not ticketed), nothing is issued, and the viewer may issue tickets.
+             * @default false
+             */
+            can_rehold: boolean;
             /** Cancel At */
             cancel_at?: string | null;
             /** Cancel Message */
@@ -8156,6 +8203,69 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    rehold_at_supplier_v1_admin_bookings__booking_id__supplier_rehold_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ReholdBody"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReholdResult"];
+                };
+            };
+            /** @description Needs the issue tickets and supplier names permissions. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not re-holdable (still held at SooperFare, issued, not SooperFare), or price_changed: the body has new_total and old_total; send accept_total_minor to hold at the new price. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description SooperFare couldn't be checked or didn't hold it; nothing was booked. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Booking data is not available. */
             503: {

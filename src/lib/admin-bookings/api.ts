@@ -82,6 +82,13 @@ export const cancelAtSupplier = (bookingId: string, options?: GatewayOptions) =>
     ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "SooperFare couldn't be reached. Nothing was changed.",
   });
 
+/** SooperFare bookings whose hold is gone: hold the same flights and fare again. Same total only, unless
+ *  acceptTotalMinor is the new total the gateway returned in a 409 price_changed (error.extra.new_total). */
+export const reholdAtSupplier = (bookingId: string, acceptTotalMinor?: number, options?: GatewayOptions) =>
+  gatewayPost("/v1/admin/bookings/{booking_id}/supplier-rehold", (acceptTotalMinor ? { accept_total_minor: acceptTotalMinor } : {}) as never, {
+    ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "SooperFare couldn't be reached. Nothing was held.",
+  });
+
 /** SooperFare bookings: read what SooperFare shows now (read-only); confirms a requested cancel once SooperFare has applied it. */
 export const checkAtSupplier = (bookingId: string, options?: GatewayOptions) =>
   gatewayPost("/v1/admin/bookings/{booking_id}/supplier-check", undefined as never, {
