@@ -47,6 +47,12 @@ export const recordPayment = (bookingId: string, body: RecordPaymentBody, option
     ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "The payment couldn't be recorded right now. Nothing was saved.",
   });
 
+/** Send a customer email for this booking again (gateway#53); the answer says sent or why not, in plain words. */
+export const resendEmail = (bookingId: string, email: string, options?: GatewayOptions) =>
+  gatewayPost("/v1/admin/bookings/{booking_id}/emails/{email}/resend", undefined as never, {
+    ...options, pathParams: { booking_id: bookingId, email }, unavailableMessage: "The email couldn't be resent right now. Try again.",
+  });
+
 /** Ask an approver to issue (full payment recorded and a valid hold). */
 export const requestIssuance = (bookingId: string, note?: string, options?: GatewayOptions) =>
   gatewayPost("/v1/admin/bookings/{booking_id}/issuance/request", { note: note?.trim() || null }, issuancePath(bookingId, options));

@@ -261,6 +261,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{booking_id}/emails/{email}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend Email
+         * @description Send a customer email for this booking again (gateway#53), e.g. after SES refused it. Back office only; logged
+         *     on the booking with who resent it. Sending can still fail; the answer says why in plain words.
+         */
+        post: operations["resend_email_v1_admin_bookings__booking_id__emails__email__resend_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/bookings/{booking_id}/issuance": {
         parameters: {
             query?: never;
@@ -4581,12 +4602,26 @@ export interface components {
              */
             at: string;
             /**
+             * Can Resend
+             * @description Resend email is offered (POST .../emails/{email}/resend).
+             * @default false
+             */
+            can_resend: boolean;
+            /**
              * Email
              * @description Which email: booking_held, bank_transfer, payment_received, ticket_issued, ...
              */
             email: string;
-            /** Reason */
+            /**
+             * Reason
+             * @description Why, in plain words for staff.
+             */
             reason?: string | null;
+            /**
+             * To
+             * @description The address it went to, masked (a***@gmail.com).
+             */
+            to?: string | null;
         };
         /** DashboardFilterOptions */
         DashboardFilterOptions: {
@@ -7179,6 +7214,16 @@ export interface components {
              */
             type: "ADT" | "CHD" | "INF";
         };
+        /** ResendEmailResult */
+        ResendEmailResult: {
+            /**
+             * Message
+             * @description 'Email sent to the customer.' or why not, in plain words.
+             */
+            message: string;
+            /** Sent */
+            sent: boolean;
+        };
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
             /**
@@ -8644,6 +8689,64 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    resend_email_v1_admin_bookings__booking_id__emails__email__resend_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+                email: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResendEmailResult"];
+                };
+            };
+            /** @description Caller is not back office, or asked for a field it may not see. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description That email was never sent for this booking. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a customer email. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Booking data is not available. */
             503: {

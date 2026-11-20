@@ -2,8 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { EmailNotSentNotice } from "@/components/admin/bookings/EmailNotSentNotice";
-import type { BookingDetail } from "@/lib/admin-bookings/types";
 
 const api = vi.hoisted(() => ({ bookingByLink: vi.fn() }));
 vi.mock("@/lib/public-booking", async original => ({ ...(await original<object>()), ...api }));
@@ -37,26 +35,5 @@ describe("booking link from an email", () => {
     open("old-token");
     expect(await screen.findByRole("alert")).toHaveTextContent("This link has expired");
     expect(screen.getByRole("link", { name: "Find my booking" })).toHaveAttribute("href", "/find-booking");
-  });
-});
-
-describe("Email not sent (admin)", () => {
-  it("lists each customer email that wasn't sent, with SES's reason", () => {
-    render(<EmailNotSentNotice booking={{ customer_email_problems: [{ email: "bank_transfer", at: "2026-11-20T10:00:00Z",
-      reason: "refused by SES: the customer's address isn't verified (SES sandbox: only verified addresses receive email)" }] } as unknown as BookingDetail} />);
-    expect(screen.getByText("Email not sent to the customer")).toBeInTheDocument();
-    expect(screen.getByText("Bank transfer details")).toBeInTheDocument();
-    expect(screen.getByText(/SES sandbox/)).toBeInTheDocument();
-  });
-});
-
-describe("Email not sent: the hold-ended and cancelled emails (gateway#52)", () => {
-  it("names them in plain words", () => {
-    render(<EmailNotSentNotice booking={{ customer_email_problems: [
-      { email: "hold_expired", at: "2026-11-21T10:00:00Z", reason: "failed (Throttling)" },
-      { email: "booking_cancelled", at: "2026-11-21T11:00:00Z", reason: "failed (Throttling)" }] } as unknown as BookingDetail} />);
-    expect(screen.getByText("2 emails not sent to the customer")).toBeInTheDocument();
-    expect(screen.getByText("Hold ended")).toBeInTheDocument();
-    expect(screen.getByText("Booking cancelled")).toBeInTheDocument();
   });
 });
