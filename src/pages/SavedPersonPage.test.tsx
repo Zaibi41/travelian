@@ -16,9 +16,11 @@ const PERSON = { id: "p-00000001", title: "MR", first_name: "Ali", last_name: "K
   can_manage: false, can_merge: false };
 
 const fetchPerson = vi.fn();
+const editDocument = vi.fn();
 vi.mock("@/lib/saved-people/api", async importOriginal => ({
   ...(await importOriginal<typeof import("@/lib/saved-people/api")>()),
   fetchPerson: (...args: unknown[]) => fetchPerson(...args),
+  editDocument: (...args: unknown[]) => editDocument(...args),
 }));
 
 import SavedPersonPage from "./SavedPersonPage";
@@ -87,5 +89,22 @@ describe("Saved person: details in full and booking history", () => {
     const section = await screen.findByRole("region", { name: "Bookings" });
     fireEvent.click(within(section).getByText("LHE → DXB → LHE"));
     expect(await screen.findByText("Booking page")).toBeInTheDocument();
+  });
+});
+
+describe("Edit a saved document (#12)", () => {
+  it("Edit opens the document filled in; saving a renewed passport sends the new number to the gateway", async () => {
+    const { waitFor } = await import("@testing-library/react");
+    fetchPerson.mockResolvedValue({ ...PERSON, can_manage: true, bookings: [] });
+    editDocument.mockResolvedValue({ ...PERSON, can_manage: true, bookings: [],
+      documents: [{ id: "d-2", id_type: "PSPT", document_country: "PAK", document_number: "AB1234568", document_expiry: "2036-01-15" }] });
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Edit Passport AB1234567" }));
+    const dialog = await screen.findByRole("dialog", { name: "Edit document" });
+    expect(dialog).toHaveTextContent("past bookings keep the old one");
+    const number = within(dialog).getByDisplayValue("AB1234567");
+    fireEvent.change(number, { target: { value: "AB1234568" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save document" }));
+    await waitFor(() => expect(editDocument).toHaveBeenCalledWith("p-00000001", "d-1", expect.objectContaining({ id_type: "PSPT", document_number: "AB1234568" })));
   });
 });

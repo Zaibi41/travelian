@@ -621,7 +621,13 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        /**
+         * Edit Document
+         * @description Edit a saved document (issue #12): number, country of issue, expiry. A new number (a renewed passport) keeps the
+         *     old document for past bookings and saves the new one; the same number only updates the expiry. Past bookings keep
+         *     their own copy.
+         */
+        put: operations["edit_document_v1_admin_customers__person_id__documents__document_id__put"];
         post?: never;
         /**
          * Remove Document
@@ -8613,6 +8619,56 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedPersonDetail"];
+                };
+            };
+            /** @description Not back office, or missing the permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such person or document. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_document_v1_admin_customers__person_id__documents__document_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                person_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
