@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import type { NotificationDeliveryLog } from "@/data/models";
 import { listNotificationLogs } from "@/lib/notification-api";
 import { CopyPnr } from "@/components/CopyPnr";
+import { bookingDetailPath } from "@/lib/admin-bookings/tabs";
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string }> = {
   booking: { icon: CalendarCheck, color: "bg-info/10 text-info" },
@@ -134,7 +135,12 @@ export default function NotificationsPage() {
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <span className="flex min-w-0 items-baseline gap-2">
                         {alert.urgent && <span className="shrink-0 rounded bg-destructive px-1.5 text-label font-semibold uppercase text-destructive-foreground">Urgent</span>}
-                        <Link to={`/admin/bookings?search=${encodeURIComponent(alert.reference || "")}`} className={`min-w-0 truncate font-semibold hover:underline ${alert.urgent ? "text-status-critical-text" : "text-teal"}`}>{alert.title}</Link>
+                        {/* The alert's reference is the booking ID the detail page is keyed by. */}
+                        {alert.reference ? (
+                          <Link to={bookingDetailPath(alert.reference)} className={`min-w-0 truncate font-semibold hover:underline ${alert.urgent ? "text-status-critical-text" : "text-teal"}`}>{alert.title}</Link>
+                        ) : (
+                          <span className="min-w-0 truncate font-semibold text-foreground">{alert.title}</span>
+                        )}
                       </span>
                       <time className="text-helper text-muted-foreground" dateTime={alert.created_at}>{new Date(alert.created_at).toLocaleString()}</time>
                     </div>
@@ -143,6 +149,7 @@ export default function NotificationsPage() {
                       {d.pnr ? <>PNR {d.pnr} <CopyPnr pnr={d.pnr} /></> : "No supplier hold"}
                       {d.hold_expires_at ? ` · expires ${new Date(d.hold_expires_at).toLocaleString()}` : null}
                     </p>
+                    {!alert.reference && <p className="text-helper text-muted-foreground">This alert isn't linked to a booking, so it can't be opened.</p>}
                     {alert.urgent ? (
                       <dl className="grid grid-cols-1 gap-x-4 gap-y-0.5 text-helper sm:grid-cols-2">
                         {([["Amount received", d.amount], ["PayFast transaction", d.payfast_transaction_id], ["Supplier", d.supplier],

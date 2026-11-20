@@ -29,12 +29,13 @@ const CARDS: BookingCard[] = ["confirmed", "on_hold", "cancelled", "unpaid", "ex
 const pick = <T extends string>(value: string | null, allowed: T[]) => (allowed.includes(value as T) ? (value as T) : undefined);
 const text = (value: string | null) => value?.trim() || undefined;
 
-/** Reads filters from the URL. Unknown values fall back to defaults. */
+/** Reads filters from the URL. Unknown values fall back to defaults. `search` is read as `q` (older links and
+ *  notification links use /admin/bookings?search=REF); writing always uses `q`. */
 export function parseBookingsFilters(params: URLSearchParams): BookingsFilters {
   const period = params.get("period");
   const page = Number(params.get("page"));
   return {
-    q: text(params.get("q"))?.slice(0, 64),
+    q: text(params.get("q") ?? params.get("search"))?.slice(0, 64),
     period: bookingReportPeriods.some(option => option.value === period) ? (period as BookingPeriod) : "all",
     bookingStatus: pick(params.get("booking_status"), BOOKING_STATUSES),
     paymentStatus: pick(params.get("payment_status"), PAYMENT_STATUSES),

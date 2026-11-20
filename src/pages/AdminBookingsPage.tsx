@@ -103,7 +103,8 @@ function BookingsRegister({ tab }: { tab: BookingsTab }) {
           {data ? <Cards cards={data.cards} flights={flights} filters={filters} /> : <CardGridSkeleton count={flights ? 4 : 6} className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4" />}
           <Filters filters={filters} data={data} flights={flights} onChange={change} />
           {bookings.error && <DashboardErrorNotice message={errorMessage(bookings.error)} />}
-          <BookingsTable data={data} loading={bookings.isPending} flights={flights} filters={filters} onPage={page => change({ page })} />
+          <BookingsTable data={data} loading={bookings.isPending} flights={flights} filters={filters} onPage={page => change({ page })}
+            onClearSearch={() => change({ q: undefined })} />
         </>
       )}
     </>
@@ -263,12 +264,13 @@ interface TableProps {
   flights: boolean;
   filters: BookingsFilters;
   onPage: (page: number) => void;
+  onClearSearch: () => void;
 }
 
 const TH = "h-table-header px-2.5 font-semibold text-foreground";
 const TD = "px-2.5 py-2 align-top";
 
-function BookingsTable({ data, loading, flights, filters, onPage }: TableProps) {
+function BookingsTable({ data, loading, flights, filters, onPage, onClearSearch }: TableProps) {
   if (loading && !data) {
     return (
       <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-card px-card py-3.5 shadow-card" aria-busy="true" aria-label="Loading bookings">
@@ -284,7 +286,14 @@ function BookingsTable({ data, loading, flights, filters, onPage }: TableProps) 
   return (
     <section aria-label="Bookings" className="flex min-w-0 flex-col gap-2.5 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
       {data.items.length === 0 ? (
-        <p className="py-2 text-body text-muted-foreground">No bookings match these filters.</p>
+        filters.q ? (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2">
+            <p className="min-w-0 break-words text-body text-muted-foreground">No bookings match <span className="font-semibold text-foreground">{filters.q}</span>.</p>
+            <Button variant="outline" size="sm" onClick={onClearSearch}>Clear search</Button>
+          </div>
+        ) : (
+          <p className="py-2 text-body text-muted-foreground">No bookings match these filters.</p>
+        )
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[52rem] border-collapse text-table">
