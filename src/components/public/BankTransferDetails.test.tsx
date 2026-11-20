@@ -51,3 +51,14 @@ describe("BankAccounts with several accounts", () => {
     expect(screen.getByAltText("QR code to pay Travelian (Pvt) Ltd, enlarged")).toBeInTheDocument();
   });
 });
+
+describe("Download QR", () => {
+  it("is a link to the gateway's file download when the gateway gives one (every browser saves it)", () => {
+    render(<BankAccounts accounts={[{ bank_name: "United Bank Limited - UBL", account_title: "Travelian", account_number: "1937359762048",
+      qr_url: "https://bucket.example/ubl.jpg", qr_download_url: "/v1/public/payment-qr/acc-1" }]} />);
+    const link = screen.getByRole("link", { name: /Download QR/ });
+    expect(link.getAttribute("href")).toMatch(/\/v1\/public\/payment-qr\/acc-1$/);
+    expect(link).toHaveAttribute("download", "travelian-united-bank-limited-ubl-qr");
+    expect(screen.queryByRole("button", { name: /Download QR/ })).not.toBeInTheDocument();
+  });
+});

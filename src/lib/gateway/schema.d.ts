@@ -2994,6 +2994,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/payment-qr/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Payment Qr
+         * @description Download QR: the checkout account's QR image as a file (Content-Disposition: attachment), so it saves in every
+         *     browser, including iPhone Safari and Android; the S3 image itself can't be downloaded cross-site.
+         */
+        get: operations["payment_qr_v1_public_payment_qr__account_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/payments/payfast/return": {
         parameters: {
             query?: never;
@@ -3231,6 +3252,11 @@ export interface components {
             bank_name?: string | null;
             /** Iban */
             iban?: string | null;
+            /**
+             * Qr Download Url
+             * @description Gateway path that downloads the QR image as a file (every browser, no S3 CORS).
+             */
+            qr_download_url?: string | null;
             /** Qr Url */
             qr_url?: string | null;
         };
@@ -15332,6 +15358,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PaymentMethodsView"];
                 };
+            };
+        };
+    };
+    payment_qr_v1_public_payment_qr__account_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The QR image as a download. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": unknown;
+                    "image/png": unknown;
+                    "image/webp": unknown;
+                };
+            };
+            /** @description No such account QR at checkout. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description The image couldn't be read. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
