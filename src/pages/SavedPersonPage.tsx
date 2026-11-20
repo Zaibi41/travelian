@@ -38,6 +38,7 @@ export default function SavedPersonPage() {
   const [merging, setMerging] = useState(false);
   const [attaching, setAttaching] = useState(false);
   const [removing, setRemoving] = useState<SavedDocument | null>(null);
+  const [editingDocument, setEditingDocument] = useState<SavedDocument | null>(null);
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["saved-people"] });
   const back = (
     <Link to="/admin/customers" className="inline-flex w-fit items-center gap-1.5 text-body text-muted-foreground hover:text-foreground">
@@ -143,8 +144,12 @@ export default function SavedPersonPage() {
                     </td>
                     {data.can_manage && !merged && (
                       <td className="px-2.5 py-2">
-                        <Button variant="outline" size="sm" aria-label={`Remove ${ID_TYPE_LABEL[document.id_type]} ${document.document_number}`}
-                          onClick={() => setRemoving(document)}>Remove</Button>
+                        <div className="flex flex-wrap gap-1.5">
+                          <Button variant="outline" size="sm" aria-label={`Edit ${ID_TYPE_LABEL[document.id_type]} ${document.document_number}`}
+                            onClick={() => setEditingDocument(document)}>Edit</Button>
+                          <Button variant="outline" size="sm" aria-label={`Remove ${ID_TYPE_LABEL[document.id_type]} ${document.document_number}`}
+                            onClick={() => setRemoving(document)}>Remove</Button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -215,6 +220,14 @@ export default function SavedPersonPage() {
         <DocumentDialog open person={data} onOpenChange={setAttaching} onSaved={detail => {
           setAttaching(false);
           toast.success("Document saved.");
+          queryClient.setQueryData(["saved-people", "detail", personId], detail);
+          void refresh();
+        }} />
+      )}
+      {editingDocument && (
+        <DocumentDialog open person={data} document={editingDocument} onOpenChange={open => { if (!open) setEditingDocument(null); }} onSaved={detail => {
+          setEditingDocument(null);
+          toast.success("Document updated.");
           queryClient.setQueryData(["saved-people", "detail", personId], detail);
           void refresh();
         }} />

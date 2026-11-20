@@ -2,7 +2,7 @@
 // /v1/admin/customers only. Values come in full from the gateway; permissions
 // (can_manage, can_merge) come from the response, never from the browser.
 
-import { gatewayDelete, gatewayGet, gatewayPatch, gatewayPost, type GatewayOptions } from "@/lib/gateway/client";
+import { gatewayDelete, gatewayGet, gatewayPatch, gatewayPost, gatewayPut, type GatewayOptions } from "@/lib/gateway/client";
 import type { components } from "@/lib/gateway/schema";
 
 type Schemas = components["schemas"];
@@ -50,6 +50,10 @@ export const updatePerson = (personId: string, body: PersonUpdate, options?: Gat
 
 export const addDocument = (personId: string, body: DocumentInput, options?: GatewayOptions) =>
   gatewayPost("/v1/admin/customers/{person_id}/documents", body, person(personId, options)) as Promise<PersonDetail>;
+
+/** Issue #12: edit a saved document. A new number (a renewed passport) keeps the old one for past bookings. */
+export const editDocument = (personId: string, documentId: string, body: DocumentInput, options?: GatewayOptions) =>
+  gatewayPut("/v1/admin/customers/{person_id}/documents/{document_id}", body, person(personId, { ...options, pathParams: { document_id: documentId } })) as Promise<PersonDetail>;
 
 export const removeDocument = (personId: string, documentId: string, options?: GatewayOptions) =>
   gatewayDelete("/v1/admin/customers/{person_id}/documents/{document_id}", person(personId, { ...options, pathParams: { document_id: documentId } }));

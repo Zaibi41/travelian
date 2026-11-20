@@ -11,8 +11,8 @@ import { CountrySelect } from "@/components/admin/search/CountrySelect";
 import { DEFAULT_COUNTRY_CODE } from "@/data/countries";
 import { cn } from "@/lib/utils";
 import {
-  MIN_SEARCH_LENGTH, addDocument, createPerson, mergePerson, searchPeople, updatePerson,
-  type DocumentInput, type PersonCreate, type PersonCreated, type PersonDetail, type PersonSummary, type PersonUpdate,
+  MIN_SEARCH_LENGTH, addDocument, createPerson, editDocument, mergePerson, searchPeople, updatePerson,
+  type DocumentInput, type PersonCreate, type PersonCreated, type PersonDetail, type PersonSummary, type PersonUpdate, type SavedDocument,
 } from "@/lib/saved-people/api";
 import { ID_TYPE_LABEL, TITLE_LABEL, fullName, mergeProblem, peopleErrorMessage, saveStateFrom, type SaveState } from "@/lib/saved-people/states";
 import { SavedDocuments } from "./SavedDocuments";
@@ -290,27 +290,32 @@ export function PersonFormDialog({ open, onOpenChange, person, onSaved }: {
 
 // ---------- attach a document ----------
 
-export function DocumentDialog({ open, onOpenChange, person, onSaved }: {
+/** Attach a document, or (with `document`, issue #12) edit a saved one: number, country of issue, expiry. */
+export function DocumentDialog({ open, onOpenChange, person, onSaved, document }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   person: PersonSummary;
   onSaved: (detail: PersonDetail) => void;
+  document?: SavedDocument | null;
 }) {
-  const [draft, setDraft] = useState<DocumentDraft>(blankDocument);
+  const fromDocument = (): DocumentDraft => document
+    ? { id_type: document.id_type, document_country: document.document_country, document_number: document.document_number, document_expiry: document.document_expiry ?? "" }
+    : blankDocument();
+  const [draft, setDraft] = useState<DocumentDraft>(fromDocument);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     if (open) {
-      setDraft(blankDocument());
+      setDraft(fromDocument());
       setError(null);
     }
-  }, [open]);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function save() {
     setBusy(true);
     setError(null);
     try {
-      onSaved(await addDocument(person.id, documentBody(draft)));
+      onSaved(document ? await editDocument(person.id, document.id, documentBody(draft)) : await addDocument(person.id, documentBody(draft)));
     } catch (failure) {
       setError(peopleErrorMessage(failure, "The document couldn't be saved. Try again in a moment."));
     } finally {
@@ -322,8 +327,10 @@ export function DocumentDialog({ open, onOpenChange, person, onSaved }: {
     <Dialog open={open} onOpenChange={next => !busy && onOpenChange(next)}>
       <DialogContent className={DIALOG}>
         <DialogHeader>
-          <DialogTitle>Attach document</DialogTitle>
-          <DialogDescription className="truncate">{fullName(person)}</DialogDescription>
+          <DialogTitle>{document ? "Edit document" : "Attach document"}</DialogTitle>
+          <DialogDescription>{document
+            ? `${fullName(person)}. A new number (for example a renewed passport) replaces this document for new bookings; past bookings keep the old one.`
+            : fullName(person)}</DialogDescription>
         </DialogHeader>
         <form className="flex min-h-0 flex-col gap-3" onSubmit={event => { event.preventDefault(); void save(); }}>
           <div className={BODY}>
