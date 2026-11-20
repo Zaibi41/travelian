@@ -146,7 +146,7 @@ describe("Booking detail", () => {
     gateway.downloadItinerary.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new GatewayError("unavailable", "The itinerary can't be downloaded right now.", 503));
     renderAt("/admin/bookings/TRV-1/overview");
     fireEvent.click(screen.getByRole("button", { name: "Download itinerary (PDF)" }));
-    await waitFor(() => expect(gateway.downloadItinerary).toHaveBeenCalledWith("TRV-1", undefined, "pdf"));
+    await waitFor(() => expect(gateway.downloadItinerary).toHaveBeenCalledWith("TRV-1", undefined, "pdf", true));
     fireEvent.click(await screen.findByRole("button", { name: "Download itinerary (PDF)" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("The itinerary can't be downloaded right now.");
   });
@@ -155,7 +155,11 @@ describe("Booking detail", () => {
     gateway.downloadItinerary.mockResolvedValue(undefined);
     renderAt("/admin/bookings/TRV-1/overview");
     fireEvent.click(screen.getByRole("button", { name: "Download PNG" }));
-    await waitFor(() => expect(gateway.downloadItinerary).toHaveBeenCalledWith("TRV-1", undefined, "png"));
+    await waitFor(() => expect(gateway.downloadItinerary).toHaveBeenCalledWith("TRV-1", undefined, "png", true));
+    // #18: Include fare off asks for the print without fare.
+    fireEvent.click(screen.getByRole("checkbox", { name: "Include fare" }));
+    fireEvent.click(screen.getByRole("button", { name: "Download itinerary (PDF)" }));
+    await waitFor(() => expect(gateway.downloadItinerary).toHaveBeenLastCalledWith("TRV-1", undefined, "pdf", false));
   });
 
   it("plain staff: no Supplier payment tab, and its URL goes back to Overview", () => {
