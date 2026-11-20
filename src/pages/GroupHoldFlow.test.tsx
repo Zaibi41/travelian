@@ -565,9 +565,9 @@ describe("Group booking itinerary download", () => {
     renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
     expect(await screen.findByRole("region", { name: "Details" })).toHaveTextContent("Final PNRK9QX2L");
     fireEvent.click(await screen.findByRole("button", { name: "Download itinerary (PDF)" }));
-    await waitFor(() => expect(bookings.downloadItinerary).toHaveBeenCalledWith("TRV-GRP-000123", undefined, "pdf"));
+    await waitFor(() => expect(bookings.downloadItinerary).toHaveBeenCalledWith("TRV-GRP-000123", undefined, "pdf", true));
     fireEvent.click(screen.getByRole("button", { name: "Download PNG" }));
-    await waitFor(() => expect(bookings.downloadItinerary).toHaveBeenLastCalledWith("TRV-GRP-000123", undefined, "png"));
+    await waitFor(() => expect(bookings.downloadItinerary).toHaveBeenLastCalledWith("TRV-GRP-000123", undefined, "png", true));
   });
 });
 
