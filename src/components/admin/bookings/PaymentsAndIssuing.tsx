@@ -375,6 +375,12 @@ function IssueTicket({ booking, checklist, loading, error, onResult }: {
               <ul className="list-disc pl-5">{checklist.blockers.map(blocker => <li key={blocker}>{blocker}</li>)}</ul>
             </Notice>
           )}
+          {checklist.balance_warning && status !== "issued" && (
+            <Notice tone="critical" title="Supplier balance">
+              {checklist.balance_warning}{" "}
+              <Link to="/admin/wallet" className="font-medium underline underline-offset-2">Open Wallets</Link>
+            </Notice>
+          )}
           {!checklist.ticketing_enabled && status !== "issued" && (
             <Notice title="Tickets can't be issued from Travelian for this booking">
               {checklist.ticketing_note ?? "Ticketing is switched off for this supplier. Payments and issuance requests still work."}

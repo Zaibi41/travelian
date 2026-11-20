@@ -1183,6 +1183,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/supplier-balances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Supplier Balances
+         * @description Each supplier's last known balance: Southair as last read from its API, SooperFare calculated. No customer wallets.
+         */
+        get: operations["supplier_balances_v1_admin_finance_supplier_balances_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/supplier-balances/southair/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh Southair
+         * @description Read Southair's balance now (read-only /my-profile) and keep it as a snapshot.
+         */
+        post: operations["refresh_southair_v1_admin_finance_supplier_balances_southair_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/supplier-balances/{provider}/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Adjust Balance
+         * @description Correct the calculated balance (+ or -) with a reason, e.g. to match SooperFare's portal. Audited.
+         */
+        post: operations["adjust_balance_v1_admin_finance_supplier_balances__provider__adjustments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/supplier-balances/{provider}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Wallet History
+         * @description Balance checks, top-ups, adjustments and ticket charges, newest first.
+         */
+        get: operations["wallet_history_v1_admin_finance_supplier_balances__provider__history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/supplier-balances/{provider}/threshold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Threshold
+         * @description The low-balance alert level for this supplier (a Finance setting, audited). Null removes it.
+         */
+        put: operations["set_threshold_v1_admin_finance_supplier_balances__provider__threshold_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/supplier-balances/{provider}/top-ups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Top Up
+         * @description Record money Travelian paid into a supplier account with no balance API (SooperFare). Records only; moves no money.
+         */
+        post: operations["record_top_up_v1_admin_finance_supplier_balances__provider__top_ups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/flight-operations/group-departures-without-final-pnr": {
         parameters: {
             query?: never;
@@ -6206,6 +6326,11 @@ export interface components {
             amount_due: components["schemas"]["BookingMoney"];
             amount_paid: components["schemas"]["BookingMoney"];
             /**
+             * Balance Warning
+             * @description The supplier's known balance is low or below this ticket's cost (Finance > Wallets). Amounts and supplier name only with cost and margin plus supplier names.
+             */
+            balance_warning?: string | null;
+            /**
              * Blockers
              * @description Why issuing (or requesting) isn't possible now; empty when it is.
              */
@@ -7778,6 +7903,42 @@ export interface components {
             /** Hold Deadline */
             hold_deadline?: string | null;
         };
+        /** SupplierWalletList */
+        SupplierWalletList: {
+            /** Wallets */
+            wallets: components["schemas"]["SupplierWalletView"][];
+        };
+        /** SupplierWalletView */
+        SupplierWalletView: {
+            /**
+             * As Of
+             * @description When the supplier was last read (api) or the last movement (calculated).
+             */
+            as_of?: string | null;
+            /** @description Null = not known yet (never read, or nothing recorded). */
+            balance?: components["schemas"]["BookingMoney"] | null;
+            /** Low */
+            low?: boolean | null;
+            /**
+             * Mode
+             * @description api: read from the supplier; calculated: top-ups + adjustments - ticket charges.
+             * @enum {string}
+             */
+            mode: "api" | "calculated";
+            /** Name */
+            name: string;
+            /**
+             * Note
+             * @description Plain words, e.g. why the balance can't be read.
+             */
+            note?: string | null;
+            /** Provider Id */
+            provider_id: string;
+            /** @description Alert below this. Null = no alert set. */
+            threshold?: components["schemas"]["BookingMoney"] | null;
+            /** Tracking Since */
+            tracking_since?: string | null;
+        };
         /** TicketNumber */
         TicketNumber: {
             /** Position */
@@ -7952,6 +8113,59 @@ export interface components {
             status: "success" | "failed" | "timeout";
             /** Vendor */
             vendor: string;
+        };
+        /** WalletEntryRequest */
+        WalletEntryRequest: {
+            /**
+             * Amount Minor
+             * @description Paisa. Top-up: more than 0. Adjustment: + or -, never 0.
+             */
+            amount_minor: number;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Reason */
+            reason?: string | null;
+            /** Reference */
+            reference?: string | null;
+        };
+        /** WalletHistory */
+        WalletHistory: {
+            /** Items */
+            items: components["schemas"]["WalletHistoryItem"][];
+        };
+        /** WalletHistoryItem */
+        WalletHistoryItem: {
+            amount?: components["schemas"]["BookingMoney"] | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            balance?: components["schemas"]["BookingMoney"] | null;
+            /** Booking Reference */
+            booking_reference?: string | null;
+            /** By User Id */
+            by_user_id?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "balance_check" | "top_up" | "adjustment" | "ticket";
+            /** Reason */
+            reason?: string | null;
+            /** Reference */
+            reference?: string | null;
+        };
+        /** WalletThresholdRequest */
+        WalletThresholdRequest: {
+            /**
+             * Threshold Minor
+             * @description Null removes the alert.
+             */
+            threshold_minor?: number | null;
         };
         /** BookingPassenger */
         app__api__routes__group_ticketing__BookingPassenger: {
@@ -11315,6 +11529,269 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supplier_balances_v1_admin_finance_supplier_balances_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierWalletList"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    refresh_southair_v1_admin_finance_supplier_balances_southair_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierWalletView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Southair didn't answer. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    adjust_balance_v1_admin_finance_supplier_balances__provider__adjustments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WalletEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierWalletView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    wallet_history_v1_admin_finance_supplier_balances__provider__history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WalletHistory"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_threshold_v1_admin_finance_supplier_balances__provider__threshold_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WalletThresholdRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierWalletView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    record_top_up_v1_admin_finance_supplier_balances__provider__top_ups_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WalletEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierWalletView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

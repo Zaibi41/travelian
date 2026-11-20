@@ -6,6 +6,7 @@ import { gatewayView, isGateway, isLocal } from "./support/gateway";
 // FINANCE_SHOTS=before only takes the before screenshots.
 
 if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
+if (process.env.FINANCE_BASE_URL) test.use({ baseURL: process.env.FINANCE_BASE_URL });
 const BEFORE = process.env.FINANCE_SHOTS === "before";
 const SHOTS = process.env.FINANCE_SHOTS_DIR;
 const OLD_KEYS = ["travelian:wallet-ledger", "travelian:wallet-deposits", "travelian:payment-webhook-events"];
@@ -39,10 +40,10 @@ const shot = async (page: Page, name: string) => {
 };
 
 for (const width of [1440, 390]) {
-  // Payments is built (#69, e2e/finance-payments.spec.ts); Wallets keeps the notice until #68.
+  // Payments (#69) and supplier Wallets (#68) are built for internal roles; agency roles keep the notice (no agency wallets).
   for (const [path, name, heading] of [["/admin/wallet", "wallets", "Wallets"]] as const) {
     test(`${path} at ${width}px: a not-built notice, no fake numbers`, async ({ page }) => {
-      await open(page, path, width);
+      await open(page, path, width, "agency_owner");
       await shot(page, `${name}-${width}`);
       if (BEFORE) return;
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
@@ -60,7 +61,7 @@ for (const width of [1440, 390]) {
   }
 }
 
-test("the Finance menu keeps Wallets marked Coming soon; Payments is built", async ({ page }) => {
+test("the Finance menu shows Wallets and Payments, both built", async ({ page }) => {
   await open(page, "/admin/wallet", 1440, "super_admin");
   const finance = page.getByRole("button", { name: /^Finance/ });
   await finance.waitFor();
@@ -68,7 +69,7 @@ test("the Finance menu keeps Wallets marked Coming soon; Payments is built", asy
   await expect(finance).toHaveAttribute("data-state", "open");
   await shot(page, "menu-1440");
   if (BEFORE) return;
-  await expect(page.getByRole("link", { name: "Wallets Coming soon" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Wallets", exact: true })).toBeVisible(); // built (#68): no tag
   await expect(page.getByRole("link", { name: "Payments", exact: true })).toBeVisible(); // built (#69): no tag
   await expect(page.getByRole("link", { name: "Accounts & Ledgers", exact: true })).toBeVisible(); // built: no tag
 });
