@@ -1,26 +1,34 @@
-# Admin design system
+# Travelian design system
 
-**Scope: the admin dashboard only.** The public website is the visual *reference*, not a
-consumer: the admin copies the public site's sizes, shapes, field style, spacing, icons and layout
-into admin-owned files. No public page, component or stylesheet imports anything described here,
-and no admin file imports from `src/components/public` or `src/pages/public` (the guard test fails
-if one does). A public change cannot change the admin, and the reverse.
+**One design system for the public website and the admin** (issue #118; rules in
+docs/DESIGN_STANDARD.md). It is being introduced in steps:
 
-Colours are the exception: the admin keeps its own colours (Zohaib, 2026-11-11). They are listed
-below next to the public site's, so unifying them later is one decision in one file.
+1. **One token file (done):** `src/styles/tokens.css` holds every token for both. Type scale,
+   control sizes, radii, spacing, focus ring, motion and the airline-logo tile are shared and
+   defined once in `:root`. Colours have the public values in `:root` and the admin values in a
+   `:root[data-app-theme="admin"]` block with the same names.
+2. **One component set (in progress):** buttons, fields, selects, date picker, cards, badges,
+   tables, tabs, dialogs, alerts/toasts, skeletons, empty states and the airline logo, used by both.
+   Until a component is moved, the admin keeps its copy in `src/components/admin/ui/` and the
+   rules below (admin files do not import from the public folders) still apply.
+3. **Screens moved one by one** in small PRs, with before/after screenshots.
+
+Colours stay separate on purpose: the admin keeps its navy/teal palette and the public site its
+blue (Zohaib, 2026-11-11, confirmed 2026-11-21). Unifying them later is a change to one block.
+The admin keeps its own layout layer (sidebar, dense tables) in `src/styles/theme.css`.
 
 ## Where things live
 
 | What | File |
 | --- | --- |
-| Every admin token (colour, type, control heights, radii, shadows, spacing, focus ring, motion) | `src/styles/admin-tokens.css` |
+| Every token, public and admin (colour, type, control heights, radii, shadows, spacing, focus ring, motion) | `src/styles/tokens.css` (`:root` shared + public colours; `:root[data-app-theme="admin"]` admin colours) |
 | Admin layout layer (sidebar, header, dense table rows, page padding) | `src/styles/theme.css` |
 | Tailwind names for the tokens (additive only) | `tailwind.config.ts` |
 | Shared admin components | `src/components/admin/ui/` |
 | Guard test (sizes, colours, radii, public imports, pinned colours) | `src/styles/admin-type-scale.test.ts` |
 | Visual regression (public and admin screenshots) | `e2e/visual.spec.ts`, `e2e/__screenshots__/` |
 
-All tokens sit under `:root[data-app-theme="admin"]`; `AdminLayout` sets that attribute on
+The admin colours sit under `:root[data-app-theme="admin"]`; `AdminLayout` sets that attribute on
 `<html>` while it is mounted, so dropdowns, dialogs and toasts rendered into `<body>` get them too.
 
 ## Tokens
@@ -157,7 +165,7 @@ Header and sidebar are structural and keep their own layout.
 
 ## Adding a token or a component
 
-- **Token:** add it to `src/styles/admin-tokens.css` (with a comment saying where the value comes
+- **Token:** add it to `src/styles/tokens.css` (`:root` when shared, the admin block for an admin colour; with a comment saying where the value comes
   from), add a Tailwind name in `tailwind.config.ts` only if needed (new name, never change an
   existing one), and teach `cn` the name in `src/lib/utils.ts` if it is a size or radius.
 - **Component:** add it to `src/components/admin/ui/`, built from the tokens, with a unit test in

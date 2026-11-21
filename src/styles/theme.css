@@ -1,15 +1,9 @@
 /*
- * Admin theme: the admin design tokens plus the admin-only LAYOUT layer.
- *
- * - src/styles/admin-tokens.css: every colour, type size, control height, radius, shadow,
- *   spacing step, focus ring and motion value the admin uses (the single source).
- * - This file: only layout values the public site has no equivalent for (sidebar, header,
- *   dense table rows, page padding). They are built from the tokens where they can be.
- *
- * Scope: admin only (:root[data-app-theme="admin"], set by AdminLayout). The public site keeps
- * its own values in src/index.css and is not affected. See docs/design-system.md.
+ * Admin LAYOUT layer: only layout values the public site has no equivalent for (sidebar, header,
+ * dense table rows, page padding, search-form rows), built from the shared tokens in
+ * src/styles/tokens.css. No colours here. Scope: :root[data-app-theme="admin"], set by
+ * AdminLayout. See docs/design-system.md.
  */
-@import './admin-tokens.css';
 
 :root[data-app-theme="admin"] {
   /* ---------- Admin layout ---------- */

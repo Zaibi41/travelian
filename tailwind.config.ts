@@ -77,13 +77,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Admin-only tokens (src/styles/theme.css). Defined only under
+        // Admin-only colour tokens (admin block of src/styles/tokens.css). Defined only under
         // <html data-app-theme="admin">; do not use on public pages.
         brand: {
           navy: "hsl(var(--brand-navy))",
           teal: "hsl(var(--brand-teal))",
         },
-        // Admin primary action (src/styles/admin-tokens.css): the filled teal button.
+        // Admin primary action (admin block of src/styles/tokens.css): the filled teal button.
         action: {
           DEFAULT: "hsl(var(--action-primary))",
           foreground: "hsl(var(--action-primary-foreground))",
@@ -126,10 +126,10 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
         pill: "9999px",
-        // Admin search-form fields and search button (src/styles/admin-tokens.css).
+        // Search-form fields and search button (src/styles/tokens.css).
         field: "var(--radius-field)",
       },
-      // Admin-only type scale and sizes (src/styles/theme.css).
+      // Shared type scale (src/styles/tokens.css, :root). Layout sizes (content, nav-item, table rows, sidebar) come from the admin layout layer, src/styles/theme.css.
       fontSize: {
         "page-title": ["var(--text-page-title)", { lineHeight: "1.25" }],
         kpi: ["var(--text-kpi)", { lineHeight: "1.2" }],

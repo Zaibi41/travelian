@@ -83,7 +83,7 @@ Known on 11 November 2026: 42 public-site specs fail on the unchanged public sit
 
 Visual regression (`e2e/visual.spec.ts`, baselines in `e2e/__screenshots__/`): full-page screenshots of the public home page (Flights, Group Ticketing, Hotels and Umrah tabs), Sign In and Register, and the admin Dashboard, Search (all four tabs), Bookings and Customers & Travelers, at 1280, 1440 and 390px; zero pixel difference allowed, with `threshold: 0` so any colour change counts (Playwright's default 0.2 lets small colour shifts through). The floating WhatsApp bubble on public pages is hidden while screenshots are taken (`e2e/support/visual.css`): it pulses and blurs whatever it floats over. Fixed clock, animations off, made-up gateway answers, web fonts blocked (fallback fonts, the same on every run). After an intended change, run `npx playwright test e2e/visual.spec.ts --update-snapshots` and review the new images before committing. A public image must never change in admin work.
 
-Admin type scale (one scale for the whole admin, based on the public site; `src/styles/admin-tokens.css`):
+Admin type scale (one scale for the whole admin, based on the public site; `src/styles/tokens.css`):
 `src/styles/admin-type-scale.test.ts` fails if an admin source file (`src/components/admin`, the
 admin layout, sidebar and admin pages) uses an arbitrary pixel size (`text-[13px]`), an inline font
 size, or a Tailwind default size class instead of the scale, and checks the scale itself (body 14px,

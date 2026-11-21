@@ -1,0 +1,265 @@
+/*
+ * Travelian design tokens: the ONE token file for the public website and the admin
+ * (docs/DESIGN_STANDARD.md, docs/design-system.md). Imported by src/index.css.
+ *
+ * - :root            every token, with the public site's colours.
+ * - :root[data-app-theme="admin"]
+ *                    the admin's colours (same token names, different values). AdminLayout sets
+ *                    the attribute on <html>, so admin dropdowns, dialogs and toasts get them too.
+ *                    The two palettes stay separate on purpose (Zohaib, 2026-11-11, confirmed
+ *                    2026-11-21); src/styles/admin-type-scale.test.ts pins the admin values.
+ * - Type scale, control sizes, radii, spacing, focus ring, motion and the airline-logo tile are
+ *   shared by both and defined once here.
+ *
+ * Colours are HSL triples (no hsl() wrapper) so Tailwind can apply opacity:
+ *   hsl(var(--primary)) / hsl(var(--primary) / 0.5)
+ * Rules: components use these tokens (through the Tailwind names in tailwind.config.ts) only, no
+ * hard-coded colours; a status colour is never the only signal; text on a status colour uses the
+ * *-text shade on the *-soft background. Contrast notes next to a value are measured on white
+ * unless they say otherwise.
+ */
+
+:root {
+  /* ================= Colour (public site) ================= */
+  --background: 220 20% 97%;
+  --foreground: 222 47% 11%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+
+  --primary: 217 91% 30%;
+  --primary-foreground: 0 0% 100%;
+  --primary-hover: 217 91% 24%;
+
+  --secondary: 220 14% 96%;
+  --secondary-foreground: 222 47% 11%;
+
+  --muted: 220 14% 96%;
+  --muted-foreground: 215 14% 34%;      /* #4B5563: 6.9-7.6:1 (TV-readable; was #6B7280) */
+
+  --accent: 217 91% 95%;
+  --accent-foreground: 217 91% 25%;
+
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  --success: 142 72% 29%;               /* #15803D: white on it 5.02:1 */
+  --success-foreground: 0 0% 100%;
+  --success-text: 143 64% 24%;          /* #166534: text on white and on its tint 6.2:1 */
+
+  --warning: 38 92% 50%;
+  --warning-foreground: 38 90% 12%;     /* #3A2603: dark text on amber fills 6.75:1 */
+  --warning-text: 23 82% 31%;           /* #92400E: amber text on white / tint 6.5-7.1:1 */
+
+  --info: 224 76% 48%;                  /* #1D4ED8: 6.7:1 */
+  --info-foreground: 0 0% 100%;
+
+  --gold: 42 78% 55%;
+  --gold-foreground: 42 78% 15%;
+  --gold-light: 42 60% 92%;
+  --gold-text: 42 100% 27%;             /* #8A6100: gold text 5.5:1 */
+
+  --teal: 185 98% 25%;                  /* #01747E (admin teal): 5.53:1 */
+  --teal-foreground: 0 0% 100%;
+  --teal-soft: 184 55% 94%;
+
+  --whatsapp: 147 79% 27%;              /* #0E7A3E: white on it 5.42:1, still WhatsApp green */
+  --whatsapp-foreground: 0 0% 100%;
+  --whatsapp-hover: 146 81% 22%;
+
+  --deal: 0 72% 51%;
+  --deal-foreground: 0 0% 100%;
+
+  --border: 218 22% 86%;                /* #D3D9E3 card and divider lines */
+  --input: 219 13% 60%;                 /* #8C95A6 field borders 3.0:1 */
+  --ring: 217 91% 30%;
+
+  --radius: 0.625rem;
+
+  --sidebar-background: 222 47% 11%;
+  --sidebar-foreground: 213 31% 91%;
+  --sidebar-primary: 217 91% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 217 33% 17%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 217 33% 17%;
+  --sidebar-ring: 217 91% 50%;
+  --sidebar-muted: 215 20% 65%;
+
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 30%), hsl(230, 70%, 40%));
+  --gradient-hero: linear-gradient(135deg, hsl(222, 47%, 8%), hsl(217, 60%, 16%));
+  --gradient-deal: linear-gradient(135deg, hsl(0, 72%, 51%), hsl(340, 80%, 45%));
+  --gradient-gold: linear-gradient(135deg, hsl(42, 78%, 55%), hsl(38, 92%, 50%));
+  --gradient-sidebar: linear-gradient(180deg, hsl(222, 47%, 11%), hsl(222, 47%, 8%));
+  --shadow-card: 0 1px 3px 0 hsl(222 47% 11% / 0.04), 0 1px 2px -1px hsl(222 47% 11% / 0.03);
+  --shadow-elevated: 0 10px 30px -8px hsl(222 47% 11% / 0.08), 0 4px 6px -2px hsl(222 47% 11% / 0.04);
+  --shadow-hover: 0 20px 50px -12px hsl(222 47% 11% / 0.12);
+  --shadow-premium: 0 4px 20px -4px hsl(42 78% 55% / 0.15);
+
+  /* Airline logo tile (same values as the public tile: Tailwind slate-200, slate-50, slate-900) */
+  --logo-tile-border: 214.3 31.8% 91.4%;
+  --logo-tile-fade: 210 40% 98%;
+  --logo-tile-ink: 222.2 47.4% 11.2%;
+  --logo-tile-shadow: 0 6px 18px hsl(222.2 47.4% 11.2% / 0.08);
+
+  /* ================= Type (Plus Jakarta Sans headings, Inter text: --font-display / --font-body above) ================= */
+
+  /* Page title and big numbers 24px, smaller numbers 20px, section headings 18px, body and
+   * sidebar 14px, field labels and table text 13px, helper text and tags 12px. Nothing smaller. */
+  --text-page-title: 24px;
+  --text-kpi: 24px;
+  --text-kpi-sm: 20px;
+  --text-section: 18px;
+  --text-nav: 14px;
+  --text-body: 14px;
+  --text-table: 13px;
+  --text-label: 13px;
+  --text-helper: 12px;
+
+  /* ================= Sizes (public site's controls) ================= */
+  /* Buttons, selects, inputs and filter chips: 40px (public h-10), 44px on touch screens.
+   * Search-form fields and the search button: 48px (public search form h-12). */
+  --control-height: 40px;
+  --control-height-touch: 44px;
+  --control-height-lg: 48px;
+  --badge-height: 22px;                /* public badge: 12px text, 2px + 1px border each side */
+  --badge-padding-x: 10px;             /* public badge px-2.5 */
+
+  /* ================= Radius (public site) ================= */
+  --radius-md: 8px;                    /* buttons, inputs, selects, sidebar items */
+  --radius-sm: 6px;                    /* small chips inside a field */
+  --radius-field: 12px;                /* search-form fields and the search button (rounded-xl) */
+  --radius-pill: 9999px;               /* badges, round swap, count bubbles */
+
+  /* ================= Spacing (4px grid, public site) ================= */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --card-padding: var(--space-5);      /* public search card: 20px sides */
+  --card-gap: var(--space-3);          /* public search grid gap-3 */
+  --section-gap: var(--space-3);
+
+  /* ================= Focus ring (public site: 2px ring, 2px offset) ================= */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* ================= Motion (public site: Tailwind transition-colors) ================= */
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Touch screens: controls grow to 44px so they are easy to tap. */
+@media (pointer: coarse) {
+  :root {
+    --control-height: var(--control-height-touch);
+  }
+}
+
+/* ================= Admin colours ================= */
+:root[data-app-theme="admin"] {
+  /* Admin values, unchanged. */
+
+  /* Brand (from the logo) */
+  --brand-navy: 216.8 100% 18.2%;      /* #00245D sidebar, headings, active tab, links */
+  --brand-teal: 184.8 98.4% 24.9%;     /* #01747E primary action buttons (guarded by a test) */
+
+  /* Primary action: the filled teal button (Search again, Continue, Hold, View booking).
+   * admin-type-scale.test.ts checks this stays the current teal. */
+  --action-primary: var(--brand-teal);
+  --action-primary-foreground: 0 0% 100%;  /* 5.53:1 */
+
+  /* Surfaces and text */
+  --background: 217 33% 97%;           /* #F5F7FA */
+  --foreground: 222 47% 11%;           /* #0F1729 */
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+
+  --primary: var(--brand-navy);
+  --primary-foreground: 0 0% 100%;     /* 14.91:1 */
+  --primary-hover: 217 100% 13%;       /* #001942 */
+
+  --secondary: 217 33% 95%;            /* #EEF1F6 */
+  --secondary-foreground: 222 47% 11%;
+  --muted: 217 33% 95%;                /* #EEF1F6 table header */
+  --muted-foreground: 217 12% 42%;     /* #5E6878 */
+  --accent: 217 60% 95%;               /* #EBF0FA */
+  --accent-foreground: var(--brand-navy);
+
+  --teal: var(--brand-teal);
+  --teal-foreground: 0 0% 100%;        /* 5.53:1 */
+  --teal-soft: 185 60% 94%;            /* #E7F7F9 */
+
+  --border: 218 22% 86%;               /* #D3D9E3 (was #DEE4ED: faint on TVs) */
+  --input: 219 13% 60%;                /* #8C95A6 field borders 3.0:1 */
+  --ring: var(--brand-navy);
+
+  /* Status */
+  --destructive: 0 72% 51%;            /* #DC2828 critical */
+  --destructive-foreground: 0 0% 100%; /* 4.80:1 */
+  --warning: 38 92% 50%;               /* #F59F0A needs action */
+  --warning-foreground: 38 90% 12%;    /* #3A2603 */
+  --success: 152 60% 38%;              /* #279B65 fine */
+  --success-foreground: 152 60% 8%;    /* #082115 */
+  --info: 210 80% 52%;
+  --info-foreground: 0 0% 100%;
+
+  --status-critical: var(--destructive);
+  --status-critical-text: 0 72% 42%;   /* #B81E1E  5.67:1 on soft */
+  --status-critical-soft: 0 86% 96%;   /* #FEECEC */
+  --status-action: 37 97% 39%;         /* #C27803 amber stripe 3.5:1 on white (was #F59F0A, 2.1:1) */
+  --status-action-text: 38 90% 28%;    /* #885907  5.38:1 on soft */
+  --status-action-soft: 38 92% 92%;    /* #FDF0D8 */
+  --status-fine: var(--success);
+  --status-fine-text: 152 60% 28%;     /* #1D724A  5.25:1 on soft */
+  --status-fine-soft: 152 50% 93%;     /* #E4F6EE */
+
+  /* Product colours */
+  --gold: 42 78% 55%;
+  --gold-foreground: 42 78% 15%;
+  --gold-light: 42 60% 92%;
+  --whatsapp: 142 70% 49%;
+  --whatsapp-foreground: 0 0% 100%;
+  --whatsapp-hover: 142 71% 43%;
+  --deal: 0 72% 51%;
+  --deal-foreground: 0 0% 100%;
+
+  /* Sidebar */
+  --sidebar-background: var(--brand-navy);
+  --sidebar-foreground: 213 31% 91%;             /* 12.11:1 */
+  --sidebar-primary: var(--brand-teal);          /* active item */
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 217 70% 25%;                 /* #13356C hover */
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 217 70% 25%;
+  --sidebar-ring: 185 70% 50%;                   /* #26CAD9 focus on navy 7.53:1 */
+  --sidebar-muted: 215 20% 65%;                  /* 5.85:1 on navy */
+
+
+  /* Charts */
+  --chart-1: var(--brand-teal);        /* Bookings */
+  --chart-2: var(--brand-navy);        /* Issued */
+
+  /* Gradients and shadows (tinted with the admin navy; colour, so unchanged) */
+  --gradient-primary: linear-gradient(135deg, hsl(216.8 100% 18.2%), hsl(217 80% 28%));
+  --gradient-hero: linear-gradient(135deg, hsl(217 100% 10%), hsl(216.8 100% 18.2%));
+  --gradient-sidebar: linear-gradient(180deg, hsl(216.8 100% 18.2%), hsl(217 100% 14%));
+  --gradient-deal: linear-gradient(135deg, hsl(0, 72%, 51%), hsl(340, 80%, 45%));
+  --gradient-gold: linear-gradient(135deg, hsl(42, 78%, 55%), hsl(38, 92%, 50%));
+  --shadow-card: 0 1px 3px 0 hsl(216.8 100% 18.2% / 0.05), 0 1px 2px -1px hsl(216.8 100% 18.2% / 0.04);
+  --shadow-elevated: 0 10px 30px -8px hsl(216.8 100% 18.2% / 0.09), 0 4px 6px -2px hsl(216.8 100% 18.2% / 0.05);
+  --shadow-hover: 0 20px 50px -12px hsl(216.8 100% 18.2% / 0.13);
+  --shadow-premium: 0 4px 20px -4px hsl(42 78% 55% / 0.15);
+}
