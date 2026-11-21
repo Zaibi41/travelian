@@ -322,6 +322,44 @@ describe("Group seats held (step 3)", () => {
   });
 });
 
+describe("Paid group holds past their time limit (gateway#109)", () => {
+  const ago = () => new Date(Date.now() - 60_000).toISOString();
+  const PAID_LATE: GroupHoldView = { ...PAID, hold_expires_at: ago(), ticketing_status: "awaiting_final_pnr",
+    can_record_payments: false, can_issue_tickets: false, can_release: false, can_set_selling_price: false, can_edit_tickets: true };
+
+  it("paid in full: the booking reads Paid – awaiting final PNR, never expired", async () => {
+    gateway.fetchGroupHold.mockResolvedValue(PAID_LATE);
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
+    await screen.findByRole("region", { name: "Payment summary" });
+    expect(screen.queryByText("This hold has expired")).not.toBeInTheDocument();
+    expect(screen.queryByText("Hold expired")).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Paid – awaiting final PNR/).length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Issue tickets" })).toBeDisabled();
+  });
+
+  it("paid in full: the held page says Paid – awaiting final PNR, not expired", async () => {
+    gateway.fetchGroupHold.mockResolvedValue(PAID_LATE);
+    renderAt("/admin/search/group-ticketing/held/TRV-GRP-000123");
+    expect(await screen.findByText("Paid – awaiting final PNR")).toBeInTheDocument();
+    expect(screen.queryByText("This hold has expired")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continue to payment" })).toBeDisabled();
+  });
+
+  it("unpaid past the time limit still reads as expired", async () => {
+    gateway.fetchGroupHold.mockResolvedValue({ ...HELD, hold_expires_at: ago(), can_record_payments: false, can_issue_tickets: false });
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
+    expect(await screen.findByText("This hold has expired")).toBeInTheDocument();
+  });
+
+  it("part-paid when the time passed: Paid, not ticketed: refund or rebook", async () => {
+    gateway.fetchGroupHold.mockResolvedValue({ ...HELD, status: "paid_not_ticketed", hold_expires_at: ago(), amount_paid: rs(50_000), amount_due: rs(187_000),
+      payment_status: "part_paid", can_record_payments: false, can_issue_tickets: false, can_release: false });
+    renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/details");
+    expect((await screen.findAllByText("Paid, not ticketed: refund or rebook")).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Expired")).not.toBeInTheDocument();
+  });
+});
+
 describe("No cancellation on group bookings", () => {
   const NOTICE = "Cancellation is not available for group fares. Unpaid holds lapse at the supplier's expiry.";
   for (const tab of ["payments", "travelers", "details"]) {

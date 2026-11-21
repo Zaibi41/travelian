@@ -13,7 +13,7 @@ import { GroupPaymentsTab, groupHoldKey } from "@/components/admin/search/GroupP
 import { GroupNoCancelNotice } from "@/components/admin/bookings/GroupNoCancelNotice";
 import { GatewayError, gatewayAssetUrl } from "@/lib/gateway/client";
 import { AirlineLogo } from "@/components/admin/ui/AirlineLogo";
-import { formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
+import { BOOKING_STATUS_LABEL, formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
 import { acknowledgedBy } from "@/lib/group-fare-terms";
 import { GROUP_BOOKING_TABS, GROUP_TICKETING_LABEL, departureText, fetchGroupHold, groupBookingPath, returnFlightText, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
 import { sourceLine } from "@/lib/admin-search/group-ticketing";
@@ -25,6 +25,7 @@ const STATUS: Record<GroupHoldView["status"], { label: string; severity: "fine" 
   processing: { label: "Issuing", severity: "action" }, issued: { label: "Issued", severity: "fine" }, unknown: { label: "Unknown", severity: "critical" },
   not_recorded: { label: "Not recorded", severity: "critical" },
   requested: { label: "Requested (website)", severity: "action" },
+  paid_not_ticketed: { label: BOOKING_STATUS_LABEL.paid_not_ticketed, severity: "critical" },
 };
 
 // Payment and issue tickets, step 4 of 4 (mockup pages 12 and 13): the group booking with
