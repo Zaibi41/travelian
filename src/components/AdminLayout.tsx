@@ -22,6 +22,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 
 import { AdminProfileDialog, type ProfileAction } from "@/components/AdminProfileDialog";
 import { useBookingAlerts } from "@/lib/admin-notifications";
+import { useLiveAnnouncements } from "@/lib/admin-announcements";
+import { AdminAnnouncementTicker } from "@/components/AdminAnnouncementTicker";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 
 /** Admin route guard: with no session, or one known to be expired, no admin page, menu or header
@@ -78,8 +80,9 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentRole, currentUser } = useRole();
-  // Top bar: sidebar toggle and user menu. No announcement ticker or Wallet chip (#73): they return when the gateway
-  // serves announcements and wallets.
+  // Top bar: sidebar toggle, the announcements from the gateway (#92: every staff role, Super Admin included; nothing when
+  // there are none) and the user menu. No Wallet chip (#73): it returns when the gateway serves wallets.
+  const announcements = useLiveAnnouncements(isInternalRole(currentRole));
   const accountTriggerRef = useRef<HTMLButtonElement>(null);
   const [profileAction, setProfileAction] = useState<ProfileAction | null>(null);
   const profileActionRef = useRef(profileAction);
@@ -142,6 +145,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
             <div className="flex shrink-0 items-center gap-2">
               <SidebarTrigger />
             </div>
+            <AdminAnnouncementTicker items={announcements} />
             <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>

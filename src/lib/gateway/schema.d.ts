@@ -210,6 +210,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/announcements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Announcements
+         * @description What the admin top bar shows, newest first. Empty list when there are none.
+         */
+        get: operations["list_announcements_v1_admin_announcements_get"];
+        put?: never;
+        /**
+         * Create Announcement
+         * @description Post an announcement. All staff see it in the top bar within a minute (the page checks every minute).
+         */
+        post: operations["create_announcement_v1_admin_announcements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/announcements/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List All Announcements
+         * @description The Announcements page: every announcement not deleted, newest first.
+         */
+        get: operations["list_all_announcements_v1_admin_announcements_all_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/announcements/{announcement_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Announcement
+         * @description Remove it from the top bar and the list.
+         */
+        delete: operations["delete_announcement_v1_admin_announcements__announcement_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/announcements/{announcement_id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End Announcement
+         * @description Take it off the top bar now. It stays in the list as ended.
+         */
+        post: operations["end_announcement_v1_admin_announcements__announcement_id__end_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/attention-queue": {
         parameters: {
             query?: never;
@@ -4096,6 +4180,30 @@ export interface components {
             /** Expected Revision */
             expected_revision: number;
         };
+        /** AnnouncementList */
+        AnnouncementList: {
+            /** Items */
+            items: components["schemas"]["AnnouncementView"][];
+        };
+        /** AnnouncementView */
+        AnnouncementView: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Ends At */
+            ends_at?: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Message
+             * @description Plain text, 2 to 240 characters.
+             */
+            message: string;
+            /** Starts At */
+            starts_at?: string | null;
+        };
         /** AttentionItem */
         AttentionItem: {
             /** Booking Id */
@@ -4927,6 +5035,24 @@ export interface components {
              */
             received_at: string;
         };
+        /** CreateAnnouncementRequest */
+        CreateAnnouncementRequest: {
+            /**
+             * Ends At
+             * @description Optional; with a time zone, in the future and after starts_at.
+             */
+            ends_at?: string | null;
+            /**
+             * Message
+             * @description Plain text. Extra spaces and line breaks are removed; < and > are refused.
+             */
+            message: string;
+            /**
+             * Starts At
+             * @description Optional; with a time zone. Shown from then on.
+             */
+            starts_at?: string | null;
+        };
         /** CurrencyAmount */
         CurrencyAmount: {
             /**
@@ -5099,6 +5225,17 @@ export interface components {
              * @constant
              */
             source: "gateway_bookings";
+        };
+        /** DeletedAnnouncement */
+        DeletedAnnouncement: {
+            /**
+             * Deleted
+             * @default true
+             * @constant
+             */
+            deleted: true;
+            /** Id */
+            id: string;
         };
         /** DestinationSuggestRequest */
         DestinationSuggestRequest: {
@@ -6888,6 +7025,38 @@ export interface components {
              * @default []
              */
             travelers: string[];
+        };
+        /** ManagedAnnouncement */
+        ManagedAnnouncement: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Ended At */
+            ended_at?: string | null;
+            /** Ends At */
+            ends_at?: string | null;
+            /** Id */
+            id: string;
+            /**
+             * Message
+             * @description Plain text, 2 to 240 characters.
+             */
+            message: string;
+            /** Starts At */
+            starts_at?: string | null;
+            /**
+             * Status
+             * @description active: in the top bar now; scheduled: its start time is ahead; ended: ended by hand or its end time passed.
+             * @enum {string}
+             */
+            status: "active" | "scheduled" | "ended";
+        };
+        /** ManagedAnnouncementList */
+        ManagedAnnouncementList: {
+            /** Items */
+            items: components["schemas"]["ManagedAnnouncement"][];
         };
         /** MarkRefundPaidRequest */
         MarkRefundPaidRequest: {
@@ -9458,6 +9627,223 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    list_announcements_v1_admin_announcements_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementList"];
+                };
+            };
+            /** @description Caller may not do this (reading: back office only; changes: Super Admin only). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_announcement_v1_admin_announcements_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAnnouncementRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAnnouncement"];
+                };
+            };
+            /** @description Caller may not do this (reading: back office only; changes: Super Admin only). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Message not 2 to 240 characters of plain text, or the start/end times don't make sense. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_all_announcements_v1_admin_announcements_all_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAnnouncementList"];
+                };
+            };
+            /** @description Caller may not do this (reading: back office only; changes: Super Admin only). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_announcement_v1_admin_announcements__announcement_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletedAnnouncement"];
+                };
+            };
+            /** @description Caller may not do this (reading: back office only; changes: Super Admin only). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No announcement with that id. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    end_announcement_v1_admin_announcements__announcement_id__end_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                announcement_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManagedAnnouncement"];
+                };
+            };
+            /** @description Caller may not do this (reading: back office only; changes: Super Admin only). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No active announcement with that id. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
