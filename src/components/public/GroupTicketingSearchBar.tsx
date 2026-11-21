@@ -352,7 +352,7 @@ export function GroupTicketingSearchBar({
 
             </span>
 
-            <div className="order-2 col-span-full flex min-w-0 gap-1.5 overflow-x-auto pb-0.5 sm:order-2 sm:flex-1 sm:flex-wrap sm:pb-0">
+            <div className="order-2 col-span-full flex min-w-0 gap-1.5 overflow-x-auto pb-0.5 pr-1 scrollbar-hide sm:order-2 sm:flex-1 sm:flex-wrap sm:pb-0 sm:pr-0">
 
               {displayedSectors.slice(0, 4).map((sec) => {
 
@@ -470,7 +470,7 @@ export function GroupTicketingSearchBar({
 
             aria-label="Swap origin and destination"
 
-            className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-primary/30 text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+            className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-primary/30 text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
 
           >
 

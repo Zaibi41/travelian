@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import type { BlogPost } from "@/data/models";
 import { listBlogPosts } from "@/lib/content-api";
@@ -12,17 +13,29 @@ import { SEO } from "@/components/SEO";
 export default function PublicBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
+  const loadPosts = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
     listBlogPosts("published")
-      .then(setPosts)
-      .catch(() => setPosts([]))
+      .then((items) => {
+        setPosts(items);
+      })
+      .catch(() => {
+        setPosts([]);
+        setLoadError(true);
+      })
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    loadPosts();
+  }, [loadPosts]);
+
   return (
     <div>
-      <SEO
+      <SEO breadcrumbs={[{ name: "Travel Guides", path: "/blog" }]}
         title="Travel Guides & Blog | Travelian"
         description="Travel guides for Pakistani travellers: Umrah planning, flight booking tips and hotel recommendations from the Travelian team."
       />
@@ -36,7 +49,17 @@ export default function PublicBlogPage() {
 
       <div className="travelian-container py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {!loading && posts.length === 0 && (
+          {!loading && loadError && (
+            <div role="status" className="col-span-full rounded-xl border bg-card p-8 text-center">
+              <p className="text-sm font-medium text-foreground">Unable to load travel guides right now.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Please try again shortly or explore flights and hotels directly.</p>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+                <Button type="button" variant="outline" onClick={loadPosts}>Try again</Button>
+                <Button asChild><Link to="/flights-search">Search Flights</Link></Button>
+              </div>
+            </div>
+          )}
+          {!loading && !loadError && posts.length === 0 && (
             <div className="col-span-full rounded-xl border bg-card p-8 text-center text-sm text-muted-foreground">
               No published articles are available yet.
             </div>

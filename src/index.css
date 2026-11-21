@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+/* Fonts are loaded asynchronously via preconnect in index.html to avoid render-blocking CSS @import chains. */
 /* Admin design tokens; active only under <html data-app-theme="admin">. */
 @import './styles/theme.css';
 

@@ -28,8 +28,8 @@ export function HomeTopRoutes() {
         </div>
         <div className="grid auto-cols-[14rem] grid-flow-col gap-3 overflow-x-auto pb-2 md:auto-cols-auto md:grid-flow-row md:grid-cols-3 md:overflow-visible lg:grid-cols-5">
           {routes.map(route => <Card key={route.code} className="h-full rounded-xl border-border shadow-sm transition-colors hover:border-primary/40">
-            <Link to={`${route.href}&depart=${departureDate}`} aria-label={`Search flights from ${route.from} to ${route.to}`} className="block h-full rounded-xl p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
-              <h3 className="truncate text-sm font-semibold text-foreground" title={`${route.from} to ${route.to}`}>{route.from} <span aria-hidden="true">→</span> {route.to}</h3>
+            <Link to={`${route.href}&depart=${departureDate}`} className="relative block h-full rounded-xl p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+              <h3 className="truncate text-sm font-semibold text-foreground" title={`${route.from} to ${route.to}`}>{route.from} <span aria-hidden="true">→</span><span className="sr-only"> to </span>{route.to}</h3>
               <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"><Plane aria-hidden="true" className="h-3.5 w-3.5" />{route.code.replace(" -> ", " → ")}</p>
               <span className="mt-4 inline-flex items-center text-xs font-semibold text-primary">Search Flights <ArrowRight aria-hidden="true" className="ml-1.5 h-3.5 w-3.5" /></span>
             </Link>

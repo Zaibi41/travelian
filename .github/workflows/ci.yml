@@ -17,6 +17,8 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      # Static public pages as HTML for crawlers (uses the runner's Google Chrome).
+      - run: npm run prerender
   lint:
     # Existing lint debt is visible without blocking unrelated configuration work.
     continue-on-error: true

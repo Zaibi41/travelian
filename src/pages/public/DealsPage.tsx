@@ -33,7 +33,7 @@ export default function DealsPage() {
 
   return (
     <div>
-      <SEO
+      <SEO breadcrumbs={[{ name: "Deals", path: "/deals" }]}
         title="Travel Deals & Promo Codes | Travelian"
         description={`Current Travelian promo codes and travel offers on flights${umrah ? ", hotels and Umrah packages" : " and hotels"}. Verified deals only, no expired listings.`}
       />
@@ -46,6 +46,22 @@ export default function DealsPage() {
 
 
       <div className="travelian-container py-10">
+        {flashDeals.length === 0 && activeCoupons.length === 0 && discountedHotels.length === 0 ? (
+          <Card className="mx-auto max-w-2xl rounded-2xl border-border/70 shadow-card">
+            <CardContent className="p-8 text-center">
+              <h2 className="font-display text-xl font-bold text-foreground">No promotional offers are active right now</h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                We only publish verified, non-expired fares and promo codes. Search live flight and group ticket rates or contact our team for current availability.
+              </p>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <Button asChild className="min-h-11 rounded-xl"><Link to="/flights-search">Search Flights</Link></Button>
+                <Button asChild variant="outline" className="min-h-11 rounded-xl"><Link to="/group-ticketing">Group Ticketing</Link></Button>
+                <Button asChild variant="outline" className="min-h-11 rounded-xl"><Link to="/hotels-search">Search Hotels</Link></Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+        <>
         {/* Flash Deals */}
         <div className="mb-12">
           <div className="flex items-center gap-2 mb-6">
@@ -143,6 +159,8 @@ export default function DealsPage() {
             {discountedHotels.length === 0 && <p className="col-span-full text-sm text-muted-foreground">No discounted hotels are active right now.</p>}
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

@@ -32,14 +32,14 @@ export default function AboutPage() {
   const { umrah } = useSiteSwitches(); // D39: Umrah wording only when Umrah is switched on
   return (
     <div>
-      <SEO title={umrah ? "About Travelian | Flights, Hotels & Umrah" : "About Travelian | Flights & Hotels"}
+      <SEO breadcrumbs={[{ name: "About", path: "/about" }]} title={umrah ? "About Travelian | Flights, Hotels & Umrah" : "About Travelian | Flights & Hotels"}
         description={umrah ? "Learn about Travelian and our support for flight bookings, group ticketing, hotels and Umrah travel." : "Learn about Travelian and our support for flight bookings, group ticketing and hotels."} />
       <SearchPageHero title="About Travelian" description={umrah ? "Building a modern travel platform for flights, hotels, Umrah and group travel." : "Building a modern travel platform for flights, hotels and group travel."} />
 
       <PageSection>
           <h2 className="text-xl md:text-2xl font-bold font-display text-foreground mb-4">Who We Are</h2>
           <p className="max-w-3xl text-sm text-muted-foreground leading-7">
-            {umrah ? "Travelian provides travel management services for flights, hotels and Umrah packages." : "Travelian provides travel management services for flights, group tickets and hotels."}
+            {umrah ? "Travelian provides travel management services for flights, hotels and Umrah packages." : "Travelian provides travel management services for flights, group tickets and hotels."}{" "}
             Our team helps travelers and agencies find available options and continue through the appropriate booking process.
           </p>
       </PageSection>
@@ -49,7 +49,7 @@ export default function AboutPage() {
             <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Our Services</h2>
             <p className="text-sm text-muted-foreground mt-2">Everything you need to plan, book and travel.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 ${umrah ? "lg:grid-cols-4" : "lg:grid-cols-3"} gap-4`}>
             {services.filter(service => umrah || !("umrah" in service)).map(service => (
               <Link to={service.to} key={service.title}>
                 <Card className="h-full rounded-xl border-border/70 shadow-card transition-shadow hover:shadow-md group">
@@ -104,14 +104,16 @@ export default function AboutPage() {
       </PageSection>
 
       <PageSection>
-          <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Ready to plan your next trip?</h2>
-          <p className="text-muted-foreground mt-2">Talk to our experts or start searching now.</p>
+          <div className="text-center">
+            <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">Ready to plan your next trip?</h2>
+            <p className="text-muted-foreground mt-2">Talk to our experts or start searching now.</p>
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
-            <Button asChild variant="outline" className="h-12 rounded-xl"><Link to="/contact">Contact Us</Link></Button>
-            <Button asChild className="h-12 rounded-xl bg-primary text-primary-foreground"><Link to="/flights-search">Search Flights</Link></Button>
-            <Button asChild variant="outline" className="rounded-lg gap-2">
-              <a href={whatsappUrl("Hello Travelian, I need help planning my next trip.")} target="_blank" rel="noreferrer"><WhatsAppIcon className="h-4 w-4" /> WhatsApp Support</a>
-          </Button>
+            <Button asChild variant="outline" className="h-12 rounded-xl px-5"><Link to="/contact">Contact Us</Link></Button>
+            <Button asChild className="h-12 rounded-xl bg-primary px-5 text-primary-foreground"><Link to="/flights-search">Search Flights</Link></Button>
+            <Button asChild variant="outline" className="h-12 rounded-xl px-5 gap-2">
+              <a href={whatsappUrl("Hello Travelian, I need help planning my next trip.")} target="_blank" rel="noreferrer"><WhatsAppIcon className="h-4 w-4 text-whatsapp" aria-hidden="true" /> WhatsApp Support</a>
+            </Button>
           </div>
       </PageSection>
     </div>

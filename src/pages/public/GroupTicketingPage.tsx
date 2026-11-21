@@ -39,6 +39,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { AirlineLogo } from "@/components/public/AirlineLogo";
 
 import { SearchPageHero } from "@/components/public/SearchPageShell";
+import { SEO } from "@/components/SEO";
 import { GROUP_FARE_NOTICE, GROUP_FARE_REFUND } from "@/lib/group-fare-terms";
 
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
@@ -1294,6 +1295,10 @@ export default function GroupTicketingPage() {
   return (
 
     <div>
+      <SEO breadcrumbs={[{ name: "Group Ticketing", path: "/group-ticketing" }]}
+        title="Group Ticketing & Fixed Flight Fares | Travelian"
+        description="Search available group ticket allocations and fixed flight fares across popular international routes from Pakistan with Travelian."
+      />
 
       {/* 1. Navbar handled globally */}
 
@@ -1422,23 +1427,15 @@ export default function GroupTicketingPage() {
 
                 </p>
 
-                <a
-
-                  href={whatsappHref(`Hello Travelian, please let me know upcoming group ticket availability for ${searchFilters.from || ""} to ${searchFilters.to || ""}.`)}
-
-                  target="_blank"
-
-                  rel="noreferrer"
-
-                >
-
-                  <Button className="mt-5 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover font-bold">
-
-                    <WhatsAppIcon className="mr-2 h-4 w-4" /> WhatsApp Travelian Desk
-
-                  </Button>
-
-                </a>
+                <Button asChild className="mt-5 min-h-11 rounded-xl bg-whatsapp font-bold text-whatsapp-foreground hover:bg-whatsapp-hover">
+                  <a
+                    href={whatsappHref(`Hello Travelian, please let me know upcoming group ticket availability for ${searchFilters.from || ""} to ${searchFilters.to || ""}.`)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <WhatsAppIcon className="mr-2 h-4 w-4" aria-hidden="true" /> WhatsApp Travelian Desk
+                  </a>
+                </Button>
 
               </div>
 
@@ -1477,115 +1474,70 @@ export default function GroupTicketingPage() {
 
 
         {/* 4. On Platform: Live + Group Tickets Section */}
+        <section className="relative overflow-hidden rounded-3xl border border-white/10 gradient-hero p-6 text-white shadow-xl sm:p-8 lg:p-10">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.06]"
+            aria-hidden="true"
+            style={{
+              backgroundImage: "radial-gradient(circle at 1px 1px, hsl(0 0% 100%) 1px, transparent 0)",
+              backgroundSize: "22px 22px",
+            }}
+          />
+          <div className="relative">
+            <div className="max-w-3xl">
+              <Badge className="mb-3 border border-white/15 bg-white/10 text-xs font-semibold uppercase tracking-wider text-gold-on-dark">
+                Group Ticketing
+              </Badge>
+              <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+                Fixed-Fare Group Seats Alongside Live Flights
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-white/85 sm:text-base">
+                Compare scheduled airline fares with dedicated group seat allocations across popular routes from Pakistan to Saudi Arabia, the UAE, and the Gulf.
+              </p>
+            </div>
 
-        <section className="rounded-3xl border border-primary/15 bg-gradient-to-br from-slate-900 via-primary/95 to-slate-900 p-6 sm:p-10 text-white shadow-xl">
+            <div className="mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm transition-colors hover:bg-white/[0.09]">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/10">
+                  <ShieldCheck className="h-5 w-5 text-gold-on-dark" aria-hidden="true" />
+                </div>
+                <h3 className="text-sm font-bold text-white">Fixed Group Fares</h3>
+                <p className="mt-1 text-xs leading-5 text-white/80">
+                  Locked seat pricing on group departures without sudden dynamic fare jumps during busy travel periods.
+                </p>
+              </div>
 
-          <div className="max-w-3xl">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm transition-colors hover:bg-white/[0.09]">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/10">
+                  <Luggage className="h-5 w-5 text-emerald-400" aria-hidden="true" />
+                </div>
+                <h3 className="text-sm font-bold text-white">Clear Baggage Allowances</h3>
+                <p className="mt-1 text-xs leading-5 text-white/80">
+                  Checked and hand-carry baggage limits are listed upfront on every group fare before you confirm.
+                </p>
+              </div>
 
-            <Badge className="bg-white/20 text-white border-0 text-xs font-bold uppercase tracking-wider mb-3">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm transition-colors hover:bg-white/[0.09]">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/10">
+                  <Sparkles className="h-5 w-5 text-sky-400" aria-hidden="true" />
+                </div>
+                <h3 className="text-sm font-bold text-white">Verified Seat Inventory</h3>
+                <p className="mt-1 text-xs leading-5 text-white/80">
+                  Live group departure dates, flight timings, and fare conditions presented clearly for every sector.
+                </p>
+              </div>
 
-              One Platform
-
-            </Badge>
-
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-
-              Live Commercial Flights + Exclusive Group Tickets
-
-            </h2>
-
-            <p className="mt-2 text-sm sm:text-base text-white">
-
-              Travelian combines real-time scheduled carrier search with wholesale fixed-rate group allocations across Pakistan, Saudi Arabia, and the Gulf.
-
-            </p>
-
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm transition-colors hover:bg-white/[0.09]">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/10">
+                  <Users className="h-5 w-5 text-gold-on-dark" aria-hidden="true" />
+                </div>
+                <h3 className="text-sm font-bold text-white">Direct Desk Support</h3>
+                <p className="mt-1 text-xs leading-5 text-white/80">
+                  Share your selected route and travel dates directly with our group ticketing team on WhatsApp for fast confirmation.
+                </p>
+              </div>
+            </div>
           </div>
-
-
-
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur transition-all hover:bg-white/10">
-
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
-
-                <ShieldCheck className="h-5 w-5 text-gold" />
-
-              </div>
-
-              <h3 className="text-base font-bold">Guaranteed Fixed Fares</h3>
-
-              <p className="mt-1 text-xs text-white">
-
-                Wholesale locked seat pricing with zero dynamic surge during peak holiday and Umrah seasons.
-
-              </p>
-
-            </div>
-
-
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur transition-all hover:bg-white/10">
-
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
-
-                <Luggage className="h-5 w-5 text-emerald-400" />
-
-              </div>
-
-              <h3 className="text-base font-bold">Baggage Included</h3>
-
-              <p className="mt-1 text-xs text-white">
-
-                Generous 30kg–40kg checked baggage allowances standard on all Saudi and international group sectors.
-
-              </p>
-
-            </div>
-
-
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur transition-all hover:bg-white/10">
-
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
-
-                <Sparkles className="h-5 w-5 text-sky-400" />
-
-              </div>
-
-              <h3 className="text-base font-bold">Transparent G-Codes</h3>
-
-              <p className="mt-1 text-xs text-white">
-
-                Each ticket features a verified public G-Code (G1, G2, G3) for instant verification via WhatsApp.
-
-              </p>
-
-            </div>
-
-
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur transition-all hover:bg-white/10">
-
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
-
-                <Users className="h-5 w-5 text-amber-400" />
-
-              </div>
-
-              <h3 className="text-base font-bold">Instant Agent Booking</h3>
-
-              <p className="mt-1 text-xs text-white">
-
-                Pre-filled WhatsApp inquiries connect you straight to dedicated group ticketing specialists in seconds.
-
-              </p>
-
-            </div>
-
-          </div>
-
         </section>
 
 
@@ -1751,61 +1703,33 @@ export default function GroupTicketingPage() {
 
 
             <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2">
-
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">
-
                 2
-
               </span>
-
-              <h3 className="text-sm font-bold text-foreground">Review Dates & G-Code</h3>
-
+              <h3 className="text-sm font-bold text-foreground">Compare Fares &amp; Baggage</h3>
               <p className="text-xs text-muted-foreground">
-
-                Compare guaranteed fixed fares, baggage limits, and note the verified public G-Code on your preferred ticket.
-
+                Review fixed fares, flight timings, checked and hand-carry baggage limits, and fare rules for your preferred date.
               </p>
-
             </div>
 
-
-
             <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2">
-
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">
-
                 3
-
               </span>
-
-              <h3 className="text-sm font-bold text-foreground">Tap WhatsApp Help</h3>
-
+              <h3 className="text-sm font-bold text-foreground">Confirm with Our Team</h3>
               <p className="text-xs text-muted-foreground">
-
-                Click WhatsApp Help to launch a chat with your ticket G-Code, flight dates, and route details pre-filled.
-
+                Tap WhatsApp Help to send your selected route, flight date and passenger count to our desk, or call us.
               </p>
-
             </div>
 
-
-
             <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2">
-
               <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">
-
                 4
-
               </span>
-
-              <h3 className="text-sm font-bold text-foreground">Instant Confirmation</h3>
-
+              <h3 className="text-sm font-bold text-foreground">Receive Your Ticket</h3>
               <p className="text-xs text-muted-foreground">
-
-                A Travelian ticketing specialist confirms seat availability and issues your ticket with full support.
-
+                A Travelian specialist confirms seat availability, shares payment details in writing, and issues your ticket.
               </p>
-
             </div>
 
           </div>

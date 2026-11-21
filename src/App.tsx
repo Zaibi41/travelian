@@ -6,7 +6,6 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AdminLayout } from "@/components/AdminLayout";
 import { PublicLayout } from "@/components/public/PublicLayout";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AdminProvider } from "@/contexts/AdminStore";
@@ -14,6 +13,8 @@ import { LocaleProvider } from "@/contexts/LocaleContext";
 
 // Public pages
 import HomePage from "./pages/public/HomePage";
+// The admin shell (sidebar, header, guards) is only fetched by admin routes, not by public visitors.
+const AdminLayout = lazy(() => import("@/components/AdminLayout").then(m => ({ default: m.AdminLayout })));
 const PublicHotelsPage = lazy(() => import("./pages/public/PublicHotelsPage"));
 const HotelDetailPage = lazy(() => import("./pages/public/HotelDetailPage"));
 const PublicFlightsPage = lazy(() => import("./pages/public/PublicFlightsPage"));
@@ -186,7 +187,7 @@ const App = () => (
             <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
             <Route path="/admin/customer" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />
             <Route path="/admin/customer/*" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />
-              <Route path="*" element={<NotFound />} />
+              <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />
             </Routes>
           </Suspense>
             </AdminProvider>

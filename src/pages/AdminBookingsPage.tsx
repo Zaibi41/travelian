@@ -106,7 +106,7 @@ function BookingsRegister({ tab }: { tab: BookingsTab }) {
         <DashboardErrorNotice message={errorMessage(bookings.error)} />
       ) : (
         <>
-          {data ? <Cards cards={data.cards} flights={flights} filters={filters} /> : <CardGridSkeleton count={flights ? 4 : 6} className="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4" />}
+          {data ? <Cards cards={data.cards} flights={flights} filters={filters} /> : <CardGridSkeleton count={flights ? 4 : 6} className={flights ? "grid-cols-2 sm:grid-cols-2 xl:grid-cols-4" : "grid-cols-2 md:grid-cols-3 xl:grid-cols-6"} />}
           <Filters filters={filters} data={data} flights={flights} onChange={change} />
           {bookings.error && <DashboardErrorNotice message={errorMessage(bookings.error)} />}
           <BookingsTable data={data} loading={bookings.isPending} flights={flights} filters={filters} onPage={page => change({ page })}
@@ -139,7 +139,7 @@ function Cards({ cards, flights, filters }: { cards: BookingList["cards"]; fligh
     // Expiring are added (not in the mockup) so each dashboard needs-action card
     // opens here with its card picked and the same count (docs/mockups/README.md).
     return (
-      <div className="grid grid-cols-1 gap-card-gap sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-card-gap xl:grid-cols-4">
         {cards.hold_deadlines != null && card("hold_deadlines", "Hold deadlines", cards.hold_deadlines, "action")}
         {cards.awaiting_issuance != null && card("awaiting_issuance", "Awaiting issuance", cards.awaiting_issuance, "action")}
         {cards.payment_pending != null && card("payment_pending", "Payment pending", cards.payment_pending, "action")}
@@ -151,7 +151,7 @@ function Cards({ cards, flights, filters }: { cards: BookingList["cards"]; fligh
   }
   // Unknown Issuance and Unassigned are hidden: not recorded yet.
   return (
-    <div className="grid grid-cols-1 gap-card-gap sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-card-gap md:grid-cols-3 xl:grid-cols-6">
       <StatusKpiCard label="All Bookings" value={count(cards.all_bookings)} to={href(undefined)} selected={!filters.card} />
       {card("confirmed", "Confirmed", cards.confirmed)}
       {card("on_hold", "On Hold", cards.on_hold, "action")}
@@ -354,7 +354,7 @@ function BookingsTable({ data, loading, flights, filters, onPage, onClearSearch 
                       <span className="block truncate text-foreground" title={item.provider ?? undefined}>{item.provider ?? "—"}</span>
                     </td>
                   )}
-                  <td className={TD}><StatusChips statuses={item.statuses} /></td>
+                  <td className={TD}><StatusChips statuses={item.statuses} direction="row" /></td>
                   {!flights && (
                     <td className={`${TD} whitespace-nowrap`}>
                       <span className="block font-semibold tabular-nums text-foreground">{formatMoney(item.amount)}</span>

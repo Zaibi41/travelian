@@ -84,6 +84,8 @@ export function AdminSidebar() {
           <img
             src={collapsed ? "/travelian-official-icon.png" : "/travelian-logo-wordmark.png"}
             alt="Travelian"
+            width={collapsed ? 128 : 576}
+            height={collapsed ? 128 : 164}
             className={collapsed ? "h-10 w-10 object-contain" : "h-11 w-auto max-w-full object-contain"}
           />
         </Link>

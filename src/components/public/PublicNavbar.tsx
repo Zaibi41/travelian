@@ -28,7 +28,7 @@ function LocaleControls({ compact = false }: { compact?: boolean }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button type="button" aria-label="Select currency" className={triggerClass}>
+          <button type="button" aria-label={`${currency} — Select currency`} className={triggerClass}>
             {currency} <ChevronDown className="h-3 w-3" aria-hidden="true" />
           </button>
         </DropdownMenuTrigger>
@@ -46,7 +46,7 @@ function LocaleControls({ compact = false }: { compact?: boolean }) {
       </DropdownMenu>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button type="button" aria-label="Select language" className={triggerClass}>
+          <button type="button" aria-label={`${language.toUpperCase()} — Select language`} className={triggerClass}>
             <Globe className="h-3.5 w-3.5" aria-hidden="true" /> {language.toUpperCase()}
             <ChevronDown className="h-3 w-3" aria-hidden="true" />
           </button>
@@ -129,8 +129,9 @@ export function PublicNavbar() {
       <Phone className="h-3.5 w-3.5" aria-hidden="true" /> {SUPPORT_PHONE_DISPLAY}
     </a>
   );
+  const signInActive = pathname === "/signin";
   const signInLink = (
-    <Link to="/signin" onClick={() => setMobileOpen(false)} className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-md px-3 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground lg:h-8 lg:text-xs">
+    <Link to="/signin" onClick={() => setMobileOpen(false)} aria-current={signInActive ? "page" : undefined} className={cn("inline-flex h-11 items-center justify-center whitespace-nowrap rounded-md px-3 text-sm font-semibold transition-colors lg:h-8 lg:text-xs", signInActive ? "bg-accent text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}>
       Sign In
     </Link>
   );
@@ -142,11 +143,11 @@ export function PublicNavbar() {
           <nav aria-label="Main navigation">
             <div className={cn("flex items-center gap-4 transition-[height] duration-200 motion-reduce:transition-none lg:grid lg:grid-cols-[1fr_auto_1fr]", "h-14")}>
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex w-fit shrink-0 items-center justify-self-start" aria-label="Travelian home">
-                <img src={logoUrl ?? "/travelian-logo-wordmark.png"} alt="Travelian" className={cn("h-8 w-auto max-w-[10rem] object-contain mix-blend-multiply sm:h-9 sm:max-w-[12rem]")} />
+                <img src={logoUrl ?? "/travelian-logo-wordmark.png"} alt="Travelian" width={576} height={164} fetchPriority="high" className={cn("h-8 w-auto max-w-[10rem] object-contain mix-blend-multiply sm:h-9 sm:max-w-[12rem]")} />
               </Link>
               <div className="hidden h-full items-center justify-center gap-1 lg:flex">{headerState === "sticky" && renderLinks(serviceLinks)}</div>
               <div aria-hidden="true" className="hidden lg:block" />
-              <button ref={menuButtonRef} type="button" className="ml-auto flex h-9 w-9 items-center justify-center rounded-lg border border-border text-foreground hover:bg-muted/60 lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(open => !open)}>
+              <button ref={menuButtonRef} type="button" className="ml-auto flex h-11 w-11 items-center justify-center rounded-lg border border-border text-foreground hover:bg-muted/60 lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen(open => !open)}>
                 {mobileOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
               </button>
             </div>

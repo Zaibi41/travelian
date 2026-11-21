@@ -46,7 +46,7 @@ export function HomeSupplierNetwork() {
                   </span>
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-bold text-white">{category.title}</h3>
-                    <p className="mt-0.5 line-clamp-2 text-xs leading-5 text-white">{category.text}</p>
+                    <p className="mt-0.5 text-xs leading-5 text-white/90">{category.text}</p>
                   </div>
                 </div>
               </div>
@@ -54,7 +54,7 @@ export function HomeSupplierNetwork() {
           </div>
 
           <div className="mt-4 flex flex-col gap-4 border-t border-white/10 pt-4 sm:flex-row sm:items-center">
-            <Button asChild size="sm" className="w-full rounded-xl bg-gold font-semibold text-gold-foreground hover:bg-gold/90 sm:w-auto">
+            <Button asChild className="min-h-11 w-full rounded-xl bg-gold px-5 font-semibold text-gold-foreground hover:bg-gold/90 sm:w-auto">
               <Link to="/contact">
                 Talk to our team <ArrowRight className="ml-1 h-4 w-4" />
               </Link>

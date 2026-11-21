@@ -254,7 +254,7 @@ export function SearchTabs({
                   <button
                     key={t.id}
                     onClick={() => setTripType(t.id)}
-                    className={`whitespace-nowrap px-2 sm:px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    className={`whitespace-nowrap px-2.5 sm:px-3 py-2 sm:py-1.5 text-xs font-medium rounded-md transition-all ${
                       tripType === t.id
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -268,6 +268,16 @@ export function SearchTabs({
                 <TravelersClassPicker value={travelers} onChange={setTravelers} variant="segmented" mode="travelers" className="w-auto" />
                 <TravelersClassPicker value={travelers} onChange={setTravelers} variant="segmented" mode="cabin" className="w-auto" />
               </div>
+              {tripType !== "multicity" && (
+                <button
+                  type="button"
+                  onClick={() => { const a = fromValue; setFromValue(toValue); setToValue(a); }}
+                  aria-label="Swap origin and destination"
+                  className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-lg border border-primary/25 bg-card text-primary transition-colors hover:bg-primary hover:text-primary-foreground md:hidden"
+                >
+                  <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+                </button>
+              )}
             </div>
 
             {/* Multi-city layout */}
@@ -326,12 +336,12 @@ export function SearchTabs({
                     <label htmlFor={`${fieldId}-from`} className="mb-1 block text-xs font-medium text-muted-foreground">From</label>
                     <AirportCombobox id={`${fieldId}-from`} value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="Origin" invalid={!!errors.from} />
                   </div>
-                  <div className="hidden md:flex items-center justify-center pb-1.5">
+                  <div className="hidden md:flex items-center justify-center pb-0.5">
                     <button
                       type="button"
                       onClick={() => { const a = fromValue; setFromValue(toValue); setToValue(a); }}
                       aria-label="Swap origin and destination"
-                      className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                      className="h-11 w-11 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
                     >
                       <ArrowLeftRight className="h-4 w-4" />
                     </button>
@@ -366,12 +376,12 @@ export function SearchTabs({
                     <label htmlFor={`${fieldId}-from`} className="mb-1 block text-xs font-medium text-muted-foreground">From</label>
                     <AirportCombobox id={`${fieldId}-from`} value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="Origin" invalid={!!errors.from} />
                   </div>
-                  <div className="hidden md:flex items-center justify-center pb-1.5">
+                  <div className="hidden md:flex items-center justify-center pb-0.5">
                     <button
                       type="button"
                       onClick={() => { const a = fromValue; setFromValue(toValue); setToValue(a); }}
                       aria-label="Swap origin and destination"
-                      className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
+                      className="h-11 w-11 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
                     >
                       <ArrowLeftRight className="h-4 w-4" />
                     </button>

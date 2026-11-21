@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SignInPage from "./SignInPage";
 import { signInWithPassword } from "@/lib/cognito-auth";
@@ -10,7 +11,7 @@ const renewSession = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/session-renewal", () => ({ renewSession: () => renewSession() }));
 vi.mock("@/contexts/RoleContext", () => ({ useRole: () => ({ setCurrentRole: vi.fn() }) }));
 
-const renderPage = () => render(<MemoryRouter><SignInPage /></MemoryRouter>);
+const renderPage = () => render(<HelmetProvider><MemoryRouter><SignInPage /></MemoryRouter></HelmetProvider>);
 const fill = () => {
   fireEvent.change(screen.getByLabelText("Email"), { target: { value: "member@example.test" } });
   fireEvent.change(screen.getByLabelText("Password"), { target: { value: "test-password" } });
@@ -65,12 +66,14 @@ describe("Sign In presentation", () => {
 
   const Landed = () => <p>Landed on {useLocation().pathname}</p>;
   const signInAt = (url: string) => render(
-    <MemoryRouter initialEntries={[url]}>
-      <Routes>
-        <Route path="/signin" element={<SignInPage />} />
-        <Route path="*" element={<Landed />} />
-      </Routes>
-    </MemoryRouter>,
+    <HelmetProvider>
+      <MemoryRouter initialEntries={[url]}>
+        <Routes>
+          <Route path="/signin" element={<SignInPage />} />
+          <Route path="*" element={<Landed />} />
+        </Routes>
+      </MemoryRouter>
+    </HelmetProvider>,
   );
   const session = { email: "staff@travelian.com", name: "Staff", createdAt: "", groups: ["super_admin"] };
 
