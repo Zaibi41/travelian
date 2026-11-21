@@ -1,3 +1,4 @@
+import { PaymentSlipUpload } from "@/components/public/PaymentSlipUpload";
 import { Plane } from "lucide-react";
 import { HoldCountdown } from "@/components/public/BankTransferDetails";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,7 +19,9 @@ const rs = (money: { amount_minor: number; currency: string }) =>
   `${money.currency === "PKR" ? "Rs" : money.currency} ${(money.amount_minor / 100).toLocaleString("en-PK")}`;
 
 /** One booking, read-only: Find my booking's result, and the page a customer email's link opens. */
-export function BookingLookupResult({ result }: { result: BookingLookup }) {
+/** `contact`: the email or phone the customer looked the booking up with (lets them upload a payment slip, gateway#56). */
+export function BookingLookupResult({ result, contact }: { result: BookingLookup; contact?: string }) {
+  const due = result.total.amount_minor - result.paid.amount_minor;
   return (
     <Card className="border-0 shadow-card" aria-live="polite">
       <CardContent className="p-5 space-y-4">
@@ -48,6 +51,9 @@ export function BookingLookupResult({ result }: { result: BookingLookup }) {
           {(result.tickets ?? []).length > 0 && <div className="col-span-2 sm:col-span-4"><dt className="text-muted-foreground">Ticket numbers</dt><dd className="font-mono">{result.tickets!.join(", ")}</dd></div>}
         </dl>
         <p className="rounded-xl bg-muted/50 px-3 py-2 text-sm"><span className="font-semibold">Next steps: </span>{result.next_steps}</p>
+        {contact && result.status === "held" && due > 0 && (
+          <PaymentSlipUpload reference={result.reference} access={{ contact }} details={{ amountMinor: due, via: "my_bookings" }} />
+        )}
       </CardContent>
     </Card>
   );

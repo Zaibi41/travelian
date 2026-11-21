@@ -52,6 +52,8 @@ const FlightsPage = lazy(() => import("./pages/FlightsPage"));
 const WalletPage = lazy(() => import("./pages/WalletPage"));
 const PaymentsPage = lazy(() => import("./pages/PaymentsPage"));
 const AccountsLedgersPage = lazy(() => import("./pages/AccountsLedgersPage"));
+const AuditLogPage = lazy(() => import("./pages/AuditLogPage"));
+const ReconciliationPage = lazy(() => import("./pages/ReconciliationPage"));
 const ProviderSystemsPage = lazy(() => import("./pages/ProviderSystemsPage"));
 const GroupTicketingCollectionsPage = lazy(() => import("./pages/GroupTicketingCollectionsPage"));
 const AdminSearchPage = lazy(() => import("./pages/AdminSearchPage"));
@@ -142,11 +144,13 @@ const App = () => (
             <Route path="/admin/reports" element={<AdminLayout><ReportsPage /></AdminLayout>} />
             <Route path="/admin/attention-queue" element={<AdminLayout><RoadmapPlaceholderPage title="Attention Queue" description="One list of cases needing a person, so nothing relies on memory or chat" /></AdminLayout>} />
             <Route path="/admin/alerts" element={<AdminLayout><RoadmapPlaceholderPage title="Alerts" description="Automatic warnings that need acknowledgement, separate from human cases" /></AdminLayout>} />
-            <Route path="/admin/roadmap/audit-log" element={<AdminLayout><RoadmapPlaceholderPage title="Audit Log" description="Evidence of every sensitive change, needed for investigations and airline or IATA review" /></AdminLayout>} />
-            <Route path="/admin/roadmap/audit-logs" element={<AdminLayout><Navigate to="/admin/roadmap/audit-log" replace /></AdminLayout>} />
+            <Route path="/admin/audit-log" element={<AdminLayout><AuditLogPage /></AdminLayout>} />
+            <Route path="/admin/roadmap/audit-log" element={<AdminLayout><Navigate to="/admin/audit-log" replace /></AdminLayout>} />
+            <Route path="/admin/roadmap/audit-logs" element={<AdminLayout><Navigate to="/admin/audit-log" replace /></AdminLayout>} />
             <Route path="/admin/roadmap/system-logs-jobs" element={<AdminLayout><RoadmapPlaceholderPage title="System Logs &amp; Jobs" description="Lets support trace an error to its cause" /></AdminLayout>} />
             <Route path="/admin/roadmap/webhook-logs" element={<AdminLayout><Navigate to="/admin/roadmap/system-logs-jobs" replace /></AdminLayout>} />
-            <Route path="/admin/roadmap/reconciliation" element={<AdminLayout><RoadmapPlaceholderPage title="Reconciliation" description="Finds differences before they become losses" /></AdminLayout>} />
+            <Route path="/admin/finance/reconciliation" element={<AdminLayout><ReconciliationPage /></AdminLayout>} />
+            <Route path="/admin/roadmap/reconciliation" element={<AdminLayout><Navigate to="/admin/finance/reconciliation" replace /></AdminLayout>} />
             <Route path="/admin/roadmap/payment-providers" element={<AdminLayout><RoadmapPlaceholderPage title="Payment Providers" description="Banks and gateways used for receipts and payouts" /></AdminLayout>} />
             <Route path="/admin/roadmap/payment-gateways" element={<AdminLayout><Navigate to="/admin/roadmap/payment-providers" replace /></AdminLayout>} />
             <Route path="/admin/tickets" element={<AdminLayout><Navigate to="/admin/flight-bookings?tab=issued" replace /></AdminLayout>} />

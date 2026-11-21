@@ -15,8 +15,9 @@ import { Link, useSearchParams } from "react-router-dom";
 // SeatMap is intentionally paused in the UI for now. Keep the component available for the future seat-selection phase.
 // import { SeatMap } from "@/components/booking/SeatMap";
 import { saveServerBooking } from "@/lib/booking-api";
-import { bookGroupFare, getFlightDocuments, getFlightPaymentOptions, getPaymentMethods, requestPublicFlight, startPayFastCheckout, PublicBookingError, type FlightPaymentOptions, type PaymentMethods } from "@/lib/public-booking";
+import { bookGroupFare, chooseReceivingAccount, getCardFee, getFlightDocuments, getFlightPaymentOptions, getPaymentMethods, requestPublicFlight, startPayFastCheckout, PublicBookingError, type BankAccountDisplay, type CardFee, type FlightPaymentOptions, type PaymentMethods } from "@/lib/public-booking";
 import { BankAccounts, HoldCountdown } from "@/components/public/BankTransferDetails";
+import { PaymentSlipUpload } from "@/components/public/PaymentSlipUpload";
 import { saveBooking, saveGatewayBooking, type BookingRecord, type BookingTraveler } from "@/lib/booking-store";
 import { submitHostedPayment } from "@/lib/payment-api";
 import { downloadETicket } from "@/lib/eticket-pdf";
@@ -67,7 +68,7 @@ interface ProductCtx {
   emoji: string;
   base: number;
   currency: string;
-  extra?: { airline?: string; flightNumber?: string; from?: string; to?: string; fromCode?: string; toCode?: string; date?: string; cabin?: string; airlineImage?: string; fareTier?: string; farePerks?: string[]; layovers?: BookingLayover[]; segments?: BookingSegment[]; baseFare?: number | null; taxes?: number | null };
+  extra?: { airline?: string; flightNumber?: string; from?: string; to?: string; fromCode?: string; toCode?: string; date?: string; returnDate?: string; cabin?: string; airlineImage?: string; fareTier?: string; farePerks?: string[]; layovers?: BookingLayover[]; segments?: BookingSegment[]; baseFare?: number | null; taxes?: number | null };
 }
 
 type BookingLayover = {
@@ -101,6 +102,7 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
     const from = params.get("from") || "";
     const to = params.get("to") || "";
     const date = params.get("date") || "";
+    const returnDate = params.get("return") || "";
     const cabin = params.get("cabin") || "Economy";
     const fareTier = params.get("fare") || "";
     const airlineImage = params.get("airlineImage") || "";
@@ -120,7 +122,7 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
       emoji: "",
       base: price,
       currency,
-      extra: { airline, flightNumber, from, to, date, cabin, airlineImage, fareTier, farePerks, layovers, segments, baseFare: Number.isFinite(baseFare) ? baseFare : null, taxes: Number.isFinite(taxes) ? taxes : null },
+      extra: { airline, flightNumber, from, to, date, returnDate, cabin, airlineImage, fareTier, farePerks, layovers, segments, baseFare: Number.isFinite(baseFare) ? baseFare : null, taxes: Number.isFinite(taxes) ? taxes : null },
     };
   }
   if (type === "hotel") {
@@ -210,14 +212,19 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const ctxFromCode = productCtx.extra?.fromCode || "";
   const ctxToCode = productCtx.extra?.toCode || "";
   const ctxDate = productCtx.extra?.date || format(addDays(new Date(), 14), "MMM dd, yyyy");
-  // The travel date (ISO) when the booking has one: passport expiry must be after it.
+  // The last travel date (ISO) when the booking has one: the return date of a round trip, else the latest flight day,
+  // else the departure date. Passport expiry must be after it, and ages are taken on it (issue #52, airline rule).
   const travelDateIso = useMemo(() => {
-    const raw = productCtx.extra?.date;
-    if (!raw) return undefined;
-    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
-    const parsed = new Date(raw);
-    return Number.isNaN(parsed.getTime()) ? undefined : format(parsed, "yyyy-MM-dd");
-  }, [productCtx.extra?.date]);
+    const iso = (raw?: string | null) => {
+      if (!raw) return undefined;
+      if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+      const parsed = new Date(raw);
+      return Number.isNaN(parsed.getTime()) ? undefined : format(parsed, "yyyy-MM-dd");
+    };
+    const days = [productCtx.extra?.date, productCtx.extra?.returnDate, ...(productCtx.extra?.segments ?? []).map(segment => segment.departureTime)]
+      .map(iso).filter((day): day is string => Boolean(day));
+    return days.length ? days.sort()[days.length - 1] : undefined;
+  }, [productCtx.extra?.date, productCtx.extra?.returnDate, productCtx.extra?.segments]);
   const ctxCabin = productCtx.extra?.cabin || "Economy";
   const ctxFarePerks = productCtx.extra?.farePerks || [];
   const ctxLayovers = productCtx.extra?.layovers || [];
@@ -319,6 +326,8 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   }, [paymentMethod, firstMethod, paymentOptions.card, paymentOptions.bank, paymentOptions.wallet]);
   const [fareTermsAccepted, setFareTermsAccepted] = useState(false);
   const [payConfirmOpen, setPayConfirmOpen] = useState(false);
+  // #74: the card / 1Link fee, worked out by the gateway, shown before payment ("Card fee (3%): Rs X · Total Rs Y").
+  const [cardFee, setCardFee] = useState<CardFee | null>(null);
   const { currentRole } = useRole();
   const isCustomer = currentRole === "customer";
 
@@ -368,6 +377,21 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const grandTotal = baseTotal + addonsTotal + taxes;
   const displayAmount = (amount: number) => convertCurrencyAmount(amount, sourceCurrency, displayCurrency);
   const formatMoney = (amount: number) => `${displayCurrency} ${Math.round(displayAmount(amount)).toLocaleString()}`;
+  const rs = (minor: number) => `Rs ${Math.round(minor / 100).toLocaleString("en-PK")}`;
+  const cardMethod = paymentMethod === "card" || paymentMethod === "1link";
+  useEffect(() => {
+    if (!payConfirmOpen || !cardMethod || !(grandTotal > 0)) { setCardFee(null); return; }
+    const controller = new AbortController();
+    getCardFee(Math.round(grandTotal * 100), groupTicketId ? "group" : "flight", controller.signal)
+      .then(setCardFee).catch(() => setCardFee(null));
+    return () => controller.abort();
+  }, [payConfirmOpen, cardMethod, grandTotal, groupTicketId]);
+  // #76: the booking remembers which receiving account the customer chose (staff see it; it helps matching the money).
+  const rememberAccount = (account: BankAccountDisplay) => {
+    const gateway = savedBooking?.gateway;
+    if (!gateway || !account.id) return;
+    chooseReceivingAccount(gateway.reference, account.id, { token: gateway.token }).catch(() => undefined);
+  };
 
   // Validation
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -1062,14 +1086,26 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     <div className="mx-auto mb-4 max-w-lg space-y-2 text-left">
                       <p className="text-sm font-semibold text-foreground">Pay by bank transfer</p>
                       <p className="text-sm text-muted-foreground">Transfer {savedBooking.pricing.currency === "PKR" ? "Rs" : savedBooking.pricing.currency} {savedBooking.pricing.total.toLocaleString("en-PK")} and use {savedBooking.id} as the reference. Travelian confirms the payment and then issues your tickets.</p>
-                      <BankAccounts accounts={methods.bank_accounts} />
+                      <BankAccounts accounts={methods.bank_accounts} onChoose={rememberAccount}
+                        facts={{ amount: `${savedBooking.pricing.currency === "PKR" ? "Rs" : savedBooking.pricing.currency} ${savedBooking.pricing.total.toLocaleString("en-PK")}`, reference: savedBooking.gateway.reference }}>
+                        {(account: BankAccountDisplay) => (
+                          <PaymentSlipUpload reference={savedBooking.gateway!.reference} access={{ token: savedBooking.gateway!.token }}
+                            details={{ method: "bank_transfer", accountId: account.id, amountMinor: Math.round(savedBooking.pricing.total * 100), via: "checkout" }} />
+                        )}
+                      </BankAccounts>
                     </div>
                   ) : null}
                   {savedBooking.gateway?.live && savedBooking.paymentMethod === "wallet" && methods?.jazzcash_accounts?.length ? (
                     <div className="mx-auto mb-4 max-w-lg space-y-2 text-left">
                       <p className="text-sm font-semibold text-foreground">Pay by JazzCash</p>
                       <p className="text-sm text-muted-foreground">Send {savedBooking.pricing.currency === "PKR" ? "Rs" : savedBooking.pricing.currency} {savedBooking.pricing.total.toLocaleString("en-PK")} by JazzCash and use {savedBooking.id} as the reference. Travelian confirms the payment and then issues your tickets.</p>
-                      <BankAccounts accounts={methods.jazzcash_accounts} />
+                      <BankAccounts accounts={methods.jazzcash_accounts} onChoose={rememberAccount}
+                        facts={{ amount: `${savedBooking.pricing.currency === "PKR" ? "Rs" : savedBooking.pricing.currency} ${savedBooking.pricing.total.toLocaleString("en-PK")}`, reference: savedBooking.gateway.reference }}>
+                        {(account: BankAccountDisplay) => (
+                          <PaymentSlipUpload reference={savedBooking.gateway!.reference} access={{ token: savedBooking.gateway!.token }}
+                            details={{ method: "jazzcash", accountId: account.id, amountMinor: Math.round(savedBooking.pricing.total * 100), via: "checkout" }} />
+                        )}
+                      </BankAccounts>
                     </div>
                   ) : null}
                   <div className="bg-gradient-to-br from-primary/5 to-accent border rounded-2xl p-6 text-left max-w-lg mx-auto">
@@ -1331,7 +1367,12 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
           </DialogHeader>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between"><span className="text-muted-foreground">Method</span><span className="font-semibold capitalize">{paymentMethod === "1link" ? "1Link" : paymentMethod}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Payable</span><span className="font-bold text-foreground">{formatMoney(grandTotal)}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">{cardFee ? "Fare" : "Payable"}</span><span className="font-bold text-foreground">{formatMoney(grandTotal)}</span></div>
+            {cardFee && (
+              <p className="rounded-lg bg-accent/40 px-3 py-2 font-semibold text-foreground">
+                Card fee ({cardFee.percent}): {rs(cardFee.fee.amount_minor)} · Total {rs(cardFee.total.amount_minor)}
+              </p>
+            )}
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setPayConfirmOpen(false)} disabled={processing}>Cancel</Button>
@@ -1340,7 +1381,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
               disabled={processing}
               className="gradient-primary text-primary-foreground"
             >
-              {processing ? "Processing..." : `Confirm ${formatMoney(grandTotal)}`}
+              {processing ? "Processing..." : `Confirm ${cardFee ? rs(cardFee.total.amount_minor) : formatMoney(grandTotal)}`}
             </Button>
           </DialogFooter>
         </DialogContent>

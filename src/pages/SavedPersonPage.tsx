@@ -17,6 +17,7 @@ import { countryName } from "@/data/countries";
 import { PRODUCT_LABEL, formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
 import { StatusChips } from "@/components/admin/bookings/BookingChips";
 import { bookingDetailPath } from "@/lib/admin-bookings/tabs";
+import { AirlineLogo } from "@/components/admin/ui/AirlineLogo";
 import { GatewayError } from "@/lib/gateway/client";
 import { fetchPerson, removeDocument, type PersonDetail, type SavedDocument } from "@/lib/saved-people/api";
 import { ID_TYPE_LABEL, TITLE_LABEL, fullName, peopleErrorMessage } from "@/lib/saved-people/states";
@@ -183,7 +184,21 @@ export default function SavedPersonPage() {
                       onClick={event => event.stopPropagation()}>{booking.booking_id}</Link></td>
                     <td className="px-2.5 py-2 whitespace-nowrap tabular-nums text-foreground">{booking.pnr ?? "—"} <CopyPnr pnr={booking.pnr} /></td>
                     <td className="px-2.5 py-2 text-foreground">{booking.product ? PRODUCT_LABEL[booking.product] ?? booking.product : "—"}</td>
-                    <td className="max-w-[12rem] truncate px-2.5 py-2 text-foreground" title={booking.route ?? undefined}>{booking.route ?? "—"}</td>
+                    <td className="max-w-[16rem] px-2.5 py-2 text-foreground">
+                      {/* #75: the shared airline logo beside the route. */}
+                      <span className="flex min-w-0 items-start gap-2">
+                        {(booking.airline_code || booking.airline_name) && (
+                          <AirlineLogo airline={booking.airline_name ?? booking.airline_code ?? ""} flightNumber={booking.flight_number ?? undefined}
+                            code={booking.airline_code} className="h-8 w-8 shrink-0 rounded-lg" />
+                        )}
+                        <span className="flex min-w-0 flex-col">
+                          <span className="truncate" title={booking.route ?? undefined}>{booking.route ?? "—"}</span>
+                          {(booking.airline_name || booking.flight_number) && (
+                            <span className="truncate text-label text-muted-foreground">{[booking.airline_name, booking.flight_number].filter(Boolean).join(" · ")}</span>
+                          )}
+                        </span>
+                      </span>
+                    </td>
                     <td className="px-2.5 py-2 whitespace-nowrap tabular-nums text-foreground">{formatDay(booking.departure_local) || "—"}</td>
                     <td className="px-2.5 py-2 text-foreground">{booking.role === "customer" ? "Customer" : "Traveler"}</td>
                     <td className="px-2.5 py-2">{booking.statuses ? <StatusChips statuses={booking.statuses} /> : "—"}</td>
@@ -197,7 +212,7 @@ export default function SavedPersonPage() {
                           {booking.supplier_cost ? formatMoney(booking.supplier_cost) : booking.cost_unknown ? "Not recorded" : "—"}
                         </td>
                         <td className="px-2.5 py-2 whitespace-nowrap tabular-nums text-foreground">
-                          {booking.profit ? formatMoney(booking.profit) : booking.cost_unknown ? "Not recorded" : "—"}
+                          {booking.profit ? formatMoney(booking.profit) : booking.cost_unknown ? "Not known" : "—"}
                         </td>
                       </>
                     )}

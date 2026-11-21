@@ -70,7 +70,8 @@ describe("internal sidebar: 14 spec menus", () => {
 
   it("gives renamed placeholder URLs (old → new) exactly the same access", () => {
     const renamed = [
-      ["/admin/roadmap/audit-logs", "/admin/roadmap/audit-log"],
+      ["/admin/roadmap/audit-logs", "/admin/audit-log"],
+      ["/admin/roadmap/audit-log", "/admin/audit-log"],
       ["/admin/roadmap/webhook-logs", "/admin/roadmap/system-logs-jobs"],
       ["/admin/roadmap/payment-gateways", "/admin/roadmap/payment-providers"],
     ];
@@ -142,7 +143,7 @@ describe("admin page titles", () => {
     expect(adminPageTitle("super_admin", "/admin/agencies")).toBe("B2B Partners");
     expect(adminPageTitle("super_admin", "/admin/hotels")).toBe("Hotels Inventory");
     expect(adminPageTitle("super_admin", "/admin/wallet")).toBe("Wallets");
-    expect(adminPageTitle("super_admin", "/admin/roadmap/audit-log")).toBe("Audit Log");
+    expect(adminPageTitle("super_admin", "/admin/audit-log")).toBe("Audit Log");
     expect(adminPageTitle("super_admin", "/admin/alerts")).toBe("Alerts");
     expect(adminPageTitle("agency_owner", "/admin")).toBe("Agency Overview");
     expect(adminPageTitle("super_admin", "/admin/unknown-page")).toBe("Admin");
@@ -160,11 +161,11 @@ describe("flight hold pages", () => {
   });
 });
 
-describe("Finance: Wallets and Payments stay in the menu, marked Coming soon (#73)", () => {
-  it("marks only Wallets and Payments", () => {
+describe("Finance: Wallets (#68) and Payments (#69) are built, no Coming soon tag", () => {
+  it("marks nothing", () => {
     const finance = getInternalSidebarForRole("super_admin").find(menu => menu.title === "Finance")!;
     expect(finance.items.map(item => [item.title, !!item.comingSoon])).toEqual([
-      ["Wallets", true], ["Payments", true], ["Reconciliation", false], ["Accounts & Ledgers", false],
+      ["Wallets", false], ["Payments", false], ["Reconciliation", false], ["Accounts & Ledgers", false],
     ]);
   });
 });

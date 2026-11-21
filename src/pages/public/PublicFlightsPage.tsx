@@ -207,6 +207,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [selectedBaggage, setSelectedBaggage] = useState<string[]>([]);
   const [sort, setSort] = useState("price-asc");
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
+  // Cards whose long airline name is shown in full (tapped open), issue #90.
+  const [expandedAirlines, setExpandedAirlines] = useState<ReadonlySet<string>>(() => new Set());
+  const toggleAirlineName = (flightId: string) => setExpandedAirlines(current => {
+    const next = new Set(current);
+    if (!next.delete(flightId)) next.add(flightId);
+    return next;
+  });
   const [departDate, setDepartDate] = useState<Date>(initDate);
   const [returnDate, setReturnDate] = useState<Date | undefined>(initReturnDate);
   const [tripType, setTripType] = useState<FlightTripType>(initTripType);
@@ -1466,8 +1473,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             </Card>
           </aside>
 
-          {/* Results */}
-          <div className="flex-1 space-y-4">
+          {/* Results (min-w-0: cards shrink beside the filters instead of pushing Book off-screen, issue #90) */}
+          <div className="min-w-0 flex-1 space-y-4">
             {apiStatus === "loading" && (
               <>
                 <FlightSearchLoader from={from} to={to} />
@@ -1519,12 +1526,20 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 >
                   <CardContent className="p-4 sm:p-5">
                     <div className="flex flex-col gap-3 sm:gap-4">
-                      <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-start">
-                        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3 md:w-[11rem] md:shrink-0 md:pt-1">
+                      {/* Issue #90: the one-line card header needs the room beside the filters that only lg has; below
+                          that it stacks (airline, timeline, Flight Details), so nothing is pushed off-screen. */}
+                      <div className="flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-start">
+                        <div className="flex min-w-0 items-center gap-2.5 sm:gap-3 lg:w-[11rem] lg:shrink-0 lg:pt-1">
                           <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={adminMode ? undefined : flight.airlineImage} className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl shrink-0" />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
-                              <p className="truncate text-xs sm:text-sm font-semibold text-foreground" title={flight.airline}>{flight.airline}</p>
+                              {/* Long names: one line with an ellipsis; tap to read the full name (issue #90). */}
+                              <button type="button" title={flight.airline} aria-expanded={expandedAirlines.has(flight.flightId)}
+                                onClick={() => toggleAirlineName(flight.flightId)}
+                                className={cn("min-w-0 text-left text-xs sm:text-sm font-semibold text-foreground",
+                                  expandedAirlines.has(flight.flightId) ? "whitespace-normal break-words" : "truncate")}>
+                                {flight.airline}
+                              </button>
                               {isGroup && (
                                 <Users className="h-3.5 w-3.5 shrink-0 text-blue-600" aria-label="Group" />
                               )}
@@ -1542,7 +1557,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         </div>
 
                         {/* Desktop: Option A stacked full timelines for return/multicity; one-way stays as today */}
-                        <div className="hidden min-w-0 flex-1 md:block">
+                        <div className="hidden min-w-0 flex-1 lg:block">
                           {showStackedLegs && journeyLegs.length > 1 ? (
                             <div className="space-y-3">
                               {journeyLegs.map((leg) => (
@@ -1573,8 +1588,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           )}
                         </div>
 
-                        {/* Mobile: Option B compact rows for return/multicity */}
-                        <div className="min-w-0 flex-1 md:hidden">
+                        {/* Mobile and tablet: Option B compact rows for return/multicity */}
+                        <div className="min-w-0 flex-1 lg:hidden">
                           {showStackedLegs && journeyLegs.length > 1 ? (
                             <div className="space-y-2.5">
                               {journeyLegs.map((leg) => (
@@ -1610,7 +1625,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="ml-auto h-7 sm:h-8 shrink-0 rounded-lg px-2.5 sm:px-3 text-xs sm:text-xs font-semibold md:mt-1"
+                            className="ml-auto h-7 sm:h-8 shrink-0 rounded-lg px-2.5 sm:px-3 text-xs sm:text-xs font-semibold lg:mt-1"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -1622,7 +1637,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         )}
                       </div>
                       <div className="overflow-hidden rounded-2xl border">
-                        <table className="hidden w-full table-fixed border-collapse md:table">
+                        <table className="hidden w-full table-fixed border-collapse lg:table">
                           <colgroup>
                             <col className="w-[20%]" />
                             <col className="w-[18%]" />
@@ -1695,7 +1710,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             ))}
                           </tbody>
                         </table>
-                        <div className="divide-y md:hidden">
+                        <div className="divide-y lg:hidden">
                           {visibleFares.map((fare) => (
                             <div key={`${flight.flightId}-${fare.tier}-${fare.price.total}`} className="bg-card px-4 py-4 text-sm space-y-3">
                               {/* Fare name */}

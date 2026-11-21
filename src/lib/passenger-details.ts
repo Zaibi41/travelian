@@ -90,8 +90,36 @@ export const REQUIRED_DOC_TEXT: Record<DocType, string> = {
   passport: "This airline needs the traveler's passport for this flight.",
 };
 
+/** Whole years on `on` (both ISO yyyy-MM-dd): the birthday counts on the day itself. */
+export function ageOn(dob: string, on: string): number {
+  const [by, bm, bd] = dob.split("-").map(Number);
+  const [y, m, d] = on.split("-").map(Number);
+  return y - by - ((m < bm || (m === bm && d < bd)) ? 1 : 0);
+}
+
+/** The fare type for an age on the travel date (airline rule): under 2 infant, 2-11 child, 12+ adult. */
+export const kindForAge = (age: number): PassengerKind => (age < 2 ? "infant" : age < 12 ? "child" : "adult");
+
+const KIND_WORD: Record<PassengerKind, string> = { adult: "an Adult", child: "a Child", infant: "an Infant" };
+const KIND_NAME: Record<PassengerKind, string> = { adult: "Adult", child: "Child", infant: "Infant" };
+
+/** Issue #52: the traveler's age on the last travel date and the fare type it gives, shown at the date of birth as soon
+ *  as it is picked. `matches` false: the date of birth doesn't fit the traveler's type (the booking would be refused). */
+export function dobFareNote(passenger: Pick<PassengerDetails, "dob" | "passengerType">, travelDate?: string): { text: string; matches: boolean } | null {
+  if (!passenger.dob || !travelDate || passenger.dob >= travelDate) return null;
+  const age = ageOn(passenger.dob, travelDate);
+  const kind = kindForAge(age);
+  const years = age < 1 ? "under 1" : String(age);
+  if (kind === passenger.passengerType) return { text: `Will be ${years} on the travel date (${dayText(travelDate)}), that's ${KIND_WORD[kind]} fare.`, matches: true };
+  return {
+    text: `Will be ${years} on the travel date (${dayText(travelDate)}), that's ${KIND_WORD[kind]} fare, not ${KIND_NAME[passenger.passengerType]}. `
+      + "Check the date of birth, or search again with the right number of adults, children and infants.",
+    matches: false,
+  };
+}
+
 /** What's missing or wrong, per field (empty when complete). `travelDate`: the last travel date (ISO), so the passport
- *  must still be valid then. `requiredDoc`: the document the airline asks for on this fare (CNIC up front). */
+ *  must still be valid then and the age on it must fit the passenger type. `requiredDoc`: the document the airline asks for on this fare (CNIC up front). */
 export function passengerErrors(passenger: PassengerDetails, travelDate?: string, requiredDoc?: DocType): Partial<Record<PassengerField, string>> {
   const errors: Partial<Record<PassengerField, string>> = {};
   const passport = usesPassport(passenger);
@@ -104,6 +132,10 @@ export function passengerErrors(passenger: PassengerDetails, travelDate?: string
   if (!passenger.lastName.trim()) errors.lastName = "Last name is required";
   if (!passenger.dob) errors.dob = "Date of birth is required";
   else if (passenger.dob >= today()) errors.dob = "Date of birth must be in the past";
+  else {
+    const note = dobFareNote(passenger, travelDate);
+    if (note && !note.matches) errors.dob = note.text;
+  }
   if (errors.docNumber) { /* the wrong document type: said above */ }
   else if (!passenger.docNumber.trim()) errors.docNumber = `${passport ? "Passport" : "CNIC"} number is required`;
   else if (!passengerDocValid(passenger)) errors.docNumber = passport ? "Enter a valid passport number (6-12 letters/digits)" : "Enter a valid 13-digit CNIC";

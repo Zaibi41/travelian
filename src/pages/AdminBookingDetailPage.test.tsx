@@ -112,12 +112,12 @@ describe("Booking detail", () => {
     expect(screen.queryByText(/Supplier cost|Profit|11,000|1,500/)).not.toBeInTheDocument();
   });
 
-  it("Fare: no real supplier cost (imported booking) shows cost and profit as n/a, never 0", () => {
+  it("Fare: no real supplier cost (imported booking) shows cost and profit as Not known, never 0", () => {
     detail.current = ok({ ...ADMIN_VIEW, fare: { billable_price: rs(12_500), cost_unknown: true } });
     renderAt("/admin/bookings/TRV-1/fare");
     const fare = screen.getByRole("region", { name: "Fare" });
     expect(within(fare).getAllByRole("row").map(row => row.textContent)).toEqual([
-      "ItemAmount", "Billable priceRs 12,500", "Supplier costn/a", "Profitn/a",
+      "ItemAmount", "Billable priceRs 12,500", "Supplier costNot known", "ProfitNot known",
     ]);
   });
 
@@ -219,9 +219,9 @@ describe("Booking detail", () => {
   });
 
   it("labels sample bookings and reports missing ones", () => {
-    detail.current = ok({ ...ADMIN_VIEW, sample: true, sample_label: "Sample data" });
+    detail.current = ok({ ...ADMIN_VIEW, sample: true, sample_label: "Imported" });
     const { unmount } = renderAt("/admin/bookings/TRV-1");
-    expect(screen.getByText("Sample data")).toBeInTheDocument();
+    expect(screen.getByText("Imported")).toBeInTheDocument();
     unmount();
     detail.current = { data: undefined, error: new GatewayError("not_found", "x"), isPending: false };
     renderAt("/admin/bookings/NOPE");

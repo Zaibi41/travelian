@@ -4,8 +4,8 @@ import { BOOKING_STATUS_LABEL, ISSUANCE_STATUS_LABEL, PAYMENT_STATUS_LABEL } fro
 import type { BookingStatuses, PaymentStatus } from "@/lib/admin-bookings/types";
 
 /** Test rows (imported sample data, supplier UAT holds) are labelled so they're never mistaken for live bookings. */
-export function SampleDataBadge({ className, label = "Sample data" }: { className?: string; label?: string | null }) {
-  return <Tag className={className}>{label ?? "Sample data"}</Tag>;
+export function SampleDataBadge({ className, label = "Imported" }: { className?: string; label?: string | null }) {
+  return <Tag className={className}>{label ?? "Imported"}</Tag>;
 }
 
 /** Booking, payment and issuance status, each a separate labelled chip (spec D5). */

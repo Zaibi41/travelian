@@ -3,13 +3,13 @@
 // supplier's expiry, never extended).
 // Several accounts: selectable cards; the selected one shows its details, each with Copy, and a large QR (tap to
 // enlarge, Download QR).
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { Check, Clock, Copy, Download, Maximize2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { publicGatewayUrl, type BankAccountDisplay } from "@/lib/public-booking";
 import { cn } from "@/lib/utils";
 
-function CopyButton({ value, label }: { value: string; label: string }) {
+export function CopyButton({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;
@@ -104,12 +104,17 @@ function QrCode({ account }: { account: BankAccountDisplay & { qr_url: string } 
   );
 }
 
-function AccountDetails({ account }: { account: BankAccountDisplay }) {
+/** What to send and the note to put on it (#76): each with Copy. */
+export interface TransferFacts { amount?: string | null; reference?: string | null }
+
+function AccountDetails({ account, facts }: { account: BankAccountDisplay; facts?: TransferFacts }) {
   const rows: [string, string | null | undefined, boolean][] = [
     ["Bank name", account.bank_name, false],
     ["Account title", account.account_title, false],
     ["Account number", account.account_number, true],
     ["IBAN", account.iban, true],
+    ["Amount to transfer", facts?.amount, false],
+    ["Reference", facts?.reference, true],
   ];
   return (
     <div className="flex flex-col gap-4 rounded-xl border bg-card p-3 sm:flex-row sm:items-start sm:p-4">
@@ -124,7 +129,8 @@ function AccountDetails({ account }: { account: BankAccountDisplay }) {
           </div>
         ))}
         <p className="pt-2 text-xs text-muted-foreground">
-          {account.qr_url ? "Transfer to this account or scan the QR code." : "Transfer to this account."} Use your booking reference as the payment reference.
+          {account.qr_url ? "Transfer to this account or scan the QR code." : "Transfer to this account."}{" "}
+          {facts?.reference ? <strong className="font-semibold text-foreground">Put this reference in the transfer note.</strong> : "Use your booking reference as the payment reference."}
         </p>
       </dl>
       {account.qr_url && <QrCode account={account as BankAccountDisplay & { qr_url: string }} />}
@@ -133,39 +139,88 @@ function AccountDetails({ account }: { account: BankAccountDisplay }) {
 }
 
 const last4 = (value?: string | null) => (value ? value.replace(/\s/g, "").slice(-4) : null);
+const accountName = (account: BankAccountDisplay, index: number) => account.bank_name ?? account.account_title ?? `Account ${index + 1}`;
 
-export function BankAccounts({ accounts }: { accounts: BankAccountDisplay[] }) {
-  const [selected, setSelected] = useState(0);
+/** "Habib Bank Limited (HBL)" -> "HBL", "Meezan Bank" -> "MB": the bank's own acronym when its name carries one. */
+export function bankInitials(name: string) {
+  const acronym = name.match(/\b[A-Z]{2,5}\b/g)?.at(-1);
+  if (acronym) return acronym;
+  const words = name.replace(/[^A-Za-z\s]/g, " ").split(/\s+/).filter(word => word && !/^(limited|ltd|pvt|of|the)$/i.test(word));
+  return words.slice(0, 2).map(word => word[0].toUpperCase()).join("") || "?";
+}
+
+/** The bank's mark on its card: its initials (Travelian has no bank logo files yet; never a made-up logo). */
+export function BankMark({ name }: { name: string }) {
+  return (
+    <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-white text-xs font-bold tracking-wide text-primary">
+      {bankInitials(name)}
+    </span>
+  );
+}
+
+/** More than this many accounts: a dropdown instead of cards (#76). */
+export const MAX_ACCOUNT_CARDS = 6;
+
+export function BankAccounts({ accounts, facts, selectedId, onChoose, children }: {
+  accounts: BankAccountDisplay[];
+  /** Amount to transfer and the booking reference, shown with Copy. */
+  facts?: TransferFacts;
+  /** The account already chosen (from the booking). */
+  selectedId?: string | null;
+  /** Called when the customer picks an account (the booking remembers it, #76). */
+  onChoose?: (account: BankAccountDisplay) => void;
+  /** Shown right below the selected account's details (the slip upload); a function gets the selected account. */
+  children?: ReactNode | ((account: BankAccountDisplay) => ReactNode);
+}) {
+  const initial = Math.max(0, accounts.findIndex(account => selectedId && account.id === selectedId));
+  const [selected, setSelected] = useState(initial);
   const name = useId();
+  const selectId = useId();
   if (!accounts.length) return null;
   const current = accounts[Math.min(selected, accounts.length - 1)];
-  if (accounts.length === 1) return <AccountDetails account={current} />;
+  const choose = (index: number) => { setSelected(index); onChoose?.(accounts[index]); };
+  const label = (account: BankAccountDisplay, index: number) =>
+    [accountName(account, index), last4(account.account_number ?? account.iban) && `ending ${last4(account.account_number ?? account.iban)}`].filter(Boolean).join(", ");
   return (
     <div className="space-y-3">
-      <fieldset>
-        <legend className="mb-2 text-sm font-semibold text-foreground">Choose the account to pay into</legend>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {accounts.map((account, index) => {
-            const checked = index === selected;
-            return (
-              <label key={index} className={cn("flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border bg-card px-3 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-ring",
-                checked ? "border-primary bg-primary/5" : "hover:border-primary/40")}>
-                <input type="radio" name={name} className="sr-only" checked={checked} onChange={() => setSelected(index)} />
-                <span aria-hidden="true" className={cn("flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2", checked ? "border-primary" : "border-muted-foreground")}>
-                  {checked && <span className="h-2 w-2 rounded-full bg-primary" />}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-foreground">{account.bank_name ?? account.account_title ?? `Account ${index + 1}`}</span>
-                  {last4(account.account_number ?? account.iban) && (
-                    <span className="block truncate text-xs text-muted-foreground">Account ending {last4(account.account_number ?? account.iban)}</span>
-                  )}
-                </span>
-              </label>
-            );
-          })}
+      {accounts.length > 1 && (accounts.length > MAX_ACCOUNT_CARDS ? (
+        <div className="space-y-1.5">
+          <label htmlFor={selectId} className="block text-sm font-semibold text-foreground">Choose the account to pay into</label>
+          <p className="text-xs text-muted-foreground">Same bank: faster transfer.</p>
+          <select id={selectId} value={Math.min(selected, accounts.length - 1)} onChange={event => choose(Number(event.target.value))}
+            className="h-11 w-full rounded-xl border bg-card px-3 text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            {accounts.map((account, index) => <option key={account.id ?? index} value={index}>{label(account, index)}</option>)}
+          </select>
         </div>
-      </fieldset>
-      <AccountDetails account={current} />
+      ) : (
+        <fieldset>
+          <legend className="text-sm font-semibold text-foreground">Choose the account to pay into</legend>
+          <p className="mb-2 text-xs text-muted-foreground">Same bank: faster transfer.</p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {accounts.map((account, index) => {
+              const checked = index === selected;
+              return (
+                <label key={account.id ?? index} className={cn("flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border bg-card px-3 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-ring",
+                  checked ? "border-primary bg-primary/5" : "hover:border-primary/40")}>
+                  <input type="radio" name={name} className="sr-only" checked={checked} onChange={() => choose(index)} />
+                  <BankMark name={accountName(account, index)} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-foreground" title={accountName(account, index)}>{accountName(account, index)}</span>
+                    {last4(account.account_number ?? account.iban) && (
+                      <span className="block truncate text-xs text-muted-foreground">Account ending {last4(account.account_number ?? account.iban)}</span>
+                    )}
+                  </span>
+                  <span aria-hidden="true" className={cn("flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2", checked ? "border-primary" : "border-muted-foreground")}>
+                    {checked && <span className="h-2 w-2 rounded-full bg-primary" />}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </fieldset>
+      ))}
+      <AccountDetails account={current} facts={facts} />
+      {typeof children === "function" ? children(current) : children}
     </div>
   );
 }

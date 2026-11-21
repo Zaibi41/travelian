@@ -17,6 +17,7 @@ import type { NotificationDeliveryLog } from "@/data/models";
 import { listNotificationLogs } from "@/lib/notification-api";
 import { CopyPnr } from "@/components/CopyPnr";
 import { bookingDetailPath } from "@/lib/admin-bookings/tabs";
+import { AirlineLogo } from "@/components/admin/ui/AirlineLogo";
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string }> = {
   booking: { icon: CalendarCheck, color: "bg-info/10 text-info" },
@@ -133,7 +134,12 @@ export default function NotificationsPage() {
                 return (
                   <li key={alert.id} className={`flex flex-col gap-1 py-2.5 ${alert.urgent ? "-mx-2 rounded-md border-l-4 border-l-status-critical bg-status-critical-soft px-2" : ""}`}>
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <span className="flex min-w-0 items-baseline gap-2">
+                      <span className="flex min-w-0 items-center gap-2">
+                        {/* #75: the booking's airline logo. */}
+                        {(alert.airline_code || alert.airline_name) && (
+                          <AirlineLogo airline={alert.airline_name ?? alert.airline_code ?? ""} flightNumber={alert.flight_number ?? undefined}
+                            code={alert.airline_code} className="h-7 w-7 shrink-0 rounded-md" />
+                        )}
                         {alert.urgent && <span className="shrink-0 rounded bg-destructive px-1.5 text-label font-semibold uppercase text-destructive-foreground">Urgent</span>}
                         {/* The alert's reference is the booking ID the detail page is keyed by. */}
                         {alert.reference ? (

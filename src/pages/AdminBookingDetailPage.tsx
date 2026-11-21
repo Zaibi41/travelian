@@ -173,9 +173,21 @@ function Fare({ booking }: { booking: BookingDetail }) {
     if (item.supplier_cost_each) rows.push([`${TYPE_LABEL[item.passenger_type]}, supplier cost each`, formatMoney(item.supplier_cost_each)]);
   }
   if (booking.fare.supplier_cost) rows.push(["Supplier cost", formatMoney(booking.fare.supplier_cost)]);
-  if (booking.fare.margin) rows.push(["Profit", formatMoney(booking.fare.margin)]);
-  // No real supplier cost (e.g. an imported booking): n/a, never a profit of 0. Sent only with cost access.
-  if (booking.fare.cost_unknown) rows.push(["Supplier cost", "n/a"], ["Profit", "n/a"]);
+  const profit = booking.fare.profit;
+  // No real supplier cost (an imported booking, or an old one whose cost was filled in as the selling price):
+  // "Not known", never a profit of 0 (travelian#91). Sent only with cost access.
+  if (booking.fare.cost_unknown) {
+    rows.push(["Supplier cost", "Not known"]);
+    if (!profit) rows.push(["Profit", "Not known"]);
+  }
+  if (profit) {
+    // travelian#70: the same profit as Finance > Reports and the dashboard (worked out by the gateway).
+    if (profit.fees_charged.amount_minor) rows.push(["Card fees charged", formatMoney(profit.fees_charged)]);
+    if (profit.supplier_charge && profit.supplier_charge_basis === "recorded") rows.push(["Supplier actual charge", formatMoney(profit.supplier_charge)]);
+    rows.push(["Payment fees", profit.missing.includes("payment_fees") && !profit.payment_fees.amount_minor ? "Not recorded" : formatMoney(profit.payment_fees)]);
+    if (profit.refunds.amount_minor) rows.push(["Refunds paid", formatMoney(profit.refunds)]);
+    rows.push(["Profit", profit.profit ? formatMoney(profit.profit) : "Not known", true]);
+  } else if (booking.fare.margin) rows.push(["Profit", formatMoney(booking.fare.margin)]);
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
       <section aria-label="Fare" className="overflow-x-auto rounded-xl border border-border bg-card px-card py-3.5 shadow-card">

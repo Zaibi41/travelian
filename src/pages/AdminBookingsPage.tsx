@@ -3,7 +3,8 @@ import { cn } from "@/lib/utils";
 import { SEARCH_FIELD } from "@/components/admin/ui/search-form";
 import { ProductTabLinks } from "@/components/admin/ui/ProductTabLinks";
 import { Pagination } from "@/components/admin/ui/pagination";
-import { Link, useSearchParams } from "react-router-dom";
+import { AirlineLogo } from "@/components/admin/ui/AirlineLogo";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { FileText, Hotel, LayoutList, MessageSquare, Plane, Search, Users, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
 import { Input } from "@/components/admin/ui/field";
@@ -93,6 +94,11 @@ function BookingsRegister({ tab }: { tab: BookingsTab }) {
   // Group Ticketing uses the Flights layout; its departure, seats, manifest and name-list columns
   // wait for the gateway (docs/backend-todo.md, Bookings).
   const flights = tab.product === "flight" || tab.product === "group";
+  // Older alerts and links open /admin/bookings?search=REF. When that search finds exactly one booking with that
+  // reference, open its detail page instead of the list (#54). A search typed on this page uses ?q= and stays a list.
+  const legacy = params.get("q") ? undefined : params.get("search")?.trim().toUpperCase();
+  const only = legacy && data && !bookings.isPlaceholderData && data.items.length === 1 ? data.items[0] : undefined;
+  if (only && only.booking_id.toUpperCase() === legacy) return <Navigate to={bookingDetailPath(only.booking_id)} replace />;
 
   return (
     <>
@@ -313,7 +319,14 @@ function BookingsTable({ data, loading, flights, filters, onPage, onClearSearch 
             <tbody>
               {data.items.map(item => (
                 <tr key={item.booking_id} className="border-b border-border last:border-b-0">
-                  <td className={`${TD} max-w-[12rem]`}>
+                  <td className={`${TD} max-w-[16rem]`}>
+                    <span className="flex min-w-0 items-start gap-2">
+                    {/* #75: the shared airline logo (own file -> code badge), as on the website and in Search. */}
+                    {(item.airline_code || item.airline_name) && (
+                      <AirlineLogo airline={item.airline_name ?? item.airline_code ?? ""} flightNumber={item.flight_number ?? undefined}
+                        code={item.airline_code} className="mt-0.5 h-8 w-8 shrink-0 rounded-lg" />
+                    )}
+                    <span className="flex min-w-0 flex-col">
                     <span className="flex min-w-0 items-center gap-1">
                     <Link to={bookingDetailPath(item.booking_id)} title={item.pnr ?? item.booking_id}
                       className="block min-w-0 truncate rounded-sm font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
@@ -321,8 +334,15 @@ function BookingsTable({ data, loading, flights, filters, onPage, onClearSearch 
                     </Link>
                     <CopyPnr pnr={item.pnr} />
                     </span>
+                    {(item.airline_name || item.flight_number) && (
+                      <span className="block truncate text-label text-muted-foreground" title={[item.airline_name, item.flight_number].filter(Boolean).join(" · ")}>
+                        {[item.airline_name, item.flight_number].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
                     {!flights && <span className="block truncate text-label text-muted-foreground" title={item.booking_id}>{item.booking_id}</span>}
                     {item.sample && <SampleDataBadge className="mt-1" label={item.data_label} />}
+                    </span>
+                    </span>
                   </td>
                   {!flights && (
                     <td className={`${TD} max-w-[14rem]`}>

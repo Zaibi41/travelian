@@ -86,8 +86,8 @@ const customerRoles: UserRole[] = ["customer"];
 /** Finance > Accounts & Ledgers: the gateway's FINANCE_ACCOUNT_ROLES (Super Admin; Finance once that role exists). */
 const financeAccountRoles: UserRole[] = ["super_admin"];
 
-/** Pages that show a "Not built yet" notice until the gateway serves them (#73: Wallets #68, Payments #69). */
-const COMING_SOON = new Set(["/admin/wallet", "/admin/payments"]);
+/** Pages that show a "Not built yet" notice until the gateway serves them (#73). Wallets (#68) and Payments (#69) are built. */
+const COMING_SOON = new Set<string>();
 
 function item(title: string, url: string, icon: AdminNavItem["icon"], roles: UserRole[]): AdminNavItem {
   return COMING_SOON.has(url) ? { title, url, icon, roles, comingSoon: true } : { title, url, icon, roles };
@@ -264,9 +264,9 @@ export const adminNavigation: AdminNavSection[] = [
     items: [
       item("Roles & Permissions", "/admin/rbac", Shield, platformOwnerRoles),
       item("General Settings", "/admin/settings", Settings, internalAdminRoles),
-      item("Audit Log", "/admin/roadmap/audit-log", FileText, platformOwnerRoles),
+      item("Audit Log", "/admin/audit-log", FileText, platformOwnerRoles),
       item("System Logs & Jobs", "/admin/roadmap/system-logs-jobs", CloudCog, platformOwnerRoles),
-      item("Reconciliation", "/admin/roadmap/reconciliation", Receipt, platformOwnerRoles),
+      item("Reconciliation", "/admin/finance/reconciliation", Receipt, platformOwnerRoles),
       item("Payment Providers", "/admin/roadmap/payment-providers", CreditCard, platformOwnerRoles),
       item("View Public Site", "/", Globe, []),
     ],
@@ -315,7 +315,7 @@ const internalSidebarMenus: SidebarMenuEntry[] = [
     number: "05", title: "Finance", icon: Wallet, items: [
       item("Wallets", "/admin/wallet", Wallet, internalAdminRoles),
       item("Payments", "/admin/payments", CreditCard, [...internalAdminRoles, "staff"]),
-      item("Reconciliation", "/admin/roadmap/reconciliation", Receipt, platformOwnerRoles),
+      item("Reconciliation", "/admin/finance/reconciliation", Receipt, platformOwnerRoles),
       item("Accounts & Ledgers", "/admin/finance/accounts-ledgers", BookOpen, financeAccountRoles),
     ],
   },
@@ -344,7 +344,7 @@ const internalSidebarMenus: SidebarMenuEntry[] = [
     number: "11", title: "Users & Access", icon: UserCog, items: [
       item("Users & Staff", "/admin/users", UserCog, internalAdminRoles),
       item("Roles & Permissions", "/admin/rbac", Shield, platformOwnerRoles),
-      item("Audit Log", "/admin/roadmap/audit-log", FileText, platformOwnerRoles),
+      item("Audit Log", "/admin/audit-log", FileText, platformOwnerRoles),
     ],
   },
   { number: "12", title: "Reports", icon: BarChart3, items: [item("Reports", "/admin/reports", BarChart3, [...internalAdminRoles, "staff"])] },
@@ -371,7 +371,9 @@ export function getInternalSidebarForRole(role: UserRole): SidebarMenuEntry[] {
 
 // Renamed placeholder URLs (2026-11-06). Old URLs redirect; they get the same access as the new ones.
 const RENAMED_ADMIN_PATHS: Record<string, string> = {
-  "/admin/roadmap/audit-logs": "/admin/roadmap/audit-log",
+  "/admin/roadmap/audit-logs": "/admin/audit-log",
+  "/admin/roadmap/audit-log": "/admin/audit-log",
+  "/admin/roadmap/reconciliation": "/admin/finance/reconciliation",
   "/admin/roadmap/webhook-logs": "/admin/roadmap/system-logs-jobs",
   "/admin/roadmap/payment-gateways": "/admin/roadmap/payment-providers",
 };

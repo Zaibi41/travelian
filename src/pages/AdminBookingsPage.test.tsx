@@ -33,7 +33,7 @@ function row(id: string, overrides: Partial<BookingListItem> = {}): BookingListI
 
 // Plain staff: the gateway leaves supplier names out entirely (D23).
 const STAFF_LIST: BookingList = {
-  source: "gateway_bookings", contains_sample_data: true, sample_label: "Sample data",
+  source: "gateway_bookings", contains_sample_data: true, sample_label: "Imported",
   cards: { all_bookings: 18, confirmed: 3, on_hold: 2, cancelled: 4, unpaid: 0, expiring_soon: 1, expiring_window_hours: 2 },
   filter_options: { agencies: [{ value: "ag-1", label: "Karachi Travels" }] },
   total: 2, limit: 50, offset: 0,
@@ -104,8 +104,8 @@ describe("Bookings register", () => {
   it("labels sample rows and truncates long agency names", () => {
     renderPage();
     const rows = screen.getAllByRole("row").slice(1);
-    expect(within(rows[0]).queryByText("Sample data")).not.toBeInTheDocument();
-    expect(within(rows[1]).getByText("Sample data")).toBeInTheDocument();
+    expect(within(rows[0]).queryByText("Imported")).not.toBeInTheDocument();
+    expect(within(rows[1]).getByText("Imported")).toBeInTheDocument();
     expect(within(rows[1]).getByTitle(/A Very Long Agency Name/)).toHaveClass("truncate");
   });
 
@@ -257,5 +257,13 @@ describe("old /admin/requests bookings screen", () => {
     role.current = "agency_owner";
     renderRequests();
     expect(screen.getByRole("heading", { name: "Bookings" })).toBeInTheDocument();
+  });
+
+  it("#75: a row shows the airline logo with the airline and flight number", () => {
+    list.current = ok({ ...ADMIN_LIST, items: [{ ...ADMIN_LIST.items[0], airline_code: "PA", airline_name: "Airblue", flight_number: "PA401 / PA402" }, ADMIN_LIST.items[1]] });
+    renderPage();
+    expect(screen.getByRole("img", { name: "Airblue logo" })).toBeInTheDocument();
+    expect(screen.getByText("Airblue · PA401 / PA402")).toBeInTheDocument();
+    expect(screen.getAllByRole("img", { name: /logo$/ })).toHaveLength(1);   // no airline recorded: no logo, no empty box
   });
 });

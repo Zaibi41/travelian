@@ -5,7 +5,7 @@ import { CountryPicker } from "@/components/ui/country-picker";
 import { CountrySelect } from "@/components/admin/search/CountrySelect";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { addDaysIso, todayIso } from "@/lib/date-iso";
-import { REQUIRED_DOC_TEXT, TITLE_OPTIONS, usesPassport, type DocType, type PassengerDetails, type PassengerField } from "@/lib/passenger-details";
+import { REQUIRED_DOC_TEXT, TITLE_OPTIONS, dobFareNote, usesPassport, type DocType, type PassengerDetails, type PassengerField } from "@/lib/passenger-details";
 import { cn } from "@/lib/utils";
 
 // One passenger's fields, shared by the website checkout and the admin hold form so both ask for the same things in
@@ -61,6 +61,10 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
   // Passport expiry: after the travel date (or today, without one).
   const expiryMin = addDaysIso(travelDate && travelDate > today ? travelDate : today, 1);
   const thisYear = new Date().getFullYear();
+  // Issue #52: the age on the last travel date and its fare type, as soon as the date of birth is picked (a mismatch
+  // shows as an error at once, not only after Continue).
+  const dobNote = dobFareNote(value, travelDate);
+  const dobNoteId = `${id("dob")}-note`;
   // Countries: the website's picker (names, the common countries with flags); the admin's full searchable list (all
   // countries, ISO alpha-3 codes). Same field, label and place; countryCode() reads either when the request is built.
   const country = (field: "nationality" | "issuanceCountry", current: string, set: (value: string) => void) => appearance === "admin"
@@ -116,9 +120,12 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
         <label htmlFor={id("dob")} className={s.label}>Date of Birth *</label>
         <div className={s.gap}>
           <DatePickerField id={id("dob")} value={value.dob} onChange={dob => onChange({ dob })} placeholder="Select date of birth"
-            min={`${thisYear - 120}-01-01`} max={today} appearance={appearance} invalid={Boolean(errors.dob)} describedBy={describedBy("dob")} />
+            min={`${thisYear - 120}-01-01`} max={today} appearance={appearance} invalid={Boolean(errors.dob) || dobNote?.matches === false}
+            describedBy={errors.dob ? describedBy("dob") : dobNote ? dobNoteId : undefined} />
         </div>
-        {error("dob")}
+        {errors.dob ? error("dob") : dobNote && (
+          <p id={dobNoteId} role={dobNote.matches ? undefined : "alert"} className={dobNote.matches ? cn("mt-1", s.helper) : s.error}>{dobNote.text}</p>
+        )}
       </div>
       <div>
         <label htmlFor={id("docType")} className={s.label}>Document *</label>
