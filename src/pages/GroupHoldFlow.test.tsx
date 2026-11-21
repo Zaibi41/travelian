@@ -207,6 +207,19 @@ describe("Hold group seats (step 2)", () => {
     expect(within(fare).getByRole("button", { name: "Hold seats" })).toBeEnabled();
   });
 
+  it("double booking (issue #17): the gateway's sentence with the existing booking shows, and nothing is held", async () => {
+    const sentence = "Ali Raza already has booking TRV-GRP-OLD111 on ISB → JED on 02 Dec 2026. A second booking for the same passenger, route and date isn't allowed. Nothing was held.";
+    gateway.holdGroupSeats.mockRejectedValue(new GatewayError("unavailable", sentence, 409, "duplicate_booking"));
+    renderAt(HOLD_URL);
+    const fare = await screen.findByRole("complementary", { name: "Selected group fare" });
+    await within(fare).findByText("Fly Jinnah");
+    await fillTravelers();
+    fireEvent.click(within(fare).getByRole("button", { name: "Hold seats" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(sentence);
+    expect(location.current).toContain("/admin/search/group-ticketing/hold");
+    expect(customerField("First Name *")).toHaveValue("Ali");
+  });
+
   it("field errors from the gateway land on their fields (adults only)", async () => {
     gateway.holdGroupSeats.mockRejectedValue(new GatewayError("unavailable", "Some details need correcting.", 422, "adults_only",
       [{ path: ["passengers", 1, "date_of_birth"], message: "Must be 12 or over on the travel date." }], { message: "Sana is under 12 on the travel date. Group fares are for adults only." }));

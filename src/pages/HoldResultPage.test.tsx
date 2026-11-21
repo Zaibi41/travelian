@@ -70,6 +70,13 @@ describe("Hold result (mockup flights-hold-result)", () => {
     expect(screen.getByRole("list", { name: "Warnings" })).toHaveTextContent("CheckTest's passport is valid for less than 6 months");
   });
 
+  it("a possible double booking (an unpaid website hold, issue #17) shows as a warning; the hold went ahead", () => {
+    const warning = "Possible double booking: Ali Raza has an unpaid website hold (TRV-OLD111) on KHI → ISB on 10 Dec 2026. Check with the customer that it isn't the same trip before taking payment.";
+    renderResult({ kind: "held", hold: { ...HOLD, warnings: [warning] }, mode: "hold" });
+    expect(screen.getByRole("list", { name: "Warnings" })).toHaveTextContent(warning);
+    expect(screen.getByText("TRV-PE49ZP", { exact: false })).toBeInTheDocument();
+  });
+
   it("no UAT label when the gateway doesn't send one", () => {
     renderResult({ kind: "held", hold: { ...HOLD, label: undefined } as never, mode: "hold" });
     expect(screen.queryByText("UAT test data")).not.toBeInTheDocument();
