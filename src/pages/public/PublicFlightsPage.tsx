@@ -29,6 +29,7 @@ import { airportByCode, loadPublicAirports } from "@/data/airports";
 import { isGroupTicketingProvider, groupTicketToFlight } from "@/lib/provider-systems";
 import { searchPublicGroups, GATEWAY_GROUP_PROVIDER } from "@/lib/public-booking";
 import { normalizeAirlineName, isSameAirline, extractAllAirlines, getAirlineNameFromCarrier } from "@/lib/airline-normalization";
+import { journeyMinutes, minutesText, stayAt, stayBetween, stopLine, stopSummary, type Stay } from "@/lib/flight-stays";
 import { BAGGAGE_UNKNOWN, baggageFilterOptions, baggageText, checkedText, handCarryText, underBaggageLabel, type BaggageText } from "@/lib/baggage";
 
 // Preload airports for routeLabel lookup
@@ -97,6 +98,8 @@ type DisplayJourneyLeg = {
   destinationAirport?: string | null;
   duration?: string;
   stopText?: string;
+  /** Where the passenger stays, e.g. "Abu Dhabi, United Arab Emirates" (#119). */
+  stopPlaces?: string;
 };
 const SEARCH_RESULT_TTL_SECONDS = 900;
 /** Sections hidden on purpose (kept for later, not shown): see CLAUDE.md "Do Not Re-add Removed Features". */
@@ -202,6 +205,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   // No price range until results arrive, then the full range of the results (avoids misleading 0–700 placeholder before fares load).
   const [priceRangeState, setPriceRange] = useState<number[] | null>(null);
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
+  // Stop city and country names come from the shared airport list: show them as soon as it has loaded (#119).
+  const [, setAirportsLoaded] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void loadPublicAirports().then(() => { if (active) setAirportsLoaded(true); }, () => undefined);
+    return () => { active = false; };
+  }, []);
   const [selectedStops, setSelectedStops] = useState<string[]>([]);
   const [selectedDepartureTimes, setSelectedDepartureTimes] = useState<string[]>([]);
   const [selectedBaggage, setSelectedBaggage] = useState<string[]>([]);
@@ -620,13 +630,21 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     }];
   };
 
-  const stopLabel = (flight: TravelianFlight) => {
-    const stops = flight.stops || 0;
-    const via = (flight.layovers || []).map((layover) => String(layover.location || "").trim()).filter(Boolean);
-    if (!stops) return "";
-    const stopText = `${stops} Stop${stops === 1 ? "" : "s"}`;
-    return via.length ? `${stopText} (${via.join(", ")})` : stopText;
+  // Stop airports of the (outbound) trip: the gateway's stays, else the airports between this flight's own segments.
+  const stopCodes = (flight: TravelianFlight) => {
+    const fromLayovers = (flight.layovers || []).map((layover) => String(layover.location || "").trim().toUpperCase()).filter(Boolean);
+    if (fromLayovers.length || tripType !== "oneway") return fromLayovers;
+    return (flight.segments || []).slice(0, -1).map((segment) => String(segment.destination || "").trim().toUpperCase()).filter(Boolean);
   };
+  /** "1 Stop · Abu Dhabi, United Arab Emirates" ("" for a non-stop flight; callers show "Non-stop"). */
+  const stopLabel = (flight: TravelianFlight) => (flight.stops ? stopLine(flight.stops, stopCodes(flight)) : "");
+  /** Under the duration on a card (#119, #120): the stop count ("Non-stop", "1 Stop") and, below it, where the passenger stays. */
+  const stopsUnderDuration = (count: string, places?: string) => (
+    <span className="flex max-w-full flex-col items-center text-center" title={places ? `${count} · ${places}` : count}>
+      <span className="max-w-full truncate text-xs font-medium text-success">{count}</span>
+      {places && <span className="line-clamp-2 max-w-full break-words text-xs text-muted-foreground">{places}</span>}
+    </span>
+  );
 
   const limitText = (value: string | null | undefined, maxLength: number) => {
     const text = String(value || "").trim();
@@ -859,13 +877,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   };
   const segmentDuration = (segment: ItinerarySegment) =>
     segment.duration || getDuration(segment.departureTimestamp || segment.departureTime || "", segment.arrivalTimestamp || segment.arrivalTime || "");
-  const stopTextForSegments = (group: ItinerarySegment[]) => {
-    const stops = Math.max(group.length - 1, 0);
-    if (!stops) return "Direct";
-    const via = group.slice(0, -1).map((segment) => airportCode(segment.destination)).filter(Boolean);
-    const label = `${stops} Stop${stops === 1 ? "" : "s"}`;
-    return via.length ? `${label} (${via.join(", ")})` : label;
-  };
+  const stopTextForSegments = (group: ItinerarySegment[]) =>
+    stopSummary(Math.max(group.length - 1, 0), group.slice(0, -1).map((segment) => airportCode(segment.destination)));
   const legFromSegments = (group: ItinerarySegment[], label: string, key: string): DisplayJourneyLeg | null => {
     if (!group.length) return null;
     const first = group[0];
@@ -879,8 +892,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       destination: airportCode(last.destination),
       originAirport: first.departureAirport,
       destinationAirport: last.arrivalAirport,
-      duration: getDuration(first.departureTimestamp || first.departureTime || "", last.arrivalTimestamp || last.arrivalTime || ""),
-      stopText: stopTextForSegments(group),
+      duration: minutesText(journeyMinutes(group)) || getDuration(first.departureTimestamp || first.departureTime || "", last.arrivalTimestamp || last.arrivalTime || ""),
+      stopText: stopTextForSegments(group).count,
+      stopPlaces: stopTextForSegments(group).places,
     };
   };
   const splitRoundtripSegments = (flight: TravelianFlight) => {
@@ -922,6 +936,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     }
     return groups.filter((group) => group.length);
   };
+  const flightStopText = (flight: TravelianFlight) => {
+    const { count, places } = stopSummary(flight.stops || 0, stopCodes(flight));
+    return { stopText: count, stopPlaces: places };
+  };
   const journeyLegsForCard = (flight: TravelianFlight): DisplayJourneyLeg[] => {
     if (tripType === "roundtrip") {
       const { outbound, inbound } = splitRoundtripSegments(flight);
@@ -936,7 +954,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           originAirport: flight.originAirport,
           destinationAirport: flight.destinationAirport,
           duration: getFlightDuration(flight),
-          stopText: stopLabel(flight) || "Direct",
+          ...flightStopText(flight),
         };
       const inboundLeg = inbound.length
         ? legFromSegments(inbound, "Return", `${flight.flightId}-ret`)
@@ -951,7 +969,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             originAirport: flight.destinationAirport,
             destinationAirport: flight.originAirport,
             duration: getDuration(flight.returnDepartureTimestamp || flight.returnDepartureTime, flight.returnArrivalTimestamp || flight.returnArrivalTime),
-            stopText: "Direct",
+            stopText: "Non-stop",
           }
           : null;
       return inboundLeg ? [outboundLeg, inboundLeg] : [outboundLeg];
@@ -976,7 +994,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       originAirport: flight.originAirport || firstSegment(flight)?.departureAirport,
       destinationAirport: flight.destinationAirport || lastSegment(flight)?.arrivalAirport,
       duration: getFlightDuration(flight),
-      stopText: stopLabel(flight) || "Direct",
+      ...flightStopText(flight),
     }];
   };
   const LegTimelineDesktop = ({ leg }: { leg: DisplayJourneyLeg }) => (
@@ -994,7 +1012,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
             <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-primary" />
           </div>
-          {leg.stopText && <span className="max-w-full truncate text-xs font-medium text-success" title={leg.stopText}>{leg.stopText}</span>}
+          {stopsUnderDuration(leg.stopText || "Non-stop", leg.stopPlaces)}
         </div>
         <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
           <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(leg.arrivalTime)}</p>
@@ -1016,32 +1034,85 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         <span className="font-bold text-foreground">{formatFlightTime(leg.arrivalTime)}</span>
         <span className="font-semibold text-foreground">{airportCode(leg.destination)}</span>
         <span>·</span>
-        <span className="truncate text-success">{leg.stopText || "Direct"}</span>
+        <span className="min-w-0 max-w-full truncate text-success" title={leg.stopPlaces ? `${leg.stopText} · ${leg.stopPlaces}` : leg.stopText}>
+          {leg.stopText || "Non-stop"}{leg.stopPlaces ? ` · ${leg.stopPlaces}` : ""}
+        </span>
         <span>·</span>
         <span className="truncate">{formatFlightDate(leg.departureTime)}</span>
       </div>
     </div>
   );
+  // The flights of each journey (one-way: one; round trip: outbound and return; multi-city: one per searched flight).
+  // A stay is only between two flights of the same journey, never between the outbound and the return.
+  const journeyGroups = (flight: TravelianFlight): ItinerarySegment[][] => {
+    const segs = itinerarySegments(flight);
+    if (tripType === "roundtrip") {
+      const { outbound, inbound } = splitRoundtripSegments(flight);
+      return [outbound, inbound].filter((group) => group.length);
+    }
+    if (tripType === "multicity") {
+      const groups = splitMulticitySegments(flight);
+      if (groups.length >= 2 && groups.reduce((total, group) => total + group.length, 0) === segs.length) return groups;
+    }
+    return [segs];
+  };
+  // #83, #84, #122: where the passenger stays and for how long, each on its own line; no flight name or number here.
+  const StayBox = ({ stay }: { stay: Stay }) => (
+    <section aria-label={`Stop at ${stay.place}`} className="rounded-xl border border-dashed border-primary/25 bg-primary/5 px-4 py-3 text-sm">
+      <div className="flex gap-3">
+        <Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-bold text-slate-950" title={`Stop at ${stay.place}`}>Stop at {stay.place}</p>
+          <dl className="mt-2 grid gap-x-4 gap-y-1.5 text-xs sm:grid-cols-3">
+            {stay.country && (
+              <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
+                <dt className="shrink-0 font-semibold text-muted-foreground">Stay country</dt>
+                <dd className="min-w-0 truncate font-bold text-slate-950" title={stay.country}>{stay.country}</dd>
+              </div>
+            )}
+            <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
+              <dt className="shrink-0 font-semibold text-muted-foreground">Stay city</dt>
+              <dd className="min-w-0 truncate font-bold text-slate-950" title={stay.city ? `${stay.city} (${stay.code})` : stay.code}>{stay.city ? `${stay.city} (${stay.code})` : stay.code}</dd>
+            </div>
+            <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
+              <dt className="shrink-0 font-semibold text-muted-foreground">Stay duration</dt>
+              <dd className="min-w-0 truncate font-bold text-slate-950">{stay.duration || "TBA"}</dd>
+            </div>
+          </dl>
+          {(stay.arrivalTime || stay.departureTime) && (
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Arrive {formatFlightTime(stay.arrivalTime)} · Depart {formatFlightTime(stay.departureTime)}
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
   const JourneyTimeline = ({ flight }: { flight: TravelianFlight }) => {
-    const segmentsToShow = itinerarySegments(flight);
+    const groups = journeyGroups(flight);
+    const layovers = flight.layovers || [];
+    const layoverAt = (code: string) => layovers.find((layover) => String(layover.location || "").trim().toUpperCase() === code);
+    let flightIndex = 0;
 
     return (
       <div className="space-y-3">
-        {segmentsToShow.map((segment, index) => {
-          const nextSegment = segmentsToShow[index + 1];
-          const layover = flight.layovers?.[index];
-          const hasStopAfter = index < segmentsToShow.length - 1;
-          const stopCode = String(layover?.location || segment.destination || nextSegment?.origin || "Transit").trim().toUpperCase();
-          const stopAirport = segment.arrivalAirport || nextSegment?.departureAirport || "";
+        {groups.flatMap((group, groupIndex) => group.map((segment, index) => {
+          const nextSegment = group[index + 1];
+          const stay = nextSegment ? stayBetween(segment, nextSegment, layoverAt(String(nextSegment.origin || segment.destination || "").trim().toUpperCase())) : undefined;
+          // The supplier sent the stop airports but not each flight: the stays sit inside the one flight, between departure and arrival.
+          const innerStays = group.length === 1 && groupIndex === 0 && (flight.stops || 0) > 0
+            ? layovers.filter((layover) => String(layover.location || "").trim()).map((layover) => stayAt(layover))
+            : [];
           const flightNumber = segment.flightNumber || flight.flightNumber;
           const segmentAirline = segment.airline || getAirlineNameFromCarrier(segment.carrier) || segment.carrier || flight.airline;
           const isSameAsParent = isSameAirline(segmentAirline, flight.airline);
+          flightIndex += 1;
 
           return (
-            <div key={`${flightNumber}-${index}`} className="space-y-3">
+            <div key={`${flightNumber}-${groupIndex}-${index}`} className="space-y-3">
               <section className="rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm sm:p-4">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <span className="rounded-full bg-primary/5 px-3 py-1 text-xs font-black uppercase tracking-wide text-primary">Flight {index + 1}</span>
+                  <span className="rounded-full bg-primary/5 px-3 py-1 text-xs font-black uppercase tracking-wide text-primary">Flight {flightIndex}</span>
                   <div className="flex min-w-0 items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-1.5 text-xs font-bold text-slate-900 ring-1 ring-slate-100">
                     <AirlineLogo airline={segmentAirline} flightNumber={flightNumber} imageUrl={isSameAsParent && !adminMode ? flight.airlineImage : undefined} className="h-6 w-6 shrink-0 rounded-md border-0 shadow-none ring-0" />
                     <span className="truncate">{flightNumber}</span>
@@ -1066,8 +1137,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     </div>
 
                     <div className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
-                      {segmentAirline} · {flightNumber} · Duration {segmentDuration(segment)}
+                      Duration {segmentDuration(segment)}
                     </div>
+                    {innerStays.map((inner, stayIndex) => <StayBox key={`${inner.code}-${stayIndex}`} stay={inner} />)}
 
                     <div className="grid gap-1 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-4">
                       <p className="text-lg font-black leading-tight text-slate-950">{formatFlightTime(segment.arrivalTime)}</p>
@@ -1082,27 +1154,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 </div>
               </section>
 
-              {hasStopAfter && (
-                <section className="rounded-xl border border-dashed border-primary/25 bg-primary/5 px-4 py-3 text-sm">
-                  <div className="flex gap-3">
-                    <Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <div className="min-w-0">
-                      <p className="truncate font-bold text-slate-950" title={routeLabel(stopCode, stopAirport)}>
-                        Stop at {routeLabel(stopCode, stopAirport)}
-                      </p>
-                      <p className="mt-1 text-xs font-semibold text-muted-foreground">Layover duration: {layover?.duration || "TBA"}</p>
-                      {(layover?.arrivalTime || layover?.departureTime) && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Arrive {formatFlightTime(layover?.arrivalTime || segment.arrivalTime)} · Depart {formatFlightTime(layover?.departureTime || nextSegment?.departureTime)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </section>
-              )}
+              {stay && <StayBox stay={stay} />}
             </div>
           );
-        })}
+        }))}
       </div>
     );
   };
@@ -1579,7 +1634,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                   <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
                                   <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-primary" />
                                 </div>
-                                {stopLabel(flight) && <span className="max-w-full truncate text-xs font-medium text-success" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
+                                {stopsUnderDuration(flightStopText(flight).stopText, flightStopText(flight).stopPlaces)}
                               </div>
                               <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
                                 <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
@@ -1611,7 +1666,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                   <div className="absolute left-0 top-1/2 h-2 w-2 sm:h-2.5 sm:w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
                                   <div className="absolute right-0 top-1/2 h-2 w-2 sm:h-2.5 sm:w-2.5 -translate-y-1/2 rounded-full bg-primary" />
                                 </div>
-                                {stopLabel(flight) && <span className="max-w-full truncate text-xs sm:text-xs font-medium text-success" title={stopLabel(flight)}>{stopLabel(flight)}</span>}
+                                {stopsUnderDuration(flightStopText(flight).stopText, flightStopText(flight).stopPlaces)}
                               </div>
                               <div className="min-w-0 shrink-0 basis-[7.5rem] sm:basis-[8.75rem] text-left">
                                 <p className="text-lg sm:text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>

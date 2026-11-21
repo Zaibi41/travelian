@@ -247,9 +247,14 @@ export const GATEWAY_FLIGHT_PROVIDER = "travelian";
 
 interface GatewayMoney { amount_minor: number; currency: string }
 interface GatewayFare { id: string; name: string; meal?: string; baggage?: string; baggage_detail?: string; refund?: string; selling_price?: GatewayMoney }
+/** One flight of a connection; layover_minutes: time on the ground at `origin` before it (left out for the first). */
+interface GatewaySegment {
+  flight_number?: string; origin: string; destination: string; departure_local?: string; arrival_local?: string;
+  duration_minutes?: number; layover_minutes?: number;
+}
 interface GatewayFlight {
   id: string; airline_code?: string; airline_name?: string; flight_number?: string; departure_local?: string; arrival_local?: string;
-  duration_minutes?: number; stops?: number; stop_cities?: string[]; fares: GatewayFare[];
+  duration_minutes?: number; stops?: number; stop_cities?: string[]; segments?: GatewaySegment[]; fares: GatewayFare[];
 }
 interface GatewayJourney { direction: "outbound" | "return"; origin: string; destination: string; flights: GatewayFlight[] }
 interface GatewaySearchView { search_id: string; status: "complete" | "unavailable"; notice?: string; journeys: GatewayJourney[] }
@@ -292,7 +297,33 @@ function gatewaySegment(flight: GatewayFlight, origin: string, destination: stri
     carrier: flight.airline_code || null, airline: flight.airline_name || null, flightNumber: flight.flight_number || null,
     origin, destination, departureAirport: origin, arrivalAirport: destination,
     departureTime: flight.departure_local || null, arrivalTime: flight.arrival_local || null,
+    duration: minutesText(flight.duration_minutes) || null,
   };
+}
+
+/** A flight's own flights (a connection has one per stop); one segment for the whole trip when the gateway sent none. */
+function gatewaySegments(flight: GatewayFlight, origin: string, destination: string) {
+  if (!flight.segments?.length) return [gatewaySegment(flight, origin, destination)];
+  return flight.segments.map((segment) => ({
+    carrier: flight.airline_code || null, airline: flight.airline_name || null, flightNumber: segment.flight_number || null,
+    origin: segment.origin, destination: segment.destination, departureAirport: segment.origin, arrivalAirport: segment.destination,
+    departureTime: segment.departure_local || null, arrivalTime: segment.arrival_local || null,
+    duration: minutesText(segment.duration_minutes) || null,
+  }));
+}
+
+/** Where the passenger stays and for how long (#37, #83, #84): one per stop, in order. Only the stop city when the
+ *  gateway sent no flight-by-flight detail. */
+function gatewayLayovers(flight: GatewayFlight) {
+  const segments = flight.segments || [];
+  if (segments.length > 1) {
+    return segments.slice(1).map((segment, index) => ({
+      location: segment.origin, duration: minutesText(segment.layover_minutes) || null,
+      arrivalTime: segments[index].arrival_local || null, departureTime: segment.departure_local || null,
+      nextFlightNumber: segment.flight_number || null,
+    }));
+  }
+  return (flight.stop_cities || []).filter(Boolean).map((location) => ({ location }));
 }
 
 /** Gateway journeys -> offers: one-way, one per flight; round trip, each outbound with the cheapest return of the same airline. */
@@ -318,8 +349,8 @@ export function gatewayOffers(view: GatewaySearchView, cabin: string): FlightOff
     }
     const options = fares.map((fare) => fareOption(fare, returnFare)).sort((a, b) => a.price.total - b.price.total);
     const lowest = options[0];
-    const segments = [gatewaySegment(flight, outbound.origin, outbound.destination)];
-    if (returnFlight && back) segments.push(gatewaySegment(returnFlight, back.origin, back.destination));
+    const segments = gatewaySegments(flight, outbound.origin, outbound.destination);
+    if (returnFlight && back) segments.push(...gatewaySegments(returnFlight, back.origin, back.destination));
     offers.push({
       provider: GATEWAY_FLIGHT_PROVIDER,
       offerId: returnFlight ? `gw-${flight.id}-${returnFlight.id}` : `gw-${flight.id}`,
@@ -330,6 +361,8 @@ export function gatewayOffers(view: GatewaySearchView, cabin: string): FlightOff
       cabin, fareBrand: lowest.tier, duration: minutesText(flight.duration_minutes), stops: flight.stops ?? 0,
       baggage: lowest.bags, meal: lowest.meal || null,
       segments: segments as FlightOffer["segments"],
+      // Outbound stays only: layovers[i] is the stay after segments[i] (the booking page reads them that way).
+      layovers: gatewayLayovers(flight),
       returnDepartureTime: returnFlight?.departure_local || null, returnArrivalTime: returnFlight?.arrival_local || null,
       price: lowest.price, fareOptions: options,
     });
