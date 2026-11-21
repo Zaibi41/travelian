@@ -535,7 +535,15 @@ function FlightDetails({ journey, flight }: { journey: JourneyView; flight: Flig
           {rows.map(([name, value]) => (
             <div key={name} className="contents">
               <dt className="border-b border-border py-2 font-semibold text-foreground">{name}</dt>
-              <dd className={cn("min-w-0 truncate border-b border-border py-2", value ? "text-foreground" : "text-muted-foreground")} title={value ?? undefined}>{value ?? "Not available"}</dd>
+              {name === "Airline" ? (
+                // #88: the airline's logo next to its name (Travelian's logo file, else the IATA code badge).
+                <dd className="flex min-w-0 items-center gap-2 border-b border-border py-1.5 text-foreground">
+                  <AirlineLogo airline={airlineLabel(flight)} flightNumber={flight.flight_number ?? undefined} code={flight.airline_code} className="h-8 w-8 rounded-lg" />
+                  <span className="min-w-0 truncate" title={value ?? undefined}>{value}</span>
+                </dd>
+              ) : (
+                <dd className={cn("min-w-0 truncate border-b border-border py-2", value ? "text-foreground" : "text-muted-foreground")} title={value ?? undefined}>{value ?? "Not available"}</dd>
+              )}
             </div>
           ))}
         </dl>

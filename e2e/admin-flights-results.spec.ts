@@ -130,3 +130,24 @@ for (const width of [1440, 1024, 768, 390]) {
     }
   });
 }
+
+for (const width of [1440, 390]) {
+  test(`airline logos on the results, in Flight details and on the booking page at ${width}px (#88)`, async ({ page }) => {
+    await openFlights(page, width);
+    for (const [flight, airline] of [["PA410", "Airblue"], ["QR629", "Qatar Airways"], ["EY242", "Etihad Airways"]]) {
+      await expect(card(page, flight).getByRole("img", { name: `${airline} logo` })).toBeVisible();
+    }
+    // A long airline name keeps its logo and truncates.
+    await expect(card(page, "Z8266").getByRole("img", { name: "South Air International Regional Airways Limited logo" })).toBeVisible();
+    await card(page, "PA410").getByRole("button", { name: "Flight details" }).click();
+    const dialog = page.getByRole("dialog", { name: "Flight details" });
+    await expect(dialog.getByRole("img", { name: "Airblue logo" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Book PA410 Value" }).click();
+    await expect(page.getByRole("heading", { name: "Book flight", level: 1 })).toBeVisible();
+    const panel = page.getByRole("complementary", { name: "Selected fare" });
+    await expect(panel.getByRole("img", { name: "Airblue logo" })).toBeVisible();
+    expect(await noPageScroll(page)).toBe(0);
+    if (process.env.SHOTS_DIR) await page.screenshot({ path: `${process.env.SHOTS_DIR}/booking-page-${width}.png`, fullPage: true });
+  });
+}

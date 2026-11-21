@@ -306,6 +306,8 @@ describe("mockup elements (Search > Flights)", () => {
     expect(dialog).toHaveTextContent("KHI");
     expect(dialog).toHaveTextContent("01h 00m");
     expect(dialog).toHaveTextContent("Non-stop");
+    // #88: the airline's logo next to its name (no logo file for this airline: its code badge, never an empty box).
+    expect(within(dialog).getByRole("img", { name: /logo$/ })).toBeInTheDocument();
     fireEvent.keyDown(dialog, { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
