@@ -1,4 +1,4 @@
-import { gatewayGet, gatewayGetFile, gatewayPost, type GatewayOptions } from "@/lib/gateway/client";
+import { gatewayGet, gatewayGetFile, gatewayPost, gatewayPut, type GatewayOptions } from "@/lib/gateway/client";
 import type { BookingListParams, RecordPaymentBody, ResolveIssuanceBody } from "./types";
 
 export const fetchBookings = (params: BookingListParams, options?: GatewayOptions) =>
@@ -45,6 +45,12 @@ export const fetchIssuance = (bookingId: string, options?: GatewayOptions) =>
 export const recordPayment = (bookingId: string, body: RecordPaymentBody, options?: GatewayOptions) =>
   gatewayPost("/v1/admin/bookings/{booking_id}/payments", body, {
     ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "The payment couldn't be recorded right now. Nothing was saved.",
+  });
+
+/** Fix the customer's email on this booking after a bounce or complaint (gateway#59). Logged. */
+export const changeCustomerEmail = (bookingId: string, email: string, options?: GatewayOptions) =>
+  gatewayPut("/v1/admin/bookings/{booking_id}/customer-email", { email }, {
+    ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "The email address couldn't be saved right now. Nothing was changed.",
   });
 
 /** Send a customer email for this booking again (gateway#53); the answer says sent or why not, in plain words. */

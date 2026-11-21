@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { BookingDetail } from "@/lib/admin-bookings/types";
 
-const api = vi.hoisted(() => ({ resendEmail: vi.fn() }));
+const api = vi.hoisted(() => ({ resendEmail: vi.fn(), changeCustomerEmail: vi.fn() }));
 vi.mock("@/lib/admin-bookings/api", async original => ({ ...(await original<object>()), ...api }));
 import { EmailNotSentNotice } from "./EmailNotSentNotice";
 
@@ -54,5 +54,28 @@ describe("Email not sent (admin)", () => {
     show([{ email: "booking_held", at: "2026-11-20T10:00:00Z", can_resend: true }]);
     fireEvent.click(screen.getByRole("button", { name: "Resend email" }));
     expect(await screen.findByText(BLOCKED)).toBeInTheDocument();
+  });
+});
+
+describe("bounced or marked as spam (gateway#59)", () => {
+  const BOUNCED = { email: "booking_held", at: "2026-11-21T08:00:00Z", to: "b***@example.invalid", can_resend: true, fix_address: true,
+    reason: "Bounced: the address doesn't accept email. Contact the customer and fix the email address." };
+  beforeEach(() => api.changeCustomerEmail.mockReset());
+
+  it("asks staff to fix the address, with no Resend until they do", () => {
+    show([BOUNCED]);
+    expect(screen.getByText(BOUNCED.reason)).toBeInTheDocument();
+    expect(screen.getByLabelText("Corrected email address")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Resend email" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save email address" })).toBeDisabled();   // empty
+  });
+
+  it("saves the corrected address", async () => {
+    api.changeCustomerEmail.mockResolvedValue({ email: "ali.new@example.invalid", message: "Email address updated. Resend the emails the customer missed." });
+    show([BOUNCED]);
+    fireEvent.change(screen.getByLabelText("Corrected email address"), { target: { value: "ali.new@example.invalid" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save email address" }));
+    expect(await screen.findByText("Email address updated. Resend the emails the customer missed.")).toBeInTheDocument();
+    expect(api.changeCustomerEmail).toHaveBeenCalledWith("TRV-1", "ali.new@example.invalid");
   });
 });
