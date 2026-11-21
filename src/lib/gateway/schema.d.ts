@@ -1106,6 +1106,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Finance Report
+         * @description Daily (weekly, monthly) sales and profit, receivables, refunds due, supplier spend, payments by method / account.
+         *     Same sale rule and profit formula as the dashboard and the booking. Profit and supplier figures need cost and margin.
+         */
+        get: operations["finance_report_v1_admin_finance_reports_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Report Csv
+         * @description One report section as CSV. Audited.
+         */
+        get: operations["export_report_csv_v1_admin_finance_reports_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reports.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Report Xlsx
+         * @description Every report section as an Excel sheet (same numbers as /reports). Audited.
+         */
+        get: operations["export_report_xlsx_v1_admin_finance_reports_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/finance/settings/payments": {
         parameters: {
             query?: never;
@@ -4143,6 +4204,8 @@ export interface components {
              * @description Selling price (and cost, with access) per passenger type. Omitted when no travelers were saved.
              */
             per_passenger?: components["schemas"]["FarePerPassenger"][] | null;
+            /** @description travelian#70: selling + fees charged - supplier actual charge - payment fees - refunds paid. Cost and margin permission only. */
+            profit?: components["schemas"]["ProfitView"] | null;
             /** @description Omitted without the cost and margin permission, or when unknown. */
             supplier_cost?: components["schemas"]["BookingMoney"] | null;
         };
@@ -4347,6 +4410,30 @@ export interface components {
              * @description The payer's transaction reference.
              */
             reference: string;
+        };
+        /** BookingProfitRow */
+        BookingProfitRow: {
+            /** Booking Reference */
+            booking_reference: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Customer */
+            customer?: string | null;
+            payment_fees: components["schemas"]["BookingMoney"];
+            /** Product */
+            product: string;
+            profit?: components["schemas"]["BookingMoney"] | null;
+            refunds: components["schemas"]["BookingMoney"];
+            sales: components["schemas"]["BookingMoney"];
+            supplier_charge?: components["schemas"]["BookingMoney"] | null;
+            /**
+             * Supplier Charge Basis
+             * @enum {string}
+             */
+            supplier_charge_basis: "recorded" | "quoted" | "not_known";
         };
         /** BookingRecord */
         BookingRecord: {
@@ -4640,6 +4727,11 @@ export interface components {
              * @description ISO currency code, e.g. PKR.
              */
             currency: string;
+            /**
+             * Profit Not Known
+             * @description Gross profit only: paid bookings left out because their supplier cost isn't known (travelian#70; never counted as 0).
+             */
+            profit_not_known?: number | null;
         };
         /** CurrentUser */
         CurrentUser: {
@@ -5014,6 +5106,40 @@ export interface components {
              * @enum {string}
              */
             status: "awaiting_check" | "confirmed" | "rejected";
+        };
+        /** FinanceReport */
+        FinanceReport: {
+            /**
+             * By Booking
+             * @description Profit by booking (cost and margin permission only), largest sales first.
+             */
+            by_booking?: components["schemas"]["BookingProfitRow"][] | null;
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Granularity
+             * @enum {string}
+             */
+            granularity: "day" | "week" | "month";
+            /** Payments By Method */
+            payments_by_method: components["schemas"]["MethodRow"][];
+            /** Periods */
+            periods: components["schemas"]["ReportPeriod"][];
+            /** Receivables */
+            receivables: components["schemas"]["ReceivableRow"][];
+            receivables_total: components["schemas"]["BookingMoney"];
+            /** @description Refundable money on paid bookings that can't travel, plus refunds approved but not paid. */
+            refunds_due: components["schemas"]["BookingMoney"];
+            /** Refunds Due Count */
+            refunds_due_count: number;
+            /**
+             * Supplier Spend
+             * @description Cost and margin permission only.
+             */
+            supplier_spend?: components["schemas"]["SupplierSpendRow"][] | null;
+            totals: components["schemas"]["ReportTotals"];
         };
         /** FlightCalendar */
         FlightCalendar: {
@@ -6547,6 +6673,17 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** MethodRow */
+        MethodRow: {
+            /** Account */
+            account?: string | null;
+            amount: components["schemas"]["BookingMoney"];
+            card_fees: components["schemas"]["BookingMoney"];
+            /** Count */
+            count: number;
+            /** Method */
+            method: string;
+        };
         /**
          * NeedsAction
          * @description Not affected by the date filter.
@@ -6997,6 +7134,19 @@ export interface components {
             /** Currency */
             currency: string;
         };
+        /** ReceivableRow */
+        ReceivableRow: {
+            /** Booking Reference */
+            booking_reference: string;
+            /** Customer */
+            customer?: string | null;
+            due: components["schemas"]["BookingMoney"];
+            /** Hold Expires At */
+            hold_expires_at?: string | null;
+            /** Status */
+            status: string;
+            total: components["schemas"]["BookingMoney"];
+        };
         /**
          * ReceivingAccount
          * @description A receiving account as Finance > Accounts & Ledgers manages it (active and inactive).
@@ -7222,6 +7372,73 @@ export interface components {
              * Format: date
              */
             start: string;
+        };
+        /** ReportPeriod */
+        ReportPeriod: {
+            /** Bookings */
+            bookings: number;
+            fees_charged: components["schemas"]["BookingMoney"];
+            /**
+             * Other Currency
+             * @description Sales not in PKR, left out of the money totals.
+             * @default 0
+             */
+            other_currency: number;
+            payment_fees: components["schemas"]["BookingMoney"];
+            /**
+             * Payment Fees Missing
+             * @description Sales with a card payment whose fee isn't recorded yet.
+             * @default 0
+             */
+            payment_fees_missing: number;
+            /** @description Cost and margin permission only. Sum over bookings whose profit is known. */
+            profit?: components["schemas"]["BookingMoney"] | null;
+            /**
+             * Profit Not Known
+             * @description Sales whose supplier cost isn't known: left out of profit, never counted as 0.
+             * @default 0
+             */
+            profit_not_known: number;
+            refunds: components["schemas"]["BookingMoney"];
+            sales: components["schemas"]["BookingMoney"];
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /** @description Cost and margin permission only. Of bookings whose profit is known. */
+            supplier_charge?: components["schemas"]["BookingMoney"] | null;
+        };
+        /** ReportTotals */
+        ReportTotals: {
+            /** Bookings */
+            bookings: number;
+            fees_charged: components["schemas"]["BookingMoney"];
+            /**
+             * Other Currency
+             * @description Sales not in PKR, left out of the money totals.
+             * @default 0
+             */
+            other_currency: number;
+            payment_fees: components["schemas"]["BookingMoney"];
+            /**
+             * Payment Fees Missing
+             * @description Sales with a card payment whose fee isn't recorded yet.
+             * @default 0
+             */
+            payment_fees_missing: number;
+            /** @description Cost and margin permission only. Sum over bookings whose profit is known. */
+            profit?: components["schemas"]["BookingMoney"] | null;
+            /**
+             * Profit Not Known
+             * @description Sales whose supplier cost isn't known: left out of profit, never counted as 0.
+             * @default 0
+             */
+            profit_not_known: number;
+            refunds: components["schemas"]["BookingMoney"];
+            sales: components["schemas"]["BookingMoney"];
+            /** @description Cost and margin permission only. Of bookings whose profit is known. */
+            supplier_charge?: components["schemas"]["BookingMoney"] | null;
         };
         /** RepriceRequest */
         RepriceRequest: {
@@ -7947,6 +8164,21 @@ export interface components {
             amount_due?: components["schemas"]["BookingMoney"] | null;
             /** Hold Deadline */
             hold_deadline?: string | null;
+        };
+        /** SupplierSpendRow */
+        SupplierSpendRow: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /**
+             * Supplier
+             * @description Supplier names permission only.
+             */
+            supplier?: string | null;
+            ticket_charges: components["schemas"]["BookingMoney"];
+            top_ups: components["schemas"]["BookingMoney"];
         };
         /** SupplierWalletList */
         SupplierWalletList: {
@@ -11325,6 +11557,151 @@ export interface operations {
             };
             /** @description Already paid or rejected. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    finance_report_v1_admin_finance_reports_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                granularity?: string;
+                product?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinanceReport"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    export_report_csv_v1_admin_finance_reports_csv_get: {
+        parameters: {
+            query?: {
+                section?: string;
+                date_from?: string | null;
+                date_to?: string | null;
+                granularity?: string;
+                product?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    export_report_xlsx_v1_admin_finance_reports_xlsx_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                granularity?: string;
+                product?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": unknown;
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -60,6 +60,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   supplier_balance_checked: "Supplier balance checked",
   supplier_top_up_recorded: "Supplier top-up recorded",
   supplier_adjustment_recorded: "Supplier balance adjusted",
+  report_exported: "Report exported",
 };
 
 export const auditActionLabel = (action: string) => AUDIT_ACTION_LABEL[action] ?? action.replace(/_/g, " ");
@@ -151,3 +152,29 @@ export const fetchWalletHistory = (provider: string, options?: GatewayOptions) =
   gatewayGet("/v1/admin/finance/supplier-balances/{provider}/history", undefined, {
     ...options, pathParams: { provider }, unavailableMessage: "The history couldn't be loaded.",
   });
+
+// ---------------------------------------------------------------- Reports (#70)
+export type FinanceReport = GetResponse<"/v1/admin/finance/reports">;
+export type FinanceReportQuery = NonNullable<GetQuery<"/v1/admin/finance/reports">>;
+export const REPORT_SECTIONS = ["summary", "profit_by_booking", "receivables", "supplier_spend", "payments_by_method"] as const;
+
+export const fetchFinanceReport = (query: FinanceReportQuery, options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/finance/reports", query, { ...options, unavailableMessage: "The report couldn't be loaded. Try again in a moment." });
+
+export const exportReportXlsx = (query: FinanceReportQuery) =>
+  gatewayGetFile("/v1/admin/finance/reports.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    { unavailableMessage: "The export couldn't be made right now." }, query);
+
+export const exportReportCsv = (query: FinanceReportQuery & { section: (typeof REPORT_SECTIONS)[number] }) =>
+  gatewayGetFile("/v1/admin/finance/reports.csv", "text/csv", { unavailableMessage: "The export couldn't be made right now." }, query);
+
+/** Save a Blob the gateway sent as a file. */
+export function saveBlob(blob: Blob, name: string) {
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+}
