@@ -107,4 +107,12 @@ describe("Edit a saved document (#12)", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Save document" }));
     await waitFor(() => expect(editDocument).toHaveBeenCalledWith("p-00000001", "d-1", expect.objectContaining({ id_type: "PSPT", document_number: "AB1234568" })));
   });
+
+  it("#75: a booking shows the airline logo beside the route", async () => {
+    fetchPerson.mockResolvedValue({ ...PERSON, bookings: [{ ...BOOKING, airline_code: "EK", airline_name: "Emirates", flight_number: "EK623" }] });
+    renderPage();
+    const section = await screen.findByRole("region", { name: "Bookings" });
+    expect(within(section).getByRole("img", { name: "Emirates logo" })).toBeInTheDocument();
+    expect(within(section).getByText("Emirates · EK623")).toBeInTheDocument();
+  });
 });

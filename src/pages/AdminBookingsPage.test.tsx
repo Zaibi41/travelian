@@ -258,4 +258,12 @@ describe("old /admin/requests bookings screen", () => {
     renderRequests();
     expect(screen.getByRole("heading", { name: "Bookings" })).toBeInTheDocument();
   });
+
+  it("#75: a row shows the airline logo with the airline and flight number", () => {
+    list.current = ok({ ...ADMIN_LIST, items: [{ ...ADMIN_LIST.items[0], airline_code: "PA", airline_name: "Airblue", flight_number: "PA401 / PA402" }, ADMIN_LIST.items[1]] });
+    renderPage();
+    expect(screen.getByRole("img", { name: "Airblue logo" })).toBeInTheDocument();
+    expect(screen.getByText("Airblue · PA401 / PA402")).toBeInTheDocument();
+    expect(screen.getAllByRole("img", { name: /logo$/ })).toHaveLength(1);   // no airline recorded: no logo, no empty box
+  });
 });

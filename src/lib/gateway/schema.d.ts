@@ -4363,6 +4363,16 @@ export interface components {
         };
         /** BookingListItem */
         BookingListItem: {
+            /**
+             * Airline Code
+             * @description First flight's airline (IATA), for the logo (#75).
+             */
+            airline_code?: string | null;
+            /**
+             * Airline Name
+             * @description First flight's airline name (the airline flown, not the supplier).
+             */
+            airline_name?: string | null;
             amount: components["schemas"]["BookingMoney"];
             /** Booking Id */
             booking_id: string;
@@ -4380,6 +4390,11 @@ export interface components {
             data_label?: "Imported" | null;
             /** Expires At */
             expires_at?: string | null;
+            /**
+             * Flight Number
+             * @description Flight number(s) in travel order, e.g. 'PA401 / PA402'.
+             */
+            flight_number?: string | null;
             /** Pnr */
             pnr?: string | null;
             /**
@@ -6770,6 +6785,13 @@ export interface components {
         /** NotificationView */
         NotificationView: {
             /**
+             * Airline Code
+             * @description The booking's first airline (IATA), for the logo (#75).
+             */
+            airline_code?: string | null;
+            /** Airline Name */
+            airline_name?: string | null;
+            /**
              * Created At
              * Format: date-time
              */
@@ -6780,6 +6802,8 @@ export interface components {
             };
             /** Emailed */
             emailed: boolean;
+            /** Flight Number */
+            flight_number?: string | null;
             /** Id */
             id: string;
             /** Kind */
@@ -7721,6 +7745,16 @@ export interface components {
          * @description One booking of a saved person's history. Cost and profit only with the cost and margin permission.
          */
         SavedPersonBooking: {
+            /**
+             * Airline Code
+             * @description First flight's airline (IATA), for the logo (#75).
+             */
+            airline_code?: string | null;
+            /**
+             * Airline Name
+             * @description First flight's airline name (the airline flown, not the supplier).
+             */
+            airline_name?: string | null;
             /** Booking Id */
             booking_id: string;
             /**
@@ -7738,6 +7772,11 @@ export interface components {
              * @description First flight's local departure, e.g. 2026-11-19T00:25.
              */
             departure_local?: string | null;
+            /**
+             * Flight Number
+             * @description Flight number(s) in travel order, e.g. 'PA401 / PA402'.
+             */
+            flight_number?: string | null;
             /**
              * Pnr
              * @description Airline PNR; a group booking's only with the supplier names permission.
