@@ -34,6 +34,26 @@ describe("flights through the gateway", () => {
     expect(offers[0]).toMatchObject({ flightNumber: "PA400", returnDepartureTime: "2026-12-15T19:00", price: { total: 22050 + 21000 } });
   });
 
+  it("round trip: each fare keeps the outbound and the return baggage separately for the Baggage tab (#123)", () => {
+    const bag = (id: string, name: string, rupees: number, baggage: string, baggage_detail: string) =>
+      ({ id, name, baggage, baggage_detail, selling_price: { amount_minor: rupees * 100, currency: "PKR" } });
+    const [offer] = gatewayOffers({ search_id: "s", status: "complete", journeys: [
+      { direction: "outbound", origin: "KHI", destination: "LHE", flights: [flight("o1", "PA", "PA400", "2026-12-12T08:00", [
+        bag("a", "Value", 22050, "7 kg", "7 kg hand carry only, no checked bag"), bag("b", "Flexi", 25050, "7+20 kg", "7 kg hand carry + 20 kg checked")])] },
+      { direction: "return", origin: "LHE", destination: "KHI", flights: [flight("r1", "PA", "PA401", "2026-12-15T11:00", [
+        bag("c", "Value", 21000, "7+30 kg", "7 kg hand carry + 30 kg checked")])] },
+    ] }, "Economy");
+    expect(offer.fareOptions?.map((o) => [o.tier, o.bags, o.legBags])).toEqual([
+      ["Value", "7 kg / 7+30 kg", [{ label: "Outbound", bags: "7 kg", bagsDetail: "7 kg hand carry only, no checked bag" },
+                                   { label: "Return", bags: "7+30 kg", bagsDetail: "7 kg hand carry + 30 kg checked" }]],
+      ["Flexi", "7+20 kg / 7+30 kg", [{ label: "Outbound", bags: "7+20 kg", bagsDetail: "7 kg hand carry + 20 kg checked" },
+                                       { label: "Return", bags: "7+30 kg", bagsDetail: "7 kg hand carry + 30 kg checked" }]],
+    ]);
+    const [oneWay] = gatewayOffers({ search_id: "s", status: "complete", journeys: [{ direction: "outbound", origin: "KHI", destination: "LHE",
+      flights: [flight("o1", "PA", "PA400", "2026-12-12T08:00", [fare("a", "Value", 22050)])] }] }, "Economy");
+    expect(oneWay.fareOptions?.[0].legBags).toBeUndefined(); // one flight: the fare's own baggage is all there is
+  });
+
   it("searches the gateway's public route with the trip, never the old API, and keeps airport times", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ search_id: "s1", status: "complete", journeys: [
       { direction: "outbound", origin: "KHI", destination: "LHE", flights: [flight("f1", "PA", "PA400", "2026-12-12T08:00", [fare("a", "Value", 22050)])] },

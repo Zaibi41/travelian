@@ -84,6 +84,8 @@ export interface FareOption {
   meal?: string;
   amenities?: string[];
   popular?: boolean;
+  /** A round trip's baggage per flight ("Outbound", "Return"), for the Baggage tab (#123). */
+  legBags?: { label: string; bags: string; bagsDetail: string }[];
   /** Gateway fare ids (outbound, then return): checkout sends these, never a price, to the gateway (B19). */
   gatewayFareIds?: string[];
 }
@@ -274,6 +276,14 @@ function fareBags(fare: GatewayFare, back?: GatewayFare) {
   return { bags: `${out.short} / ${ret.short}`, bagsDetail: `Outbound: ${out.detail}. Return: ${ret.detail}.` };
 }
 
+/** Each flight's own baggage on a round trip (#123): outbound, then return. */
+function legBags(fare: GatewayFare, back: GatewayFare) {
+  return ([["Outbound", fare], ["Return", back]] as const).map(([label, item]) => {
+    const text = baggageText(item.baggage, item.baggage_detail);
+    return { label, bags: text.short, bagsDetail: text.detail };
+  });
+}
+
 function fareOption(fare: GatewayFare, extra?: GatewayFare): FareOption {
   const total = rupees(fare.selling_price) + rupees(extra?.selling_price);
   return {
@@ -283,6 +293,7 @@ function fareOption(fare: GatewayFare, extra?: GatewayFare): FareOption {
     change: "As per airline fare rules",
     refund: fare.refund || "As per airline fare rules",
     meal: fare.meal || undefined,
+    ...(extra ? { legBags: legBags(fare, extra) } : {}),
     gatewayFareIds: [fare.id, extra?.id].filter((id): id is string => Boolean(id)),
   };
 }
