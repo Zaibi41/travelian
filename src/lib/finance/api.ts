@@ -1,7 +1,7 @@
 // Finance (travelian#91 and the Finance issues): travelian-api-gateway /v1/admin/finance/*.
 // The gateway checks the Finance permission on every call and does all money maths (integer paisa);
 // this file only fetches and sends. Nothing here moves money.
-import { gatewayGet, gatewayGetFile, gatewayPost, gatewayPut, type GatewayOptions, type GetQuery, type GetResponse } from "@/lib/gateway/client";
+import { gatewayGet, gatewayGetFile, gatewayPost, gatewayPut, type GatewayOptions, type GetQuery, type GetResponse, type PostBody, type PostResponse } from "@/lib/gateway/client";
 
 export type AuditLogPage = GetResponse<"/v1/admin/finance/audit-log">;
 export type AuditEntry = AuditLogPage["entries"][number];
@@ -61,6 +61,12 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   supplier_top_up_recorded: "Supplier top-up recorded",
   supplier_adjustment_recorded: "Supplier balance adjusted",
   report_exported: "Report exported",
+  statement_imported: "Statement imported",
+  bank_match_confirmed: "Bank match confirmed",
+  bank_match_rejected: "Bank match rejected",
+  supplier_charges_checked: "Supplier charges checked",
+  mismatch_explained: "Mismatch explained",
+  mismatch_resolved: "Mismatch resolved",
 };
 
 export const auditActionLabel = (action: string) => AUDIT_ACTION_LABEL[action] ?? action.replace(/_/g, " ");
@@ -178,3 +184,47 @@ export function saveBlob(blob: Blob, name: string) {
   link.remove();
   window.setTimeout(() => URL.revokeObjectURL(link.href), 5000);
 }
+
+// ---------------------------------------------------------------- Reconciliation (#71)
+export type StatementPreview = PostResponse<"/v1/admin/finance/reconciliation/preview">;
+export type StatementImportBody = PostBody<"/v1/admin/finance/reconciliation/imports">;
+export type StatementImportResult = PostResponse<"/v1/admin/finance/reconciliation/imports">;
+export type StatementImport = GetResponse<"/v1/admin/finance/reconciliation/imports">["imports"][number];
+export type StatementLine = GetResponse<"/v1/admin/finance/reconciliation/imports/{import_id}/lines">["lines"][number];
+export type Mismatch = GetResponse<"/v1/admin/finance/reconciliation/mismatches">["mismatches"][number];
+
+export const previewStatement = (file_name: string, content: string) =>
+  gatewayPost("/v1/admin/finance/reconciliation/preview", { file_name, content }, { unavailableMessage: "The file couldn't be read right now." });
+
+export const importStatement = (body: StatementImportBody) =>
+  gatewayPost("/v1/admin/finance/reconciliation/imports", body, { unavailableMessage: "The import couldn't be done right now. Nothing was imported." });
+
+export const fetchStatementImports = (kind: StatementImport["kind"], options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/finance/reconciliation/imports", { kind }, { ...options, unavailableMessage: "Imports couldn't be loaded." });
+
+export const fetchStatementLines = (importId: string, options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/finance/reconciliation/imports/{import_id}/lines", undefined, {
+    ...options, pathParams: { import_id: importId }, unavailableMessage: "The statement lines couldn't be loaded.",
+  });
+
+export const decideBankMatch = (lineId: string, accept: boolean) =>
+  gatewayPost(accept ? "/v1/admin/finance/reconciliation/lines/{line_id}/confirm" : "/v1/admin/finance/reconciliation/lines/{line_id}/reject",
+    undefined as never, { pathParams: { line_id: lineId }, unavailableMessage: "It couldn't be saved right now. Nothing was changed." });
+
+export const runSupplierCheck = () =>
+  gatewayPost("/v1/admin/finance/reconciliation/supplier-check", undefined as never, { unavailableMessage: "The check couldn't run right now." });
+
+export const fetchMismatches = (status: "open" | "explained" | "resolved" | "all", options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/finance/reconciliation/mismatches", { status }, { ...options, unavailableMessage: "Mismatches couldn't be loaded." });
+
+export const resolveMismatch = (id: string, status: "explained" | "resolved", reason: string) =>
+  gatewayPost("/v1/admin/finance/reconciliation/mismatches/{mismatch_id}/resolve", { status, reason }, {
+    pathParams: { mismatch_id: id }, unavailableMessage: "It couldn't be saved right now. Nothing was changed.",
+  });
+
+export const MISMATCH_LABEL: Record<string, string> = {
+  payfast_line_not_found: "PayFast line not in Travelian", payfast_amount_differs: "PayFast amount differs", payfast_net_differs: "PayFast net differs",
+  payment_not_in_payfast: "Card payment not in PayFast file", bank_credit_unmatched: "Bank credit not matched", payment_not_in_bank: "Payment not on statement",
+  ticket_without_charge: "Ticket without supplier charge", charge_differs_from_cost: "Charge differs from cost",
+  supplier_line_not_found: "Supplier line not in Travelian", supplier_statement_differs: "Supplier statement differs",
+};
