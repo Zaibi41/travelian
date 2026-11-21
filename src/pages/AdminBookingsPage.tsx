@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { SEARCH_FIELD } from "@/components/admin/ui/search-form";
 import { ProductTabLinks } from "@/components/admin/ui/ProductTabLinks";
 import { Pagination } from "@/components/admin/ui/pagination";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { FileText, Hotel, LayoutList, MessageSquare, Plane, Search, Users, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
 import { Input } from "@/components/admin/ui/field";
@@ -93,6 +93,11 @@ function BookingsRegister({ tab }: { tab: BookingsTab }) {
   // Group Ticketing uses the Flights layout; its departure, seats, manifest and name-list columns
   // wait for the gateway (docs/backend-todo.md, Bookings).
   const flights = tab.product === "flight" || tab.product === "group";
+  // Older alerts and links open /admin/bookings?search=REF. When that search finds exactly one booking with that
+  // reference, open its detail page instead of the list (#54). A search typed on this page uses ?q= and stays a list.
+  const legacy = params.get("q") ? undefined : params.get("search")?.trim().toUpperCase();
+  const only = legacy && data && !bookings.isPlaceholderData && data.items.length === 1 ? data.items[0] : undefined;
+  if (only && only.booking_id.toUpperCase() === legacy) return <Navigate to={bookingDetailPath(only.booking_id)} replace />;
 
   return (
     <>
