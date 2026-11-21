@@ -1225,7 +1225,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 <Badge role="timer" aria-label="Search expiry" aria-live="off" className={cn("gap-1 rounded-full border-0 whitespace-nowrap tabular-nums", searchExpired ? "bg-destructive/20 text-primary-foreground" : "bg-primary-foreground/15 text-primary-foreground")}>
                   <Clock className="h-3 w-3" aria-hidden="true" />
                   {apiStatus === "success" && flights.length > 0
-                    ? searchExpired ? "Search expired" : `Expires in ${expiryLabel}`
+                    ? searchExpired ? "Search expired" : <>Expires in <span className="font-extrabold">{expiryLabel}</span></>
                     : apiStatus === "error" ? "Expiry unavailable"
                     : apiStatus === "success" ? "No active fares" : "Waiting for fares"}
                 </Badge>
@@ -1286,7 +1286,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             {apiStatus === "success" && flights.length > 0 && (
               <Badge className={cn("gap-1 rounded-full border-0", searchExpired ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success")}>
                 <Clock className="h-3 w-3" />
-                {searchExpired ? "Search expired" : `Expires in ${expiryLabel}`}
+                {searchExpired ? "Search expired" : <>Expires in <span className="font-extrabold">{expiryLabel}</span></>}
               </Badge>
             )}
             <Button variant="outline" size="sm" className="gap-2 rounded-xl" onClick={() => setFareCalculatorOpen(true)}>
