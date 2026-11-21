@@ -20,7 +20,7 @@ export function whatsappUrlFor(phoneDigits: string, message?: string) {
   return `${base}?text=${encodeURIComponent(message)}`;
 }
 
-export const SUPPORT_ADDRESS = "589-J2, Johar Town, Lahore";
+export const SUPPORT_ADDRESS = "J2 Johar Town Lahore";
 // The public site's address: VITE_SITE_URL, else the production site (also used by scripts/generate-sitemap.ts,
 // where import.meta.env doesn't exist, hence the optional access).
 export const SITE_URL = (import.meta.env?.VITE_SITE_URL?.trim() || "https://travelian.pk").replace(/\/+$/, "");

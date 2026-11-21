@@ -31,7 +31,7 @@ export default function HomePage() {
             telephone: SUPPORT_PHONE_TEL,
             address: {
               "@type": "PostalAddress",
-              streetAddress: "589-J2, Johar Town",
+              streetAddress: "J2 Johar Town",
               addressLocality: "Lahore",
               addressRegion: "Punjab",
               addressCountry: "PK",
