@@ -57,6 +57,9 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   payment_slip_confirmed: "Payment slip confirmed",
   payment_slip_rejected: "Payment slip rejected",
   payments_exported: "Payments exported",
+  supplier_balance_checked: "Supplier balance checked",
+  supplier_top_up_recorded: "Supplier top-up recorded",
+  supplier_adjustment_recorded: "Supplier balance adjusted",
 };
 
 export const auditActionLabel = (action: string) => AUDIT_ACTION_LABEL[action] ?? action.replace(/_/g, " ");
@@ -123,3 +126,28 @@ export function percentToBps(text: string): number | null {
 }
 
 export const bpsLabel = (bps: number) => `${(bps / 100).toFixed(2).replace(/\.?0+$/, "")}%`;
+
+// ---------------------------------------------------------------- Finance > Wallets (#68)
+export type SupplierWallet = GetResponse<"/v1/admin/finance/supplier-balances">["wallets"][number];
+export type WalletHistoryItem = GetResponse<"/v1/admin/finance/supplier-balances/{provider}/history">["items"][number];
+
+export const fetchSupplierWallets = (options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/finance/supplier-balances", undefined, { ...options, unavailableMessage: "Supplier balances couldn't be loaded. Try again in a moment." });
+
+export const refreshSouthair = () =>
+  gatewayPost("/v1/admin/finance/supplier-balances/southair/refresh", undefined as never, { unavailableMessage: "Southair couldn't be read right now." });
+
+export const recordWalletEntry = (provider: string, kind: "top-ups" | "adjustments",
+                                  body: { amount_minor: number; reference?: string | null; reason?: string | null; occurred_at: string }) =>
+  gatewayPost(kind === "top-ups" ? "/v1/admin/finance/supplier-balances/{provider}/top-ups" : "/v1/admin/finance/supplier-balances/{provider}/adjustments",
+    body, { pathParams: { provider }, unavailableMessage: "It couldn't be saved right now. Nothing was recorded." });
+
+export const setWalletThreshold = (provider: string, thresholdMinor: number | null) =>
+  gatewayPut("/v1/admin/finance/supplier-balances/{provider}/threshold", { threshold_minor: thresholdMinor }, {
+    pathParams: { provider }, unavailableMessage: "The alert level couldn't be saved. Nothing was changed.",
+  });
+
+export const fetchWalletHistory = (provider: string, options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/finance/supplier-balances/{provider}/history", undefined, {
+    ...options, pathParams: { provider }, unavailableMessage: "The history couldn't be loaded.",
+  });

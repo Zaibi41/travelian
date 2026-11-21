@@ -86,8 +86,8 @@ const customerRoles: UserRole[] = ["customer"];
 /** Finance > Accounts & Ledgers: the gateway's FINANCE_ACCOUNT_ROLES (Super Admin; Finance once that role exists). */
 const financeAccountRoles: UserRole[] = ["super_admin"];
 
-/** Pages that show a "Not built yet" notice until the gateway serves them (#73: Wallets #68). */
-const COMING_SOON = new Set(["/admin/wallet"]);
+/** Pages that show a "Not built yet" notice until the gateway serves them (#73). Wallets (#68) and Payments (#69) are built. */
+const COMING_SOON = new Set<string>();
 
 function item(title: string, url: string, icon: AdminNavItem["icon"], roles: UserRole[]): AdminNavItem {
   return COMING_SOON.has(url) ? { title, url, icon, roles, comingSoon: true } : { title, url, icon, roles };
