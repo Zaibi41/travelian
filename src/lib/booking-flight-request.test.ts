@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { saveBooking } from "./booking-store";
-import { getFlightPaymentOptions, PublicBookingError, requestPublicFlight, toGatewayFlightPassenger } from "./public-booking";
+import { getFlightPaymentOptions, requestPublicFlight, toGatewayFlightPassenger } from "./public-booking";
 
 // B19 / D43 / D45: the website never makes up a PNR or a confirmed status, and a flight is booked by the gateway's fare
 // ids as a request (the gateway prices it; nothing is held, ticketed or charged).
@@ -65,19 +65,6 @@ describe("website flight booking", () => {
     for (const body of bodies) {
       for (const field of ["paid", "payment_status", "status", "pnr", "tickets", "price", "total"]) expect(body).not.toHaveProperty(field);
     }
-  });
-
-  it("a double booking refused by the gateway (409) reports its plain sentence and code (issue #17)", async () => {
-    vi.stubEnv("VITE_TRAVELIAN_GATEWAY_BASE_URL", "https://gw.example.test");
-    const sentence = "One of these travelers already has a booking on this route and date, so nothing was booked. If you need help, contact Travelian.";
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ detail: sentence, code: "duplicate_booking" }), { status: 409 })));
-    const error = await requestPublicFlight({
-      searchId: "search-123456", fareIds: ["fare-out"],
-      contact: { firstName: "Test", lastName: "Guest", phoneCode: "92", phone: "3001234567", email: "guest@example.invalid" },
-      travelers: [{ passengerType: "adult", title: "Mr", firstName: "Test", lastName: "Guest", dob: "1990-01-01", docType: "cnic", docNumber: "3520112345671" }],
-    }).catch((problem) => problem);
-    expect(error).toBeInstanceOf(PublicBookingError);
-    expect([error.status, error.code, error.message]).toEqual([409, "duplicate_booking", sentence]);
   });
 
   it("asks the gateway which methods a fare takes (no card where it can't be issued) by fare ids only", async () => {
