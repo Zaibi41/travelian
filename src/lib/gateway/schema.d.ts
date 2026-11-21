@@ -6763,7 +6763,7 @@ export interface components {
             ticketing_enabled: boolean;
             /**
              * Ticketing Note
-             * @description Why tickets can't be issued from Travelian for this booking: the supplier and the switch.
+             * @description Why tickets can't be issued from Travelian for this booking: the supplier and the switch. Left out while a flight's hold is gone (expired or not on hold): the hold blocker is then the reason.
              */
             ticketing_note?: string | null;
         };

@@ -11,6 +11,7 @@ import type { BookingDetail, IssuanceChecklist } from "@/lib/admin-bookings/type
 const api = vi.hoisted(() => ({
   fetchPaymentAccounts: vi.fn(),
   fetchIssuance: vi.fn(), recordPayment: vi.fn(), requestIssuance: vi.fn(), issueTicket: vi.fn(), verifyIssuance: vi.fn(), resolveIssuance: vi.fn(),
+  reholdAtSupplier: vi.fn(),
 }));
 vi.mock("@/lib/admin-bookings/api", () => api);
 
@@ -247,6 +248,79 @@ describe("2 · Issue the ticket", () => {
     renderTab();
     const card = await screen.findByRole("region", { name: "The hold ran out before issuing" });
     expect(within(card).getByRole("link", { name: "Search again" })).toHaveAttribute("href", "/admin/search?tab=flights");
+  });
+});
+
+// gateway#44: an expired SooperFare booking showed "Not ready to issue" (isn't on hold + has expired), the ticketing
+// switch notice and the hold-expired card together. Now: one message, the hold-expired card, with Re-hold at SooperFare.
+describe("hold expired: one message", () => {
+  const PAST = "2020-01-01T00:00:00Z";
+  const EXPIRED: IssuanceChecklist = { ...READY, hold_expires_at: PAST, blockers: ["The hold has expired."], can_issue: false, can_request: false, ticketing_enabled: false };
+  const SUPPLIER = { supplier: "SooperFare", booking_id: "3801e825-ccc9-421e-a441-222d8740612a", order_ref: "spa-zrc", cancel_state: "none" as const, can_cancel: false };
+  const SOOPERFARE: BookingDetail = { ...BOOKING, pnr: "VFTATB", statuses: { booking: "paid_not_ticketed", payment: "paid", issuance: "not_issued" },
+    supplier_booking: { ...SUPPLIER, can_rehold: true } } as BookingDetail;
+
+  it("shows only the hold-expired card, with Re-hold at SooperFare first; no ticketing notice, no repeated hold reason", async () => {
+    api.fetchIssuance.mockResolvedValue(EXPIRED);
+    renderTab(SOOPERFARE);
+    const card = await screen.findByRole("region", { name: "The hold ran out before issuing" });
+    expect(card).toHaveTextContent("SooperFare no longer holds PNR VFTATB");
+    expect(within(card).getAllByRole("button").map(button => button.textContent)).toEqual(["Re-hold at SooperFare"]);
+    expect(within(card).getByRole("link", { name: "Search again" })).toHaveAttribute("href", "/admin/search?tab=flights");
+    expect(screen.queryByText("Not ready to issue")).not.toBeInTheDocument();
+    expect(screen.queryByText("The hold has expired.")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Tickets can't be issued from Travelian|Ticketing is (switched|turned) off/)).not.toBeInTheDocument();
+    expect(screen.getByText("Expired")).toBeInTheDocument();   // the checklist row stays
+    expect(screen.getByRole("button", { name: "Issue ticket" })).toBeDisabled();
+  });
+
+  it("other reasons still show, without the hold reason", async () => {
+    api.fetchIssuance.mockResolvedValue({ ...EXPIRED, full_payment_recorded: false, amount_due: rs(5_000),
+      blockers: ["The hold has expired.", "Full payment isn't recorded yet."] });
+    renderTab(SOOPERFARE);
+    const notice = (await screen.findByText("Not ready to issue")).closest("[role=status]") as HTMLElement;
+    expect(within(notice).getAllByRole("listitem").map(item => item.textContent)).toEqual(["Full payment isn't recorded yet."]);
+  });
+
+  it("Re-hold asks first; the booking only changes after the gateway's answer, then says what was held", async () => {
+    api.fetchIssuance.mockResolvedValue(EXPIRED);
+    api.reholdAtSupplier.mockResolvedValue({ message: "held again: new PNR NEWPNR, expires 22 Nov 2026 10:00 UTC" });
+    renderTab(SOOPERFARE);
+    const card = await screen.findByRole("region", { name: "The hold ran out before issuing" });
+    fireEvent.click(within(card).getByRole("button", { name: "Re-hold at SooperFare" }));
+    const dialog = screen.getByRole("dialog", { name: "Re-hold at SooperFare?" });
+    expect(dialog).toHaveTextContent("at the booking's price of Rs 15,316");
+    expect(api.reholdAtSupplier).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Re-hold at SooperFare" }));
+    await waitFor(() => expect(api.reholdAtSupplier).toHaveBeenCalledWith("TRV-O5QZB5", undefined));
+    expect(await screen.findByText("Held again at SooperFare: new PNR NEWPNR, expires 22 Nov 2026 10:00 UTC.")).toBeInTheDocument();
+  });
+
+  it("a failed re-hold shows the gateway's words and keeps the dialog open", async () => {
+    api.fetchIssuance.mockResolvedValue(EXPIRED);
+    api.reholdAtSupplier.mockRejectedValue(new GatewayError("unavailable",
+      "SooperFare shows PNR VFTATB as 'active', not expired or cancelled. Check with SooperFare before holding again, so the travelers aren't booked twice. Nothing was held.", 409, "still_active"));
+    renderTab(SOOPERFARE);
+    fireEvent.click(await screen.findByRole("button", { name: "Re-hold at SooperFare" }));
+    const dialog = screen.getByRole("dialog", { name: "Re-hold at SooperFare?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Re-hold at SooperFare" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("not expired or cancelled");
+    expect(screen.queryByText(/Held again/)).not.toBeInTheDocument();
+  });
+
+  it("without Re-hold (no permission, or not SooperFare) the card offers Search again", async () => {
+    api.fetchIssuance.mockResolvedValue(EXPIRED);
+    renderTab({ ...SOOPERFARE, supplier_booking: undefined });
+    const card = await screen.findByRole("region", { name: "The hold ran out before issuing" });
+    expect(within(card).queryByRole("button", { name: "Re-hold at SooperFare" })).not.toBeInTheDocument();
+    expect(within(card).getByRole("link", { name: "Search again" })).toBeInTheDocument();
+  });
+
+  it("a ticketing switch notice shows only when the gateway gives its reason", async () => {
+    api.fetchIssuance.mockResolvedValue({ ...READY, ticketing_enabled: false, can_issue: false });
+    renderTab();
+    await screen.findByText("Payment recorded in full");
+    expect(screen.queryByText("Tickets can't be issued from Travelian for this booking")).not.toBeInTheDocument();
   });
 });
 

@@ -22,6 +22,7 @@ import { CopyPnr } from "@/components/CopyPnr";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { titleText } from "@/lib/passenger-details";
 import { SlipPreview } from "@/components/admin/finance/SlipReviewDialog";
+import { ReholdAtSupplier } from "./ReholdAtSupplier";
 
 // Booking detail > Payments (spec 7, mockup booking-payment-issue): 1 · record the customer's
 // payment, 2 · issue the ticket, then the result. The gateway decides everything (amounts due,
@@ -46,6 +47,7 @@ export function PaymentsAndIssuing({ booking }: { booking: BookingDetail }) {
     staleTime: 30_000, refetchInterval: 60_000, retry: 1,
   });
   const [result, setResult] = useState<IssuanceResult | null>(null);
+  const [reheld, setReheld] = useState<string | null>(null);
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
       <div className="grid grid-cols-1 items-start gap-card-gap xl:grid-cols-2">
@@ -53,7 +55,8 @@ export function PaymentsAndIssuing({ booking }: { booking: BookingDetail }) {
         <IssueTicket booking={booking} checklist={checklist.data} loading={checklist.isPending} error={checklist.error} onResult={setResult} />
       </div>
       <CustomerSlips booking={booking} />
-      <IssuanceOutcome booking={booking} checklist={checklist.data} result={result} onResult={setResult} />
+      {reheld && <Notice tone="fine">{reheld}</Notice>}
+      <IssuanceOutcome booking={booking} checklist={checklist.data} result={result} onResult={setResult} onReheld={setReheld} />
       <Notice>
         After any issuing error the PNR is always checked first. Every step (payment recorded, issuance requested, issued, checked,
         resolved) appears on the Audit tab with who did it and when.
@@ -290,6 +293,12 @@ function CheckRow({ label, children }: { label: string; children: React.ReactNod
 const holdExpired = (checklist: IssuanceChecklist) =>
   !checklist.hold_expires_at || new Date(checklist.hold_expires_at).getTime() <= Date.now()
   || checklist.blockers.some(blocker => /hold has expired/i.test(blocker));
+/** The gateway's hold reason ("The hold has expired.", "… or is about to expire.", "The booking isn't on hold."). */
+const HOLD_BLOCKER = /^The hold has expired|^The booking isn't on hold/i;
+/** A flight whose hold ran out gets one message, the "Hold expired" card below with its action (gateway#44): the hold
+ *  reason isn't repeated in "Not ready to issue". */
+const holdCardShown = (booking: BookingDetail, checklist: IssuanceChecklist) =>
+  booking.product === "flight" && holdExpired(checklist) && checklist.issuance_status !== "issued";
 
 function IssueTicket({ booking, checklist, loading, error, onResult }: {
   booking: BookingDetail; checklist?: IssuanceChecklist; loading: boolean; error: unknown; onResult: (result: IssuanceResult) => void;
@@ -328,6 +337,8 @@ function IssueTicket({ booking, checklist, loading, error, onResult }: {
   const status = checklist?.issuance_status;
   const travelers = travelersOf(booking).length;
   const admin = checklist && (checklist.supplier_amount || checklist.supplier_balance || checklist.margin);
+  const blockers = !checklist ? [] : holdCardShown(booking, checklist)
+    ? checklist.blockers.filter(blocker => !HOLD_BLOCKER.test(blocker)) : checklist.blockers;
 
   return (
     <section aria-labelledby="issue-ticket-title" className={CARD}>
@@ -370,9 +381,9 @@ function IssueTicket({ booking, checklist, loading, error, onResult }: {
             <LastAttempt booking={booking} checklist={checklist} onResult={onResult} />
           )}
 
-          {checklist.blockers.length > 0 && status !== "issued" && (
+          {blockers.length > 0 && status !== "issued" && (
             <Notice tone="action" title="Not ready to issue">
-              <ul className="list-disc pl-5">{checklist.blockers.map(blocker => <li key={blocker}>{blocker}</li>)}</ul>
+              <ul className="list-disc pl-5">{blockers.map(blocker => <li key={blocker}>{blocker}</li>)}</ul>
             </Notice>
           )}
           {checklist.balance_warning && status !== "issued" && (
@@ -381,10 +392,9 @@ function IssueTicket({ booking, checklist, loading, error, onResult }: {
               <Link to="/admin/wallet" className="font-medium underline underline-offset-2">Open Wallets</Link>
             </Notice>
           )}
-          {!checklist.ticketing_enabled && status !== "issued" && (
-            <Notice title="Tickets can't be issued from Travelian for this booking">
-              {checklist.ticketing_note ?? "Ticketing is switched off for this supplier. Payments and issuance requests still work."}
-            </Notice>
+          {/* The gateway leaves the note out while the hold is gone: the hold is the reason then, not the switch. */}
+          {!checklist.ticketing_enabled && checklist.ticketing_note && status !== "issued" && (
+            <Notice title="Tickets can't be issued from Travelian for this booking">{checklist.ticketing_note}</Notice>
           )}
 
           {admin && (
@@ -520,8 +530,9 @@ function TicketTable({ booking, tickets }: { booking: BookingDetail; tickets: Ti
   );
 }
 
-function IssuanceOutcome({ booking, checklist, result, onResult }: {
+function IssuanceOutcome({ booking, checklist, result, onResult, onReheld }: {
   booking: BookingDetail; checklist?: IssuanceChecklist; result: IssuanceResult | null; onResult: (result: IssuanceResult) => void;
+  onReheld?: (message: string) => void;
 }) {
   const status = result?.issuance_status ?? checklist?.issuance_status;
   const pnr = booking.pnr ?? booking.booking_id;
@@ -558,7 +569,20 @@ function IssuanceOutcome({ booking, checklist, result, onResult }: {
       </ResultCard>
     );
   }
-  if (checklist && holdExpired(checklist) && booking.product === "flight") {
+  if (checklist && holdCardShown(booking, checklist)) {
+    if (booking.supplier_booking?.can_rehold) {
+      return (
+        <ResultCard tone="critical" tag="Hold expired" title="The hold ran out before issuing">
+          <p className="text-body text-muted-foreground">
+            SooperFare no longer holds PNR {booking.pnr ?? "—"}, so it can't be issued. Re-hold the same flights and fare for these travelers; you'll see the price before anything changes.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <ReholdAtSupplier booking={booking} onHeld={onReheld} />
+            <Button asChild variant="outline" className="h-11 sm:h-10"><Link to="/admin/search?tab=flights">Search again</Link></Button>
+          </div>
+        </ResultCard>
+      );
+    }
     return (
       <ResultCard tone="critical" tag="Hold expired" title="The hold ran out before issuing">
         <p className="text-body text-muted-foreground">The seats were released. The payment stays recorded on the booking. Search again and choose a fare for the customer.</p>
