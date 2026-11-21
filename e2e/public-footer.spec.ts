@@ -33,7 +33,7 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
       expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
-    await expect(footer.getByRole("img", { name: "Travelian", exact: true })).toHaveAttribute("src", "/travelian-logo-wordmark.png");
+    await expect(footer.getByRole("img", { name: "Travelian", exact: true })).toHaveAttribute("src", "/travelian-logo-wordmark-dark.png");
     const link = productNav.getByRole("link", { name: "Group Ticketing", exact: true });
     await page.keyboard.press("Tab");
     await link.focus();

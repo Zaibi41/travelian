@@ -27,8 +27,8 @@ export function PublicFooter() {
       <div className="travelian-container py-8 lg:py-7">
         <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:gap-5 md:grid-cols-3 lg:grid-cols-[1.25fr_.85fr_.65fr_1.05fr_1.25fr]">
           <div className="col-span-2 min-w-0 sm:col-span-1">
-            <Link to="/" onClick={scrollToTop} aria-label="Travelian home" className="mb-3 inline-flex w-fit rounded bg-white p-1.5">
-              <img src="/travelian-logo-wordmark.png" alt="Travelian" className="h-9 w-auto max-w-[9rem] object-contain" />
+            <Link to="/" onClick={scrollToTop} aria-label="Travelian home" className="mb-3 inline-flex w-fit items-center rounded-sm">
+              <img src="/travelian-logo-wordmark-dark.png" alt="Travelian" width={576} height={164} loading="lazy" decoding="async" className="h-9 w-auto max-w-[9.5rem] object-contain" />
             </Link>
             <p className="mb-2 text-sm leading-relaxed text-sidebar-muted">{umrah ? "Flights, group tickets, hotels and Umrah all in one Travelian platform." : "Flights, group tickets and hotels all in one Travelian platform."}</p>
             <div aria-label="Travelian social profiles" className="flex gap-1">
@@ -58,8 +58,8 @@ export function PublicFooter() {
             </ul>
           </section>
         </div>
-        <div className="mt-5 border-t border-sidebar-border pt-4 pb-16 text-center md:pb-0">
-          <p className="text-xs text-sidebar-muted">&copy; {new Date().getFullYear()} Travelian. All rights reserved.</p>
+        <div className="mt-5 border-t border-sidebar-border pt-4 pb-16 text-center md:pb-12">
+          <p className="text-xs text-sidebar-foreground/80">&copy; {new Date().getFullYear()} Travelian. All rights reserved.</p>
         </div>
       </div>
     </footer>

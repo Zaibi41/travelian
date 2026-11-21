@@ -184,3 +184,11 @@ Staff record the final PNR and ticket numbers on the booking's Tickets tab
 | Notifications: delivery logs and email/SMS/WhatsApp settings | The page still reads the Lambda's `/content/notification-logs` (fails silently) and keeps channel settings in the browser only. Needs gateway endpoints for delivery logs and notification settings |
 | Notifications: airline logo on booking alerts (#75) | `airline_code`, `airline_name` and `flight_number` in the alert's `details` (gateway `app/services/notifications.py`, today: passenger, route, fare, PNR) |
 | Receiving accounts: edit an account's details | `PATCH /v1/admin/finance/payment-accounts/{id}` exists; the page has no edit control yet (ask before adding). Until then an old account is deactivated and added again with its full number |
+
+
+## 10. Public website contact form & blog (21 November 2026)
+
+| Item | Needs |
+| --- | --- |
+| Public `/contact` message form | Hidden until a real gateway endpoint exists (`POST /v1/public/contact` or inquiry endpoint with rate limiting and email/inbox delivery). Previously simulated success with `setTimeout` and discarded messages |
+| Public `/blog` articles | Currently calls legacy `/content/blog-posts` which fails with 500 while `CONTENT_TABLE` is unset. Needs a gateway `GET /v1/public/blog-posts` endpoint |

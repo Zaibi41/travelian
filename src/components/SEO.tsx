@@ -12,27 +12,30 @@ interface SEOProps {
 }
 
 const SITE_NAME = "Travelian";
-const DEFAULT_IMAGE = "/travelian-logo-wordmark.png";
+const DEFAULT_IMAGE = "/og-image.png";
 
 export function SEO({ title, description, canonical, image = DEFAULT_IMAGE, type = "website", jsonLd, noIndex = false }: SEOProps) {
   const fullTitle = title.length > 60 ? title.slice(0, 57) + "..." : title;
   const desc = description.length > 160 ? description.slice(0, 157) + "..." : description;
   const url = canonical || new URL(typeof window !== "undefined" ? window.location.pathname : "/", SITE_URL).href;
   const imageUrl = new URL(image, SITE_URL).href;
+  const isDefaultImage = image === DEFAULT_IMAGE;
   const blocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
 
   return (
     <Helmet>
       <title>{fullTitle}</title>
-      <meta name="robots" content={noIndex ? "noindex, follow" : "index, follow"} />
+      <meta name="robots" content={noIndex ? "noindex, nofollow" : "index, follow"} />
       <meta name="description" content={desc} />
-      {url && <link rel="canonical" href={url} />}
+      {!noIndex && url && <link rel="canonical" href={url} />}
       <meta property="og:site_name" content={SITE_NAME} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={desc} />
       <meta property="og:type" content={type} />
-      {url && <meta property="og:url" content={url} />}
+      {!noIndex && url && <meta property="og:url" content={url} />}
       <meta property="og:image" content={imageUrl} />
+      {isDefaultImage && <meta property="og:image:width" content="1200" />}
+      {isDefaultImage && <meta property="og:image:height" content="630" />}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={desc} />

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { signInWithPassword } from "@/lib/cognito-auth";
 import { isAdminPortalRole, roleForSession } from "@/lib/role-mapping";
@@ -14,6 +14,7 @@ import { AuthAside } from "@/components/public/AuthAside";
 import { EXPIRED_MESSAGE, EXPIRED_REASON, safeReturnPath, signInDecision, type SignInDecision } from "@/lib/auth-guard";
 import { clearSession, getSession } from "@/lib/auth-session";
 import { renewSession } from "@/lib/session-renewal";
+import { SEO } from "@/components/SEO";
 
 
 export default function SignInPage() {
@@ -89,6 +90,7 @@ export default function SignInPage() {
 
   return (
     <div data-public-page-scroll className="h-full min-h-0 overflow-y-auto travelian-hero-background">
+      <SEO title="Sign In | Travelian" description="Sign in to your Travelian account to manage flights, group tickets and hotel bookings." noIndex />
       <div className="flex min-h-full items-center justify-center px-4 py-6 sm:px-6 sm:py-8">
         <Card className="my-auto w-full max-w-[880px] shrink-0 overflow-hidden rounded-xl border border-border/60 bg-white shadow-md">
           <CardContent className="grid p-0 lg:grid-cols-[44fr_56fr]">
@@ -103,7 +105,10 @@ export default function SignInPage() {
               <form onSubmit={signIn} noValidate aria-busy={loading} className="mt-7">
                 <div>
                   <Label htmlFor="email" className="text-sm font-medium">Email</Label>
-                  <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" required aria-invalid={!!errors.email} aria-describedby="email-error" onChange={() => { if (errors.email) setErrors(current => ({ ...current, email: "" })); }} className="mt-2 h-12 rounded-lg bg-white" />
+                  <div className="relative mt-2">
+                    <Mail aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" required aria-invalid={!!errors.email} aria-describedby="email-error" onChange={() => { if (errors.email) setErrors(current => ({ ...current, email: "" })); }} className="h-12 rounded-lg bg-white pl-10" />
+                  </div>
                   <p id="email-error" aria-live="polite" className="min-h-6 pt-1 text-xs leading-5 text-destructive">{errors.email}</p>
                 </div>
                 <div className="mt-2">
@@ -118,7 +123,7 @@ export default function SignInPage() {
                     Forgot password?
                   </button>
                 </div>
-                <p role="alert" className="min-h-12 py-2 text-sm leading-5 text-destructive">{serverError}</p>
+                <p role="alert" className="min-h-6 py-1 text-sm leading-5 text-destructive">{serverError}</p>
                 <Button type="submit" disabled={loading} className="h-12 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90">
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
                   {loading ? "Signing in…" : "Sign In"}

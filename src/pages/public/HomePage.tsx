@@ -10,7 +10,7 @@ import { HomePopularLinks } from "@/components/public/HomePopularLinks";
 import { HomeFaq } from "@/components/public/HomeFaq";
 import { HomeSupportCta } from "@/components/public/HomeSupportCta";
 import { useSiteSwitches } from "@/lib/site-switches";
-import { SITE_URL } from "@/lib/site-config";
+import { SITE_URL, SOCIAL_LINKS, SUPPORT_EMAIL, SUPPORT_PHONE_TEL } from "@/lib/site-config";
 
 export default function HomePage() {
   const { umrah } = useSiteSwitches(); // D39: Umrah wording only when Umrah is switched on
@@ -22,14 +22,21 @@ export default function HomePage() {
         jsonLd={[
           {
             "@context": "https://schema.org",
-            "@type": "Organization",
+            "@type": ["TravelAgency", "Organization"],
             name: "Travelian",
             url: SITE_URL,
             logo: `${SITE_URL}/travelian-logo-wordmark.png`,
-            sameAs: [
-              "https://www.facebook.com/Travelian.pk/",
-              "https://www.instagram.com/travelian.pk/",
-            ],
+            image: `${SITE_URL}/og-image.png`,
+            email: SUPPORT_EMAIL,
+            telephone: SUPPORT_PHONE_TEL,
+            address: {
+              "@type": "PostalAddress",
+              streetAddress: "589-J2, Johar Town",
+              addressLocality: "Lahore",
+              addressRegion: "Punjab",
+              addressCountry: "PK",
+            },
+            sameAs: SOCIAL_LINKS.map((link) => link.href),
             contactPoint: {
               "@type": "ContactPoint",
               telephone: "+92-324-4440014",

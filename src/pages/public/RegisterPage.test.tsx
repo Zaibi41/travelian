@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import RegisterPage from "./RegisterPage";
 import { confirmSignUp, signUpWithPassword } from "@/lib/cognito-auth";
@@ -9,7 +10,7 @@ import { rememberAccountRole } from "@/lib/role-mapping";
 vi.mock("@/lib/cognito-auth", () => ({ signUpWithPassword: vi.fn(), confirmSignUp: vi.fn() }));
 vi.mock("@/lib/role-mapping", () => ({ rememberAccountRole: vi.fn() }));
 beforeEach(() => { vi.clearAllMocks(); vi.mocked(signUpWithPassword).mockReset(); });
-const renderPage = () => render(<MemoryRouter><RegisterPage /></MemoryRouter>);
+const renderPage = () => render(<HelmetProvider><MemoryRouter><RegisterPage /></MemoryRouter></HelmetProvider>);
 const fill = () => {
   for (const [label, value] of [["Full Name", "Test Member"], ["Email", "member@example.test"], ["Mobile Number", "+92 300 0000000"], ["Password", "test-password"], ["Confirm Password", "test-password"]]) {
     fireEvent.change(screen.getByLabelText(label, { exact: true }), { target: { value } });

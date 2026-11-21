@@ -24,7 +24,7 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     await expect(popular.getByRole("link")).toHaveCount(10);
     await expect(popular.getByText("Popular route", { exact: true })).toHaveCount(0);
     await expect(popular).not.toContainText(/PKR|Rs\.|\$/);
-    await expect(popular.getByRole("link", { name: "Search flights from Lahore to Dubai" })).toHaveAttribute("href", /^\/flights-search\?from=LHE&to=DXB&depart=\d{4}-\d{2}-\d{2}$/);
+    await expect(popular.getByRole("link", { name: /Lahore.*Dubai.*Search Flights/i })).toHaveAttribute("href", /^\/flights-search\?from=LHE&to=DXB&depart=\d{4}-\d{2}-\d{2}$/);
     const tops = await page.evaluate(() => [
       document.querySelector('[aria-label="Booking confidence"]')!,
       document.getElementById("popular-routes-heading")!,

@@ -15,26 +15,27 @@ interface SitemapEntry {
 
 const entries: SitemapEntry[] = [
   { path: "/", changefreq: "daily", priority: "1.0" },
-  { path: "/hotels-search", changefreq: "daily", priority: "0.9" },
   { path: "/flights-search", changefreq: "daily", priority: "0.9" },
+  { path: "/group-ticketing", changefreq: "daily", priority: "0.9" },
+  { path: "/hotels-search", changefreq: "daily", priority: "0.9" },
   // D39: Umrah is hidden; listed again when built with SITEMAP_UMRAH=true (the sitemap is a static file).
   ...(process.env.SITEMAP_UMRAH === "true" ? [{ path: "/umrah-packages", changefreq: "weekly" as const, priority: "0.8" }] : []),
   { path: "/deals", changefreq: "daily", priority: "0.8" },
-  { path: "/blog-public", changefreq: "weekly", priority: "0.6" },
+  { path: "/blog", changefreq: "weekly", priority: "0.6" },
   { path: "/about", changefreq: "monthly", priority: "0.5" },
   { path: "/contact", changefreq: "monthly", priority: "0.5" },
   { path: "/careers", changefreq: "monthly", priority: "0.4" },
   { path: "/faq", changefreq: "monthly", priority: "0.4" },
   { path: "/privacy", changefreq: "yearly", priority: "0.3" },
   { path: "/terms", changefreq: "yearly", priority: "0.3" },
-  { path: "/signin", changefreq: "monthly", priority: "0.3" },
-  { path: "/register", changefreq: "monthly", priority: "0.3" },
 ];
 
 function generateSitemap(items: SitemapEntry[]) {
+  const lastmod = new Date().toISOString().slice(0, 10);
   const urls = items.map(e => [
     `  <url>`,
     `    <loc>${BASE_URL}${e.path}</loc>`,
+    `    <lastmod>${lastmod}</lastmod>`,
     e.changefreq ? `    <changefreq>${e.changefreq}</changefreq>` : null,
     e.priority ? `    <priority>${e.priority}</priority>` : null,
     `  </url>`,

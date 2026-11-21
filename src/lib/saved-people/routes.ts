@@ -8,7 +8,7 @@ export interface CustomersTab {
 export const CUSTOMERS_TABS: CustomersTab[] = [
   { slug: "", label: "Customers" },
   { slug: "travelers", label: "Travelers" },
-  { slug: "communications", label: "Communications (P3)" },
+  { slug: "communications", label: "Communications" },
 ];
 
 export function customersTabPath(tab: CustomersTab, q = "") {

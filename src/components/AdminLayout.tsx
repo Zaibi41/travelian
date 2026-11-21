@@ -124,9 +124,18 @@ function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-    <Helmet><title>{`${adminPageTitle(currentRole, location.pathname)} · Travelian Admin`}</title></Helmet>
+    <Helmet>
+      <title>{`${adminPageTitle(currentRole, location.pathname)} · Travelian Admin`}</title>
+      <meta name="robots" content="noindex, nofollow" />
+    </Helmet>
     <SidebarProvider>
-      <div className="flex min-h-svh w-full bg-muted/20">
+      <div className="relative flex min-h-svh w-full bg-muted/20">
+        <a
+          href="#admin-main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2.5 focus:text-body focus:font-semibold focus:text-primary-foreground focus:shadow-card focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        >
+          Skip to main content
+        </a>
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0">
           <header className="sticky top-0 z-30 h-16 flex items-center justify-between border-b bg-card/95 px-4 shrink-0 backdrop-blur">
@@ -136,7 +145,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
             <div className="ml-auto flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
-                <Button ref={accountTriggerRef} variant="ghost" aria-label="Open account menu" className="h-11 gap-2 rounded-xl px-2">
+                <Button ref={accountTriggerRef} variant="ghost" aria-label={`${currentUser.name} — Open account menu`} className="h-11 gap-2 rounded-xl px-2">
                   <span className="relative shrink-0">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={session?.picture} alt="" className="object-cover" />
@@ -181,7 +190,7 @@ function AdminShell({ children }: { children: React.ReactNode }) {
             </div>
           </header>
           {/* Bottom padding keeps content scrollable clear of the fixed Move-to-top button. */}
-          <main className="flex-1 bg-muted/20 p-4 pb-24 md:p-6 md:pb-24">
+          <main id="admin-main-content" tabIndex={-1} className="flex-1 bg-muted/20 p-4 pb-24 focus:outline-none md:p-6 md:pb-24">
             {!isAuthenticated ? null : allowed ? <PageErrorBoundary key={location.pathname}>{children}</PageErrorBoundary> : <AccessDeniedPage />}
           </main>
           {/* No WhatsApp chat button in the admin: it is a public-site help channel. */}

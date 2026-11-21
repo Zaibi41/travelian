@@ -15,6 +15,7 @@ import { useLocale } from "@/contexts/LocaleContext";
 import { addDays } from "date-fns";
 import { formatDateOnly } from "@/lib/date-only";
 import { HotelSearchBar } from "@/components/public/HotelSearchBar";
+import { SEO } from "@/components/SEO";
 
 const amenityFilters = [
   { id: "wifi", label: "Free WiFi", icon: Wifi },
@@ -104,6 +105,13 @@ export default function PublicHotelsPage() {
 
   return (
     <div>
+      <SEO
+        title={searchValues.location ? `Hotels in ${searchValues.location} | Travelian` : "Find Hotels & Stays | Travelian"}
+        description={searchValues.location
+          ? `Compare hotel rates and availability in ${searchValues.location} with Travelian booking support.`
+          : "Search and compare hotel stays in Makkah, Madinah, Dubai, Istanbul and worldwide with Travelian."}
+        canonical="https://travelian.pk/hotels-search"
+      />
       <SearchPageHero title="Find Hotels with Travelian" support={<ProductValuePills product="hotels" />}>
         <SearchCard>
           <ProductTabs active="hotels" />

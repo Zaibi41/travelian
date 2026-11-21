@@ -12,6 +12,7 @@ import { AuthAside } from "@/components/public/AuthAside";
 
 import { rememberAccountRole } from "@/lib/role-mapping";
 import type { UserRole } from "@/data/models";
+import { SEO } from "@/components/SEO";
 
 function roleForAccountType(accountType: string): UserRole {
   return accountType === "partner" ? "agency_owner" : "customer";
@@ -88,6 +89,7 @@ export default function RegisterPage() {
 
   return (
     <div data-public-page-scroll className="h-full min-h-0 overflow-y-auto travelian-hero-background">
+      <SEO title="Create Account | Travelian" description="Create a Travelian customer or partner agency account to manage your travel bookings." noIndex />
       <div className="flex min-h-full items-center justify-center px-4 py-6 sm:px-6 sm:py-8">
         <Card className="my-auto w-full max-w-[920px] shrink-0 overflow-hidden rounded-xl border border-border/60 bg-white shadow-md">
           <CardContent className="grid p-0 lg:grid-cols-[42fr_58fr]">

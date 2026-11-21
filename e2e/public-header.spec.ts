@@ -40,7 +40,7 @@ for (const width of widths) {
       for (const [name] of products) await expect(header.getByRole("link", { name, exact: true })).toBeVisible();
       await expect(header.getByRole("link", { name: active, exact: true })).toHaveAttribute("aria-current", "page");
       await expect(header.getByRole("link", { name: "Sign In", exact: true })).toBeVisible();
-      await header.getByRole("button", { name: "Select currency", exact: true }).click();
+      await header.getByRole("button", { name: /Select currency/ }).click();
       await expect(page.getByRole("menu")).toBeVisible();
       const menuBox = await page.getByRole("menu").boundingBox();
       expect(menuBox!.x).toBeGreaterThanOrEqual(0);

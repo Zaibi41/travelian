@@ -199,8 +199,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [travelers, setTravelers] = useState<TravelersValue>({
     adults: initAdults, children: initChildren, infants: initInfants, cabin: initCabin,
   });
-  // Admin: no range until results arrive, then the full range of the results (no 0–700 jump).
-  const [priceRangeState, setPriceRange] = useState<number[] | null>(adminMode ? null : [0, 700]);
+  // No price range until results arrive, then the full range of the results (avoids misleading 0–700 placeholder before fares load).
+  const [priceRangeState, setPriceRange] = useState<number[] | null>(null);
   const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
   const [selectedStops, setSelectedStops] = useState<string[]>([]);
   const [selectedDepartureTimes, setSelectedDepartureTimes] = useState<string[]>([]);
@@ -1411,9 +1411,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 </div>
               </CardContent>
             </Card>
-            {(!adminMode || flights.length > 0) && <Card className="shadow-card border-0">
+            {flights.length > 0 && <Card className="shadow-card border-0">
               <CardContent className="p-4">
-                <h3 className="font-semibold text-foreground text-sm mb-4">Price Range</h3>
+                <h3 className="font-semibold text-foreground text-sm mb-4">Price Range ({currency})</h3>
                 <Slider value={priceRange} onValueChange={setPriceRange} min={0} max={Math.max(700, Math.ceil(maxPrice / 1000) * 1000)} step={100} className="mb-3" />
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <input value={priceRange[0]} onChange={(event) => setPriceRange([Number(event.target.value) || 0, priceRange[1]])} className="h-8 rounded-lg border bg-background px-2" aria-label="Minimum price" />
@@ -1428,7 +1428,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   {departureTimeOptions.map(option => (
                     <label key={option.value} className="flex min-w-0 cursor-pointer items-center gap-2" title={option.label}>
                       <Checkbox checked={selectedDepartureTimes.includes(option.value)} onCheckedChange={() => toggleDepartureTimeFilter(option.value)} />
-                      <span className="min-w-0 truncate text-xs text-muted-foreground">{limitText(option.label, 15)}</span>
+                      <span className="min-w-0 truncate text-xs text-muted-foreground">{option.label}</span>
                     </label>
                   ))}
                 </div>

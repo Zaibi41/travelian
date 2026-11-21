@@ -31,6 +31,6 @@ describe("Popular Routes departure dates", () => {
       expect(url.searchParams.has("trip")).toBe(false);
       expect([...url.searchParams.keys()]).toEqual(["from", "to", "depart"]);
     }
-    expect(screen.getByRole("link", { name: "Search flights from Lahore to Dubai" })).toHaveAttribute("href", `/flights-search?from=LHE&to=DXB&depart=${expected}`);
+    expect(screen.getByRole("link", { name: /Lahore to Dubai.*Search Flights/i })).toHaveAttribute("href", `/flights-search?from=LHE&to=DXB&depart=${expected}`);
   });
 });

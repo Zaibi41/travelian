@@ -43,6 +43,18 @@ export default defineConfig(({ mode, command, isPreview }) => {
       },
     },
     plugins: [react(), { name: "travelian-site-url", transformIndexHtml: (html: string) => html.replaceAll("%SITE_URL%", siteUrl) }],
+    build: {
+      rolldownOptions: {
+        output: {
+          codeSplitting: {
+            groups: [
+              { name: "react-vendor", test: /[\\/]node_modules[\\/](react|react-dom|react-router-dom|react-helmet-async)[\\/]/, priority: 30 },
+              { name: "ui-vendor", test: /[\\/]node_modules[\\/](@radix-ui|lucide-react|cmdk|date-fns|clsx|tailwind-merge|class-variance-authority)[\\/]/, priority: 20 },
+            ],
+          },
+        },
+      },
+    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),

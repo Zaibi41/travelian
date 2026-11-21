@@ -143,7 +143,7 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverAnchor asChild>
         <div ref={fieldRef} className={cn(
-          "flex h-12 min-w-0 w-full items-center gap-2 rounded-xl border border-muted-foreground/80 bg-muted/30 px-3 text-sm",
+          "flex h-12 min-w-0 w-full items-center gap-1.5 rounded-xl border border-muted-foreground/80 bg-muted/30 px-2.5 text-sm sm:gap-2 sm:px-3",
           keyboardFocus && "ring-2 ring-ring ring-offset-2",
           invalid && "border-destructive", className,
         )}>

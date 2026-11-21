@@ -15,7 +15,7 @@ for (const [today, tomorrow] of [["2026-10-29", "2026-10-30"], ["2026-10-31", "2
     await expect(routes.getByRole("link")).toHaveCount(10);
     const departures = await routes.getByRole("link").evaluateAll(links => links.map(link => new URL((link as HTMLAnchorElement).href).searchParams.get("depart")));
     expect(departures).toEqual(Array(10).fill(tomorrow));
-    await routes.getByRole("link", { name: "Search flights from Lahore to Dubai", exact: true }).click();
+    await routes.getByRole("link", { name: /Lahore.*Dubai.*Search Flights/i }).click();
     await expect(page).toHaveURL(new RegExp(`/flights-search\\?from=LHE&to=DXB&depart=${tomorrow}$`));
     await expect(page.locator(".travelian-search-card").getByText(format(parseDateOnly(tomorrow)!, "EEE, MMM d"), { exact: true })).toBeVisible();
     await context.close();
