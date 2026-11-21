@@ -6,7 +6,6 @@ import { Button } from "@/components/admin/ui/button";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
-import { cn } from "@/lib/utils";
 import { PASSENGER_LABEL, airlineLabel, parseFlightSearch, repriceFlights, type FlightSearch, type FlightSearchView, type RepriceView } from "@/lib/admin-search/flights";
 import { HOLD_PATH, fareCheckFailure, type FareCheckState, type HoldDraft, type HoldMode } from "@/lib/admin-search/hold";
 import { FareCheckDialog } from "./FareCheckDialog";
@@ -79,17 +78,6 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
     setSelected({ searchId: search.search_id, picks });
     if (directionsOf(search).every(direction => picks[direction])) void startCheck(mode, search, picks);
   };
-  /** Revalidate on a fare row: select it; once every direction has a fare, reprice them together. */
-  const revalidate = (search: FlightSearchView, pick: FareSelection) => {
-    reprice.reset();
-    const picks = { ...picksFor(search), [pick.journey.direction]: pick };
-    setSelected({ searchId: search.search_id, picks });
-    const directions = search.journeys.map(journey => journey.direction);
-    if (directions.every(direction => picks[direction])) {
-      reprice.mutate({ searchId: search.search_id, fareIds: directions.map(direction => picks[direction]!.fare.id) });
-    }
-  };
-
   const closeCheck = () => {
     checking.current?.abort();
     setCheck(null);
@@ -121,43 +109,24 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
     />
     <FlightsSearch
       renderFareAction={(pick, search) => {
-        const isSelected = picksFor(search)[pick.journey.direction]?.fare.id === pick.fare.id;
         const label = `${pick.flight.flight_number ?? ""} ${pick.fare.name}`.trim();
         const priced = Boolean(pick.fare.selling_price);
         return (
-          // One Actions cell, right-aligned: Book and Hold as buttons, then Revalidate as a link.
-          <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5">
-            <div className="flex flex-wrap justify-end gap-1.5">
-              {pick.fare.booking_mode === "request" ? (
-                // Restricted airline (D32): never a supplier hold; Travelian's team confirms the fare and payment.
-                <Button type="button" size="sm" variant="primary" disabled={!priced} title="This airline is booked by Travelian's team: send a request"
-                  aria-label={`Request to book ${label}`} onClick={() => bookOrHold("request", search, pick)}>
-                  Request to book
-                </Button>
-              ) : (["book", "hold"] as const).map(mode => (
-                <Button key={mode} type="button" size="sm" variant={mode === "book" ? "primary" : "outline"} disabled={!priced}
-                  title={priced ? undefined : "Price not available"} aria-label={`${mode === "book" ? "Book" : "Hold"} ${label}`}
-                  onClick={() => bookOrHold(mode, search, pick)}>
-                  {mode === "book" ? "Book" : "Hold"}
-                </Button>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-x-3 gap-y-1">
-              <button
-                type="button"
-                aria-label={`Revalidate ${label}`}
-                aria-pressed={isSelected}
-                disabled={!pick.fare.selling_price || (isSelected && reprice.isPending)}
-                title={pick.fare.selling_price ? undefined : "Price not available"}
-                onClick={() => revalidate(search, pick)}
-                className={cn(
-                  "text-body font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:text-muted-foreground",
-                  isSelected ? "text-foreground underline" : "text-teal hover:underline",
-                )}
-              >
-                {isSelected && reprice.isPending ? "Revalidating…" : isSelected ? "Selected" : "Revalidate"}
-              </button>
-            </div>
+          // One Actions cell, right-aligned: Book and Hold as buttons (#81: no Revalidate; the fare is checked on Book or Hold).
+          <div className="flex flex-wrap justify-end gap-1.5">
+            {pick.fare.booking_mode === "request" ? (
+              // Restricted airline (D32): never a supplier hold; Travelian's team confirms the fare and payment.
+              <Button type="button" size="sm" variant="primary" disabled={!priced} title="This airline is booked by Travelian's team: send a request"
+                aria-label={`Request to book ${label}`} onClick={() => bookOrHold("request", search, pick)}>
+                Request to book
+              </Button>
+            ) : (["book", "hold"] as const).map(mode => (
+              <Button key={mode} type="button" size="sm" variant={mode === "book" ? "primary" : "outline"} disabled={!priced}
+                title={priced ? undefined : "Price not available"} aria-label={`${mode === "book" ? "Book" : "Hold"} ${label}`}
+                onClick={() => bookOrHold(mode, search, pick)}>
+                {mode === "book" ? "Book" : "Hold"}
+              </Button>
+            ))}
           </div>
         );
       }}
