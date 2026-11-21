@@ -52,6 +52,7 @@ jobs:
           # Separate commands: under set -e a failed test inside an && list would not stop the step.
           test -f dist-prerender/index.html
           test -f dist-prerender/faq.html
+          if grep -qE "(localhost|127\.0\.0\.1)" dist-prerender/*.html; then echo "Prerendered HTML points at a local server"; exit 1; fi
           ls dist/assets/*.js >/dev/null
           # The production build must call the production API, never a local server
           # (React Router's own "http://localhost" placeholder has no port).

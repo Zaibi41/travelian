@@ -72,7 +72,11 @@ async function render(browser, path) {
     return "<!doctype html>\n" + document.documentElement.outerHTML;
   }, { path, guardJs: GUARD_JS });
   await page.close();
-  return html;
+  // Vite's preload helper adds <link rel="modulepreload"> tags with absolute URLs of the preview server:
+  // make every same-origin URL relative, and refuse to write a page that still points at it.
+  const relative = html.replaceAll(ORIGIN, "");
+  if (/127\.0\.0\.1|localhost/.test(relative)) throw new Error(`${path}: prerendered HTML still references the preview server`);
+  return relative;
 }
 
 const server = spawn("npx", ["vite", "preview", "--port", String(PORT), "--strictPort", "--host", "127.0.0.1"], { stdio: "ignore" });
