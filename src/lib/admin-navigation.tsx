@@ -266,7 +266,7 @@ export const adminNavigation: AdminNavSection[] = [
       item("General Settings", "/admin/settings", Settings, internalAdminRoles),
       item("Audit Log", "/admin/audit-log", FileText, platformOwnerRoles),
       item("System Logs & Jobs", "/admin/roadmap/system-logs-jobs", CloudCog, platformOwnerRoles),
-      item("Reconciliation", "/admin/roadmap/reconciliation", Receipt, platformOwnerRoles),
+      item("Reconciliation", "/admin/finance/reconciliation", Receipt, platformOwnerRoles),
       item("Payment Providers", "/admin/roadmap/payment-providers", CreditCard, platformOwnerRoles),
       item("View Public Site", "/", Globe, []),
     ],
@@ -315,7 +315,7 @@ const internalSidebarMenus: SidebarMenuEntry[] = [
     number: "05", title: "Finance", icon: Wallet, items: [
       item("Wallets", "/admin/wallet", Wallet, internalAdminRoles),
       item("Payments", "/admin/payments", CreditCard, [...internalAdminRoles, "staff"]),
-      item("Reconciliation", "/admin/roadmap/reconciliation", Receipt, platformOwnerRoles),
+      item("Reconciliation", "/admin/finance/reconciliation", Receipt, platformOwnerRoles),
       item("Accounts & Ledgers", "/admin/finance/accounts-ledgers", BookOpen, financeAccountRoles),
     ],
   },
@@ -373,6 +373,7 @@ export function getInternalSidebarForRole(role: UserRole): SidebarMenuEntry[] {
 const RENAMED_ADMIN_PATHS: Record<string, string> = {
   "/admin/roadmap/audit-logs": "/admin/audit-log",
   "/admin/roadmap/audit-log": "/admin/audit-log",
+  "/admin/roadmap/reconciliation": "/admin/finance/reconciliation",
   "/admin/roadmap/webhook-logs": "/admin/roadmap/system-logs-jobs",
   "/admin/roadmap/payment-gateways": "/admin/roadmap/payment-providers",
 };

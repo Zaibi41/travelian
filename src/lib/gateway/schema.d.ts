@@ -1036,6 +1036,165 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/reconciliation/imports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Statement Imports */
+        get: operations["list_statement_imports_v1_admin_finance_reconciliation_imports_get"];
+        put?: never;
+        /**
+         * Import Statement
+         * @description Import a PayFast settlement, a bank statement or a supplier statement and match it. If any row can't be read,
+         *     nothing is saved and the rows are listed. Audited. Changes no payment or booking.
+         */
+        post: operations["import_statement_v1_admin_finance_reconciliation_imports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reconciliation/imports/{import_id}/lines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Statement Lines */
+        get: operations["list_statement_lines_v1_admin_finance_reconciliation_imports__import_id__lines_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reconciliation/lines/{line_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Bank Match
+         * @description Staff confirm a suggested bank match. Audited.
+         */
+        post: operations["confirm_bank_match_v1_admin_finance_reconciliation_lines__line_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reconciliation/lines/{line_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject Bank Match
+         * @description Staff reject a suggested bank match: the credit goes on the mismatch list. Audited.
+         */
+        post: operations["reject_bank_match_v1_admin_finance_reconciliation_lines__line_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reconciliation/mismatches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Mismatches
+         * @description One list of differences to work through; supplier ones need cost and margin.
+         */
+        get: operations["list_mismatches_v1_admin_finance_reconciliation_mismatches_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reconciliation/mismatches/{mismatch_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Mismatch
+         * @description Mark a mismatch explained or resolved, with the reason. Audited; it can't be reopened or edited.
+         */
+        post: operations["resolve_mismatch_v1_admin_finance_reconciliation_mismatches__mismatch_id__resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reconciliation/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Statement
+         * @description The file's columns and first rows, so staff can say which column is which. Nothing is saved.
+         */
+        post: operations["preview_statement_v1_admin_finance_reconciliation_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/reconciliation/supplier-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Supplier Check
+         * @description Compare recorded supplier charges with issued tickets and their stored cost; differences go on the mismatch list.
+         */
+        post: operations["supplier_check_v1_admin_finance_reconciliation_supplier_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/finance/refunds": {
         parameters: {
             query?: never;
@@ -6743,6 +6902,48 @@ export interface components {
             /** Method */
             method: string;
         };
+        /** MismatchList */
+        MismatchList: {
+            /** Mismatches */
+            mismatches: components["schemas"]["MismatchView"][];
+            /** Total */
+            total: number;
+        };
+        /** MismatchView */
+        MismatchView: {
+            actual?: components["schemas"]["BookingMoney"] | null;
+            /** Booking Reference */
+            booking_reference?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Detail */
+            detail: string;
+            expected?: components["schemas"]["BookingMoney"] | null;
+            /** Explained At */
+            explained_at?: string | null;
+            /** Explained By User Id */
+            explained_by_user_id?: string | null;
+            /** Explanation */
+            explanation?: string | null;
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Resolution Reason */
+            resolution_reason?: string | null;
+            /** Resolved At */
+            resolved_at?: string | null;
+            /** Resolved By User Id */
+            resolved_by_user_id?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "explained" | "resolved";
+        };
         /**
          * NeedsAction
          * @description Not affected by the date filter.
@@ -7640,6 +7841,16 @@ export interface components {
             /** Username */
             username: string;
         };
+        /** ResolveMismatchRequest */
+        ResolveMismatchRequest: {
+            /** Reason */
+            reason: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "explained" | "resolved";
+        };
         /** ReturnResult */
         ReturnResult: {
             /** Reference */
@@ -8144,6 +8355,172 @@ export interface components {
              * @enum {string}
              */
             submitted_via: "checkout" | "my_bookings";
+        };
+        /** StatementColumns */
+        StatementColumns: {
+            /** Amount */
+            amount?: string | null;
+            /** Credit */
+            credit?: string | null;
+            /** Date */
+            date?: string | null;
+            /** Debit */
+            debit?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Fee */
+            fee?: string | null;
+            /** Net */
+            net?: string | null;
+            /** Payout Date */
+            payout_date?: string | null;
+            /** Reference */
+            reference?: string | null;
+        };
+        /** StatementImportList */
+        StatementImportList: {
+            /** Imports */
+            imports: components["schemas"]["StatementImportView"][];
+        };
+        /** StatementImportRequest */
+        StatementImportRequest: {
+            /**
+             * Account Id
+             * @description Bank: the receiving account the statement belongs to.
+             */
+            account_id?: string | null;
+            columns: components["schemas"]["StatementColumns"];
+            /**
+             * Content
+             * @description The CSV file's text.
+             */
+            content: string;
+            /**
+             * Date Format
+             * @default DD/MM/YYYY
+             * @enum {string}
+             */
+            date_format: "DD/MM/YYYY" | "MM/DD/YYYY" | "YYYY-MM-DD" | "DD-MMM-YYYY";
+            /** File Name */
+            file_name: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "payfast" | "bank" | "supplier";
+            /**
+             * Provider Id
+             * @description Supplier statements.
+             */
+            provider_id?: ("southair" | "sooperfare") | null;
+        };
+        /** StatementImportResult */
+        StatementImportResult: {
+            /**
+             * Fees Recorded
+             * @description PayFast fees taken from the settlement file onto payments (used in profit).
+             */
+            fees_recorded: number;
+            /** Import Id */
+            import_id: string;
+            /** Lines */
+            lines: number;
+            /** Matched */
+            matched: number;
+            /** Mismatches Added */
+            mismatches_added: number;
+            /** Suggested */
+            suggested: number;
+            /** Unmatched */
+            unmatched: number;
+        };
+        /** StatementImportView */
+        StatementImportView: {
+            /** Account Label */
+            account_label?: string | null;
+            /** File Name */
+            file_name: string;
+            /** Id */
+            id: string;
+            /**
+             * Imported At
+             * Format: date-time
+             */
+            imported_at: string;
+            /** Imported By User Id */
+            imported_by_user_id?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "payfast" | "bank" | "supplier";
+            /** Matched */
+            matched: number;
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Row Count */
+            row_count: number;
+            /** Suggested */
+            suggested: number;
+            /** Unmatched */
+            unmatched: number;
+        };
+        /** StatementLineList */
+        StatementLineList: {
+            /** Lines */
+            lines: components["schemas"]["StatementLineView"][];
+        };
+        /** StatementLineView */
+        StatementLineView: {
+            amount: components["schemas"]["BookingMoney"];
+            /** Booking Reference */
+            booking_reference?: string | null;
+            /** Description */
+            description?: string | null;
+            fee?: components["schemas"]["BookingMoney"] | null;
+            /** Id */
+            id: string;
+            /** Line No */
+            line_no: number;
+            net?: components["schemas"]["BookingMoney"] | null;
+            /** Occurred On */
+            occurred_on?: string | null;
+            payment_amount?: components["schemas"]["BookingMoney"] | null;
+            /** Payment Reference */
+            payment_reference?: string | null;
+            /** Payout On */
+            payout_on?: string | null;
+            /** Reference */
+            reference?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "matched" | "suggested" | "unmatched" | "ignored";
+        };
+        /** StatementPreview */
+        StatementPreview: {
+            /** Columns */
+            columns: string[];
+            /** Date Formats */
+            date_formats: string[];
+            /** Rows */
+            rows: number;
+            /**
+             * Sample
+             * @description The first rows, to choose the columns.
+             */
+            sample: string[][];
+        };
+        /** StatementPreviewRequest */
+        StatementPreviewRequest: {
+            /**
+             * Content
+             * @description The CSV file's text.
+             */
+            content: string;
+            /** File Name */
+            file_name: string;
         };
         /**
          * SupplierBookingView
@@ -11424,6 +11801,454 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_statement_imports_v1_admin_finance_reconciliation_imports_get: {
+        parameters: {
+            query?: {
+                kind?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementImportList"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    import_statement_v1_admin_finance_reconciliation_imports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatementImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementImportResult"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Already imported. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rows that can't be read (listed); nothing saved. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_statement_lines_v1_admin_finance_reconciliation_imports__import_id__lines_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+            };
+            header?: never;
+            path: {
+                import_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementLineList"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    confirm_bank_match_v1_admin_finance_reconciliation_lines__line_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                line_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reject_bank_match_v1_admin_finance_reconciliation_lines__line_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                line_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_mismatches_v1_admin_finance_reconciliation_mismatches_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                kind?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MismatchList"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    resolve_mismatch_v1_admin_finance_reconciliation_mismatches__mismatch_id__resolve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mismatch_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveMismatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MismatchView"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    preview_statement_v1_admin_finance_reconciliation_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatementPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementPreview"];
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a readable CSV. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supplier_check_v1_admin_finance_reconciliation_supplier_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Caller doesn't have the Finance permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Database not available. */
             503: {
