@@ -68,7 +68,7 @@ function Requested({ request }: { request: RequestView }) {
         <Fact label="Quoted total" value={formatMoney(request.selling_total)} />
       </div>
       <p className="text-body text-muted-foreground">Admins were notified. Contact the customer, confirm the fare and payment, then make the booking in the admin.</p>
-      <div><Link to={`/admin/bookings?search=${encodeURIComponent(request.booking_id)}`} className="font-medium text-teal hover:underline">Open in Bookings</Link></div>
+      <div><Link to={bookingDetailPath(request.booking_id)} className="font-medium text-teal hover:underline">Open in Bookings</Link></div>
     </section>
   );
 }
