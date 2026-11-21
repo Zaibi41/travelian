@@ -261,6 +261,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{booking_id}/customer-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Customer Email
+         * @description Fix the customer's email on this booking after a bounce or complaint (gateway#59). Back office; logged (masked).
+         *     Later emails go to the new address; Resend sends the bounced ones again.
+         */
+        put: operations["change_customer_email_v1_admin_bookings__booking_id__customer_email_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/bookings/{booking_id}/emails/{email}/resend": {
         parameters: {
             query?: never;
@@ -3732,6 +3753,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/webhooks/ses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ses Feedback Webhook */
+        post: operations["ses_feedback_webhook_v1_webhooks_ses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4803,6 +4841,21 @@ export interface components {
              */
             save_for_next_time: boolean;
         };
+        /** CustomerEmailChange */
+        CustomerEmailChange: {
+            /**
+             * Email
+             * @description The corrected customer email address.
+             */
+            email: string;
+        };
+        /** CustomerEmailChanged */
+        CustomerEmailChanged: {
+            /** Email */
+            email: string;
+            /** Message */
+            message: string;
+        };
         /**
          * CustomerEmailProblem
          * @description A customer email whose last attempt wasn't delivered to SES (e.g. the SES sandbox refuses unverified addresses).
@@ -4824,6 +4877,12 @@ export interface components {
              * @description Which email: booking_held, bank_transfer, payment_received, ticket_issued, ...
              */
             email: string;
+            /**
+             * Fix Address
+             * @description Bounced for good or marked as spam: contact the customer and fix the address (PUT .../customer-email).
+             * @default false
+             */
+            fix_address: boolean;
             /**
              * Reason
              * @description Why, in plain words for staff.
@@ -9135,6 +9194,67 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    change_customer_email_v1_admin_bookings__booking_id__customer_email_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerEmailChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerEmailChanged"];
+                };
+            };
+            /** @description Caller is not back office, or asked for a field it may not see. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Same address, or no customer record. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a valid email address. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Booking data is not available. */
             503: {
@@ -18893,6 +19013,40 @@ export interface operations {
             };
             /** @description Application is not ready */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ses_feedback_webhook_v1_webhooks_ses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Not an SNS message. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed by SNS for our topic. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
