@@ -61,4 +61,10 @@ describe("Notifications booking alerts (#54)", () => {
     expect(screen.getByText("Booking request")).toBeInTheDocument();
     expect(screen.getByText("This alert isn't linked to a booking, so it can't be opened.")).toBeInTheDocument();
   });
+
+  it("#75: an alert shows its booking's airline logo", () => {
+    alerts.items = [alert({ airline_code: "Z8", airline_name: "South Air", flight_number: "Z8266" })];
+    renderPage();
+    expect(screen.getByRole("img", { name: "South Air logo" })).toBeInTheDocument();
+  });
 });
