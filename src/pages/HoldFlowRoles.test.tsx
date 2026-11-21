@@ -71,7 +71,7 @@ describe("supplier fields in the hold flow follow what the gateway sends", () =>
     gateway.reprice.mockResolvedValue({ ...STAFF_DRAFT.quote, price_changed: true, old_price_per_adult: rs(13_597), new_price_per_adult: rs(13_700),
       price_difference_per_adult: rs(103), ...(view.supplier_total ? { supplier_total: view.supplier_total, margin: view.margin } : {}) });
     renderAt(<FlightsBooking />, "/admin/search", null, "?tab=flights&from=LHE&to=KHI&date=2026-11-19");
-    fireEvent.click(await screen.findByRole("button", { name: "Hold Z8266 EB" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Book Z8266 EB" }));
     const dialog = await screen.findByRole("dialog", { name: "The fare price has changed" });
     expect(dialog).not.toHaveTextContent(SUPPLIER_TEXT);
   });

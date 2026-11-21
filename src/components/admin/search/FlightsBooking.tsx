@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Share2 } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
 import { PASSENGER_LABEL, airlineLabel, parseFlightSearch, repriceFlights, type FlightSearch, type FlightSearchView, type RepriceView } from "@/lib/admin-search/flights";
 import { HOLD_PATH, fareCheckFailure, type FareCheckState, type HoldDraft, type HoldMode } from "@/lib/admin-search/hold";
+import { flightShareMessage, whatsappShareUrl } from "@/lib/admin-search/share";
+import { useAirports } from "@/hooks/use-airports";
 import { FareCheckDialog } from "./FareCheckDialog";
 import { FlightsSearch, type FareSelection } from "./FlightsSearch";
 
@@ -36,6 +38,8 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [params] = useSearchParams();
+  const request = parseFlightSearch(params);
+  const airports = useAirports();
   const [check, setCheck] = useState<{ state: FareCheckState; mode: HoldMode; search: FlightSearchView; picks: Selections } | null>(null);
   const checking = useRef<AbortController | null>(null);
   useEffect(() => () => checking.current?.abort(), []);
@@ -71,7 +75,7 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
     }
   };
 
-  /** Book or Hold on a fare row: select it; once every direction has a fare, check the fare. */
+  /** Book (or Request to book) on a fare row: select it; once every direction has a fare, check the fare. */
   const bookOrHold = (mode: HoldMode, search: FlightSearchView, pick: FareSelection) => {
     reprice.reset();
     const picks = { ...picksFor(search), [pick.journey.direction]: pick };
@@ -111,22 +115,28 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
       renderFareAction={(pick, search) => {
         const label = `${pick.flight.flight_number ?? ""} ${pick.fare.name}`.trim();
         const priced = Boolean(pick.fare.selling_price);
+        const share = whatsappShareUrl(flightShareMessage(pick, request, airports));
         return (
-          // One Actions cell, right-aligned: Book and Hold as buttons (#81: no Revalidate; the fare is checked on Book or Hold).
+          // One Actions cell, right-aligned. Issue 112: Book (no Hold button; the hold flow stays for the Book path and
+          // existing links) and Share on WhatsApp. Restricted airlines (D32) stay "Request to book": the gateway
+          // refuses a supplier hold for them, so a Book button there could not book.
           <div className="flex flex-wrap justify-end gap-1.5">
             {pick.fare.booking_mode === "request" ? (
-              // Restricted airline (D32): never a supplier hold; Travelian's team confirms the fare and payment.
               <Button type="button" size="sm" variant="primary" disabled={!priced} title="This airline is booked by Travelian's team: send a request"
                 aria-label={`Request to book ${label}`} onClick={() => bookOrHold("request", search, pick)}>
                 Request to book
               </Button>
-            ) : (["book", "hold"] as const).map(mode => (
-              <Button key={mode} type="button" size="sm" variant={mode === "book" ? "primary" : "outline"} disabled={!priced}
-                title={priced ? undefined : "Price not available"} aria-label={`${mode === "book" ? "Book" : "Hold"} ${label}`}
-                onClick={() => bookOrHold(mode, search, pick)}>
-                {mode === "book" ? "Book" : "Hold"}
+            ) : (
+              <Button type="button" size="sm" variant="primary" disabled={!priced} title={priced ? undefined : "Price not available"}
+                aria-label={`Book ${label}`} onClick={() => bookOrHold("book", search, pick)}>
+                Book
               </Button>
-            ))}
+            )}
+            <Button asChild size="sm" variant="outline">
+              <a href={share} target="_blank" rel="noopener noreferrer" aria-label={`Share ${label} on WhatsApp`} title="Send the flight details and price on WhatsApp">
+                <Share2 className="h-3.5 w-3.5" aria-hidden="true" />Share
+              </a>
+            </Button>
           </div>
         );
       }}
