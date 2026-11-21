@@ -9,13 +9,13 @@ import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
 import { GroupBookingSteps, HoldCountdown, useHoldOver } from "@/components/admin/search/GroupBookingSteps";
 import { GatewayError } from "@/lib/gateway/client";
-import { formatMoney } from "@/lib/admin-bookings/format";
+import { BOOKING_STATUS_LABEL, formatMoney } from "@/lib/admin-bookings/format";
 import { sourceLine } from "@/lib/admin-search/group-ticketing";
 import { signedMoney } from "@/components/admin/search/GroupPaymentsTab";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
 import { FieldLabel, Input } from "@/components/admin/ui/field";
 import { setSellingPrice } from "@/lib/admin-bookings/api";
-import { acceptHeldPrice, departureText, fetchGroupHold, returnFlightText, gatewayMessage, groupBookingPath, releaseGroupHold, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
+import { GROUP_TICKETING_LABEL, acceptHeldPrice, departureText, fetchGroupHold, returnFlightText, gatewayMessage, groupBookingPath, releaseGroupHold, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
 import { CopyPnr } from "@/components/CopyPnr";
 
 const SEARCH = "/admin/search?tab=group-ticketing";
@@ -169,8 +169,10 @@ function Held({ view }: { view: GroupHoldView }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const over = useHoldOver(view.status === "held" ? view.hold_expires_at : null);
-  const expired = view.status === "expired" || (view.status === "held" && over);
-  const held = view.status === "held" && !expired;
+  // Paid in full past the hold time: the gateway keeps it open, waiting for the final PNR (never "expired").
+  const awaitingPnr = view.status === "held" && over && view.ticketing_status === "awaiting_final_pnr";
+  const expired = view.status === "expired" || (view.status === "held" && over && !awaitingPnr);
+  const held = view.status === "held" && !over;
   const [problem, setProblem] = useState<string | null>(null);
   const release = useMutation({
     mutationFn: () => releaseGroupHold(view.booking_id),
@@ -193,8 +195,9 @@ function Held({ view }: { view: GroupHoldView }) {
           <HoldCountdown expiresAt={view.hold_expires_at} note={view.hold_time_note} />
         </section>
       ) : (
-        <Notice tone={expired || view.status === "not_recorded" ? "critical" : "info"} title={
-          expired ? "This hold has expired" : view.status === "released" ? "This hold was released" : view.status === "issued" ? "Tickets issued"
+        <Notice tone={expired || view.status === "not_recorded" || view.status === "paid_not_ticketed" ? "critical" : "info"} title={
+          expired ? "This hold has expired" : awaitingPnr ? GROUP_TICKETING_LABEL.awaiting_final_pnr
+            : view.status === "paid_not_ticketed" ? BOOKING_STATUS_LABEL.paid_not_ticketed : view.status === "released" ? "This hold was released" : view.status === "issued" ? "Tickets issued"
             : view.status === "not_recorded" ? "This hold was not recorded" : "Issuing in progress"}>
           {view.status === "not_recorded" ? <>The supplier held the seats but the booking couldn't be saved. <Link to={SEARCH} className="font-medium text-teal hover:underline">Search again</Link> to hold new seats.</>
             : expired ? <>The seats were not kept and this booking can't be held again. <Link to={SEARCH} className="font-medium text-teal hover:underline">Search again</Link> and hold new seats.</>
@@ -218,7 +221,7 @@ function Held({ view }: { view: GroupHoldView }) {
             </div>
             <Row label="Stock" value={view.stock === "owned" ? "Owned" : "Supplier"} />
             {source && <Row label="Source" value={<span title={source}>{source}</span>} />}
-            {view.status !== "held" && <Row label="Status" value={<StatusBadge severity={view.status === "issued" ? "fine" : "critical"}>{view.status === "issued" ? "Issued" : view.status === "released" ? "Released" : view.status === "expired" ? "Expired" : view.status === "unknown" ? "Unknown" : view.status === "not_recorded" ? "Not recorded" : "Processing"}</StatusBadge>} />}
+            {view.status !== "held" && <Row label="Status" value={<StatusBadge severity={view.status === "issued" ? "fine" : "critical"}>{view.status === "issued" ? "Issued" : view.status === "released" ? "Released" : view.status === "expired" ? "Expired" : view.status === "unknown" ? "Unknown" : view.status === "not_recorded" ? "Not recorded" : view.status === "paid_not_ticketed" ? BOOKING_STATUS_LABEL.paid_not_ticketed : "Processing"}</StatusBadge>} />}
           </dl>
           <dl className="mt-2 flex flex-col border-t border-border pt-2">
             <Row label="Customer" value={view.customer?.name ?? "—"} />

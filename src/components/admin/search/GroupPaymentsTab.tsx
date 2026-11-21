@@ -15,7 +15,7 @@ import { formatMoney } from "@/lib/admin-bookings/format";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABEL, rupeesToPaisa } from "@/lib/admin-bookings/payments";
 import type { PaymentMethod } from "@/lib/admin-bookings/types";
 import {
-  costChangeFrom, gatewayMessage, issueGroupTickets, releaseGroupHold, type CostChange, type GroupHoldView, type GroupIssueResult, type GroupMoney,
+  GROUP_TICKETING_LABEL, costChangeFrom, gatewayMessage, issueGroupTickets, releaseGroupHold, type CostChange, type GroupHoldView, type GroupIssueResult, type GroupMoney,
 } from "@/lib/admin-search/group-holds";
 import { cn } from "@/lib/utils";
 
@@ -35,8 +35,10 @@ export function signedMoney(money: GroupMoney) {
 // whether recording or issuing is allowed; once the hold expires both are disabled here too.
 export function GroupPaymentsTab({ view, onChange }: { view: GroupHoldView; onChange: (next: GroupHoldView) => void }) {
   const over = useHoldOver(view.status === "held" ? view.hold_expires_at : null);
-  const expired = view.status === "expired" || (view.status === "held" && over);
-  const held = view.status === "held" && !expired;
+  // Paid in full past the hold time: the gateway keeps it open, waiting for the final PNR (never "expired").
+  const awaitingPnr = view.status === "held" && view.ticketing_status === "awaiting_final_pnr";
+  const expired = view.status === "expired" || (view.status === "held" && over && !awaitingPnr);
+  const held = view.status === "held" && !over;
   const paidInFull = view.amount_due.amount_minor <= 0;
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
@@ -90,7 +92,7 @@ export function GroupPaymentsTab({ view, onChange }: { view: GroupHoldView; onCh
           </div>
         )}
       </section>
-      <IssueTickets view={view} held={held} onChange={onChange} />
+      <IssueTickets view={view} held={held} awaitingPnr={awaitingPnr && over} onChange={onChange} />
     </div>
   );
 }
@@ -167,7 +169,7 @@ function RecordPayment({ view, enabled, onChange }: { view: GroupHoldView; enabl
   );
 }
 
-function IssueTickets({ view, held, onChange }: { view: GroupHoldView; held: boolean; onChange: (next: GroupHoldView) => void }) {
+function IssueTickets({ view, held, awaitingPnr = false, onChange }: { view: GroupHoldView; held: boolean; awaitingPnr?: boolean; onChange: (next: GroupHoldView) => void }) {
   const queryClient = useQueryClient();
   const [change, setChange] = useState<CostChange | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -199,6 +201,7 @@ function IssueTickets({ view, held, onChange }: { view: GroupHoldView; held: boo
     : view.status === "issued" ? "Tickets are issued."
     : view.status === "unknown" ? "The tickets' status is unknown. Don't issue again: check with the supplier."
     : view.status === "processing" ? "Issuing is in progress."
+    : awaitingPnr ? `${GROUP_TICKETING_LABEL.awaiting_final_pnr}.`
     : !held ? "The hold is no longer open."
     : due ? `Record the full payment first: ${formatMoney(view.amount_due)} is still due.`
     : !view.can_issue_tickets ? "Issuing tickets needs the issue tickets permission."
@@ -212,7 +215,7 @@ function IssueTickets({ view, held, onChange }: { view: GroupHoldView; held: boo
         {problem && <p role="alert" className="mt-1 text-body text-status-critical-text">{problem}</p>}
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-3">
-        {view.status === "held" && <HoldCountdown expiresAt={view.hold_expires_at} expired={!held} note={view.hold_time_note} />}
+        {view.status === "held" && !awaitingPnr && <HoldCountdown expiresAt={view.hold_expires_at} expired={!held} note={view.hold_time_note} />}
         <Button type="button" variant="primary" disabled={!canIssue || issue.isPending} title={view.issue_unavailable_reason ?? undefined}
           onClick={() => { setProblem(null); setResult(null); issue.mutate(undefined); }}>
           {issue.isPending ? "Issuing…" : "Issue tickets"}

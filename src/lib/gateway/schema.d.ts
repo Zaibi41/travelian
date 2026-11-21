@@ -6012,10 +6012,10 @@ export interface components {
             saved_people?: components["schemas"]["SaveOutcomeView"][] | null;
             /**
              * Status
-             * @description held; confirmed (paid, the final PNR is recorded); expired (time limit passed, can't be held again: search again); released; processing (issuing); issued; unknown (issuing outcome unclear); not_recorded (the supplier held but the booking couldn't be completed; only viewers with supplier access can open it).
+             * @description held (also paid in full past the time limit, waiting for the final PNR: ticketing_status awaiting_final_pnr); confirmed (paid, the final PNR is recorded); expired (time limit passed with no money recorded, can't be held again: search again); released; processing (issuing); issued; unknown (issuing outcome unclear); not_recorded (the supplier held but the booking couldn't be completed; only viewers with supplier access can open it); paid_not_ticketed (part-paid when the time limit passed, or the supplier cancelled a paid booking: staff refund or rebook).
              * @enum {string}
              */
-            status: "held" | "confirmed" | "expired" | "released" | "processing" | "issued" | "unknown" | "not_recorded" | "requested";
+            status: "held" | "confirmed" | "expired" | "released" | "processing" | "issued" | "unknown" | "not_recorded" | "requested" | "paid_not_ticketed";
             /**
              * Stock
              * @enum {string}
