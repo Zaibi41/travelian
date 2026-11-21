@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plane, Download, X, Search, Calendar, MapPin, Upload } from "lucide-react";
 import { listBookings, cancelBooking, deleteBooking, updateBooking, type BookingRecord } from "@/lib/booking-store";
 import { confirmPayFastReturn, getPublicBooking, isPayFastReturn, type PublicBooking } from "@/lib/public-booking";
-import { downloadETicket } from "@/lib/eticket-pdf";
+import { downloadETicket } from "@/lib/eticket-pdf-lazy";
 import { toast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
 import { CopyPnr } from "@/components/CopyPnr";

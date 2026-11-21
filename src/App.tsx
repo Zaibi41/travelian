@@ -13,6 +13,8 @@ import { LocaleProvider } from "@/contexts/LocaleContext";
 
 // Public pages
 import HomePage from "./pages/public/HomePage";
+// Pages prerendered at deploy time (scripts/prerender.mjs); they load without a "Loading page…" flash.
+import { AboutPage, CareersPage, ContactPage, DealsPage, FaqPage, GroupTicketingPage, PrivacyPage, TermsPage } from "./pages/public/prerendered-pages";
 // The admin shell (sidebar, header, guards) is only fetched by admin routes, not by public visitors.
 const AdminLayout = lazy(() => import("@/components/AdminLayout").then(m => ({ default: m.AdminLayout })));
 const PublicHotelsPage = lazy(() => import("./pages/public/PublicHotelsPage"));
@@ -23,18 +25,11 @@ const PublicPackagesPage = lazy(() => import("./pages/public/PublicPackagesPage"
 const UmrahSamplePage = lazy(() => import("./pages/public/UmrahSamplePage"));
 
 const PublicBlogPage = lazy(() => import("./pages/public/PublicBlogPage"));
-const ContactPage = lazy(() => import("./pages/public/ContactPage"));
-const AboutPage = lazy(() => import("./pages/public/AboutPage"));
-const DealsPage = lazy(() => import("./pages/public/DealsPage"));
 const BookingPage = lazy(() => import("./pages/public/BookingPage"));
 const AccountPage = lazy(() => import("./pages/public/AccountPage"));
 const SignInPage = lazy(() => import("./pages/public/SignInPage"));
 const RegisterPage = lazy(() => import("./pages/public/RegisterPage"));
 const AuthCallbackPage = lazy(() => import("./pages/public/AuthCallbackPage"));
-const FaqPage = lazy(() => import("./pages/public/FaqPage"));
-const PrivacyPage = lazy(() => import("./pages/public/PrivacyPage"));
-const TermsPage = lazy(() => import("./pages/public/TermsPage"));
-const CareersPage = lazy(() => import("./pages/public/CareersPage"));
 const UmrahDetailPage = lazy(() => import("./pages/public/UmrahDetailPage"));
 const MyBookingsPage = lazy(() => import("./pages/public/MyBookingsPage"));
 const FindBookingPage = lazy(() => import("./pages/public/FindBookingPage"));
@@ -42,7 +37,6 @@ const BookingLinkPage = lazy(() => import("./pages/public/BookingLinkPage"));
 const BlogDetailPage = lazy(() => import("./pages/public/BlogDetailPage"));
 const DestinationPage = lazy(() => import("./pages/public/DestinationPage"));
 const BookingRequestPage = lazy(() => import("./pages/public/BookingRequestPage"));
-const GroupTicketingPage = lazy(() => import("./pages/public/GroupTicketingPage"));
 
 // Admin pages
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));

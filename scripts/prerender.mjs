@@ -9,7 +9,7 @@
 // API calls are held (never answered) while rendering: pages are captured in their loading state,
 // never with build-time fares, prices or seat counts that would go stale.
 import { spawn } from "node:child_process";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { chromium } from "@playwright/test";
 
 export const PRERENDER_ROUTES = [
@@ -76,8 +76,17 @@ async function render(browser, path) {
   // make every same-origin URL relative, and refuse to write a page that still points at it.
   const relative = html.replaceAll(ORIGIN, "");
   if (/127\.0\.0\.1|localhost/.test(relative)) throw new Error(`${path}: prerendered HTML still references the preview server`);
+  if (!relative.includes(`src="${ENTRY}"`)) throw new Error(`${path}: rendered from another build (no ${ENTRY})`);
   return relative;
 }
+
+// Another preview already on this port would be rendered instead of this build: refuse.
+if (await fetch(ORIGIN + "/").then(() => true, () => false)) {
+  throw new Error(`Port ${PORT} is already in use; stop that server or set PRERENDER_PORT`);
+}
+// Every saved page must load this build's own entry script.
+const ENTRY = (await readFile(new URL("../dist/index.html", import.meta.url), "utf8")).match(/src="(\/assets\/index-[^"]+\.js)"/)?.[1];
+if (!ENTRY) throw new Error("dist/index.html has no entry script; run `npm run build` first");
 
 const server = spawn("npx", ["vite", "preview", "--port", String(PORT), "--strictPort", "--host", "127.0.0.1"], { stdio: "ignore" });
 try {

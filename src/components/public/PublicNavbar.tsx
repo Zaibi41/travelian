@@ -143,7 +143,7 @@ export function PublicNavbar() {
           <nav aria-label="Main navigation">
             <div className={cn("flex items-center gap-4 transition-[height] duration-200 motion-reduce:transition-none lg:grid lg:grid-cols-[1fr_auto_1fr]", "h-14")}>
               <Link to="/" onClick={() => setMobileOpen(false)} className="flex w-fit shrink-0 items-center justify-self-start" aria-label="Travelian home">
-                <img src={logoUrl ?? "/travelian-logo-wordmark.png"} alt="Travelian" width={576} height={164} fetchPriority="high" className={cn("h-8 w-auto max-w-[10rem] object-contain mix-blend-multiply sm:h-9 sm:max-w-[12rem]")} />
+                <img src={logoUrl ?? "/travelian-logo-wordmark.png"} alt="Travelian" width={576} height={164} {...{ fetchpriority: "high" }} className={cn("h-8 w-auto max-w-[10rem] object-contain mix-blend-multiply sm:h-9 sm:max-w-[12rem]")} />
               </Link>
               <div className="hidden h-full items-center justify-center gap-1 lg:flex">{headerState === "sticky" && renderLinks(serviceLinks)}</div>
               <div aria-hidden="true" className="hidden lg:block" />

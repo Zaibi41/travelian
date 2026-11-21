@@ -20,7 +20,7 @@ import { BankAccounts, HoldCountdown } from "@/components/public/BankTransferDet
 import { PaymentSlipUpload } from "@/components/public/PaymentSlipUpload";
 import { saveBooking, saveGatewayBooking, type BookingRecord, type BookingTraveler } from "@/lib/booking-store";
 import { submitHostedPayment } from "@/lib/payment-api";
-import { downloadETicket } from "@/lib/eticket-pdf";
+import { downloadETicket } from "@/lib/eticket-pdf-lazy";
 import { toast } from "@/hooks/use-toast";
 import { SEO } from "@/components/SEO";
 import { AirlineLogo } from "@/components/public/AirlineLogo";
@@ -766,21 +766,26 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
               <Lock className="h-3 w-3 text-success" /> Secure Checkout
             </div>
           </div>
-          <div className="flex items-center gap-2 mt-4">
+          <ol aria-label="Checkout progress" className="flex items-center gap-2 mt-4">
             {steps.map((s, i) => (
-              <div key={s.id} className="flex items-center gap-2 flex-1">
-                <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all duration-300 ${
+              <li key={s.id} aria-current={step === s.id ? "step" : undefined} className="flex items-center gap-2 flex-1">
+                <span className="sr-only">{`Step ${s.id} of ${steps.length}: ${s.label}${step > s.id ? " (done)" : ""}`}</span>
+                <div aria-hidden="true" className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all duration-300 ${
                   step >= s.id ? 'gradient-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground'
                 }`}>
                   {step > s.id ? <Check className="h-4 w-4" /> : s.id}
                 </div>
-                <span className={`text-xs font-medium hidden sm:block transition-colors ${step >= s.id ? 'text-foreground' : 'text-muted-foreground'}`}>
+                <span aria-hidden="true" className={`text-xs font-medium hidden sm:block transition-colors ${step >= s.id ? 'text-foreground' : 'text-muted-foreground'}`}>
                   {s.label}
                 </span>
-                {i < steps.length - 1 && <div className={`h-0.5 flex-1 rounded transition-all ${step > s.id ? 'bg-primary' : 'bg-muted'}`} />}
-              </div>
+                {i < steps.length - 1 && <div aria-hidden="true" className={`h-0.5 flex-1 rounded transition-all ${step > s.id ? 'bg-primary' : 'bg-muted'}`} />}
+              </li>
             ))}
-          </div>
+          </ol>
+          {/* Phones hide the step names beside the circles; name the current step so the traveller knows where they are. */}
+          <p aria-hidden="true" className="mt-2 text-xs font-semibold text-foreground sm:hidden">
+            Step {Math.min(step, steps.length)} of {steps.length}: {steps.find(s => s.id === step)?.label ?? steps[steps.length - 1].label}
+          </p>
         </div>
       </div>
 
