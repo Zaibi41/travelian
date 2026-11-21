@@ -34,6 +34,19 @@ describe("flights through the gateway", () => {
     expect(offers[0]).toMatchObject({ flightNumber: "PA400", returnDepartureTime: "2026-12-15T19:00", price: { total: 22050 + 21000 } });
   });
 
+  it("searches the gateway's public route with the trip, never the old API, and keeps airport times", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ search_id: "s1", status: "complete", journeys: [
+      { direction: "outbound", origin: "KHI", destination: "LHE", flights: [flight("f1", "PA", "PA400", "2026-12-12T08:00", [fare("a", "Value", 22050)])] },
+    ] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await searchFlights({ tripType: "oneway", from: "Karachi (KHI)", to: "LHE", departureDate: "2026-12-12", cabin: "Economy", currency: "PKR",
+      passengers: { adults: 2, children: 1, infants: 0 } });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://api.example.test/v1/public/flights/search");
+    expect(JSON.parse(init.body)).toMatchObject({ origin: "KHI", destination: "LHE", departure_date: "2026-12-12", return_date: null, adults: 2, children: 1, cabin: "economy" });
+    expect(result.flights[0]).toMatchObject({ provider: "travelian", flightNumber: "PA400", departureTime: "2026-12-12 08:00", price: 22050 });
+  });
+
   it("round trip: each fare keeps the outbound and the return baggage separately for the Baggage tab (#123)", () => {
     const bag = (id: string, name: string, rupees: number, baggage: string, baggage_detail: string) =>
       ({ id, name, baggage, baggage_detail, selling_price: { amount_minor: rupees * 100, currency: "PKR" } });
@@ -52,19 +65,6 @@ describe("flights through the gateway", () => {
     const [oneWay] = gatewayOffers({ search_id: "s", status: "complete", journeys: [{ direction: "outbound", origin: "KHI", destination: "LHE",
       flights: [flight("o1", "PA", "PA400", "2026-12-12T08:00", [fare("a", "Value", 22050)])] }] }, "Economy");
     expect(oneWay.fareOptions?.[0].legBags).toBeUndefined(); // one flight: the fare's own baggage is all there is
-  });
-
-  it("searches the gateway's public route with the trip, never the old API, and keeps airport times", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ search_id: "s1", status: "complete", journeys: [
-      { direction: "outbound", origin: "KHI", destination: "LHE", flights: [flight("f1", "PA", "PA400", "2026-12-12T08:00", [fare("a", "Value", 22050)])] },
-    ] }), { status: 200 }));
-    vi.stubGlobal("fetch", fetchMock);
-    const result = await searchFlights({ tripType: "oneway", from: "Karachi (KHI)", to: "LHE", departureDate: "2026-12-12", cabin: "Economy", currency: "PKR",
-      passengers: { adults: 2, children: 1, infants: 0 } });
-    const [url, init] = fetchMock.mock.calls[0];
-    expect(url).toBe("https://api.example.test/v1/public/flights/search");
-    expect(JSON.parse(init.body)).toMatchObject({ origin: "KHI", destination: "LHE", departure_date: "2026-12-12", return_date: null, adults: 2, children: 1, cabin: "economy" });
-    expect(result.flights[0]).toMatchObject({ provider: "travelian", flightNumber: "PA400", departureTime: "2026-12-12 08:00", price: 22050 });
   });
 
   describe("signed in (admin and agency screens, #130)", () => {
