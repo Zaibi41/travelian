@@ -43,7 +43,7 @@ export function AirlineLogo({
   // the supplier image is only used for airlines we have no file for (or if our file fails to load).
   const logoSource = [localLogo, remoteLogo].find((source) => source && !failedSources.includes(source));
   // Same look as the public logo tile; its colours are admin tokens with the same values
-  // (--logo-tile-*, src/styles/admin-tokens.css).
+  // (--logo-tile-*, src/styles/tokens.css).
   const logoShell = "flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[hsl(var(--logo-tile-border))] bg-gradient-to-br from-card via-card to-[hsl(var(--logo-tile-fade))] shadow-[var(--logo-tile-shadow)] ring-1 ring-[hsl(var(--logo-tile-ink)/0.05)]";
   const logoImage = "max-h-10 w-[86%] object-contain drop-shadow-[0_1px_1px_hsl(var(--logo-tile-ink)/0.16)] [filter:saturate(1.12)_contrast(1.08)]";
 

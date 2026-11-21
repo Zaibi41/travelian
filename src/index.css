@@ -1,95 +1,13 @@
 /* Fonts are loaded asynchronously via preconnect in index.html to avoid render-blocking CSS @import chains. */
-/* Admin design tokens; active only under <html data-app-theme="admin">. */
+/* One token file for the public site and the admin (colours, type, spacing, radius, shadows, motion). */
+@import './styles/tokens.css';
+/* Admin layout layer (sidebar, dense tables, search-form rows). */
 @import './styles/theme.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 220 20% 97%;
-    --foreground: 222 47% 11%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-
-    --primary: 217 91% 30%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 217 91% 24%;
-
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 11%;
-
-    --muted: 220 14% 96%;
-    --muted-foreground: 215 14% 34%;      /* #4B5563: 6.9-7.6:1 (TV-readable; was #6B7280) */
-
-    --accent: 217 91% 95%;
-    --accent-foreground: 217 91% 25%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-
-    --success: 142 72% 29%;               /* #15803D: white on it 5.02:1 */
-    --success-foreground: 0 0% 100%;
-    --success-text: 143 64% 24%;          /* #166534: text on white and on its tint 6.2:1 */
-
-    --warning: 38 92% 50%;
-    --warning-foreground: 38 90% 12%;     /* #3A2603: dark text on amber fills 6.75:1 */
-    --warning-text: 23 82% 31%;           /* #92400E: amber text on white / tint 6.5-7.1:1 */
-
-    --info: 224 76% 48%;                  /* #1D4ED8: 6.7:1 */
-    --info-foreground: 0 0% 100%;
-
-    --gold: 42 78% 55%;
-    --gold-foreground: 42 78% 15%;
-    --gold-light: 42 60% 92%;
-    --gold-text: 42 100% 27%;             /* #8A6100: gold text 5.5:1 */
-
-    --teal: 185 98% 25%;                  /* #01747E (admin teal): 5.53:1 */
-    --teal-foreground: 0 0% 100%;
-    --teal-soft: 184 55% 94%;
-
-    --whatsapp: 147 79% 27%;              /* #0E7A3E: white on it 5.42:1, still WhatsApp green */
-    --whatsapp-foreground: 0 0% 100%;
-    --whatsapp-hover: 146 81% 22%;
-
-    --deal: 0 72% 51%;
-    --deal-foreground: 0 0% 100%;
-
-    --border: 218 22% 86%;                /* #D3D9E3 card and divider lines */
-    --input: 219 13% 60%;                 /* #8C95A6 field borders 3.0:1 */
-    --ring: 217 91% 30%;
-
-    --radius: 0.625rem;
-
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 217 91% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 217 91% 50%;
-    --sidebar-muted: 215 20% 65%;
-
-    --font-display: 'Plus Jakarta Sans', sans-serif;
-    --font-body: 'Inter', sans-serif;
-
-    --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 30%), hsl(230, 70%, 40%));
-    --gradient-hero: linear-gradient(135deg, hsl(222, 47%, 8%), hsl(217, 60%, 16%));
-    --gradient-deal: linear-gradient(135deg, hsl(0, 72%, 51%), hsl(340, 80%, 45%));
-    --gradient-gold: linear-gradient(135deg, hsl(42, 78%, 55%), hsl(38, 92%, 50%));
-    --gradient-sidebar: linear-gradient(180deg, hsl(222, 47%, 11%), hsl(222, 47%, 8%));
-    --shadow-card: 0 1px 3px 0 hsl(222 47% 11% / 0.04), 0 1px 2px -1px hsl(222 47% 11% / 0.03);
-    --shadow-elevated: 0 10px 30px -8px hsl(222 47% 11% / 0.08), 0 4px 6px -2px hsl(222 47% 11% / 0.04);
-    --shadow-hover: 0 20px 50px -12px hsl(222 47% 11% / 0.12);
-    --shadow-premium: 0 4px 20px -4px hsl(42 78% 55% / 0.15);
-  }
-}
 
 @layer base {
   * {

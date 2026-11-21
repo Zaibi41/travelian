@@ -1,6 +1,6 @@
 /// <reference types="node" />
 // Guard: the admin design system (docs/design-system.md). Admin files use the admin tokens
-// (src/styles/admin-tokens.css) only: one type scale (tailwind fontSize: page-title, kpi, kpi-sm,
+// (src/styles/tokens.css) only: one type scale (tailwind fontSize: page-title, kpi, kpi-sm,
 // section, nav, body, table, label, helper), no arbitrary pixel sizes, inline font sizes or
 // Tailwind's default size classes, no hard-coded colours (hex, rgb/hsl, Tailwind palette colours)
 // and no arbitrary radii. Nothing below 12px in the scale; the admin colours stay as they are.
@@ -8,7 +8,9 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
 // Token files read from disk (Vitest turns CSS imports into empty stylesheets, even with ?raw).
-const tokensCss = readFileSync(`${process.cwd()}/src/styles/admin-tokens.css`, "utf8");
+const tokensCss = readFileSync(`${process.cwd()}/src/styles/tokens.css`, "utf8");
+// The admin's colour block in the shared token file (the public values are in :root above it).
+const adminCss = tokensCss.slice(tokensCss.search(/^:root\[data-app-theme="admin"\]/m));
 const themeCss = readFileSync(`${process.cwd()}/src/styles/theme.css`, "utf8");
 
 // Raw source of every admin file (Vite reads them at test time).
@@ -78,10 +80,10 @@ describe("admin type scale", () => {
   });
 });
 
-// Admin colours are not unified with the public site (Zohaib, 2026-11-11). A change here must be
-// a deliberate decision, not a side effect of a token or component change.
+// Admin colours are not unified with the public site (Zohaib, 2026-11-11; confirmed 2026-11-21 when
+// the tokens became one file). A change here must be a deliberate decision, not a side effect.
 describe("admin colours stay as they are", () => {
-  const value = (token: string) => tokensCss.match(new RegExp(`--${token}:\\s*([^;]+);`))?.[1].trim();
+  const value = (token: string) => adminCss.match(new RegExp(`--${token}:\\s*([^;]+);`))?.[1].trim();
 
   it("primary action buttons stay the current admin teal", () => {
     expect(value("brand-teal")).toBe("184.8 98.4% 24.9%");
@@ -106,9 +108,12 @@ describe("admin colours stay as they are", () => {
     });
   });
 
-  it("tokens are admin-scoped; the layout layer holds no colour", () => {
-    expect(tokensCss).not.toMatch(/^:root\s*\{/m);
-    expect(themeCss).toContain("@import './admin-tokens.css'");
+  it("one token file: shared :root, admin colours in their own block; the layout layer holds no colour", () => {
+    expect(tokensCss).toMatch(/^:root\s*\{/m);
+    expect(adminCss).toMatch(/^:root\[data-app-theme="admin"\]\s*\{/);
+    // The admin block holds colours only: type, sizes, radii, spacing and motion are shared.
+    expect(adminCss).not.toMatch(/--(text|control|radius|space|focus|motion)-/);
+    expect(themeCss).not.toContain("@import");
     expect(themeCss.replace(/\/\*[\s\S]*?\*\//g, "")).not.toMatch(/\d+(\.\d+)?%|#[0-9a-f]{3,8}\b|hsl\(/i);
   });
 });

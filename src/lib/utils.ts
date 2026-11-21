@@ -8,7 +8,7 @@ const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
       "font-size": [{ text: ["page-title", "kpi", "kpi-sm", "section", "nav", "body", "table", "label", "helper"] }],
-      // Admin size and radius tokens (src/styles/admin-tokens.css), so an override such as
+      // Admin size and radius tokens (src/styles/tokens.css), so an override such as
       // "h-9" replaces "h-control" instead of both being kept. Names only the admin uses.
       h: [{ h: ["control", "control-lg", "badge", "table-row", "table-header", "nav-item"] }],
       w: [{ w: ["control", "admin-sidebar"] }],
