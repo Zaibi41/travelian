@@ -389,7 +389,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           children: travelers.children,
           infants: travelers.infants,
         },
-      }, controller.signal),
+      }, controller.signal, { signedIn: adminMode }),
       (isAdultsOnly
         ? searchPublicGroups({ origin: originAirport, destination: destAirport, departureDate: departDateStr, adults: adultsCount }, controller.signal)
         : Promise.resolve([])),
@@ -1130,7 +1130,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       return;
     }
 
-    if (flight.provider === "sooperfare" && flight.rawRef?.faresPayload) {
+    // Admin screens never call the legacy API (#130): their fares come with the signed-in gateway search.
+    if (!adminMode && flight.provider === "sooperfare" && flight.rawRef?.faresPayload) {
       setModalFaresLoading(true);
       try {
         const options = await fetchFlightFares(flight);

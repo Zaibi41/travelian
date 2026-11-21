@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { HelmetProvider } from "react-helmet-async";
@@ -34,6 +34,7 @@ vi.mock("@/lib/travelian-api", () => ({
 vi.mock("@/lib/group-ticketing", () => ({ fetchGroupTickets: vi.fn(async () => []), filterGroupTickets: () => [] }));
 
 import PublicFlightsPage from "./PublicFlightsPage";
+import { fetchFlightFares, searchFlights } from "@/lib/travelian-api";
 
 function renderAdmin() {
   return render(
@@ -58,6 +59,18 @@ describe("admin legacy flight results", () => {
     const max = await screen.findByLabelText("Maximum price", undefined, { timeout: 4000 });
     expect(max).toHaveValue("37000");
     expect(screen.getByLabelText("Minimum price")).toHaveValue("0");
+  });
+
+  it("searches through the signed-in gateway route (#130) and never asks the legacy API for fares", async () => {
+    renderAdmin();
+    // A legacy-shaped flight that would make the public page ask the legacy API for its fare options.
+    resolveSearch({ flights: [{ ...flight, rawRef: { faresPayload: { ref_id: "legacy-ref", legs: [] } } }] });
+    await screen.findByLabelText("Maximum price", undefined, { timeout: 4000 });
+    expect(searchFlights).toHaveBeenCalled();
+    for (const call of vi.mocked(searchFlights).mock.calls) expect(call[2]).toEqual({ signedIn: true });
+    act(() => screen.getAllByRole("button", { name: /Flight Details/i })[0].click());
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(fetchFlightFares).not.toHaveBeenCalled();
   });
 
   it("links to checkout without a price, supplier ID or supplier logo", async () => {
