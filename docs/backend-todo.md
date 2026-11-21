@@ -14,7 +14,6 @@ The previous long-form list (sections 1 to 10) is in git history before 21 Novem
 | --- | --- |
 | Legacy `/content/bookings` and `/content/booking-requests` open to anyone; proxy Lambda `CORS_ORIGIN=*`; remove retired PayFast and group-feed routes from the Lambda (1, 9) | [gateway#82](https://github.com/Zaibi41/travelian-api-gateway/issues/82) |
 | `GET /v1/agency/bookings`, verified `bookings.agency_id`, agency dashboards, Agency filter (1, 2) | [gateway#83](https://github.com/Zaibi41/travelian-api-gateway/issues/83) |
-| Agency flight search `/admin/flights-search` on the legacy Lambda (6) | [travelian#130](https://github.com/Zaibi41/travelian/issues/130) |
 | Database protection for plain-text identity values (3) | [gateway#84](https://github.com/Zaibi41/travelian-api-gateway/issues/84) |
 | Unknown issuance card, Dashboard and Bookings (2, 4) | [gateway#85](https://github.com/Zaibi41/travelian-api-gateway/issues/85) |
 | Dashboard Money and balances section (2) | [gateway#86](https://github.com/Zaibi41/travelian-api-gateway/issues/86) |
@@ -72,5 +71,6 @@ The previous long-form list (sections 1 to 10) is in git history before 21 Novem
 | Group Ticketing: Al Haider adapter (6) | Gateway `app/vendors/group_ticketing/al_haider/`, `AlHaiderHoldProvider` behind `GROUP_AL_HAIDER_HOLD_ENABLED`; credentials are an owner step |
 | Group Ticketing: staff record final PNR and tickets (8) | Gateway `POST /v1/group-ticketing/holds/{id}/tickets`; tracker `group-departures-without-final-pnr` |
 | Customers list without a search term (7) | Gateway `GET /v1/admin/customers`: `q` optional, "Leave out to list the most recent people" |
+| Agency flight search `/admin/flights-search` on the gateway (6) | Signed-in `POST /v1/live-ticketing/flights/search` (`searchFlights(..., { signedIn: true })` in `src/lib/travelian-api.ts`); travelian#130 |
 | Lambda PayFast routes and group feed blocked (9) | Gateway `deploy/Caddyfile` answers 410; removing them from the Lambda is part of gateway#82 |
 | Receiving account edit endpoint (9) | Gateway `PATCH /v1/admin/finance/payment-accounts/{id}`; the page's edit control is in gateway#95 |

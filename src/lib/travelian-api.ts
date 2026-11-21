@@ -238,7 +238,7 @@ export function extractAirportCode(value: string) {
   return match?.[1].toUpperCase() || "";
 }
 
-// ---------- flights through the Travelian gateway (/v1/public/flights/search) ----------
+// ---------- flights through the Travelian gateway (/v1/public/flights/search; admin: /v1/live-ticketing/flights/search) ----------
 // Every flight supplier is called from the gateway's static IP (SooperFare only accepts that IP), and the gateway
 // returns selling prices only. The answer is turned into the offer shape this page already shows.
 
@@ -337,7 +337,16 @@ export function gatewayOffers(view: GatewaySearchView, cabin: string): FlightOff
   return offers;
 }
 
-export async function searchFlights(input: FlightSearchInput, signal?: AbortSignal): Promise<FlightSearchResult> {
+export interface FlightSearchOptions {
+  /** Admin screens (agency and back office): the signed-in route /v1/live-ticketing/flights/search, with the user's
+   *  token, so the gateway leaves out what the role may not receive (supplier names, cost, margin; #130).
+   *  The public website: /v1/public/flights/search (selling prices only). */
+  signedIn?: boolean;
+}
+
+const SIGNED_IN_UNAVAILABLE = "Flight search can't run right now. The flight supplier isn't responding; try again in a few minutes.";
+
+export async function searchFlights(input: FlightSearchInput, signal?: AbortSignal, options: FlightSearchOptions = {}): Promise<FlightSearchResult> {
   const origin = extractAirportCode(input.from);
   const destination = extractAirportCode(input.to);
   if (!origin || !destination) {
@@ -346,25 +355,34 @@ export async function searchFlights(input: FlightSearchInput, signal?: AbortSign
   if (input.tripType === "multicity") {
     throw new Error("Multi-city search isn't available online yet. Please contact Travelian.");
   }
-  const base = gatewayBaseUrl();
-  if (!base) throw new Error("Flight search is unavailable right now.");
   const cabin = String(input.cabin || "economy").toLowerCase().replace(/\s+/g, "_");
-  const response = await fetch(`${base}/v1/public/flights/search`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    signal,
-    body: JSON.stringify({
-      origin, destination, departure_date: input.departureDate,
-      return_date: input.tripType === "roundtrip" ? input.returnDate || null : null,
-      adults: input.passengers.adults, children: input.passengers.children, infants: input.passengers.infants,
-      cabin: ["economy", "premium_economy", "business", "first"].includes(cabin) ? cabin : "economy",
-      currency: input.currency || "PKR",
-    }),
-  });
-  const payload = await response.json().catch(() => null) as GatewaySearchView | { detail?: unknown } | null;
-  if (!response.ok || !payload || !("journeys" in payload)) {
-    const detail = payload && "detail" in payload && typeof payload.detail === "string" ? payload.detail : "Flight search failed. Please try again.";
-    throw new Error(detail);
+  const body = {
+    origin, destination, departure_date: input.departureDate,
+    return_date: input.tripType === "roundtrip" ? input.returnDate || null : null,
+    adults: input.passengers.adults, children: input.passengers.children, infants: input.passengers.infants,
+    cabin: (["economy", "premium_economy", "business", "first"].includes(cabin) ? cabin : "economy") as "economy" | "premium_economy" | "business" | "first",
+    currency: input.currency || "PKR",
+  };
+  let payload: GatewaySearchView;
+  if (options.signedIn) {
+    // Loaded only on admin screens, so the public site's bundle doesn't carry the signed-in client.
+    const { gatewayPost } = await import("@/lib/gateway/client");
+    payload = await gatewayPost("/v1/live-ticketing/flights/search", body, { signal, unavailableMessage: SIGNED_IN_UNAVAILABLE });
+  } else {
+    const base = gatewayBaseUrl();
+    if (!base) throw new Error("Flight search is unavailable right now.");
+    const response = await fetch(`${base}/v1/public/flights/search`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      signal,
+      body: JSON.stringify(body),
+    });
+    const answer = await response.json().catch(() => null) as GatewaySearchView | { detail?: unknown } | null;
+    if (!response.ok || !answer || !("journeys" in answer)) {
+      const detail = answer && "detail" in answer && typeof answer.detail === "string" ? answer.detail : "Flight search failed. Please try again.";
+      throw new Error(detail);
+    }
+    payload = answer;
   }
   return {
     searchId: payload.search_id,
