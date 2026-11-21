@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -30,8 +30,8 @@ const STAFF: FlightSearchView = {
   journeys: [{
     direction: "outbound", origin: "KHI", destination: "MUX",
     flights: [
-      { id: "f1", airline_code: "MM", airline_name: "Synthetic Aviation With A Very Long Airline Name", flight_number: "MM112", departure_local: "2026-11-27T23:00", arrival_local: "2026-11-28T00:00", duration_minutes: 60, stops: 0, stop_cities: [], fares: [fare("eb", 467), fare("ep", 520, "Non-refundable"), fare("ex", 600), fare("ez", 700)] },
-      { id: "f2", airline_code: "MM", airline_name: "Synthetic Aviation", flight_number: "MM114", departure_local: "2026-11-27T08:00", arrival_local: "2026-11-27T10:30", duration_minutes: 150, stops: 1, stop_cities: ["LHE"], fares: [fare("y", 306)] },
+      { id: "f1", airline_code: "MM", airline_name: "Synthetic Aviation With A Very Long Airline Name", flight_number: "MM112", departure_local: "2026-11-27T23:00", arrival_local: "2026-11-28T00:00", duration_minutes: 60, stops: 0, stop_cities: [], segments: [], fares: [fare("eb", 467), fare("ep", 520, "Non-refundable"), fare("ex", 600), fare("ez", 700)] },
+      { id: "f2", airline_code: "MM", airline_name: "Synthetic Aviation", flight_number: "MM114", departure_local: "2026-11-27T08:00", arrival_local: "2026-11-27T10:30", duration_minutes: 150, stops: 1, stop_cities: ["LHE"], segments: [], fares: [fare("y", 306)] },
     ],
   }],
 };
@@ -52,7 +52,7 @@ describe("admin Flights search", () => {
     expect(gateway.search).toHaveBeenCalledWith(expect.objectContaining({ from: "KHI", to: "MUX", date: "2026-11-27", adults: 1, trip: "oneway" }), expect.anything());
     const cards = within(results).getAllByRole("article");
     expect(cards[0]).toHaveTextContent("MM114");  // Rs 306 is cheapest
-    expect(cards[0]).toHaveTextContent("1 stop via LHE");
+    await waitFor(() => expect(cards[0]).toHaveTextContent("1 stop via Lahore"));  // the stop city from the airport list (#89)
     expect(within(cards[1]).getByText("Rs 467")).toBeInTheDocument();
     expect(within(cards[1]).getAllByRole("row")).toHaveLength(3);  // header + 2 fares, then "Show 2 more fares"
     fireEvent.click(within(cards[1]).getByRole("button", { name: "Show 2 more fares" }));
@@ -109,7 +109,7 @@ const LIVE_UAT: FlightSearchView = {
     direction: "outbound", origin: "LHE", destination: "KHI",
     flights: [{
       id: "f-live", airline_code: "Z8", airline_name: "South Air", flight_number: "Z8266",
-      departure_local: "2026-11-19T00:25", arrival_local: "2026-11-19T02:35", duration_minutes: 130, stops: 0, stop_cities: [],
+      departure_local: "2026-11-19T00:25", arrival_local: "2026-11-19T02:35", duration_minutes: 130, stops: 0, stop_cities: [], segments: [],
       fares: [
         { id: "x1", name: "EB", baggage: "No checked baggage", selling_price: rs(13_997), booking_mode: "hold" },
         { id: "x2", name: "EV", baggage: "20KG", selling_price: rs(15_671), booking_mode: "hold" },

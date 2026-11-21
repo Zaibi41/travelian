@@ -85,7 +85,7 @@ for (const width of [1920, 1440, 1366, 1280, 1024, 768, 390]) {
 
   test(`admin flights: round trip with long names, no horizontal page scroll at ${width}px`, async ({ page }) => {
     await openFlights(page, width, "trip=roundtrip&from=LHE&to=KHI&date=2026-11-19&return=2026-11-22");
-    await expect(page.getByText("2 stops via MUX, ISB")).toBeVisible();
+    await expect(page.getByText("2 stops via Multan, Islamabad")).toBeVisible();  // stop cities from the airport list (#89)
     expect(await noPageScroll(page)).toBe(0);
   });
 }

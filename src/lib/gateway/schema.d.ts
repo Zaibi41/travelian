@@ -5563,6 +5563,12 @@ export interface components {
              */
             id: string;
             /**
+             * Segments
+             * @description Each flight of the connection, in order, with the time at each stop. Empty when the supplier sent no flight-by-flight detail.
+             * @default []
+             */
+            segments: components["schemas"]["SegmentView"][];
+            /**
              * Stop Cities
              * @default []
              */
@@ -8192,6 +8198,38 @@ export interface components {
             phone_code?: string | null;
             /** Title */
             title?: ("MR" | "MRS" | "MISS" | "MASTER") | null;
+        };
+        /**
+         * SegmentView
+         * @description One flight of a connection, in order. Airports are IATA codes; times are each airport's local time.
+         */
+        SegmentView: {
+            /**
+             * Arrival Local
+             * @description Local time at destination, YYYY-MM-DDTHH:MM.
+             */
+            arrival_local?: string | null;
+            /**
+             * Departure Local
+             * @description Local time at origin, YYYY-MM-DDTHH:MM.
+             */
+            departure_local?: string | null;
+            /** Destination */
+            destination: string;
+            /**
+             * Duration Minutes
+             * @description Flying time of this flight.
+             */
+            duration_minutes?: number | null;
+            /** Flight Number */
+            flight_number?: string | null;
+            /**
+             * Layover Minutes
+             * @description Time on the ground at `origin` before this flight (the stop). Omitted for the first flight.
+             */
+            layover_minutes?: number | null;
+            /** Origin */
+            origin: string;
         };
         /** SellingPriceItem */
         SellingPriceItem: {

@@ -16,6 +16,7 @@ import { LabeledSelect } from "@/components/admin/ui/LabeledSelect";
 import { AirportCombobox } from "@/components/admin/ui/AirportCombobox";
 import { RouteRow, SEARCH_FIELD, SearchSubmitButton } from "@/components/admin/ui/search-form";
 import { DayFirstDateField } from "@/components/admin/ui/DayFirstDateField";
+import { useAirports } from "@/hooks/use-airports";
 import { useFlightFares, type FareRoute } from "@/hooks/use-flight-fares";
 import { formatDay, todayIso } from "@/lib/admin-search/date-display";
 import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
@@ -28,6 +29,7 @@ import {
   SORT_OPTIONS, adminFlightCalendar, priceBands, searchFlights, stopsLabel, writeFlightSearch,
   type FareView, type FlightSearch, type FlightSearchView, type FlightView, type JourneyView, type ResultFilters,
 } from "@/lib/admin-search/flights";
+import { flightStays, stayPlace, stopsBelowLine, type Stay } from "@/lib/admin-search/stays";
 
 const errorMessage = (error: unknown) =>
   error instanceof GatewayError ? error.message : "Flights couldn't be loaded. Try again in a few minutes.";
@@ -511,7 +513,22 @@ function FlightAirlineLogo({ flight }: { flight: FlightView }) {
   );
 }
 
-function FlightDetails({ journey, flight }: { journey: JourneyView; flight: FlightView }) {
+/** "Doha, Qatar (DOH)" and, when the gateway sent each flight's times, "02h 45m · lands 06:00, leaves 08:45". */
+function stayLines(stay: Stay) {
+  const place = stayPlace(stay);
+  const where = place === stay.code ? place : `${place} (${stay.code})`;
+  const length = formatDuration(stay.minutes);
+  const when = stay.arrival && stay.departure ? stayTimes(stay.arrival, stay.departure) : null;
+  return [where, length ? [length, when].filter(Boolean).join(" · ") : "Stay time not available"];
+}
+/** "lands 06:00, leaves 08:45"; with the dates when the stay runs overnight ("lands 22:00 on 5 Dec, leaves 01:30 on 6 Dec"). */
+function stayTimes(arrival: string, departure: string) {
+  if (arrival.slice(0, 10) === departure.slice(0, 10)) return `lands ${time(arrival)}, leaves ${time(departure)}`;
+  const short = (local: string) => (day(local) ? ` on ${day(local).replace(/ \d{4}$/, "")}` : "");
+  return `lands ${time(arrival)}${short(arrival)}, leaves ${time(departure)}${short(departure)}`;
+}
+
+function FlightDetails({ journey, flight, stays }: { journey: JourneyView; flight: FlightView; stays: Stay[] }) {
   const rows: [string, string | null][] = [
     ["Airline", airlineLabel(flight)],
     ["Flight", flight.flight_number ?? null],
@@ -522,6 +539,8 @@ function FlightDetails({ journey, flight }: { journey: JourneyView; flight: Flig
     ["Duration", formatDuration(flight.duration_minutes)],
     ["Stops", stopsLabel(flight)],
   ];
+  // #85: each stay's place with its country, how long, and when the passenger lands and leaves.
+  const stayRows = stays.map((stay, index) => [stays.length > 1 ? `Stay ${index + 1}` : "Stay", stayLines(stay)] as const);
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -544,6 +563,15 @@ function FlightDetails({ journey, flight }: { journey: JourneyView; flight: Flig
               ) : (
                 <dd className={cn("min-w-0 truncate border-b border-border py-2", value ? "text-foreground" : "text-muted-foreground")} title={value ?? undefined}>{value ?? "Not available"}</dd>
               )}
+            </div>
+          ))}
+          {stayRows.map(([name, [where, how]]) => (
+            <div key={name} className="contents">
+              <dt className="border-b border-border py-2 font-semibold text-foreground">{name}</dt>
+              <dd className="min-w-0 border-b border-border py-2 text-foreground">
+                <span className="block break-words">{where}</span>
+                <span className="block text-label text-muted-foreground">{how}</span>
+              </dd>
             </div>
           ))}
         </dl>
@@ -571,12 +599,34 @@ function Missing({ value, fallback }: { value?: string | null; fallback?: string
   return <span className="line-clamp-2 break-words" title={value}>{value}</span>;
 }
 
+/** #89: the total duration above the line, the stops and stays under it, and a line that runs the full width from the
+ *  departure time to the arrival time, with a dot at each end and one per stop. */
+function RouteLine({ total, below, stops }: { total: string | null; below: string | null; stops: number }) {
+  return (
+    <div className="flex min-w-0 flex-col items-stretch gap-1 text-center" data-route-line>
+      <span className="truncate text-label font-medium text-foreground">{total ?? <><span aria-hidden="true">—</span><span className="sr-only">Duration not available</span></>}</span>
+      <span className="relative flex h-2 items-center" aria-hidden="true">
+        <span className="absolute inset-x-1 top-1/2 h-px -translate-y-1/2 bg-muted-foreground/50" />
+        <span className="relative z-10 flex w-full items-center justify-between">
+          {Array.from({ length: stops + 2 }, (_, index) => (
+            <span key={index} className={cn("h-2 w-2 rounded-full", index === 0 || index === stops + 1 ? "bg-muted-foreground" : "border border-muted-foreground bg-card")} />
+          ))}
+        </span>
+      </span>
+      <span className="line-clamp-2 break-words text-label text-muted-foreground" title={below ?? undefined}>{below ?? "—"}</span>
+    </div>
+  );
+}
+
 function FlightCard({ journey, flight, data, renderFareAction, actionNotes }: {
   journey: JourneyView; flight: FlightView; data: FlightSearchView; renderFareAction?: FlightsSearchProps["renderFareAction"]; actionNotes?: string[];
 }) {
   const [expanded, setExpanded] = useState(false);
   const fares = expanded ? flight.fares : flight.fares.slice(0, VISIBLE_FARES);
-  const meta = [formatDuration(flight.duration_minutes), stopsLabel(flight)].filter(Boolean).join(" · ");
+  const airports = useAirports();
+  const stays = flightStays(flight, airports);
+  const total = formatDuration(flight.duration_minutes);
+  const below = stopsBelowLine(flight, stays);
   const showsProvider = flight.fares.some(fare => fare.supplier);
   return (
     <article aria-label={`${airlineLabel(flight)} ${flight.flight_number ?? ""}`} className="min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-card">
@@ -591,18 +641,14 @@ function FlightCard({ journey, flight, data, renderFareAction, actionNotes }: {
             <p className="text-section font-semibold tabular-nums text-foreground">{time(flight.departure_local)}</p>
             <p className="truncate text-label text-muted-foreground">{day(flight.departure_local)} · {journey.origin}</p>
           </div>
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="h-px flex-1 bg-border" aria-hidden="true" />
-            <span className="truncate text-label text-muted-foreground" title={meta || undefined}>{meta || "—"}</span>
-            <span className="h-px flex-1 bg-border" aria-hidden="true" />
-          </div>
+          <RouteLine total={total} below={below} stops={Math.max(stays.length, flight.stops ?? 0)} />
           <div className="min-w-0 text-right">
             <p className="text-section font-semibold tabular-nums text-foreground">{time(flight.arrival_local)}</p>
             <p className="truncate text-label text-muted-foreground">{day(flight.arrival_local)} · {journey.destination}</p>
           </div>
         </div>
         <div className="col-start-3 row-start-1 lg:col-start-4">
-          <FlightDetails journey={journey} flight={flight} />
+          <FlightDetails journey={journey} flight={flight} stays={stays} />
         </div>
       </div>
       {/* From 1024px the table fits its card (columns wrap); only phones and tablets scroll it sideways. */}
