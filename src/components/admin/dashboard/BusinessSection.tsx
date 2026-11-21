@@ -34,10 +34,17 @@ export function BusinessSection({ data, loading }: { data?: BusinessResults; loa
           )}
           {!!data.gross_profit?.length && (
             <StatusKpiCard size="sm" label="Gross profit" value={formatAmounts(data.gross_profit)}
+              hint={notKnownHint(data.gross_profit)}
               breakdown={split(data, product => product.gross_profit?.length ? formatAmounts(product.gross_profit) : null)} />
           )}
         </div>
       )}
     </DashboardSection>
   );
+}
+
+/** travelian#70: paid bookings whose supplier cost isn't known are left out of the profit (never counted as 0). */
+function notKnownHint(amounts: { profit_not_known?: number | null }[]) {
+  const count = amounts.reduce((sum, amount) => sum + (amount.profit_not_known ?? 0), 0);
+  return count ? `${count} booking${count === 1 ? "" : "s"}: profit not known` : undefined;
 }
