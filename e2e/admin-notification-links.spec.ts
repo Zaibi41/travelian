@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { gatewayView } from "./support/gateway";
+import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
 // #54: every booking alert in Admin → Notifications opens that booking's detail page, not the Bookings list.
 // Local-only session and intercepted gateway responses.
@@ -27,7 +27,7 @@ async function mock(page: Page) {
   const listCalls: string[] = [];
   await page.route("**/*", route => {
     const url = gatewayView(route.request().url());
-    if (url.port === "8000") {
+    if (isGateway(url)) {
       if (url.pathname === "/v1/admin/notifications") {
         return route.fulfill({ json: { email_enabled: true, items: ALERTS.map((alert, index) => ({
           id: `n${index}`, kind: alert.kind, reference: alert.ref, title: alert.title, urgent: alert.urgent, emailed: true,
@@ -48,7 +48,7 @@ async function mock(page: Page) {
       }
       return route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
-    return ["localhost", "127.0.0.1"].includes(url.hostname) ? route.continue() : route.fulfill({ json: {} });
+    return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
   });
   await page.addInitScript(() => localStorage.setItem("travelian.session.v1", JSON.stringify({
     email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),

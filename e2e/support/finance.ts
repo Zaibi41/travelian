@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { gatewayView } from "./gateway";
+import { APP_URL, gatewayView, isLocal } from "./gateway";
 
 // Finance specs: a local-only admin session and gateway answers from the spec. Any /v1/ call is answered here
 // (direct gateway, the dev /__gateway proxy, or api.travelian.pk when FINANCE_BASE_URL points at the live site
@@ -21,7 +21,7 @@ export async function openAdmin(page: Page, path: string, width: number, answer:
       if (result && typeof result === "object" && "status" in result && "json" in result) return route.fulfill({ status: result.status, json: result.json });
       return route.fulfill({ json: result });
     }
-    const local = ["localhost", "127.0.0.1"].includes(url.hostname) || url.hostname === new URL(page.url() === "about:blank" ? "http://localhost" : page.url()).hostname
+    const local = isLocal(url) || url.hostname === (page.url() === "about:blank" ? APP_URL : new URL(page.url())).hostname
       || url.hostname.endsWith("travelian.pk");
     return local && !url.hostname.startsWith("api.") ? route.continue() : route.fulfill({ json: {} });
   });
