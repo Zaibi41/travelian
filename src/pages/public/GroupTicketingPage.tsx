@@ -1718,7 +1718,7 @@ export default function GroupTicketingPage() {
               </span>
               <h3 className="text-sm font-bold text-foreground">Confirm with Our Team</h3>
               <p className="text-xs text-muted-foreground">
-                Tap WhatsApp Help or call our desk with your selected route, flight date, and passenger count pre-filled.
+                Tap WhatsApp Help to send your selected route, flight date and passenger count to our desk, or call us.
               </p>
             </div>
 

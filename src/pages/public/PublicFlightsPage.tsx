@@ -1385,6 +1385,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         <div className="flex gap-4 xl:gap-5">
           {/* Sidebar Filters */}
           <aside className="hidden w-48 shrink-0 space-y-4 self-start md:sticky md:top-24 md:block xl:w-52">
+            <h2 className="sr-only">Filter results</h2>
             <Card className="shadow-card border-0">
               <CardContent className="p-4">
                 <h3 className="font-semibold text-foreground text-sm mb-3">Stops</h3>

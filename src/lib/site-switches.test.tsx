@@ -27,7 +27,7 @@ describe("Umrah switch", () => {
       <PublicLayout><p>Umrah package page</p></PublicLayout>
     </MemoryRouter></LocaleProvider></HelmetProvider>);
     expect(screen.queryByText("Umrah package page")).not.toBeInTheDocument();
-    expect(screen.getByText("Oops! Page not found")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Page not found" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Umrah" })).not.toBeInTheDocument();
   });
 
