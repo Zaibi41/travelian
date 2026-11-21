@@ -1295,10 +1295,9 @@ export default function GroupTicketingPage() {
   return (
 
     <div>
-      <SEO
+      <SEO breadcrumbs={[{ name: "Group Ticketing", path: "/group-ticketing" }]}
         title="Group Ticketing & Fixed Flight Fares | Travelian"
         description="Search available group ticket allocations and fixed flight fares across popular international routes from Pakistan with Travelian."
-        canonical="https://travelian.pk/group-ticketing"
       />
 
       {/* 1. Navbar handled globally */}

@@ -32,7 +32,7 @@ export default function AboutPage() {
   const { umrah } = useSiteSwitches(); // D39: Umrah wording only when Umrah is switched on
   return (
     <div>
-      <SEO title={umrah ? "About Travelian | Flights, Hotels & Umrah" : "About Travelian | Flights & Hotels"}
+      <SEO breadcrumbs={[{ name: "About", path: "/about" }]} title={umrah ? "About Travelian | Flights, Hotels & Umrah" : "About Travelian | Flights & Hotels"}
         description={umrah ? "Learn about Travelian and our support for flight bookings, group ticketing, hotels and Umrah travel." : "Learn about Travelian and our support for flight bookings, group ticketing and hotels."} />
       <SearchPageHero title="About Travelian" description={umrah ? "Building a modern travel platform for flights, hotels, Umrah and group travel." : "Building a modern travel platform for flights, hotels and group travel."} />
 

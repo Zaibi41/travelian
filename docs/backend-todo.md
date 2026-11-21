@@ -192,3 +192,4 @@ Staff record the final PNR and ticket numbers on the booking's Tickets tab
 | --- | --- |
 | Public `/contact` message form | Hidden until a real gateway endpoint exists (`POST /v1/public/contact` or inquiry endpoint with rate limiting and email/inbox delivery). Previously simulated success with `setTimeout` and discarded messages |
 | Public `/blog` articles | Currently calls legacy `/content/blog-posts` which fails with 500 while `CONTENT_TABLE` is unset. Needs a gateway `GET /v1/public/blog-posts` endpoint |
+| API host not marked for crawlers | `api.travelian.pk/robots.txt` returns 404. The gateway should serve `robots.txt` with `Disallow: /` and send `X-Robots-Tag: noindex` on `/v1/*` responses, so API URLs never appear in search results (the website's own private pages are already noindex + disallowed) |

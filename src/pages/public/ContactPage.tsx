@@ -11,7 +11,7 @@ export default function ContactPage() {
 
   return (
     <div>
-      <SEO
+      <SEO breadcrumbs={[{ name: "Contact", path: "/contact" }]}
         title={umrah ? "Contact Travelian | Flights, Umrah & Hotel Support" : "Contact Travelian | Flights & Hotel Support"}
         description={`Talk to the Travelian team about flights, ${umrah ? "Umrah packages and hotels" : "group tickets and hotels"}. Call, WhatsApp or email our Lahore travel desk for booking support.`}
       />

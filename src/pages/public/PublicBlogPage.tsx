@@ -35,7 +35,7 @@ export default function PublicBlogPage() {
 
   return (
     <div>
-      <SEO
+      <SEO breadcrumbs={[{ name: "Travel Guides", path: "/blog" }]}
         title="Travel Guides & Blog | Travelian"
         description="Travel guides for Pakistani travellers: Umrah planning, flight booking tips and hotel recommendations from the Travelian team."
       />

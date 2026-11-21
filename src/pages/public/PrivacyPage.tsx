@@ -6,7 +6,7 @@ import { SUPPORT_ADDRESS, SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TE
 export default function PrivacyPage() {
   return (
     <div>
-      <SEO title="Privacy Policy | Travelian" description="Read how Travelian collects, uses and protects personal information provided during travel searches and bookings." />
+      <SEO breadcrumbs={[{ name: "Privacy Policy", path: "/privacy" }]} title="Privacy Policy | Travelian" description="Read how Travelian collects, uses and protects personal information provided during travel searches and bookings." />
       <PageHeader title="Privacy Policy" tagline="How we collect, use and protect your personal information" />
       <div className="travelian-container py-10">
         <Card className="mx-auto max-w-3xl rounded-2xl border-border/70 shadow-card">

@@ -105,12 +105,11 @@ export default function PublicHotelsPage() {
 
   return (
     <div>
-      <SEO
+      <SEO breadcrumbs={[{ name: "Hotels", path: "/hotels-search" }]}
         title={searchValues.location ? `Hotels in ${searchValues.location} | Travelian` : "Find Hotels & Stays | Travelian"}
         description={searchValues.location
           ? `Compare hotel rates and availability in ${searchValues.location} with Travelian booking support.`
           : "Search and compare hotel stays in Makkah, Madinah, Dubai, Istanbul and worldwide with Travelian."}
-        canonical="https://travelian.pk/hotels-search"
       />
       <SearchPageHero title="Find Hotels with Travelian" support={<ProductValuePills product="hotels" />}>
         <SearchCard>

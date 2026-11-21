@@ -7,7 +7,7 @@ import { SUPPORT_ADDRESS, SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TE
 export default function TermsPage() {
   return (
     <div>
-      <SEO title="Booking Terms & Conditions | Travelian" description="Review Travelian booking terms, cancellation policies, group fare conditions and refund terms before making your travel arrangements." />
+      <SEO breadcrumbs={[{ name: "Terms & Conditions", path: "/terms" }]} title="Booking Terms & Conditions | Travelian" description="Review Travelian booking terms, cancellation policies, group fare conditions and refund terms before making your travel arrangements." />
       <PageHeader title="Terms & Conditions" tagline="Booking terms, cancellation, group fare and refund policies" />
       <div className="travelian-container py-10">
         <Card className="mx-auto max-w-3xl rounded-2xl border-border/70 shadow-card">

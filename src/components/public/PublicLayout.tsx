@@ -8,6 +8,8 @@ import { whatsappUrl } from "@/lib/site-config";
 import { PageErrorBoundary } from "@/components/PageErrorBoundary";
 import { isUmrahPath, useSiteSwitches } from "@/lib/site-switches";
 import NotFound from "@/pages/NotFound";
+import { Helmet } from "react-helmet-async";
+import { isPrivatePath } from "@/lib/private-paths";
 
 export function PublicLayout({ children, showFooter = true }: { children: React.ReactNode; showFooter?: boolean }) {
   const { pathname, search } = useLocation();
@@ -24,6 +26,8 @@ export function PublicLayout({ children, showFooter = true }: { children: React.
       >
         Skip to main content
       </a>
+      {/* Fallback for private pages without their own SEO tag (e.g. the sign-in callback). */}
+      {isPrivatePath(pathname) && <Helmet><meta name="robots" content="noindex, nofollow" /></Helmet>}
       <PublicNavbar />
       <main id="main-content" tabIndex={-1} className={showFooter ? "min-w-0 flex-1 overflow-x-hidden focus:outline-none" : "flex-1 min-h-0 overflow-hidden focus:outline-none"}><PageErrorBoundary key={pathname}>{page}</PageErrorBoundary></main>
       {showFooter && (

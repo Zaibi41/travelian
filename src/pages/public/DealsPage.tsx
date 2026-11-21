@@ -33,7 +33,7 @@ export default function DealsPage() {
 
   return (
     <div>
-      <SEO
+      <SEO breadcrumbs={[{ name: "Deals", path: "/deals" }]}
         title="Travel Deals & Promo Codes | Travelian"
         description={`Current Travelian promo codes and travel offers on flights${umrah ? ", hotels and Umrah packages" : " and hotels"}. Verified deals only, no expired listings.`}
       />

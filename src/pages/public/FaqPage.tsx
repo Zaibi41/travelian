@@ -21,7 +21,7 @@ export default function FaqPage() {
   const visibleFaqs = faqs.filter(f => umrah || !("umrah" in f));
   return (
     <div>
-      <SEO
+      <SEO breadcrumbs={[{ name: "FAQ", path: "/faq" }]}
         title="Travel Help & Frequently Asked Questions | Travelian"
         description={`Find answers about booking flights, group tickets, changing trips, ${umrah ? "Umrah packages, " : ""}payments and contacting Travelian support.`}
         jsonLd={{
