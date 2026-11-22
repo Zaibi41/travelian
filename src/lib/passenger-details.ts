@@ -50,10 +50,41 @@ export function createPassengerDetails(passengerType: PassengerKind, label: stri
   };
 }
 
+/** #155: the gender a title implies (Mr, Mstr: male; Mrs, Ms, Miss: female), "" for anything else. Still editable. */
+export function genderForTitle(title: string | null | undefined): "male" | "female" | "" {
+  const code = String(title ?? "").trim().toLowerCase();
+  if (code === "mr" || code === "master") return "male";
+  if (code === "mrs" || code === "ms" || code === "miss") return "female";
+  return "";
+}
+
+/** #155: names as on the passport: letters, spaces, hyphen and apostrophe only. */
+export const NAME_PATTERN = /^[A-Za-z][A-Za-z' -]*$/;
+export const NAME_LETTERS_ONLY = "Use letters only, as on the passport";
+/** About this many letters (first and last name together) and airlines may shorten the name on the ticket. */
+export const LONG_NAME_LETTERS = 50;
+export const LONG_NAME_WARNING = "Airlines may shorten long names";
+export const nameIsLong = (passenger: Pick<PassengerDetails, "firstName" | "lastName">) =>
+  passenger.firstName.trim().length + passenger.lastName.trim().length > LONG_NAME_LETTERS;
+
+/** #155: a passport number as typed or pasted ("ab 123 4567") as the airline wants it ("AB1234567"). */
+export const cleanPassportNumber = (value: string) => value.replace(/\s+/g, "").toUpperCase();
+
+/** #155: where the date-of-birth calendar opens when nothing is picked yet: a year that fits the traveler (adult about
+ *  30 years ago, child about 6, infant about 1), ISO yyyy-MM-01. */
+export function dobCalendarStart(passengerType: PassengerKind, today: Date = new Date()): string {
+  const years = passengerType === "adult" ? 30 : passengerType === "child" ? 6 : 1;
+  return `${today.getFullYear() - years}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
+/** "Mr Ali KHAN": a traveler's full name for checking (title, first name, last name in capitals as on the ticket). */
+export const travelerFullName = (passenger: Pick<PassengerDetails, "title" | "firstName" | "lastName">) =>
+  [titleText(passenger.title), passenger.firstName.trim(), passenger.lastName.trim().toUpperCase()].filter(Boolean).join(" ");
+
 export const usesPassport = (passenger: Pick<PassengerDetails, "docType">) => (passenger.docType ?? "passport") === "passport";
 
 export function passengerDocValid(passenger: Pick<PassengerDetails, "docType" | "docNumber">) {
-  if (usesPassport(passenger)) return /^[A-Z0-9]{6,12}$/i.test(passenger.docNumber);
+  if (usesPassport(passenger)) return /^[A-Z0-9]{6,12}$/i.test(passenger.docNumber.replace(/\s+/g, ""));
   return /^\d{13}$/.test(passenger.docNumber.replace(/-/g, ""));
 }
 
@@ -129,7 +160,9 @@ export function passengerErrors(passenger: PassengerDetails, travelDate?: string
   }
   if (!passenger.gender) errors.gender = "Gender is required";
   if (!passenger.firstName.trim()) errors.firstName = "First name is required";
+  else if (!NAME_PATTERN.test(passenger.firstName.trim())) errors.firstName = NAME_LETTERS_ONLY;
   if (!passenger.lastName.trim()) errors.lastName = "Last name is required";
+  else if (!NAME_PATTERN.test(passenger.lastName.trim())) errors.lastName = NAME_LETTERS_ONLY;
   if (!passenger.dob) errors.dob = "Date of birth is required";
   else if (passenger.dob >= today()) errors.dob = "Date of birth must be in the past";
   else {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ageOn, createPassengerDetails, dobFareNote, kindForAge, passengerComplete, passengerErrors } from "./passenger-details";
+import { ageOn, cleanPassportNumber, createPassengerDetails, dobCalendarStart, dobFareNote, genderForTitle, kindForAge, nameIsLong, passengerComplete, passengerErrors, travelerFullName } from "./passenger-details";
 
 const complete = { ...createPassengerDetails("adult", "Adult 1"), gender: "male", firstName: "Ali", lastName: "Raza", dob: "1990-01-31",
   docNumber: "AB1234567", expiryDate: "2031-01-01" };
@@ -100,5 +100,46 @@ describe("age on the last travel date (issue #52)", () => {
 
   it("an infant under 1 reads 'under 1'", () => {
     expect(dobFareNote({ ...infant, dob: "2026-06-01" }, "2026-12-10")?.text).toBe("Will be under 1 on the travel date (10 Dec 2026), that's an Infant fare.");
+  });
+});
+
+describe("names, passport, title and date of birth (#155)", () => {
+  it("names take letters, spaces, hyphen and apostrophe only", () => {
+    expect(passengerErrors({ ...complete, firstName: "Ali123 @#" }).firstName).toBe("Use letters only, as on the passport");
+    expect(passengerErrors({ ...complete, lastName: "Raza." }).lastName).toBe("Use letters only, as on the passport");
+    expect(passengerErrors({ ...complete, firstName: "Mary-Jane", lastName: "O'Neil Khan" })).toEqual({});
+    expect(passengerErrors({ ...complete, firstName: "" }).firstName).toBe("First name is required");
+  });
+
+  it("warns (does not block) when first and last name together pass 50 letters", () => {
+    expect(nameIsLong({ firstName: "A".repeat(25), lastName: "B".repeat(25) })).toBe(false);
+    expect(nameIsLong({ firstName: "A".repeat(26), lastName: "B".repeat(25) })).toBe(true);
+    expect(passengerComplete({ ...complete, firstName: "A".repeat(30), lastName: "B".repeat(30) })).toBe(true);
+  });
+
+  it("a passport typed with spaces is cleaned and accepted", () => {
+    expect(cleanPassportNumber("ab 123 4567")).toBe("AB1234567");
+    expect(passengerErrors({ ...complete, docNumber: "AB 1234567" }).docNumber).toBeUndefined();
+    expect(passengerErrors({ ...complete, docNumber: "AB 12" }).docNumber).toMatch(/valid passport/);
+  });
+
+  it("the title gives the gender", () => {
+    expect(genderForTitle("mr")).toBe("male");
+    expect(genderForTitle("master")).toBe("male");
+    expect(genderForTitle("mrs")).toBe("female");
+    expect(genderForTitle("ms")).toBe("female");
+    expect(genderForTitle("miss")).toBe("female");
+    expect(genderForTitle("")).toBe("");
+  });
+
+  it("the date-of-birth calendar opens on a year that fits the traveler", () => {
+    const today = new Date(2026, 10, 22);
+    expect(dobCalendarStart("adult", today)).toBe("1996-11-01");
+    expect(dobCalendarStart("child", today)).toBe("2020-11-01");
+    expect(dobCalendarStart("infant", today)).toBe("2025-11-01");
+  });
+
+  it("full name for checking: Title First LAST", () => {
+    expect(travelerFullName({ title: "mrs", firstName: " Ayesha ", lastName: "Khan" })).toBe("Mrs Ayesha KHAN");
   });
 });

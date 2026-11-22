@@ -21,3 +21,18 @@ export const addDaysIso = (iso: string, days: number) => {
   const [year, month, day] = iso.split("-").map(Number);
   return dateToIso(new Date(year, month - 1, day + days));
 };
+
+/** "14031990" / "14/03/1990" -> "14/03/1990" as it is typed (day, month, year; slashes added). */
+export function maskDayFirst(raw: string) {
+  const digits = raw.replace(/\D/g, "").slice(0, 8);
+  return [digits.slice(0, 2), digits.slice(2, 4), digits.slice(4)].filter(Boolean).join("/");
+}
+
+/** "14/03/1990" -> "1990-03-14" when it is a real day, else undefined. */
+export function dayFirstToIso(text: string) {
+  const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return undefined;
+  const iso = `${match[3]}-${match[2]}-${match[1]}`;
+  const date = isoToDate(iso);
+  return date && dateToIso(date) === iso ? iso : undefined;
+}
