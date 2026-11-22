@@ -9,9 +9,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/components/ui/calendar-popup";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users, Loader2 } from "lucide-react";
+import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users, Loader2, SlidersHorizontal, ArrowUpDown } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
-import { format, addDays, parseISO } from "date-fns";
+import { format, addDays, parseISO, startOfDay } from "date-fns";
 import { GroupFareCalendar } from "@/components/GroupFareCalendar";
 import { useFlightFares } from "@/hooks/use-flight-fares";
 import { cn } from "@/lib/utils";
@@ -24,13 +24,16 @@ import { FlightSearchLoader } from "@/components/public/FlightSearchLoader";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
 import { AirlineLogo } from "@/components/public/AirlineLogo";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { ResultsSheet } from "@/components/public/ResultsSheet";
 import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
+import { keepReturnDate, returnDateError, RETURN_CLEARED_MESSAGE } from "@/lib/return-date";
 import { whatsappUrl } from "@/lib/site-config";
 import { airportByCode, loadPublicAirports } from "@/data/airports";
 import { isGroupTicketingProvider, groupTicketToFlight } from "@/lib/provider-systems";
 import { searchPublicGroups, GATEWAY_GROUP_PROVIDER } from "@/lib/public-booking";
 import { normalizeAirlineName, isSameAirline, extractAllAirlines, getAirlineNameFromCarrier } from "@/lib/airline-normalization";
 import { journeyMinutes, minutesText, stayAt, stayBetween, stopLine, stopSummary, type Stay } from "@/lib/flight-stays";
+import { activeFilterCount, filtersFromParams, FLIGHT_SORTS, sortShortLabel, withFilterParams, type FlightSort } from "@/lib/flight-result-filters";
 import { BAGGAGE_UNKNOWN, baggageFilterOptions, baggageText, checkedText, handCarryText, underBaggageLabel, type BaggageText } from "@/lib/baggage";
 
 // Preload airports for routeLabel lookup
@@ -111,13 +114,7 @@ const SEARCH_RESULT_TTL_SECONDS = 900;
 /** Sections hidden on purpose (kept for later, not shown): see CLAUDE.md "Do Not Re-add Removed Features". */
 const SHOW_HIDDEN_SECTIONS = false;
 
-const sortOptions = [
-  { value: "price-asc", label: "Price - Low to High" },
-  { value: "price-desc", label: "Price - High to Low" },
-  { value: "duration-asc", label: "Shortest Duration" },
-  { value: "duration-desc", label: "Longest Duration" },
-  { value: "departure-asc", label: "Departure - Early to Late" },
-];
+const sortOptions = FLIGHT_SORTS;
 
 function tripTypeFromParam(value: string | null): FlightTripType {
   return value === "roundtrip" || value === "multicity" ? value : "oneway";
@@ -200,6 +197,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const initDate = clampToToday(parseDateOnly(initDateStr));
   const initReturnDate = parseDateOnly(initReturnDateStr);
   const initSegments = segmentsFromParam(params.get("segments"));
+  // #150: filters and sort come from the URL, so a reload or a shared link keeps them.
+  const [initFilters] = useState(() => filtersFromParams(params));
+  const urlPrice = useRef<[number, number] | null>(initFilters.price);
 
   const [search, setSearch] = useState("");
   const [from, setFrom] = useState(initFrom);
@@ -210,7 +210,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   });
   // No price range until results arrive, then the full range of the results (avoids misleading 0–700 placeholder before fares load).
   const [priceRangeState, setPriceRange] = useState<number[] | null>(null);
-  const [selectedAirlines, setSelectedAirlines] = useState<string[]>([]);
+  const [selectedAirlines, setSelectedAirlines] = useState<string[]>(initFilters.airlines);
   // Stop city and country names come from the shared airport list: show them as soon as it has loaded (#119).
   const [, setAirportsLoaded] = useState(false);
   useEffect(() => {
@@ -218,10 +218,15 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     void loadPublicAirports().then(() => { if (active) setAirportsLoaded(true); }, () => undefined);
     return () => { active = false; };
   }, []);
-  const [selectedStops, setSelectedStops] = useState<string[]>([]);
-  const [selectedDepartureTimes, setSelectedDepartureTimes] = useState<string[]>([]);
-  const [selectedBaggage, setSelectedBaggage] = useState<string[]>([]);
-  const [sort, setSort] = useState("price-asc");
+  const [selectedStops, setSelectedStops] = useState<string[]>(initFilters.stops);
+  const [selectedDepartureTimes, setSelectedDepartureTimes] = useState<string[]>(initFilters.departureTimes);
+  const [selectedBaggage, setSelectedBaggage] = useState<string[]>(initFilters.baggage);
+  const [sort, setSort] = useState<FlightSort>(initFilters.sort);
+  // Phones (#150): the Filters and Sort sheets.
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [mobileSortOpen, setMobileSortOpen] = useState(false);
+  const phoneBarPlace = useRef<HTMLDivElement>(null);
+  const [phoneBarPinned, setPhoneBarPinned] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
   // Cards whose long airline name is shown in full (tapped open), issue #90.
   const [expandedAirlines, setExpandedAirlines] = useState<ReadonlySet<string>>(() => new Set());
@@ -269,6 +274,22 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     cabin: editTravelers.cabin.toLowerCase().replace(/\s+/g, "_"),
   });
   const [editReturnDateOpen, setEditReturnDateOpen] = useState(false);
+  // #151: the Return date uses the same fare calendar, for the way back from the departure date on; its message
+  // shows at the field.
+  const editReturnFares = useFlightFares(modifyOpen && editTripType === "roundtrip" && !!editDate, {
+    from: airportCodeOf(editTo), to: airportCodeOf(editFrom), adults: editTravelers.adults,
+    cabin: editTravelers.cabin.toLowerCase().replace(/\s+/g, "_"), start: editDate ? formatDateOnly(editDate) : undefined,
+  });
+  const [editReturnError, setEditReturnError] = useState<string>();
+  const editReturnRef = useRef<HTMLButtonElement>(null);
+  const pickEditDeparture = (date: Date | undefined) => {
+    setEditDate(date);
+    if (!date) return;
+    setEditDateOpen(false);
+    const kept = keepReturnDate(date, editReturnDate);
+    if (editReturnDate && !kept) { setEditReturnDate(undefined); setEditReturnError(RETURN_CLEARED_MESSAGE); }
+    if (editTripType === "roundtrip") setEditReturnDateOpen(true);
+  };
   const [editSegmentDateOpen, setEditSegmentDateOpen] = useState<number | null>(null);
   // Phones (#148): choosing From opens To (`key`), choosing To opens the departure date.
   const [editAdvance, setEditAdvance] = useState({ key: "", n: 0 });
@@ -285,14 +306,19 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       { from: to, to: "", date: returnDate },
     ]);
     setEditTravelers(travelers);
+    setEditReturnError(undefined);
     setModifyOpen(true);
   };
 
   const applyModify = () => {
     const effectiveSegments = editTripType === "multicity" ? editSegments : [];
-    if (editTripType === "roundtrip" && (!editReturnDate || (editDate && editReturnDate < editDate))) {
-      setApiMessage("Select a return date on or after the departure date.");
-      return;
+    if (editTripType === "roundtrip") {
+      const message = returnDateError(editDate, editReturnDate);
+      if (message) {
+        setEditReturnError(message);
+        editReturnRef.current?.focus();
+        return;
+      }
     }
     if (editTripType === "multicity" && (effectiveSegments.length < 2 || effectiveSegments.some((segment) => !/^[A-Z]{3}$/.test(segment.from) || !/^[A-Z]{3}$/.test(segment.to) || segment.from === segment.to || !segment.date))) {
       setApiMessage("Complete each multi-city flight with different airports and a travel date.");
@@ -445,7 +471,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         // Render search results immediately with zero background fare overhead
         setApiFlights(consolidated);
         const liveMaxPrice = Math.max(700, ...consolidated.map((f) => f.price));
-        setPriceRange(adminMode ? null : [0, Math.ceil(liveMaxPrice / 1000) * 1000]);
+        // A price range from the URL (#150) applies to the first results; later searches start from the full range.
+        const fullRange: [number, number] = [0, Math.ceil(liveMaxPrice / 1000) * 1000];
+        const fromUrl = urlPrice.current;
+        urlPrice.current = null;
+        setPriceRange(fromUrl ? [Math.min(fromUrl[0], fullRange[1]), Math.min(fromUrl[1], fullRange[1])] : adminMode ? null : fullRange);
         setApiStatus("success");
         setApiMessage(consolidated.length ? "" : "No live bookable fares returned for this search.");
         setExpirySeconds(consolidated.length ? SEARCH_RESULT_TTL_SECONDS : 0);
@@ -884,6 +914,41 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     ...(search ? [{ key: "search", label: `Search: ${search}`, onRemove: () => setSearch("") }] : []),
   ];
   const hasFilterChanges = activeFilterLabels.length > 0 || priceRange[0] > 0 || priceRange[1] < maxPrice;
+  const fullPriceMax = Math.max(700, Math.ceil(maxPrice / 1000) * 1000);
+  const clearAllFilters = () => {
+    setSelectedAirlines([]);
+    setSelectedStops([]);
+    setSelectedDepartureTimes([]);
+    setSelectedBaggage([]);
+    setPriceRange([0, fullPriceMax]);
+    setSearch("");
+  };
+  // #150: filters and sort in the URL. A price range is written only when narrowed; until results arrive the URL's own
+  // range is kept (it is applied to the first results).
+  const priceNarrowed = priceRange[0] > 0 || priceRange[1] < fullPriceMax;
+  const priceFilter: [number, number] | null = apiStatus !== "success" ? urlPrice.current : priceNarrowed ? [priceRange[0], priceRange[1]] : null;
+  const urlFilters = { stops: selectedStops, departureTimes: selectedDepartureTimes, baggage: selectedBaggage, airlines: selectedAirlines, sort, price: priceFilter };
+  const urlFiltersKey = JSON.stringify(urlFilters);
+  useEffect(() => {
+    if (withFilterParams(params, urlFilters).toString() === params.toString()) return;
+    setParams((current) => withFilterParams(current, urlFilters), { replace: true });
+  }, [urlFiltersKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const mobileFilterCount = activeFilterCount(urlFilters);
+  const showPhoneBar = !searchExpired && apiStatus === "success" && flights.length > 0;
+  useEffect(() => {
+    const place = phoneBarPlace.current;
+    if (!showPhoneBar || !place) return;
+    const headerHeight = adminMode ? 64 : 57;
+    const update = () => setPhoneBarPinned(place.getBoundingClientRect().top < headerHeight);
+    update();
+    document.addEventListener("scroll", update, { capture: true, passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      document.removeEventListener("scroll", update, { capture: true });
+      window.removeEventListener("resize", update);
+    };
+  }, [showPhoneBar, adminMode]);
+  const flightCountText = `${filtered.length} ${filtered.length === 1 ? "flight" : "flights"}`;
   const tryDate = (date: Date) => {
     const safeDate = clampToToday(date);
     setDepartDate(safeDate);
@@ -891,6 +956,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     setSearch("");
     const next = new URLSearchParams(params);
     next.set("depart", formatDateOnly(safeDate));
+    next.delete("airline");
     setParams(next, { replace: true });
   };
   const routeLabel = (code: string, airportName?: string | null) => {
@@ -1267,6 +1333,100 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     }
   };
 
+  // The filter groups (#150): the desktop sidebar, and on phones the Filters sheet (Sort has its own sheet there).
+  const filterGroups = (phone: boolean) => (
+    <>
+      <Card className="shadow-card border-0">
+        <CardContent className="p-4">
+          <h3 className="font-semibold text-foreground text-sm mb-3">Stops</h3>
+          <div className="space-y-2.5">
+            {stopOptions.map(option => (
+              <label key={option.value} className="flex min-w-0 cursor-pointer items-center gap-2" title={option.label}>
+                <Checkbox checked={selectedStops.includes(option.value)} onCheckedChange={() => toggleStopFilter(option.value)} />
+                <span className="min-w-0 truncate text-xs text-muted-foreground">{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      {!phone && (
+        <Card className="shadow-card border-0">
+          <CardContent className="p-4">
+            <h3 className="mb-3 text-sm font-semibold text-foreground">Sort By</h3>
+            <div className="space-y-2">
+              {sortOptions.map((option) => (
+                <label key={option.value} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground">
+                  <input
+                    type="radio"
+                    name="flight-sort"
+                    value={option.value}
+                    checked={sort === option.value}
+                    onChange={() => setSort(option.value)}
+                    className="h-3.5 w-3.5 accent-primary"
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {flights.length > 0 && <Card className="shadow-card border-0">
+        <CardContent className="p-4">
+          <h3 className="font-semibold text-foreground text-sm mb-4">Price Range ({currency})</h3>
+          <Slider value={priceRange} onValueChange={setPriceRange} min={0} max={Math.max(700, Math.ceil(maxPrice / 1000) * 1000)} step={100} className="mb-3" />
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <input value={priceRange[0]} onChange={(event) => setPriceRange([Number(event.target.value) || 0, priceRange[1]])} className="h-8 rounded-lg border bg-background px-2" aria-label="Minimum price" />
+            <input value={priceRange[1]} onChange={(event) => setPriceRange([priceRange[0], Number(event.target.value) || priceRange[1]])} className="h-8 rounded-lg border bg-background px-2" aria-label="Maximum price" />
+          </div>
+        </CardContent>
+      </Card>}
+      <Card className="shadow-card border-0">
+        <CardContent className="p-4">
+          <h3 className="font-semibold text-foreground text-sm mb-3">Departure Time</h3>
+          <div className="space-y-2.5">
+            {departureTimeOptions.map(option => (
+              <label key={option.value} className="flex min-w-0 cursor-pointer items-center gap-2" title={option.label}>
+                <Checkbox checked={selectedDepartureTimes.includes(option.value)} onCheckedChange={() => toggleDepartureTimeFilter(option.value)} />
+                <span className="min-w-0 truncate text-xs text-muted-foreground">{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      {baggageOptions.length > 0 && <Card className="shadow-card border-0">
+        <CardContent className="p-4">
+          <h3 id="baggage-filter" className="font-semibold text-foreground text-sm mb-3">Baggage</h3>
+          {/* #36: built from the fares in these results, in the short form, lightest first. */}
+          <div role="group" aria-labelledby="baggage-filter" className="space-y-2.5">
+            {baggageOptions.map(option => (
+              <label key={option.value} className="flex min-w-0 cursor-pointer items-center gap-2" title={option.label}>
+                <Checkbox checked={selectedBaggage.includes(option.value)} onCheckedChange={() => toggleBaggageFilter(option.value)} aria-label={underBaggageLabel(option.label)} />
+                <span className="min-w-0 truncate text-xs text-muted-foreground">{underBaggageLabel(option.label)}</span>
+              </label>
+            ))}
+          </div>
+        </CardContent>
+      </Card>}
+      <Card className="shadow-card border-0">
+        <CardContent className="p-4">
+          <h3 className="font-semibold text-foreground text-sm mb-3">Airlines</h3>
+          <div className="space-y-2.5">
+            {airlineOptions.length === 0 && (
+              <p className="text-xs text-muted-foreground">Airlines appear here after live fares are returned.</p>
+            )}
+            {airlineOptions.map(a => (
+              <label key={a} className="flex min-w-0 cursor-pointer items-center gap-2 group" title={a}>
+                <Checkbox checked={selectedAirlines.some(sel => isSameAirline(sel, a))} onCheckedChange={() => toggleAirline(a)} />
+                <span className="min-w-0 truncate text-xs text-muted-foreground transition-colors group-hover:text-foreground">{a}</span>
+              </label>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </>
+  );
+
   return (
     <div className={adminMode ? "-m-4 md:-m-6 bg-muted/30 min-h-[calc(100vh-3.5rem)]" : ""}>
       <SEO
@@ -1370,6 +1530,52 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         </div>
       </div>
 
+      {/* Phones (#150): Filters and Sort stay at the top while scrolling; the sidebar filters show from md. */}
+      {showPhoneBar && (
+        // The page sits in a container that clips sideways, where position: sticky does not work: the bar is pinned
+        // under the header (fixed) once its place scrolls past it; the wrapper keeps its height so nothing jumps.
+        <div ref={phoneBarPlace} className="min-h-[61px] md:hidden">
+        <section aria-label="Filter and sort results" className={cn("z-20 border-b bg-card/95 backdrop-blur",
+          phoneBarPinned ? cn("fixed inset-x-0 shadow-sm", adminMode ? "top-16" : "top-[57px]") : "relative")}>
+          <div className={cn("flex items-center gap-2 py-2", adminMode ? "px-4" : "travelian-container")}>
+            <p className="shrink-0 text-xs font-semibold text-muted-foreground" aria-live="polite">{flightCountText}</p>
+            <Button type="button" variant="outline" aria-haspopup="dialog" aria-label={mobileFilterCount ? `Filters, ${mobileFilterCount} selected` : "Filters"}
+              className="h-11 min-w-0 flex-1 gap-2 rounded-xl px-3 font-semibold" onClick={() => setMobileFiltersOpen(true)}>
+              <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>Filters</span>
+              {mobileFilterCount > 0 && <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold leading-none text-primary-foreground">{mobileFilterCount}</span>}
+            </Button>
+            <Button type="button" variant="outline" aria-haspopup="dialog" className="h-11 min-w-0 flex-1 gap-2 rounded-xl px-3 font-semibold" onClick={() => setMobileSortOpen(true)}>
+              <ArrowUpDown className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className="truncate"><span className="sr-only">Sort: </span>{sortShortLabel(sort)}</span>
+            </Button>
+          </div>
+        </section>
+        </div>
+      )}
+      <ResultsSheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen} title="Filters" description="Narrow the flight results" full
+        footer={(
+          <div className="grid grid-cols-2 gap-3">
+            <Button type="button" variant="outline" className="h-11 rounded-xl font-semibold" onClick={clearAllFilters}>Clear all</Button>
+            <Button type="button" className="h-11 rounded-xl font-semibold" onClick={() => setMobileFiltersOpen(false)}>Show {flightCountText}</Button>
+          </div>
+        )}>
+        <div className="space-y-3 bg-muted/30 p-4 [&_label]:min-h-11 [&_label>span]:text-sm [&_input]:h-11">{filterGroups(true)}</div>
+      </ResultsSheet>
+      <ResultsSheet open={mobileSortOpen} onOpenChange={setMobileSortOpen} title="Sort by" description="Choose how the flights are ordered">
+        <div role="radiogroup" aria-label="Sort by" className="p-2">
+          {sortOptions.map((option) => (
+            <button key={option.value} type="button" role="radio" aria-checked={sort === option.value}
+              onClick={() => { setSort(option.value); setMobileSortOpen(false); }}
+              className={cn("flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 text-left text-sm",
+                sort === option.value ? "bg-primary/10 font-semibold text-primary" : "text-foreground hover:bg-muted")}>
+              <span>{option.label}</span>
+              {sort === option.value && <Check className="h-4 w-4 shrink-0" aria-hidden="true" />}
+            </button>
+          ))}
+        </div>
+      </ResultsSheet>
+
       <div className={cn(adminMode ? "px-4 md:px-6 py-5" : "travelian-container py-6")}>
         {SHOW_HIDDEN_SECTIONS && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card px-4 py-3 shadow-sm">
           <div>
@@ -1400,7 +1606,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               Sort
               <select
                 value={sort}
-                onChange={(event) => setSort(event.target.value)}
+                onChange={(event) => setSort(event.target.value as FlightSort)}
                 className="h-9 rounded-xl border border-input bg-background px-3 text-sm text-foreground"
               >
                 <option value="best">Recommended</option>
@@ -1424,7 +1630,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 {formatFare(priceRange[0], currency)} - {formatFare(priceRange[1], currency)}
               </span>
             ) : null}
-            <Button variant="ghost" size="sm" className="h-7 rounded-full text-xs" onClick={() => { setSelectedAirlines([]); setSelectedStops([]); setSelectedDepartureTimes([]); setSelectedBaggage([]); setPriceRange([0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)]); setSearch(""); }}>
+            <Button variant="ghost" size="sm" className="h-7 rounded-full text-xs" onClick={clearAllFilters}>
               Clear all
             </Button>
           </div>
@@ -1439,7 +1645,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           ].map(s => (
             <button
               key={s.id}
-              onClick={() => setSort(s.id)}
+              onClick={() => setSort(s.id as FlightSort)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap ${
                 sort === s.id
                   ? "bg-primary text-primary-foreground shadow-sm"
@@ -1487,92 +1693,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
           {/* Sidebar Filters */}
           <aside className="hidden w-48 shrink-0 space-y-4 self-start md:sticky md:top-24 md:block xl:w-52">
             <h2 className="sr-only">Filter results</h2>
-            <Card className="shadow-card border-0">
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-foreground text-sm mb-3">Stops</h3>
-                <div className="space-y-2.5">
-                  {stopOptions.map(option => (
-                    <label key={option.value} className="flex min-w-0 cursor-pointer items-center gap-2" title={option.label}>
-                      <Checkbox checked={selectedStops.includes(option.value)} onCheckedChange={() => toggleStopFilter(option.value)} />
-                      <span className="min-w-0 truncate text-xs text-muted-foreground">{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-card border-0">
-              <CardContent className="p-4">
-                <h3 className="mb-3 text-sm font-semibold text-foreground">Sort By</h3>
-                <div className="space-y-2">
-                  {sortOptions.map((option) => (
-                    <label key={option.value} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-muted-foreground hover:bg-muted/60 hover:text-foreground">
-                      <input
-                        type="radio"
-                        name="flight-sort"
-                        value={option.value}
-                        checked={sort === option.value}
-                        onChange={() => setSort(option.value)}
-                        className="h-3.5 w-3.5 accent-primary"
-                      />
-                      <span>{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            {flights.length > 0 && <Card className="shadow-card border-0">
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-foreground text-sm mb-4">Price Range ({currency})</h3>
-                <Slider value={priceRange} onValueChange={setPriceRange} min={0} max={Math.max(700, Math.ceil(maxPrice / 1000) * 1000)} step={100} className="mb-3" />
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <input value={priceRange[0]} onChange={(event) => setPriceRange([Number(event.target.value) || 0, priceRange[1]])} className="h-8 rounded-lg border bg-background px-2" aria-label="Minimum price" />
-                  <input value={priceRange[1]} onChange={(event) => setPriceRange([priceRange[0], Number(event.target.value) || priceRange[1]])} className="h-8 rounded-lg border bg-background px-2" aria-label="Maximum price" />
-                </div>
-              </CardContent>
-            </Card>}
-            <Card className="shadow-card border-0">
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-foreground text-sm mb-3">Departure Time</h3>
-                <div className="space-y-2.5">
-                  {departureTimeOptions.map(option => (
-                    <label key={option.value} className="flex min-w-0 cursor-pointer items-center gap-2" title={option.label}>
-                      <Checkbox checked={selectedDepartureTimes.includes(option.value)} onCheckedChange={() => toggleDepartureTimeFilter(option.value)} />
-                      <span className="min-w-0 truncate text-xs text-muted-foreground">{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            {baggageOptions.length > 0 && <Card className="shadow-card border-0">
-              <CardContent className="p-4">
-                <h3 id="baggage-filter" className="font-semibold text-foreground text-sm mb-3">Baggage</h3>
-                {/* #36: built from the fares in these results, in the short form, lightest first. */}
-                <div role="group" aria-labelledby="baggage-filter" className="space-y-2.5">
-                  {baggageOptions.map(option => (
-                    <label key={option.value} className="flex min-w-0 cursor-pointer items-center gap-2" title={option.label}>
-                      <Checkbox checked={selectedBaggage.includes(option.value)} onCheckedChange={() => toggleBaggageFilter(option.value)} aria-label={underBaggageLabel(option.label)} />
-                      <span className="min-w-0 truncate text-xs text-muted-foreground">{underBaggageLabel(option.label)}</span>
-                    </label>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>}
-            <Card className="shadow-card border-0">
-              <CardContent className="p-4">
-                <h3 className="font-semibold text-foreground text-sm mb-3">Airlines</h3>
-                <div className="space-y-2.5">
-                  {airlineOptions.length === 0 && (
-                    <p className="text-xs text-muted-foreground">Airlines appear here after live fares are returned.</p>
-                  )}
-                  {airlineOptions.map(a => (
-                    <label key={a} className="flex min-w-0 cursor-pointer items-center gap-2 group" title={a}>
-                      <Checkbox checked={selectedAirlines.some(sel => isSameAirline(sel, a))} onCheckedChange={() => toggleAirline(a)} />
-                      <span className="min-w-0 truncate text-xs text-muted-foreground transition-colors group-hover:text-foreground">{a}</span>
-                    </label>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            {filterGroups(false)}
           </aside>
 
           {/* Results (min-w-0: cards shrink beside the filters instead of pushing Book off-screen, issue #90) */}
@@ -1992,7 +2113,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   ))}
                 </div>
                 <div className="flex flex-wrap justify-center gap-2">
-                  <Button variant="outline" className="rounded-lg" onClick={() => { setSelectedAirlines([]); setSelectedStops([]); setSelectedDepartureTimes([]); setSelectedBaggage([]); setPriceRange([0, Math.max(700, Math.ceil(maxPrice / 1000) * 1000)]); setSearch(""); }}>
+                  <Button variant="outline" className="rounded-lg" onClick={clearAllFilters}>
                     Clear All Filters
                   </Button>
                   <a href={whatsappUrl(`Hello Travelian,\n\nPlease check live fares for ${from} to ${to} on ${format(departDate, "MMM dd, yyyy")}.\n\nTravelers: ${formatTravelers(travelers)}\nCurrency: ${currency}`)} target="_blank" rel="noreferrer">
@@ -2099,16 +2220,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       <GroupFareCalendar days={editFares.days} anyDate checking={editFares.checking}
                         status={editFares.status === "loading" || editFares.status === "error" ? editFares.status : "ready"}
                         selected={editDate ? format(editDate, "yyyy-MM-dd") : undefined}
-                        onPick={(picked) => { setEditDate(parseISO(picked)); setEditDateOpen(false); }} />
+                        onPick={(picked) => pickEditDeparture(parseISO(picked))} />
                     </div>
                   ) : (
                   <Calendar size="large"
                     mode="single"
                     selected={editDate}
-                    onSelect={(date) => {
-                      setEditDate(date);
-                      if (date) setEditDateOpen(false);
-                    }}
+                    onSelect={pickEditDeparture}
                     initialFocus
                     className="p-3 sm:p-5 pointer-events-auto"
                   />
@@ -2121,34 +2239,50 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Return Date</label>
                 <CalendarPopup open={editReturnDateOpen} onOpenChange={setEditReturnDateOpen}>
                   <CalendarPopupTrigger asChild>
-                    <button type="button" className="flex items-center gap-2 h-11 w-full bg-background border border-input rounded-xl px-3 text-sm text-left">
+                    <button ref={editReturnRef} type="button" aria-invalid={editReturnError ? true : undefined} aria-describedby={editReturnError ? "modify-return-error" : undefined}
+                      className={cn("flex items-center gap-2 h-11 w-full bg-background border border-input rounded-xl px-3 text-sm text-left", editReturnError && "border-destructive")}>
                       <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                       {editReturnDate ? format(editReturnDate, "MMM dd, yyyy") : "Select return date"}
                     </button>
                   </CalendarPopupTrigger>
                   <CalendarPopupContent title="Select return date">
+                    {editDate && editReturnFares.ready ? (
+                      <div className="w-[min(46rem,calc(100vw-2.5rem))] overflow-y-auto p-3 sm:p-5">
+                        <GroupFareCalendar days={editReturnFares.days} anyDate checking={editReturnFares.checking}
+                          status={editReturnFares.status === "loading" || editReturnFares.status === "error" ? editReturnFares.status : "ready"}
+                          selected={editReturnDate ? format(editReturnDate, "yyyy-MM-dd") : undefined}
+                          min={format(editDate, "yyyy-MM-dd")} marked={format(editDate, "yyyy-MM-dd")}
+                          onPick={(picked) => { setEditReturnDate(parseISO(picked)); setEditReturnError(undefined); setEditReturnDateOpen(false); }} />
+                      </div>
+                    ) : (
                     <Calendar size="large"
                       mode="single"
                       selected={editReturnDate}
                       onSelect={(date) => {
                         setEditReturnDate(date);
-                        if (date) setEditReturnDateOpen(false);
+                        if (date) { setEditReturnError(undefined); setEditReturnDateOpen(false); }
                       }}
+                      disabled={editDate ? { before: startOfDay(editDate) } : undefined}
+                      defaultMonth={editReturnDate ?? editDate}
+                      modifiers={editDate ? { departure: editDate } : undefined}
+                      modifiersClassNames={editDate ? { departure: "ring-2 ring-inset ring-primary" } : undefined}
                       initialFocus
                       className="p-3 sm:p-5 pointer-events-auto"
                     />
+                    )}
                   </CalendarPopupContent>
                 </CalendarPopup>
+                {editReturnError && <p id="modify-return-error" role="alert" className="mt-1 text-xs text-destructive">{editReturnError}</p>}
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="min-w-0">
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Travelers</label>
-                <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} mode="travelers" />
+                <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} mode="travelers" fit />
               </div>
               <div className="min-w-0">
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Cabin Class</label>
-                <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} mode="cabin" />
+                <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} mode="cabin" fit />
               </div>
             </div>
           </div>

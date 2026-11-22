@@ -62,4 +62,19 @@ describe("GroupFareCalendar", () => {
     expect(screen.getByText(/No dates with seats in this period/)).toBeInTheDocument();
     expect(screen.getAllByRole("button").filter((button) => button.getAttribute("data-available") === "true")).toHaveLength(0);
   });
+
+  it("return calendar (#151): dates before `min` can't be picked, the departure is outlined, the month starts at min", () => {
+    const pick = vi.fn();
+    render(<GroupFareCalendar days={days} anyDate min="2026-12-04" marked="2026-12-04" selected="2026-12-06" onPick={pick} />);
+    expect(screen.getByText("December 2026")).toBeInTheDocument();
+    expect(screen.queryByText("November 2026")).toBeNull();
+    const early = screen.getByRole("button", { name: /Tuesday 1 December: before departure/ });
+    expect(early).toBeDisabled();
+    expect(early.textContent).toBe("1"); // no price before the departure
+    const departure = screen.getByRole("button", { name: /Friday 4 December \(departure\)/ });
+    expect(departure.className).toMatch(/ring-primary/);
+    expect(screen.getByRole("button", { name: /Saturday 5 December/ }).className).toMatch(/bg-primary\/10/);
+    fireEvent.click(departure);
+    expect(pick).toHaveBeenCalledWith("2026-12-04");
+  });
 });
