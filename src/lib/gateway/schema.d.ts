@@ -1649,6 +1649,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/flight-operations/group-bookings-awaiting-final-pnr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Group Awaiting Final Pnr
+         * @description Every paid group booking still waiting for the supplier's final PNR (not yet departed), soonest first.
+         */
+        get: operations["group_awaiting_final_pnr_v1_admin_flight_operations_group_bookings_awaiting_final_pnr_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/flight-operations/group-departures-without-final-pnr": {
         parameters: {
             query?: never;
@@ -5750,6 +5770,55 @@ export interface components {
             vendors_queried?: string[] | null;
             /** Vendors Succeeded */
             vendors_succeeded?: string[] | null;
+        };
+        /**
+         * GroupAwaitingFinalPnr
+         * @description The Dashboard tracker (travelian#13): every paid group booking still waiting for the supplier's final PNR.
+         */
+        GroupAwaitingFinalPnr: {
+            /**
+             * Departs Soon
+             * @description How many of them leave within window_hours.
+             */
+            departs_soon: number;
+            /**
+             * Items
+             * @description Soonest departure first; bookings with no flight recorded last.
+             */
+            items: components["schemas"]["GroupAwaitingFinalPnrItem"][];
+            /** Total */
+            total: number;
+            /**
+             * Window Hours
+             * @description A booking leaving within this many hours is marked departs_soon.
+             */
+            window_hours: number;
+        };
+        /** GroupAwaitingFinalPnrItem */
+        GroupAwaitingFinalPnrItem: {
+            /** Airline Name */
+            airline_name?: string | null;
+            /** Booking Id */
+            booking_id: string;
+            /** Customer Or Agency */
+            customer_or_agency?: string | null;
+            /**
+             * Departs Soon
+             * @description Leaves within window_hours: the final PNR is due now.
+             */
+            departs_soon: boolean;
+            /**
+             * Departure At
+             * @description First flight's departure (Pakistan time zone assumed); none when no flight is recorded.
+             */
+            departure_at?: string | null;
+            /** Flight Number */
+            flight_number?: string | null;
+            /**
+             * Route
+             * @description e.g. "LHE → JED → LHE".
+             */
+            route?: string | null;
         };
         /** GroupBookingRequest */
         GroupBookingRequest: {
@@ -13693,6 +13762,40 @@ export interface operations {
                 content?: never;
             };
             /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    group_awaiting_final_pnr_v1_admin_flight_operations_group_bookings_awaiting_final_pnr_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupAwaitingFinalPnr"];
+                };
+            };
+            /** @description Not back office. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
             503: {
                 headers: {
                     [name: string]: unknown;

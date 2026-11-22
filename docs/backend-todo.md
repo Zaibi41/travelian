@@ -42,6 +42,7 @@ The previous long-form list (sections 1 to 10) is in git history before 21 Novem
 | Group Ticketing `/check-availability` takes the supplier price (5) | [gateway#107](https://github.com/Zaibi41/travelian-api-gateway/issues/107) |
 | Group Ticketing issue call, Dhillu & Sahi hold/release, hold rule, hold expiry on results, final PNR and tickets from the supplier (6, 8) | [gateway#108](https://github.com/Zaibi41/travelian-api-gateway/issues/108) |
 | Paid group holds expiring before the final PNR (8) | [gateway#109](https://github.com/Zaibi41/travelian-api-gateway/issues/109) |
+| Dashboard: group bookings awaiting final PNR (travelian#13); the tracker stays hidden until this is deployed | Gateway `GET /v1/admin/flight-operations/group-bookings-awaiting-final-pnr`, [gateway#135](https://github.com/Zaibi41/travelian-api-gateway/pull/135) |
 | Group Ticketing owned stock (6) | [gateway#110](https://github.com/Zaibi41/travelian-api-gateway/issues/110) |
 | Admin Search → Flights: multi-city, cabins, fare rules, refund/meal/hold time, Staff fare tag, Available providers and Search expiry cards (6) | [gateway#111](https://github.com/Zaibi41/travelian-api-gateway/issues/111) |
 | Admin Search → Flights: Book and Hold | [travelian#112](https://github.com/Zaibi41/travelian/issues/112) (existing) and [gateway#111](https://github.com/Zaibi41/travelian-api-gateway/issues/111) |
