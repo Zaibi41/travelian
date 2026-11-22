@@ -78,8 +78,8 @@ for (const width of [1920, 1440, 1366, 1280, 1024, 768, 390]) {
     const box = await page.getByText("02:35", { exact: true }).first().boundingBox();
     expect(box && box.x + box.width).toBeLessThanOrEqual(width);
     await page.getByRole("button", { name: "Show 2 more fares" }).click();
-    await page.getByRole("button", { name: "Revalidate Z8266 EB" }).click();
-    await expect(page.getByText("Total to confirm")).toBeVisible();
+    // #80, #81: the Price column has no "per adult" text and the Actions column no Revalidate.
+    await expect(page.getByRole("region", { name: "Results" })).not.toContainText(/per adult|Revalidate/);
     expect(await noPageScroll(page)).toBe(0);
   });
 

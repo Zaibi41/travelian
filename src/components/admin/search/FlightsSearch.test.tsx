@@ -120,7 +120,7 @@ const LIVE_UAT: FlightSearchView = {
 };
 
 describe("admin Flights search, live Southair shape", () => {
-  it("shows times, duration, stops and per-fare baggage; missing meal, refund and hold time show a dash", async () => {
+  it("shows times, duration, stops and per-fare baggage; missing meal says No Meal, missing refund a dash", async () => {
     gateway.search.mockReset().mockResolvedValue(LIVE_UAT);
     renderAt("/admin/search?tab=flights&from=LHE&to=KHI&date=2026-11-19");
     const results = await screen.findByRole("region", { name: "Results" });
@@ -136,7 +136,7 @@ describe("admin Flights search, live Southair shape", () => {
       "30 kg checked30 kg checked; hand carry: check with airline"]);
     for (const row of rows) {
       const cells = within(row).getAllByRole("cell").map(cell => cell.textContent);
-      expect([cells[1], cells[3], cells[4]]).toEqual(["No Meal", "—Not available", "—Not available"]);  // meal says No Meal; refund, hold left (dash; screen readers hear "Not available")
+      expect([cells[1], cells[3]]).toEqual(["No Meal", "—Not available"]);  // meal says No Meal; refund a dash (screen readers hear "Not available"); no Hold left (#78)
       expect(row).not.toHaveTextContent(/info not available|Not available yet|Hold time not available/);
     }
     expect(results).not.toHaveTextContent("Baggage info not available");
@@ -153,7 +153,7 @@ describe("admin Flights search, live Southair shape", () => {
     renderAt("/admin/search?tab=flights&from=LHE&to=KHI&date=2026-11-19");
     const results = await screen.findByRole("region", { name: "Results" });
     fireEvent.click(within(results).getByRole("button", { name: "Show 1 more fares" }));
-    expect(within(results).getAllByRole("row").slice(1).map(row => within(row).getAllByRole("cell")[5].textContent)).toEqual(["—Not available", "—Not available", "—Not available"]);
+    expect(within(results).getAllByRole("row").slice(1).map(row => within(row).getAllByRole("cell")[4].textContent)).toEqual(["—Not available", "—Not available", "—Not available"]);
     expect(screen.getAllByRole("group", { name: "Price range" })[0]).toBeDisabled();
   });
 });
@@ -221,8 +221,17 @@ describe("mockup elements (Search > Flights)", () => {
     expect(screen.getByRole("combobox", { name: "Provider" })).toHaveTextContent("All providers");
     expect(screen.getByLabelText("Search status")).toHaveTextContent("Providers responding 1 of 1");
     expect(screen.getAllByRole("group", { name: "Provider" }).length).toBeGreaterThan(0);
-    expect(within(results).getAllByRole("columnheader", { name: "Hold left · Provider" }).length).toBeGreaterThan(0);
+    expect(within(results).getAllByRole("columnheader", { name: "Provider" }).length).toBeGreaterThan(0);
     expect(within(results).getAllByText("southair").length).toBeGreaterThan(0);
+  });
+
+  it("#78: no Hold left column or time limit text, with or without provider names", async () => {
+    renderAt(url);
+    const results = await screen.findByRole("region", { name: "Results" });
+    expect(within(results).queryByRole("columnheader", { name: /Hold left|Provider/ })).not.toBeInTheDocument();
+    expect(within(results).getAllByRole("columnheader").map(header => header.textContent)).toEqual(
+      expect.arrayContaining(["Fare", "Meal", "Baggage", "Refund", "Price"]));
+    expect(results).not.toHaveTextContent(/Hold left|1 hours for domestic/);
   });
 
   it("status line: fares valid until (from expires_at); Sort by with the public site's options plus arrival", async () => {

@@ -598,11 +598,12 @@ function FlightCard({ journey, flight, data, renderFareAction, actionNotes }: {
         </div>
       </div>
       {/* From 1024px the table fits its card (columns wrap); only phones and tablets scroll it sideways. */}
-      <div className="max-lg:overflow-x-auto">
+      <div className="relative max-lg:overflow-x-auto">
         <table className="w-full border-collapse text-table max-lg:min-w-[52rem]">
           <thead>
             <tr className="bg-muted text-left">
-              {["Fare", "Meal", "Baggage", "Refund", showsProvider ? "Hold left · Provider" : "Hold left"].map(column => (
+              {/* #78: no "Hold left" column (the gateway still sends fare.time_limit); Provider only for viewers sent provider names. */}
+              {["Fare", "Meal", "Baggage", "Refund", ...(showsProvider ? ["Provider"] : [])].map(column => (
                 <th key={column} scope="col" className="h-table-header px-2.5 font-semibold text-foreground">{column}</th>
               ))}
               <th scope="col" className="h-table-header px-2.5 text-right font-semibold text-foreground">Price</th>
@@ -621,12 +622,13 @@ function FlightCard({ journey, flight, data, renderFareAction, actionNotes }: {
                     {refundable === null ? <Missing value={null} />
                       : <StatusBadge severity={refundable ? "fine" : "critical"}>{refundable ? "Refundable" : "Non-refundable"}</StatusBadge>}
                   </td>
-                  <td className="max-w-[10rem] px-2.5 py-2">
-                    <Missing value={fare.time_limit} />
-                    {fare.supplier && <span className="block truncate text-label text-muted-foreground" title={fare.supplier}>{fare.supplier}</span>}
-                  </td>
+                  {showsProvider && (
+                    <td className="max-w-[10rem] px-2.5 py-2">
+                      {fare.supplier ? <span className="block truncate text-label text-muted-foreground" title={fare.supplier}>{fare.supplier}</span> : <Missing value={null} />}
+                    </td>
+                  )}
                   <td className="whitespace-nowrap px-2.5 py-2 text-right tabular-nums">
-                    {fare.selling_price ? <><span className="font-semibold text-foreground">{formatMoney(fare.selling_price)}</span> <span className="text-label text-muted-foreground">per adult</span></> : <Missing value={null} />}
+                    {fare.selling_price ? <span className="font-semibold text-foreground">{formatMoney(fare.selling_price)}</span> : <Missing value={null} />}
                   </td>
                   {renderFareAction && <td className="px-2.5 py-2 text-right">{renderFareAction({ journey, flight, fare }, data)}</td>}
                 </tr>
