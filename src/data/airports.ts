@@ -27,3 +27,9 @@ export function airportByCode(code: string): Airport | undefined {
   const found = loadedAirports()?.byCode.get(code.trim().toUpperCase());
   return found ? toPublic(found) : undefined;
 }
+
+/** City and country name (full words, e.g. "United Arab Emirates") for a code, from the same list; undefined before it loads. */
+export function airportPlace(code: string): { code: string; city?: string; country?: string } | undefined {
+  const found = loadedAirports()?.byCode.get(code.trim().toUpperCase());
+  return found ? { code: found.iata.toUpperCase(), city: found.city?.trim() || undefined, country: found.country?.trim() || undefined } : undefined;
+}

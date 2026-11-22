@@ -34,6 +34,47 @@ describe("flights through the gateway", () => {
     expect(offers[0]).toMatchObject({ flightNumber: "PA400", returnDepartureTime: "2026-12-15T19:00", price: { total: 22050 + 21000 } });
   });
 
+  it("keeps each flight of a connection and where and how long the passenger stays (#37, #83, #84)", () => {
+    const twoStops = { ...flight("f1", "EY", "EY254 / EY11 / EY19", "2026-12-12T03:00", [fare("a", "Saver", 90000)]), stops: 2, stop_cities: ["AUH", "DOH"],
+      duration_minutes: 900, segments: [
+        { flight_number: "EY254", origin: "LHE", destination: "AUH", departure_local: "2026-12-12T03:00", arrival_local: "2026-12-12T05:30", duration_minutes: 210 },
+        { flight_number: "EY11", origin: "AUH", destination: "DOH", departure_local: "2026-12-12T08:15", arrival_local: "2026-12-12T08:30", duration_minutes: 75, layover_minutes: 165 },
+        { flight_number: "EY19", origin: "DOH", destination: "LHR", departure_local: "2026-12-12T10:00", arrival_local: "2026-12-12T15:00", duration_minutes: 420, layover_minutes: 90 },
+      ] };
+    const [offer] = gatewayOffers({ search_id: "s", status: "complete", journeys: [{ direction: "outbound", origin: "LHE", destination: "LHR", flights: [twoStops] }] }, "Economy");
+    expect(offer.stops).toBe(2);
+    expect(offer.segments?.map((s) => [s.flightNumber, s.origin, s.destination, s.duration])).toEqual([
+      ["EY254", "LHE", "AUH", "3h 30m"], ["EY11", "AUH", "DOH", "1h 15m"], ["EY19", "DOH", "LHR", "7h 0m"]]);
+    expect(offer.layovers).toEqual([
+      { location: "AUH", duration: "2h 45m", arrivalTime: "2026-12-12T05:30", departureTime: "2026-12-12T08:15", nextFlightNumber: "EY11" },
+      { location: "DOH", duration: "1h 30m", arrivalTime: "2026-12-12T08:30", departureTime: "2026-12-12T10:00", nextFlightNumber: "EY19" }]);
+  });
+
+  it("without flight-by-flight detail: the stop city alone, and one segment with the flight's own duration", () => {
+    const oneStop = { ...flight("f1", "PA", "PA200", "2026-12-12T08:00", [fare("a", "Value", 22050)]), stops: 1, stop_cities: ["MUX"] };
+    const [offer] = gatewayOffers({ search_id: "s", status: "complete", journeys: [{ direction: "outbound", origin: "KHI", destination: "LHE", flights: [oneStop] }] }, "Economy");
+    expect(offer.layovers).toEqual([{ location: "MUX" }]);
+    expect(offer.segments).toHaveLength(1);
+    expect(offer.segments?.[0]).toMatchObject({ origin: "KHI", destination: "LHE", duration: "2h 0m" });
+    const [direct] = gatewayOffers({ search_id: "s", status: "complete", journeys: [{ direction: "outbound", origin: "KHI", destination: "LHE",
+      flights: [flight("f2", "PA", "PA400", "2026-12-12T08:00", [fare("a", "Value", 22050)])] }] }, "Economy");
+    expect(direct.layovers).toEqual([]);
+  });
+
+  it("round trip: outbound and return flights in order; the stays listed are the outbound's", () => {
+    const out = { ...flight("o1", "EY", "EY254 / EY11", "2026-12-12T03:00", [fare("a", "Saver", 90000)]), stops: 1, stop_cities: ["AUH"], segments: [
+      { flight_number: "EY254", origin: "LHE", destination: "AUH", departure_local: "2026-12-12T03:00", arrival_local: "2026-12-12T05:30" },
+      { flight_number: "EY11", origin: "AUH", destination: "LHR", departure_local: "2026-12-12T08:15", arrival_local: "2026-12-12T12:30", layover_minutes: 165 }] };
+    const back = { ...flight("r1", "EY", "EY12 / EY255", "2026-12-20T09:00", [fare("b", "Saver", 80000)]), stops: 1, stop_cities: ["AUH"], segments: [
+      { flight_number: "EY12", origin: "LHR", destination: "AUH", departure_local: "2026-12-20T09:00", arrival_local: "2026-12-20T19:00" },
+      { flight_number: "EY255", origin: "AUH", destination: "LHE", departure_local: "2026-12-20T21:00", arrival_local: "2026-12-21T01:30", layover_minutes: 120 }] };
+    const [offer] = gatewayOffers({ search_id: "s", status: "complete", journeys: [
+      { direction: "outbound", origin: "LHE", destination: "LHR", flights: [out] },
+      { direction: "return", origin: "LHR", destination: "LHE", flights: [back] }] }, "Economy");
+    expect(offer.segments?.map((s) => s.flightNumber)).toEqual(["EY254", "EY11", "EY12", "EY255"]);
+    expect(offer.layovers?.map((l) => [l.location, l.duration])).toEqual([["AUH", "2h 45m"]]);
+  });
+
   it("searches the gateway's public route with the trip, never the old API, and keeps airport times", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ search_id: "s1", status: "complete", journeys: [
       { direction: "outbound", origin: "KHI", destination: "LHE", flights: [flight("f1", "PA", "PA400", "2026-12-12T08:00", [fare("a", "Value", 22050)])] },
