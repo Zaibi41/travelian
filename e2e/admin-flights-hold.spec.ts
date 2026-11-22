@@ -99,8 +99,8 @@ const overflow = (page: Page) => page.evaluate(() => document.documentElement.sc
 for (const width of [1280, 1366, 1440, 1920]) {
   test(`hold form and hold result fit at ${width}px`, async ({ page }) => {
     await open(page, width);
-    await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
-    await expect(page.getByRole("heading", { name: "Hold flight", level: 1 })).toBeVisible();
+    await page.getByRole("button", { name: "Book Z8266 EB" }).click();
+    await expect(page.getByRole("heading", { name: "Book flight", level: 1 })).toBeVisible();
     await expect(page.getByRole("complementary", { name: "Selected fare" })).toContainText("Rs 15,316");
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `hold form at ${width}px`);
@@ -129,7 +129,7 @@ for (const width of [1280, 1366, 1440, 1920]) {
 
   test(`hold problem state fits at ${width}px`, async ({ page }) => {
     await open(page, width, { holdError: true });
-    await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
+    await page.getByRole("button", { name: "Book Z8266 EB" }).click();
     await fillRequired(page);
     await page.getByRole("button", { name: "Hold seats" }).click();
     const card = page.getByRole("region", { name: "The total couldn't be verified, so nothing was saved" });
@@ -143,7 +143,7 @@ for (const width of [1280, 390]) {
   test(`saved customer and travelers by mobile number at ${width}px: the hold sends only their ids`, async ({ page }) => {
     holdBodies.length = 0;
     await open(page, width);
-    await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
+    await page.getByRole("button", { name: "Book Z8266 EB" }).click();
     // Live search: the list opens under the field as the user types, inside the viewport.
     const find = page.getByRole("combobox", { name: "Find saved customer" });
     await find.fill("3001234567");
@@ -185,7 +185,7 @@ for (const width of [1280, 390]) {
 
 test("country dropdown opens attached to its field, stays in view and works with the keyboard", async ({ page }) => {
   await open(page, 1366);
-  await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
+  await page.getByRole("button", { name: "Book Z8266 EB" }).click();
   const adult = page.getByRole("region", { name: "Adult 1" });
   const nationality = adult.getByRole("combobox", { name: "Nationality" });
   await expect(nationality).toHaveText("Pakistan");

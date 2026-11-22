@@ -95,8 +95,8 @@ for (const [width, height] of [[1440, 760], [390, 700]] as const) {
   test(`hold form: the dropdowns and date picker leave the page where it is at ${width}x${height}`, async ({ page }) => {
     await open(page, width);
     await page.setViewportSize({ width, height });
-    await page.getByRole("button", { name: "Hold Z8266 EB" }).click();
-    await expect(page.getByRole("heading", { name: "Hold flight", level: 1 })).toBeVisible();
+    await page.getByRole("button", { name: "Book Z8266 EB" }).click();
+    await expect(page.getByRole("heading", { name: "Book flight", level: 1 })).toBeVisible();
     const first = page.getByRole("region", { name: "Adult 1" });
     await expect(first).toBeVisible();
     const triggers = [

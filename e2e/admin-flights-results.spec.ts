@@ -151,3 +151,38 @@ for (const width of [1440, 390]) {
     if (process.env.SHOTS_DIR) await page.screenshot({ path: `${process.env.SHOTS_DIR}/booking-page-${width}.png`, fullPage: true });
   });
 }
+
+for (const width of [1440, 1024, 768, 390]) {
+  test(`actions: Book and Share on WhatsApp, no Hold; restricted airlines stay Request to book at ${width}px (#112)`, async ({ page }) => {
+    await openFlights(page, width, ROUND_TRIP);
+    const results = page.getByRole("region", { name: "Results" });
+    await expect(results.getByRole("button", { name: /^Hold / })).toHaveCount(0);
+    await expect(results.getByRole("button", { name: /^Revalidate/ })).toHaveCount(0);
+    for (const [flight, fareName, action] of [["PA410", "Value", "Book"], ["Z8266", "EB", "Book"], ["EK624", "Saver", "Book"],
+      ["QR629", "Economy Classic", "Request to book"], ["EY242", "Economy Saver", "Request to book"]]) {
+      await expect(card(page, flight).getByRole("button", { name: `${action} ${flight} ${fareName}` })).toBeVisible();
+      const share = card(page, flight).getByRole("link", { name: `Share ${flight} ${fareName} on WhatsApp` });
+      await expect(share).toHaveAttribute("target", "_blank");
+      const href = (await share.getAttribute("href"))!;
+      expect(href.startsWith("https://wa.me/?text=")).toBe(true);
+      const text = decodeURIComponent(href.slice("https://wa.me/?text=".length));
+      expect(text).toContain(`${flight}\n`);
+      expect(text).toMatch(/\nPrice: Rs [\d,]+$/);
+      expect(text).not.toMatch(/sooperfare|supplier|margin|null|undefined/i);
+    }
+    const qatar = decodeURIComponent((await card(page, "QR629").getByRole("link", { name: /^Share/ }).getAttribute("href"))!.split("text=")[1]);
+    expect(qatar).toContain("Outbound flight\nQatar Airways QR629\nLahore (LHE) to Dubai (DXB)");
+    expect(qatar).toContain("Price: Rs 132,400");
+    // The share link opens WhatsApp in a new tab; nothing is sent by the page itself.
+    await page.context().route("https://wa.me/**", route => route.fulfill({ body: "WhatsApp" }));
+    const [popup] = await Promise.all([page.waitForEvent("popup"), card(page, "PA410").getByRole("link", { name: /^Share PA410 Value/ }).click()]);
+    await popup.waitForURL(/wa\.me\/\?text=/);
+    await popup.close();
+    // Round trip: Book on each direction opens the booking page (the hold flow behind it is unchanged).
+    await card(page, "PA410").getByRole("button", { name: "Book PA410 Value" }).click();
+    await expect(page.getByRole("region", { name: "Selected fare" })).toContainText("Return: choose a fare");
+    await card(page, "EK624").getByRole("button", { name: "Book EK624 Saver" }).click();
+    await expect(page.getByRole("heading", { name: "Book flight", level: 1 })).toBeVisible();
+    expect(await noPageScroll(page)).toBe(0);
+  });
+}

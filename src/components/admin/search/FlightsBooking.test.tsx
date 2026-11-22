@@ -53,10 +53,14 @@ describe("fare row actions (mockup; #80, #81)", () => {
     gateway.reprice.mockReset().mockResolvedValue(QUOTE);
   });
 
-  it("has Book and Hold; no Revalidate, Quote or Fare rules on a fare", async () => {
+  it("has Book and Share; no Hold, Revalidate, Quote or Fare rules on a fare (#112)", async () => {
     renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
     expect(await screen.findByRole("button", { name: "Book PA-1 Y" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Hold PA-1 Y" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: /^Hold/ })).not.toBeInTheDocument();
+    const share = screen.getByRole("link", { name: "Share PA-1 Y on WhatsApp" });
+    expect(share).toHaveAttribute("target", "_blank");
+    expect(share.getAttribute("href")).toMatch(/^https:\/\/wa\.me\/\?text=/);
+    expect(decodeURIComponent(share.getAttribute("href")!.split("text=")[1])).toContain("Price: Rs 467");
     expect(screen.queryByRole("button", { name: /^(Revalidate|Quote|Fare rules|Select)/ })).not.toBeInTheDocument();
     const card = screen.getByRole("article", { name: /PA-1/ });
     expect(card).not.toHaveTextContent(/Revalidate|Quotes aren't available|Fare rules/);
@@ -72,11 +76,19 @@ describe("fare row actions (mockup; #80, #81)", () => {
     expect(card).not.toHaveTextContent(/per adult/i);
   });
 
-  it("can't book or hold a fare with no price", async () => {
+  it("restricted airline (request fare): Request to book stays, no Book (the gateway can't book it); Share works", async () => {
+    gateway.search.mockResolvedValue({ ...ONE_WAY, journeys: [{ ...ONE_WAY.journeys[0], flights: [{ ...flight("1", "fare-out", 467), fares: [{ id: "fare-out", name: "Y", selling_price: rs(467), booking_mode: "request" }] }] }] });
+    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    expect(await screen.findByRole("button", { name: "Request to book PA-1 Y" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Book PA-1 Y" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Share PA-1 Y on WhatsApp" })).toBeInTheDocument();
+  });
+
+  it("can't book a fare with no price (Share still opens, without a price)", async () => {
     gateway.search.mockResolvedValue({ ...ONE_WAY, journeys: [{ ...ONE_WAY.journeys[0], flights: [{ ...flight("1", "fare-out", 0), fares: [{ id: "fare-out", name: "Y" }] }] }] });
     renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
     expect(await screen.findByRole("button", { name: "Book PA-1 Y" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Hold PA-1 Y" })).toBeDisabled();
+    expect(decodeURIComponent(screen.getByRole("link", { name: "Share PA-1 Y on WhatsApp" }).getAttribute("href")!)).not.toContain("Price:");
   });
 
   it("round trip: the Selected fare panel asks for the other direction until both are chosen", async () => {
@@ -88,7 +100,7 @@ describe("fare row actions (mockup; #80, #81)", () => {
   });
 });
 
-describe("fare check on Book or Hold (mockup flights-fare-check)", () => {
+describe("fare check on Book (mockup flights-fare-check)", () => {
   const url = "/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27&adults=2";
   beforeEach(() => {
     gateway.search.mockReset().mockResolvedValue(ONE_WAY);
@@ -99,11 +111,11 @@ describe("fare check on Book or Hold (mockup flights-fare-check)", () => {
 
   it("price unchanged: opens the booking page straight away, with the gateway's quote and no dialog", async () => {
     renderAt(url);
-    fireEvent.click(await screen.findByRole("button", { name: "Hold PA-1 Y" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Book PA-1 Y" }));
     expect(await screen.findByRole("heading", { name: "Hold page" })).toBeInTheDocument();
     expect(gateway.reprice).toHaveBeenCalledWith("s1", ["fare-out"], expect.objectContaining({ signal: expect.anything() }));
     const draft = holdPage.state as { mode: string; quote: unknown; acceptPriceChange: boolean; picks: { fare: { id: string } }[] };
-    expect(holdPage.search).toBe("?mode=hold");
+    expect(holdPage.search).toBe("?mode=book");
     expect(draft.quote).toEqual(QUOTE);
     expect(draft.acceptPriceChange).toBe(false);
     expect(draft.picks.map(pick => pick.fare.id)).toEqual(["fare-out"]);
@@ -143,14 +155,14 @@ describe("fare check on Book or Hold (mockup flights-fare-check)", () => {
   it("a lower price shows Down with its amount", async () => {
     gateway.reprice.mockResolvedValue({ ...QUOTE, price_changed: true, old_price_per_adult: rs(467), new_price_per_adult: rs(450), price_difference_per_adult: rs(-17) });
     renderAt(url);
-    fireEvent.click(await screen.findByRole("button", { name: "Hold PA-1 Y" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Book PA-1 Y" }));
     expect(await screen.findByRole("dialog", { name: "The fare price has changed" })).toHaveTextContent("Down Rs 17");
   });
 
   it("Back to results closes the price-changed dialog without opening the page", async () => {
     gateway.reprice.mockResolvedValue({ ...QUOTE, price_changed: true });
     renderAt(url);
-    fireEvent.click(await screen.findByRole("button", { name: "Hold PA-1 Y" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Book PA-1 Y" }));
     fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Back to results" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(screen.queryByRole("heading", { name: "Hold page" })).not.toBeInTheDocument();
@@ -165,7 +177,7 @@ describe("fare check on Book or Hold (mockup flights-fare-check)", () => {
   ])("%s shows its state with the gateway's message", async (code, status, message, title, action) => {
     gateway.reprice.mockRejectedValue(new GatewayError(status === 404 ? "not_found" : "unavailable", message, status, code));
     renderAt(url);
-    fireEvent.click(await screen.findByRole("button", { name: "Hold PA-1 Y" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Book PA-1 Y" }));
     const dialog = await screen.findByRole("dialog", { name: title });
     expect(dialog).toHaveTextContent(message);
     expect(within(dialog).getByRole("button", { name: action })).toBeInTheDocument();
@@ -175,7 +187,7 @@ describe("fare check on Book or Hold (mockup flights-fare-check)", () => {
   it("Try again repeats the fare check", async () => {
     gateway.reprice.mockRejectedValueOnce(new GatewayError("unavailable", "The flight supplier couldn't reprice this fare. Try again.", 502, "not_confirmed"));
     renderAt(url);
-    fireEvent.click(await screen.findByRole("button", { name: "Hold PA-1 Y" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Book PA-1 Y" }));
     fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Try again" }));
     expect(await screen.findByRole("heading", { name: "Hold page" })).toBeInTheDocument();
     expect(gateway.reprice).toHaveBeenCalledTimes(2);
