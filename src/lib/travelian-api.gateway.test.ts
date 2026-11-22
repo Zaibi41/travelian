@@ -88,6 +88,26 @@ describe("flights through the gateway", () => {
     expect(result.flights[0]).toMatchObject({ provider: "travelian", flightNumber: "PA400", departureTime: "2026-12-12 08:00", price: 22050 });
   });
 
+  it("round trip: each fare keeps the outbound and the return baggage separately for the Baggage tab (#123)", () => {
+    const bag = (id: string, name: string, rupees: number, baggage: string, baggage_detail: string) =>
+      ({ id, name, baggage, baggage_detail, selling_price: { amount_minor: rupees * 100, currency: "PKR" } });
+    const [offer] = gatewayOffers({ search_id: "s", status: "complete", journeys: [
+      { direction: "outbound", origin: "KHI", destination: "LHE", flights: [flight("o1", "PA", "PA400", "2026-12-12T08:00", [
+        bag("a", "Value", 22050, "7 kg", "7 kg hand carry only, no checked bag"), bag("b", "Flexi", 25050, "7+20 kg", "7 kg hand carry + 20 kg checked")])] },
+      { direction: "return", origin: "LHE", destination: "KHI", flights: [flight("r1", "PA", "PA401", "2026-12-15T11:00", [
+        bag("c", "Value", 21000, "7+30 kg", "7 kg hand carry + 30 kg checked")])] },
+    ] }, "Economy");
+    expect(offer.fareOptions?.map((o) => [o.tier, o.bags, o.legBags])).toEqual([
+      ["Value", "7 kg / 7+30 kg", [{ label: "Outbound", bags: "7 kg", bagsDetail: "7 kg hand carry only, no checked bag" },
+                                   { label: "Return", bags: "7+30 kg", bagsDetail: "7 kg hand carry + 30 kg checked" }]],
+      ["Flexi", "7+20 kg / 7+30 kg", [{ label: "Outbound", bags: "7+20 kg", bagsDetail: "7 kg hand carry + 20 kg checked" },
+                                       { label: "Return", bags: "7+30 kg", bagsDetail: "7 kg hand carry + 30 kg checked" }]],
+    ]);
+    const [oneWay] = gatewayOffers({ search_id: "s", status: "complete", journeys: [{ direction: "outbound", origin: "KHI", destination: "LHE",
+      flights: [flight("o1", "PA", "PA400", "2026-12-12T08:00", [fare("a", "Value", 22050)])] }] }, "Economy");
+    expect(oneWay.fareOptions?.[0].legBags).toBeUndefined(); // one flight: the fare's own baggage is all there is
+  });
+
   describe("signed in (admin and agency screens, #130)", () => {
     beforeEach(() => setSession({ email: "agency@example.invalid", name: "Agency", groups: ["agency_owner"], accessToken: "agency-token",
       createdAt: new Date().toISOString(), expiresAt: Date.now() + 60_000 }));

@@ -70,6 +70,8 @@ type DisplayFare = {
   bags?: string | null;
   /** Baggage in full words (#36). */
   bagsDetail?: string | null;
+  /** A round trip's baggage per flight (#123). */
+  legBags?: { label: string; bags: string; bagsDetail: string }[];
   meal?: string | null;
   refund?: string | null;
   change?: string | null;
@@ -606,6 +608,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         price: fare.price,
         bags: fare.bags,
         bagsDetail: fare.bagsDetail,
+        legBags: fare.legBags,
         meal: fare.meal || flight.meal,
         refund: fare.refund,
         change: fare.change,
@@ -2338,11 +2341,35 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 )}
 
                 {fareDetailsTab === "baggage" && (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <InfoBox title="Fare" value={fareDetails.fare.tier} />
-                    <InfoBox title="Hand carry" value={handCarryText(fareBaggage(fareDetails.fare, fareDetails.flight))} />
-                    <InfoBox title="Checked baggage" value={checkedText(fareBaggage(fareDetails.fare, fareDetails.flight))} />
-                    <InfoBox title="Allowance" value={fareBaggage(fareDetails.fare, fareDetails.flight).detail} />
+                  // #123: every fare's baggage (hand carry and checked), not only the fare shown first; a round trip
+                  // shows each flight's own allowance.
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" role="table" aria-label="Baggage by fare">
+                    <div role="row" className="grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)] gap-3 border-b bg-slate-50 px-4 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                      <span role="columnheader">Fare</span>
+                      <span role="columnheader">Hand carry</span>
+                      <span role="columnheader">Checked baggage</span>
+                    </div>
+                    {fareRows(fareDetails.flight).flatMap((fare, fareIndex) => {
+                      const legs = fare.legBags?.length
+                        ? fare.legBags.map((leg) => ({ label: leg.label, baggage: baggageText(leg.bags, leg.bagsDetail) }))
+                        : [{ label: "", baggage: fareBaggage(fare, fareDetails.flight) }];
+                      return legs.map((leg, legIndex) => (
+                        <div
+                          key={`${fare.tier}-${fareIndex}-${legIndex}`}
+                          role="row"
+                          aria-label={leg.label ? `${fare.tier}, ${leg.label}` : fare.tier}
+                          className={cn("grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)] items-start gap-3 px-4 py-3 text-sm", legIndex === 0 && fareIndex > 0 && "border-t")}
+                        >
+                          <div role="cell" className="min-w-0">
+                            {legIndex === 0 && <p className="truncate font-bold text-slate-950" title={fare.tier}>{fare.tier}</p>}
+                            {leg.label && <p className="text-xs font-bold uppercase tracking-wide text-primary">{leg.label}</p>}
+                            <p className="mt-0.5 text-xs text-muted-foreground">{leg.baggage.detail}</p>
+                          </div>
+                          <p role="cell" className="min-w-0 break-words font-semibold text-slate-900">{handCarryText(leg.baggage)}</p>
+                          <p role="cell" className="min-w-0 break-words font-semibold text-slate-900">{checkedText(leg.baggage)}</p>
+                        </div>
+                      ));
+                    })}
                   </div>
                 )}
               </div>
