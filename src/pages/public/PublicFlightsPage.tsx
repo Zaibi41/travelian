@@ -221,6 +221,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   // Phones (#150): the Filters and Sort sheets.
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [mobileSortOpen, setMobileSortOpen] = useState(false);
+  const phoneBarPlace = useRef<HTMLDivElement>(null);
+  const [phoneBarPinned, setPhoneBarPinned] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
   // Cards whose long airline name is shown in full (tapped open), issue #90.
   const [expandedAirlines, setExpandedAirlines] = useState<ReadonlySet<string>>(() => new Set());
@@ -877,6 +879,20 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     setParams((current) => withFilterParams(current, urlFilters), { replace: true });
   }, [urlFiltersKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const mobileFilterCount = activeFilterCount(urlFilters);
+  const showPhoneBar = !searchExpired && apiStatus === "success" && flights.length > 0;
+  useEffect(() => {
+    const place = phoneBarPlace.current;
+    if (!showPhoneBar || !place) return;
+    const headerHeight = adminMode ? 64 : 57;
+    const update = () => setPhoneBarPinned(place.getBoundingClientRect().top < headerHeight);
+    update();
+    document.addEventListener("scroll", update, { capture: true, passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      document.removeEventListener("scroll", update, { capture: true });
+      window.removeEventListener("resize", update);
+    };
+  }, [showPhoneBar, adminMode]);
   const flightCountText = `${filtered.length} ${filtered.length === 1 ? "flight" : "flights"}`;
   const tryDate = (date: Date) => {
     const safeDate = clampToToday(date);
@@ -1460,8 +1476,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       </div>
 
       {/* Phones (#150): Filters and Sort stay at the top while scrolling; the sidebar filters show from md. */}
-      {!searchExpired && apiStatus === "success" && flights.length > 0 && (
-        <section aria-label="Filter and sort results" className={cn("sticky z-20 border-b bg-card/95 backdrop-blur md:hidden", adminMode ? "top-16" : "top-[57px]")}>
+      {showPhoneBar && (
+        // The page sits in a container that clips sideways, where position: sticky does not work: the bar is pinned
+        // under the header (fixed) once its place scrolls past it; the wrapper keeps its height so nothing jumps.
+        <div ref={phoneBarPlace} className="min-h-[61px] md:hidden">
+        <section aria-label="Filter and sort results" className={cn("z-20 border-b bg-card/95 backdrop-blur",
+          phoneBarPinned ? cn("fixed inset-x-0 shadow-sm", adminMode ? "top-16" : "top-[57px]") : "relative")}>
           <div className={cn("flex items-center gap-2 py-2", adminMode ? "px-4" : "travelian-container")}>
             <p className="shrink-0 text-xs font-semibold text-muted-foreground" aria-live="polite">{flightCountText}</p>
             <Button type="button" variant="outline" aria-haspopup="dialog" aria-label={mobileFilterCount ? `Filters, ${mobileFilterCount} selected` : "Filters"}
@@ -1472,10 +1492,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             </Button>
             <Button type="button" variant="outline" aria-haspopup="dialog" className="h-11 min-w-0 flex-1 gap-2 rounded-xl px-3 font-semibold" onClick={() => setMobileSortOpen(true)}>
               <ArrowUpDown className="h-4 w-4 shrink-0" aria-hidden="true" />
-              <span className="truncate">Sort: {sortShortLabel(sort)}</span>
+              <span className="truncate"><span className="sr-only">Sort: </span>{sortShortLabel(sort)}</span>
             </Button>
           </div>
         </section>
+        </div>
       )}
       <ResultsSheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen} title="Filters" description="Narrow the flight results" full
         footer={(
