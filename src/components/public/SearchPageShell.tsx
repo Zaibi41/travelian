@@ -19,7 +19,8 @@ export function SearchPageHero({ title, description, children, support, compact 
 export function SearchCard({ children, className }: { children: ReactNode; className?: string }) {
   return <div onFocusCapture={event => {
     const field = event.target as HTMLElement;
-    if (event.currentTarget.contains(field) && field.matches("input, select, textarea")) makeRoomBelowField(field);
+    // A phone airport field opens its full-screen picker (#148): no room to make below it.
+    if (event.currentTarget.contains(field) && field.matches("input, select, textarea") && !field.matches("[aria-haspopup=\"dialog\"]")) makeRoomBelowField(field);
   }} className={cn("travelian-search-card relative z-10 w-full rounded-xl border border-border/70 bg-card shadow-card", className)}>{children}</div>;
 }
 

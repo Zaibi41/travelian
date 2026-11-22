@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useOpenSignal } from "@/hooks/use-open-signal";
 import { parseISO } from "date-fns";
 import { CalendarDays } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
@@ -36,13 +37,15 @@ interface DayFirstDateFieldProps {
   fares?: { days: CalendarDay[]; checking?: boolean; anyDate?: boolean; status?: "idle" | "loading" | "ready" | "error" };
   /** The popup opened or closed. */
   onOpenChange?: (open: boolean) => void;
+  /** Opens the calendar each time this changes to a new non-zero number (phones: after the destination, issue 148). */
+  openSignal?: number;
 }
 
 const iso = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 /** A date shown day first ("24 Nov 2026") whatever the browser language. Type it (24/11/2026,
  *  24 Nov 2026) or pick it from the calendar; the value stays ISO. */
-export function DayFirstDateField({ id, value, onChange, min, max, disabled, invalid, describedBy, fromYear = 2024, toYear = 2035, className, inputClassName, variant = "default", placeholder, calendarTitle = "Select a date", fares, onOpenChange }: DayFirstDateFieldProps) {
+export function DayFirstDateField({ id, value, onChange, min, max, disabled, invalid, describedBy, fromYear = 2024, toYear = 2035, className, inputClassName, variant = "default", placeholder, calendarTitle = "Select a date", fares, onOpenChange, openSignal }: DayFirstDateFieldProps) {
   const [text, setText] = useState(formatDay(value));
   const [unreadable, setUnreadable] = useState(false);
   const [open, setOpenState] = useState(false);
@@ -50,6 +53,7 @@ export function DayFirstDateField({ id, value, onChange, min, max, disabled, inv
     setOpenState(next);
     onOpenChange?.(next);
   };
+  useOpenSignal(openSignal, () => setOpen(true));
   useEffect(() => {
     setText(formatDay(value));
     setUnreadable(false);

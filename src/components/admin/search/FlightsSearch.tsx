@@ -112,6 +112,9 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
   // eslint-disable-next-line react-hooks/exhaustive-deps -- re-sync the form when the URL changes
   useEffect(() => setDraft(parseFlightSearch(params)), [paramsKey]);
   const [filters, setFilters] = useState<ResultFilters>(DEFAULT_FILTERS);
+  // Phones (issue 148): choosing From opens To, choosing To opens the departure date.
+  const [toSignal, setToSignal] = useState(0);
+  const [dateSignal, setDateSignal] = useState(0);
 
   const complete = isCompleteFlightSearch(search);
   const results = useQuery({
@@ -152,12 +155,14 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
           <div className="admin-search-row">
             <div data-size="route" className="min-w-0">
               <RouteRow
-                from={<AirportCombobox id="flight-from" label="From" placeholder="Origin" icon="departure" value={draft.from} onChange={from => setDraft({ ...draft, from })} />}
-                to={<AirportCombobox id="flight-to" label="To" placeholder="Destination" icon="arrival" value={draft.to} onChange={to => setDraft({ ...draft, to })} />}
+                from={<AirportCombobox id="flight-from" label="From" placeholder="Origin" icon="departure" value={draft.from} onChange={from => setDraft({ ...draft, from })}
+                  onAdvance={() => setToSignal(n => n + 1)} />}
+                to={<AirportCombobox id="flight-to" label="To" placeholder="Destination" icon="arrival" value={draft.to} onChange={to => setDraft({ ...draft, to })}
+                  openSignal={toSignal} onAdvance={() => setDateSignal(n => n + 1)} />}
                 onSwap={() => setDraft({ ...draft, from: draft.to, to: draft.from })}
               />
             </div>
-            <div data-size="date"><DateInput id="flight-date" label="Departure date" value={draft.date} min={todayIso()} onChange={date => setDraft({ ...draft, date })}
+            <div data-size="date"><DateInput id="flight-date" label="Departure date" value={draft.date} min={todayIso()} onChange={date => setDraft({ ...draft, date })} openSignal={dateSignal}
               fareRoute={draft.from && draft.to ? { from: draft.from, to: draft.to, adults: draft.adults, cabin: "economy" } : undefined} /></div>
             {draft.trip === "roundtrip" && (
               <div data-size="date"><DateInput id="flight-return" label="Return date" value={draft.returnDate} min={draft.date} onChange={returnDate => setDraft({ ...draft, returnDate })} /></div>
@@ -195,12 +200,12 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
 
 /** fareRoute (Departure date, as on the website): the website's fare calendar opens in the popup. Its prices load in
  *  the background as soon as From and To are both set (#55), so they are there when the calendar opens. */
-function DateInput({ id, label, value, min, onChange, fareRoute }: { id: string; label: string; value?: string; min?: string; onChange: (value?: string) => void; fareRoute?: FareRoute }) {
+function DateInput({ id, label, value, min, onChange, fareRoute, openSignal }: { id: string; label: string; value?: string; min?: string; onChange: (value?: string) => void; fareRoute?: FareRoute; openSignal?: number }) {
   const fares = useFlightFares(true, fareRoute, adminFlightCalendar);
   return (
     <div className="relative flex min-w-0 flex-col gap-1">
       <label htmlFor={id} className="text-label font-medium text-muted-foreground">{label}</label>
-      <DayFirstDateField id={id} value={value} min={min} variant="search" calendarTitle={`Select ${label.toLowerCase()}`} onChange={onChange}
+      <DayFirstDateField id={id} value={value} min={min} variant="search" calendarTitle={`Select ${label.toLowerCase()}`} onChange={onChange} openSignal={openSignal}
         fares={fares.ready ? { days: fares.days, checking: fares.checking, anyDate: true, status: fares.status } : undefined} />
     </div>
   );

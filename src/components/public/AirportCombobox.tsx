@@ -1,8 +1,12 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Check, ChevronsUpDown, Loader2, PlaneLanding, PlaneTakeoff } from "lucide-react";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import { AirportPickerSheet, type AirportPickerSection } from "@/components/ui/airport-picker-sheet";
 import type { Airport } from "@/data/airports";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useOpenSignal } from "@/hooks/use-open-signal";
 import { formatAirportSubtitle, getCountryName } from "@/lib/country-names";
+import { readRecentAirports, rememberRecentAirport } from "@/lib/recent-airports";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -13,6 +17,11 @@ interface Props {
   className?: string;
   invalid?: boolean;
   iconVariant?: "departure" | "arrival";
+  /** Phones only: called after an airport is chosen in the full-screen picker (not when it is just closed), so the
+   *  form can open its next field (From → To → departure date). */
+  onAdvance?: () => void;
+  /** Opens the field (the picker on phones) each time this changes to a new non-zero number. */
+  openSignal?: number;
 }
 
 const popularAirports: Airport[] = [
@@ -79,7 +88,9 @@ function airportMatchScore(airport: Airport, search: string) {
   return Number.POSITIVE_INFINITY;
 }
 
-export function AirportCombobox({ id, value, onChange, placeholder = "Select airport", className, invalid, iconVariant = "departure" }: Props) {
+export function AirportCombobox({ id, value, onChange, placeholder = "Select airport", className, invalid, iconVariant = "departure", onAdvance, openSignal }: Props) {
+  // Phones (below 768px) get the full-screen picker (issue #148); tablets and desktops keep the dropdown.
+  const isPhone = useIsMobile();
   const [open, setOpen] = useState(false);
   const [keyboardFocus, setKeyboardFocus] = useState(false);
   const pointerFocus = useRef(false);
@@ -135,12 +146,40 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
 
   const selectAirport = (airport: Airport) => {
     onChange(airport.code);
+    rememberRecentAirport("public", airport);
     setOpen(false);
     setQuery("");
+    if (isPhone) onAdvance?.();
+  };
+
+  useOpenSignal(openSignal, () => {
+    setQuery("");
+    setOpen(true);
+  });
+
+  // Phone picker: before typing, the airports chosen before, then the popular airports; typing lists the matches
+  // (the same matching and airport directory as the dropdown).
+  const recentAirports = useMemo<Airport[]>(
+    () => (isPhone && open ? readRecentAirports("public").map(item => popularAirportByCode.get(item.code) ?? { code: item.code, city: item.city, name: item.name, country: item.country ?? "" }) : []),
+    [isPhone, open],
+  );
+  const pickerSections = useMemo<AirportPickerSection[]>(() => {
+    const toOption = (airport: Airport) => ({ code: airport.code, city: airport.city, detail: formatAirportSubtitle(airport.name, airport.country) });
+    if (query.trim()) return [{ id: "matches", label: "Airports", options: shownAirports.map(toOption) }];
+    const recentCodes = new Set(recentAirports.map(airport => airport.code));
+    return [
+      { id: "recent", label: "Recent searches", options: recentAirports.map(toOption) },
+      { id: "popular", label: "Popular airports", options: popularAirports.filter(airport => !recentCodes.has(airport.code)).map(toOption) },
+    ];
+  }, [query, shownAirports, recentAirports]);
+  const pickAirport = (code: string) => {
+    const airport = [...recentAirports, ...popularAirports, ...shownAirports].find(item => item.code === code);
+    if (airport) selectAirport(airport);
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <>
+    <Popover open={open && !isPhone} onOpenChange={setOpen}>
       <PopoverAnchor asChild>
         <div ref={fieldRef} className={cn(
           "flex h-12 min-w-0 w-full items-center gap-1.5 rounded-xl border border-muted-foreground/80 bg-muted/30 px-2.5 text-sm sm:gap-2 sm:px-3",
@@ -153,17 +192,26 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
             role="combobox"
             aria-label={placeholder}
             aria-autocomplete="list"
-            aria-haspopup="listbox"
+            aria-haspopup={isPhone ? "dialog" : "listbox"}
             aria-expanded={open}
-            aria-controls={listId}
-            aria-activedescendant={open && shownAirports[activeIndex] ? `${listId}-${shownAirports[activeIndex].code}` : undefined}
+            aria-controls={isPhone ? undefined : listId}
+            aria-activedescendant={open && !isPhone && shownAirports[activeIndex] ? `${listId}-${shownAirports[activeIndex].code}` : undefined}
             aria-invalid={invalid || undefined}
             autoComplete="off"
             style={{ outline: "none" }}
             placeholder={placeholder}
-            value={open ? query : label}
+            // Phones: the field only opens the full-screen picker, whose own search box takes the typing, so the
+            // keyboard never opens under the field itself.
+            readOnly={isPhone}
+            value={open && !isPhone ? query : label}
             onPointerDown={() => { pointerFocus.current = true; setKeyboardFocus(false); }}
-            onFocus={() => { setKeyboardFocus(!pointerFocus.current); pointerFocus.current = false; setQuery(""); setOpen(true); }}
+            onFocus={() => {
+              setKeyboardFocus(!pointerFocus.current);
+              pointerFocus.current = false;
+              if (isPhone) return;
+              setQuery("");
+              setOpen(true);
+            }}
             onBlur={() => { setKeyboardFocus(false); pointerFocus.current = false; }}
             onClick={() => setOpen(true)}
             onChange={event => {
@@ -172,6 +220,14 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
               if (event.target.value.trim().length >= 2) loadFullAirports();
             }}
             onKeyDown={event => {
+              if (isPhone) {
+                if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
+                  event.preventDefault();
+                  setQuery("");
+                  setOpen(true);
+                }
+                return;
+              }
               if (event.key === "ArrowDown" || event.key === "ArrowUp") {
                 event.preventDefault();
                 if (!open) { setOpen(true); return; }
@@ -228,6 +284,25 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
         </div>
       </PopoverContent>
     </Popover>
+    {isPhone && (
+      <AirportPickerSheet
+        open={open}
+        title={iconVariant === "arrival" ? "Where to?" : "Where from?"}
+        query={query}
+        onQueryChange={next => {
+          setQuery(next);
+          if (next.trim().length >= 2) loadFullAirports();
+        }}
+        sections={pickerSections}
+        selectedCode={value}
+        onSelect={pickAirport}
+        onClose={() => { setOpen(false); setQuery(""); }}
+        status={isLoadingAirports
+          ? <div role="status" className="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground"><Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />Loading full airport directory...</div>
+          : loadError ? <p role="status" className="px-3 py-3 text-sm text-destructive">{loadError}</p> : undefined}
+      />
+    )}
+    </>
   );
 }
 

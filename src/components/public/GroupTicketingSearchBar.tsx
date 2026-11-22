@@ -32,6 +32,7 @@ import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
 
 import { GroupFareCalendar } from "@/components/GroupFareCalendar";
 import { useCalendarFares, type FareState } from "@/hooks/use-flight-fares";
+import { useOpenSignal } from "@/hooks/use-open-signal";
 
 import { publicGroupCalendar, searchPublicGroups } from "@/lib/public-booking";
 
@@ -73,6 +74,8 @@ function DatePickerField({
 
   fares,
 
+  openSignal,
+
 }: {
 
   date: Date | undefined;
@@ -86,9 +89,13 @@ function DatePickerField({
 
   fares?: FareState;
 
+  /** Phones: opens the calendar when the destination is chosen (#148). */
+  openSignal?: number;
+
 }) {
 
   const [open, setOpen] = useState(false);
+  useOpenSignal(openSignal, () => setOpen(true));
 
   const today = startOfDay(new Date());
 
@@ -200,6 +207,9 @@ export function GroupTicketingSearchBar({
   const [toValue, setToValue] = useState(initialValues?.to || "");
 
   const [dateFrom, setDateFrom] = useState<Date | undefined>(parseDateOnly(initialValues?.dateFrom));
+  // Phones (#148): choosing From opens To, choosing To opens the date.
+  const [toSignal, setToSignal] = useState(0);
+  const [dateSignal, setDateSignal] = useState(0);
 
   const [sectors, setSectors] = useState<AvailableSector[]>(initialSectors || []);
 
@@ -448,7 +458,7 @@ export function GroupTicketingSearchBar({
 
           {label("From")}
 
-          <AirportCombobox value={fromValue} onChange={setFromValue} placeholder="Origin" />
+          <AirportCombobox value={fromValue} onChange={setFromValue} placeholder="Origin" onAdvance={() => setToSignal(n => n + 1)} />
 
         </div>
 
@@ -484,7 +494,7 @@ export function GroupTicketingSearchBar({
 
           {label("To")}
 
-          <AirportCombobox value={toValue} onChange={setToValue} placeholder="Destination" iconVariant="arrival" />
+          <AirportCombobox value={toValue} onChange={setToValue} placeholder="Destination" iconVariant="arrival" openSignal={toSignal} onAdvance={() => setDateSignal(n => n + 1)} />
 
         </div>
 
@@ -492,7 +502,7 @@ export function GroupTicketingSearchBar({
 
           {label("Departure Date (Optional)")}
 
-          <DatePickerField date={dateFrom} onSelect={setDateFrom} placeholder="All departure dates" fares={fares} />
+          <DatePickerField date={dateFrom} onSelect={setDateFrom} placeholder="All departure dates" fares={fares} openSignal={dateSignal} />
 
         </div>
 

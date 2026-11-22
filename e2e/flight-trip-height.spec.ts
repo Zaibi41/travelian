@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { isLocal } from "./support/gateway";
+import { MAX_MULTI_CITY_FLIGHTS } from "../src/lib/flight-search-limits";
 
 for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 768], [768, 1024], [375, 812], [320, 740]]) {
   test(`flight trip forms collapse after multi-city at ${width}px`, async ({ page }) => {
@@ -17,9 +18,16 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
       await page.evaluate(() => scrollTo(0, 0));
     };
     const oneWay = await cardHeight();
-    const origin = page.getByLabel("From", { exact: true });
+    // The From field is a combobox named "Origin" (its value shows the airport). Below 768px it opens the full-screen
+    // airport picker (#148), which opens To next after a choice; that To picker is closed here.
+    const origin = page.locator(".travelian-search-card").getByRole("combobox", { name: "Origin" });
     await origin.click();
-    await page.getByRole("option", { name: /LHE/ }).click();
+    await page.getByRole("option", { name: /LHE/ }).first().click();
+    if (width < 768) {
+      await expect(page.getByRole("dialog", { name: "Where to?" })).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(page.getByRole("dialog", { name: "Where to?" })).toHaveCount(0);
+    }
     await switchTrip("Round-trip");
     const roundTrip = await cardHeight();
     expect(roundTrip).toBe(oneWay);
@@ -28,10 +36,10 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     await expect(page.locator(".unified-search-segment-grid")).toHaveCount(2);
     await switchTrip("One-way");
     await expect.poll(cardHeight).toBe(oneWay);
-    await expect(origin).toContainText("LHE");
+    await expect(origin).toHaveValue(/LHE/);
     await expect(page.locator(".unified-search-segment-grid")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Select date", exact: true })).toHaveCount(0);
-    for (const count of [2, 3, 6]) {
+    for (const count of [2, 3, MAX_MULTI_CITY_FLIGHTS]) {
       await switchTrip("Multi-city");
       while (await page.locator(".unified-search-segment-grid").count() < count) await page.getByRole("button", { name: "Add Flight", exact: true }).click();
       await expect(page.locator(".unified-search-segment-grid")).toHaveCount(count);
@@ -51,7 +59,7 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
       await expect(page.locator(".unified-search-segment-grid")).toHaveCount(0);
       await switchTrip("One-way");
       await expect.poll(cardHeight).toBe(oneWay);
-      await expect(origin).toContainText("LHE");
+      await expect(origin).toHaveValue(/LHE/);
     }
     expect(await page.locator(".unified-search-content").getAttribute("style")).toBeNull();
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
