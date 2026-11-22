@@ -119,6 +119,7 @@ test("desktop 1440px keeps the dropdown, fully inside the viewport", async ({ pa
   await page.keyboard.type("lah");
   await page.getByRole("option", { name: /LHE/ }).first().click();
   await expect(origin(page)).toHaveValue(/LHE/);
-  // No auto-advance on desktop.
-  await expect(list).toBeHidden();
+  // Desktop moves on to To too (#157): its own list opens, focus is in To.
+  await expect(destination(page)).toBeFocused();
+  await expect(page.getByRole("listbox", { name: "Airports" })).toHaveCount(1);
 });
