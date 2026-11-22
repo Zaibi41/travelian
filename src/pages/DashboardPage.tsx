@@ -11,6 +11,7 @@ import { BusinessSection } from "@/components/admin/dashboard/BusinessSection";
 import { AttentionQueuePanel } from "@/components/admin/dashboard/AttentionQueuePanel";
 import { BookingReportChart } from "@/components/admin/dashboard/BookingReportChart";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
+import { GroupFinalPnrTracker } from "@/components/admin/dashboard/GroupFinalPnrTracker";
 
 function errorMessage(error: unknown) {
   if (error instanceof GatewayError) return error.message;
@@ -59,6 +60,8 @@ export default function DashboardPage() {
             </>
           )}
           {attention.error ? <DashboardErrorNotice message={errorMessage(attention.error)} /> : <AttentionQueuePanel data={attention.data} loading={attention.isPending} />}
+          {/* #13: back office only (the gateway refuses agency roles); ignores the date filter. */}
+          {!isAgency && <GroupFinalPnrTracker />}
           {report.error ? <DashboardErrorNotice message={errorMessage(report.error)} /> : <BookingReportChart data={report.data} loading={report.isPending} />}
         </>
       )}

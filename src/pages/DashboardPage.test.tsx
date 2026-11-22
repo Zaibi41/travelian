@@ -1,12 +1,18 @@
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { DashboardSummary } from "@/lib/admin-dashboard/types";
 import { GatewayError } from "@/lib/gateway/client";
 
+const role = { current: "super_admin" };
 vi.mock("@/contexts/RoleContext", () => ({
-  useRole: () => ({ currentRole: "super_admin", currentUser: { name: "QA", email: "" } }),
+  useRole: () => ({ currentRole: role.current, currentUser: { name: "QA", email: "" } }),
 }));
+
+// #13: the final PNR tracker reads its own list from the gateway.
+const tracker = vi.fn();
+vi.mock("@/lib/flight-operations/api", () => ({ fetchGroupBookingsAwaitingFinalPnr: (...args: unknown[]) => tracker(...args) }));
 
 const dashboard = { current: {} as Record<string, unknown> };
 vi.mock("@/lib/admin-dashboard/use-dashboard", () => ({ useDashboard: () => dashboard.current }));
@@ -44,10 +50,33 @@ function setData(overrides: Record<string, unknown> = {}) {
   };
 }
 
-const renderPage = (url = "/admin") => render(<MemoryRouter initialEntries={[url]}><DashboardPage /></MemoryRouter>);
+const renderPage = (url = "/admin") => render(
+  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <MemoryRouter initialEntries={[url]}><DashboardPage /></MemoryRouter>
+  </QueryClientProvider>,
+);
 
 describe("DashboardPage", () => {
-  beforeEach(() => setData());
+  beforeEach(() => {
+    setData();
+    role.current = "super_admin";
+    tracker.mockReset();
+    tracker.mockResolvedValue({ window_hours: 48, total: 0, departs_soon: 0, items: [] });
+  });
+
+  it("shows the group final PNR tracker to the back office, not to agencies (#13)", async () => {
+    renderPage();
+    expect(await screen.findByRole("region", { name: "Group bookings awaiting final PNR" })).toBeInTheDocument();
+    expect(tracker).toHaveBeenCalled();
+  });
+
+  it("agency roles get no final PNR tracker (#13)", () => {
+    role.current = "agency_owner";
+    tracker.mockClear();
+    renderPage();
+    expect(screen.queryByRole("region", { name: "Group bookings awaiting final PNR" })).not.toBeInTheDocument();
+    expect(tracker).not.toHaveBeenCalled();
+  });
 
   it("shows needs-action cards with status text, green Fine at zero, and matching links", () => {
     renderPage();
