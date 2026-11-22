@@ -16,7 +16,6 @@ import { chromium } from "@playwright/test";
 export const PRERENDER_ROUTES = [
   "/",
   "/group-ticketing",
-  "/deals",
   "/about",
   "/contact",
   "/faq",

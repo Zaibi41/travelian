@@ -20,6 +20,8 @@ export default function DealsPage() {
   const today = new Date().toISOString().slice(0, 10);
   const activeCoupons = coupons.filter(c => c.status === 'active' && c.validUntil >= today && isPublicServiceVisible(c.applicableTo));
   const discountedHotels: Hotel[] = [];
+  // travelian#127: no offers yet, so keep /deals out of search results until there are some.
+  const hasOffers = flashDeals.length > 0 || activeCoupons.length > 0 || discountedHotels.length > 0;
   const [copied, setCopied] = useState<string | null>(null);
 
   const onCopy = (code: string) => {
@@ -36,6 +38,7 @@ export default function DealsPage() {
       <SEO breadcrumbs={[{ name: "Deals", path: "/deals" }]}
         title="Travel Deals & Promo Codes | Travelian"
         description={`Current Travelian promo codes and travel offers on flights${umrah ? ", hotels and Umrah packages" : " and hotels"}. Verified deals only, no expired listings.`}
+        noIndex={!hasOffers}
       />
       <PageHeader
         eyebrow="Limited time"
@@ -46,7 +49,7 @@ export default function DealsPage() {
 
 
       <div className="travelian-container py-10">
-        {flashDeals.length === 0 && activeCoupons.length === 0 && discountedHotels.length === 0 ? (
+        {!hasOffers ? (
           <Card className="mx-auto max-w-2xl rounded-2xl border-border/70 shadow-card">
             <CardContent className="p-8 text-center">
               <h2 className="font-display text-xl font-bold text-foreground">No promotional offers are active right now</h2>

@@ -33,11 +33,15 @@ export default function PublicBlogPage() {
     loadPosts();
   }, [loadPosts]);
 
+  // travelian#127: not indexable while there are no articles (still loading, failed or none published).
+  const noIndex = loadError || posts.length === 0;
+
   return (
     <div>
       <SEO breadcrumbs={[{ name: "Travel Guides", path: "/blog" }]}
         title="Travel Guides & Blog | Travelian"
         description="Travel guides for Pakistani travellers: Umrah planning, flight booking tips and hotel recommendations from the Travelian team."
+        noIndex={noIndex}
       />
       <PageHeader
         eyebrow="Travel guide"
