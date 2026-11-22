@@ -741,7 +741,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       date: formatFlightDate(group[0]?.departureTime || flight.departureTime).replace(/^(\d{2}) (\w{3}) (\d{4})$/, "$2 $1, $3"),
     }));
     const price = lowestFare ? formatFare(lowestFare.price.total, lowestFare.price.currency || flight.currency) : formatFare(flight.price, flight.currency);
-    return whatsappUrl(flightHelpMessage({ airline: flight.airline, journeys, cabin: flight.class || travelers.cabin, lowestPrice: price }));
+    return whatsappUrl(flightHelpMessage({ airline: flight.airline, journeys, cabin: travelers.cabin || flight.class, lowestPrice: price }));
   };
 
   const bookingHref = (flight: TravelianFlight, fare?: { tier: string; price: { base?: number | null; taxes?: number | null; total: number; currency?: string }; amenities?: string[]; gatewayFareIds?: string[]; refund?: string | null; cancellation?: string | null }) => {
