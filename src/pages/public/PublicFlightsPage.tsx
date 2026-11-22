@@ -2111,11 +2111,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="min-w-0">
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Travelers</label>
-                <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} mode="travelers" />
+                <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} mode="travelers" fit />
               </div>
               <div className="min-w-0">
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Cabin Class</label>
-                <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} mode="cabin" />
+                <TravelersClassPicker value={editTravelers} onChange={setEditTravelers} mode="cabin" fit />
               </div>
             </div>
           </div>
