@@ -5390,6 +5390,11 @@ export interface components {
             meal?: string | null;
             /** Name */
             name: string;
+            /**
+             * Passenger Prices
+             * @description The total's breakdown per passenger type (count and selling price each). Sent with total_price.
+             */
+            passenger_prices?: components["schemas"]["PassengerPrice"][] | null;
             /** Refund */
             refund?: string | null;
             /** @description Per adult. Omitted when no markup is configured or the supplier sent no total. */
@@ -5406,6 +5411,8 @@ export interface components {
              * @description Supplier's hold time text, e.g. '1 hours for domestic'.
              */
             time_limit?: string | null;
+            /** @description Selling total of this fare for every traveler searched (adults, children, infants), each passenger type at the supplier's own price for it. Omitted when the supplier didn't price every type searched. */
+            total_price?: components["schemas"]["FlightMoney"] | null;
         };
         /** FilterOption */
         FilterOption: {
