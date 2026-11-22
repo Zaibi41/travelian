@@ -14,7 +14,6 @@ export const GroupTicketingPage = lazyPage(() => import("./GroupTicketingPage"))
 // replaced by the same page and never by the "Loading page…" line.
 export const PRERENDERED_PAGE_PRELOADS: Record<string, () => Promise<unknown>> = {
   "/group-ticketing": GroupTicketingPage.preload,
-  "/deals": DealsPage.preload,
   "/about": AboutPage.preload,
   "/contact": ContactPage.preload,
   "/faq": FaqPage.preload,

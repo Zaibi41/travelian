@@ -87,7 +87,9 @@ jobs:
             aws s3 cp "$f" "s3://$BUCKET/$name" "${HTML[@]}"
           done
           # Search pages in the sitemap get the plain app shell, not the home page's HTML.
-          for name in flights-search hotels-search; do aws s3 cp dist/index.html "s3://$BUCKET/$name" "${HTML[@]}"; done
+          # /deals too: it is no longer prerendered while it has no offers (noindex, #127), and the deploy
+          # never deletes S3 objects, so this overwrites the old prerendered "deals" key.
+          for name in flights-search hotels-search deals; do aws s3 cp dist/index.html "s3://$BUCKET/$name" "${HTML[@]}"; done
           # index.html last (the prerendered home page): revalidate with origin (without no-store, which blocks browser bfcache).
           aws s3 cp dist-prerender/index.html "s3://$BUCKET/index.html" "${HTML[@]}"
 
