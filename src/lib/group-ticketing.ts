@@ -8,6 +8,10 @@ export interface GroupTicketLeg {
   sequence?: number;
   flightNumber?: string;
   flightDate?: string;
+  /** The day it lands, when the supplier sends it (#152). */
+  arrivalDate?: string;
+  /** "outbound" or "return" as the gateway says (#152): a connection is outbound, not a return. */
+  direction?: "outbound" | "return";
   origin?: string;
   destination?: string;
   baggage?: string;
@@ -292,6 +296,13 @@ export function groupTicketOriginCode(group: GroupTicket): string | undefined {
 export function groupTicketDestinationCode(group: GroupTicket): string | undefined {
   const isRoundtrip = group.tripType === "round-trip" || Boolean(group.returnDate);
   const legs = group.itinerary || [];
+
+  // The gateway marks the return legs (#152): the destination is where the last outbound leg lands.
+  if (legs.some((leg) => leg.direction)) {
+    const outbound = legs.filter((leg) => leg.direction !== "return");
+    const outboundDest = airportCodeFromText(outbound[outbound.length - 1]?.destination);
+    if (outboundDest) return outboundDest;
+  }
 
   if (isRoundtrip && legs.length >= 2) {
     const outboundDest = airportCodeFromText(legs[0]?.destination);

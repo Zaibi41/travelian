@@ -94,6 +94,15 @@ describe("group ticketing search helpers", () => {
     expect(one).toMatchObject({ arrivalTime: "23:45", returnLeg: null });
   });
 
+  it("a connecting one-way row shows every flight number and the last arrival, with no return (#152)", () => {
+    const [row] = resultRows([{ id: "g7", sector: "LHE - MCT - JED", tickets: [ticket("c1", {
+      sector: "LHE - MCT - JED", departure_date: "2026-11-27", departure_time: "03:25", flight_number: "OV522",
+      legs: [{ direction: "outbound", flight_number: "OV522", origin: "LHE", destination: "MCT", departure_date: "2026-11-27", departure_time: "03:25", arrival_time: "05:40" },
+        { direction: "outbound", flight_number: "OV283", origin: "MCT", destination: "JED", departure_date: "2026-11-27", departure_time: "08:40", arrival_time: "11:10" }],
+    })] }] as unknown as GroupInventory[]);
+    expect(row).toMatchObject({ sector: "LHE - MCT - JED", flightNumber: "OV522 / OV283", arrivalTime: "11:10", returnLeg: null });
+  });
+
   it("the sector list comes from the listing, both directions where offered", () => {
     const listed = [{ id: "a", sector: "x", tickets: [ticket("1", { sector: "LHE - DMM" }), ticket("2", { sector: "DMM - LHE" }), ticket("3", { sector: "LHE - DMM" })] }] as unknown as GroupInventory[];
     expect(inventoryOptions(listed).sectors).toEqual([{ from: "LHE", to: "DMM", count: 2 }, { from: "DMM", to: "LHE", count: 1 }]);
