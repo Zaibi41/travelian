@@ -1868,7 +1868,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 <td className="px-4 py-3 align-middle">
                                   <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={mealLabel(fare, flight)}>
                                     <MealIcon fare={fare} flight={flight} className="h-3.5 w-3.5" />
-                                    <span className="truncate">{mealLabel(fare, flight)}</span>
+                                    <span className="line-clamp-2 break-words">{mealLabel(fare, flight)}</span>
                                   </p>
                                 </td>
                                 <td className="px-4 py-3 align-middle">
@@ -1913,7 +1913,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               <div className="grid grid-cols-2 gap-3">
                                 <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={mealLabel(fare, flight)}>
                                   <MealIcon fare={fare} flight={flight} className="h-4 w-4" />
-                                  <span className="truncate">{mealLabel(fare, flight)}</span>
+                                  <span className="line-clamp-2 break-words">{mealLabel(fare, flight)}</span>
                                 </p>
                                 <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={baggageWords(fare, flight)}>
                                   <Luggage aria-hidden="true" className={cn("h-4 w-4 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
@@ -2390,7 +2390,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                   </div>
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     <MealIcon fare={fare} flight={fareDetails.flight} className="h-4 w-4" />
-                                    <span className="truncate font-medium text-slate-700">{mealLabel(fare, fareDetails.flight)}</span>
+                                    <span className="line-clamp-2 break-words font-medium text-slate-700">{mealLabel(fare, fareDetails.flight)}</span>
                                   </div>
                                   <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-xs text-muted-foreground">
                                     <Clock className="h-4 w-4 shrink-0 text-primary" />
