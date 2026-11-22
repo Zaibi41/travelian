@@ -35,6 +35,9 @@ interface Props {
   align?: "left" | "right" | "start" | "center" | "end";
   /** Which side of the trigger to open on. Defaults to bottom. */
   side?: "top" | "bottom";
+  /** Inside a modal (Modify Search, #114): open above the field when there is more room there, so every row and the
+   *  Done button stay on screen. */
+  fit?: boolean;
 }
 
 export function TravelersClassPicker({
@@ -45,6 +48,7 @@ export function TravelersClassPicker({
   mode = "combined",
   align = "start",
   side = "bottom",
+  fit = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const total = value.adults + value.children + value.infants;
@@ -126,6 +130,7 @@ export function TravelersClassPicker({
         aria-label={mode === "cabin" ? "Cabin Class" : "Travelers"}
         align={effectiveAlign}
         side={side}
+        fit={fit}
         sideOffset={8}
         collisionPadding={16}
         className={cn(

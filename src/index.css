@@ -264,8 +264,10 @@
   }
   /* Shared search surfaces: visible controls without changing their geometry. */
   .home-search .travelian-search-card :is(input, [role="combobox"], button[aria-haspopup="dialog"]) {
-    border-color: hsl(var(--muted-foreground) / 0.8);
     background-color: hsl(var(--muted) / 0.55);
+  }
+  .home-search .travelian-search-card :is(input, [role="combobox"], button[aria-haspopup="dialog"]):not([aria-invalid="true"]) {
+    border-color: hsl(var(--muted-foreground) / 0.8);
   }
   .home-search .travelian-search-card :is(input, [role="combobox"], button[aria-haspopup="dialog"]):focus-visible {
     border-color: hsl(var(--primary));

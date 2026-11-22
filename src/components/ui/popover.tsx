@@ -16,8 +16,11 @@ const PopoverContent = React.forwardRef<
     /** Fixed-size content (the date picker's calendar): never capped and scrolled; opens above the field when there is
      *  more room there (e.g. the last field of a dialog). Every other popover opens below its field. */
     flip?: boolean;
+    /** Content that must be seen whole (a picker inside a modal, #114): opens below, or above when there is more room
+     *  there, and is capped to the room on that side (its own body scrolls), so it never runs off the screen. */
+    fit?: boolean;
   }
->(({ className, align = "center", sideOffset = 4, style, flip = false, ...props }, ref) => {
+>(({ className, align = "center", sideOffset = 4, style, flip = false, fit = false, side = "bottom", ...props }, ref) => {
   const below = useBelowField(ref);
   return (
   <PopoverPrimitive.Portal>
@@ -30,10 +33,10 @@ const PopoverContent = React.forwardRef<
         className,
       )}
       {...props}
-      side="bottom"
+      side={fit ? side : "bottom"}
       avoidCollisions
-      collisionPadding={flip ? props.collisionPadding ?? 12 : below.collisionPadding}
-      style={flip ? { ...style, maxHeight: "none", overflowY: "visible" } : { ...style, maxHeight: "min(24rem, var(--travelian-dropdown-available-height, calc(100dvh - 2rem)))", overflowY: style?.overflowY ?? "auto", "--radix-popover-content-available-height": "var(--travelian-dropdown-available-height, calc(100dvh - 2rem))" } as React.CSSProperties}
+      collisionPadding={flip || fit ? props.collisionPadding ?? 12 : below.collisionPadding}
+      style={fit ? { ...style, maxHeight: "var(--radix-popover-content-available-height)" } : flip ? { ...style, maxHeight: "none", overflowY: "visible" } : { ...style, maxHeight: "min(24rem, var(--travelian-dropdown-available-height, calc(100dvh - 2rem)))", overflowY: style?.overflowY ?? "auto", "--radix-popover-content-available-height": "var(--travelian-dropdown-available-height, calc(100dvh - 2rem))" } as React.CSSProperties}
     />
   </PopoverPrimitive.Portal>
 );
