@@ -168,6 +168,30 @@ describe("flights through the gateway", () => {
     });
   });
 
+  it("#113: keeps the gateway's total for all travelers; a round trip adds its two totals; none when a leg has none", () => {
+    const money = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" });
+    const total = (id: string, name: string, adult: number, child: number) => ({
+      ...fare(id, name, adult), total_price: money(adult * 2 + child),
+      passenger_prices: [{ type: "ADT" as const, count: 2, selling_each: money(adult) }, { type: "CHD" as const, count: 1, selling_each: money(child) }],
+    });
+    const [oneWay] = gatewayOffers({ search_id: "s", status: "complete", journeys: [{ direction: "outbound", origin: "KHI", destination: "LHE",
+      flights: [flight("o1", "PA", "PA400", "2026-12-10T08:00", [total("a", "Value", 21828, 19174), fare("b", "Xtra", 25000)])] }] }, "Economy");
+    expect(oneWay.fareOptions?.[0]).toMatchObject({ tier: "Value", price: { total: 21828 }, allTravelersTotal: 62830, travelerCount: 3 });
+    expect(oneWay.fareOptions?.[1].allTravelersTotal).toBeUndefined(); // the gateway sent no total: none is made up
+
+    const [roundTrip] = gatewayOffers({ search_id: "s", status: "complete", journeys: [
+      { direction: "outbound", origin: "KHI", destination: "LHE", flights: [flight("o1", "PA", "PA400", "2026-12-10T08:00", [total("a", "Value", 21828, 19174)])] },
+      { direction: "return", origin: "LHE", destination: "KHI", flights: [flight("r1", "PA", "PA401", "2026-12-15T11:15", [total("c", "Value", 23746, 20613)])] },
+    ] }, "Economy");
+    expect(roundTrip.fareOptions?.[0]).toMatchObject({ price: { total: 21828 + 23746 }, allTravelersTotal: 62830 + 68105, travelerCount: 3 });
+
+    const [mixed] = gatewayOffers({ search_id: "s", status: "complete", journeys: [
+      { direction: "outbound", origin: "KHI", destination: "LHE", flights: [flight("o1", "PA", "PA400", "2026-12-10T08:00", [total("a", "Value", 21828, 19174)])] },
+      { direction: "return", origin: "LHE", destination: "KHI", flights: [flight("r1", "PA", "PA401", "2026-12-15T11:15", [fare("c", "Value", 23746)])] },
+    ] }, "Economy");
+    expect(mixed.fareOptions?.[0].allTravelersTotal).toBeUndefined();
+  });
+
   it("the gateway label is never taken for a group fare", () => {
     expect(isGroupTicketingProvider(GATEWAY_FLIGHT_PROVIDER)).toBe(false);
   });

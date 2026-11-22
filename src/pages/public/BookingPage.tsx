@@ -72,7 +72,7 @@ interface ProductCtx {
   emoji: string;
   base: number;
   currency: string;
-  extra?: { airline?: string; flightNumber?: string; from?: string; to?: string; fromCode?: string; toCode?: string; date?: string; returnDate?: string; cabin?: string; airlineImage?: string; fareTier?: string; farePerks?: string[]; refund?: RefundStatus; layovers?: BookingLayover[]; segments?: BookingSegment[]; baseFare?: number | null; taxes?: number | null };
+  extra?: { airline?: string; flightNumber?: string; from?: string; to?: string; fromCode?: string; toCode?: string; date?: string; returnDate?: string; cabin?: string; airlineImage?: string; fareTier?: string; farePerks?: string[]; refund?: RefundStatus; layovers?: BookingLayover[]; segments?: BookingSegment[]; baseFare?: number | null; taxes?: number | null; allTravelersTotal?: number | null };
 }
 
 type BookingLayover = {
@@ -123,6 +123,8 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
     const baseFare = params.has("baseFare") ? Number(params.get("baseFare")) : null;
     const taxes = params.has("taxes") ? Number(params.get("taxes")) : null;
     const price = Number(params.get("price"));
+    // #113: the gateway's total for all travelers (from the results), when it priced every passenger type.
+    const allTravelersTotal = params.has("total") ? Number(params.get("total")) : null;
     const currency = params.get("currency") || "PKR";
     if (!airline || !flightNumber || !from || !to || !date || !Number.isFinite(price) || price <= 0) return null;
     return {
@@ -133,7 +135,7 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
       emoji: "",
       base: price,
       currency,
-      extra: { airline, flightNumber, from, to, date, returnDate, cabin, airlineImage, fareTier, farePerks, refund, layovers, segments, baseFare: Number.isFinite(baseFare) ? baseFare : null, taxes: Number.isFinite(taxes) ? taxes : null },
+      extra: { airline, flightNumber, from, to, date, returnDate, cabin, airlineImage, fareTier, farePerks, refund, layovers, segments, baseFare: Number.isFinite(baseFare) ? baseFare : null, taxes: Number.isFinite(taxes) ? taxes : null, allTravelersTotal: allTravelersTotal && Number.isFinite(allTravelersTotal) && allTravelersTotal > 0 ? allTravelersTotal : null },
     };
   }
   if (type === "hotel") {
@@ -250,9 +252,12 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   // When the supplier only returns a single total, synthesize an industry-standard split (≈78% base / 22% taxes & fees) so the breakdown card is never a single line.
   const derivedBasePerPax = knownBaseFare ? (ctxBaseFare as number) : Math.round(productCtx.base * 0.78);
   const derivedTaxesPerPax = knownTaxes ? (ctxTaxes as number) : Math.max(0, productCtx.base - derivedBasePerPax);
-  const fareBaseTotal = derivedBasePerPax * passengerTotal;
-  const fareTaxesTotal = derivedTaxesPerPax * passengerTotal;
   const fareSplitIsEstimated = !knownBaseFare && !knownTaxes;
+  // #113: with the gateway's total for all travelers, the (estimated) split is of that total, so the lines add up to it.
+  const ctxAllTravelersTotal = productCtx.extra?.allTravelersTotal ?? null;
+  const splitOfGatewayTotal = Boolean(ctxAllTravelersTotal && fareSplitIsEstimated);
+  const fareBaseTotal = splitOfGatewayTotal ? Math.round((ctxAllTravelersTotal as number) * 0.78) : derivedBasePerPax * passengerTotal;
+  const fareTaxesTotal = splitOfGatewayTotal ? (ctxAllTravelersTotal as number) - fareBaseTotal : derivedTaxesPerPax * passengerTotal;
   const passengerSummary = `${passengerTotal} ${passengerTotal === 1 ? "Adult" : "Travelers"}`;
   // #153: each journey's time from the flights' own durations (gateway minutes) and the stays between them, never
   // local arrival minus local departure (airports are in different time zones). Same wording as the results card.
@@ -377,7 +382,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
   const seatFee = 0;
   const addonsTotal = addons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.price, 0) + seatFee;
-  const baseTotal = isFlight ? productCtx.base * passengerTotal : productCtx.base;
+  const baseTotal = isFlight ? (ctxAllTravelersTotal ?? productCtx.base * passengerTotal) : productCtx.base;
   const taxes = 0;
   const grandTotal = baseTotal + addonsTotal + taxes;
   const displayAmount = (amount: number) => convertCurrencyAmount(amount, sourceCurrency, displayCurrency);
