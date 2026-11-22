@@ -267,6 +267,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   });
   const [editReturnDateOpen, setEditReturnDateOpen] = useState(false);
   const [editSegmentDateOpen, setEditSegmentDateOpen] = useState<number | null>(null);
+  // Phones (#148): choosing From opens To (`key`), choosing To opens the departure date.
+  const [editAdvance, setEditAdvance] = useState({ key: "", n: 0 });
+  const editSignal = (key: string) => (editAdvance.key === key ? editAdvance.n : 0);
 
   const openModify = () => {
     setEditFrom(from);
@@ -2000,8 +2003,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               <div className="space-y-3">
                 {editSegments.map((segment, index) => (
                   <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-                    <AirportCombobox value={segment.from} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, from: value } : item))} placeholder="Origin" />
-                    <AirportCombobox value={segment.to} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, to: value } : item))} placeholder="Destination" iconVariant="arrival" />
+                    <AirportCombobox value={segment.from} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, from: value } : item))} placeholder="Origin"
+                      onAdvance={() => setEditAdvance(current => ({ key: `to-${index}`, n: current.n + 1 }))} />
+                    <AirportCombobox value={segment.to} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, to: value } : item))} placeholder="Destination" iconVariant="arrival"
+                      openSignal={editSignal(`to-${index}`)} onAdvance={() => setEditSegmentDateOpen(index)} />
                     <CalendarPopup open={editSegmentDateOpen === index} onOpenChange={(open) => setEditSegmentDateOpen(open ? index : null)}>
                       <CalendarPopupTrigger asChild>
                         <button type="button" className="flex h-11 items-center gap-2 rounded-xl border border-input bg-background px-3 text-left text-sm">
@@ -2031,7 +2036,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
               <div className="min-w-0">
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">From</label>
-                <AirportCombobox value={editFrom} onChange={setEditFrom} className="h-11" placeholder="Origin" />
+                <AirportCombobox value={editFrom} onChange={setEditFrom} className="h-11" placeholder="Origin"
+                  onAdvance={() => setEditAdvance(current => ({ key: "to", n: current.n + 1 }))} />
               </div>
               <div className="hidden sm:flex items-center justify-center pb-1">
                 <button type="button" onClick={swapEdit} aria-label="Swap origin and destination" className="h-9 w-9 rounded-full border-2 border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
@@ -2040,7 +2046,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               </div>
               <div className="min-w-0">
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">To</label>
-                <AirportCombobox value={editTo} onChange={setEditTo} className="h-11" placeholder="Destination" iconVariant="arrival" />
+                <AirportCombobox value={editTo} onChange={setEditTo} className="h-11" placeholder="Destination" iconVariant="arrival"
+                  openSignal={editSignal("to")} onAdvance={() => setEditDateOpen(true)} />
               </div>
             </div>
             )}

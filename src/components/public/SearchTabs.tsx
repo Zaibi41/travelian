@@ -14,6 +14,7 @@ import { format, startOfDay, addDays, parseISO } from "date-fns";
 import { GroupFareCalendar } from "@/components/GroupFareCalendar";
 import { useFlightFares } from "@/hooks/use-flight-fares";
 import { cn } from "@/lib/utils";
+import { useOpenSignal } from "@/hooks/use-open-signal";
 import { TravelersClassPicker, type TravelersValue } from "@/components/public/TravelersClassPicker";
 import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { useLocale } from "@/contexts/LocaleContext";
@@ -39,8 +40,10 @@ interface MultiCitySegment {
 }
 
 /** fares: the Departure date's fare calendar (#55), loaded by the form in the background once From and To are set. */
-function DatePickerField({ id, date, onSelect, placeholder, fares }: { id?: string; date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string; fares?: ReturnType<typeof useFlightFares> }) {
+function DatePickerField({ id, date, onSelect, placeholder, fares, openSignal }: { id?: string; date: Date | undefined; onSelect: (d: Date | undefined) => void; placeholder: string; fares?: ReturnType<typeof useFlightFares>; openSignal?: number }) {
   const [open, setOpen] = useState(false);
+  // Phones: choosing the destination opens this calendar next (#148).
+  useOpenSignal(openSignal, () => setOpen(true));
   const today = startOfDay(new Date());
   const selectDate = (nextDate: Date | undefined) => {
     onSelect(nextDate);
@@ -129,6 +132,10 @@ export function SearchTabs({
     { from: "", to: "", date: undefined },
   ]);
   const navigate = useNavigate();
+  // Phones (#148): choosing From opens To, choosing To opens the departure date. `key` names the field to open next.
+  const [advance, setAdvance] = useState({ key: "", n: 0 });
+  const advanceTo = (key: string) => setAdvance(current => ({ key, n: current.n + 1 }));
+  const signal = (key: string) => (advance.key === key ? advance.n : 0);
   // #55: the Departure date's fares load in the background as soon as From and To are both set (kept here, in the
   // form, so switching One-way / Round-trip doesn't ask again for the same route).
   const departFares = useFlightFares(activeTab === "flights" && tripType !== "multicity",
@@ -268,12 +275,13 @@ export function SearchTabs({
                 <TravelersClassPicker value={travelers} onChange={setTravelers} variant="segmented" mode="travelers" className="w-auto" />
                 <TravelersClassPicker value={travelers} onChange={setTravelers} variant="segmented" mode="cabin" className="w-auto" />
               </div>
+              {/* 640–767px only, where this row has room for it; phones have the swap button between From and To (#148). */}
               {tripType !== "multicity" && (
                 <button
                   type="button"
                   onClick={() => { const a = fromValue; setFromValue(toValue); setToValue(a); }}
                   aria-label="Swap origin and destination"
-                  className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-lg border border-primary/25 bg-card text-primary transition-colors hover:bg-primary hover:text-primary-foreground md:hidden"
+                  className="ml-auto hidden h-9 w-9 items-center justify-center rounded-lg border border-primary/25 bg-card text-primary transition-colors hover:bg-primary hover:text-primary-foreground sm:inline-flex md:hidden"
                 >
                   <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -288,18 +296,20 @@ export function SearchTabs({
                     <div className="relative">
                       {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">From</label>}
                       <div className="relative">
-                        <AirportCombobox value={String(seg.from || "")} onChange={code => updateSegment(idx, "from", code)} placeholder="Origin" />
+                        <AirportCombobox value={String(seg.from || "")} onChange={code => updateSegment(idx, "from", code)} placeholder="Origin"
+                          onAdvance={() => advanceTo(`to-${idx}`)} />
                       </div>
                     </div>
                     <div className="relative">
                       {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>}
                       <div className="relative">
-                        <AirportCombobox value={String(seg.to || "")} onChange={code => updateSegment(idx, "to", code)} placeholder="Destination" iconVariant="arrival" />
+                        <AirportCombobox value={String(seg.to || "")} onChange={code => updateSegment(idx, "to", code)} placeholder="Destination" iconVariant="arrival"
+                          openSignal={signal(`to-${idx}`)} onAdvance={() => advanceTo(`date-${idx}`)} />
                       </div>
                     </div>
                     <div>
                       {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">Date</label>}
-                      <DatePickerField date={seg.date} onSelect={d => updateSegment(idx, "date", d)} placeholder="Select date" />
+                      <DatePickerField date={seg.date} onSelect={d => updateSegment(idx, "date", d)} placeholder="Select date" openSignal={signal(`date-${idx}`)} />
                     </div>
                     <div className="flex items-center h-12">
                       {multiCitySegments.length > 2 && (
@@ -334,9 +344,11 @@ export function SearchTabs({
                 <div className="unified-search-flight-grid grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_auto] gap-3 items-end">
                   <div className="relative">
                     <label htmlFor={`${fieldId}-from`} className="mb-1 block text-xs font-medium text-muted-foreground">From</label>
-                    <AirportCombobox id={`${fieldId}-from`} value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="Origin" invalid={!!errors.from} />
+                    <AirportCombobox id={`${fieldId}-from`} value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="Origin" invalid={!!errors.from}
+                      onAdvance={() => advanceTo("to")} />
                   </div>
-                  <div className="hidden md:flex items-center justify-center pb-0.5">
+                  {/* Phones: a round button on the line between the stacked From and To (index.css, #148). */}
+                  <div className="unified-search-swap hidden md:flex items-center justify-center pb-0.5">
                     <button
                       type="button"
                       onClick={() => { const a = fromValue; setFromValue(toValue); setToValue(a); }}
@@ -348,11 +360,12 @@ export function SearchTabs({
                   </div>
                   <div className="relative">
                     <label htmlFor={`${fieldId}-to`} className="mb-1 block text-xs font-medium text-muted-foreground">To</label>
-                    <AirportCombobox id={`${fieldId}-to`} value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="Destination" invalid={!!errors.to} iconVariant="arrival" />
+                    <AirportCombobox id={`${fieldId}-to`} value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="Destination" invalid={!!errors.to} iconVariant="arrival"
+                      openSignal={signal("to")} onAdvance={() => advanceTo("depart")} />
                   </div>
                   <div className="min-w-0">
                     <label htmlFor={`${fieldId}-depart`} className="mb-1 block text-xs font-medium text-muted-foreground">Departure Date</label>
-                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" fares={departFares} />
+                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" fares={departFares} openSignal={signal("depart")} />
                   </div>
                   <Button
                     onClick={handleSearch}
@@ -374,9 +387,11 @@ export function SearchTabs({
                 <div className="unified-search-flight-grid grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_1fr_1fr_auto] gap-3 items-end">
                   <div className="relative">
                     <label htmlFor={`${fieldId}-from`} className="mb-1 block text-xs font-medium text-muted-foreground">From</label>
-                    <AirportCombobox id={`${fieldId}-from`} value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="Origin" invalid={!!errors.from} />
+                    <AirportCombobox id={`${fieldId}-from`} value={fromValue} onChange={code => { setFromValue(code); if (errors.from) setErrors(p => ({ ...p, from: undefined })); }} placeholder="Origin" invalid={!!errors.from}
+                      onAdvance={() => advanceTo("to")} />
                   </div>
-                  <div className="hidden md:flex items-center justify-center pb-0.5">
+                  {/* Phones: a round button on the line between the stacked From and To (index.css, #148). */}
+                  <div className="unified-search-swap hidden md:flex items-center justify-center pb-0.5">
                     <button
                       type="button"
                       onClick={() => { const a = fromValue; setFromValue(toValue); setToValue(a); }}
@@ -388,11 +403,12 @@ export function SearchTabs({
                   </div>
                   <div className="relative">
                     <label htmlFor={`${fieldId}-to`} className="mb-1 block text-xs font-medium text-muted-foreground">To</label>
-                    <AirportCombobox id={`${fieldId}-to`} value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="Destination" invalid={!!errors.to} iconVariant="arrival" />
+                    <AirportCombobox id={`${fieldId}-to`} value={toValue} onChange={code => { setToValue(code); if (errors.to) setErrors(p => ({ ...p, to: undefined })); }} placeholder="Destination" invalid={!!errors.to} iconVariant="arrival"
+                      openSignal={signal("to")} onAdvance={() => advanceTo("depart")} />
                   </div>
                   <div className="min-w-0">
                     <label htmlFor={`${fieldId}-depart`} className="mb-1 block text-xs font-medium text-muted-foreground">Departure Date</label>
-                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" fares={departFares} />
+                    <DatePickerField id={`${fieldId}-depart`} date={departDate} onSelect={(d) => { setDepartDate(d); if (errors.depart) setErrors(p => ({ ...p, depart: undefined })); }} placeholder="Departure date" fares={departFares} openSignal={signal("depart")} />
                   </div>
                   <div className="min-w-0">
                     <label htmlFor={`${fieldId}-return`} className="mb-1 block text-xs font-medium text-muted-foreground">Return Date</label>

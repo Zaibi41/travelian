@@ -1,6 +1,10 @@
 import { useId, useMemo, useRef, useState } from "react";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import { AirportPickerSheet, type AirportPickerSection } from "@/components/ui/airport-picker-sheet";
 import { useAirports } from "@/hooks/use-airports";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useOpenSignal } from "@/hooks/use-open-signal";
+import { readRecentAirports, rememberRecentAirport } from "@/lib/recent-airports";
 import { MIN_QUERY, popularAirports, searchAirports, type Airport } from "@/lib/admin-search/airports";
 import { cn } from "@/lib/utils";
 import {
@@ -16,13 +20,22 @@ interface AirportComboboxProps {
   onChange: (code?: string) => void;
   /** Leading field icon: take-off for From, landing for To (public site). */
   icon?: AirportIconKind;
+  /** Phones only: called after an airport is chosen in the full-screen picker (not when it is just closed), so the
+   *  form can open its next field (From → To → departure date). */
+  onAdvance?: () => void;
+  /** Opens the field (the picker on phones) each time this changes to a new non-zero number. */
+  openSignal?: number;
 }
 
 /** Origin or destination: opening the field lists popular airports; typing a code, city, airport
  *  or country lists at most 8 matches (searched in memory, no request). Arrow keys, Enter, Escape; Tab leaves.
  *  After a choice the field shows the airport with an x to clear it. */
-export function AirportCombobox({ id, label, placeholder, value, onChange, icon = "departure" }: AirportComboboxProps) {
+export function AirportCombobox({ id, label, placeholder, value, onChange, icon = "departure", onAdvance, openSignal }: AirportComboboxProps) {
   const index = useAirports();
+  // Phones (below 768px): a full-screen picker instead of the dropdown, which the keyboard would hide (issue 148).
+  const isPhone = useIsMobile();
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetText, setSheetText] = useState("");
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [editing, setEditing] = useState(false);
@@ -35,10 +48,52 @@ export function AirportCombobox({ id, label, placeholder, value, onChange, icon 
 
   const choose = (airport: Airport) => {
     onChange(airport.iata);
+    rememberRecentAirport("admin", { code: airport.iata, city: airport.city, name: airport.name, country: airport.country });
     setEditing(false);
     setText("");
   };
+  const openSheet = () => {
+    setSheetText("");
+    setSheetOpen(true);
+  };
+  useOpenSignal(openSignal, () => (isPhone ? openSheet() : startEditing()));
+  // Before typing: the airports chosen before, then the popular airports; typing lists the same matches as the dropdown.
+  const sheetTyped = sheetText.trim().length >= MIN_QUERY;
+  const sheetSections = useMemo<AirportPickerSection[]>(() => {
+    if (!index || !sheetOpen) return [];
+    const toOption = (airport: Airport) => ({ code: airport.iata, city: airport.city, detail: `${airport.name}, ${airport.country}` });
+    if (sheetTyped) return [{ id: "matches", label: "Airports", options: searchAirports(index, sheetText).map(toOption) }];
+    const recent = readRecentAirports("admin").flatMap(item => index.byCode.get(item.code) ?? []);
+    const recentCodes = new Set(recent.map(airport => airport.iata));
+    return [
+      { id: "recent", label: "Recent searches", options: recent.map(toOption) },
+      { id: "popular", label: "Popular airports", options: popularAirports(index).filter(airport => !recentCodes.has(airport.iata)).map(toOption) },
+    ];
+  }, [index, sheetOpen, sheetText, sheetTyped]);
+  const sheet = isPhone && (
+    <AirportPickerSheet
+      open={sheetOpen}
+      title={icon === "arrival" ? "Where to?" : "Where from?"}
+      query={sheetText}
+      onQueryChange={setSheetText}
+      sections={sheetSections}
+      status={index ? undefined : <p role="status" className="px-3 py-3 text-body text-muted-foreground">Loading airports…</p>}
+      selectedCode={value}
+      onSelect={code => {
+        const airport = index?.byCode.get(code);
+        if (!airport) return;
+        choose(airport);
+        setSheetOpen(false);
+        onAdvance?.();
+      }}
+      onClose={() => setSheetOpen(false)}
+    />
+  );
   const startEditing = () => {
+    if (isPhone) {
+      openSheet();
+      return;
+    }
     setEditing(true);
     setText("");
     setActive(0);
@@ -46,8 +101,13 @@ export function AirportCombobox({ id, label, placeholder, value, onChange, icon 
   };
 
   if (value && !editing) {
-    return <SelectedAirportCard id={id} label={label} code={value} airport={selected} icon={icon} onOpen={startEditing}
-      onClear={() => { onChange(undefined); startEditing(); }} />;
+    return (
+      <>
+        <SelectedAirportCard id={id} label={label} code={value} airport={selected} icon={icon} onOpen={startEditing}
+          onClear={() => { onChange(undefined); startEditing(); }} />
+        {sheet}
+      </>
+    );
   }
 
   const activeId = open && results[active] ? `${listId}-${results[active].iata}` : undefined;
@@ -62,8 +122,12 @@ export function AirportCombobox({ id, label, placeholder, value, onChange, icon 
             ref={inputRef}
             id={id}
             role="combobox"
-            aria-expanded={open}
-            aria-controls={listId}
+            aria-expanded={isPhone ? sheetOpen : open}
+            aria-controls={isPhone ? undefined : listId}
+            aria-haspopup={isPhone ? "dialog" : undefined}
+            // Phones: the field only opens the full-screen picker; its own search box takes the typing.
+            readOnly={isPhone}
+            onClick={() => { if (isPhone) openSheet(); }}
             aria-autocomplete="list"
             aria-activedescendant={activeId}
             value={text}
@@ -71,7 +135,7 @@ export function AirportCombobox({ id, label, placeholder, value, onChange, icon 
             placeholder={placeholder}
             autoComplete="off"
             spellCheck={false}
-            onFocus={() => setEditing(true)}
+            onFocus={() => { if (!isPhone) setEditing(true); }}
             onChange={event => {
               setEditing(true);
               setText(event.target.value);
@@ -85,6 +149,13 @@ export function AirportCombobox({ id, label, placeholder, value, onChange, icon 
               setText("");
             }}
             onKeyDown={event => {
+              if (isPhone) {
+                if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
+                  event.preventDefault();
+                  openSheet();
+                }
+                return;
+              }
               if (event.key === "ArrowDown" && results.length) {
                 event.preventDefault();
                 setActive(current => (current + 1) % results.length);
@@ -133,6 +204,7 @@ export function AirportCombobox({ id, label, placeholder, value, onChange, icon 
           </ul>
         </PopoverContent>
       </Popover>
+      {sheet}
     </div>
   );
 }

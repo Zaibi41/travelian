@@ -208,6 +208,32 @@
       grid-column: 1 / -1;
     }
   }
+  /* Phones (#148): From and To stacked straight under the trip type and travellers row, with the round swap
+     button on the line between them (not alone on a row of its own above). 8px between From and To keeps the
+     flight form inside the shared search height, so switching products or trip types doesn't move the card. */
+  @media (max-width: 639px) {
+    .unified-search-content .unified-search-flight-grid > :nth-child(1),
+    .unified-search-content .unified-search-flight-grid > :nth-child(3) {
+      grid-column: 1 / -1;
+    }
+    .unified-search-content .unified-search-flight-grid > :nth-child(3) { margin-top: -1rem; }
+    .unified-search-content .unified-search-flight-grid > .unified-search-swap {
+      display: block;
+      grid-column: 1 / -1;
+      position: relative;
+      z-index: 1;
+      height: 0;
+      padding: 0;
+    }
+    .unified-search-content .unified-search-swap > button {
+      position: absolute;
+      right: 2.75rem;
+      top: -0.5rem;
+      transform: translateY(-50%);
+      background-color: hsl(var(--card));
+    }
+    .unified-search-content .unified-search-swap > button > svg { transform: rotate(90deg); }
+  }
   @media (max-width: 639px) {
     .unified-search-content .hotel-search-fields,
     .unified-search-content .umrah-search-fields {
