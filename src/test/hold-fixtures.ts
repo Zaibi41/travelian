@@ -10,7 +10,7 @@ export const STAFF_DRAFT: HoldDraft = {
   picks: [{
     journey: { direction: "outbound", origin: "LHE", destination: "KHI", flights: [] },
     flight: { id: "f1", airline_code: "Z8", airline_name: "South Air", flight_number: "Z8266", departure_local: "2026-11-19T00:25",
-      arrival_local: "2026-11-19T02:35", duration_minutes: 130, stops: 0, stop_cities: [], fares: [] },
+      arrival_local: "2026-11-19T02:35", duration_minutes: 130, stops: 0, stop_cities: [], segments: [], fares: [] },
     fare: { id: "x1", name: "EB", baggage: "No checked baggage", selling_price: rs(13_597), booking_mode: "hold" },
   }],
   quote: {

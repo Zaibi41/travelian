@@ -27,12 +27,20 @@ describe("Share on WhatsApp (#112)", () => {
       "Lahore (LHE) to Dubai (DXB)",
       "Departs: Sat 5 Dec 2026, 04:10",
       "Arrives: Sat 5 Dec 2026, 11:00",
-      "Duration: 07h 50m · 1 stop via DOH",
+      "Duration: 07h 50m · 1 stop via Doha",
       "Fare: Economy Classic",
       "Baggage: 7 kg hand carry + 30 kg checked",
       "Meal: Meal included",
       "Price: Rs 132,400",
     ].join("\n"));
+  });
+
+  it("with the gateway's flight-by-flight times: where the passenger stays and for how long", () => {
+    const withSegments = { ...flight, segments: [
+      { origin: "LHE", destination: "DOH", departure_local: "2026-12-05T04:10", arrival_local: "2026-12-05T06:00", duration_minutes: 230 },
+      { origin: "DOH", destination: "DXB", departure_local: "2026-12-05T08:45", arrival_local: "2026-12-05T11:00", duration_minutes: 75, layover_minutes: 165 },
+    ] };
+    expect(flightShareMessage({ journey, flight: withSegments, fare }, ONE, AIRPORTS)).toContain("Duration: 07h 50m · 1 stop via Doha (02h 45m)");
   });
 
   it("never includes the provider, supplier cost or margin", () => {

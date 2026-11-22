@@ -186,3 +186,60 @@ for (const width of [1440, 1024, 768, 390]) {
     expect(await noPageScroll(page)).toBe(0);
   });
 }
+for (const width of [1440, 1024, 768, 390]) {
+  test(`flight line: total duration above, stops and stays below, line from departure to arrival at ${width}px (#89)`, async ({ page }) => {
+    await openFlights(page, width, ROUND_TRIP);
+    const expected: [string, string, string, number][] = [
+      ["PA410", "03h 30m", "Non-stop", 2],
+      ["QR629", "07h 50m", "1 stop via Doha (02h 45m)", 3],
+      ["Z8266", "11h 40m", "2 stops via Islamabad (01h 00m), Karachi (04h 00m)", 4],
+      ["EY242", "06h 45m", "1 stop via Abu Dhabi", 3],  // no segments from the supplier: the stop airport only
+      ["EK624", "03h 30m", "Non-stop", 2],
+    ];
+    for (const [flight, total, below, dots] of expected) {
+      const line = card(page, flight).locator("[data-route-line]");
+      const [above, track, under] = await line.locator(":scope > span").all();
+      await expect(above).toHaveText(total);
+      await expect(under).toHaveText(below);
+      await expect(track.locator(".rounded-full")).toHaveCount(dots);
+      const a = (await above.boundingBox())!, t = (await track.boundingBox())!, u = (await under.boundingBox())!;
+      expect(a.y + a.height).toBeLessThanOrEqual(t.y + 1);
+      expect(t.y + t.height).toBeLessThanOrEqual(u.y + 1);
+      // The line runs from the departure time's column to the arrival time's column.
+      const departs = (await card(page, flight).getByText(/^\d{2}:\d{2}$/).first().boundingBox())!;
+      const arrives = (await card(page, flight).getByText(/^\d{2}:\d{2}$/).nth(1).boundingBox())!;
+      expect(t.x).toBeGreaterThanOrEqual(departs.x + departs.width - 1);
+      expect(t.x + t.width).toBeLessThanOrEqual(arrives.x + 1);
+      expect(t.width).toBeGreaterThan(40);
+    }
+    expect(await noPageScroll(page)).toBe(0);
+  });
+
+  test(`flight details: each stay with its country, stay time and times at ${width}px (#85)`, async ({ page }) => {
+    await openFlights(page, width);
+    const open = async (flight: string) => {
+      await card(page, flight).getByRole("button", { name: "Flight details" }).click();
+      const dialog = page.getByRole("dialog", { name: "Flight details" });
+      await expect(dialog).toBeVisible();
+      const box = (await dialog.boundingBox())!;
+      expect(box.y).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height).toBeLessThanOrEqual(900);
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+      return dialog;
+    };
+    let dialog = await open("QR629");
+    await expect(dialog).toContainText("StayDoha, Qatar (DOH)02h 45m · lands 06:00, leaves 08:45");
+    await page.keyboard.press("Escape");
+    dialog = await open("Z8266");
+    await expect(dialog).toContainText("Stay 1Islamabad, Pakistan (ISB)01h 00m · lands 07:00, leaves 08:00");
+    await expect(dialog).toContainText("Stay 2Karachi, Pakistan (KHI)04h 00m · lands 10:00, leaves 14:00");
+    await page.keyboard.press("Escape");
+    dialog = await open("EY242");
+    await expect(dialog).toContainText("StayAbu Dhabi, United Arab Emirates (AUH)Stay time not available");
+    await page.getByRole("button", { name: "Close" }).click();
+    dialog = await open("PA410");
+    await expect(dialog).not.toContainText("Stay");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+  });
+}

@@ -7,7 +7,8 @@ import { format, parseISO } from "date-fns";
 import { formatMoney } from "@/lib/admin-bookings/format";
 import { underBaggageLabel } from "@/lib/baggage";
 import type { AirportIndex } from "./airports";
-import { airlineLabel, fareBaggage, formatDuration, stopsLabel, type FareView, type FlightSearch, type FlightView, type JourneyView } from "./flights";
+import { flightStays, stopsBelowLine } from "./stays";
+import { airlineLabel, fareBaggage, formatDuration, type FareView, type FlightSearch, type FlightView, type JourneyView } from "./flights";
 
 const clean = (value: unknown) => {
   const text = String(value ?? "").trim();
@@ -39,7 +40,8 @@ export function flightShareMessage(
   const meal = clean(fare.meal);
   const departs = when(flight.departure_local);
   const arrives = when(flight.arrival_local);
-  const trip = [formatDuration(flight.duration_minutes), stopsLabel(flight)].filter(Boolean).join(" · ");
+  // Stops with where and how long the passenger stays (#89), as under the flight's line on the results.
+  const trip = [formatDuration(flight.duration_minutes), stopsBelowLine(flight, flightStays(flight, airports))].filter(Boolean).join(" · ");
   const price = fare.selling_price ? `${formatMoney(fare.selling_price)}${severalTravelers(request) ? " per adult" : ""}` : null;
   return [
     "Flight details from Travelian",
