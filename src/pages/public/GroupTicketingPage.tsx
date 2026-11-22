@@ -1,5 +1,5 @@
 import { ProductValuePills, TravelianTrustStrip } from "@/components/public/ProductTrust";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
@@ -10,6 +10,8 @@ import {
   ArrowRight,
 
   Check,
+
+  Clock,
 
   Compass,
   Info,
@@ -58,6 +60,8 @@ import { airportByCode, loadPublicAirports } from "@/data/airports";
 
 import { searchPublicGroups } from "@/lib/public-booking";
 import { baggageText, underBaggageLabel } from "@/lib/baggage";
+
+import { groupJourneys, groupStopText, legArrivalDate, type GroupJourney } from "@/lib/group-journeys";
 
 import { CURRENCIES, useLocale } from "@/contexts/LocaleContext";
 
@@ -276,39 +280,70 @@ interface GroupJourneyLeg {
 
   stopText?: string;
 
+  flightNumber?: string;
+
+  /** The connection after this flight, in the same journey: "Change planes in MCT Muscat · 3h 0m" (#152). */
+  connectionAfter?: string;
+
 }
 
 
 
+/** One flight per row, labelled by its journey (#152): a one-way connection is "Flight 1" / "Flight 2", never "Return".
+ * "Return" is only for the return journey of a return fare. */
 function getJourneyLegs(active: GroupTicket): GroupJourneyLeg[] {
 
-  if (active.itinerary && active.itinerary.length > 0) {
+  const journeys = groupJourneys(active);
 
-    return active.itinerary.map((leg, index) => ({
+  if (journeys.length > 0) {
 
-      key: leg.id || `${active.id}-leg-${index}`,
+    const hasReturn = journeys.some((journey) => journey.direction === "return");
 
-      label: active.itinerary!.length === 2
+    return journeys.flatMap((journey) => journey.legs.map((leg, index) => {
 
-        ? (index === 0 ? "Outbound" : "Return")
+      const side = journey.direction === "return" ? "Return" : "Outbound";
 
-        : (active.itinerary!.length === 1 ? "Flight" : `Flight ${index + 1}`),
+      const count = journey.legs.length;
 
-      departureTime: leg.departureTime || "TBA",
+      const label = hasReturn
 
-      arrivalTime: leg.arrivalTime || "TBA",
+        ? (count > 1 ? `${side} · Flight ${index + 1}` : side)
 
-      departureDate: leg.flightDate || active.departureDate,
+        : (count > 1 ? `Flight ${index + 1}` : "Flight");
 
-      arrivalDate: leg.flightDate || active.departureDate,
+      const connection = journey.connections[index];
 
-      origin: leg.origin || "Origin",
+      const fallbackDate = journey.direction === "return" ? active.returnDate : active.departureDate;
 
-      destination: leg.destination || "Destination",
+      return {
 
-      duration: "Direct",
+        key: `${active.id}-${journey.direction}-${index}`,
 
-      stopText: "Direct",
+        label,
+
+        departureTime: leg.departureTime || "TBA",
+
+        arrivalTime: leg.arrivalTime || "TBA",
+
+        departureDate: leg.flightDate || fallbackDate,
+
+        arrivalDate: legArrivalDate(leg) || fallbackDate,
+
+        origin: leg.origin || "Origin",
+
+        destination: leg.destination || "Destination",
+
+        stopText: count > 1 ? undefined : "Direct",
+
+        flightNumber: leg.flightNumber,
+
+        connectionAfter: connection
+
+          ? `Change planes in ${routeLabel(connection.airport)}${connection.duration ? ` · ${connection.duration}` : ""}`
+
+          : undefined,
+
+      };
 
     }));
 
@@ -448,6 +483,70 @@ function getJourneyLegs(active: GroupTicket): GroupJourneyLeg[] {
 
 
 
+interface GroupCardJourney {
+
+  origin?: string;
+
+  destination?: string;
+
+  departureDate?: string;
+
+  departureTime?: string;
+
+  arrivalDate?: string;
+
+  arrivalTime?: string;
+
+  stopText?: string;
+
+}
+
+
+
+function cardJourney(journey: GroupJourney): GroupCardJourney {
+
+  return {
+
+    origin: journey.origin, destination: journey.destination,
+
+    departureDate: journey.departureDate, departureTime: journey.departureTime,
+
+    arrivalDate: journey.arrivalDate, arrivalTime: journey.arrivalTime,
+
+    stopText: groupStopText(journey),
+
+  };
+
+}
+
+
+
+/** "03:25 → 10:00" (the last flight's arrival), or just the departure when the arrival isn't known. */
+function journeyTimes(leg?: GroupCardJourney) {
+
+  const leaves = leg?.departureTime && leg.departureTime !== "TBA" ? formatFlightTime(leg.departureTime) : "";
+
+  const lands = leg?.arrivalTime && leg.arrivalTime !== "TBA" ? formatFlightTime(leg.arrivalTime) : "";
+
+  return leaves && lands ? `${leaves} → ${lands}` : leaves;
+
+}
+
+
+
+/** "Direct" or "1 stop · via MCT (3h 00m)", and the arrival day when it lands on a later day. */
+function journeyStopLine(leg?: GroupCardJourney) {
+
+  if (!leg?.stopText) return "";
+
+  const later = leg.arrivalDate && leg.departureDate && leg.arrivalDate.slice(0, 10) !== leg.departureDate.slice(0, 10);
+
+  return later ? `${leg.stopText} · Arrives ${formatFlightDate(leg.arrivalDate)}` : leg.stopText;
+
+}
+
+
+
 function SkeletonCards() {
 
   return (
@@ -526,15 +625,22 @@ function GroupCard({
 
   const journeyLegs = getJourneyLegs(active);
 
-  const outboundLeg = journeyLegs[0];
+  // #152: the card shows each journey whole: first departure, final arrival and its stops (LHE → JED, 1 stop via MCT).
+  const journeys = groupJourneys(active);
 
-  const returnLeg = journeyLegs[1];
+  const outboundJourney = journeys.find((journey) => journey.direction === "outbound");
+
+  const returnJourney = journeys.find((journey) => journey.direction === "return");
+
+  const outboundLeg = outboundJourney ? cardJourney(outboundJourney) : journeyLegs[0];
+
+  const returnLeg = returnJourney ? cardJourney(returnJourney) : (journeys.length ? undefined : journeyLegs[1]);
 
 
 
   return (
 
-    <Card className="overflow-hidden transition-all duration-200 border border-slate-200/80 bg-card shadow-sm hover:border-primary/30 hover:shadow-md">
+    <Card data-testid="group-card" className="overflow-hidden transition-all duration-200 border border-slate-200/80 bg-card shadow-sm hover:border-primary/30 hover:shadow-md">
 
       <CardContent className="p-4 sm:p-5">
 
@@ -652,13 +758,23 @@ function GroupCard({
 
                   </p>
 
+                  {journeyStopLine(outboundLeg) && (
+
+                    <p className="break-words text-xs font-semibold text-foreground" title={journeyStopLine(outboundLeg)} data-testid="group-stop-line">
+
+                      {journeyStopLine(outboundLeg)}
+
+                    </p>
+
+                  )}
+
                 </div>
 
-                {outboundLeg?.departureTime && outboundLeg.departureTime !== "TBA" && (
+                {journeyTimes(outboundLeg) && (
 
                   <span className="shrink-0 text-xs font-semibold text-muted-foreground">
 
-                    {formatFlightTime(outboundLeg.departureTime)}
+                    {journeyTimes(outboundLeg)}
 
                   </span>
 
@@ -708,13 +824,23 @@ function GroupCard({
 
                     </p>
 
+                    {journeyStopLine(returnLeg) && (
+
+                      <p className="break-words text-xs font-semibold text-foreground" title={journeyStopLine(returnLeg)} data-testid="group-stop-line">
+
+                        {journeyStopLine(returnLeg)}
+
+                      </p>
+
+                    )}
+
                   </div>
 
-                  {returnLeg?.departureTime && returnLeg.departureTime !== "TBA" && (
+                  {journeyTimes(returnLeg) && (
 
                     <span className="shrink-0 text-xs font-semibold text-muted-foreground">
 
-                      {formatFlightTime(returnLeg.departureTime)}
+                      {journeyTimes(returnLeg)}
 
                     </span>
 
@@ -970,7 +1096,9 @@ function GroupCard({
 
                     {journeyLegs.map((leg, legIdx) => (
 
-                      <section key={leg.key || legIdx} className="rounded-2xl border border-slate-200 bg-white/95 p-3.5 shadow-sm sm:p-4">
+                      <Fragment key={leg.key || legIdx}>
+
+                      <section className="rounded-2xl border border-slate-200 bg-white/95 p-3.5 shadow-sm sm:p-4">
 
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
 
@@ -1044,7 +1172,7 @@ function GroupCard({
 
                             <div className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
 
-                              {active.airlineName || "Airline"} · {leg.duration || "Direct"} · {leg.stopText || "Direct"}
+                              {[active.airlineName || "Airline", leg.flightNumber, leg.stopText].filter(Boolean).join(" · ")}
 
                             </div>
 
@@ -1079,6 +1207,20 @@ function GroupCard({
                         </div>
 
                       </section>
+
+                      {leg.connectionAfter && (
+
+                        <p className="flex items-center gap-2 rounded-xl border border-dashed border-warning/40 bg-warning/10 px-3 py-2 text-xs font-semibold text-foreground" data-testid="group-connection">
+
+                          <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+
+                          <span className="min-w-0 truncate" title={leg.connectionAfter}>{leg.connectionAfter}</span>
+
+                        </p>
+
+                      )}
+
+                      </Fragment>
 
                     ))}
 

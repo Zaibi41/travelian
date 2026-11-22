@@ -2,6 +2,7 @@ import type { TravelianFlight } from "@/lib/travelian-api";
 import { API_BASE_URL } from "@/lib/api-config";
 import { BAGGAGE_UNKNOWN, baggageText, underBaggageLabel } from "@/lib/baggage";
 import { normalizeAirlineName } from "@/lib/airline-normalization";
+import { groupJourneys, legArrivalDate } from "@/lib/group-journeys";
 import {
   type GroupTicket,
   groupTicketOriginCode,
@@ -282,6 +283,7 @@ export function groupTicketToFlight(group: GroupTicket): TravelianFlight {
     : undefined;
 
   const decodedOfferId = decodeGroupTicketId(group.id);
+  const outboundJourney = groupJourneys(group).find((journey) => journey.direction === "outbound");
 
   // Resolve provider
   let providerId = group.provider;
@@ -315,12 +317,12 @@ export function groupTicketToFlight(group: GroupTicket): TravelianFlight {
     ? `${group.departureDate || firstLeg.flightDate || ""} ${firstLeg.departureTime}`.trim()
     : (group.departureDate || "");
   const arrTime = lastLeg?.arrivalTime
-    ? `${lastLeg.flightDate || group.departureDate || ""} ${lastLeg.arrivalTime}`.trim()
+    ? `${legArrivalDate(lastLeg) || group.departureDate || ""} ${lastLeg.arrivalTime}`.trim()
     : (group.departureDate || "");
 
   const segments = (group.itinerary || []).map((leg) => ({
     departureTime: `${leg.flightDate || ""} ${leg.departureTime || ""}`.trim(),
-    arrivalTime: `${leg.flightDate || ""} ${leg.arrivalTime || ""}`.trim(),
+    arrivalTime: `${legArrivalDate(leg) || ""} ${leg.arrivalTime || ""}`.trim(),
     origin: leg.origin || originCode,
     destination: leg.destination || destinationCode,
     departureAirport: leg.origin,
@@ -355,6 +357,12 @@ export function groupTicketToFlight(group: GroupTicket): TravelianFlight {
     meal: "Meal info not available",
     stops: Math.max(0, (group.itinerary?.length || 1) - 1),
     segments,
+    // #152: where a connecting group fare changes planes (layovers[i] follows segments[i], outbound only).
+    ...(outboundJourney?.connections.length ? {
+      layovers: outboundJourney.connections.map((stop, index) => ({
+        location: stop.airport, duration: stop.duration || null, nextFlightNumber: outboundJourney.legs[index + 1]?.flightNumber || null,
+      })),
+    } : {}),
     refundable: false,
     fareOptions: [
       {

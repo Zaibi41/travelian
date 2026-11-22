@@ -3,6 +3,7 @@
 // by the gateway; this module only sends and displays.
 import { countries } from "@/data/countries";
 import { groupBaggageText } from "@/lib/baggage";
+import { getAirlineNameFromCarrier } from "@/lib/airline-normalization";
 import type { GroupTicket } from "@/lib/group-ticketing";
 import type { RequiredDocument } from "@/lib/passenger-details";
 
@@ -77,17 +78,21 @@ function logoUrl(path?: string) {
 function toGroupTicket(group: PublicGroup, ticket: PublicTicket): GroupTicket {
   const legs = ticket.legs || [];
   const returning = legs.some((leg) => leg.direction === "return");
+  const airline = (ticket.airline || group.airline)?.trim();
   // #36: hand carry first ("7+20 kg"), from the gateway's label when it sent one.
   const baggage = groupBaggageText(ticket.baggage, ticket.hand_carry, ticket.baggage_label, ticket.baggage_detail);
   return {
     id: ticket.id,
     provider: GATEWAY_GROUP_PROVIDER,
-    airlineName: ticket.airline || group.airline,
+    // Some suppliers send only the carrier code ("SV"): shown as the airline's name, the code kept for the logo (#152).
+    airlineName: getAirlineNameFromCarrier(airline) || airline,
+    airlineCode: /^[A-Z0-9]{2}$/i.test(airline || "") ? airline!.toUpperCase() : undefined,
     airlineLogo: logoUrl(group.logo_url),
     sector: ticket.sector || group.sector,
     tripType: returning ? "round-trip" : "one-way",
     itinerary: legs.map((leg, index) => ({
-      sequence: index + 1, flightNumber: leg.flight_number, flightDate: leg.departure_date, origin: leg.origin,
+      sequence: index + 1, flightNumber: leg.flight_number, flightDate: leg.departure_date, arrivalDate: leg.arrival_date,
+      direction: leg.direction === "return" ? "return" as const : "outbound" as const, origin: leg.origin,
       destination: leg.destination, baggage: groupBaggageText(leg.baggage, leg.hand_carry, leg.baggage_label, leg.baggage_detail).short, departureTime: leg.departure_time, arrivalTime: leg.arrival_time,
     })),
     departureDate: ticket.departure_date,

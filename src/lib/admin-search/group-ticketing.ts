@@ -155,6 +155,12 @@ export interface GroupResultRow {
   source: string | null;
 }
 
+/** "OV522 / OV287" for the flights of one journey, when there is more than one; undefined otherwise. */
+function flightNumbers(legs: { flight_number?: string | null }[]) {
+  const numbers = legs.map(leg => leg.flight_number).filter(Boolean);
+  return numbers.length > 1 ? numbers.join(" / ") : undefined;
+}
+
 /** One row per departure, filtered by airline (display filter), earliest first. */
 export function resultRows(groups: GroupInventory[], airline?: string): GroupResultRow[] {
   return groups
@@ -170,13 +176,16 @@ export function resultRows(groups: GroupInventory[], airline?: string): GroupRes
         price: ticket.selling_price ?? null,
         sector: ticket.sector ?? group.sector,
         airline: (ticket.airline ?? group.airline)?.trim() || null,
-        flightNumber: ticket.flight_number ?? null,
+        // #152: a connecting fare shows every flight number ("OV522 / OV287").
+        flightNumber: flightNumbers(outbound) ?? ticket.flight_number ?? null,
         seatsLeft: ticket.remaining,
         baggage: ticketBaggage(ticket),
         meal: ticket.meal ?? null,
         arrivalTime: outbound.length ? outbound[outbound.length - 1].arrival_time ?? null : null,
         returnLeg: back ? {
-          flightNumber: back.flight_number, route: back.origin && back.destination ? `${back.origin} - ${back.destination}` : null,
+          flightNumber: flightNumbers(legs.filter(leg => leg.direction === "return")) ?? back.flight_number,
+          route: back.origin && legs.filter(leg => leg.direction === "return").at(-1)?.destination
+            ? [back.origin, ...legs.filter(leg => leg.direction === "return").map(leg => leg.destination)].join(" - ") : null,
           departureDate: back.departure_date, departureTime: back.departure_time, arrivalTime: legs.filter(leg => leg.direction === "return").at(-1)?.arrival_time ?? null,
           baggage: ticketBaggage(back), meal: back.meal ?? null,
         } : null,
