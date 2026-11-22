@@ -23,6 +23,7 @@ import { buildGroupTicketSearchParams } from "@/lib/group-ticketing";
 import { GroupTicketingSearchBar } from "@/components/public/GroupTicketingSearchBar";
 import { HotelSearchBar, type HotelSearchValues } from "@/components/public/HotelSearchBar";
 import { keepReturnDate, returnDateError, RETURN_CLEARED_MESSAGE } from "@/lib/return-date";
+import { firstLegError, legErrors, nextLeg, remainingLegErrors, updateLeg, type LegErrors } from "@/lib/multi-city";
 
 
 
@@ -156,6 +157,8 @@ export function SearchTabs({
     { from: "", to: "", date: undefined },
     { from: "", to: "", date: undefined },
   ]);
+  // #160: each multi-city leg's messages, shown under its fields.
+  const [legErrs, setLegErrs] = useState<LegErrors[]>([]);
   const navigate = useNavigate();
   // Phones (#148): choosing From opens To, choosing To opens the departure date. `key` names the field to open next.
   const [advance, setAdvance] = useState({ key: "", n: 0 });
@@ -207,15 +210,12 @@ export function SearchTabs({
   const handleSearch = () => {
     if (activeTab === "flights") {
       if (tripType === "multicity") {
-        const validSegments = multiCitySegments.every((segment) =>
-          /^[A-Z]{3}$/.test(segment.from) &&
-          /^[A-Z]{3}$/.test(segment.to) &&
-          segment.from !== segment.to &&
-          !!segment.date &&
-          segment.date >= today
-        );
-        if (!validSegments) {
-          setErrors({ depart: "Complete each multi-city flight with different airports and a valid date" });
+        // #160: a message under each field to fix, and the first one takes the focus.
+        const found = legErrors(multiCitySegments, today);
+        setLegErrs(found);
+        const toFix = firstLegError(found);
+        if (toFix) {
+          document.getElementById(`${fieldId}-leg${toFix[0]}-${toFix[1]}`)?.focus();
           return;
         }
         const segments = multiCitySegments.map((segment) => ({
@@ -266,21 +266,22 @@ export function SearchTabs({
     else navigate("/");
   };
 
+  // #160: a new leg starts where the last one lands, on its date.
   const addMultiCitySegment = () => {
-    setMultiCitySegments(current => current.length < MAX_MULTI_CITY_FLIGHTS
-      ? [...current, { from: "", to: "", date: undefined }]
-      : current);
+    setMultiCitySegments(current => current.length < MAX_MULTI_CITY_FLIGHTS ? [...current, nextLeg(current)] : current);
   };
 
   const updateSegment = (index: number, field: keyof MultiCitySegment, value: string | Date | undefined) => {
-    const updated = [...multiCitySegments];
-    updated[index] = { ...updated[index], [field]: value };
-    setMultiCitySegments(updated);
+    const next = updateLeg(multiCitySegments, index, { [field]: value });
+    setMultiCitySegments(next);
+    setLegErrs(current => remainingLegErrors(current, next, today));
   };
 
   const removeSegment = (index: number) => {
     if (multiCitySegments.length > 2) {
-      setMultiCitySegments(multiCitySegments.filter((_, i) => i !== index));
+      const next = multiCitySegments.filter((_, i) => i !== index);
+      setMultiCitySegments(next);
+      setLegErrs(current => remainingLegErrors(current.filter((_, i) => i !== index), next, today));
     }
   };
 
@@ -328,40 +329,50 @@ export function SearchTabs({
             {/* Multi-city layout */}
             {tripType === "multicity" ? (
               <div className="space-y-3">
-                {multiCitySegments.map((seg, idx) => (
-                  <div key={idx} className="unified-search-segment-grid grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
-                    <div className="relative">
-                      {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">From</label>}
-                      <div className="relative">
-                        <AirportCombobox value={String(seg.from || "")} onChange={code => updateSegment(idx, "from", code)} placeholder="Origin"
-                          onAdvance={() => advanceTo(`to-${idx}`)} />
-                      </div>
-                    </div>
-                    <div className="relative">
-                      {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">To</label>}
-                      <div className="relative">
-                        <AirportCombobox value={String(seg.to || "")} onChange={code => updateSegment(idx, "to", code)} placeholder="Destination" iconVariant="arrival"
-                          openSignal={signal(`to-${idx}`)} onAdvance={() => advanceTo(`date-${idx}`)} />
-                      </div>
-                    </div>
-                    <div>
-                      {idx === 0 && <label className="text-xs font-medium text-muted-foreground mb-1 block">Date</label>}
-                      <DatePickerField date={seg.date} onSelect={d => updateSegment(idx, "date", d)} placeholder="Select date" openSignal={signal(`date-${idx}`)} />
-                    </div>
-                    <div className="flex items-center h-12">
+                {multiCitySegments.map((seg, idx) => {
+                  const legId = `${fieldId}-leg${idx}`;
+                  const legError = legErrs[idx] ?? {};
+                  // Labels: every leg on phones; on wider screens only the first row (the others keep them for screen readers).
+                  const labelClass = cn("mb-1 block text-xs font-medium text-muted-foreground", idx > 0 && "md:sr-only");
+                  const message = (key: keyof LegErrors) => legError[key]
+                    ? <p id={`${legId}-${key}-error`} className="mt-1 text-xs text-destructive">{legError[key]}</p> : null;
+                  return (
+                  <section key={idx} aria-labelledby={`${legId}-title`} className="rounded-xl border border-border/70 bg-muted/20 p-3 md:border-0 md:bg-transparent md:p-0">
+                    <div className="mb-2 flex min-h-8 items-center justify-between gap-2 md:mb-1">
+                      <h3 id={`${legId}-title`} className="text-xs font-semibold text-foreground">Flight {idx + 1}</h3>
                       {multiCitySegments.length > 2 && (
                         <button
                           type="button"
                           onClick={() => removeSegment(idx)}
-                          className="h-9 w-9 rounded-full border border-destructive/30 text-destructive hover:bg-destructive/10 flex items-center justify-center transition-colors"
-                          aria-label="Remove segment"
-                        ><X className="h-4 w-4" /></button>
+                          className="-my-1.5 flex h-11 w-11 items-center justify-center rounded-full text-destructive transition-colors hover:bg-destructive/10 md:h-8 md:w-8"
+                          aria-label={`Remove Flight ${idx + 1}`}
+                        ><X className="h-4 w-4" aria-hidden="true" /></button>
                       )}
                     </div>
+                  <div className="unified-search-segment-grid grid grid-cols-1 md:grid-cols-3 gap-3 items-start">
+                    <div className="relative min-w-0">
+                      <label htmlFor={`${legId}-from`} className={labelClass}>From</label>
+                      <AirportCombobox id={`${legId}-from`} value={String(seg.from || "")} onChange={code => updateSegment(idx, "from", code)} placeholder="Origin"
+                        invalid={!!legError.from} onAdvance={() => advanceTo(`to-${idx}`)} />
+                      {message("from")}
+                    </div>
+                    <div className="relative min-w-0">
+                      <label htmlFor={`${legId}-to`} className={labelClass}>To</label>
+                      <AirportCombobox id={`${legId}-to`} value={String(seg.to || "")} onChange={code => updateSegment(idx, "to", code)} placeholder="Destination" iconVariant="arrival"
+                        invalid={!!legError.to} openSignal={signal(`to-${idx}`)} onAdvance={() => advanceTo(`date-${idx}`)} />
+                      {message("to")}
+                    </div>
+                    <div className="min-w-0">
+                      <label htmlFor={`${legId}-date`} className={labelClass}>Date</label>
+                      <DatePickerField id={`${legId}-date`} date={seg.date} onSelect={d => updateSegment(idx, "date", d)} placeholder="Select date" openSignal={signal(`date-${idx}`)}
+                        min={idx > 0 ? multiCitySegments[idx - 1].date : undefined} invalid={!!legError.date} describedBy={legError.date ? `${legId}-date-error` : undefined} />
+                      {message("date")}
+                    </div>
                   </div>
-                ))}
+                  </section>
+                  );
+                })}
                 <div className="flex items-center justify-between gap-3 pt-1">
-                  {errors.depart && <p className="text-xs text-destructive">{errors.depart}</p>}
                   <button
                     type="button"
                     onClick={addMultiCitySegment}
