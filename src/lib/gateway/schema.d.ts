@@ -1013,8 +1013,8 @@ export interface paths {
         head?: never;
         /**
          * Update Payment Account
-         * @description Bank name, account title, full account number, IBAN and QR image. Fields left out keep their value; remove_qr clears
-         *     the QR image.
+         * @description Bank name, account title, full account number, IBAN, QR image and bank logo. Fields left out keep their value;
+         *     remove_qr / remove_logo clear the image.
          */
         patch: operations["update_payment_account_v1_admin_finance_payment_accounts__account_id__patch"];
         trace?: never;
@@ -4069,6 +4069,11 @@ export interface components {
              */
             label: string;
             /**
+             * Logo Asset Key
+             * @description From POST /v1/admin/uploads (purpose bank_logo).
+             */
+            logo_asset_key?: string | null;
+            /**
              * Method
              * @enum {string}
              */
@@ -4304,6 +4309,11 @@ export interface components {
              * @description Send it back as the chosen account (travelian#76).
              */
             id?: string | null;
+            /**
+             * Logo Url
+             * @description The bank's logo uploaded by staff (travelian#76). None: show the bank's initials.
+             */
+            logo_url?: string | null;
             /**
              * Qr Download Url
              * @description Gateway path that downloads the QR image as a file (every browser, no S3 CORS).
@@ -7706,6 +7716,16 @@ export interface components {
             /** Label */
             label: string;
             /**
+             * Logo Asset Key
+             * @description S3 object key of the bank's logo image (travelian#76).
+             */
+            logo_asset_key?: string | null;
+            /**
+             * Logo Url
+             * @description Public URL of the bank's logo (S3). None: checkout shows the bank's initials.
+             */
+            logo_url?: string | null;
+            /**
              * Method
              * @enum {string}
              */
@@ -8507,7 +8527,7 @@ export interface components {
              * Purpose
              * @enum {string}
              */
-            purpose: "site_logo" | "payment_qr" | "payment_proof";
+            purpose: "site_logo" | "payment_qr" | "payment_proof" | "bank_logo";
         };
         /** SignedUploadView */
         SignedUploadView: {
@@ -9016,10 +9036,21 @@ export interface components {
              */
             iban?: string | null;
             /**
+             * Logo Asset Key
+             * @description From POST /v1/admin/uploads (purpose bank_logo).
+             */
+            logo_asset_key?: string | null;
+            /**
              * Qr Asset Key
              * @description From POST /v1/admin/uploads (purpose payment_qr).
              */
             qr_asset_key?: string | null;
+            /**
+             * Remove Logo
+             * @description Remove the bank logo (checkout shows the bank's initials). Ignored with logo_asset_key.
+             * @default false
+             */
+            remove_logo: boolean;
             /**
              * Remove Qr
              * @description Remove the QR image (customers stop seeing it at checkout). Ignored with qr_asset_key.

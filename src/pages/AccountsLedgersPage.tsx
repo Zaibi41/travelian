@@ -174,6 +174,7 @@ function AccountsTable({ accounts, onDeactivate, onEdit }: {
               <tr key={account.id} className={TABLE.row}>
                 <td className={cn(TABLE.td, "max-w-0")}>
                   <span className="flex min-w-0 items-center gap-2">
+                    {account.logo_url && <img src={account.logo_url} alt={`Bank logo for ${account.label}`} className="h-8 w-8 shrink-0 rounded border bg-white object-contain" />}
                     {account.qr_url && <img src={account.qr_url} alt={`QR code for ${account.label}`} className="h-8 w-8 shrink-0 rounded border object-contain" />}
                     <span className="min-w-0">
                       <span className="block truncate font-medium" title={account.label}>{account.label}</span>
@@ -213,12 +214,13 @@ function AddAccountDialog({ initialMethod, onClose }: { initialMethod: PaymentMe
   const [label, setLabel] = useState("");
   const [bank, setBank] = useState({ bank_name: "", account_title: "", account_number: "", iban: "" });
   const [qr, setQr] = useState<UploadedQr | null>(null);
+  const [logo, setLogo] = useState<UploadedQr | null>(null);
   const [uploading, setUploading] = useState(false);
   const isBank = method === "bank_transfer";
   const save = useMutation({
     mutationFn: () => addReceivingAccount(method, label, hasCheckoutDetails(method) ? {
       bank_name: (isBank && bank.bank_name) || null, account_title: bank.account_title || null, account_number: bank.account_number || null,
-      iban: (isBank && bank.iban) || null, qr_asset_key: qr?.key ?? null,
+      iban: (isBank && bank.iban) || null, qr_asset_key: qr?.key ?? null, ...(logo ? { logo_asset_key: logo.key } : {}),
     } : {}),
     onSuccess: account => {
       toast.success(`${account.label} added.`);
@@ -262,6 +264,7 @@ function AddAccountDialog({ initialMethod, onClose }: { initialMethod: PaymentMe
                 </FieldShell>
               ))}
               <QrField id={`${nameId}-qr`} value={qr} onChange={setQr} onUploading={setUploading} />
+              <QrField id={`${nameId}-logo`} kind="logo" value={logo} onChange={setLogo} onUploading={setUploading} />
             </>
           )}
         </form>
@@ -293,11 +296,20 @@ const detailFields = (method: string) => (method === "jazzcash" ? JAZZCASH_FIELD
 
 type UploadedQr = { key: string; url?: string | null };
 
-/** The QR image: uploaded to S3 as soon as it is chosen; any failure is shown under the field and nothing is kept. */
-function QrField({ id, value, onChange, onUploading, current, onRemove }: {
+/** The account's images, uploaded to S3 the same way: the QR code and (#76) the bank's logo. */
+const IMAGE_FIELDS = {
+  qr: { purpose: "payment_qr", label: "QR code image", hint: "PNG, JPEG or WebP, up to 2 MB. Stored in S3; customers see it at checkout.",
+    preview: "QR code preview", remove: "Remove QR" },
+  logo: { purpose: "bank_logo", label: "Bank logo", hint: "PNG, JPEG or WebP, up to 2 MB. Shown on this account's card at checkout; without one, the bank's initials are shown.",
+    preview: "Bank logo preview", remove: "Remove logo" },
+} as const;
+
+/** An account image: uploaded to S3 as soon as it is chosen; any failure is shown under the field and nothing is kept. */
+function QrField({ id, value, onChange, onUploading, current, onRemove, kind = "qr" }: {
   id: string; value: UploadedQr | null; onChange: (qr: UploadedQr | null) => void; onUploading: (busy: boolean) => void;
-  current?: string | null; onRemove?: () => void;
+  current?: string | null; onRemove?: () => void; kind?: keyof typeof IMAGE_FIELDS;
 }) {
+  const field = IMAGE_FIELDS[kind];
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pick = async (file?: File) => {
@@ -306,7 +318,7 @@ function QrField({ id, value, onChange, onUploading, current, onRemove }: {
     onUploading(true);
     setError(null);
     try {
-      const uploaded = await uploadImage("payment_qr", file);
+      const uploaded = await uploadImage(field.purpose, file);
       onChange({ key: uploaded.assetKey, url: uploaded.publicUrl });
     } catch (problem) {
       onChange(null);
@@ -318,15 +330,15 @@ function QrField({ id, value, onChange, onUploading, current, onRemove }: {
   };
   const preview = value?.url ?? current;
   return (
-    <FieldShell id={id} label="QR code image" hint="PNG, JPEG or WebP, up to 2 MB. Stored in S3; customers see it at checkout."
+    <FieldShell id={id} label={field.label} hint={field.hint}
       error={error && <span className="inline-flex items-start gap-1.5 text-status-critical-text"><AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{error}</span>}>
       <div className="flex flex-wrap items-center gap-3">
         <Input id={id} type="file" accept="image/png,image/jpeg,image/webp" disabled={uploading} className="min-w-0 flex-1"
           aria-describedby={describedBy(id, { hint: true, error })} onChange={event => void pick(event.target.files?.[0])} />
         {uploading && <span className="text-label text-muted-foreground">Uploading…</span>}
-        {preview && <img src={preview} alt="QR code preview" className="h-12 w-12 rounded border object-contain" />}
+        {preview && <img src={preview} alt={field.preview} className="h-12 w-12 rounded border bg-white object-contain" />}
         {onRemove && current && !value && (
-          <Button type="button" variant="outline" size="sm" onClick={onRemove}>Remove QR</Button>
+          <Button type="button" variant="outline" size="sm" onClick={onRemove}>{field.remove}</Button>
         )}
       </div>
     </FieldShell>
@@ -340,6 +352,8 @@ function EditAccountDialog({ account, onClose }: { account: ReceivingAccount; on
     account_number: account.account_number ?? "", iban: account.iban ?? "" });
   const [qr, setQr] = useState<UploadedQr | null>(null);
   const [removeQr, setRemoveQr] = useState(false);
+  const [logo, setLogo] = useState<UploadedQr | null>(null);
+  const [removeLogo, setRemoveLogo] = useState(false);
   const [uploading, setUploading] = useState(false);
   const save = useMutation({
     // Only changed values are sent; a blank field keeps its value (the gateway never blanks a detail by accident).
@@ -349,6 +363,7 @@ function EditAccountDialog({ account, onClose }: { account: ReceivingAccount; on
       account_number: bank.account_number && bank.account_number !== account.account_number ? bank.account_number : null,
       iban: bank.iban && bank.iban !== account.iban ? bank.iban : null,
       qr_asset_key: qr?.key ?? null, remove_qr: removeQr && !qr,
+      ...(logo ? { logo_asset_key: logo.key } : removeLogo ? { remove_logo: true } : {}),
     }),
     onSuccess: updated => {
       toast.success(`${updated.label} updated.`);
@@ -374,6 +389,9 @@ function EditAccountDialog({ account, onClose }: { account: ReceivingAccount; on
           <QrField id={`${nameId}-qr`} value={qr} onChange={next => { setQr(next); if (next) setRemoveQr(false); }} onUploading={setUploading}
             current={removeQr ? null : account.qr_url} onRemove={() => setRemoveQr(true)} />
           {removeQr && <p role="status" className="text-label text-muted-foreground">The QR image will be removed when you save.</p>}
+          <QrField id={`${nameId}-logo`} kind="logo" value={logo} onChange={next => { setLogo(next); if (next) setRemoveLogo(false); }} onUploading={setUploading}
+            current={removeLogo ? null : account.logo_url} onRemove={() => setRemoveLogo(true)} />
+          {removeLogo && <p role="status" className="text-label text-muted-foreground">The bank logo will be removed when you save. Checkout will show the bank's initials.</p>}
           {save.error && <p role="alert" className="text-label text-status-critical-text">{save.error.message}</p>}
         </form>
         <DialogFooter className="gap-2 sm:gap-2">
