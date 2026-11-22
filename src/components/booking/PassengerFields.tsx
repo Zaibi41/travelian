@@ -5,7 +5,11 @@ import { CountryPicker } from "@/components/ui/country-picker";
 import { CountrySelect } from "@/components/admin/search/CountrySelect";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 import { addDaysIso, todayIso } from "@/lib/date-iso";
-import { REQUIRED_DOC_TEXT, TITLE_OPTIONS, dobFareNote, usesPassport, type DocType, type PassengerDetails, type PassengerField } from "@/lib/passenger-details";
+import { AlertTriangle } from "lucide-react";
+import {
+  LONG_NAME_WARNING, NAME_LETTERS_ONLY, NAME_PATTERN, REQUIRED_DOC_TEXT, TITLE_OPTIONS, cleanPassportNumber, dobCalendarStart, dobFareNote, genderForTitle,
+  nameIsLong, usesPassport, type DocType, type PassengerDetails, type PassengerField,
+} from "@/lib/passenger-details";
 import { cn } from "@/lib/utils";
 
 // One passenger's fields, shared by the website checkout and the admin hold form so both ask for the same things in
@@ -17,7 +21,8 @@ const STYLES = {
     grid: "grid grid-cols-1 gap-4 md:grid-cols-2",
     span: "md:col-span-2",
     label: "text-sm font-medium",
-    control: "mt-1.5 h-11 rounded-xl",
+    // #155: every field in error gets the same red border (aria-invalid), not only the date fields.
+    control: "mt-1.5 h-11 rounded-xl aria-[invalid=true]:border-destructive",
     gap: "mt-1.5",
     helper: "text-xs text-muted-foreground",
     error: "mt-1 text-xs text-destructive",
@@ -26,7 +31,7 @@ const STYLES = {
     grid: "grid grid-cols-1 gap-3 sm:grid-cols-2",
     span: "sm:col-span-2",
     label: "text-label font-medium text-muted-foreground",
-    control: "mt-1 h-control rounded-md text-body",
+    control: "mt-1 h-control rounded-md text-body aria-[invalid=true]:border-destructive",
     gap: "mt-1",
     helper: "text-helper text-muted-foreground",
     error: "mt-1 text-helper text-status-critical-text",
@@ -55,6 +60,12 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
   const id = (field: string) => `${idPrefix}-${field}`;
   const describedBy = (field: string, helper?: boolean) =>
     [helper ? `${id(field)}-helper` : null, errors[field] ? `${id(field)}-error` : null].filter(Boolean).join(" ") || undefined;
+  // #155: a name with digits or symbols is flagged as it is typed, not only after Continue.
+  const typedNameError = (field: "firstName" | "lastName") => {
+    const name = value[field].trim();
+    return name && !NAME_PATTERN.test(name) ? NAME_LETTERS_ONLY : undefined;
+  };
+  errors = { ...errors, firstName: errors.firstName ?? typedNameError("firstName"), lastName: errors.lastName ?? typedNameError("lastName") };
   const error = (field: string) => errors[field] && <p id={`${id(field)}-error`} className={s.error}>{errors[field]}</p>;
   const nameHelperId = `${idPrefix}-name-helper`;
   const today = todayIso();
@@ -75,7 +86,8 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
     <div className={s.grid}>
       <div>
         <label htmlFor={id("title")} className={s.label}>Title *</label>
-        <Select value={value.title} onValueChange={title => onChange({ title })}>
+        {/* #155: the title sets the gender (Mr, Mstr: Male; Mrs, Ms, Miss: Female); the gender can still be changed. */}
+        <Select value={value.title} onValueChange={title => onChange({ title, gender: genderForTitle(title) || value.gender })}>
           <SelectTrigger id={id("title")} className={s.control}>
             <SelectValue placeholder="Select title" />
           </SelectTrigger>
@@ -115,12 +127,18 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
       <p id={nameHelperId} className={cn(s.span, "-mt-2", s.helper)}>
         Name must match exactly as shown on your {passport ? "passport" : "CNIC"}.
       </p>
+      {nameIsLong(value) && (
+        <p role="status" className={cn(s.span, "-mt-2 flex items-center gap-1.5", s.helper)}>
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" aria-hidden="true" /> {LONG_NAME_WARNING}.
+        </p>
+      )}
 
       <div data-error-key={id("dob")}>
         <label htmlFor={id("dob")} className={s.label}>Date of Birth *</label>
         <div className={s.gap}>
           <DatePickerField id={id("dob")} value={value.dob} onChange={dob => onChange({ dob })} placeholder="Select date of birth"
             min={`${thisYear - 120}-01-01`} max={today} appearance={appearance} invalid={Boolean(errors.dob) || dobNote?.matches === false}
+            defaultMonth={dobCalendarStart(value.passengerType)} typeable={appearance === "public"}
             describedBy={errors.dob ? describedBy("dob") : dobNote ? dobNoteId : undefined} />
         </div>
         {errors.dob ? error("dob") : dobNote && (
@@ -147,7 +165,8 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
         <label htmlFor={id("docNumber")} className={s.label}>{passport ? "Passport Number *" : "CNIC / B-form Number *"}</label>
         <Input id={id("docNumber")} placeholder={passport ? "e.g. AB1234567" : "e.g. 3520112345671"} className={s.control} value={value.docNumber}
           autoComplete="off" maxLength={passport ? 12 : 13} aria-invalid={Boolean(errors.docNumber) || undefined} aria-describedby={describedBy("docNumber", true)}
-          onChange={event => onChange({ docNumber: passport ? event.target.value.toUpperCase() : event.target.value.replace(/[^\d]/g, "") })} />
+          onChange={event => onChange({ docNumber: passport ? cleanPassportNumber(event.target.value) : event.target.value.replace(/[^\d]/g, "") })}
+          onBlur={() => { if (passport && value.docNumber !== cleanPassportNumber(value.docNumber)) onChange({ docNumber: cleanPassportNumber(value.docNumber) }); }} />
         <p id={`${id("docNumber")}-helper`} className={cn("mt-1", s.helper)}>
           {passport ? "Use the passport number without spaces." : "Use 13 digits without dashes."}
         </p>

@@ -17,8 +17,11 @@ vi.mock("@/lib/public-booking", async importOriginal => ({ ...(await importOrigi
 import { LocaleProvider } from "@/contexts/LocaleContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import BookingPage from "./BookingPage";
+import { chooseOption } from "@/test/pick-date";
 
 Element.prototype.scrollIntoView ??= function scrollIntoView() {};
+globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+Element.prototype.hasPointerCapture ??= () => false;
 window.scrollTo = (() => {}) as typeof window.scrollTo;
 
 const FLIGHT = {
@@ -98,10 +101,8 @@ async function goToPayment() {
   renderAt(url());
   await waitFor(() => expect(screen.getByDisplayValue("3001234567")).toBeInTheDocument());
   fireEvent.click(screen.getByRole("button", { name: /^Continue/ }));
-  const dialog = await screen.findByRole("dialog", { name: "Confirm traveler names" });
-  fireEvent.click(within(dialog).getByRole("checkbox"));
-  fireEvent.click(within(dialog).getByRole("button", { name: "Continue" }));
   await screen.findByRole("heading", { name: "Review Booking" });
+  fireEvent.click(screen.getByRole("checkbox", { name: /match the passport/ }));
   expect(document.body.textContent).not.toMatch(INTERNAL);
   fireEvent.click(screen.getByRole("button", { name: /^Continue/ }));
   await screen.findByRole("heading", { name: "Payment Method" });
@@ -184,5 +185,70 @@ describe("Phone checkout action bar (#156)", () => {
     setWidth(1024);
     renderAt(url());
     expect(screen.queryByTestId("checkout-action-bar")).not.toBeInTheDocument();
+  });
+});
+
+describe("Traveler details and Review (#155)", () => {
+  it("flags digits in a name as it is typed, and warns on a long name", () => {
+    renderAt(url());
+    const first = document.getElementById("passenger-0-firstName") as HTMLInputElement;
+    fireEvent.change(first, { target: { value: "Ali123 @#" } });
+    expect(screen.getByText("Use letters only, as on the passport")).toBeInTheDocument();
+    expect(first).toHaveAttribute("aria-invalid", "true");
+    fireEvent.change(first, { target: { value: "A".repeat(30) } });
+    fireEvent.change(document.getElementById("passenger-0-lastName") as HTMLInputElement, { target: { value: "B".repeat(25) } });
+    expect(screen.queryByText("Use letters only, as on the passport")).not.toBeInTheDocument();
+    expect(screen.getByText(/Airlines may shorten long names/)).toBeInTheDocument();
+  });
+
+  it("removes spaces from a passport number and capitalises it", () => {
+    renderAt(url());
+    const passport = document.getElementById("passenger-0-docNumber") as HTMLInputElement;
+    fireEvent.change(passport, { target: { value: "ab 1234567" } });
+    expect(passport).toHaveValue("AB1234567");
+  });
+
+  it("starts with Gender from the Title (Mr: Male) and Mrs sets Female", () => {
+    renderAt(url());
+    expect(document.getElementById("passenger-0-gender")).toHaveTextContent("Male");
+    chooseOption(document.getElementById("passenger-0-title") as HTMLElement, "Mrs");
+    expect(document.getElementById("passenger-0-gender")).toHaveTextContent("Female");
+  });
+
+  it("date of birth can be typed DD/MM/YYYY", () => {
+    renderAt(url());
+    const dob = document.getElementById("passenger-0-dob") as HTMLInputElement;
+    fireEvent.change(dob, { target: { value: "14031990" } });
+    expect(dob).toHaveValue("14/03/1990");
+  });
+
+  it("Review lists every traveler's full name, contact and total, and asks for the names check there", async () => {
+    const params = new URLSearchParams(url({ adults: "2", children: "1", infants: "1" }).split("?")[1]);
+    const form = (passengerType: string, label: string, title: string, firstName: string, lastName: string, dob: string) => ({
+      passengerType, label, title, firstName, lastName, gender: title === "mrs" || title === "miss" ? "female" : "male", dob,
+      docNumber: "AB123456", expiryDate: "2032-01-01", nationality: "Pakistan", issuanceCountry: "Pakistan",
+    });
+    localStorage.setItem(`travelian.bookingDraft.${params.toString()}`, JSON.stringify({
+      passengerForms: [
+        form("adult", "Adult 1", "mr", "Ali", "Khan", "1990-01-01"), form("adult", "Adult 2", "mrs", "Ayesha", "Khan", "1992-05-05"),
+        form("child", "Child 1", "master", "Omar", "Khan", "2019-03-03"), form("infant", "Infant 1", "miss", "Sara", "Khan", "2026-01-10"),
+      ],
+      email: "traveller@example.invalid", phoneCode: "+92", phone: "3001234567",
+    }));
+    renderAt(`/booking?${params.toString()}`);
+    await waitFor(() => expect(screen.getByDisplayValue("3001234567")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /^Continue/ }));
+    await screen.findByRole("heading", { name: "Review Booking" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const list = screen.getByTestId("review-travelers");
+    expect(within(list).getAllByRole("listitem").map(item => item.firstChild?.textContent)).toEqual(["Mr Ali KHAN", "Mrs Ayesha KHAN", "Mstr Omar KHAN", "Miss Sara KHAN"]);
+    expect(screen.getByText("+92 3001234567")).toBeInTheDocument();
+    expect(screen.getByText("traveller@example.invalid")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Continue/ }));
+    expect(screen.getByText("Tick the box to confirm the names before you continue.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Payment Method" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: /match the passport/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Continue/ }));
+    await screen.findByRole("heading", { name: "Payment Method" });
   });
 });

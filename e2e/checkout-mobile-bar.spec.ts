@@ -81,10 +81,8 @@ for (const [width, height] of [[390, 844], [360, 740]]) {
 
       // Step 1 -> 2 -> 3 from the bar.
       await action.click();
-      const dialog = page.getByRole("dialog", { name: "Confirm traveler names" });
-      await dialog.getByRole("checkbox").first().click();
-      await dialog.getByRole("button", { name: "Continue" }).click();
       await expect(page.getByRole("heading", { name: "Review Booking" })).toBeVisible();
+      await page.getByRole("checkbox", { name: /match the passport/ }).click();
       await expect(bar.getByRole("button", { name: /^Continue/ })).toBeVisible();
       await bar.getByRole("button", { name: /^Continue/ }).click();
       await expect(page.getByRole("heading", { name: "Payment Method" })).toBeVisible();

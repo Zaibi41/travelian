@@ -2,13 +2,14 @@ import * as React from "react";
 import { CalendarIcon } from "lucide-react";
 import { DayPicker } from "react-day-picker";
 import { cn } from "@/lib/utils";
-import { dateToIso, formatPickedDate, isoToDate } from "@/lib/date-iso";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { dateToIso, dayFirstToIso, formatPickedDate, isoToDate, maskDayFirst } from "@/lib/date-iso";
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { buttonVariants } from "@/components/ui/button";
 
 // The one date picker for forms on the public site and in the admin (date of birth, passport expiry, travel and
 // transfer dates, coupon and package dates). Click (or Enter / Space) opens a calendar with month and year lists for a
-// quick jump; arrow keys move between days, Enter picks, Escape closes. Nothing is typed, so no date is misread.
+// quick jump; arrow keys move between days, Enter picks, Escape closes. With `typeable` the date can also be typed day
+// first (DD/MM/YYYY, never read month first) and the calendar opens from its own button.
 // The value is ISO yyyy-MM-dd (what forms keep and send); it is shown day first ("24 Nov 2026") everywhere.
 // Search bars keep their own range calendars (approved layouts).
 
@@ -32,10 +33,17 @@ export interface DatePickerFieldProps {
   /** "public": the website's 44px rounded field; "admin": the admin control height and radius. */
   appearance?: "public" | "admin";
   className?: string;
+  /** Where the calendar opens while nothing is picked (ISO), e.g. a date of birth about 30 years back. Default: today. */
+  defaultMonth?: string;
+  /** #155: the date can also be typed day first (DD/MM/YYYY) in the field; the calendar opens from its own button. */
+  typeable?: boolean;
 }
+
+const isoToDayFirst = (iso?: string | null) => (iso && isoToDate(iso) ? iso.split("-").reverse().join("/") : "");
 
 export function DatePickerField({
   id, value, onChange, min, max, placeholder = "Select date", disabled, invalid, describedBy, ariaLabel, appearance = "public", className,
+  defaultMonth, typeable,
 }: DatePickerFieldProps) {
   const selected = toDate(value);
   const minDate = toDate(min);
@@ -45,10 +53,11 @@ export function DatePickerField({
   const toYear = maxDate?.getFullYear() ?? thisYear + 25;
   const clamp = (date: Date) => (minDate && date < minDate ? minDate : maxDate && date > maxDate ? maxDate : date);
   const [open, setOpen] = React.useState(false);
-  const [month, setMonth] = React.useState<Date>(() => clamp(selected ?? new Date()));
+  const start = () => clamp(selected ?? toDate(defaultMonth) ?? new Date());
+  const [month, setMonth] = React.useState<Date>(start);
 
   React.useEffect(() => {
-    if (open) setMonth(clamp(selected ?? new Date()));
+    if (open) setMonth(start());
     // eslint-disable-next-line react-hooks/exhaustive-deps -- re-centre only when the calendar opens
   }, [open]);
 
@@ -59,8 +68,77 @@ export function DatePickerField({
     setOpen(false);
   };
 
+  // Typing (typeable only): the text follows the value when it changes from outside (the calendar, a saved draft).
+  const [text, setText] = React.useState(() => isoToDayFirst(value));
+  const [typedWrong, setTypedWrong] = React.useState("");
+  React.useEffect(() => {
+    if (!typeable) return;
+    setText(current => (dayFirstToIso(current) === (value || undefined) ? current : isoToDayFirst(value)));
+  }, [value, typeable]);
+  const typed = (raw: string) => {
+    const next = maskDayFirst(raw);
+    setText(next);
+    setTypedWrong("");
+    const iso = dayFirstToIso(next);
+    const inRange = iso && (!min || iso >= min) && (!max || iso <= max);
+    if (inRange) onChange(iso);
+    else if (value) onChange(undefined);
+  };
+  const typedOut = () => {
+    const iso = dayFirstToIso(text);
+    if (!text) setTypedWrong("");
+    else if (!iso) setTypedWrong("Enter the date as DD/MM/YYYY.");
+    else if (min && iso < min) setTypedWrong(`Choose ${formatPickedDate(min)} or later.`);
+    else if (max && iso > max) setTypedWrong(`Choose ${formatPickedDate(max)} or earlier.`);
+    else setTypedWrong("");
+  };
+  const wrongId = id ? `${id}-typed` : undefined;
+
+  const trigger = typeable ? (
+    <div
+      className={cn(
+        "flex w-full min-w-0 items-center border bg-background transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 hover:border-primary/50",
+        appearance === "public" ? "h-11 rounded-xl border-input text-sm" : "h-control rounded-md border-input text-body",
+        (invalid || Boolean(typedWrong)) && "border-destructive",
+        disabled && "cursor-not-allowed opacity-50",
+        className,
+      )}
+    >
+      <input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        placeholder="DD/MM/YYYY"
+        disabled={disabled}
+        aria-label={ariaLabel}
+        aria-invalid={invalid || Boolean(typedWrong) || undefined}
+        aria-describedby={[describedBy, typedWrong ? wrongId : null].filter(Boolean).join(" ") || undefined}
+        value={text}
+        onChange={event => typed(event.target.value)}
+        onBlur={typedOut}
+        className="h-full min-w-0 flex-1 rounded-[inherit] bg-transparent px-3 text-foreground outline-none placeholder:text-muted-foreground"
+      />
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          disabled={disabled}
+          aria-label="Open calendar"
+          aria-haspopup="dialog"
+          className="flex h-full w-11 shrink-0 items-center justify-center rounded-r-[inherit] text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <CalendarIcon className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </PopoverTrigger>
+    </div>
+  ) : null;
+
   return (
+    <>
     <Popover open={open} onOpenChange={next => !disabled && setOpen(next)}>
+      {typeable ? (
+        <PopoverAnchor asChild>{trigger}</PopoverAnchor>
+      ) : (
       <PopoverTrigger asChild>
         <button
           id={id}
@@ -83,6 +161,7 @@ export function DatePickerField({
           <span className="truncate">{selected ? formatPickedDate(value) : placeholder}</span>
         </button>
       </PopoverTrigger>
+      )}
       <PopoverContent
         className="w-auto max-w-[calc(100vw-1.5rem)] p-0"
         align="start"
@@ -148,5 +227,11 @@ export function DatePickerField({
         />
       </PopoverContent>
     </Popover>
+    {typeable && typedWrong && (
+      <p id={wrongId} className={appearance === "public" ? "mt-1 text-xs text-destructive" : "mt-1 text-helper text-status-critical-text"}>
+        {typedWrong}
+      </p>
+    )}
+    </>
   );
 }

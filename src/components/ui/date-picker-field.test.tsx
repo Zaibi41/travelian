@@ -6,12 +6,12 @@ import { pickDate } from "@/test/pick-date";
 
 globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
 
-function Harness({ min, max, initial }: { min?: string; max?: string; initial?: string }) {
+function Harness({ min, max, initial, typeable, defaultMonth }: { min?: string; max?: string; initial?: string; typeable?: boolean; defaultMonth?: string }) {
   const [value, setValue] = useState<string | undefined>(initial);
   return (
     <>
       <label htmlFor="dob">Date of Birth</label>
-      <DatePickerField id="dob" value={value} onChange={setValue} min={min} max={max} placeholder="Select date of birth" />
+      <DatePickerField id="dob" value={value} onChange={setValue} min={min} max={max} placeholder="Select date of birth" typeable={typeable} defaultMonth={defaultMonth} />
       <output data-testid="value">{value ?? ""}</output>
     </>
   );
@@ -47,5 +47,33 @@ describe("DatePickerField", () => {
     expect(field).toHaveAttribute("aria-invalid", "true");
     expect(field).toHaveAttribute("aria-describedby", "x-error");
     expect(field).toHaveTextContent("1 Jan 2031");
+  });
+
+  it("typeable: the date is typed day first, a wrong or out-of-range one says so, and the calendar still works (#155)", () => {
+    render(<Harness typeable min="1906-01-01" max="2026-11-19" />);
+    const input = screen.getByLabelText("Date of Birth");
+    expect(input).toHaveAttribute("placeholder", "DD/MM/YYYY");
+    fireEvent.change(input, { target: { value: "14031990" } });
+    expect(input).toHaveValue("14/03/1990");
+    expect(screen.getByTestId("value")).toHaveTextContent("1990-03-14");
+    fireEvent.change(input, { target: { value: "31/02/1990" } });
+    fireEvent.blur(input);
+    expect(screen.getByTestId("value")).toHaveTextContent("");
+    expect(screen.getByText("Enter the date as DD/MM/YYYY.")).toBeInTheDocument();
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    fireEvent.change(input, { target: { value: "01/01/2030" } });
+    fireEvent.blur(input);
+    expect(screen.getByText("Choose 19 Nov 2026 or earlier.")).toBeInTheDocument();
+    pickDate(screen.getByRole("button", { name: "Open calendar" }), "1988-04-12");
+    expect(screen.getByTestId("value")).toHaveTextContent("1988-04-12");
+    expect(input).toHaveValue("12/04/1988");
+  });
+
+  it("opens on the default month while nothing is picked (#155)", () => {
+    render(<Harness defaultMonth="1996-11-01" max="2026-11-19" />);
+    fireEvent.click(screen.getByLabelText("Date of Birth"));
+    const selects = screen.getByRole("dialog").querySelectorAll("select");
+    expect((selects[1] as HTMLSelectElement).value).toBe("1996");
+    expect((selects[0] as HTMLSelectElement).value).toBe("10");
   });
 });

@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PassengerFields } from "@/components/booking/PassengerFields";
 import { CheckoutActionBar, type CheckoutAction } from "@/components/booking/CheckoutActionBar";
-import { createPassengerDetails, passengerComplete, passengerErrors, requiredDocuments, type PassengerDetails, type RequiredDocument } from "@/lib/passenger-details";
+import { createPassengerDetails, genderForTitle, passengerComplete, passengerErrors, requiredDocuments, travelerFullName, type PassengerDetails, type RequiredDocument } from "@/lib/passenger-details";
 import { CountryCodePicker } from "@/components/ui/country-code-picker";
 import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Search, Info } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -284,8 +284,9 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const [recheckLoading, setRecheckLoading] = useState(false);
   const [recheckResult, setRecheckResult] = useState<{ oldPrice: number; newPrice: number } | null>(null);
   const [recheckAccepted, setRecheckAccepted] = useState(false);
-  const [nameConfirmationOpen, setNameConfirmationOpen] = useState(false);
+  // #155: the "names match the passport" check is on the Review step, under the travelers' names (no separate dialog).
   const [nameAcknowledged, setNameAcknowledged] = useState(false);
+  const [reviewTouched, setReviewTouched] = useState(false);
   // A group fare from the Travelian gateway: booked and priced by the gateway, never by this page.
   const groupTicketId = params.get("groupTicketId") || "";
   // A live flight fare from the gateway search (B19, D43): sent to the gateway as a booking request by these ids.
@@ -429,21 +430,29 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
     });
   };
 
-  const continueAfterNameConfirmation = () => {
-    setNameConfirmationOpen(false);
-    // B19: no simulated "fare confirmed with the airline" step. The gateway reprices a fare for real when the booking or
-    // request is sent; this page never claims a check it didn't make.
-    setStep(2);
-  };
-
   const handleContinue = () => {
     setTouched(true);
     if (!isStep1Valid) {
       focusFirstInvalidField();
       return;
     }
+    // B19: no simulated "fare confirmed with the airline" step. The gateway reprices a fare for real when the booking or
+    // request is sent; this page never claims a check it didn't make. Names are confirmed again after any change.
     setNameAcknowledged(false);
-    setNameConfirmationOpen(true);
+    setReviewTouched(false);
+    setStep(2);
+  };
+
+  const reviewConfirmed = nameAcknowledged && (!groupTicketId || fareTermsAccepted);
+  const continueFromReview = () => {
+    if (!reviewConfirmed) {
+      setReviewTouched(true);
+      const box = document.querySelector<HTMLElement>(!nameAcknowledged ? "#review-names-confirm" : "#review-fare-terms");
+      box?.scrollIntoView({ behavior: "smooth", block: "center" });
+      box?.focus({ preventScroll: true });
+      return;
+    }
+    setStep(3);
   };
 
   const draftKey = useMemo(() => `travelian.bookingDraft.${params.toString()}`, [params]);
@@ -876,7 +885,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const mobileAction: CheckoutAction | null = step === 1
     ? { label: "Continue", onClick: handleContinue }
     : step === 2
-      ? { label: "Continue", onClick: () => setStep(3) }
+      ? { label: "Continue", onClick: continueFromReview }
       : step === 3
         ? canPayHere
           ? { label: processing ? "Processing..." : "Pay & Book", onClick: requestPay, disabled: processing }
@@ -1058,11 +1067,72 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                 <Card className="shadow-card border-0">
                   <CardContent className="p-6">
                     <h2 className="text-lg font-bold text-foreground mb-1">Review Booking</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Seat selection and trip enhancements are paused for now. Continue to payment, or hold this booking and our team will confirm it.
-                    </p>
+                    <p className="text-sm text-muted-foreground">Check the traveler names before payment. They must match each passport or CNIC exactly.</p>
+
+                    {/* #155: what is being booked, so names are checked here, not in a dialog without them. */}
+                    <section aria-labelledby="review-travelers" className="mt-5">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 id="review-travelers" className="text-sm font-bold text-foreground">Travelers</h3>
+                        <button type="button" onClick={() => setStep(1)} className="min-h-11 rounded-lg px-2 text-sm font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Edit</button>
+                      </div>
+                      <ul className="mt-1 divide-y rounded-xl border" data-testid="review-travelers">
+                        {passengerForms.map((passenger, index) => (
+                          <li key={`${passenger.label}-${index}`} className="flex items-center justify-between gap-3 px-4 py-3">
+                            <span className="min-w-0 break-words text-sm font-semibold text-foreground">{travelerFullName(passenger)}</span>
+                            <span className="shrink-0 text-xs text-muted-foreground">{passenger.label}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+
+                    <section aria-labelledby="review-contact" className="mt-5">
+                      <h3 id="review-contact" className="text-sm font-bold text-foreground">Contact</h3>
+                      <dl className="mt-1 grid gap-1 rounded-xl border px-4 py-3 text-sm">
+                        <div className="flex flex-wrap justify-between gap-2"><dt className="text-muted-foreground">Mobile</dt><dd className="font-medium text-foreground">{phoneCode} {phone}</dd></div>
+                        {email.trim() && <div className="flex flex-wrap justify-between gap-2"><dt className="text-muted-foreground">Email</dt><dd className="min-w-0 break-all font-medium text-foreground">{email.trim()}</dd></div>}
+                      </dl>
+                    </section>
+
+                    <section aria-labelledby="review-fare" className="mt-5">
+                      <h3 id="review-fare" className="text-sm font-bold text-foreground">Fare</h3>
+                      <div className="mt-1 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-3 text-sm">
+                        <span className="text-muted-foreground">Total · {passengerSummary}</span>
+                        <span className="font-bold text-primary">{formatMoney(grandTotal)}</span>
+                      </div>
+                    </section>
+
+                    <div className="mt-5 space-y-3">
+                      <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 text-sm leading-5 ${reviewTouched && !nameAcknowledged ? "border-destructive" : ""}`}>
+                        <Checkbox
+                          id="review-names-confirm"
+                          checked={nameAcknowledged}
+                          onCheckedChange={(checked) => setNameAcknowledged(checked === true)}
+                          aria-invalid={reviewTouched && !nameAcknowledged ? true : undefined}
+                          aria-describedby={reviewTouched && !nameAcknowledged ? "review-names-error" : undefined}
+                          className="mt-0.5"
+                        />
+                        <span>I have checked each traveler’s first and last name, and they match the passport.</span>
+                      </label>
+                      {reviewTouched && !nameAcknowledged && <p id="review-names-error" className="-mt-2 text-xs text-destructive">Tick the box to confirm the names before you continue.</p>}
+                      {groupTicketId && (
+                        <>
+                          <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 text-sm leading-5 ${reviewTouched && !fareTermsAccepted ? "border-destructive" : ""}`}>
+                            <Checkbox
+                              id="review-fare-terms"
+                              checked={fareTermsAccepted}
+                              onCheckedChange={(checked) => setFareTermsAccepted(checked === true)}
+                              aria-invalid={reviewTouched && !fareTermsAccepted ? true : undefined}
+                              aria-describedby={reviewTouched && !fareTermsAccepted ? "review-terms-error" : undefined}
+                              className="mt-0.5"
+                            />
+                            <span>I understand this group fare is non-refundable and non-changeable. Names and dates cannot be changed after booking.</span>
+                          </label>
+                          {reviewTouched && !fareTermsAccepted && <p id="review-terms-error" className="-mt-2 text-xs text-destructive">Tick the box to accept the group fare terms.</p>}
+                        </>
+                      )}
+                    </div>
                     {/*
-                      Future seat and add-on UI:
+                      Future seat and add-on UI (paused):
                       <SeatMap selected={selectedSeat} onSelect={setSelectedSeat} />
                       {addons.map(addon => (...))}
                     */}
@@ -1081,7 +1151,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                           </TooltipContent> */}
                         </Tooltip>
                         )}
-                        <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6 hidden md:inline-flex">
+                        <Button onClick={continueFromReview} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6 hidden md:inline-flex">
                           Continue <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
                       </div>
@@ -1332,39 +1402,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
         <CheckoutActionBar total={formatMoney(grandTotal)} travelers={passengerSummary} action={mobileAction} summary={fareSummaryContent} />
       )}
 
-      <Dialog open={nameConfirmationOpen} onOpenChange={setNameConfirmationOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Confirm traveler names</DialogTitle>
-            <DialogDescription>
-              Check every traveler’s first and last name before continuing.
-            </DialogDescription>
-          </DialogHeader>
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border p-4 text-sm leading-5">
-            <Checkbox
-              checked={nameAcknowledged}
-              onCheckedChange={(checked) => setNameAcknowledged(checked === true)}
-              className="mt-0.5"
-            />
-            <span>I have checked each traveler’s first and last name, and they match the passport.</span>
-          </label>
-          {groupTicketId && (
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border p-4 text-sm leading-5">
-              <Checkbox
-                checked={fareTermsAccepted}
-                onCheckedChange={(checked) => setFareTermsAccepted(checked === true)}
-                className="mt-0.5"
-              />
-              <span>I understand this group fare is non-refundable and non-changeable. Names and dates cannot be changed after booking.</span>
-            </label>
-          )}
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setNameConfirmationOpen(false)}>Back</Button>
-            <Button disabled={!nameAcknowledged || (Boolean(groupTicketId) && !fareTermsAccepted)} onClick={continueAfterNameConfirmation}>Continue</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Fare recheck interstitial */}
       <Dialog open={recheckOpen} onOpenChange={(open) => { if (!open) { setRecheckOpen(false); setRecheckResult(null); } }}>
         <DialogContent className="sm:max-w-md">
@@ -1470,7 +1507,11 @@ function flightNumbersForDisplay(value: string) {
 }
 
 type PassengerForm = PassengerDetails;
-const createPassengerForm = createPassengerDetails;
+// #155: the title sets the gender (the default Mr: Male); the traveler can still change it.
+const createPassengerForm = (type: PassengerDetails["passengerType"], label: string): PassengerForm => {
+  const details = createPassengerDetails(type, label);
+  return { ...details, gender: genderForTitle(details.title) };
+};
 
 /** A draft date saved by an older version (a Date as a UTC timestamp) or now (ISO day) -> ISO day in local time. */
 function draftDay(value?: string) {
