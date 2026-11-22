@@ -11,7 +11,7 @@ import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users, Loader2 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
-import { format, addDays, parseISO } from "date-fns";
+import { format, addDays, parseISO, startOfDay } from "date-fns";
 import { GroupFareCalendar } from "@/components/GroupFareCalendar";
 import { useFlightFares } from "@/hooks/use-flight-fares";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,7 @@ import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleConte
 import { AirlineLogo } from "@/components/public/AirlineLogo";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
+import { keepReturnDate, returnDateError, RETURN_CLEARED_MESSAGE } from "@/lib/return-date";
 import { whatsappUrl } from "@/lib/site-config";
 import { airportByCode, loadPublicAirports } from "@/data/airports";
 import { isGroupTicketingProvider, groupTicketToFlight } from "@/lib/provider-systems";
@@ -266,6 +267,22 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     cabin: editTravelers.cabin.toLowerCase().replace(/\s+/g, "_"),
   });
   const [editReturnDateOpen, setEditReturnDateOpen] = useState(false);
+  // #151: the Return date uses the same fare calendar, for the way back from the departure date on; its message
+  // shows at the field.
+  const editReturnFares = useFlightFares(modifyOpen && editTripType === "roundtrip" && !!editDate, {
+    from: airportCodeOf(editTo), to: airportCodeOf(editFrom), adults: editTravelers.adults,
+    cabin: editTravelers.cabin.toLowerCase().replace(/\s+/g, "_"), start: editDate ? formatDateOnly(editDate) : undefined,
+  });
+  const [editReturnError, setEditReturnError] = useState<string>();
+  const editReturnRef = useRef<HTMLButtonElement>(null);
+  const pickEditDeparture = (date: Date | undefined) => {
+    setEditDate(date);
+    if (!date) return;
+    setEditDateOpen(false);
+    const kept = keepReturnDate(date, editReturnDate);
+    if (editReturnDate && !kept) { setEditReturnDate(undefined); setEditReturnError(RETURN_CLEARED_MESSAGE); }
+    if (editTripType === "roundtrip") setEditReturnDateOpen(true);
+  };
   const [editSegmentDateOpen, setEditSegmentDateOpen] = useState<number | null>(null);
   // Phones (#148): choosing From opens To (`key`), choosing To opens the departure date.
   const [editAdvance, setEditAdvance] = useState({ key: "", n: 0 });
@@ -282,14 +299,19 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       { from: to, to: "", date: returnDate },
     ]);
     setEditTravelers(travelers);
+    setEditReturnError(undefined);
     setModifyOpen(true);
   };
 
   const applyModify = () => {
     const effectiveSegments = editTripType === "multicity" ? editSegments : [];
-    if (editTripType === "roundtrip" && (!editReturnDate || (editDate && editReturnDate < editDate))) {
-      setApiMessage("Select a return date on or after the departure date.");
-      return;
+    if (editTripType === "roundtrip") {
+      const message = returnDateError(editDate, editReturnDate);
+      if (message) {
+        setEditReturnError(message);
+        editReturnRef.current?.focus();
+        return;
+      }
     }
     if (editTripType === "multicity" && (effectiveSegments.length < 2 || effectiveSegments.some((segment) => !/^[A-Z]{3}$/.test(segment.from) || !/^[A-Z]{3}$/.test(segment.to) || segment.from === segment.to || !segment.date))) {
       setApiMessage("Complete each multi-city flight with different airports and a travel date.");
@@ -2066,16 +2088,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       <GroupFareCalendar days={editFares.days} anyDate checking={editFares.checking}
                         status={editFares.status === "loading" || editFares.status === "error" ? editFares.status : "ready"}
                         selected={editDate ? format(editDate, "yyyy-MM-dd") : undefined}
-                        onPick={(picked) => { setEditDate(parseISO(picked)); setEditDateOpen(false); }} />
+                        onPick={(picked) => pickEditDeparture(parseISO(picked))} />
                     </div>
                   ) : (
                   <Calendar size="large"
                     mode="single"
                     selected={editDate}
-                    onSelect={(date) => {
-                      setEditDate(date);
-                      if (date) setEditDateOpen(false);
-                    }}
+                    onSelect={pickEditDeparture}
                     initialFocus
                     className="p-3 sm:p-5 pointer-events-auto"
                   />
@@ -2088,24 +2107,40 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Return Date</label>
                 <CalendarPopup open={editReturnDateOpen} onOpenChange={setEditReturnDateOpen}>
                   <CalendarPopupTrigger asChild>
-                    <button type="button" className="flex items-center gap-2 h-11 w-full bg-background border border-input rounded-xl px-3 text-sm text-left">
+                    <button ref={editReturnRef} type="button" aria-invalid={editReturnError ? true : undefined} aria-describedby={editReturnError ? "modify-return-error" : undefined}
+                      className={cn("flex items-center gap-2 h-11 w-full bg-background border border-input rounded-xl px-3 text-sm text-left", editReturnError && "border-destructive")}>
                       <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
                       {editReturnDate ? format(editReturnDate, "MMM dd, yyyy") : "Select return date"}
                     </button>
                   </CalendarPopupTrigger>
                   <CalendarPopupContent title="Select return date">
+                    {editDate && editReturnFares.ready ? (
+                      <div className="w-[min(46rem,calc(100vw-2.5rem))] overflow-y-auto p-3 sm:p-5">
+                        <GroupFareCalendar days={editReturnFares.days} anyDate checking={editReturnFares.checking}
+                          status={editReturnFares.status === "loading" || editReturnFares.status === "error" ? editReturnFares.status : "ready"}
+                          selected={editReturnDate ? format(editReturnDate, "yyyy-MM-dd") : undefined}
+                          min={format(editDate, "yyyy-MM-dd")} marked={format(editDate, "yyyy-MM-dd")}
+                          onPick={(picked) => { setEditReturnDate(parseISO(picked)); setEditReturnError(undefined); setEditReturnDateOpen(false); }} />
+                      </div>
+                    ) : (
                     <Calendar size="large"
                       mode="single"
                       selected={editReturnDate}
                       onSelect={(date) => {
                         setEditReturnDate(date);
-                        if (date) setEditReturnDateOpen(false);
+                        if (date) { setEditReturnError(undefined); setEditReturnDateOpen(false); }
                       }}
+                      disabled={editDate ? { before: startOfDay(editDate) } : undefined}
+                      defaultMonth={editReturnDate ?? editDate}
+                      modifiers={editDate ? { departure: editDate } : undefined}
+                      modifiersClassNames={editDate ? { departure: "ring-2 ring-inset ring-primary" } : undefined}
                       initialFocus
                       className="p-3 sm:p-5 pointer-events-auto"
                     />
+                    )}
                   </CalendarPopupContent>
                 </CalendarPopup>
+                {editReturnError && <p id="modify-return-error" role="alert" className="mt-1 text-xs text-destructive">{editReturnError}</p>}
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
