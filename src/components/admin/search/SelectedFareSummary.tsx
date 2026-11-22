@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { AirlineLogo } from "@/components/admin/ui/AirlineLogo";
 import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { formatMoney } from "@/lib/admin-bookings/format";
 import { airlineLabel, fareBaggage, formatDuration, stopsLabel } from "@/lib/admin-search/flights";
@@ -16,9 +17,13 @@ export function FlightFareDetails({ draft }: { draft: HoldDraft }) {
     <>
       {draft.picks.map(({ journey, flight }) => (
         <div key={journey.direction} className="flex min-w-0 flex-col gap-1">
-          <p className="min-w-0 truncate text-body text-foreground" title={airlineLabel(flight)}>
-            <span className="font-semibold">{airlineLabel(flight)}</span> <span className="text-muted-foreground">{flight.flight_number ?? ""}</span>
-          </p>
+          <div className="flex min-w-0 items-center gap-2">
+            {/* #88: the airline's logo (Travelian's logo file, else the IATA code badge), as on the search results. */}
+            <AirlineLogo airline={airlineLabel(flight)} flightNumber={flight.flight_number ?? undefined} code={flight.airline_code} className="h-9 w-9 rounded-xl" />
+            <p className="min-w-0 truncate text-body text-foreground" title={airlineLabel(flight)}>
+              <span className="font-semibold">{airlineLabel(flight)}</span> <span className="text-muted-foreground">{flight.flight_number ?? ""}</span>
+            </p>
+          </div>
           <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2">
             <div><p className="text-section font-semibold tabular-nums text-foreground">{time(flight.departure_local)}</p><p className="text-label text-muted-foreground">{journey.origin}</p></div>
             <p className="truncate text-center text-label text-muted-foreground">{[formatDuration(flight.duration_minutes), stopsLabel(flight)].filter(Boolean).join(" · ") || "—"}</p>
