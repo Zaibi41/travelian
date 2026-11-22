@@ -15,6 +15,7 @@ import { format, addDays, parseISO } from "date-fns";
 import { GroupFareCalendar } from "@/components/GroupFareCalendar";
 import { useFlightFares } from "@/hooks/use-flight-fares";
 import { cn } from "@/lib/utils";
+import { FARE_RULES_FALLBACK, refundStatus } from "@/lib/fare-refund";
 import { SEO } from "@/components/SEO";
 import { TravelersClassPicker, formatTravelers, type TravelersValue } from "@/components/public/TravelersClassPicker";
 import { fetchFlightFares, hydrateSooperFareOptions, searchFlights, type FareOption, type TravelianFlight } from "@/lib/travelian-api";
@@ -618,16 +619,18 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         amenities: fare.amenities,
       })).sort((a, b) => a.price.total - b.price.total);
     }
-    const isNonRefundable = flight.refundable === false;
+    // #149: refundable only when the flight data says so; unknown falls back to the airline's fare rules.
+    const refundText = flight.refundable === false ? "Non-refundable as per airline policy."
+      : flight.refundable === true ? "Refundable subject to airline fare conditions." : `${FARE_RULES_FALLBACK}.`;
     return [{
       tier: cleanFareTier(flight.fareBrand, "Fare option", flight),
       price: { currency: flight.currency, total: flight.price },
       bags: flight.baggage,
       meal: flight.meal,
-      refund: isNonRefundable ? "Non-refundable as per airline policy." : "Refundable subject to airline fare conditions.",
+      refund: refundText,
       change: "Permitted subject to airline date change fees and fare difference.",
       noShow: "",
-      cancellation: isNonRefundable ? "Non-refundable as per airline policy." : "Refundable subject to airline fare conditions.",
+      cancellation: refundText,
       conditions: "",
       amenities: [],
     }];
@@ -730,7 +733,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return whatsappUrl(message);
   };
 
-  const bookingHref = (flight: TravelianFlight, fare?: { tier: string; price: { base?: number | null; taxes?: number | null; total: number; currency?: string }; amenities?: string[]; gatewayFareIds?: string[] }) => {
+  const bookingHref = (flight: TravelianFlight, fare?: { tier: string; price: { base?: number | null; taxes?: number | null; total: number; currency?: string }; amenities?: string[]; gatewayFareIds?: string[]; refund?: string | null; cancellation?: string | null }) => {
     if (adminMode) {
       // Admin checkout never takes a price or supplier flight ID from the URL: the gateway
       // must reprice the fare (booking is blocked until it can). Itinerary only.
@@ -772,6 +775,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     if (Number.isFinite(Number(fare?.price.base))) query.set("baseFare", String(fare?.price.base));
     if (Number.isFinite(Number(fare?.price.taxes))) query.set("taxes", String(fare?.price.taxes));
     if (fare?.amenities?.length) query.set("farePerks", fare.amenities.join("|"));
+    // #149: checkout shows Refundable / Non-refundable only when the fare data says so (same rule as fare details).
+    const refund = refundStatus(flight.refundable, fare ? fare.cancellation || fare.refund : flight.fareOptions?.[0]?.refund);
+    if (refund) query.set("refund", refund);
     if (flight.layovers?.length) query.set("layovers", JSON.stringify(flight.layovers));
     if (flight.segments?.length) query.set("segments", JSON.stringify(flight.segments));
     if (tripType === "roundtrip" && returnDate) query.set("return", format(returnDate, "MMM dd, yyyy"));
@@ -2211,9 +2217,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         )}
                         <div className="space-y-3">
                           {fareRows(fareDetails.flight).map((fare) => {
-                            const isNonRefundable =
-                              fareDetails.flight.refundable === false ||
-                              /non[- ]?refundable|not refundable|no refund/i.test(fare.cancellation || fare.refund || "");
+                            const refund = refundStatus(fareDetails.flight.refundable, fare.cancellation || fare.refund);
+                            const isNonRefundable = refund === "non_refundable";
                             return (
                               <div
                                 key={`${fare.tier}-${fare.price.total}`}
@@ -2225,6 +2230,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                       {fare.tier}
                                     </p>
                                   </div>
+                                  {refund && (
                                   <Badge
                                     variant={isNonRefundable ? "secondary" : "outline"}
                                     className={cn(
@@ -2234,6 +2240,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                   >
                                     {isNonRefundable ? "Non-Refundable" : "Refundable"}
                                   </Badge>
+                                  )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3 py-3 sm:grid-cols-3">
@@ -2293,12 +2300,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     <div className="space-y-2">
                       {fareRows(fareDetails.flight).map((fare, idx) => {
                         const isOpen = expandedFareRule === fare.tier || (expandedFareRule === null && idx === 0);
-                        const isNonRefundable =
-                          fareDetails.flight.refundable === false ||
-                          /non[- ]?refundable|not refundable|no refund/i.test(fare.cancellation || fare.refund || "");
+                        const refund = refundStatus(fareDetails.flight.refundable, fare.cancellation || fare.refund);
+                        const isNonRefundable = refund === "non_refundable";
                         const defaultCancellation = isNonRefundable
                           ? "Non-refundable as per airline policy."
-                          : "Refundable subject to airline fare conditions and cancellation penalties.";
+                          : refund === "refundable" ? "Refundable subject to airline fare conditions and cancellation penalties." : `${FARE_RULES_FALLBACK}.`;
                         const defaultDateChange = "Permitted subject to airline date change fees and any fare difference.";
 
                         const cancellation = cleanFareText(fare.cancellation || fare.refund, defaultCancellation);
@@ -2312,12 +2318,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             >
                               <span className="truncate font-bold text-primary" title={fare.tier}>{fare.tier}</span>
                               <span className="flex shrink-0 items-center gap-3">
+                                {refund && (
                                 <span className={cn(
                                   "rounded-lg px-2.5 py-1 text-xs font-semibold",
                                   isNonRefundable ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
                                 )}>
                                   {isNonRefundable ? "Non-Refundable" : "Refundable"}
                                 </span>
+                                )}
                                 {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                               </span>
                             </button>

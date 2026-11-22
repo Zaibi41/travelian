@@ -28,6 +28,7 @@ import type { UmrahPackage } from "@/data/models";
 import { findSeedUmrahOffer, umrahOfferToPackage } from "@/data/services/umrah-adapter";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { format, addDays } from "date-fns";
+import { REFUND_LABEL, type RefundStatus } from "@/lib/fare-refund";
 import { useAdmin } from "@/contexts/AdminStore";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -68,7 +69,7 @@ interface ProductCtx {
   emoji: string;
   base: number;
   currency: string;
-  extra?: { airline?: string; flightNumber?: string; from?: string; to?: string; fromCode?: string; toCode?: string; date?: string; returnDate?: string; cabin?: string; airlineImage?: string; fareTier?: string; farePerks?: string[]; layovers?: BookingLayover[]; segments?: BookingSegment[]; baseFare?: number | null; taxes?: number | null };
+  extra?: { airline?: string; flightNumber?: string; from?: string; to?: string; fromCode?: string; toCode?: string; date?: string; returnDate?: string; cabin?: string; airlineImage?: string; fareTier?: string; farePerks?: string[]; refund?: RefundStatus; layovers?: BookingLayover[]; segments?: BookingSegment[]; baseFare?: number | null; taxes?: number | null };
 }
 
 type BookingLayover = {
@@ -107,6 +108,9 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
     const fareTier = params.get("fare") || "";
     const airlineImage = params.get("airlineImage") || "";
     const farePerks = (params.get("farePerks") || "").split("|").map((item) => item.trim()).filter(Boolean);
+    // #149: only what the fare data said (results put it in the link); anything else is unknown.
+    const refundParam = params.get("refund");
+    const refund: RefundStatus = refundParam === "refundable" || refundParam === "non_refundable" ? refundParam : null;
     const layovers = parseJsonParam<BookingLayover[]>(params, "layovers", []);
     const segments = parseJsonParam<BookingSegment[]>(params, "segments", []);
     const baseFare = params.has("baseFare") ? Number(params.get("baseFare")) : null;
@@ -122,7 +126,7 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
       emoji: "",
       base: price,
       currency,
-      extra: { airline, flightNumber, from, to, date, returnDate, cabin, airlineImage, fareTier, farePerks, layovers, segments, baseFare: Number.isFinite(baseFare) ? baseFare : null, taxes: Number.isFinite(taxes) ? taxes : null },
+      extra: { airline, flightNumber, from, to, date, returnDate, cabin, airlineImage, fareTier, farePerks, refund, layovers, segments, baseFare: Number.isFinite(baseFare) ? baseFare : null, taxes: Number.isFinite(taxes) ? taxes : null },
     };
   }
   if (type === "hotel") {
@@ -233,7 +237,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const ctxTaxes = productCtx.extra?.taxes;
   const sourceCurrency = String(productCtx.currency || activeCurrency || "PKR").toUpperCase();
   const displayCurrency = activeCurrency || "PKR";
-  const sourceCurrencyLabel = sourceCurrency === displayCurrency ? "" : `Supplier fare received in ${sourceCurrency}. Displayed in ${displayCurrency}.`;
+  const sourceCurrencyLabel = sourceCurrency === displayCurrency ? "" : `Fare received in ${sourceCurrency}. Displayed in ${displayCurrency}.`;
   const knownBaseFare = typeof ctxBaseFare === "number" && Number.isFinite(ctxBaseFare) && ctxBaseFare > 0;
   const knownTaxes = typeof ctxTaxes === "number" && Number.isFinite(ctxTaxes) && ctxTaxes > 0;
   // When the supplier only returns a single total, synthesize an industry-standard split (≈78% base / 22% taxes & fees) so the breakdown card is never a single line.
@@ -311,6 +315,8 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
     return () => controller.abort();
   }, [gatewayFlight, gatewaySearchId, fareIdsKey]);
   const flightPayable = gatewayFlight && Boolean(flightOptions?.held);
+  // #149: Refundable / Non-refundable only when the fare data says so. Group fares are always non-refundable.
+  const ctxRefund: RefundStatus = isFlight ? (groupTicketId ? "non_refundable" : productCtx.extra?.refund ?? null) : null;
   const paymentOptions = groupTicketId ? {
     card: Boolean(methods?.card), bank: Boolean(methods?.bank_transfer), wallet: Boolean(methods?.jazzcash),
   } : flightPayable ? {
@@ -703,7 +709,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
         console.error("Unable to persist booking to Travelian API", error);
         toast({
           title: "Booking saved locally",
-          description: "The admin database save did not complete. Please retry if it does not appear in the admin panel.",
+          description: "It was not sent to Travelian. Please try again or contact our team.",
           variant: "destructive",
         });
       }
@@ -906,14 +912,13 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                 <div className="grid gap-2 rounded-2xl border bg-card p-3 text-xs text-muted-foreground sm:grid-cols-3">
                   <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-success" /> Secure SSL checkout</span>
                   <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5 text-success" /> Your card is not charged yet</span>
-                  <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-success" /> Supplier verification before ticketing</span>
+                  <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-success" /> We confirm your fare before ticketing</span>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <Badge variant="outline" className="gap-1 rounded-full border-success/30 bg-success/10 px-2.5 py-1 text-success">
-                      <Check className="h-3 w-3" /> Free cancellation until {format(addDays(new Date(), 1), "MMM d, HH:mm")}
-                    </Badge>
-                    <span className="text-muted-foreground">Refundable per supplier fare rules. Review terms before payment.</span>
+                    {/* #149: no invented free-cancellation deadline; refundability only when the fare data says so. */}
+                    {ctxRefund && <RefundBadge status={ctxRefund} />}
+                    <span className="text-muted-foreground">Cancellation and refund rules: as per airline fare rules.</span>
                   </div>
                   <Button onClick={handleContinue} className="gradient-primary h-11 rounded-xl px-6 text-primary-foreground">
                     Continue <ChevronRight className="ml-1 h-4 w-4" />
@@ -928,7 +933,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                   <CardContent className="p-6">
                     <h2 className="text-lg font-bold text-foreground mb-1">Review Booking</h2>
                     <p className="text-sm text-muted-foreground">
-                      Seat selection and trip enhancements are paused for now. Continue to payment or hold this booking for admin follow-up.
+                      Seat selection and trip enhancements are paused for now. Continue to payment, or hold this booking and our team will confirm it.
                     </p>
                     {/*
                       Future seat and add-on UI:
@@ -969,7 +974,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     {([
                       { id: "card", label: "Credit/Debit Card", icon: CreditCard, desc: "Pay online through secure PayFast checkout", badges: ["Visa", "Mastercard"] as string[] },
                       { id: "1link", label: "1Link", icon: Wallet, desc: "Pay through PayFast 1Link checkout", badges: ["1Link"] as string[] },
-                      { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "Available after wallet payment configuration", badges: ["JazzCash", "Easypaisa"] as string[] },
+                      { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "Pay from your mobile wallet", badges: ["JazzCash", "Easypaisa"] as string[] },
                       { id: "bank", label: "Bank Transfer", icon: Building2, desc: "Direct bank transfer", badges: [] as string[] },
                     ]).filter(method => (method.id === "bank" ? paymentOptions.bank : method.id === "wallet" ? paymentOptions.wallet : paymentOptions.card))
                     .map(method => (
@@ -1046,13 +1051,13 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
-                            {isCustomer ? "Reserve / Request Booking" : isFlight ? "Book Only" : "Request Without Payment"}
+                            {isCustomer ? "Reserve / Request Booking" : isFlight ? "Reserve now, pay later" : "Request Without Payment"}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent className="max-w-xs">
                           {isCustomer
                             ? "Reserve now and let Travelian confirm the itinerary before payment."
-                            : "Creates a saved booking with payment pending. Ticketing starts only after payment or admin approval."}
+                            : "Saves your booking with payment pending. Tickets are issued only after payment or confirmation by our team."}
                         </TooltipContent>
                       </Tooltip>
                       <Button asChild variant="outline" className="rounded-xl h-11 px-5">
@@ -1276,9 +1281,9 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                         Fare rules summary
                       </p>
                       <p className="mt-1">Includes 7kg carry-on.</p>
-                      <p className="mt-1">Free cancellation until {format(addDays(new Date(), 1), "MMM d, HH:mm")}.</p>
-                      <p className="mt-1">Refundability and change fees follow supplier fare rules and are verified before ticketing.</p>
-                      {fareSplitIsEstimated && <p className="mt-1">Base/tax split is estimated until the supplier confirms the fare.</p>}
+                      {ctxRefund && <p className="mt-1">{REFUND_LABEL[ctxRefund]}.</p>}
+                      <p className="mt-1">Refund and change fees follow the airline's fare rules. We confirm them before ticketing.</p>
+                      {fareSplitIsEstimated && <p className="mt-1">Base/tax split is estimated until the airline confirms the fare.</p>}
                     </div>
                   )}
                   <div className="mt-2 flex justify-between border-t pt-2 text-base font-black">
@@ -1287,7 +1292,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <Badge variant="outline" className="gap-1 rounded-full px-2.5 py-1 text-xs"><Shield className="h-3 w-3 text-success" /> Live Supplier Fare</Badge>
                   <Badge variant="outline" className="gap-1 rounded-full px-2.5 py-1 text-xs"><Lock className="h-3 w-3 text-success" /> Instant Verification</Badge>
                   <Badge variant="outline" className="rounded-full px-2.5 py-1 text-xs">{passengerSummary}</Badge>
                   <Badge variant="outline" className="rounded-full px-2.5 py-1 text-xs">{ctxCabin}</Badge>
@@ -1341,7 +1345,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
             <DialogTitle>{recheckLoading ? "Verifying fare with airline…" : recheckResult ? "Fare has changed" : "Fare confirmed"}</DialogTitle>
             <DialogDescription>
               {recheckLoading
-                ? "We are re-pricing this itinerary with the supplier to make sure the fare is still available."
+                ? "We are re-pricing this itinerary with the airline to make sure the fare is still available."
                 : recheckResult
                   ? `The airline returned a new price. Previous total ${formatMoney(recheckResult.oldPrice)} → New total ${formatMoney(recheckResult.newPrice)}.`
                   : "Your fare is confirmed at the displayed total."}
@@ -1392,6 +1396,16 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// #149: the fare's refundability, shown only when the fare data says so (colour always with icon and text).
+function RefundBadge({ status }: { status: Exclude<RefundStatus, null> }) {
+  const refundable = status === "refundable";
+  return (
+    <Badge variant="outline" className={`gap-1 rounded-full px-2.5 py-1 ${refundable ? "border-success/30 bg-success/10 text-success" : "border-warning/30 bg-warning/10 text-foreground"}`}>
+      {refundable ? <Check className="h-3 w-3" /> : <AlertCircle className="h-3 w-3 text-warning" />} {REFUND_LABEL[status]}
+    </Badge>
   );
 }
 
