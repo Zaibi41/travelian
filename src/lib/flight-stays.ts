@@ -135,3 +135,54 @@ export function journeyMinutes(segments: (StaySegment & { duration?: string | nu
   }
   return segments.length ? total : undefined;
 }
+
+export interface CheckoutJourney {
+  /** "Outbound" / "Return" on a round trip, "Flight 1", "Flight 2"… on a multi-city trip, "" on a one-way trip. */
+  label: string;
+  /** Flying time plus stays, from the flights' own durations (#153); undefined when not every duration is known. */
+  duration?: string;
+  stops: number;
+  /** "Non-stop", "1 Stop", "2 Stops". */
+  stopText: string;
+}
+
+const iataOf = (value: string | null | undefined) => {
+  const text = clean(value).toUpperCase();
+  const code = text.match(/\(([A-Z]{3})\)/)?.[1] || text.match(/^[A-Z]{3}$/)?.[0];
+  return code || text;
+};
+
+/** The checkout summary's journeys (#153): a round trip splits where it reaches the destination, a multi-city trip
+ *  where the passenger stays a day or more; the time of each comes from the flights' durations and the stays between
+ *  them (journeyMinutes), never from subtracting one airport's local clock from another's. */
+export function checkoutJourneys(
+  segments: (StaySegment & { duration?: string | null })[],
+  options: { destination?: string | null; trip?: string | null } = {},
+): CheckoutJourney[] {
+  if (!segments.length) return [];
+  const groups: (typeof segments)[] = [];
+  const roundtrip = options.trip === "roundtrip";
+  const destination = iataOf(options.destination);
+  let current: typeof segments = [];
+  segments.forEach((segment, index) => {
+    if (index && !roundtrip) {
+      const before = segments[index - 1];
+      const stay = gapMinutes(before.arrivalTimestamp || before.arrivalTime, segment.departureTimestamp || segment.departureTime);
+      if (options.trip === "multicity" && stay !== undefined && stay >= 24 * 60) { groups.push(current); current = []; }
+    }
+    current.push(segment);
+    if (roundtrip && groups.length === 0 && destination && iataOf(segment.destination) === destination && index < segments.length - 1) {
+      groups.push(current); current = [];
+    }
+  });
+  if (current.length) groups.push(current);
+  return groups.map((group, index) => {
+    const stops = Math.max(0, group.length - 1);
+    return {
+      label: groups.length < 2 ? "" : roundtrip ? (index ? "Return" : "Outbound") : `Flight ${index + 1}`,
+      duration: minutesText(journeyMinutes(group)),
+      stops,
+      stopText: stopCountText(stops),
+    };
+  });
+}

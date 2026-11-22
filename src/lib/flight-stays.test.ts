@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { durationMinutes, gapMinutes, journeyMinutes, minutesText, placeName, placeOf, stayAt, stayBetween, stopCountText, stopLine, stopSummary, type Place } from "./flight-stays";
+import { checkoutJourneys, durationMinutes, gapMinutes, journeyMinutes, minutesText, placeName, placeOf, stayAt, stayBetween, stopCountText, stopLine, stopSummary, type Place } from "./flight-stays";
 
 // The shared airport list's shape (src/data/airports.json): city and full country name per code.
 const AIRPORTS: Record<string, Place> = {
@@ -90,5 +90,50 @@ describe("a journey's total time across time zones", () => {
     expect(journeyMinutes([{ duration: "3h 30m" }, { duration: undefined }])).toBeUndefined();
     expect(journeyMinutes([{ duration: "3h", arrivalTime: "TBA" }, { duration: "1h", departureTime: "TBA" }])).toBeUndefined();
     expect(journeyMinutes([])).toBeUndefined();
+  });
+});
+
+describe("checkout journey durations (#153)", () => {
+  const seg = (origin: string, destination: string, dep: string, arr: string, duration?: string) =>
+    ({ origin, destination, departureTime: dep, arrivalTime: arr, departureTimestamp: dep, arrivalTimestamp: arr, duration });
+
+  it("uses the flight's own time, not local arrival minus local departure (LHE +5 -> DXB +4)", () => {
+    // 11:50 PKT -> 14:35 GST is 3h 45m; the clocks alone say 2h 45m.
+    expect(checkoutJourneys([seg("LHE", "DXB", "2026-12-08 11:50", "2026-12-08 14:35", "3h 45m")], { destination: "DXB", trip: "oneway" }))
+      .toEqual([{ label: "", duration: "3h 45m", stops: 0, stopText: "Non-stop" }]);
+  });
+
+  it("works westbound where the local arrival clock is before the departure clock (DXB -> LHE is fine, DXB -> JFK)", () => {
+    expect(checkoutJourneys([seg("DXB", "JFK", "2026-12-08 08:00", "2026-12-08 07:30", "14h 30m")])[0].duration).toBe("14h 30m");
+    expect(checkoutJourneys([seg("DXB", "LHE", "2026-12-08 16:00", "2026-12-08 20:10", "3h 10m")])[0].duration).toBe("3h 10m");
+  });
+
+  it("adds the stay between flights for a 1-stop trip (LHE -> DXB -> IST)", () => {
+    const journeys = checkoutJourneys([
+      seg("LHE", "DXB", "2026-12-08 11:50", "2026-12-08 14:35", "3h 45m"),
+      seg("DXB", "IST", "2026-12-08 16:35", "2026-12-08 20:35", "5h 0m"),
+    ], { destination: "IST", trip: "oneway" });
+    expect(journeys).toEqual([{ label: "", duration: "10h 45m", stops: 1, stopText: "1 Stop" }]);
+  });
+
+  it("splits a round trip at the destination and gives each direction its own time and stops", () => {
+    const journeys = checkoutJourneys([
+      seg("LHE", "DXB", "2026-12-08 11:50", "2026-12-08 14:35", "3h 45m"),
+      seg("DXB", "LHE", "2026-12-15 16:00", "2026-12-15 20:10", "3h 10m"),
+    ], { destination: "DXB", trip: "roundtrip" });
+    expect(journeys.map((j) => `${j.label} ${j.duration} ${j.stopText}`)).toEqual(["Outbound 3h 45m Non-stop", "Return 3h 10m Non-stop"]);
+  });
+
+  it("splits a multi-city trip where the passenger stays a day or more", () => {
+    const journeys = checkoutJourneys([
+      seg("LHE", "DXB", "2026-12-08 11:50", "2026-12-08 14:35", "3h 45m"),
+      seg("DXB", "IST", "2026-12-12 09:00", "2026-12-12 13:00", "5h 0m"),
+    ], { trip: "multicity" });
+    expect(journeys.map((j) => j.label)).toEqual(["Flight 1", "Flight 2"]);
+  });
+
+  it("leaves the time out (never a wrong one) when a flight's duration is missing", () => {
+    expect(checkoutJourneys([seg("LHE", "DXB", "2026-12-08 11:50", "2026-12-08 14:35")])[0].duration).toBeUndefined();
+    expect(checkoutJourneys([])).toEqual([]);
   });
 });
