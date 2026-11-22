@@ -22,6 +22,17 @@
   }
 }
 
+/* #156: phones keep checkout's total and main button in a bar at the bottom; leave room so the footer and the
+   move-to-top button are never under it. */
+@media (max-width: 767px) {
+  body.has-checkout-action-bar {
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+  }
+  body.has-checkout-action-bar button[aria-label="Move to top"] {
+    bottom: calc(7rem + env(safe-area-inset-bottom));
+  }
+}
+
 @layer utilities {
   .gradient-primary {
     background: var(--gradient-primary);
