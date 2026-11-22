@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PassengerFields } from "@/components/booking/PassengerFields";
+import { CheckoutActionBar, type CheckoutAction } from "@/components/booking/CheckoutActionBar";
 import { createPassengerDetails, passengerComplete, passengerErrors, requiredDocuments, type PassengerDetails, type RequiredDocument } from "@/lib/passenger-details";
 import { CountryCodePicker } from "@/components/ui/country-code-picker";
 import { Check, Shield, Lock, CreditCard, Wallet, Building2, ChevronRight, AlertCircle, ArrowLeft, Plane, Download, Search, Info } from "lucide-react";
@@ -22,6 +23,7 @@ import { saveBooking, saveGatewayBooking, type BookingRecord, type BookingTravel
 import { submitHostedPayment } from "@/lib/payment-api";
 import { downloadETicket } from "@/lib/eticket-pdf-lazy";
 import { toast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { SEO } from "@/components/SEO";
 import { AirlineLogo } from "@/components/public/AirlineLogo";
 import type { UmrahPackage } from "@/data/models";
@@ -753,6 +755,134 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
     : (productCtx.type as string) === "umrah" ? "/umrah-packages"
     : "/umrah-packages";
 
+  // The flight and fare summary: the sidebar on wide screens, a sheet from the bottom bar on phones (#156).
+  const fareSummaryContent = (
+    <>
+      <div className="mb-4 flex gap-3 border-b pb-4">
+        <div className="shrink-0">
+          {isFlight ? (
+            <AirlineLogo airline={ctxAirline || productCtx.title} flightNumber={ctxFlightNo} imageUrl={productCtx.extra?.airlineImage} />
+          ) : (
+            <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-accent text-2xl">
+              {productCtx.emoji}
+            </div>
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="truncate text-base font-bold text-foreground">{ctxAirline || productCtx.title}</h3>
+              <p className="mt-0.5 text-xs font-semibold text-foreground">{flightNumbersForDisplay(ctxFlightNo)}</p>
+            </div>
+            {isFlight && <Badge className="shrink-0 rounded-md bg-primary/10 text-primary hover:bg-primary/10">{stopSummary}</Badge>}
+          </div>
+          <p className="mt-2 text-sm font-semibold text-foreground">{ctxFrom} &rarr; {ctxTo}</p>
+          <p className="text-xs text-muted-foreground">{ctxDate} &bull; {passengerSummary} &bull; {ctxCabin}</p>
+        </div>
+      </div>
+      {isFlight && (ctxSegments.length > 0 || ctxLayovers.length > 0) && (
+        <div className="mb-4 rounded-2xl border bg-slate-50/80 p-3 text-xs text-slate-600">
+          {ctxSegments.length > 0 && (
+            <div className="space-y-3">
+              {ctxSegments.map((segment, index) => (
+                <div key={`${segment.flightNumber || "segment"}-${index}`}>
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                    <div className="text-left">
+                      <p className="text-lg font-black text-foreground">{bookingTime(segment.departureTime)}</p>
+                      <p className="font-bold text-foreground">{segment.origin || "Origin TBA"}</p>
+                      <p className="text-xs text-muted-foreground">{bookingShortDate(segment.departureTime)}</p>
+                    </div>
+                    <div className="flex min-w-[86px] flex-col items-center">
+                      <div className="mb-1 text-xs font-semibold text-primary">{segment.flightNumber || "Flight TBA"}</div>
+                      <div className="h-px w-full bg-border" />
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-black text-foreground">{bookingTime(segment.arrivalTime)}</p>
+                      <p className="font-bold text-foreground">{segment.destination || "Destination TBA"}</p>
+                      <p className="text-xs text-muted-foreground">{bookingShortDate(segment.arrivalTime)}</p>
+                    </div>
+                  </div>
+                  {ctxLayovers[index] && (
+                    <div className="my-3 rounded-full bg-primary/10 px-3 py-1 text-center text-xs font-semibold text-primary">
+                      Layover in {ctxLayovers[index].location || "connection"} &bull; {ctxLayovers[index].duration || "Duration TBA"}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {journeys.length > 0 && (
+            <div className="mt-3 space-y-1 border-t pt-3 text-xs font-semibold text-slate-700" data-testid="checkout-journeys">
+              {journeys.map((journey, index) => (
+                <div key={`${journey.label}-${index}`} className="flex flex-wrap items-center justify-between gap-2">
+                  {journey.duration
+                    ? <span>{journey.label ? `${journey.label}: ` : "Total Duration: "}{journey.duration}</span>
+                    : <span>{journey.label}</span>}
+                  <span>{journey.stopText}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="rounded-2xl border bg-white p-3 text-sm">
+        <p className="mb-2 font-bold text-foreground">Fare Summary</p>
+        {sourceCurrencyLabel && <p className="mb-2 text-xs text-muted-foreground">{sourceCurrencyLabel}</p>}
+        {isFlight && passengerTotal > 1 && (
+          <p className="mb-1 text-xs text-muted-foreground">{passengerSummary} · fares shown for the whole party</p>
+        )}
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Base Fare{isFlight && passengerTotal > 1 ? ` x ${passengerTotal}` : ""}</span>
+          <span className="font-semibold text-foreground">{formatMoney(fareBaseTotal)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Taxes &amp; fees</span>
+          <span className="font-semibold text-foreground">{formatMoney(fareTaxesTotal)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Seat/baggage add-ons{selectedAddons.length > 0 ? ` (${selectedAddons.length})` : ""}</span>
+          <span className="text-foreground font-medium">{formatMoney(addonsTotal)}</span>
+        </div>
+        {isFlight && (
+          <div className="mt-3 rounded-xl border border-primary/10 bg-accent/40 p-3 text-xs text-muted-foreground">
+            <p className="flex items-start gap-1.5 font-semibold text-foreground">
+              <Info className="mt-0.5 h-3.5 w-3.5 text-primary" />
+              Fare rules summary
+            </p>
+            <p className="mt-1">Includes 7kg carry-on.</p>
+            {ctxRefund && <p className="mt-1">{REFUND_LABEL[ctxRefund]}.</p>}
+            <p className="mt-1">Refund and change fees follow the airline's fare rules. We confirm them before ticketing.</p>
+            {fareSplitIsEstimated && <p className="mt-1">Base/tax split is estimated until the airline confirms the fare.</p>}
+          </div>
+        )}
+        <div className="mt-2 flex justify-between border-t pt-2 text-base font-black">
+          <span>Total</span>
+          <span className="text-primary">{formatMoney(grandTotal)}</span>
+        </div>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Badge variant="outline" className="gap-1 rounded-full px-2.5 py-1 text-xs"><Lock className="h-3 w-3 text-success" /> Instant Verification</Badge>
+        <Badge variant="outline" className="rounded-full px-2.5 py-1 text-xs">{passengerSummary}</Badge>
+        <Badge variant="outline" className="rounded-full px-2.5 py-1 text-xs">{ctxCabin}</Badge>
+        {ctxFarePerks.slice(0, 4).map((perk) => (
+          <Badge key={perk} variant="outline" className="gap-1 rounded-full px-2.5 py-1 text-xs"><Check className="h-3 w-3 text-success" /> {perk}</Badge>
+        ))}
+      </div>
+    </>
+  );
+
+  // #156: each step's one main action, repeated in the phone's bottom bar next to the total.
+  const isPhone = useIsMobile();
+  const mobileAction: CheckoutAction | null = step === 1
+    ? { label: "Continue", onClick: handleContinue }
+    : step === 2
+      ? { label: "Continue", onClick: () => setStep(3) }
+      : step === 3
+        ? canPayHere
+          ? { label: processing ? "Processing..." : "Pay & Book", onClick: requestPay, disabled: processing }
+          : { label: isCustomer ? "Reserve / Request Booking" : isFlight ? "Reserve now, pay later" : "Request Without Payment", onClick: handleHoldBooking, disabled: processing }
+        : null;
+
   return (
     <div className="bg-muted/20 min-h-screen">
       <SEO title="Secure Checkout - Travelian" description={`Complete your ${productCtx.type} booking securely with Travelian.`} />
@@ -916,7 +1046,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     {ctxRefund && <RefundBadge status={ctxRefund} />}
                     <span className="text-muted-foreground">Cancellation and refund rules: as per airline fare rules.</span>
                   </div>
-                  <Button onClick={handleContinue} className="gradient-primary h-11 rounded-xl px-6 text-primary-foreground">
+                  <Button onClick={handleContinue} className="gradient-primary hidden h-11 rounded-xl px-6 text-primary-foreground md:inline-flex">
                     Continue <ChevronRight className="ml-1 h-4 w-4" />
                   </Button>
                 </div>
@@ -951,7 +1081,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                           </TooltipContent> */}
                         </Tooltip>
                         )}
-                        <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
+                        <Button onClick={() => setStep(3)} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6 hidden md:inline-flex">
                           Continue <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
                       </div>
@@ -1046,7 +1176,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     <div className="flex flex-wrap justify-end gap-2">
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className="rounded-xl h-11 px-5">
+                          <Button variant="outline" onClick={handleHoldBooking} disabled={processing} className={`rounded-xl h-11 px-5 ${canPayHere ? "" : "hidden md:inline-flex"}`}>
                             {isCustomer ? "Reserve / Request Booking" : isFlight ? "Reserve now, pay later" : "Request Without Payment"}
                           </Button>
                         </TooltipTrigger>
@@ -1060,7 +1190,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                         <a href={bookingWhatsAppUrl} target="_blank" rel="noreferrer">WhatsApp Help</a>
                       </Button>
                       {canPayHere && (
-                        <Button onClick={requestPay} disabled={processing} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6">
+                        <Button onClick={requestPay} disabled={processing} className="gradient-primary text-primary-foreground rounded-xl h-11 px-6 hidden md:inline-flex">
                           {processing ? "Processing..." : `Pay & Book ${formatMoney(grandTotal)}`} <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
                       )}
@@ -1191,121 +1321,16 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
           <div>
             <Card className="sticky top-32 shadow-card border-0">
               <CardContent className="p-5">
-                <div className="mb-4 flex gap-3 border-b pb-4">
-                  <div className="shrink-0">
-                    {isFlight ? (
-                      <AirlineLogo airline={ctxAirline || productCtx.title} flightNumber={ctxFlightNo} imageUrl={productCtx.extra?.airlineImage} />
-                    ) : (
-                      <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-accent text-2xl">
-                        {productCtx.emoji}
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <h3 className="truncate text-base font-bold text-foreground">{ctxAirline || productCtx.title}</h3>
-                        <p className="mt-0.5 text-xs font-semibold text-foreground">{flightNumbersForDisplay(ctxFlightNo)}</p>
-                      </div>
-                      {isFlight && <Badge className="shrink-0 rounded-md bg-primary/10 text-primary hover:bg-primary/10">{stopSummary}</Badge>}
-                    </div>
-                    <p className="mt-2 text-sm font-semibold text-foreground">{ctxFrom} &rarr; {ctxTo}</p>
-                    <p className="text-xs text-muted-foreground">{ctxDate} &bull; {passengerSummary} &bull; {ctxCabin}</p>
-                  </div>
-                </div>
-                {isFlight && (ctxSegments.length > 0 || ctxLayovers.length > 0) && (
-                  <div className="mb-4 rounded-2xl border bg-slate-50/80 p-3 text-xs text-slate-600">
-                    {ctxSegments.length > 0 && (
-                      <div className="space-y-3">
-                        {ctxSegments.map((segment, index) => (
-                          <div key={`${segment.flightNumber || "segment"}-${index}`}>
-                            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                              <div className="text-left">
-                                <p className="text-lg font-black text-foreground">{bookingTime(segment.departureTime)}</p>
-                                <p className="font-bold text-foreground">{segment.origin || "Origin TBA"}</p>
-                                <p className="text-xs text-muted-foreground">{bookingShortDate(segment.departureTime)}</p>
-                              </div>
-                              <div className="flex min-w-[86px] flex-col items-center">
-                                <div className="mb-1 text-xs font-semibold text-primary">{segment.flightNumber || "Flight TBA"}</div>
-                                <div className="h-px w-full bg-border" />
-                              </div>
-                              <div className="text-right">
-                                <p className="text-lg font-black text-foreground">{bookingTime(segment.arrivalTime)}</p>
-                                <p className="font-bold text-foreground">{segment.destination || "Destination TBA"}</p>
-                                <p className="text-xs text-muted-foreground">{bookingShortDate(segment.arrivalTime)}</p>
-                              </div>
-                            </div>
-                            {ctxLayovers[index] && (
-                              <div className="my-3 rounded-full bg-primary/10 px-3 py-1 text-center text-xs font-semibold text-primary">
-                                Layover in {ctxLayovers[index].location || "connection"} &bull; {ctxLayovers[index].duration || "Duration TBA"}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {journeys.length > 0 && (
-                      <div className="mt-3 space-y-1 border-t pt-3 text-xs font-semibold text-slate-700" data-testid="checkout-journeys">
-                        {journeys.map((journey, index) => (
-                          <div key={`${journey.label}-${index}`} className="flex flex-wrap items-center justify-between gap-2">
-                            {journey.duration
-                              ? <span>{journey.label ? `${journey.label}: ` : "Total Duration: "}{journey.duration}</span>
-                              : <span>{journey.label}</span>}
-                            <span>{journey.stopText}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-                <div className="rounded-2xl border bg-white p-3 text-sm">
-                  <p className="mb-2 font-bold text-foreground">Fare Summary</p>
-                  {sourceCurrencyLabel && <p className="mb-2 text-xs text-muted-foreground">{sourceCurrencyLabel}</p>}
-                  {isFlight && passengerTotal > 1 && (
-                    <p className="mb-1 text-xs text-muted-foreground">{passengerSummary} · fares shown for the whole party</p>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Base Fare{isFlight && passengerTotal > 1 ? ` x ${passengerTotal}` : ""}</span>
-                    <span className="font-semibold text-foreground">{formatMoney(fareBaseTotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Taxes &amp; fees</span>
-                    <span className="font-semibold text-foreground">{formatMoney(fareTaxesTotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Seat/baggage add-ons{selectedAddons.length > 0 ? ` (${selectedAddons.length})` : ""}</span>
-                    <span className="text-foreground font-medium">{formatMoney(addonsTotal)}</span>
-                  </div>
-                  {isFlight && (
-                    <div className="mt-3 rounded-xl border border-primary/10 bg-accent/40 p-3 text-xs text-muted-foreground">
-                      <p className="flex items-start gap-1.5 font-semibold text-foreground">
-                        <Info className="mt-0.5 h-3.5 w-3.5 text-primary" />
-                        Fare rules summary
-                      </p>
-                      <p className="mt-1">Includes 7kg carry-on.</p>
-                      {ctxRefund && <p className="mt-1">{REFUND_LABEL[ctxRefund]}.</p>}
-                      <p className="mt-1">Refund and change fees follow the airline's fare rules. We confirm them before ticketing.</p>
-                      {fareSplitIsEstimated && <p className="mt-1">Base/tax split is estimated until the airline confirms the fare.</p>}
-                    </div>
-                  )}
-                  <div className="mt-2 flex justify-between border-t pt-2 text-base font-black">
-                    <span>Total</span>
-                    <span className="text-primary">{formatMoney(grandTotal)}</span>
-                  </div>
-                </div>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Badge variant="outline" className="gap-1 rounded-full px-2.5 py-1 text-xs"><Lock className="h-3 w-3 text-success" /> Instant Verification</Badge>
-                  <Badge variant="outline" className="rounded-full px-2.5 py-1 text-xs">{passengerSummary}</Badge>
-                  <Badge variant="outline" className="rounded-full px-2.5 py-1 text-xs">{ctxCabin}</Badge>
-                  {ctxFarePerks.slice(0, 4).map((perk) => (
-                    <Badge key={perk} variant="outline" className="gap-1 rounded-full px-2.5 py-1 text-xs"><Check className="h-3 w-3 text-success" /> {perk}</Badge>
-                  ))}
-                </div>
+                {fareSummaryContent}
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
+
+      {isPhone && mobileAction && (
+        <CheckoutActionBar total={formatMoney(grandTotal)} travelers={passengerSummary} action={mobileAction} summary={fareSummaryContent} />
+      )}
 
       <Dialog open={nameConfirmationOpen} onOpenChange={setNameConfirmationOpen}>
         <DialogContent className="sm:max-w-md">

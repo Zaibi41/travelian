@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { UserRole } from "@/data/models";
 
 // #149: checkout shows only real cancellation / refund information and traveller wording.
@@ -149,5 +149,40 @@ describe("Checkout summary duration (#153)", () => {
     const line = screen.getByTestId("checkout-journeys");
     expect(within(line).getByText("Outbound: 3h 45m")).toBeInTheDocument();
     expect(within(line).getByText("Return: 3h 10m")).toBeInTheDocument();
+  });
+});
+
+describe("Phone checkout action bar (#156)", () => {
+  const setWidth = (width: number) => Object.defineProperty(window, "innerWidth", { configurable: true, writable: true, value: width });
+  afterEach(() => { setWidth(1024); document.body.classList.remove("has-checkout-action-bar"); });
+
+  it("keeps the total, travelers and Continue in a bottom bar on phones, and opens the fare summary", async () => {
+    setWidth(390);
+    renderAt(url({ adults: "2", children: "1", infants: "1" }));
+    const bar = await screen.findByTestId("checkout-action-bar");
+    expect(within(bar).getByText("PKR 180,000")).toBeInTheDocument();
+    expect(within(bar).getByText("4 Travelers")).toBeInTheDocument();
+    expect(within(bar).getByRole("button", { name: /^Continue/ })).toBeInTheDocument();
+    expect(document.body).toHaveClass("has-checkout-action-bar");
+    fireEvent.click(within(bar).getByRole("button", { name: /Show fare summary/ }));
+    const sheet = await screen.findByRole("dialog", { name: "Fare summary" });
+    expect(within(sheet).getByText("Total")).toBeInTheDocument();
+  });
+
+  it("steps aside while a text field has focus (keyboard up)", async () => {
+    setWidth(360);
+    renderAt(url());
+    const bar = await screen.findByTestId("checkout-action-bar");
+    const phone = document.getElementById("contact-phone") as HTMLInputElement;
+    phone.focus();
+    await waitFor(() => expect(bar).toHaveClass("hidden"));
+    phone.blur();
+    await waitFor(() => expect(bar).not.toHaveClass("hidden"));
+  });
+
+  it("is not shown on wider screens", () => {
+    setWidth(1024);
+    renderAt(url());
+    expect(screen.queryByTestId("checkout-action-bar")).not.toBeInTheDocument();
   });
 });
