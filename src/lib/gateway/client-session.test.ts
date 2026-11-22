@@ -67,3 +67,14 @@ describe("401 from the gateway", () => {
     expect(expireSession).not.toHaveBeenCalled();
   });
 });
+
+describe("409 from the gateway", () => {
+  it("a refused double booking (issue #17) carries the gateway's sentence with the existing booking reference, and its code", async () => {
+    const sentence = "Ali Raza already has booking TRV-OLD111 on KHI → ISB on 10 Dec 2026. A second booking for the same passenger, route and date isn't allowed. Nothing was booked.";
+    const fetchImpl = vi.fn().mockResolvedValue(reply(409, { detail: sentence, code: "duplicate_booking" }));
+    const error = await gatewayPost("/v1/live-ticketing/flights/bookings", {} as never, options(fetchImpl)).catch(e => e);
+    expect(error).toBeInstanceOf(GatewayError);
+    expect([error.status, error.code, error.message]).toEqual([409, "duplicate_booking", sentence]);
+    expect(fetchImpl).toHaveBeenCalledTimes(1); // never sent again
+  });
+});
