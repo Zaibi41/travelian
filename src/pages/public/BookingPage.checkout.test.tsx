@@ -131,3 +131,23 @@ describe("Checkout wording (#149)", () => {
     expect(await screen.findByRole("heading", { name: "Booking Request Received" })).toBeInTheDocument();
   });
 });
+
+describe("Checkout summary duration (#153)", () => {
+  const segment = { flightNumber: "EX786", origin: "LHE", destination: "DXB", departureTime: "2026-12-08 11:50", arrivalTime: "2026-12-08 14:35", departureTimestamp: "2026-12-08 11:50", arrivalTimestamp: "2026-12-08 14:35", duration: "3h 45m" };
+
+  it("shows the flight's own duration across time zones and Non-stop", () => {
+    renderAt(url({ segments: JSON.stringify([segment]) }));
+    const line = screen.getByTestId("checkout-journeys");
+    expect(within(line).getByText("Total Duration: 3h 45m")).toBeInTheDocument();
+    expect(within(line).getByText("Non-stop")).toBeInTheDocument();
+    expect(screen.queryByText(/2h 45m|0 Stops/)).not.toBeInTheDocument();
+  });
+
+  it("shows each direction of a round trip", () => {
+    const back = { ...segment, flightNumber: "EX787", origin: "DXB", destination: "LHE", departureTime: "2026-12-15 16:00", arrivalTime: "2026-12-15 20:10", departureTimestamp: "2026-12-15 16:00", arrivalTimestamp: "2026-12-15 20:10", duration: "3h 10m" };
+    renderAt(url({ trip: "roundtrip", return: "Dec 15, 2026", segments: JSON.stringify([segment, back]) }));
+    const line = screen.getByTestId("checkout-journeys");
+    expect(within(line).getByText("Outbound: 3h 45m")).toBeInTheDocument();
+    expect(within(line).getByText("Return: 3h 10m")).toBeInTheDocument();
+  });
+});

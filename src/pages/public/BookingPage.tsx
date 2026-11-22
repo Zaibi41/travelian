@@ -28,6 +28,7 @@ import type { UmrahPackage } from "@/data/models";
 import { findSeedUmrahOffer, umrahOfferToPackage } from "@/data/services/umrah-adapter";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
 import { format, addDays } from "date-fns";
+import { checkoutJourneys, stopCountText } from "@/lib/flight-stays";
 import { REFUND_LABEL, type RefundStatus } from "@/lib/fare-refund";
 import { useAdmin } from "@/contexts/AdminStore";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
@@ -86,6 +87,10 @@ type BookingSegment = {
   destination?: string | null;
   departureTime?: string | null;
   arrivalTime?: string | null;
+  departureTimestamp?: string | null;
+  arrivalTimestamp?: string | null;
+  /** The flight's own time from the gateway ("3h 45m"). */
+  duration?: string | null;
 };
 
 interface PackageInventory {
@@ -232,7 +237,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const ctxCabin = productCtx.extra?.cabin || "Economy";
   const ctxFarePerks = productCtx.extra?.farePerks || [];
   const ctxLayovers = productCtx.extra?.layovers || [];
-  const ctxSegments = productCtx.extra?.segments || [];
+  const ctxSegments = useMemo(() => productCtx.extra?.segments || [], [productCtx.extra?.segments]);
   const ctxBaseFare = productCtx.extra?.baseFare;
   const ctxTaxes = productCtx.extra?.taxes;
   const sourceCurrency = String(productCtx.currency || activeCurrency || "PKR").toUpperCase();
@@ -247,22 +252,13 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const fareTaxesTotal = derivedTaxesPerPax * passengerTotal;
   const fareSplitIsEstimated = !knownBaseFare && !knownTaxes;
   const passengerSummary = `${passengerTotal} ${passengerTotal === 1 ? "Adult" : "Travelers"}`;
-  const stopCount = Math.max(0, ctxSegments.length > 1 ? ctxSegments.length - 1 : ctxLayovers.length);
-  const stopSummary = `${stopCount} Stop${stopCount === 1 ? "" : "s"}`;
-  const totalDuration = ctxSegments.length
-    ? (() => {
-      const first = ctxSegments[0]?.departureTime;
-      const last = ctxSegments[ctxSegments.length - 1]?.arrivalTime;
-      if (!first || !last) return "";
-      const start = new Date(String(first).replace(" ", "T")).getTime();
-      const end = new Date(String(last).replace(" ", "T")).getTime();
-      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return "";
-      const minutes = Math.round((end - start) / 60000);
-      const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
-      return `${hours ? `${hours}h` : ""}${hours && mins ? " " : ""}${mins ? `${mins}m` : ""}`;
-    })()
-    : "";
+  // #153: each journey's time from the flights' own durations (gateway minutes) and the stays between them, never
+  // local arrival minus local departure (airports are in different time zones). Same wording as the results card.
+  const journeys = useMemo(() => checkoutJourneys(ctxSegments, { destination: ctxTo, trip: params.get("trip") }), [ctxSegments, ctxTo, params]);
+  const layoverStops = Math.max(0, ctxLayovers.length);
+  const stopSummary = journeys.length
+    ? Array.from(new Set(journeys.map((journey) => journey.stopText))).join(" / ")
+    : stopCountText(layoverStops);
 
   const [step, setStep] = useState(1);
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
@@ -1248,10 +1244,16 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                         ))}
                       </div>
                     )}
-                    {(totalDuration || ctxSegments.length > 0) && (
-                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-xs font-semibold text-slate-700">
-                        {totalDuration && <span>Total Duration: {totalDuration}</span>}
-                        <span>{stopSummary}</span>
+                    {journeys.length > 0 && (
+                      <div className="mt-3 space-y-1 border-t pt-3 text-xs font-semibold text-slate-700" data-testid="checkout-journeys">
+                        {journeys.map((journey, index) => (
+                          <div key={`${journey.label}-${index}`} className="flex flex-wrap items-center justify-between gap-2">
+                            {journey.duration
+                              ? <span>{journey.label ? `${journey.label}: ` : "Total Duration: "}{journey.duration}</span>
+                              : <span>{journey.label}</span>}
+                            <span>{journey.stopText}</span>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
