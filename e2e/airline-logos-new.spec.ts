@@ -56,7 +56,7 @@ for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await mock(page);
     await page.goto("/flights-search?from=LHE&to=DXB&depart=2026-12-15&adults=1&children=0&infants=0&cabin=Economy&trip=oneway&currency=PKR");
-    await expect(page.getByText("PF786").first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("button", { name: "Flight Details" }).first()).toBeVisible({ timeout: 20_000 });
     await page.waitForTimeout(600);
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/public-results-${width}-${TAG}.png`, fullPage: width === 1440 ? false : true });
     if (!ONLY_SHOTS) await expectLogos(page);
