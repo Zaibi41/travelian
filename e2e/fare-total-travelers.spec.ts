@@ -92,7 +92,7 @@ test("website 390px: one traveler shows the price as before (no total line)", as
 });
 
 for (const width of [390, 1440]) {
-  test(`admin search ${width}px: total for 5 travelers with the per-adult price`, async ({ page }) => {
+  test(`admin search ${width}px: total for 5 travelers, no "per adult" wording (#80)`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await mock(page);
     await page.addInitScript(() => {
@@ -108,9 +108,9 @@ for (const width of [390, 1440]) {
     const pa = page.getByRole("article", { name: /PA410$/ });
     await expect(pa.getByText("Rs 310,176", { exact: true })).toBeVisible();
     await expect(pa.getByText("total for 5 travelers", { exact: true })).toHaveCount(2); // both fares
-    await expect(pa.getByText("Rs 79,392 per adult", { exact: true })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Results" })).not.toContainText(/per adult/i);
     const z8 = page.getByRole("article", { name: /Z8266$/ });
-    await expect(z8.getByText("per adult", { exact: true })).toBeVisible();
+    await expect(z8.getByText("Rs 90,000", { exact: true })).toBeVisible();
     await expect(z8).not.toContainText("total for");
   });
 }

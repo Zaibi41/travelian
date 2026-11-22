@@ -624,32 +624,24 @@ function RouteLine({ total, below, stops }: { total: string | null; below: strin
   );
 }
 
-/** #113: one traveler: the selling price. Several: the gateway's total for all of them, the per-adult price under it;
- *  without a gateway total (a passenger type the supplier didn't price), the per-adult price, labelled so. */
+/** Issue 113: several travelers: the gateway's total for all of them. No "per adult" wording on the admin (issue 80);
+ *  without a gateway total (a passenger type the supplier didn't price), the selling price as before. */
 function FarePrice({ fare, travelers }: { fare: FareView; travelers: number }) {
-  const perAdult = fare.selling_price ? formatMoney(fare.selling_price) : "";
-  if (travelers <= 1) return <span className="font-semibold text-foreground">{perAdult}</span>;
-  if (fare.total_price) {
+  if (travelers > 1 && fare.total_price) {
     const count = fare.passenger_prices?.reduce((sum, row) => sum + row.count, 0) || travelers;
     return (
       <span className="inline-flex flex-col items-end">
         <span className="font-semibold text-foreground">{formatMoney(fare.total_price)}</span>
         <span className="text-label text-muted-foreground">total for {count} travelers</span>
-        <span className="text-label text-muted-foreground">{perAdult} per adult</span>
       </span>
     );
   }
-  return (
-    <span className="inline-flex flex-col items-end">
-      <span className="font-semibold text-foreground">{perAdult}</span>
-      <span className="text-label text-muted-foreground">per adult</span>
-    </span>
-  );
+  return <span className="font-semibold text-foreground">{fare.selling_price ? formatMoney(fare.selling_price) : ""}</span>;
 }
 
 function FlightCard({ journey, flight, data, renderFareAction, actionNotes, travelers = 1 }: {
   journey: JourneyView; flight: FlightView; data: FlightSearchView; renderFareAction?: FlightsSearchProps["renderFareAction"]; actionNotes?: string[];
-  /** Travelers searched: with more than one, the price is the gateway's total for all of them (#113). */
+  /** Travelers searched: with more than one, the price is the gateway's total for all of them (issue 113). */
   travelers?: number;
 }) {
   const [expanded, setExpanded] = useState(false);
