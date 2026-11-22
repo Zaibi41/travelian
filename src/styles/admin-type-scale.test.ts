@@ -20,7 +20,7 @@ const sources = {
     "/src/components/AdminLayout.tsx", "/src/components/AdminSidebar.tsx", "/src/components/AdminProfileDialog.tsx",
     "/src/pages/DashboardPage.tsx", "/src/pages/AccessDeniedPage.tsx", "/src/pages/AdminSearchPage.tsx", "/src/pages/InternalSearchPage.tsx",
     "/src/pages/AdminBookingsPage.tsx", "/src/pages/AdminBookingDetailPage.tsx", "/src/pages/HoldFlightPage.tsx", "/src/pages/HoldResultPage.tsx",
-    "/src/pages/CustomersTravelersPage.tsx", "/src/pages/SavedPersonPage.tsx",
+    "/src/pages/CustomersTravelersPage.tsx", "/src/pages/SavedPersonPage.tsx", "/src/pages/AnnouncementsPage.tsx",
     // Older admin pages (moved to the admin components and the type scale on 11 November 2026).
     "/src/pages/AgenciesPage.tsx", "/src/pages/PackagesPage.tsx", "/src/pages/UsersPage.tsx", "/src/pages/RBACPage.tsx",
     "/src/pages/HotelsPage.tsx", "/src/pages/FlightsPage.tsx", "/src/pages/FlightOperationsPage.tsx",
