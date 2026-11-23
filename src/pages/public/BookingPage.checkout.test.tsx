@@ -252,3 +252,16 @@ describe("Traveler details and Review (#155)", () => {
     await screen.findByRole("heading", { name: "Payment Method" });
   });
 });
+
+describe("Checkout total for several travelers (#113)", () => {
+  it("shows the gateway's total for all travelers from the results link, not the per-adult price x travelers", () => {
+    renderAt(url({ adults: "2", children: "1", price: "21828", total: "62830" }));
+    expect(screen.getAllByText("PKR 62,830").length).toBeGreaterThan(0);
+    expect(screen.queryByText("PKR 65,484")).not.toBeInTheDocument(); // 21,828 x 3
+  });
+
+  it("without a gateway total keeps the old per-adult x travelers total", () => {
+    renderAt(url({ adults: "2", price: "21828" }));
+    expect(screen.getAllByText("PKR 43,656").length).toBeGreaterThan(0);
+  });
+});
