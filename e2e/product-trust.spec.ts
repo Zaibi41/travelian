@@ -9,7 +9,7 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
     let baseline: unknown;
-    for (const [path, third] of [["/", "Live + Group Fares"], ["/group-ticketing", "Fixed Group Inventory"], ["/hotels-search", "Hotel Booking Assistance"], ["/umrah-packages", "Custom + Ready Packages"]]) {
+    for (const [path, third] of [["/", "Live + Group Fares"], ["/group-ticketing", "Fixed Group Inventory"], ["/hotels-search", "Hotel Booking Assistance"]]) { // Umrah hidden (D39)
       await page.goto(path);
       const pills = page.getByRole("list", { name: "Travelian value highlights" });
       const trust = page.getByRole("region", { name: "Booking confidence" });
@@ -26,7 +26,15 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
           const box = node.getBoundingClientRect();
           return { x: box.x, y: box.y + scrollY, width: box.width, height: box.height };
         };
-        return { pills: rect(element), strip: rect(strip), card: rect(card), icons: [...element.querySelectorAll("svg")].map(svg => svg.innerHTML) };
+        // The card's height follows its form (the Group form is shorter on phones, #161); everything else lines up the
+        // same way under it on every product page.
+        const pills = rect(element), stripBox = rect(strip), cardBox = rect(card);
+        return {
+          pills: { x: pills.x, width: pills.width, height: pills.height, belowCard: pills.y - (cardBox.y + cardBox.height) },
+          strip: { x: stripBox.x, width: stripBox.width, height: stripBox.height, belowPills: stripBox.y - (pills.y + pills.height) },
+          card: { x: cardBox.x, y: cardBox.y, width: cardBox.width },
+          icons: [...element.querySelectorAll("svg")].map(svg => svg.innerHTML),
+        };
       });
       if (!baseline) baseline = geometry;
       else expect(geometry).toEqual(baseline);
