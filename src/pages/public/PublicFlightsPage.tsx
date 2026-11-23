@@ -35,6 +35,7 @@ import { searchPublicGroups, GATEWAY_GROUP_PROVIDER } from "@/lib/public-booking
 import { normalizeAirlineName, isSameAirline, extractAllAirlines, getAirlineNameFromCarrier } from "@/lib/airline-normalization";
 import { journeyMinutes, minutesText, stayAt, stayBetween, stopLine, stopSummary, type Stay } from "@/lib/flight-stays";
 import { activeFilterCount, filtersFromParams, FLIGHT_SORTS, sortShortLabel, withFilterParams, type FlightSort } from "@/lib/flight-result-filters";
+import { mealStatus, mealText } from "@/lib/meal";
 import { BAGGAGE_UNKNOWN, baggageFilterOptions, baggageText, checkedText, handCarryText, underBaggageLabel, type BaggageText } from "@/lib/baggage";
 
 // Preload airports for routeLabel lookup
@@ -669,17 +670,19 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return text;
   };
 
-  const mealLabel = (fare: DisplayFare, flight: TravelianFlight) => {
-    const meal = cleanFareText(fare.meal || flight.meal, "No Meal");
-    if (/included|available|yes/i.test(meal)) return "Meal";
-    return meal === "No Meal" ? "No Meal" : "Meal";
+  // #154: "No Meal" only when the fare says so; missing data is "Meal info not available".
+  const mealLabel = (fare: DisplayFare, flight: TravelianFlight) => mealText(fare.meal || flight.meal);
+  /** Meal served: green fork and knife; no meal: crossed out; unknown: a muted fork and knife. */
+  const MealIcon = ({ fare, flight, className }: { fare: DisplayFare; flight: TravelianFlight; className: string }) => {
+    const status = mealStatus(fare.meal || flight.meal);
+    if (status === "none") return <UtensilsCrossed aria-hidden="true" className={cn(className, "shrink-0 text-muted-foreground")} />;
+    return <Utensils aria-hidden="true" className={cn(className, "shrink-0", status === "included" ? "text-emerald-600" : "text-muted-foreground opacity-50")} />;
   };
 
   // Shown under a "Baggage" heading: "Check with airline" rather than repeating "Baggage:".
   const baggageLabel = (fare: DisplayFare, flight: TravelianFlight) => underBaggageLabel(fareBaggage(fare, flight).short);
   const baggageWords = (fare: DisplayFare, flight: TravelianFlight) => fareBaggage(fare, flight).detail;
 
-  const hasMeal = (fare: DisplayFare, flight: TravelianFlight) => mealLabel(fare, flight) !== "No Meal";
   const hasBaggage = (fare: DisplayFare, flight: TravelianFlight) => fareBaggage(fare, flight).known;
 
   const fareRows = (flight: TravelianFlight): DisplayFare[] => {
@@ -1916,10 +1919,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 </td>
                                 <td className="px-4 py-3 align-middle">
                                   <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={mealLabel(fare, flight)}>
-                                    {hasMeal(fare, flight)
-                                      ? <Utensils className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                                      : <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-                                    <span className="truncate">{mealLabel(fare, flight)}</span>
+                                    <MealIcon fare={fare} flight={flight} className="h-3.5 w-3.5" />
+                                    <span className="line-clamp-2 break-words">{mealLabel(fare, flight)}</span>
                                   </p>
                                 </td>
                                 <td className="px-4 py-3 align-middle">
@@ -1963,10 +1964,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               {/* Meal and Baggage in 2-column grid */}
                               <div className="grid grid-cols-2 gap-3">
                                 <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={mealLabel(fare, flight)}>
-                                  {hasMeal(fare, flight)
-                                    ? <Utensils className="h-4 w-4 shrink-0 text-emerald-600" />
-                                    : <UtensilsCrossed className="h-4 w-4 shrink-0 text-muted-foreground" />}
-                                  <span className="truncate">{mealLabel(fare, flight)}</span>
+                                  <MealIcon fare={fare} flight={flight} className="h-4 w-4" />
+                                  <span className="line-clamp-2 break-words">{mealLabel(fare, flight)}</span>
                                 </p>
                                 <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={baggageWords(fare, flight)}>
                                   <Luggage aria-hidden="true" className={cn("h-4 w-4 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
@@ -2474,12 +2473,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                     <span className="truncate font-medium text-slate-700" title={baggageWords(fare, fareDetails.flight)}>{baggageLabel(fare, fareDetails.flight)}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    {hasMeal(fare, fareDetails.flight) ? (
-                                      <Utensils className="h-4 w-4 shrink-0 text-emerald-600" />
-                                    ) : (
-                                      <UtensilsCrossed className="h-4 w-4 shrink-0 text-slate-400" />
-                                    )}
-                                    <span className="truncate font-medium text-slate-700">{mealLabel(fare, fareDetails.flight)}</span>
+                                    <MealIcon fare={fare} flight={fareDetails.flight} className="h-4 w-4" />
+                                    <span className="line-clamp-2 break-words font-medium text-slate-700">{mealLabel(fare, fareDetails.flight)}</span>
                                   </div>
                                   <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-xs text-muted-foreground">
                                     <Clock className="h-4 w-4 shrink-0 text-primary" />
