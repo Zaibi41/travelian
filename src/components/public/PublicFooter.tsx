@@ -3,12 +3,14 @@ import { BriefcaseBusiness, Building2, CircleHelp, Facebook, Globe, Instagram, M
 import { SITE_DISPLAY, SITE_URL, SOCIAL_LINKS, SUPPORT_ADDRESS, SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL } from "@/lib/site-config";
 import { useProductTabs } from "./product-navigation";
 import { useSiteSwitches } from "@/lib/site-switches";
+import { useBookingLink, type BookingLink } from "@/hooks/use-booking-link";
 
 const socialIcons = { facebook: Facebook, instagram: Instagram, youtube: Youtube, tiktok: Music2 };
-const navigationGroups = (products: ReturnType<typeof useProductTabs>) => [
+const navigationGroups = (products: ReturnType<typeof useProductTabs>, booking: BookingLink) => [
   { id: "products", title: "Products", icon: BriefcaseBusiness, links: products.map(product => ({ label: product.label, href: product.href })) },
   { id: "company", title: "Company", icon: Building2, links: [{ label: "About", href: "/about" }, { label: "Contact", href: "/contact" }] },
   { id: "support", title: "Support & Policies", icon: CircleHelp, links: [
+    { label: booking.label, href: booking.href },   // #159
     { label: "FAQ", href: "/faq" },
     { label: "Terms & Conditions", href: "/terms" },
     { label: "Privacy Policy", href: "/privacy" },
@@ -18,6 +20,7 @@ const navigationGroups = (products: ReturnType<typeof useProductTabs>) => [
 
 export function PublicFooter() {
   const products = useProductTabs();
+  const booking = useBookingLink();
   const { umrah } = useSiteSwitches();
   const scrollToTop = () => {
     requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }));
@@ -39,7 +42,7 @@ export function PublicFooter() {
             </div>
           </div>
 
-          {navigationGroups(products).map(group => (
+          {navigationGroups(products, booking).map(group => (
             <nav key={group.id} aria-labelledby={`footer-${group.id}`} className={`min-w-0 ${group.id === "support" ? "col-span-2 sm:col-span-1" : ""}`}>
               <h2 id={`footer-${group.id}`} className="mb-1 flex items-center gap-2 text-sm font-semibold text-sidebar-accent-foreground"><group.icon aria-hidden="true" className="h-4 w-4 shrink-0 text-sidebar-primary" />{group.title}</h2>
               <ul className={`text-sm ${group.id === "products" ? "font-medium text-sidebar-foreground" : "text-sidebar-muted"}`}>

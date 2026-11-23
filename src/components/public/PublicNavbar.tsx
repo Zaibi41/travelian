@@ -3,7 +3,7 @@ import { PRODUCT_TABS, useProductTabs } from "./product-navigation";
 import { useSearchHeaderState } from "@/hooks/use-scroll-reveal";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Globe, Menu, Phone, X, Info } from "lucide-react";
+import { ChevronDown, Globe, Menu, Phone, X, Info, Ticket } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   DropdownMenu,
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CURRENCIES, LANGUAGES, useLocale } from "@/contexts/LocaleContext";
 import { SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
+import { useBookingLink } from "@/hooks/use-booking-link";
 
 const quickLinks = [
   { label: "About Us", href: "/about", icon: Info, match: ["/about"] },
@@ -69,6 +70,8 @@ function LocaleControls({ compact = false }: { compact?: boolean }) {
 
 export function PublicNavbar() {
   const serviceLinks = useProductTabs(); // Umrah only when switched on (D39)
+  // #159: "Find my booking" (guests) / "My Bookings" (signed in), in the header and the mobile menu's Quick Links.
+  const bookingLink = useBookingLink();
   // Website & CMS > Site logo (S3, D38); the built-in logo until one is uploaded or if it can't be loaded.
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   useEffect(() => { void loadSiteLogo().then(setLogoUrl); }, []);
@@ -136,6 +139,18 @@ export function PublicNavbar() {
     </Link>
   );
 
+  const bookingActive = pathname === bookingLink.href;
+  const findBookingLink = (
+    // While the service links sit in the header's middle (scrolled), narrow desktops show the ticket icon only, so the
+    // links never overlap; the name stays as the accessible name and tooltip.
+    <Link to={bookingLink.href} onClick={() => setMobileOpen(false)} aria-current={bookingActive ? "page" : undefined} title={bookingLink.label}
+      aria-label={bookingLink.label}
+      className={cn("inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 text-sm font-semibold transition-colors lg:h-8 lg:text-xs", compact && "lg:px-2 xl:px-3", bookingActive ? "bg-accent text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground")}>
+      {compact && <Ticket className="h-3.5 w-3.5 xl:hidden" aria-hidden="true" />}
+      <span className={compact ? "hidden xl:inline" : undefined}>{bookingLink.label}</span>
+    </Link>
+  );
+
   return (
     <header ref={headerRef} aria-label="Travelian header" className="relative h-[57px] shrink-0">
       <div ref={element => { navRef.current = element; if (element) element.inert = hidden; }} aria-hidden={hidden} data-header-state={headerState} className={cn("travelian-navbar inset-x-0 top-0 z-[1000] border-b border-border/60 bg-card shadow-sm backdrop-blur-md transition-[transform,opacity,visibility] duration-200 motion-reduce:transition-none [&_a]:focus-visible:ring-2 [&_a]:focus-visible:ring-primary [&_a]:focus-visible:ring-offset-2 [&_button]:focus-visible:ring-2 [&_button]:focus-visible:ring-primary [&_button]:focus-visible:ring-offset-2", headerState === "sticky" ? "fixed" : "absolute", hidden ? "invisible pointer-events-none -translate-y-full opacity-0" : "visible translate-y-0 opacity-100", headerState === "sticky" && "shadow-sm")}>
@@ -159,7 +174,7 @@ export function PublicNavbar() {
                 </section>
                 <section aria-label="Quick Links" className="mt-3 border-t border-border pt-3">
                   <h2 className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Quick Links</h2>
-                  <div className="grid gap-1">{renderLinks(quickLinks, true)}</div>
+                  <div className="grid gap-1">{renderLinks([{ label: bookingLink.label, href: bookingLink.href, icon: Ticket, match: [bookingLink.href] }, ...quickLinks], true)}</div>
                 </section>
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2">{requestBookingLink}{signInLink}</div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3"><div className="flex flex-wrap items-center gap-1">{phoneLink}</div><div className="flex items-center gap-1"><LocaleControls key={hidden ? "hidden" : "visible"} /></div></div>
@@ -169,6 +184,7 @@ export function PublicNavbar() {
           <div aria-label="Account and preferences" className="absolute right-5 top-1/2 hidden h-8 -translate-y-1/2 items-center gap-1 sm:right-6 lg:right-8 lg:flex">
             <div className={compact ? pathname === "/flights-search" ? "hidden xl:block" : "hidden" : "block"}>{phoneLink}</div>
             <LocaleControls key={hidden ? "hidden" : "visible"} compact />
+            {findBookingLink}
             {signInLink}
           </div>
         </div>
