@@ -24,7 +24,8 @@ for (const width of [1920, 1440, 1366, 1024, 768, 375, 320]) {
       await expect(tabs.getByRole("button")).toHaveText(labels);
       await expect(tabs.getByRole("button", { name, exact: true })).toHaveAttribute("aria-pressed", "true");
       const bounds = await tabs.boundingBox();
-      await expect.poll(() => page.locator(".travelian-search-card").evaluate(element => element.getBoundingClientRect().height)).toBe(cardHeight);
+      // Same card height on every product from 640px; on phones the Group form is shorter (#161).
+      if (width >= 640) await expect.poll(() => page.locator(".travelian-search-card").evaluate(element => element.getBoundingClientRect().height)).toBe(cardHeight);
       expect(bounds!.width).toBeCloseTo(initial!.width, 0);
       expect(bounds!.y).toBeCloseTo(initial!.y, 0);
       const boxes = await tabs.getByRole("button").evaluateAll(elements => elements.map(element => element.getBoundingClientRect().width));

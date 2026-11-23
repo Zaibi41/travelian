@@ -14,17 +14,23 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     await page.goto("/");
     const tabs = page.getByRole("group", { name: "Travelian products" });
     const measure = () => tabs.evaluate(element => {
-      const card = element.parentElement!;
+      const card = element.closest(".travelian-search-card")!;
       const hero = card.closest("section")!;
       const rect = (node: Element) => {
         const box = node.getBoundingClientRect();
         return { top: box.top + window.scrollY, height: box.height };
       };
       const action = [...card.querySelectorAll("button")].find(button => /^(Search|Search flights)$/i.test(button.textContent?.trim() || button.getAttribute("aria-label")?.replace("flights", "Flights") || ""))!;
+      // Phones: the Group form is shorter (#161), so only what sits above the form is compared there.
+      const phone = window.innerWidth < 640;
+      const clear = [...card.querySelectorAll(".unified-search-content button, .unified-search-content input")]
+        .filter(control => control !== action && control.getBoundingClientRect().width > 0 && control.getBoundingClientRect().height > 0)
+        .every(control => control.getBoundingClientRect().bottom <= action.getBoundingClientRect().top);
+      if (phone) return { card: rect(card).top, tabs: rect(element), heading: rect(hero.querySelector("h1")!), overflow: document.documentElement.scrollWidth > window.innerWidth, controlsClearAction: clear };
       return {
         card: rect(card), hero: rect(hero), tabs: rect(element),
         heading: rect(hero.querySelector("h1")!),
-        trust: rect(hero.querySelector(".mt-4")!),
+        trust: rect(hero.querySelector('[aria-label="Travelian value highlights"]')!),
         next: rect(hero.nextElementSibling!), action: rect(action),
         overflow: document.documentElement.scrollWidth > window.innerWidth,
         controlsClearAction: window.innerWidth >= 1024 || [...card.querySelectorAll(".unified-search-content button, .unified-search-content input")]
@@ -49,23 +55,37 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await tabs.getByRole("button", { name: "Flights", exact: true }).click();
     await page.locator(".unified-search-content").getByRole("combobox").first().click();
-    const airports = page.getByRole("listbox");
-    await expect(airports).toBeVisible();
-    const airportBounds = await page.getByRole("dialog").filter({ has: airports }).boundingBox();
-    expect(airportBounds!.width).toBeGreaterThanOrEqual(Math.min(288, width - 32));
-    expect(airportBounds!.x).toBeGreaterThanOrEqual(0);
-    expect(airportBounds!.x + airportBounds!.width).toBeLessThanOrEqual(width);
-    await page.getByRole("option").first().click();
-    await expect(airports).toHaveCount(0);
+    if (width >= 768) {
+      const airports = page.getByRole("listbox");
+      await expect(airports).toBeVisible();
+      const airportBounds = await page.getByRole("dialog").filter({ has: airports }).boundingBox();
+      expect(airportBounds!.width).toBeGreaterThanOrEqual(Math.min(288, width - 32));
+      expect(airportBounds!.x).toBeGreaterThanOrEqual(0);
+      expect(airportBounds!.x + airportBounds!.width).toBeLessThanOrEqual(width);
+      await page.getByRole("option").first().click();
+      // From → To (#157): To's list opens; close it.
+      await expect(page.getByRole("combobox", { name: "Destination" })).toBeFocused();
+      await page.keyboard.press("Escape");
+      await expect(airports).toHaveCount(0);
+    } else {
+      // Phones: the full-screen picker (#148), inside the viewport.
+      const sheet = page.getByRole("dialog", { name: "Where from?" });
+      await expect(sheet).toBeVisible();
+      const sheetBounds = await sheet.boundingBox();
+      expect(sheetBounds!.x).toBeGreaterThanOrEqual(0);
+      expect(sheetBounds!.x + sheetBounds!.width).toBeLessThanOrEqual(width);
+      await sheet.getByRole("option").first().click();
+      await page.getByRole("dialog", { name: "Where to?" }).getByRole("button", { name: "Back" }).click();
+      await expect(page.getByRole("dialog")).toHaveCount(0);
+    }
     await page.getByRole("button", { name: "Round-trip", exact: true }).click();
     expect(await measure()).toEqual(baseline);
     await page.getByRole("button", { name: "Multi-city", exact: true }).click();
     await page.getByRole("button", { name: "Add Flight", exact: true }).click();
-    // Additional legs can grow the form; switching products must retain that space.
-    await page.waitForTimeout(100);
-    const expanded = await measure();
+    // More legs grow the Flights form; the Hotels page (its own page) keeps the shared geometry.
+    await expect(page.getByRole("heading", { name: "Flight 3" })).toBeVisible();
     await tabs.getByRole("button", { name: "Hotels", exact: true }).click();
-    expect(await measure()).toEqual(expanded);
+    await expect.poll(measure).toEqual(baseline);
     expect(errors).toEqual([]);
   });
 }
