@@ -18,4 +18,14 @@ describe("airline logo manifest", () => {
   it("the airlines named in gateway#62 have a logo by IATA code (the PDF looks them up by code)", () => {
     for (const code of ["pk", "pa", "9p", "ek", "qr", "tk", "wy", "gf", "z8"]) expect(manifest.logos[code as keyof typeof manifest.logos]).toBeTruthy();
   });
+
+  it("#164 / #97 / #136: British Airways, SriLankan and Centrum Air by code and name; AirSial uses its square mark", () => {
+    const logos = manifest.logos as Record<string, string>;
+    const codes = manifest.codes as Record<string, string>;
+    expect([logos.ba, logos["british airways"]]).toEqual(["/airline-logos/british-airways.png", "/airline-logos/british-airways.png"]);
+    expect([logos.ul, logos["srilankan airlines"]]).toEqual(["/airline-logos/srilankan-airlines.png", "/airline-logos/srilankan-airlines.png"]);
+    expect([logos.c6, logos["centrum air"]]).toEqual(["/airline-logos/centrum-air.png", "/airline-logos/centrum-air.png"]);
+    expect([codes["british airways"], codes["srilankan airlines"], codes["centrum air"]]).toEqual(["BA", "UL", "C6"]);
+    for (const key of ["pf", "airsial", "air sial"]) expect(logos[key]).toBe("/airline-logos/airsial-mark.png");
+  });
 });
