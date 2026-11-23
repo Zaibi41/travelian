@@ -910,7 +910,7 @@ function GroupCard({
 
                   size="sm"
 
-                  className="h-9 rounded-xl px-3 text-xs font-semibold"
+                  className="h-11 rounded-xl px-3 text-xs font-semibold sm:h-9"
 
                   onClick={() => {
 
@@ -928,7 +928,7 @@ function GroupCard({
 
                 <a href={whatsappHref(message)} target="_blank" rel="noreferrer">
 
-                  <Button size="sm" className="h-9 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover px-3.5 text-xs font-bold gap-1.5 shadow-sm">
+                  <Button size="sm" className="h-11 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover px-3.5 text-xs font-bold gap-1.5 shadow-sm sm:h-9">
 
                     <WhatsAppIcon className="h-3.5 w-3.5" /> WhatsApp Help
 
@@ -1558,7 +1558,7 @@ export default function GroupTicketingPage() {
 
               <div className="flex items-center gap-2">
 
-                <Button variant="outline" size="sm" className="rounded-xl text-xs" onClick={clearSearch}>
+                <Button variant="outline" size="sm" className="h-11 rounded-xl text-xs sm:h-9" onClick={clearSearch}>
 
                   Clear search
 
@@ -1789,7 +1789,7 @@ export default function GroupTicketingPage() {
 
                         variant={isSelected ? "default" : "outline"}
 
-                        className="rounded-xl text-xs font-bold shrink-0"
+                        className="h-11 rounded-xl text-xs font-bold shrink-0 sm:h-9"
 
                         onClick={(e) => {
 

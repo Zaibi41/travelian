@@ -1480,7 +1480,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     setParams(next, { replace: true });
                   }}
                   aria-label="Swap origin and destination"
-                  className={cn("h-6 w-6 rounded-full border border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0")}
+                  className={cn("relative h-6 w-6 rounded-full border border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0 before:absolute before:-inset-3 before:content-[''] sm:before:hidden")}
                 >
                   <ArrowLeftRight className="h-3.5 w-3.5" />
                 </button>
@@ -1516,7 +1516,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 size="sm"
                 variant="secondary"
                 onClick={openModify}
-                className="rounded-lg gap-2"
+                className="h-11 rounded-lg gap-2 sm:h-9"
               >
                 <Pencil className="h-3.5 w-3.5" /> Modify Search
               </Button>
@@ -1781,7 +1781,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               {/* Long names: one line with an ellipsis; tap to read the full name (issue #90). */}
                               <button type="button" title={flight.airline} aria-expanded={expandedAirlines.has(flight.flightId)}
                                 onClick={() => toggleAirlineName(flight.flightId)}
-                                className={cn("min-w-0 text-left text-xs sm:text-sm font-semibold text-foreground",
+                                className={cn("min-w-0 text-left text-xs sm:text-sm font-semibold text-foreground", "relative before:absolute before:-inset-x-3 before:-inset-y-3.5 before:content-[''] sm:before:hidden",
                                   expandedAirlines.has(flight.flightId) ? "whitespace-normal break-words" : "truncate")}>
                                 {flight.airline}
                               </button>
@@ -1870,7 +1870,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="ml-auto h-7 sm:h-8 shrink-0 rounded-lg px-2.5 sm:px-3 text-xs sm:text-xs font-semibold lg:mt-1"
+                            className="ml-auto h-11 sm:h-8 shrink-0 rounded-lg px-3 text-xs sm:text-xs font-semibold lg:mt-1"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -1979,15 +1979,15 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 <FarePriceText fare={fare} flight={flight} className="text-lg font-black text-primary" />
                                 <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
                                   <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer" className="min-w-0">
-                                    <Button variant="outline" size="sm" className="h-9 w-full min-w-0 whitespace-nowrap rounded-xl gap-2 px-2 font-semibold">
+                                    <Button variant="outline" size="sm" className="h-11 w-full min-w-0 whitespace-nowrap rounded-xl gap-2 px-2 font-semibold sm:h-9">
                                       <WhatsAppIcon className="h-4 w-4" /> WhatsApp
                                     </Button>
                                   </a>
                                   {searchExpired ? (
-                                    <Button size="sm" className="h-9 w-full rounded-xl px-3 font-semibold" onClick={revalidateSearch}>Revalidate</Button>
+                                    <Button size="sm" className="h-11 w-full rounded-xl px-3 font-semibold sm:h-9" onClick={revalidateSearch}>Revalidate</Button>
                                   ) : (
                                     <Link to={bookingHref(flight, fare)} className="min-w-0">
-                                      <Button size="sm" className="h-9 w-full rounded-xl px-3 font-semibold">Book</Button>
+                                      <Button size="sm" className="h-11 w-full rounded-xl px-3 font-semibold sm:h-9">Book</Button>
                                     </Link>
                                   )}
                                 </div>
@@ -2001,7 +2001,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="mx-auto flex h-8 gap-2 rounded-lg px-4 text-xs font-semibold text-primary hover:text-primary"
+                              className="mx-auto flex h-11 gap-2 rounded-lg px-4 text-xs font-semibold text-primary hover:text-primary sm:h-8"
                               aria-expanded={fareOptionsOpen}
                               onClick={() => setSelectedFlight((current) => current === flight.flightId ? null : flight.flightId)}
                             >
