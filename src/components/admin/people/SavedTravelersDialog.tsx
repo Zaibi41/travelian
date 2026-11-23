@@ -32,7 +32,7 @@ function useSettled(value: string, delay = 250) {
 }
 
 /**
- * #167: "Saved Travelers" on the admin traveler card opens this popup with a search box. Before typing it lists the
+ * Issue 167: "Saved Travelers" on the admin traveler card opens this popup with a search box. Before typing it lists the
  * most recent saved people; from 2 characters it searches saved travelers by name or passport number. Choosing one
  * fills the traveler's details (the form does that) and closes the popup.
  */

@@ -240,7 +240,7 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
 }) {
   const [customer, setCustomer] = useState<BookingCustomer>(blankCustomer);
   const [travelers, setTravelers] = useState<BookingTraveler[]>(() => initialTravelers(counts));
-  /** #167: which traveler's "Saved Travelers" popup is open. */
+  /** Issue 167: which traveler's "Saved Travelers" popup is open. */
   const [pickerFor, setPickerFor] = useState<number | null>(null);
   const [selling, setSelling] = useState<string | null>(null);
   const [localErrors, setLocalErrors] = useState<FormErrors | null>(null);
@@ -404,7 +404,7 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
                   <p className="text-label text-muted-foreground">{AGE_TEXT[traveler.details.passengerType]}</p>
                 </div>
                 {customerIsAdult1 ? <Tag tone="teal">The customer</Tag> : (
-                  // #167: the website's Traveler Details form plus one button that opens the saved travelers in a popup.
+                  // Issue 167: the website's Traveler Details form plus one button that opens the saved travelers in a popup.
                   <Button type="button" variant="outline" onClick={() => setPickerFor(index)} aria-label={`Saved Travelers, ${label}`}>
                     <Users className="h-4 w-4" aria-hidden="true" /> Saved Travelers
                   </Button>
