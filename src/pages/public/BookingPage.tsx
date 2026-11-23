@@ -352,8 +352,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const [email, setEmail] = useState("");
   const [phoneCode, setPhoneCode] = useState("+92");
   const [phone, setPhone] = useState("");
-  const [altPhoneCode, setAltPhoneCode] = useState("+92");
-  const [altPhone, setAltPhone] = useState("");
 
   const requiredDocs = useMemo(() => requiredDocuments(passengerForms, fareDocuments), [passengerForms, fareDocuments]);
 
@@ -407,7 +405,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   // Validation
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const phoneValid = /^\d{6,15}$/.test(phone);
-  const altPhoneValid = altPhone === "" || /^\d{6,15}$/.test(altPhone);
   const errors = useMemo(() => {
     const e: Record<string, string> = {};
     passengerForms.forEach((passenger, index) => {
@@ -416,9 +413,8 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
     if (email.trim() && !emailValid) e.email = "Enter a valid email address";
     if (!phone.trim()) e.phone = "Mobile number is required";
     else if (!phoneValid) e.phone = "Enter a valid numeric phone (6-15 digits)";
-    if (!altPhoneValid) e.altPhone = "Enter a valid numeric phone (6-15 digits)";
     return e;
-  }, [passengerForms, email, emailValid, phone, phoneValid, altPhoneValid, travelDateIso, requiredDocs]);
+  }, [passengerForms, email, emailValid, phone, phoneValid, travelDateIso, requiredDocs]);
 
   const isStep1Valid = Object.keys(errors).length === 0;
 
@@ -472,8 +468,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
         email?: string;
         phoneCode?: string;
         phone?: string;
-        altPhoneCode?: string;
-        altPhone?: string;
       };
       if (Array.isArray(draft.passengerForms) && draft.passengerForms.length === passengerLabels.length) {
         setPassengerForms(draft.passengerForms.map((passenger) => ({ ...passenger, dob: draftDay(passenger.dob), expiryDate: draftDay(passenger.expiryDate) })));
@@ -481,8 +475,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
       if (draft.email) setEmail(draft.email);
       if (draft.phoneCode) setPhoneCode(draft.phoneCode);
       if (draft.phone) setPhone(draft.phone);
-      if (draft.altPhoneCode) setAltPhoneCode(draft.altPhoneCode);
-      if (draft.altPhone) setAltPhone(draft.altPhone);
     } catch {
       localStorage.removeItem(draftKey);
     }
@@ -586,7 +578,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
         type: "flight", status: live ? "held" : "requested", holdExpiresAt: live ? result.booking.hold_expires_at : undefined,
         flight: { airline: ctxAirline, flightNumber: ctxFlightNo, from: ctxFrom, fromCode: ctxFrom, to: ctxTo, toCode: ctxTo, date: ctxDate, cabin: ctxCabin },
         travelers,
-        contact: { email: email.trim(), phone: `${phoneCode}${phone}`, altPhone: altPhone ? `${altPhoneCode}${altPhone}` : undefined },
+        contact: { email: email.trim(), phone: `${phoneCode}${phone}` },
         addons: [], paymentMethod: live ? paymentMethod : "request", paymentStatus: "unpaid", ticketStatus: "not_issued",
         pricing: { base: total, addons: 0, taxes: 0, total, currency: result.booking.total.currency },
         gateway: { reference: result.reference, token: result.access_token, live },
@@ -631,7 +623,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
         status: booking.status === "requested" ? "requested" : "held",
         flight: isFlight ? { airline: ctxAirline, flightNumber: ctxFlightNo, from: ctxFrom, fromCode: ctxFrom, to: ctxTo, toCode: ctxTo, date: ctxDate, cabin: ctxCabin } : undefined,
         travelers,
-        contact: { email: email.trim() || undefined, phone: `${phoneCode}${phone}`, altPhone: altPhone ? `${altPhoneCode}${altPhone}` : undefined },
+        contact: { email: email.trim() || undefined, phone: `${phoneCode}${phone}` },
         addons: [],
         paymentMethod,
         paymentStatus: "unpaid",
@@ -700,7 +692,6 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
         contact: {
           email: email.trim() || undefined,
           phone: `${phoneCode}${phone}`,
-          altPhone: altPhone ? `${altPhoneCode}${altPhone}` : undefined,
         },
         seat: selectedSeat || undefined,
         addons: addons.filter((addon) => selectedAddons.includes(addon.id)).map((addon) => ({ id: addon.id, name: addon.name, price: addon.price })),
@@ -997,7 +988,8 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     <h2 className="text-lg font-bold text-foreground mb-1">Contact Information</h2>
                     <p className="text-sm text-muted-foreground mb-6">We'll use the mobile number for booking follow-up. Email is optional.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2" data-error-key="email">
+                      {/* #167: Email and Mobile Number in one row; one mobile number only (no alternate). */}
+                      <div data-error-key="email">
                         <Label htmlFor="contact-email" className="text-sm font-medium">Email</Label>
                         <Input
                           id="contact-email"
@@ -1011,7 +1003,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                         {touched && errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
                         {!email.trim() && <p id="contact-email-hint" className="text-xs text-muted-foreground mt-1">Optional, but recommended for e-ticket delivery.</p>}
                       </div>
-                      <div className="md:col-span-2" data-error-key="phone">
+                      <div data-error-key="phone">
                         <Label htmlFor="contact-phone" className="text-sm font-medium">Mobile Number *</Label>
                         <div className="flex gap-2 mt-1.5">
                           <CountryCodePicker value={phoneCode} onChange={setPhoneCode} />
@@ -1022,25 +1014,11 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                             className="h-11 rounded-xl flex-1"
                             value={phone}
                             onChange={onPhoneChange(setPhone)}
-                            aria-describedby="contact-phone-hint"
+                            aria-invalid={touched && errors.phone ? true : undefined}
+                            aria-describedby={touched && errors.phone ? "contact-phone-error" : undefined}
                           />
                         </div>
-                        <p id="contact-phone-hint" className="text-xs text-muted-foreground mt-1">Travelian will use this number for ticketing updates and support.</p>
-                        {touched && errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
-                      </div>
-                      <div className="md:col-span-2" data-error-key="altPhone">
-                        <Label className="text-sm font-medium">Alternate Mobile Number</Label>
-                        <div className="flex gap-2 mt-1.5">
-                          <CountryCodePicker value={altPhoneCode} onChange={setAltPhoneCode} />
-                          <Input
-                            inputMode="numeric"
-                            placeholder="3001234567"
-                            className="h-11 rounded-xl flex-1"
-                            value={altPhone}
-                            onChange={onPhoneChange(setAltPhone)}
-                          />
-                        </div>
-                        {touched && errors.altPhone && <p className="text-xs text-destructive mt-1">{errors.altPhone}</p>}
+                        {touched && errors.phone && <p id="contact-phone-error" className="text-xs text-destructive mt-1">{errors.phone}</p>}
                       </div>
                     </div>
                   </CardContent>
