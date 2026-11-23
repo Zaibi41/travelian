@@ -54,7 +54,7 @@ export function flightShareMessage(
     ...(trip ? [`Duration: ${trip}`] : []),
     `Fare: ${fare.name}`,
     `Baggage: ${baggage.known ? baggage.detail : underBaggageLabel(baggage.short)}`,
-    `Meal: ${meal || "No Meal"}`,
+    `Meal: ${meal || "Meal info not available"}`, // #154: missing is not "No Meal"
     ...(price ? [`Price: ${price}`] : []),
   ].join("\n");
 }

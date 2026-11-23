@@ -36,6 +36,7 @@ import { searchPublicGroups, GATEWAY_GROUP_PROVIDER } from "@/lib/public-booking
 import { normalizeAirlineName, isSameAirline, extractAllAirlines, getAirlineNameFromCarrier } from "@/lib/airline-normalization";
 import { journeyMinutes, minutesText, stayAt, stayBetween, stopLine, stopSummary, type Stay } from "@/lib/flight-stays";
 import { activeFilterCount, filtersFromParams, FLIGHT_SORTS, sortShortLabel, withFilterParams, type FlightSort } from "@/lib/flight-result-filters";
+import { mealStatus, mealText } from "@/lib/meal";
 import { BAGGAGE_UNKNOWN, baggageFilterOptions, baggageText, checkedText, handCarryText, underBaggageLabel, type BaggageText } from "@/lib/baggage";
 
 // Preload airports for routeLabel lookup
@@ -78,6 +79,9 @@ type DisplayFare = {
   bagsDetail?: string | null;
   /** A round trip's baggage per flight (#123). */
   legBags?: { label: string; bags: string; bagsDetail: string }[];
+  /** #113: the gateway's total for every traveler searched, and how many travelers it is for. */
+  allTravelersTotal?: number;
+  travelerCount?: number;
   meal?: string | null;
   refund?: string | null;
   change?: string | null;
@@ -617,6 +621,31 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return `${dst} ${Math.round(converted).toLocaleString()}`;
   };
 
+  // #113: with several travelers a fare shows the gateway's total for all of them, and the per-adult price below it.
+  // Without a gateway total (a passenger type the supplier didn't price) it shows the per-adult price, labelled so.
+  const searchedTravelers = Number(travelers.adults || 0) + Number(travelers.children || 0) + Number(travelers.infants || 0);
+  const farePrice = (fare: DisplayFare, flight: TravelianFlight) => {
+    const currency = fare.price.currency || flight.currency;
+    const perAdult = formatFare(fare.price.total, currency);
+    if (searchedTravelers <= 1) return { main: perAdult, note: "", secondary: "" };
+    if (fare.allTravelersTotal && fare.allTravelersTotal > 0) {
+      const count = fare.travelerCount || searchedTravelers;
+      return { main: formatFare(fare.allTravelersTotal, currency), note: `total for ${count} travelers`, secondary: `${perAdult} per adult` };
+    }
+    return { main: perAdult, note: "per adult", secondary: "" };
+  };
+  const FarePriceText = ({ fare, flight, className, align = "left" }: { fare: DisplayFare; flight: TravelianFlight; className: string; align?: "left" | "center" }) => {
+    const price = farePrice(fare, flight);
+    const label = [price.main, price.note, price.secondary && `(${price.secondary})`].filter(Boolean).join(" ");
+    return (
+      <span className={cn("flex min-w-0 flex-col", align === "center" ? "items-center text-center" : "items-start text-left")} title={label}>
+        <span className={cn("block max-w-full truncate whitespace-nowrap", className)}>{price.main}</span>
+        {price.note && <span className="block max-w-full truncate text-xs font-medium text-muted-foreground">{price.note}</span>}
+        {price.secondary && <span className="block max-w-full truncate text-xs text-muted-foreground">{price.secondary}</span>}
+      </span>
+    );
+  };
+
   const isUnclearDisplayValue = (value: unknown) => {
     const text = String(value || "").trim();
     return !text || /^(null|undefined|n\/a|na|-|none|not available|see supplier details|subject to supplier rules|meal info not available|baggage info not available)$/i.test(text);
@@ -642,17 +671,19 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return text;
   };
 
-  const mealLabel = (fare: DisplayFare, flight: TravelianFlight) => {
-    const meal = cleanFareText(fare.meal || flight.meal, "No Meal");
-    if (/included|available|yes/i.test(meal)) return "Meal";
-    return meal === "No Meal" ? "No Meal" : "Meal";
+  // #154: "No Meal" only when the fare says so; missing data is "Meal info not available".
+  const mealLabel = (fare: DisplayFare, flight: TravelianFlight) => mealText(fare.meal || flight.meal);
+  /** Meal served: green fork and knife; no meal: crossed out; unknown: a muted fork and knife. */
+  const MealIcon = ({ fare, flight, className }: { fare: DisplayFare; flight: TravelianFlight; className: string }) => {
+    const status = mealStatus(fare.meal || flight.meal);
+    if (status === "none") return <UtensilsCrossed aria-hidden="true" className={cn(className, "shrink-0 text-muted-foreground")} />;
+    return <Utensils aria-hidden="true" className={cn(className, "shrink-0", status === "included" ? "text-emerald-600" : "text-muted-foreground opacity-50")} />;
   };
 
   // Shown under a "Baggage" heading: "Check with airline" rather than repeating "Baggage:".
   const baggageLabel = (fare: DisplayFare, flight: TravelianFlight) => underBaggageLabel(fareBaggage(fare, flight).short);
   const baggageWords = (fare: DisplayFare, flight: TravelianFlight) => fareBaggage(fare, flight).detail;
 
-  const hasMeal = (fare: DisplayFare, flight: TravelianFlight) => mealLabel(fare, flight) !== "No Meal";
   const hasBaggage = (fare: DisplayFare, flight: TravelianFlight) => fareBaggage(fare, flight).known;
 
   const fareRows = (flight: TravelianFlight): DisplayFare[] => {
@@ -663,6 +694,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         bags: fare.bags,
         bagsDetail: fare.bagsDetail,
         legBags: fare.legBags,
+        allTravelersTotal: fare.allTravelersTotal,
+        travelerCount: fare.travelerCount,
         meal: fare.meal || flight.meal,
         refund: fare.refund,
         change: fare.change,
@@ -763,7 +796,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return whatsappUrl(flightHelpMessage({ airline: flight.airline, journeys, cabin: travelers.cabin || flight.class, lowestPrice: price }));
   };
 
-  const bookingHref = (flight: TravelianFlight, fare?: { tier: string; price: { base?: number | null; taxes?: number | null; total: number; currency?: string }; amenities?: string[]; gatewayFareIds?: string[]; refund?: string | null; cancellation?: string | null }) => {
+  const bookingHref = (flight: TravelianFlight, fare?: { allTravelersTotal?: number; tier: string; price: { base?: number | null; taxes?: number | null; total: number; currency?: string }; amenities?: string[]; gatewayFareIds?: string[]; refund?: string | null; cancellation?: string | null }) => {
     if (adminMode) {
       // Admin checkout never takes a price or supplier flight ID from the URL: the gateway
       // must reprice the fare (booking is blocked until it can). Itinerary only.
@@ -793,6 +826,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       price: String(fare?.price.total ?? flight.price),
       currency: fare?.price.currency || flight.currency || "PKR",
     });
+    // #113: the gateway's total for all travelers, so checkout shows it instead of the per-adult price x travelers.
+    const allTravelers = fare && "allTravelersTotal" in fare ? fare.allTravelersTotal : flight.fareOptions?.[0]?.allTravelersTotal;
+    if (allTravelers && allTravelers > 0) query.set("total", String(allTravelers));
     if (fare?.tier) query.set("fare", fare.tier);
     // A group fare from the Travelian gateway: booked and priced by the gateway (the price here is for display only).
     if (flight.provider === GATEWAY_GROUP_PROVIDER && flight.offerId) query.set("groupTicketId", String(flight.offerId));
@@ -1883,10 +1919,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 </td>
                                 <td className="px-4 py-3 align-middle">
                                   <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={mealLabel(fare, flight)}>
-                                    {hasMeal(fare, flight)
-                                      ? <Utensils className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                                      : <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-                                    <span className="truncate">{mealLabel(fare, flight)}</span>
+                                    <MealIcon fare={fare} flight={flight} className="h-3.5 w-3.5" />
+                                    <span className="line-clamp-2 break-words">{mealLabel(fare, flight)}</span>
                                   </p>
                                 </td>
                                 <td className="px-4 py-3 align-middle">
@@ -1897,7 +1931,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                   </p>
                                 </td>
                                 <td className="overflow-hidden px-3 py-3 text-center align-middle">
-                                  <span className="block truncate whitespace-nowrap text-base font-black text-foreground" title={formatFare(fare.price.total, fare.price.currency || flight.currency)}>{formatFare(fare.price.total, fare.price.currency || flight.currency)}</span>
+                                  <FarePriceText fare={fare} flight={flight} align="center" className="text-base font-black text-foreground" />
                                 </td>
                                 <td className="overflow-hidden px-3 py-3 text-right align-middle">
                                   <div className="flex min-w-0 flex-col items-stretch gap-2">
@@ -1925,10 +1959,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               {/* Meal and Baggage in 2-column grid */}
                               <div className="grid grid-cols-2 gap-3">
                                 <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={mealLabel(fare, flight)}>
-                                  {hasMeal(fare, flight)
-                                    ? <Utensils className="h-4 w-4 shrink-0 text-emerald-600" />
-                                    : <UtensilsCrossed className="h-4 w-4 shrink-0 text-muted-foreground" />}
-                                  <span className="truncate">{mealLabel(fare, flight)}</span>
+                                  <MealIcon fare={fare} flight={flight} className="h-4 w-4" />
+                                  <span className="line-clamp-2 break-words">{mealLabel(fare, flight)}</span>
                                 </p>
                                 <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={baggageWords(fare, flight)}>
                                   <Luggage aria-hidden="true" className={cn("h-4 w-4 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
@@ -1939,7 +1971,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               
                               {/* Price and fare actions */}
                               <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                                <p className="whitespace-nowrap text-lg font-black text-primary">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</p>
+                                <FarePriceText fare={fare} flight={flight} className="text-lg font-black text-primary" />
                                 <div className="w-36 max-w-[50%] shrink-0">
                                   {searchExpired ? (
                                     <Button size="sm" className="h-11 w-full rounded-xl px-3 font-semibold sm:h-9" onClick={revalidateSearch}>Revalidate</Button>
