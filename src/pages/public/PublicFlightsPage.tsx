@@ -2365,7 +2365,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         fareDetailsTab === tab ? "bg-primary text-primary-foreground shadow-sm" : "bg-transparent hover:bg-primary/5 hover:text-primary",
                       )}
                     >
-                      {fareDetailsTab === tab && <Check className="h-3.5 w-3.5" />}
+                      {fareDetailsTab === tab && <Check className="hidden h-3.5 w-3.5 sm:block" aria-hidden="true" />}
                       <span className="truncate">{label}</span>
                     </button>
                   ))}
