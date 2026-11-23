@@ -219,6 +219,18 @@
       grid-column: 1 / -1;
     }
   }
+  /* Phones (#161): the group form keeps Search right under its fields (12px), with no reserved empty space. */
+  @media (max-width: 639px) {
+    .unified-search-content:has(.group-search-fields) {
+      min-height: 0;
+      padding-bottom: 1.25rem;
+    }
+    .unified-search-content .group-search-fields > .unified-search-submit {
+      position: static;
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+  }
   /* Phones (#148): From and To stacked straight under the trip type and travellers row, with the round swap
      button on the line between them (not alone on a row of its own above). 8px between From and To keeps the
      flight form inside the shared search height, so switching products or trip types doesn't move the card. */
@@ -264,8 +276,10 @@
   }
   /* Shared search surfaces: visible controls without changing their geometry. */
   .home-search .travelian-search-card :is(input, [role="combobox"], button[aria-haspopup="dialog"]) {
-    border-color: hsl(var(--muted-foreground) / 0.8);
     background-color: hsl(var(--muted) / 0.55);
+  }
+  .home-search .travelian-search-card :is(input, [role="combobox"], button[aria-haspopup="dialog"]):not([aria-invalid="true"]) {
+    border-color: hsl(var(--muted-foreground) / 0.8);
   }
   .home-search .travelian-search-card :is(input, [role="combobox"], button[aria-haspopup="dialog"]):focus-visible {
     border-color: hsl(var(--primary));

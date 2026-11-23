@@ -42,7 +42,7 @@ export function bands(days: CalendarDay[]): Map<string, Band> {
   return fareBands(days).bands;
 }
 
-function Month({ month, byDate, band, selected, today, onPick, anyDate, shimmer }: {
+function Month({ month, byDate, band, selected, today, onPick, anyDate, shimmer, min, marked }: {
   month: Date;
   byDate: Map<string, CalendarDay>;
   band: Map<string, Band>;
@@ -52,7 +52,12 @@ function Month({ month, byDate, band, selected, today, onPick, anyDate, shimmer 
   anyDate?: boolean;
   /** A future date without a price yet shows a loading bar in its price slot. */
   shimmer: (info: CalendarDay | undefined) => boolean;
+  /** Earliest date that can be picked (ISO), e.g. the departure date for the return (#151). */
+  min?: string;
+  /** A day shown outlined (the departure date in the return calendar, #151); days between it and `selected` are tinted. */
+  marked?: string;
 }) {
+  const floor = min && min > today ? min : today;
   const days = eachDayOfInterval({ start: startOfMonth(month), end: endOfMonth(month) });
   return (
     <div className="min-w-0">
@@ -63,13 +68,15 @@ function Month({ month, byDate, band, selected, today, onPick, anyDate, shimmer 
         {days.map((day) => {
           const key = format(day, "yyyy-MM-dd");
           const info = byDate.get(key);
-          const real = key >= today && info?.available && info.lowest_price ? info.lowest_price : null;
+          const real = key >= floor && info?.available && info.lowest_price ? info.lowest_price : null;
           const tone = real ? band.get(key) ?? "avg" : null;
           const isSelected = selected === key;
-          const selectable = Boolean(real) || (anyDate && key >= today);
-          const loading = !real && key >= today && shimmer(info);
-          const label = `${format(day, "EEEE d MMMM")}: ${real ? `from ${formatFare(real.amount_minor, real.currency)}` : key < today ? "past date"
-            : loading ? "loading fare" : anyDate ? (info?.checked ? "no fares found" : "fare not checked yet") : "no availability"}`;
+          const selectable = Boolean(real) || (anyDate && key >= floor);
+          const loading = !real && key >= floor && shimmer(info);
+          const isMarked = marked === key;
+          const between = Boolean(marked && selected && key > marked && key < selected);
+          const label = `${format(day, "EEEE d MMMM")}${isMarked ? " (departure)" : ""}: ${real ? `from ${formatFare(real.amount_minor, real.currency)}` : key < today ? "past date"
+            : key < floor ? "before departure" : loading ? "loading fare" : anyDate ? (info?.checked ? "no fares found" : "fare not checked yet") : "no availability"}`;
           return (
             <button
               key={key}
@@ -80,6 +87,7 @@ function Month({ month, byDate, band, selected, today, onPick, anyDate, shimmer 
               data-available={real ? "true" : "false"}
               onClick={() => selectable && onPick?.(key)}
               className={`mx-auto flex h-11 w-11 flex-col items-center justify-center rounded-lg leading-tight transition-colors ${
+                isMarked && !isSelected ? "ring-2 ring-inset ring-primary " : ""}${between ? "bg-primary/10 " : ""}${
                 isSelected ? "bg-primary text-primary-foreground" : real ? "hover:bg-primary/10" : selectable ? "text-foreground hover:bg-muted" : "cursor-not-allowed text-muted-foreground"
               }`}
             >
@@ -94,7 +102,7 @@ function Month({ month, byDate, band, selected, today, onPick, anyDate, shimmer 
   );
 }
 
-export function GroupFareCalendar({ days, selected, onPick, caption, anyDate, checking, status = "ready" }: {
+export function GroupFareCalendar({ days, selected, onPick, caption, anyDate, checking, status = "ready", min, marked }: {
   days: CalendarDay[];
   selected?: string;
   onPick?: (date: string) => void;
@@ -106,23 +114,29 @@ export function GroupFareCalendar({ days, selected, onPick, caption, anyDate, ch
   /** loading: the prices are on their way (the slots shimmer); error: they couldn't be loaded ("Prices unavailable").
    *  In both cases every future date can be picked. */
   status?: "loading" | "ready" | "error";
+  /** Earliest date that can be picked (ISO); earlier dates are greyed out and the calendar opens on its month (#151). */
+  min?: string;
+  /** A day to outline, e.g. the departure date in the return calendar (#151). */
+  marked?: string;
 }) {
   const today = format(new Date(), "yyyy-MM-dd");
   const byDate = useMemo(() => new Map(days.map((day) => [day.date, day])), [days]);
-  const fares = useMemo(() => fareBands(days, today), [days, today]);
+  const floor = min && min > today ? min : today;
+  const fares = useMemo(() => fareBands(days, floor), [days, floor]);
   const band = fares.bands;
   const loading = status === "loading";
   const unavailable = status === "error";
   // Until the prices are in (or when they failed), any future date can be picked, as on a plain calendar.
   const pickAny = Boolean(anyDate) || loading || unavailable;
   const shimmer = (info: CalendarDay | undefined) => loading || Boolean(checking && info && info.checked === false);
-  const first = days.length ? startOfMonth(parseISO(days[0].date)) : startOfMonth(new Date());
+  const firstDay = days.length ? startOfMonth(parseISO(days[0].date)) : startOfMonth(new Date());
+  const first = min && startOfMonth(parseISO(min)) > firstDay ? startOfMonth(parseISO(min)) : firstDay;
   const last = pickAny ? addMonths(startOfMonth(new Date()), 11) : days.length ? startOfMonth(parseISO(days[days.length - 1].date)) : first;
   const initial = selected ? startOfMonth(parseISO(selected)) : first;
   const [month, setMonth] = useState(initial < first || initial > last ? first : initial);
   if (!days.length && !pickAny) return null;
   const second = addMonths(month, 1);
-  const open = days.filter((day) => day.available && day.lowest_price && day.date >= today).length;
+  const open = days.filter((day) => day.available && day.lowest_price && day.date >= floor).length;
   return (
     <section aria-label={caption ?? "Fare calendar"} className="w-full min-w-0">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -137,8 +151,8 @@ export function GroupFareCalendar({ days, selected, onPick, caption, anyDate, ch
           className="rounded-lg border p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-40"><ArrowRight className="h-4 w-4" /></button>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Month month={month} byDate={byDate} band={band} selected={selected} today={today} onPick={onPick} anyDate={pickAny} shimmer={shimmer} />
-        <div className="hidden sm:block"><Month month={second} byDate={byDate} band={band} selected={selected} today={today} onPick={onPick} anyDate={pickAny} shimmer={shimmer} /></div>
+        <Month month={month} byDate={byDate} band={band} selected={selected} today={today} onPick={onPick} anyDate={pickAny} shimmer={shimmer} min={min} marked={marked} />
+        <div className="hidden sm:block"><Month month={second} byDate={byDate} band={band} selected={selected} today={today} onPick={onPick} anyDate={pickAny} shimmer={shimmer} min={min} marked={marked} /></div>
       </div>
       {!unavailable && (
         <div className="mt-3 border-t pt-2 text-xs text-muted-foreground">
