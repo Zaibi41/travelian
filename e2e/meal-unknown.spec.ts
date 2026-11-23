@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
-// #154: "No Meal" only when the fare says so; missing meal data says "Meal info not available" on the card, in Flight
-// details and in the WhatsApp message. Admin: a missing meal is a dash (like a missing refund), never "No Meal".
+// #154: "No Meal" only when the fare says so; missing meal data says "Meal info not available" on the card and in Flight
+// details (the per-flight WhatsApp message of #53 has no meal line and never says "No Meal"). Admin: a missing meal is a dash (like a missing refund), never "No Meal".
 // Intercepted gateway responses only. MEAL_SHOTS_DIR saves screenshots; MEAL_SHOTS=before only takes them.
 
 if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
@@ -54,7 +54,8 @@ for (const width of [360, 390, 768, 1440]) {
     await expect(visible(page, "South Air", "No Meal")).toHaveCount(0);
     await expect(visible(page, "South Air", "Meal info not available")).toHaveCount(0);
     const wa = await card(page, "Emirates").getByRole("link").filter({ hasText: "WhatsApp" }).locator("visible=true").first().getAttribute("href");
-    expect(decodeURIComponent(wa!)).toContain("Meal: Meal info not available");
+    // #53: one WhatsApp message per flight (flight numbers, date, route, cabin, lowest price: no meal line); it never says "No Meal".
+    expect(decodeURIComponent(wa!)).not.toContain("No Meal");
     await card(page, "Emirates").getByRole("button", { name: "Flight Details" }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByText("Meal info not available", { exact: true }).first()).toBeVisible();

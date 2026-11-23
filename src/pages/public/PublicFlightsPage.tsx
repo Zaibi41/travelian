@@ -24,6 +24,7 @@ import { FlightSearchLoader } from "@/components/public/FlightSearchLoader";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
 import { AirlineLogo } from "@/components/public/AirlineLogo";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { flightHelpMessage } from "@/lib/flight-whatsapp";
 import { ResultsSheet } from "@/components/public/ResultsSheet";
 import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
 import { keepReturnDate, returnDateError, RETURN_CLEARED_MESSAGE } from "@/lib/return-date";
@@ -779,43 +780,20 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const searchExpired = apiStatus === "success" && flights.length > 0 && expirySeconds === 0;
   const calculatorTotal = (Number(calculatorBase) || 0) + (Number(calculatorTaxes) || 0) + (Number(calculatorServiceFee) || 0);
 
-  const flightWhatsAppHref = (flight: TravelianFlight) => {
-    const message = [
-      "Hello Travelian,",
-      "",
-      "I need help with this flight:",
-      "",
-      `Airline: ${flight.airline}`,
-      `Flight: ${flight.flightNumber}`,
-      `Route: ${flight.origin} to ${flight.destination}`,
-      `Date: ${format(departDate, "MMM dd, yyyy")}`,
-      `Cabin: ${flight.class}`,
-      `Fare: ${formatFare(flight.price, flight.currency)}`,
-      "",
-      "Please guide me with booking details.",
-    ].join("\n");
-    return whatsappUrl(message);
-  };
-
-  const fareWhatsAppHref = (flight: TravelianFlight, fare: DisplayFare) => {
-    const message = [
-      "Hello Travelian,",
-      "",
-      "I need help with this fare option:",
-      "",
-      `Airline: ${flight.airline}`,
-      `Flight: ${flight.flightNumber}`,
-      `Route: ${flight.origin} to ${flight.destination}`,
-      `Date: ${format(departDate, "MMM dd, yyyy")}`,
-      `Cabin: ${flight.class}`,
-      `Fare option: ${fare.tier}`,
-      `Baggage: ${baggageLabel(fare, flight)}`,
-      `Meal: ${mealLabel(fare, flight)}`,
-      `Fare: ${[farePrice(fare, flight).main, farePrice(fare, flight).note].filter(Boolean).join(" ")}`,
-      "",
-      "Please guide me with booking details.",
-    ].join("\n");
-    return whatsappUrl(message);
+  /** #53: one WhatsApp link per flight: each journey's flight numbers, route and date, the cabin, and the lowest price
+   *  shown on the card (lowestFare: the card's first fare row, as the gateway priced it). */
+  const flightWhatsAppHref = (flight: TravelianFlight, lowestFare?: DisplayFare) => {
+    const groups = journeyGroups(flight);
+    const labels = tripType === "roundtrip" ? ["Outbound", "Return"] : groups.map((_, index) => (groups.length > 1 ? `Flight ${index + 1}` : ""));
+    const journeys = groups.map((group, index) => ({
+      label: labels[index] || "",
+      flightNumbers: [...new Set(group.map((segment) => String(segment.flightNumber || "").trim()).filter(Boolean))],
+      origin: airportCode(group[0]?.origin) || flight.origin,
+      destination: airportCode(group[group.length - 1]?.destination) || flight.destination,
+      date: formatFlightDate(group[0]?.departureTime || flight.departureTime).replace(/^(\d{2}) (\w{3}) (\d{4})$/, "$2 $1, $3"),
+    }));
+    const price = lowestFare ? formatFare(lowestFare.price.total, lowestFare.price.currency || flight.currency) : formatFare(flight.price, flight.currency);
+    return whatsappUrl(flightHelpMessage({ airline: flight.airline, journeys, cabin: travelers.cabin || flight.class, lowestPrice: price }));
   };
 
   const bookingHref = (flight: TravelianFlight, fare?: { allTravelersTotal?: number; tier: string; price: { base?: number | null; taxes?: number | null; total: number; currency?: string }; amenities?: string[]; gatewayFareIds?: string[]; refund?: string | null; cancellation?: string | null }) => {
@@ -1866,11 +1844,18 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         </div>
 
                         {primaryFare && (
+                          <div className="ml-auto flex shrink-0 items-center gap-2 lg:mt-1">
+                          {/* #53 / #163: one WhatsApp per flight, next to Flight Details; Book stays the main action on each fare. */}
+                          <Button asChild variant="outline" size="sm" className="h-11 sm:h-8 shrink-0 gap-1.5 rounded-lg px-3 text-xs font-semibold">
+                            <a href={flightWhatsAppHref(flight, primaryFare)} target="_blank" rel="noreferrer" aria-label={`Ask about ${flight.airline} ${flight.flightNumber} on WhatsApp`}>
+                              <WhatsAppIcon className="h-3.5 w-3.5" /> WhatsApp
+                            </a>
+                          </Button>
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="ml-auto h-11 sm:h-8 shrink-0 rounded-lg px-3 text-xs sm:text-xs font-semibold lg:mt-1"
+                            className="h-11 sm:h-8 shrink-0 rounded-lg px-3 text-xs sm:text-xs font-semibold"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -1879,6 +1864,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           >
                             Flight Details
                           </Button>
+                          </div>
                         )}
                       </div>
                       <div className="overflow-hidden rounded-2xl border">
@@ -1935,11 +1921,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 </td>
                                 <td className="overflow-hidden px-3 py-3 text-right align-middle">
                                   <div className="flex min-w-0 flex-col items-stretch gap-2">
-                                    <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer" className="min-w-0">
-                                      <Button variant="outline" size="sm" className="w-full min-w-0 justify-center gap-2 rounded-xl px-2">
-                                        <WhatsAppIcon className="h-4 w-4" /> WhatsApp
-                                      </Button>
-                                    </a>
                                     {searchExpired ? (
                                       <Button size="sm" className="w-full rounded-xl px-3" onClick={revalidateSearch}>Revalidate</Button>
                                     ) : (
@@ -1977,12 +1958,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               {/* Price and fare actions */}
                               <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                                 <FarePriceText fare={fare} flight={flight} className="text-lg font-black text-primary" />
-                                <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
-                                  <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer" className="min-w-0">
-                                    <Button variant="outline" size="sm" className="h-11 w-full min-w-0 whitespace-nowrap rounded-xl gap-2 px-2 font-semibold sm:h-9">
-                                      <WhatsAppIcon className="h-4 w-4" /> WhatsApp
-                                    </Button>
-                                  </a>
+                                <div className="w-36 max-w-[50%] shrink-0">
                                   {searchExpired ? (
                                     <Button size="sm" className="h-11 w-full rounded-xl px-3 font-semibold sm:h-9" onClick={revalidateSearch}>Revalidate</Button>
                                   ) : (
@@ -2052,7 +2028,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               )}
                             </>
                           )}
-                          <a href={flightWhatsAppHref(flight)} target="_blank" rel="noreferrer">
+                          <a href={flightWhatsAppHref(flight, primaryFare)} target="_blank" rel="noreferrer">
                             <Button variant="outline" size="sm" className="w-full rounded-xl gap-2">
                               <WhatsAppIcon className="h-4 w-4" /> WhatsApp Help
                             </Button>
@@ -2490,7 +2466,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                     <FarePriceText fare={fare} flight={fareDetails.flight} className="text-xl font-black text-primary" />
                                   </div>
                                   <a
-                                    href={fareWhatsAppHref(fareDetails.flight, fare)}
+                                    href={flightWhatsAppHref(fareDetails.flight, fareRows(fareDetails.flight)[0])}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="shrink-0"

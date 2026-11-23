@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
 // #158: on phones every control on the Flights and Group Ticketing results is at least 44px tall and wide (its hit
-// area), with at least 8px between Book and WhatsApp. One-way, round trip, long airline names. Intercepted gateway
+// area), with at least 8px between Flight Details and WhatsApp (#53). One-way, round trip, long airline names. Intercepted gateway
 // answers only. TOUCH_SHOTS_DIR saves screenshots; TOUCH_SHOTS=before only takes them and prints what is too small.
 
 if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
@@ -76,7 +76,7 @@ for (const width of [390, 360]) {
     { name: "one-way", query: "from=LHE&to=DXB&depart=2026-12-08&trip=oneway&adults=1" },
     { name: "round-trip", query: "from=LHE&to=DXB&depart=2026-12-08&return=2026-12-15&trip=roundtrip&adults=1" },
   ]) {
-    test(`flights ${trip.name} ${width}px: every control at least 44px; Book and WhatsApp 8px apart`, async ({ page }) => {
+    test(`flights ${trip.name} ${width}px: every control at least 44px; WhatsApp and Flight Details 8px apart`, async ({ page }) => {
       await page.setViewportSize({ width, height: 860 });
       await mock(page);
       await page.goto(`/flights-search?${trip.query}`);
@@ -86,10 +86,11 @@ for (const width of [390, 360]) {
       const small = await smallTargets(page, "main");
       if (BEFORE) { console.log(`flights ${trip.name} ${width}:`, small); return; }
       expect(small).toEqual([]);
-      const book = page.getByRole("button", { name: "Book", exact: true }).locator("visible=true").first();
-      const wa = page.getByRole("button", { name: "WhatsApp", exact: true }).locator("visible=true").first();
-      const [b, w] = [await book.boundingBox(), await wa.boundingBox()];
-      expect(Math.abs(b!.x - (w!.x + w!.width))).toBeGreaterThanOrEqual(8);
+      // #53: WhatsApp is one per flight, beside Flight Details (8px apart); Book stays on each fare row.
+      const details = page.getByRole("button", { name: "Flight Details" }).locator("visible=true").first();
+      const wa = page.getByRole("link", { name: /on WhatsApp$/ }).locator("visible=true").first();
+      const [d, w] = [await details.boundingBox(), await wa.boundingBox()];
+      expect(Math.abs(d!.x - (w!.x + w!.width))).toBeGreaterThanOrEqual(8);
       expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);
     });
   }
