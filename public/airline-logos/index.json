@@ -55,7 +55,14 @@
     "centrum": "C6",
     "srilankan airlines": "UL",
     "sri lankan airlines": "UL",
-    "srilankan": "UL"
+    "srilankan": "UL",
+    "hy": "HY",
+    "uzbekistan airways": "HY",
+    "uzbekistan": "HY",
+    "j2": "J2",
+    "azerbaijan airlines": "J2",
+    "azerbaijan": "J2",
+    "azal": "J2"
   },
   "logos": {
     "1g": "/airline-logos/travelport.svg",
@@ -126,6 +133,11 @@
     "british airways": "/airline-logos/british-airways.png",
     "c6": "/airline-logos/centrum-air.png",
     "centrum air": "/airline-logos/centrum-air.png",
-    "centrum": "/airline-logos/centrum-air.png"
+    "centrum": "/airline-logos/centrum-air.png",
+    "hy": "/airline-logos/uzbekistan-airways.png",
+    "uzbekistan airways": "/airline-logos/uzbekistan-airways.png",
+    "uzbekistan": "/airline-logos/uzbekistan-airways.png",
+    "j2": "/airline-logos/azerbaijan-airlines.png",
+    "azal": "/airline-logos/azerbaijan-airlines.png"
   }
 }
