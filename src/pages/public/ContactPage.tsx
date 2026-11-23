@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Mail, Phone, MapPin, Clock, MessageSquare } from "lucide-react";
 import { SEO } from "@/components/SEO";
@@ -108,6 +109,10 @@ export default function ContactPage() {
                       <p className="mt-1 text-sm leading-6 text-muted-foreground">
                         Include your booking reference or PNR when messaging or emailing so our team can assist you faster.
                       </p>
+                      {/* #159: guests find their booking themselves by reference. */}
+                      <Link to="/find-booking" className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-4 hover:underline">
+                        Find my booking
+                      </Link>
                     </div>
                   </div>
                 </div>
