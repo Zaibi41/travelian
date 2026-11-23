@@ -113,22 +113,20 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
       <div data-error-key={id("firstName")}>
         <label htmlFor={id("firstName")} className={s.label}>First Name *</label>
         <Input id={id("firstName")} placeholder="Given Name" className={s.control} value={value.firstName} autoComplete="off" maxLength={30}
-          aria-invalid={Boolean(errors.firstName) || undefined} aria-describedby={[nameHelperId, errors.firstName ? `${id("firstName")}-error` : null].filter(Boolean).join(" ")}
+          aria-invalid={Boolean(errors.firstName) || undefined} aria-describedby={[nameIsLong(value) ? nameHelperId : null, errors.firstName ? `${id("firstName")}-error` : null].filter(Boolean).join(" ") || undefined}
           onChange={event => onChange({ firstName: event.target.value })} />
         {error("firstName")}
       </div>
       <div data-error-key={id("lastName")}>
         <label htmlFor={id("lastName")} className={s.label}>Last Name *</label>
         <Input id={id("lastName")} placeholder="Surnames" className={s.control} value={value.lastName} autoComplete="off" maxLength={30}
-          aria-invalid={Boolean(errors.lastName) || undefined} aria-describedby={[nameHelperId, errors.lastName ? `${id("lastName")}-error` : null].filter(Boolean).join(" ")}
+          aria-invalid={Boolean(errors.lastName) || undefined} aria-describedby={[nameIsLong(value) ? nameHelperId : null, errors.lastName ? `${id("lastName")}-error` : null].filter(Boolean).join(" ") || undefined}
           onChange={event => onChange({ lastName: event.target.value })} />
         {error("lastName")}
       </div>
-      <p id={nameHelperId} className={cn(s.span, "-mt-2", s.helper)}>
-        Name must match exactly as shown on your {passport ? "passport" : "CNIC"}.
-      </p>
+      {/* #167: no "Name must match exactly…" helper under the names (the Review step asks for that check). */}
       {nameIsLong(value) && (
-        <p role="status" className={cn(s.span, "-mt-2 flex items-center gap-1.5", s.helper)}>
+        <p id={nameHelperId} role="status" className={cn(s.span, "-mt-2 flex items-center gap-1.5", s.helper)}>
           <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" aria-hidden="true" /> {LONG_NAME_WARNING}.
         </p>
       )}
@@ -150,7 +148,7 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
         <Select value={value.docType ?? "passport"}
           onValueChange={docType => onChange({ docType: docType as PassengerDetails["docType"], docNumber: "", expiryDate: undefined })}>
           <SelectTrigger id={id("docType")} className={s.control} aria-label={`Document for ${value.label}`}
-            aria-describedby={requiredDoc ? `${id("docType")}-required` : undefined}>
+            aria-describedby={requiredDoc === "cnic" ? `${id("docType")}-required` : undefined}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
@@ -158,18 +156,18 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
             <SelectItem value="cnic" disabled={requiredDoc === "passport"}>CNIC / B-form (Pakistan)</SelectItem>
           </SelectContent>
         </Select>
-        {requiredDoc && <p id={`${id("docType")}-required`} className={cn("mt-1", s.helper)}>{REQUIRED_DOC_TEXT[requiredDoc]}</p>}
+        {/* #167: no "This airline needs the traveler's passport…" helper (Passport is the default); the CNIC one stays, as only CNIC can then be chosen. */}
+        {requiredDoc === "cnic" && <p id={`${id("docType")}-required`} className={cn("mt-1", s.helper)}>{REQUIRED_DOC_TEXT.cnic}</p>}
         {error("docType")}
       </div>
       <div data-error-key={id("docNumber")}>
         <label htmlFor={id("docNumber")} className={s.label}>{passport ? "Passport Number *" : "CNIC / B-form Number *"}</label>
         <Input id={id("docNumber")} placeholder={passport ? "e.g. AB1234567" : "e.g. 3520112345671"} className={s.control} value={value.docNumber}
-          autoComplete="off" maxLength={passport ? 12 : 13} aria-invalid={Boolean(errors.docNumber) || undefined} aria-describedby={describedBy("docNumber", true)}
+          autoComplete="off" maxLength={passport ? 12 : 13} aria-invalid={Boolean(errors.docNumber) || undefined} aria-describedby={describedBy("docNumber", !passport)}
           onChange={event => onChange({ docNumber: passport ? cleanPassportNumber(event.target.value) : event.target.value.replace(/[^\d]/g, "") })}
           onBlur={() => { if (passport && value.docNumber !== cleanPassportNumber(value.docNumber)) onChange({ docNumber: cleanPassportNumber(value.docNumber) }); }} />
-        <p id={`${id("docNumber")}-helper`} className={cn("mt-1", s.helper)}>
-          {passport ? "Use the passport number without spaces." : "Use 13 digits without dashes."}
-        </p>
+        {/* #167: no "Use the passport number without spaces." (spaces are removed as it's typed). */}
+        {!passport && <p id={`${id("docNumber")}-helper`} className={cn("mt-1", s.helper)}>Use 13 digits without dashes.</p>}
         {error("docNumber")}
       </div>
       <div>
@@ -188,7 +186,8 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
             </div>
             {error("issuanceCountry")}
           </div>
-          <div className={s.span} data-error-key={id("expiryDate")}>
+          {/* #167: Date of Expiry sits to the right of Country of Issuance. */}
+          <div data-error-key={id("expiryDate")}>
             <label htmlFor={id("expiryDate")} className={s.label}>Date of Expiry *</label>
             <div className={s.gap}>
               <DatePickerField id={id("expiryDate")} value={value.expiryDate} onChange={expiryDate => onChange({ expiryDate })} placeholder="Select expiry date"

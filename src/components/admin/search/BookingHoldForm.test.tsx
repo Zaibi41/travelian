@@ -9,6 +9,7 @@ const gateway = vi.hoisted(() => ({ hold: vi.fn(), reprice: vi.fn(), people: vi.
 vi.mock("@/lib/admin-search/group-holds", async importOriginal => ({ ...(await importOriginal<object>()), fetchGroupTicket: gateway.groupTicket }));
 vi.mock("@/lib/saved-people/api", async importOriginal => ({
   ...(await importOriginal<object>()), searchPeople: gateway.people, searchCustomers: gateway.people, searchTravelers: gateway.people,
+  listRecentPeople: gateway.people,
 }));
 vi.mock("@/lib/admin-search/flights", async importOriginal => ({
   ...(await importOriginal<object>()), holdFlight: gateway.hold, repriceFlights: gateway.reprice,
@@ -117,7 +118,7 @@ describe("Shared booking form on the Flights hold page", () => {
     const infant = screen.getByRole("region", { name: "Infant 1" });
     // The website checkout's fields, in its order (lib/passenger-details).
     const labels = (card: HTMLElement) => Array.from(card.querySelectorAll("label")).map(label => label.textContent);
-    expect(labels(infant)).toEqual(["Use saved traveler", "Title *", "Gender *", "First Name *", "Last Name *", "Date of Birth *", "Document *",
+    expect(labels(infant)).toEqual(["Title *", "Gender *", "First Name *", "Last Name *", "Date of Birth *", "Document *",
       "Passport Number *", "Nationality *", "Country of Issuance *", "Date of Expiry *", "Travels with", "Save this traveler for next time"]);
     for (const label of ["First Name *", "Last Name *", "Passport Number *"]) expect(within(infant).getByLabelText(label)).toHaveValue("");
     for (const label of ["Date of Birth *", "Date of Expiry *"]) expect(within(adult).getByLabelText(label)).toHaveTextContent(/^Select/);
@@ -126,8 +127,9 @@ describe("Shared booking form on the Flights hold page", () => {
     expect(adult).toHaveTextContent("12+ years");
     expect(infant).toHaveTextContent("Under 2 years");
     expect(within(infant).getByLabelText("Travels with")).toHaveTextContent("Adult 1");
-    expect(within(adult).queryByRole("combobox", { name: "Use saved traveler, Adult 1" })).not.toBeInTheDocument(); // Adult 1 is the customer
-    expect(within(infant).getByRole("combobox", { name: "Use saved traveler, Infant 1" })).toBeInTheDocument();
+    // #167: the website's form plus one "Saved Travelers" button per traveler (not on Adult 1 when that is the customer).
+    expect(within(adult).queryByRole("button", { name: "Saved Travelers, Adult 1" })).not.toBeInTheDocument();
+    expect(within(infant).getByRole("button", { name: "Saved Travelers, Infant 1" })).toBeInTheDocument();
     expect(screen.queryByText(/never shown in full|show masked/)).not.toBeInTheDocument();   // no masking notice
     expect(screen.getByText("Holding reserves the seats until the time limit. No payment is taken.")).toBeInTheDocument();
   });
@@ -408,6 +410,14 @@ describe("country dropdowns on the hold form", () => {
       fireEvent.change(input, { target: { value: query } });
       fireEvent.click(await screen.findByRole("option", { name: new RegExp(`^${who}`) }));
     }
+    /** #167: "Saved Travelers" opens the popup; search in it and choose the traveler. */
+    async function pickSaved(card: HTMLElement, label: string, query: string, who: string) {
+      fireEvent.click(within(card).getByRole("button", { name: `Saved Travelers, ${label}` }));
+      const dialog = await screen.findByRole("dialog", { name: "Pick from Saved Travelers" });
+      fireEvent.change(within(dialog).getByPlaceholderText("Search by name or passport number..."), { target: { value: query } });
+      fireEvent.click(await within(dialog).findByRole("button", { name: new RegExp(`^${who}`) }));
+      await waitFor(() => expect(screen.queryByRole("dialog", { name: "Pick from Saved Travelers" })).not.toBeInTheDocument());
+    }
     const findCustomer = () => within(screen.getByRole("region", { name: "Customer" })).getByRole("combobox", { name: "Search existing customer" });
 
     it("Search existing customer by mobile number lists every match; picking fills the form (editable) and the hold sends the id with the values", async () => {
@@ -441,7 +451,7 @@ describe("country dropdowns on the hold form", () => {
       const infant = screen.getByRole("region", { name: "Infant 1" });
       // Under 2 on the travel date (issue #52: an adult's date of birth on an infant card is refused before Hold).
       gateway.people.mockResolvedValue({ results: [{ ...SARA, date_of_birth: "2025-06-15" }], can_manage: true, can_merge: false });
-      await pick(within(infant).getByRole("combobox", { name: "Use saved traveler, Infant 1" }), "Sara", "Sara Khan");
+      await pickSaved(infant, "Infant 1", "Sara", "Sara Khan");
       expect(infant).toHaveTextContent("Filled from saved traveler: Sara Khan");
       expect(within(infant).getByLabelText("Passport Number *")).toHaveValue("AB1230111");
       fireEvent.click(screen.getByRole("button", { name: "Hold seats" }));
@@ -692,8 +702,10 @@ describe("live search for saved customers and travelers (both hold pages)", () =
       await waitFor(() => expect(screen.queryByRole("listbox")).not.toBeInTheDocument());
       const second = screen.getAllByRole("region").find(region => /^(Adult 2|Infant 1)$/.test(region.getAttribute("aria-label") ?? ""))!;
       const label = second.getAttribute("aria-label")!;
-      fireEvent.change(within(second).getByRole("combobox", { name: `Use saved traveler, ${label}` }), { target: { value: "sana" } });
-      fireEvent.click(await screen.findByRole("option", { name: /^Sana Tariq/ }));
+      fireEvent.click(within(second).getByRole("button", { name: `Saved Travelers, ${label}` }));
+      const dialog = await screen.findByRole("dialog", { name: "Pick from Saved Travelers" });
+      fireEvent.change(within(dialog).getByPlaceholderText("Search by name or passport number..."), { target: { value: "sana" } });
+      fireEvent.click(await within(dialog).findByRole("button", { name: /^Sana Tariq/ }));
       const card = screen.getByRole("region", { name: label });
       expect(card).toHaveTextContent("Filled from saved traveler: Sana Tariq");
       expect(within(card).getByLabelText("First Name *")).toHaveValue("Sana");            // filled, still editable
