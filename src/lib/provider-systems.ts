@@ -283,7 +283,12 @@ export function groupTicketToFlight(group: GroupTicket): TravelianFlight {
     : undefined;
 
   const decodedOfferId = decodeGroupTicketId(group.id);
-  const outboundJourney = groupJourneys(group).find((journey) => journey.direction === "outbound");
+  const journeys = groupJourneys(group);
+  const outboundJourney = journeys.find((journey) => journey.direction === "outbound");
+  // #175: a return fare's return flights are a second journey, not a stop of the outbound one.
+  const returnJourney = journeys.find((journey) => journey.direction === "return");
+  const returnLegs = new Set(returnJourney?.legs ?? []);
+  const outboundLast = outboundJourney?.legs[outboundJourney.legs.length - 1];
 
   // Resolve provider
   let providerId = group.provider;
@@ -316,9 +321,12 @@ export function groupTicketToFlight(group: GroupTicket): TravelianFlight {
   const depTime = firstLeg?.departureTime
     ? `${group.departureDate || firstLeg.flightDate || ""} ${firstLeg.departureTime}`.trim()
     : (group.departureDate || "");
-  const arrTime = lastLeg?.arrivalTime
-    ? `${legArrivalDate(lastLeg) || group.departureDate || ""} ${lastLeg.arrivalTime}`.trim()
+  const arrivalLeg = returnJourney && outboundLast ? outboundLast : lastLeg;
+  const arrTime = arrivalLeg?.arrivalTime
+    ? `${legArrivalDate(arrivalLeg) || group.departureDate || ""} ${arrivalLeg.arrivalTime}`.trim()
     : (group.departureDate || "");
+  const returnFirst = returnJourney?.legs[0];
+  const returnLast = returnJourney?.legs[returnJourney.legs.length - 1];
 
   const segments = (group.itinerary || []).map((leg) => ({
     departureTime: `${leg.flightDate || ""} ${leg.departureTime || ""}`.trim(),
@@ -329,6 +337,7 @@ export function groupTicketToFlight(group: GroupTicket): TravelianFlight {
     arrivalAirport: leg.destination,
     flightNumber: leg.flightNumber || group.flightNumber || "Group Flight",
     baggage: leg.baggage || group.baggage || undefined,
+    ...(returnJourney ? { direction: returnLegs.has(leg) ? "return" as const : "outbound" as const } : {}),
   }));
 
   const fareNum =
@@ -344,9 +353,13 @@ export function groupTicketToFlight(group: GroupTicket): TravelianFlight {
     airlineImage: group.airlineLogo,
     flightNumber: group.flightNumber || firstLeg?.flightNumber || "Group Flight",
     origin: originCode,
-    destination: destinationCode,
+    destination: returnJourney ? String(outboundJourney?.destination || destinationCode).toUpperCase() : destinationCode,
     departureTime: depTime,
     arrivalTime: arrTime,
+    ...(returnFirst && returnLast ? {
+      returnDepartureTime: `${returnFirst.flightDate || ""} ${returnFirst.departureTime || ""}`.trim(),
+      returnArrivalTime: `${legArrivalDate(returnLast) || ""} ${returnLast.arrivalTime || ""}`.trim(),
+    } : {}),
     price: fareNum,
     currency: group.currency || "PKR",
     seats: Number(group.seatsAvailable) || 1,
@@ -355,7 +368,8 @@ export function groupTicketToFlight(group: GroupTicket): TravelianFlight {
     fareBrand: "Group Ticket",
     baggage: group.baggage || firstLeg?.baggage || undefined,
     meal: "Meal info not available",
-    stops: Math.max(0, (group.itinerary?.length || 1) - 1),
+    // #175: the outbound journey's stops (a return fare's way back is not a stop).
+    stops: outboundJourney ? outboundJourney.stops : Math.max(0, (group.itinerary?.length || 1) - 1),
     segments,
     // #152: where a connecting group fare changes planes (layovers[i] follows segments[i], outbound only).
     ...(outboundJourney?.connections.length ? {

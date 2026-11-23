@@ -784,7 +784,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
    *  shown on the card (lowestFare: the card's first fare row, as the gateway priced it). */
   const flightWhatsAppHref = (flight: TravelianFlight, lowestFare?: DisplayFare) => {
     const groups = journeyGroups(flight);
-    const labels = tripType === "roundtrip" ? ["Outbound", "Return"] : groups.map((_, index) => (groups.length > 1 ? `Flight ${index + 1}` : ""));
+    const labels = isTwoWay(flight) ? ["Outbound", "Return"] : groups.map((_, index) => (groups.length > 1 ? `Flight ${index + 1}` : ""));
     const journeys = groups.map((group, index) => ({
       label: labels[index] || "",
       flightNumbers: [...new Set(group.map((segment) => String(segment.flightNumber || "").trim()).filter(Boolean))],
@@ -1051,7 +1051,21 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     const { count, places } = stopSummary(flight.stops || 0, stopCodes(flight));
     return { stopText: count, stopPlaces: places };
   };
+  /** #175: a group return fare (on any search) is an outbound and a return journey, by each flight's own direction. */
+  const hasReturnLegs = (flight: TravelianFlight) => Boolean(flight.segments?.some((segment) => segment.direction === "return"));
+  const directionGroups = (flight: TravelianFlight): ItinerarySegment[][] | null => {
+    if (!hasReturnLegs(flight)) return null;
+    const segs = itinerarySegments(flight);
+    return [segs.filter((segment) => segment.direction !== "return"), segs.filter((segment) => segment.direction === "return")].filter((group) => group.length);
+  };
+  const isTwoWay = (flight: TravelianFlight) => tripType === "roundtrip" || hasReturnLegs(flight);
   const journeyLegsForCard = (flight: TravelianFlight): DisplayJourneyLeg[] => {
+    const byDirection = directionGroups(flight);
+    if (byDirection) {
+      return byDirection
+        .map((group, index) => legFromSegments(group, index === 0 ? "Outbound" : "Return", `${flight.flightId}-${index === 0 ? "out" : "ret"}`))
+        .filter((leg): leg is DisplayJourneyLeg => Boolean(leg));
+    }
     if (tripType === "roundtrip") {
       const { outbound, inbound } = splitRoundtripSegments(flight);
       const outboundLeg = legFromSegments(outbound, "Outbound", `${flight.flightId}-out`)
@@ -1157,6 +1171,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   // A stay is only between two flights of the same journey, never between the outbound and the return.
   const journeyGroups = (flight: TravelianFlight): ItinerarySegment[][] => {
     const segs = itinerarySegments(flight);
+    const byDirection = directionGroups(flight);
+    if (byDirection) return byDirection;
     if (tripType === "roundtrip") {
       const { outbound, inbound } = splitRoundtripSegments(flight);
       return [outbound, inbound].filter((group) => group.length);
@@ -1225,7 +1241,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     const groups = journeyGroups(flight);
     const layovers = flight.layovers || [];
     const layoverAt = (code: string) => layovers.find((layover) => String(layover.location || "").trim().toUpperCase() === code);
-    const labels = tripType === "roundtrip" ? ["Outbound", "Return"] : groups.map((_, index) => (groups.length > 1 ? `Flight ${index + 1}` : ""));
+    const labels = isTwoWay(flight) ? ["Outbound", "Return"] : groups.map((_, index) => (groups.length > 1 ? `Flight ${index + 1}` : ""));
     const cabin = travelers.cabin || flight.class;
 
     return (
@@ -1752,7 +1768,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               const visibleFares = fareOptionsOpen ? displayFares : displayFares.slice(0, 1);
               const hiddenFareCount = Math.max(0, displayFares.length - 1);
               const journeyLegs = journeyLegsForCard(flight);
-              const showStackedLegs = tripType === "roundtrip" || tripType === "multicity";
+              const showStackedLegs = tripType === "roundtrip" || tripType === "multicity" || hasReturnLegs(flight);
 
               return (
                 <Card

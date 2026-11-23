@@ -82,6 +82,19 @@ describe("group journeys (#152)", () => {
     expect(groupTicketToFlight(airblue).layovers).toBeUndefined();
   });
 
+  it("#175: a return fare on the flights page is an outbound and a return journey, not a flight with a stop", async () => {
+    const [salam, airblue] = await live();
+    const flight = groupTicketToFlight(airblue);
+    // The outbound ends at JED on 3 Dec; the way back is the return, with its own times; no stop anywhere.
+    expect(flight).toMatchObject({ origin: "LHE", destination: "JED", stops: 0, arrivalTime: "2026-12-03 03:15" });
+    expect(flight.returnDepartureTime).toMatch(/^2026-12-22 /);
+    expect(flight.segments?.map((s) => s.direction)).toEqual(["outbound", "return"]);
+    expect(flight.price).toBe(groupTicketToFlight(airblue).price); // one total, as the gateway priced it
+    // A one-way connection keeps no direction marks and its stop.
+    expect(groupTicketToFlight(salam).segments?.every((s) => s.direction === undefined)).toBe(true);
+    expect(groupTicketToFlight(salam).stops).toBe(1);
+  });
+
   it("works out a two-stop journey and missing times", () => {
     const ticket: GroupTicket = { id: "x", tripType: "one-way", itinerary: [
       { direction: "outbound", origin: "ISB", destination: "MCT", flightDate: "2026-12-01", departureTime: "22:00", arrivalTime: "00:10" },
