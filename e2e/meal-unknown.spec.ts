@@ -58,7 +58,8 @@ for (const width of [360, 390, 768, 1440]) {
     expect(decodeURIComponent(wa!)).not.toContain("No Meal");
     await card(page, "Emirates").getByRole("button", { name: "Flight Details" }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByText("Meal info not available", { exact: true }).first()).toBeVisible();
+    // #163: Flight Details is the itinerary (fares, meal and price stay on the card); it never says "No Meal" here.
+    await expect(dialog.getByRole("heading", { name: /–/ })).toBeVisible();
     await expect(dialog.getByText("No Meal", { exact: true })).toHaveCount(0);
     await shot(page, `details-${width}`);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBe(0);

@@ -90,7 +90,7 @@ type DisplayFare = {
   conditions?: string | null;
   amenities?: string[];
 };
-type FareDetailsTab = "options" | "flight" | "rules" | "baggage";
+type FareDetailsTab = "flight" | "rules" | "baggage";
 
 /** A fare's baggage as shown (#36): the gateway's short form and full words; never a guessed hand carry. */
 const fareBaggage = (fare: { bags?: string | null; bagsDetail?: string | null } | undefined, flight: { baggage?: string | null }): BaggageText =>
@@ -1167,108 +1167,122 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     }
     return [segs];
   };
-  // #83, #84, #122: where the passenger stays and for how long, each on its own line; no flight name or number here.
-  const StayBox = ({ stay }: { stay: Stay }) => (
-    <section aria-label={`Stop at ${stay.place}`} className="rounded-xl border border-dashed border-primary/25 bg-primary/5 px-4 py-3 text-sm">
-      <div className="flex gap-3">
-        <Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-bold text-slate-950" title={`Stop at ${stay.place}`}>Stop at {stay.place}</p>
-          <dl className="mt-2 grid gap-x-4 gap-y-1.5 text-xs sm:grid-cols-3">
-            {stay.country && (
-              <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
-                <dt className="shrink-0 font-semibold text-muted-foreground">Stay country</dt>
-                <dd className="min-w-0 truncate font-bold text-slate-950" title={stay.country}>{stay.country}</dd>
-              </div>
-            )}
-            <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
-              <dt className="shrink-0 font-semibold text-muted-foreground">Stay city</dt>
-              <dd className="min-w-0 truncate font-bold text-slate-950" title={stay.city ? `${stay.city} (${stay.code})` : stay.code}>{stay.city ? `${stay.city} (${stay.code})` : stay.code}</dd>
-            </div>
-            <div className="flex min-w-0 items-baseline justify-between gap-3 sm:block">
-              <dt className="shrink-0 font-semibold text-muted-foreground">Stay duration</dt>
-              <dd className="min-w-0 truncate font-bold text-slate-950">{stay.duration || "TBA"}</dd>
-            </div>
-          </dl>
-          {(stay.arrivalTime || stay.departureTime) && (
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Arrive {formatFlightTime(stay.arrivalTime)} · Depart {formatFlightTime(stay.departureTime)}
-            </p>
-          )}
-        </div>
-      </div>
+  // #163: the itinerary the owner asked for: per journey a date / duration / stops line, then each flight on a vertical
+  // line (time and date, airport, airline and flight number) and a layover line between flights. #83, #84, #122: the
+  // stay shows how long, the city and its country; never a flight name or number.
+  const longDate = (value?: string | null) => {
+    const date = new Date(String(value || ""));
+    if (!Number.isNaN(date.getTime())) return format(date, "EEE, MMM dd, yyyy");
+    const parsed = parseDateOnly(String(value || "").split(" ")[0]);
+    return parsed ? format(parsed, "EEE, MMM dd, yyyy") : "";
+  };
+  const shortDate = (value?: string | null) => {
+    const date = new Date(String(value || ""));
+    return Number.isNaN(date.getTime()) ? "" : format(date, "dd MMM");
+  };
+  const placeLine = (code?: string | null) => {
+    const clean = airportCode(code);
+    const airport = airportByCode(clean) || popularAirportByCode.get(clean);
+    const city = airport?.city || "";
+    const name = airport && "name" in airport ? String(airport.name || "") : "";
+    return { head: city ? `${city} (${clean})` : clean, name: name && name !== city ? name : "" };
+  };
+  const StayLine = ({ stay }: { stay: Stay }) => (
+    <section aria-label={`Stop at ${stay.place}`} className="my-3 ml-[4.75rem] flex min-w-0 items-start gap-2 rounded-lg bg-primary/5 px-3 py-2 text-sm text-foreground">
+      <Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+      <p className="min-w-0 break-words">
+        <span className="font-semibold">{stay.duration ? `${stay.duration} layover` : "Layover"}</span>
+        <span aria-hidden="true"> • </span>
+        <span>{stay.city ? `${stay.city} (${stay.code})` : stay.code}</span>
+        {stay.country && <span className="text-muted-foreground">, {stay.country}</span>}
+      </p>
     </section>
   );
+  const PointRow = ({ time, date, code, last }: { time?: string | null; date?: string | null; code?: string | null; last?: boolean }) => {
+    const place = placeLine(code);
+    return (
+      <div className="grid grid-cols-[3.5rem_1rem_minmax(0,1fr)] gap-x-3">
+        <div>
+          <p className="text-base font-bold leading-tight text-foreground">{formatFlightTime(time)}</p>
+          {shortDate(date) && <p className="text-xs text-muted-foreground">{shortDate(date)}</p>}
+        </div>
+        <div className="flex justify-center pt-1.5">
+          <span className={cn("relative z-10 h-3 w-3 rounded-full border-2 border-foreground/70 bg-card", last && "bg-foreground/70")} aria-hidden="true" />
+        </div>
+        <p className="min-w-0 break-words text-sm text-foreground">
+          <span className="font-semibold">{place.head}</span>
+          {place.name && <span className="text-muted-foreground"> • {place.name}</span>}
+        </p>
+      </div>
+    );
+  };
+  /** "Lahore – Dubai" (the cities, else the codes) for the Flight Details title. */
+  const detailsRouteTitle = (flight: TravelianFlight) => {
+    const city = (code: string) => placeLine(code).head.replace(/ \([A-Z]{3}\)$/, "") || code;
+    return `${city(flight.origin)} – ${city(flight.destination)}`;
+  };
   const JourneyTimeline = ({ flight }: { flight: TravelianFlight }) => {
     const groups = journeyGroups(flight);
     const layovers = flight.layovers || [];
     const layoverAt = (code: string) => layovers.find((layover) => String(layover.location || "").trim().toUpperCase() === code);
-    let flightIndex = 0;
+    const labels = tripType === "roundtrip" ? ["Outbound", "Return"] : groups.map((_, index) => (groups.length > 1 ? `Flight ${index + 1}` : ""));
+    const cabin = travelers.cabin || flight.class;
 
     return (
-      <div className="space-y-3">
-        {groups.flatMap((group, groupIndex) => group.map((segment, index) => {
-          const nextSegment = group[index + 1];
-          const stay = nextSegment ? stayBetween(segment, nextSegment, layoverAt(String(nextSegment.origin || segment.destination || "").trim().toUpperCase())) : undefined;
-          // The supplier sent the stop airports but not each flight: the stays sit inside the one flight, between departure and arrival.
+      <div className="space-y-4">
+        {groups.map((group, groupIndex) => {
+          // The supplier sent the stop airports but not each flight: the stays sit inside the one flight.
           const innerStays = group.length === 1 && groupIndex === 0 && (flight.stops || 0) > 0
             ? layovers.filter((layover) => String(layover.location || "").trim()).map((layover) => stayAt(layover))
             : [];
-          const flightNumber = segment.flightNumber || flight.flightNumber;
-          const segmentAirline = segment.airline || getAirlineNameFromCarrier(segment.carrier) || segment.carrier || flight.airline;
-          const isSameAsParent = isSameAirline(segmentAirline, flight.airline);
-          flightIndex += 1;
-
+          const stops = group.length > 1 ? group.length - 1 : innerStays.length;
+          const total = minutesText(journeyMinutes(group)) || (group.length === 1 ? segmentDuration(group[0]) : "");
+          const summary = [total && total !== "Duration TBA" ? total : "", stops ? `${stops} ${stops === 1 ? "stop" : "stops"}` : "Non-stop"].filter(Boolean).join(" · ");
+          const label = labels[groupIndex] || "";
           return (
-            <div key={`${flightNumber}-${groupIndex}-${index}`} className="space-y-3">
-              <section className="rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm sm:p-4">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <span className="rounded-full bg-primary/5 px-3 py-1 text-xs font-black uppercase tracking-wide text-primary">Flight {flightIndex}</span>
-                  <div className="flex min-w-0 items-center gap-2 rounded-xl bg-slate-50 px-2.5 py-1.5 text-xs font-bold text-slate-900 ring-1 ring-slate-100">
-                    <AirlineLogo airline={segmentAirline} flightNumber={flightNumber} imageUrl={isSameAsParent && !adminMode ? flight.airlineImage : undefined} className="h-6 w-6 shrink-0 rounded-md border-0 shadow-none ring-0" />
-                    <span className="truncate">{flightNumber}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-[1rem_minmax(0,1fr)] gap-3">
-                  <div className="relative flex justify-center pt-1">
-                    <span className="h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-primary/10" />
-                    <span className="absolute bottom-4 top-4 w-px bg-gradient-to-b from-primary to-emerald-400" />
-                    <span className="absolute bottom-1 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/10" />
-                  </div>
-                  <div className="min-w-0 space-y-3">
-                    <div className="grid gap-1 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-4">
-                      <p className="text-lg font-black leading-tight text-slate-950">{formatFlightTime(segment.departureTime)}</p>
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Departure</p>
-                        <p className="truncate text-sm font-bold text-slate-950" title={routeLabel(segment.origin || "", segment.departureAirport)}>
-                          {routeLabel(segment.origin || "", segment.departureAirport)}
-                        </p>
+            <section key={`journey-${groupIndex}`} aria-label={label || "Itinerary"} className="overflow-hidden rounded-2xl border bg-card">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-b bg-muted/50 px-4 py-3">
+                {label && <span className="text-xs font-bold uppercase tracking-wide text-primary">{label}</span>}
+                <span className="font-display text-base font-bold text-foreground">{longDate(group[0]?.departureTime || flight.departureTime)}</span>
+                <span className="text-sm text-muted-foreground">{summary}</span>
+              </div>
+              <div className="px-4 py-4">
+                {group.map((segment, index) => {
+                  const nextSegment = group[index + 1];
+                  const stay = nextSegment ? stayBetween(segment, nextSegment, layoverAt(String(nextSegment.origin || segment.destination || "").trim().toUpperCase())) : undefined;
+                  const flightNumber = segment.flightNumber || flight.flightNumber;
+                  const segmentAirline = segment.airline || getAirlineNameFromCarrier(segment.carrier) || segment.carrier || flight.airline;
+                  const isSameAsParent = isSameAirline(segmentAirline, flight.airline);
+                  const duration = segmentDuration(segment);
+                  return (
+                    <div key={`${flightNumber}-${groupIndex}-${index}`}>
+                      <div className="relative" data-testid="itinerary-flight">
+                        <span className="absolute bottom-3 left-[calc(3.5rem+0.75rem+0.5rem-0.5px)] top-3 w-px bg-border" aria-hidden="true" />
+                        <PointRow time={segment.departureTime} date={segment.departureTime} code={segment.origin} />
+                        <div className="grid grid-cols-[3.5rem_1rem_minmax(0,1fr)] gap-x-3 py-3">
+                          <p className="self-center text-xs text-muted-foreground">{duration !== "Duration TBA" ? duration : ""}</p>
+                          <span aria-hidden="true" />
+                          <div className="min-w-0">
+                            <div className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+                              <AirlineLogo airline={segmentAirline} flightNumber={flightNumber} imageUrl={isSameAsParent && !adminMode ? flight.airlineImage : undefined} className="h-6 w-6 shrink-0 rounded-md border-0 shadow-none ring-0" />
+                              <span className="truncate" title={segmentAirline}>{segmentAirline}</span>
+                            </div>
+                            <p className="mt-0.5 truncate text-xs text-muted-foreground" title={[cabin, flightNumber].filter(Boolean).join(" • ")}>
+                              {[cabin, flightNumber].filter(Boolean).join(" • ")}
+                            </p>
+                          </div>
+                        </div>
+                        <PointRow time={segment.arrivalTime} date={segment.arrivalTime} code={segment.destination} last />
                       </div>
+                      {innerStays.map((inner, stayIndex) => <StayLine key={`${inner.code}-${stayIndex}`} stay={inner} />)}
+                      {stay && <StayLine stay={stay} />}
                     </div>
-
-                    <div className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
-                      Duration {segmentDuration(segment)}
-                    </div>
-                    {innerStays.map((inner, stayIndex) => <StayBox key={`${inner.code}-${stayIndex}`} stay={inner} />)}
-
-                    <div className="grid gap-1 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-4">
-                      <p className="text-lg font-black leading-tight text-slate-950">{formatFlightTime(segment.arrivalTime)}</p>
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Arrival</p>
-                        <p className="truncate text-sm font-bold text-slate-950" title={routeLabel(segment.destination || "", segment.arrivalAirport)}>
-                          {routeLabel(segment.destination || "", segment.arrivalAirport)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-              {stay && <StayBox stay={stay} />}
-            </div>
+                  );
+                })}
+              </div>
+            </section>
           );
-        }))}
+        })}
       </div>
     );
   };
@@ -1285,7 +1299,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   };
 
   const openFlightDetails = async (flight: TravelianFlight, primaryFare: DisplayFare) => {
-    setFareDetailsTab("options");
+    setFareDetailsTab("flight");
     setExpandedFareRule(primaryFare.tier);
     setFareDetails({ flight, fare: primaryFare });
     setModalFaresError(null);
@@ -2360,25 +2374,16 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         <DialogContent className="top-[calc(50%+1.75rem)] flex max-h-[calc(100dvh-7rem)] w-[calc(100vw-1.5rem)] flex-col overflow-hidden border border-primary/10 bg-gradient-to-br from-white via-sky-50/50 to-white p-0 shadow-[0_24px_80px_rgba(15,23,42,0.28)] sm:max-h-[calc(100dvh-8rem)] sm:max-w-2xl md:max-w-3xl">
           {fareDetails && (
             <>
-              <DialogHeader className="sticky top-0 z-10 shrink-0 border-b border-primary/10 bg-white/95 px-4 py-3 text-left backdrop-blur sm:px-5">
-                <div className="flex items-start gap-3 pr-8">
-                  <AirlineLogo airline={fareDetails.flight.airline} flightNumber={fareDetails.flight.flightNumber} imageUrl={adminMode ? undefined : fareDetails.flight.airlineImage} className="h-10 w-10 rounded-xl border-slate-200 shadow-sm ring-0" />
-                  <div className="min-w-0">
-                    <DialogTitle className="sr-only">Flight details</DialogTitle>
-                    <p className="truncate text-base font-black text-slate-950" title={`${fareDetails.flight.airline} - ${fareDetails.flight.flightNumber}`}>
-                      {fareDetails.flight.airline} <span className="text-slate-400">·</span> {fareDetails.flight.flightNumber}
-                    </p>
-                    <p className="mt-1 truncate text-xs font-semibold text-primary" title={`${fareDetails.flight.origin} to ${fareDetails.flight.destination} - ${formatFlightTime(fareDetails.flight.departureTime)} - ${formatFlightTime(fareDetails.flight.arrivalTime)} - ${getFlightDuration(fareDetails.flight)} - ${stopLabel(fareDetails.flight) || "Non-stop"}`}>
-                      {fareDetails.flight.origin} → {fareDetails.flight.destination} <span className="text-slate-300">·</span> {formatFlightTime(fareDetails.flight.departureTime)} - {formatFlightTime(fareDetails.flight.arrivalTime)} <span className="text-slate-300">·</span> {getFlightDuration(fareDetails.flight)} <span className="text-slate-300">·</span> {stopLabel(fareDetails.flight) || "Non-stop"}
-                    </p>
-                  </div>
-                </div>
+              <DialogHeader className="sticky top-0 z-10 shrink-0 border-b bg-card px-4 py-3 pr-14 text-left sm:px-5">
+                <p className="text-sm text-muted-foreground">Flight Details</p>
+                <DialogTitle className="truncate font-display text-xl font-bold text-foreground" title={detailsRouteTitle(fareDetails.flight)}>
+                  {detailsRouteTitle(fareDetails.flight)}
+                </DialogTitle>
               </DialogHeader>
 
               <div className="shrink-0 bg-white/60 px-4 pt-3 sm:px-5">
-                <div className="grid grid-cols-2 gap-1 overflow-hidden rounded-xl border border-primary/15 bg-white p-1 text-xs font-bold text-slate-600 shadow-sm sm:grid-cols-4">
+                <div className="grid grid-cols-3 gap-1 overflow-hidden rounded-xl border border-primary/15 bg-white p-1 text-xs font-bold text-slate-600 shadow-sm">
                   {([
-                    ["options", "Fare Options"],
                     ["flight", "Flight Info"],
                     ["rules", "Fare Rules"],
                     ["baggage", "Baggage"],
@@ -2392,7 +2397,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         fareDetailsTab === tab ? "bg-primary text-primary-foreground shadow-sm" : "bg-transparent hover:bg-primary/5 hover:text-primary",
                       )}
                     >
-                      {fareDetailsTab === tab && <Check className="h-3.5 w-3.5" />}
+                      {fareDetailsTab === tab && <Check className="hidden h-3.5 w-3.5 sm:block" aria-hidden="true" />}
                       <span className="truncate">{label}</span>
                     </button>
                   ))}
@@ -2400,91 +2405,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-                {fareDetailsTab === "options" && (
-                  <div className="space-y-4">
-                    {modalFaresLoading ? (
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="mt-3 text-sm font-bold text-slate-900">Loading live fare options & baggage...</p>
-                        <p className="text-xs text-muted-foreground mt-1">Checking available fare families from the airline</p>
-                      </div>
-                    ) : (
-                      <>
-                        {modalFaresError && (
-                          <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-xs text-amber-800">
-                            {modalFaresError} Showing default fare.
-                          </div>
-                        )}
-                        <div className="space-y-3">
-                          {fareRows(fareDetails.flight).map((fare) => {
-                            const refund = refundStatus(fareDetails.flight.refundable, fare.cancellation || fare.refund);
-                            const isNonRefundable = refund === "non_refundable";
-                            return (
-                              <div
-                                key={`${fare.tier}-${fare.price.total}`}
-                                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
-                              >
-                                <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
-                                  <div className="min-w-0">
-                                    <p className="truncate text-base font-bold text-slate-950" title={fare.tier}>
-                                      {fare.tier}
-                                    </p>
-                                  </div>
-                                  {refund && (
-                                  <Badge
-                                    variant={isNonRefundable ? "secondary" : "outline"}
-                                    className={cn(
-                                      "rounded-lg px-2.5 py-1 text-xs font-semibold border-0",
-                                      isNonRefundable ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"
-                                    )}
-                                  >
-                                    {isNonRefundable ? "Non-Refundable" : "Refundable"}
-                                  </Badge>
-                                  )}
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3 py-3 sm:grid-cols-3">
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <Luggage className={cn("h-4 w-4 shrink-0", hasBaggage(fare, fareDetails.flight) ? "text-emerald-600" : "text-slate-400")} />
-                                    <span className="truncate font-medium text-slate-700" title={baggageWords(fare, fareDetails.flight)}>{baggageLabel(fare, fareDetails.flight)}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    <MealIcon fare={fare} flight={fareDetails.flight} className="h-4 w-4" />
-                                    <span className="line-clamp-2 break-words font-medium text-slate-700">{mealLabel(fare, fareDetails.flight)}</span>
-                                  </div>
-                                  <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-xs text-muted-foreground">
-                                    <Clock className="h-4 w-4 shrink-0 text-primary" />
-                                    <span className="truncate font-medium text-slate-700">
-                                      {fare.change && !isUnclearDisplayValue(fare.change) ? fare.change : "Changeable with fee"}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
-                                  <div>
-                                    <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{searchedTravelers > 1 && !fare.allTravelersTotal ? "Fare" : "Total Fare"}</span>
-                                    <FarePriceText fare={fare} flight={fareDetails.flight} className="text-xl font-black text-primary" />
-                                  </div>
-                                  <a
-                                    href={flightWhatsAppHref(fareDetails.flight, fareRows(fareDetails.flight)[0])}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="shrink-0"
-                                  >
-                                    <Button size="sm" className="h-9 gap-2 rounded-xl px-4 font-semibold">
-                                      <WhatsAppIcon className="h-4 w-4" /> WhatsApp Help
-                                    </Button>
-                                  </a>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-
                 {fareDetailsTab === "flight" && (
                   <JourneyTimeline flight={fareDetails.flight} />
                 )}
