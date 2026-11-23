@@ -345,6 +345,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{booking_id}/customer-contact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Customer Contact
+         * @description Change the customer's mobile number and email on this booking (travelian#56), e.g. on the Payments tab before the
+         *     payment is recorded. No re-hold: the airline hold and the price stay. Back office; logged (masked).
+         */
+        put: operations["change_customer_contact_v1_admin_bookings__booking_id__customer_contact_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/bookings/{booking_id}/customer-email": {
         parameters: {
             query?: never;
@@ -1013,8 +1034,8 @@ export interface paths {
         head?: never;
         /**
          * Update Payment Account
-         * @description Bank name, account title, full account number, IBAN and QR image. Fields left out keep their value; remove_qr clears
-         *     the QR image.
+         * @description Bank name, account title, full account number, IBAN, QR image and bank logo. Fields left out keep their value;
+         *     remove_qr / remove_logo clear the image.
          */
         patch: operations["update_payment_account_v1_admin_finance_payment_accounts__account_id__patch"];
         trace?: never;
@@ -3673,6 +3694,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/bookings/{reference}/contact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change Contact
+         * @description Change the mobile number and email on a website booking that still waits for payment. Needs the booking's private
+         *     access token (X-Booking-Token, issued when it was made); the reference and an email or phone are not enough. The
+         *     airline hold and the price stay as they are (no re-hold). Logged on the booking (masked); the old email is told.
+         */
+        put: operations["change_contact_v1_public_bookings__reference__contact_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/bookings/{reference}/payment-slips": {
         parameters: {
             query?: never;
@@ -4069,6 +4112,11 @@ export interface components {
              */
             label: string;
             /**
+             * Logo Asset Key
+             * @description From POST /v1/admin/uploads (purpose bank_logo).
+             */
+            logo_asset_key?: string | null;
+            /**
              * Method
              * @enum {string}
              */
@@ -4304,6 +4352,11 @@ export interface components {
              * @description Send it back as the chosen account (travelian#76).
              */
             id?: string | null;
+            /**
+             * Logo Url
+             * @description The bank's logo uploaded by staff (travelian#76). None: show the bank's initials.
+             */
+            logo_url?: string | null;
             /**
              * Qr Download Url
              * @description Gateway path that downloads the QR image as a file (every browser, no S3 CORS).
@@ -5160,6 +5213,39 @@ export interface components {
              * @default true
              */
             save_for_next_time: boolean;
+        };
+        /**
+         * CustomerContactChange
+         * @description The customer's new mobile number and email (travelian#56). Names and documents are not changed here.
+         */
+        CustomerContactChange: {
+            /**
+             * Email
+             * @description Left out or empty: the email on the booking stays.
+             */
+            email?: string | null;
+            /**
+             * Phone
+             * @description Mobile number, digits only, without the country code.
+             */
+            phone: string;
+            /**
+             * Phone Code
+             * @description Country code, e.g. "+92".
+             */
+            phone_code: string;
+        };
+        /** CustomerContactChanged */
+        CustomerContactChanged: {
+            /** Email */
+            email: string;
+            /** Message */
+            message: string;
+            /**
+             * Phone
+             * @description With country code, e.g. +92 3001234567 (as on BookingCustomer).
+             */
+            phone: string;
         };
         /** CustomerEmailChange */
         CustomerEmailChange: {
@@ -7567,6 +7653,38 @@ export interface components {
             travelers?: string[];
         };
         /**
+         * PublicContactChange
+         * @description The customer's new contact details (travelian#56). Names, dates of birth and passports are not changed here.
+         */
+        PublicContactChange: {
+            /**
+             * Email
+             * @description Left out or empty: the email on the booking stays.
+             */
+            email?: string | null;
+            /**
+             * Phone
+             * @description Mobile number, digits only, without the country code.
+             */
+            phone: string;
+            /**
+             * Phone Code
+             * @description Country code, e.g. "+92".
+             */
+            phone_code: string;
+        };
+        /** PublicContactView */
+        PublicContactView: {
+            /** Email */
+            email: string;
+            /** Message */
+            message: string;
+            /** Phone */
+            phone: string;
+            /** Phone Code */
+            phone_code: string;
+        };
+        /**
          * PublicFlightRequest
          * @description A website flight booking (B19, D43). The gateway reprices the fare itself (the price is never taken from the page).
          *     With PUBLIC_FLIGHT_BOOKING_ENABLED off, or for a restricted airline (D32), or when booking is off for the fare's
@@ -7705,6 +7823,16 @@ export interface components {
             id: string;
             /** Label */
             label: string;
+            /**
+             * Logo Asset Key
+             * @description S3 object key of the bank's logo image (travelian#76).
+             */
+            logo_asset_key?: string | null;
+            /**
+             * Logo Url
+             * @description Public URL of the bank's logo (S3). None: checkout shows the bank's initials.
+             */
+            logo_url?: string | null;
             /**
              * Method
              * @enum {string}
@@ -8507,7 +8635,7 @@ export interface components {
              * Purpose
              * @enum {string}
              */
-            purpose: "site_logo" | "payment_qr" | "payment_proof";
+            purpose: "site_logo" | "payment_qr" | "payment_proof" | "bank_logo";
         };
         /** SignedUploadView */
         SignedUploadView: {
@@ -9016,10 +9144,21 @@ export interface components {
              */
             iban?: string | null;
             /**
+             * Logo Asset Key
+             * @description From POST /v1/admin/uploads (purpose bank_logo).
+             */
+            logo_asset_key?: string | null;
+            /**
              * Qr Asset Key
              * @description From POST /v1/admin/uploads (purpose payment_qr).
              */
             qr_asset_key?: string | null;
+            /**
+             * Remove Logo
+             * @description Remove the bank logo (checkout shows the bank's initials). Ignored with logo_asset_key.
+             * @default false
+             */
+            remove_logo: boolean;
             /**
              * Remove Qr
              * @description Remove the QR image (customers stop seeing it at checkout). Ignored with qr_asset_key.
@@ -10103,6 +10242,60 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    change_customer_contact_v1_admin_bookings__booking_id__customer_contact_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerContactChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerContactChanged"];
+                };
+            };
+            /** @description Caller is not back office, or asked for a field it may not see. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a valid phone or email. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Booking data is not available. */
             503: {
@@ -19713,6 +19906,62 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    change_contact_v1_public_bookings__reference__contact_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Booking-Token"?: string | null;
+            };
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicContactChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicContactView"];
+                };
+            };
+            /** @description No booking for this reference and access token (the same answer either way). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not open for changes: paid, part paid, issued, closed or any other state. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

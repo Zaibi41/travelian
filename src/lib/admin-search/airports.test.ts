@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_RESULTS, POPULAR_AIRPORT_CODES, buildIndex, normalize, popularAirports, searchAirports, type Airport } from "./airports";
+import { MAX_RESULTS, POPULAR_AIRPORT_CODES, buildIndex, isCommercialAirport, normalize, popularAirports, rankAirports, searchAirports, type Airport } from "./airports";
 
 const a = (iata: string, city: string, name: string, country: string, type = "large"): Airport => ({ iata, city, name, country, countryCode: "XX", type });
 const LIST = [
@@ -72,5 +72,52 @@ describe("airport search", () => {
     const full = buildIndex(real);
     expect(searchAirports(full, "lhe")[0]).toMatchObject({ iata: "LHE", city: "Lahore" });
     expect(searchAirports(full, "kar").map(x => x.iata)).toContain("KHI");
+  });
+
+  // #157: one ranking for every From / To field: exact code, then the city's main airport, no military fields.
+  it("the real list: the main airport of a city first, exact codes first, no military fields", async () => {
+    const real = buildIndex((await import("@/data/airports.json")).default as Airport[]);
+    const top = (query: string) => searchAirports(real, query).map(x => x.iata);
+    expect(top("dubai")[0]).toBe("DXB");
+    expect(top("dubai")).toContain("DWC");
+    // "dub" is also Dublin's exact code (exact codes come first); among the Dubai airports DXB leads.
+    expect(top("dub").slice(0, 2)).toEqual(["DUB", "DXB"]);
+    expect(top("dub").indexOf("DXB")).toBeLessThan(top("dub").indexOf("DWC"));
+    expect(top("lah")[0]).toBe("LHE");
+    expect(top("lah").slice(1)).toEqual(expect.arrayContaining(["LAH"]));
+    expect(top("lahore")[0]).toBe("LHE");
+    expect(top("london")[0]).toBe("LHR");
+    expect(top("jeddah")[0]).toBe("JED");
+    expect(top("ist")[0]).toBe("IST");
+    expect(top("isla")[0]).toBe("ISB");
+    expect(top("karachi")[0]).toBe("KHI");
+    for (const query of ["dubai", "dub", "nhd", "al minhad", "ramstein", "lakenheath"]) {
+      expect(top(query)).not.toContain("NHD");
+      expect(top(query)).not.toContain("RMS");
+      expect(top(query)).not.toContain("LKZ");
+    }
+    // A military code chosen before still resolves (e.g. a saved search), it just isn't offered.
+    expect(real.byCode.get("NHD")?.city).toBe("Dubai");
+  });
+
+  it("military and non-commercial fields are recognised by name; joint-use airports stay", () => {
+    const named = (name: string) => isCommercialAirport({ name });
+    expect(named("Al Minhad Air Base")).toBe(false);
+    expect(named("Ramstein Air Base")).toBe(false);
+    expect(named("RAF Lakenheath")).toBe(false);
+    expect(named("Wiesbaden Army Airfield")).toBe(false);
+    expect(named("Naval Air Station Key West/Boca Chica Field")).toBe(false);
+    expect(named("Dubai International Airport")).toBe(true);
+    expect(named("Baghdad International Airport / New Al Muthana Air Base")).toBe(true);
+    expect(named("Dover Civil Air Terminal/Dover Air Force Base")).toBe(true);
+    expect(named("Allama Iqbal International Airport")).toBe(true);
+  });
+
+  it("ranks a short list the same way from one letter (the website's popular airports before the list loads)", () => {
+    const short = [a("DWC", "Dubai(Jebel Ali)", "Al Maktoum International Airport", "UAE"), a("DXB", "Dubai", "Dubai International Airport", "UAE"),
+      a("NHD", "Dubai", "Al Minhad Air Base", "UAE", "medium"), a("DOH", "Doha", "Hamad International Airport", "Qatar")];
+    expect(rankAirports(short, "d").map(x => x.iata)).toEqual(["DXB", "DOH", "DWC"]);
+    expect(rankAirports(short, "dubai").map(x => x.iata)).toEqual(["DXB", "DWC"]);
+    expect(rankAirports(short, "")).toEqual([]);
   });
 });
