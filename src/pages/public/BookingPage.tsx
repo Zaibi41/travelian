@@ -19,6 +19,7 @@ import { saveServerBooking } from "@/lib/booking-api";
 import { bookGroupFare, chooseReceivingAccount, getCardFee, getFlightDocuments, getFlightPaymentOptions, getPaymentMethods, requestPublicFlight, startPayFastCheckout, PublicBookingError, type BankAccountDisplay, type CardFee, type FlightPaymentOptions, type PaymentMethods } from "@/lib/public-booking";
 import { BankAccounts, HoldCountdown } from "@/components/public/BankTransferDetails";
 import { PaymentSlipUpload } from "@/components/public/PaymentSlipUpload";
+import { BookingContactDetails } from "@/components/public/BookingContactDetails";
 import { saveBooking, saveGatewayBooking, type BookingRecord, type BookingTraveler } from "@/lib/booking-store";
 import { submitHostedPayment } from "@/lib/payment-api";
 import { downloadETicket } from "@/lib/eticket-pdf-lazy";
@@ -1292,6 +1293,31 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
                   {savedBooking.gateway?.live && savedBooking.holdExpiresAt && (
                     <div className="mx-auto mb-4 max-w-lg text-left"><HoldCountdown until={savedBooking.holdExpiresAt} /></div>
+                  )}
+                  {/* #56: before paying, who is travelling and the contact details (editable in place, no re-hold). */}
+                  {savedBooking.gateway && savedBooking.paymentStatus !== "paid" && (
+                    <div className="mx-auto mb-4 max-w-lg space-y-3 text-left">
+                      <section aria-labelledby="pay-travelers" className="rounded-xl border bg-card p-4 text-sm">
+                        <h3 id="pay-travelers" className="font-semibold text-foreground">Travelers</h3>
+                        <ul className="mt-1 space-y-1" data-testid="pay-travelers">
+                          {passengerForms.map((passenger, index) => (
+                            <li key={`${passenger.label}-${index}`} className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="min-w-0 break-words font-medium text-foreground">{travelerFullName(passenger)}</span>
+                              <span className="text-xs text-muted-foreground">{passenger.label}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                      <BookingContactDetails
+                        reference={savedBooking.gateway.reference}
+                        token={savedBooking.gateway.token}
+                        initial={{ phoneCode, phone, email: email.trim() }}
+                        onSaved={(next) => {
+                          setPhoneCode(next.phoneCode); setPhone(next.phone); setEmail(next.email);
+                          setSavedBooking((current) => current && { ...current, contact: { ...current.contact, email: next.email || undefined, phone: `${next.phoneCode}${next.phone}` } });
+                        }}
+                      />
+                    </div>
                   )}
                   {savedBooking.gateway?.live && savedBooking.paymentMethod === "bank" && methods?.bank_accounts?.length ? (
                     <div className="mx-auto mb-4 max-w-lg space-y-2 text-left">

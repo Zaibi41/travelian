@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/components/ui/calendar-popup";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users, Loader2, SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users, Loader2, SlidersHorizontal, ArrowUpDown, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays, parseISO, startOfDay } from "date-fns";
 import { GroupFareCalendar } from "@/components/GroupFareCalendar";
@@ -27,6 +27,7 @@ import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { ResultsSheet } from "@/components/public/ResultsSheet";
 import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
 import { keepReturnDate, returnDateError, RETURN_CLEARED_MESSAGE } from "@/lib/return-date";
+import { firstLegError, legErrors, nextLeg, remainingLegErrors, updateLeg, type Leg, type LegErrors } from "@/lib/multi-city";
 import { whatsappUrl } from "@/lib/site-config";
 import { airportByCode, loadPublicAirports } from "@/data/airports";
 import { isGroupTicketingProvider, groupTicketToFlight } from "@/lib/provider-systems";
@@ -291,6 +292,18 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     if (editTripType === "roundtrip") setEditReturnDateOpen(true);
   };
   const [editSegmentDateOpen, setEditSegmentDateOpen] = useState<number | null>(null);
+  // #160: each multi-city leg's messages, under its fields; a new leg starts where the last one lands.
+  const [editLegErrors, setEditLegErrors] = useState<LegErrors[]>([]);
+  const changeEditLeg = (index: number, patch: Partial<Leg>) => {
+    const next = updateLeg(editSegments, index, patch);
+    setEditSegments(next);
+    setEditLegErrors(current => remainingLegErrors(current, next));
+  };
+  const removeEditLeg = (index: number) => {
+    const next = editSegments.filter((_, at) => at !== index);
+    setEditSegments(next);
+    setEditLegErrors(current => remainingLegErrors(current.filter((_, at) => at !== index), next));
+  };
   // Phones (#148): choosing From opens To (`key`), choosing To opens the departure date.
   const [editAdvance, setEditAdvance] = useState({ key: "", n: 0 });
   const editSignal = (key: string) => (editAdvance.key === key ? editAdvance.n : 0);
@@ -307,6 +320,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     ]);
     setEditTravelers(travelers);
     setEditReturnError(undefined);
+    setEditLegErrors([]);
     setModifyOpen(true);
   };
 
@@ -320,9 +334,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         return;
       }
     }
-    if (editTripType === "multicity" && (effectiveSegments.length < 2 || effectiveSegments.some((segment) => !/^[A-Z]{3}$/.test(segment.from) || !/^[A-Z]{3}$/.test(segment.to) || segment.from === segment.to || !segment.date))) {
-      setApiMessage("Complete each multi-city flight with different airports and a travel date.");
-      return;
+    if (editTripType === "multicity") {
+      const found = legErrors(effectiveSegments);
+      setEditLegErrors(found);
+      const toFix = firstLegError(found);
+      if (toFix) {
+        document.getElementById(`modify-leg${toFix[0]}-${toFix[1]}`)?.focus();
+        return;
+      }
     }
     const firstSegment = effectiveSegments[0];
     const effectiveFrom = firstSegment?.from || editFrom;
@@ -2155,36 +2174,68 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             </div>
             {editTripType === "multicity" ? (
               <div className="space-y-3">
-                {editSegments.map((segment, index) => (
-                  <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-                    <AirportCombobox value={segment.from} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, from: value } : item))} placeholder="Origin"
-                      onAdvance={() => setEditAdvance(current => ({ key: `to-${index}`, n: current.n + 1 }))} />
-                    <AirportCombobox value={segment.to} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, to: value } : item))} placeholder="Destination" iconVariant="arrival"
-                      openSignal={editSignal(`to-${index}`)} onAdvance={() => setEditSegmentDateOpen(index)} />
-                    <CalendarPopup open={editSegmentDateOpen === index} onOpenChange={(open) => setEditSegmentDateOpen(open ? index : null)}>
-                      <CalendarPopupTrigger asChild>
-                        <button type="button" className="flex h-11 items-center gap-2 rounded-xl border border-input bg-background px-3 text-left text-sm">
-                          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                          {segment.date ? format(segment.date, "MMM dd, yyyy") : "Select date"}
+                {editSegments.map((segment, index) => {
+                  const legError = editLegErrors[index] ?? {};
+                  const legId = `modify-leg${index}`;
+                  const previousDate = index > 0 ? editSegments[index - 1].date : undefined;
+                  const message = (key: keyof LegErrors) => legError[key]
+                    ? <p id={`${legId}-${key}-error`} className="mt-1 text-xs text-destructive">{legError[key]}</p> : null;
+                  return (
+                  <section key={index} aria-labelledby={`${legId}-title`} className="rounded-xl border border-border/70 bg-muted/20 p-3">
+                    <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
+                      <h3 id={`${legId}-title`} className="text-xs font-semibold text-foreground">Flight {index + 1}</h3>
+                      {editSegments.length > 2 && (
+                        <button type="button" onClick={() => removeEditLeg(index)} aria-label={`Remove Flight ${index + 1}`}
+                          className="-my-1.5 flex h-11 w-11 items-center justify-center rounded-full text-destructive transition-colors hover:bg-destructive/10 sm:h-8 sm:w-8">
+                          <X className="h-4 w-4" aria-hidden="true" />
                         </button>
-                      </CalendarPopupTrigger>
-                      <CalendarPopupContent title="Select flight date">
-                        <Calendar size="large"
-                          mode="single"
-                          selected={segment.date}
-                          onSelect={(date) => {
-                            setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, date } : item));
-                            if (date) setEditSegmentDateOpen(null);
-                          }}
-                          initialFocus
-                          className="p-3 sm:p-5 pointer-events-auto"
-                        />
-                      </CalendarPopupContent>
-                    </CalendarPopup>
-                    <Button type="button" variant="outline" size="sm" className="shrink-0" disabled={editSegments.length <= 2} onClick={() => setEditSegments((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Remove</Button>
-                  </div>
-                ))}
-                <Button type="button" variant="outline" size="sm" disabled={editSegments.length >= MAX_MULTI_CITY_FLIGHTS} onClick={() => setEditSegments((current) => current.length < MAX_MULTI_CITY_FLIGHTS ? [...current, { from: "", to: "", date: undefined }] : current)}>Add flight</Button>
+                      )}
+                    </div>
+                    <div className="grid items-start gap-2 sm:grid-cols-3">
+                      <div className="min-w-0">
+                        <label htmlFor={`${legId}-from`} className="mb-1 block text-xs font-medium text-muted-foreground">From</label>
+                        <AirportCombobox id={`${legId}-from`} value={segment.from} onChange={(value) => changeEditLeg(index, { from: value })} placeholder="Origin" invalid={!!legError.from}
+                          onAdvance={() => setEditAdvance(current => ({ key: `to-${index}`, n: current.n + 1 }))} />
+                        {message("from")}
+                      </div>
+                      <div className="min-w-0">
+                        <label htmlFor={`${legId}-to`} className="mb-1 block text-xs font-medium text-muted-foreground">To</label>
+                        <AirportCombobox id={`${legId}-to`} value={segment.to} onChange={(value) => changeEditLeg(index, { to: value })} placeholder="Destination" iconVariant="arrival" invalid={!!legError.to}
+                          openSignal={editSignal(`to-${index}`)} onAdvance={() => setEditSegmentDateOpen(index)} />
+                        {message("to")}
+                      </div>
+                      <div className="min-w-0">
+                        <label htmlFor={`${legId}-date`} className="mb-1 block text-xs font-medium text-muted-foreground">Date</label>
+                        <CalendarPopup open={editSegmentDateOpen === index} onOpenChange={(open) => setEditSegmentDateOpen(open ? index : null)}>
+                          <CalendarPopupTrigger asChild>
+                            <button id={`${legId}-date`} type="button" aria-invalid={legError.date ? true : undefined} aria-describedby={legError.date ? `${legId}-date-error` : undefined}
+                              className={cn("flex h-11 w-full items-center gap-2 rounded-xl border border-input bg-background px-3 text-left text-sm", legError.date && "border-destructive")}>
+                              <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                              <span className="truncate">{segment.date ? format(segment.date, "MMM dd, yyyy") : "Select date"}</span>
+                            </button>
+                          </CalendarPopupTrigger>
+                          <CalendarPopupContent title="Select flight date">
+                            <Calendar size="large"
+                              mode="single"
+                              selected={segment.date}
+                              onSelect={(date) => {
+                                changeEditLeg(index, { date });
+                                if (date) setEditSegmentDateOpen(null);
+                              }}
+                              disabled={previousDate ? { before: startOfDay(previousDate) } : undefined}
+                              defaultMonth={segment.date ?? previousDate}
+                              initialFocus
+                              className="p-3 sm:p-5 pointer-events-auto"
+                            />
+                          </CalendarPopupContent>
+                        </CalendarPopup>
+                        {message("date")}
+                      </div>
+                    </div>
+                  </section>
+                  );
+                })}
+                <Button type="button" variant="outline" size="sm" disabled={editSegments.length >= MAX_MULTI_CITY_FLIGHTS} onClick={() => setEditSegments((current) => current.length < MAX_MULTI_CITY_FLIGHTS ? [...current, nextLeg(current)] : current)}>Add flight</Button>
               </div>
             ) : (
             <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">

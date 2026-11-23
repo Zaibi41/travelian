@@ -149,8 +149,17 @@ export function bankInitials(name: string) {
   return words.slice(0, 2).map(word => word[0].toUpperCase()).join("") || "?";
 }
 
-/** The bank's mark on its card: its initials (Travelian has no bank logo files yet; never a made-up logo). */
-export function BankMark({ name }: { name: string }) {
+/** The bank's mark on its card: the logo staff uploaded for this account (#76, Accounts & Ledgers), else its initials
+ *  (never a made-up logo). The name is written beside it, so the mark itself is decorative. */
+export function BankMark({ name, logoUrl }: { name: string; logoUrl?: string | null }) {
+  const [broken, setBroken] = useState(false);
+  if (logoUrl && !broken) {
+    return (
+      <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-white p-0.5">
+        <img src={logoUrl} alt="" className="h-full w-full object-contain" onError={() => setBroken(true)} />
+      </span>
+    );
+  }
   return (
     <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-white text-xs font-bold tracking-wide text-primary">
       {bankInitials(name)}
@@ -203,7 +212,7 @@ export function BankAccounts({ accounts, facts, selectedId, onChoose, children }
                 <label key={account.id ?? index} className={cn("flex min-w-0 cursor-pointer items-center gap-3 rounded-xl border bg-card px-3 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-ring",
                   checked ? "border-primary bg-primary/5" : "hover:border-primary/40")}>
                   <input type="radio" name={name} className="sr-only" checked={checked} onChange={() => choose(index)} />
-                  <BankMark name={accountName(account, index)} />
+                  <BankMark name={accountName(account, index)} logoUrl={account.logo_url} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-foreground" title={accountName(account, index)}>{accountName(account, index)}</span>
                     {last4(account.account_number ?? account.iban) && (
