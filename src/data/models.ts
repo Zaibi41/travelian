@@ -252,6 +252,8 @@ export interface FlightItinerarySegment {
   arrivalTerminal?: string | null;
   duration?: string | null;
   equipment?: string | null;
+  /** A group return fare's flights say which journey they belong to (#175); live flights leave it out. */
+  direction?: "outbound" | "return";
 }
 
 export interface FlightLayover {
