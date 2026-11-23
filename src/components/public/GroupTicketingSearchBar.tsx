@@ -385,8 +385,7 @@ export function GroupTicketingSearchBar({
                     className={cn(
 
                       index >= 4 && "sm:hidden",
-
-                      "min-h-8 shrink-0 whitespace-nowrap rounded-md border px-2 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-7",
+                      "min-h-11 shrink-0 whitespace-nowrap rounded-md border px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-7 sm:px-2",
 
                       isSelected
 
@@ -416,7 +415,7 @@ export function GroupTicketingSearchBar({
 
             <Select value={displayedSectors.some(sector => sector.sector === currentSectorKey) ? currentSectorKey : "select-sector-placeholder"} onValueChange={handleSectorSelect}>
 
-              <SelectTrigger aria-label={`Select available sector${currentSectorKey ? `, ${currentSectorKey}` : ""}`} className="h-8 w-full min-w-[11rem] justify-between gap-2 rounded-md border-border bg-transparent px-2 text-xs sm:w-auto hover:bg-muted">
+              <SelectTrigger aria-label={`Select available sector${currentSectorKey ? `, ${currentSectorKey}` : ""}`} className="h-11 w-full min-w-[11rem] justify-between gap-2 rounded-md border-border bg-transparent px-2 text-xs sm:h-8 sm:w-auto hover:bg-muted">
 
                 <SelectValue placeholder="Select available sector" />
 
