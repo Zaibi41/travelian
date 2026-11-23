@@ -23,6 +23,7 @@ import { DatePickerField } from "@/components/ui/date-picker-field";
 import { titleText } from "@/lib/passenger-details";
 import { SlipPreview } from "@/components/admin/finance/SlipReviewDialog";
 import { ReholdAtSupplier } from "./ReholdAtSupplier";
+import { TravelersAndContact } from "./TravelersAndContact";
 
 // Booking detail > Payments (spec 7, mockup booking-payment-issue): 1 · record the customer's
 // payment, 2 · issue the ticket, then the result. The gateway decides everything (amounts due,
@@ -50,6 +51,7 @@ export function PaymentsAndIssuing({ booking }: { booking: BookingDetail }) {
   const [reheld, setReheld] = useState<string | null>(null);
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
+      {booking.statuses.payment !== "paid" && <TravelersAndContact booking={booking} />}
       <div className="grid grid-cols-1 items-start gap-card-gap xl:grid-cols-2">
         <RecordPayment booking={booking} />
         <IssueTicket booking={booking} checklist={checklist.data} loading={checklist.isPending} error={checklist.error} onResult={setResult} />

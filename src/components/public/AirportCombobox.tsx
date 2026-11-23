@@ -6,6 +6,7 @@ import type { Airport } from "@/data/airports";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useOpenSignal } from "@/hooks/use-open-signal";
 import { formatAirportSubtitle, getCountryName } from "@/lib/country-names";
+import { loadedAirports, rankAirports, searchAirports, MIN_QUERY, type Airport as ListAirport } from "@/lib/admin-search/airports";
 import { readRecentAirports, rememberRecentAirport } from "@/lib/recent-airports";
 import { cn } from "@/lib/utils";
 
@@ -17,8 +18,8 @@ interface Props {
   className?: string;
   invalid?: boolean;
   iconVariant?: "departure" | "arrival";
-  /** Phones only: called after an airport is chosen in the full-screen picker (not when it is just closed), so the
-   *  form can open its next field (From → To → departure date). */
+  /** Called after an airport is chosen (not when the list is just closed), so the form can open its next field
+   *  (From → To → departure date), on phones and desktop. */
   onAdvance?: () => void;
   /** Opens the field (the picker on phones) each time this changes to a new non-zero number. */
   openSignal?: number;
@@ -69,23 +70,17 @@ function loadAirportDataset() {
   return airportCachePromise;
 }
 
-function airportMatchScore(airport: Airport, search: string) {
-  const needle = search.trim().toLowerCase();
-  if (!needle) return 0;
-  const code = airport.code.toLowerCase();
-  const city = airport.city.toLowerCase();
-  const name = airport.name.toLowerCase();
-  const countryCode = airport.country.toLowerCase();
-  const countryName = getCountryName(airport.country).toLowerCase();
-  if (code === needle) return 0;
-  if (code.startsWith(needle)) return 1;
-  if (city.startsWith(needle)) return 2;
-  if (name.startsWith(needle)) return 3;
-  if (countryName.startsWith(needle) || countryCode.startsWith(needle)) return 4;
-  if (city.includes(needle)) return 5;
-  if (name.includes(needle)) return 6;
-  if (countryName.includes(needle)) return 7;
-  return Number.POSITIVE_INFINITY;
+// One ranking for every From / To field (#157): src/lib/admin-search/airports.ts. Before the full list has loaded (or
+// for one letter), the popular airports are ranked the same way.
+const asListAirport = (airport: Airport): ListAirport => ({
+  iata: airport.code, name: airport.name, city: airport.city, country: getCountryName(airport.country), countryCode: airport.country, type: "large",
+});
+const popularForRanking = popularAirports.map(asListAirport);
+
+function rankedAirports(query: string, loaded: boolean): Airport[] {
+  const index = loaded ? loadedAirports() : null;
+  const found = index && query.length >= MIN_QUERY ? searchAirports(index, query, 80) : rankAirports(popularForRanking, query, 24);
+  return found.map(airport => resolveAirport({ code: airport.iata, name: airport.name, city: airport.city, country: airport.countryCode }));
 }
 
 export function AirportCombobox({ id, value, onChange, placeholder = "Select airport", className, invalid, iconVariant = "departure", onAdvance, openSignal }: Props) {
@@ -99,6 +94,7 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
   const listId = useId();
   const fieldRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [allAirports, setAllAirports] = useState<Airport[] | null>(airportCache);
   const [isLoadingAirports, setIsLoadingAirports] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -118,13 +114,8 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
   };
 
   const shownAirports = useMemo(() => {
-    const source = allAirports || popularAirports;
     const trimmedQuery = query.trim();
-    const matches = source
-      .map(airport => ({ airport, score: airportMatchScore(airport, trimmedQuery) }))
-      .filter(({ score }) => Number.isFinite(score))
-      .sort((a, b) => a.score - b.score || a.airport.code.localeCompare(b.airport.code))
-      .map(({ airport }) => airport);
+    const matches = trimmedQuery ? rankedAirports(trimmedQuery, Boolean(allAirports)) : [];
     const popularMatches = trimmedQuery
       ? []
       : popularAirports;
@@ -149,12 +140,15 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
     rememberRecentAirport("public", airport);
     setOpen(false);
     setQuery("");
-    if (isPhone) onAdvance?.();
+    // From → To → departure date, on phones (#148) and on desktop (#157): the next field opens, so typing the
+    // destination never lands in From.
+    onAdvance?.();
   };
 
   useOpenSignal(openSignal, () => {
     setQuery("");
     setOpen(true);
+    if (!isPhone) inputRef.current?.focus();
   });
 
   // Phone picker: before typing, the airports chosen before, then the popular airports; typing lists the matches
@@ -188,6 +182,7 @@ export function AirportCombobox({ id, value, onChange, placeholder = "Select air
         )}>
           <FieldIcon aria-hidden="true" className="h-4 w-4 shrink-0 text-muted-foreground" />
           <input
+            ref={inputRef}
             id={id}
             role="combobox"
             aria-label={placeholder}

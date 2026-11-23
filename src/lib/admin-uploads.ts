@@ -3,7 +3,7 @@
 // Every failure says what went wrong ("Image upload failed: …"), so it is never silent.
 import { gatewayPost } from "@/lib/gateway/client";
 
-export type UploadPurpose = "site_logo" | "payment_qr" | "payment_proof";
+export type UploadPurpose = "site_logo" | "payment_qr" | "payment_proof" | "bank_logo";
 const TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
 export const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
 
