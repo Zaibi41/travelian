@@ -473,7 +473,8 @@ function Results({ data, search, filters, onFilters, renderFareAction, actionNot
                   </h3>
                 )}
                 {flights.length === 0 ? empty : flights.map(flight => (
-                  <FlightCard key={flight.id} journey={journey} flight={flight} data={data} renderFareAction={renderFareAction} actionNotes={actionNotes} />
+                  <FlightCard key={flight.id} journey={journey} flight={flight} data={data} renderFareAction={renderFareAction} actionNotes={actionNotes}
+                    travelers={search.adults + search.children + search.infants} />
                 ))}
               </div>
             );
@@ -623,8 +624,25 @@ function RouteLine({ total, below, stops }: { total: string | null; below: strin
   );
 }
 
-function FlightCard({ journey, flight, data, renderFareAction, actionNotes }: {
+/** Issue 113: several travelers: the gateway's total for all of them. No "per adult" wording on the admin (issue 80);
+ *  without a gateway total (a passenger type the supplier didn't price), the selling price as before. */
+function FarePrice({ fare, travelers }: { fare: FareView; travelers: number }) {
+  if (travelers > 1 && fare.total_price) {
+    const count = fare.passenger_prices?.reduce((sum, row) => sum + row.count, 0) || travelers;
+    return (
+      <span className="inline-flex flex-col items-end">
+        <span className="font-semibold text-foreground">{formatMoney(fare.total_price)}</span>
+        <span className="text-label text-muted-foreground">total for {count} travelers</span>
+      </span>
+    );
+  }
+  return <span className="font-semibold text-foreground">{fare.selling_price ? formatMoney(fare.selling_price) : ""}</span>;
+}
+
+function FlightCard({ journey, flight, data, renderFareAction, actionNotes, travelers = 1 }: {
   journey: JourneyView; flight: FlightView; data: FlightSearchView; renderFareAction?: FlightsSearchProps["renderFareAction"]; actionNotes?: string[];
+  /** Travelers searched: with more than one, the price is the gateway's total for all of them (issue 113). */
+  travelers?: number;
 }) {
   const [expanded, setExpanded] = useState(false);
   const fares = expanded ? flight.fares : flight.fares.slice(0, VISIBLE_FARES);
@@ -687,7 +705,7 @@ function FlightCard({ journey, flight, data, renderFareAction, actionNotes }: {
                     </td>
                   )}
                   <td className="whitespace-nowrap px-2.5 py-2 text-right tabular-nums">
-                    {fare.selling_price ? <span className="font-semibold text-foreground">{formatMoney(fare.selling_price)}</span> : <Missing value={null} />}
+                    {fare.selling_price ? <FarePrice fare={fare} travelers={travelers} /> : <Missing value={null} />}
                   </td>
                   {renderFareAction && <td className="px-2.5 py-2 text-right">{renderFareAction({ journey, flight, fare }, data)}</td>}
                 </tr>

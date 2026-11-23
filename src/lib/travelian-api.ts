@@ -88,6 +88,11 @@ export interface FareOption {
   legBags?: { label: string; bags: string; bagsDetail: string }[];
   /** Gateway fare ids (outbound, then return): checkout sends these, never a price, to the gateway (B19). */
   gatewayFareIds?: string[];
+  /** #113: the gateway's total for every traveler searched (a round trip: its outbound and return totals), in rupees.
+   *  Missing when the gateway sent none (a passenger type the supplier didn't price): show the per-adult price only. */
+  allTravelersTotal?: number;
+  /** How many travelers allTravelersTotal is for. */
+  travelerCount?: number;
 }
 
 export type TravelianFlight = Flight & {
@@ -248,7 +253,13 @@ export function extractAirportCode(value: string) {
 export const GATEWAY_FLIGHT_PROVIDER = "travelian";
 
 interface GatewayMoney { amount_minor: number; currency: string }
-interface GatewayFare { id: string; name: string; meal?: string; baggage?: string; baggage_detail?: string; refund?: string; selling_price?: GatewayMoney }
+interface GatewayPassengerPrice { type: "ADT" | "CHD" | "INF"; count: number; selling_each: GatewayMoney }
+/** selling_price is per adult; total_price is the gateway's total for every traveler searched (#113), sent only when the
+ *  supplier priced every passenger type. */
+interface GatewayFare {
+  id: string; name: string; meal?: string; baggage?: string; baggage_detail?: string; refund?: string; selling_price?: GatewayMoney;
+  total_price?: GatewayMoney; passenger_prices?: GatewayPassengerPrice[];
+}
 /** One flight of a connection; layover_minutes: time on the ground at `origin` before it (left out for the first). */
 interface GatewaySegment {
   flight_number?: string; origin: string; destination: string; departure_local?: string; arrival_local?: string;
@@ -289,6 +300,14 @@ function legBags(fare: GatewayFare, back: GatewayFare) {
   });
 }
 
+const travelerCount = (fare: GatewayFare) => (fare.passenger_prices || []).reduce((sum, row) => sum + row.count, 0);
+
+/** The gateway's total for all travelers (#113): one fare's, or a round trip's outbound and return totals together. */
+function allTravelersTotal(fare: GatewayFare, extra?: GatewayFare) {
+  if (!fare.total_price || (extra && !extra.total_price)) return {};
+  return { allTravelersTotal: rupees(fare.total_price) + rupees(extra?.total_price), travelerCount: travelerCount(fare) };
+}
+
 function fareOption(fare: GatewayFare, extra?: GatewayFare): FareOption {
   const total = rupees(fare.selling_price) + rupees(extra?.selling_price);
   return {
@@ -300,6 +319,7 @@ function fareOption(fare: GatewayFare, extra?: GatewayFare): FareOption {
     meal: fare.meal || undefined,
     ...(extra ? { legBags: legBags(fare, extra) } : {}),
     gatewayFareIds: [fare.id, extra?.id].filter((id): id is string => Boolean(id)),
+    ...allTravelersTotal(fare, extra),
   };
 }
 
