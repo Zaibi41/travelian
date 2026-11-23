@@ -112,22 +112,23 @@ for (const width of [1440, 390]) {
 
     // Each tab of a 1-stop flight's details.
     const dialog = await details(page, "Etihad Airways");
-    await shot(page, `details-options-${width}`);
+    await shot(page, `details-default-${width}`);
     await dialog.getByRole("button", { name: "Flight Info" }).click();
     await shot(page, `details-flightinfo-onestop-${width}`);
     if (!BEFORE) {
       const stay = dialog.getByRole("region", { name: "Stop at Abu Dhabi, United Arab Emirates" });
       await expect(stay).toBeVisible();
-      await expect(stay.getByText("Stay country")).toBeVisible();
-      await expect(stay.getByText("United Arab Emirates", { exact: true })).toBeVisible();
+      // #163: "2h 45m layover • Abu Dhabi (AUH), United Arab Emirates" (#84: with the country).
+      await expect(stay.getByText("2h 45m layover", { exact: true })).toBeVisible();
       await expect(stay.getByText("Abu Dhabi (AUH)", { exact: true })).toBeVisible();
-      await expect(stay.getByText("2h 45m", { exact: true })).toBeVisible();
-      await expect(stay.getByText("Arrive 05:30 · Depart 08:15")).toBeVisible();
+      await expect(stay).toContainText("United Arab Emirates");
       await expect(stay).not.toContainText(/EY254|EY11|Etihad/); // #122: no flight name or number in the stay
-      // #122: the flight number stays on the right of each flight; the duration line has no name or number.
-      await expect(dialog.getByText("EY254", { exact: true })).toBeVisible();
-      await expect(dialog.getByText("EY11", { exact: true })).toBeVisible();
-      await expect(dialog.getByText("Duration 3h 30m", { exact: true })).toBeVisible();
+      // #163: each flight shows its airline and "Economy • flight number"; its flying time on the left.
+      await expect(dialog.getByText("Economy • EY254", { exact: true })).toBeVisible();
+      await expect(dialog.getByText("Economy • EY11", { exact: true })).toBeVisible();
+      await expect(dialog.getByText("3h 30m", { exact: true })).toBeVisible();
+      await expect(dialog.getByText("Thu, Dec 10, 2026", { exact: true })).toBeVisible();
+      await expect(dialog.getByText("14h 30m · 1 stop", { exact: true })).toBeVisible();
       await expect(dialog.getByText(/· Duration/)).toHaveCount(0); // was "Etihad Airways · EY254 · Duration 3h 30m"
     }
     await dialog.getByRole("button", { name: "Fare Rules" }).click();
@@ -143,9 +144,9 @@ for (const width of [1440, 390]) {
     if (!BEFORE) {
       await expect(qrDialog.getByRole("region", { name: /^Stop at / })).toHaveCount(2);
       const doha = qrDialog.getByRole("region", { name: "Stop at Doha, Qatar" });
-      await expect(doha.getByText("2h 30m", { exact: true })).toBeVisible();
+      await expect(doha.getByText("2h 30m layover", { exact: true })).toBeVisible();
       const kinshasa = qrDialog.getByRole("region", { name: "Stop at Kinshasa, Congo, The Democratic Republic of the" });
-      await expect(kinshasa.getByText("9h 40m", { exact: true })).toBeVisible();
+      await expect(kinshasa.getByText("9h 40m layover", { exact: true })).toBeVisible();
       const box = await kinshasa.boundingBox();
       const dialogBox = await qrDialog.boundingBox();
       expect(box!.x + box!.width).toBeLessThanOrEqual(dialogBox!.x + dialogBox!.width + 1);
@@ -163,8 +164,8 @@ for (const width of [1440, 390]) {
     await shot(page, `details-flightinfo-stopcity-${width}`);
     if (!BEFORE) {
       const multan = z8Dialog.getByRole("region", { name: "Stop at Multan, Pakistan" });
-      await expect(multan.getByText("Pakistan", { exact: true })).toBeVisible();
-      await expect(multan.getByText("TBA", { exact: true })).toBeVisible();
+      await expect(multan).toContainText("Multan (MUX), Pakistan");
+      await expect(multan.getByText("Layover", { exact: true })).toBeVisible(); // no duration is guessed
     }
   });
 
@@ -188,8 +189,11 @@ for (const width of [1440, 390]) {
     if (!BEFORE) {
       // Two stays in Abu Dhabi (2h 45m out, 2h 0m back); none at London between the outbound and the return.
       await expect(dialog.getByRole("region", { name: /^Stop at / })).toHaveCount(2);
-      await expect(dialog.getByText("2h 45m", { exact: true })).toBeVisible();
-      await expect(dialog.getByText("2h 0m", { exact: true })).toBeVisible();
+      await expect(dialog.getByText("2h 45m layover", { exact: true })).toBeVisible();
+      await expect(dialog.getByText("2h 0m layover", { exact: true })).toBeVisible();
+      // #163: one block per journey, Outbound and Return.
+      await expect(dialog.getByRole("region", { name: "Outbound" })).toBeVisible();
+      await expect(dialog.getByRole("region", { name: "Return" })).toBeVisible();
       await expect(dialog.getByRole("region", { name: /Stop at London/ })).toHaveCount(0);
     }
   });
