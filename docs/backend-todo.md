@@ -53,6 +53,7 @@ The previous long-form list (sections 1 to 10) is in git history before 21 Novem
 | Public `/contact` message form (10) | [gateway#114](https://github.com/Zaibi41/travelian-api-gateway/issues/114) |
 | Public `/blog` articles; `/blog` and `/deals` in the sitemap (10) | [travelian#127](https://github.com/Zaibi41/travelian/issues/127) |
 | API host not marked for crawlers: `robots.txt`, `X-Robots-Tag` (10) | [gateway#81](https://github.com/Zaibi41/travelian-api-gateway/issues/81) |
+| "Upload Passport or ID" in the admin Saved Travelers popup (read a passport / ID scan into the traveler's fields, PDF / JPG / PNG up to 10 MB): needs a gateway upload + document-reading endpoint (none exists); the button is not shown until then | [travelian#167](https://github.com/Zaibi41/travelian/issues/167) |
 
 ## Done
 

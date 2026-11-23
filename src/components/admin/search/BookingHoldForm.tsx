@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, X } from "lucide-react";
+import { ChevronLeft, Users, X } from "lucide-react";
 import { Button } from "@/components/admin/ui/button";
 import { Checkbox } from "@/components/admin/ui/choice";
 import { FieldLabel, Input } from "@/components/admin/ui/field";
@@ -8,6 +8,7 @@ import { Tag } from "@/components/admin/ui/StatusBadge";
 import { Notice } from "@/components/admin/ui/feedback";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PersonTypeahead } from "@/components/admin/people/PersonTypeahead";
+import { SavedTravelersDialog } from "@/components/admin/people/SavedTravelersDialog";
 import { PassengerFields } from "@/components/booking/PassengerFields";
 import { GroupBookingSteps } from "./GroupBookingSteps";
 import { DEFAULT_COUNTRY_CODE } from "@/data/countries";
@@ -221,6 +222,8 @@ export function passengerText({ adults, children, infants }: PassengerCounts) {
 
 // Customer, then one card per traveler, then (Group) the selling price. The Hold seats button sits
 // in the fare panel and submits this form by its id.
+const AGE_LABEL = { adult: "Adult", child: "Child", infant: "Infant" } as const;
+
 export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, defaultSelling, travelDate, documents }: {
   formId: string;
   counts: PassengerCounts;
@@ -237,6 +240,8 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
 }) {
   const [customer, setCustomer] = useState<BookingCustomer>(blankCustomer);
   const [travelers, setTravelers] = useState<BookingTraveler[]>(() => initialTravelers(counts));
+  /** Issue 167: which traveler's "Saved Travelers" popup is open. */
+  const [pickerFor, setPickerFor] = useState<number | null>(null);
   const [selling, setSelling] = useState<string | null>(null);
   const [localErrors, setLocalErrors] = useState<FormErrors | null>(null);
   const shown = localErrors ?? errors;
@@ -398,20 +403,16 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
                   <h2 className="font-display text-section font-semibold text-brand-navy">{label}</h2>
                   <p className="text-label text-muted-foreground">{AGE_TEXT[traveler.details.passengerType]}</p>
                 </div>
-                {customerIsAdult1 && <Tag tone="teal">The customer</Tag>}
+                {customerIsAdult1 ? <Tag tone="teal">The customer</Tag> : (
+                  // Issue 167: the website's Traveler Details form plus one button that opens the saved travelers in a popup.
+                  <Button type="button" variant="outline" onClick={() => setPickerFor(index)} aria-label={`Saved Travelers, ${label}`}>
+                    <Users className="h-4 w-4" aria-hidden="true" /> Saved Travelers
+                  </Button>
+                )}
               </div>
-              {!customerIsAdult1 && (
-                traveler.picked ? (
-                  <FilledFrom person={traveler.picked} what="saved traveler" onClear={() => setTravelers(current => current.map((entry, i) => (
-                    i === index ? { ...blankTraveler(entry.type, entry.travels_with, entry.details.label), save: entry.save } : entry)))} />
-                ) : (
-                  <div className="flex flex-col gap-1">
-                    <FieldLabel htmlFor={id("find")}>Use saved traveler</FieldLabel>
-                    <PersonTypeahead id={id("find")} label={`Use saved traveler, ${label}`} kind="traveler" placeholder="Name or passport or CNIC number"
-                      emptyText="No saved traveler matches. Type the details below."
-                      onPick={person => setTraveler(index, { picked: person, details: detailsFromPerson(person, traveler.details, requiredDocs[index]) })} />
-                  </div>
-                )
+              {!customerIsAdult1 && traveler.picked && (
+                <FilledFrom person={traveler.picked} what="saved traveler" onClear={() => setTravelers(current => current.map((entry, i) => (
+                  i === index ? { ...blankTraveler(entry.type, entry.travels_with, entry.details.label), save: entry.save } : entry)))} />
               )}
               {fieldError(`passengers.${index}`) && <p role="alert" className="text-body text-status-critical-text">{fieldError(`passengers.${index}`)}</p>}
               <PassengerFields idPrefix={`traveler-${index}`} appearance="admin" travelDate={travelDate} requiredDoc={requiredDocs[index]}
@@ -472,6 +473,11 @@ export function BookingHoldForm({ formId, counts, canSubmit, onSubmit, errors, d
           return text ? <Notice tone="critical">{text}</Notice> : null;
         })()}
       </form>
+      {pickerFor !== null && travelers[pickerFor] && (
+        <SavedTravelersDialog open onOpenChange={open => { if (!open) setPickerFor(null); }}
+          travelerLabel={travelers[pickerFor].details.label} typeLabel={AGE_LABEL[travelers[pickerFor].details.passengerType]}
+          onPick={person => setTraveler(pickerFor, { picked: person, details: detailsFromPerson(person, travelers[pickerFor].details, requiredDocs[pickerFor]) })} />
+      )}
 
     </>
   );

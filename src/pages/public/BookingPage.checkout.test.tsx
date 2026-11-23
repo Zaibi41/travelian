@@ -265,3 +265,23 @@ describe("Checkout total for several travelers (#113)", () => {
     expect(screen.getAllByText("PKR 43,656").length).toBeGreaterThan(0);
   });
 });
+
+describe("Traveler Details form (#167)", () => {
+  it("has no name, passport or mobile helper texts and no Alternate Mobile Number; Email and Mobile share a row", () => {
+    renderAt(url());
+    for (const text of ["Name must match exactly as shown on your passport.", "This airline needs the traveler's passport for this flight.",
+      "Use the passport number without spaces.", "Travelian will use this number for ticketing updates and support."]) {
+      expect(screen.queryByText(text)).not.toBeInTheDocument();
+    }
+    expect(screen.queryByText("Alternate Mobile Number")).not.toBeInTheDocument();
+    const email = document.querySelector('[data-error-key="email"]')!;
+    const phone = document.querySelector('[data-error-key="phone"]')!;
+    expect(email.parentElement).toBe(phone.parentElement);
+    expect(email.className).not.toMatch(/col-span-2/);
+    expect(phone.className).not.toMatch(/col-span-2/);
+    // Date of Expiry is a half-width cell right after Country of Issuance.
+    const expiry = document.querySelector('[data-error-key="passenger-0-expiryDate"]')!;
+    expect(expiry.className).not.toMatch(/col-span-2/);
+    expect(expiry.previousElementSibling).toHaveTextContent("Country of Issuance *");
+  });
+});
