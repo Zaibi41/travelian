@@ -229,6 +229,8 @@ export interface BankAccountDisplay {
   bank_name?: string | null; account_title?: string | null; account_number?: string | null; iban?: string | null; qr_url?: string | null;
   /** Gateway path that sends the QR image as a file download (works in every browser; the S3 image itself can't be downloaded cross-site). */
   qr_download_url?: string | null;
+  /** #76: the bank's logo staff uploaded for this account; none: the card shows the bank's initials. */
+  logo_url?: string | null;
 }
 /** `flights`: website flight fares are held and paid here; false: a flight booking is a request (Travelian arranges payment). */
 export interface PaymentMethods {
