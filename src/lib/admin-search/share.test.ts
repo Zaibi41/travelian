@@ -57,7 +57,7 @@ describe("Share on WhatsApp (#112)", () => {
     const text = flightShareMessage({ journey, flight: { ...flight, duration_minutes: null, stops: null, airline_name: null }, fare: bare }, ONE, null);
     expect(text).toContain("QR QR629");
     expect(text).toContain("LHE to DXB");
-    expect(text).toContain("Meal: No Meal");
+    expect(text).toContain("Meal: Meal info not available"); // #154: missing meal data is not "No Meal"
     expect(text).toContain("Baggage: Check with airline");
     expect(text).not.toMatch(/Price:|Duration:|null|undefined/);
   });
