@@ -20,7 +20,7 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
         const box = node.getBoundingClientRect();
         return { top: box.top + window.scrollY, height: box.height };
       };
-      const action = [...card.querySelectorAll("button")].find(button => /^(Search|Search Flights)$/.test(button.textContent?.trim() || button.getAttribute("aria-label")?.replace("flights", "Flights") || ""))!;
+      const action = [...card.querySelectorAll("button")].find(button => /^(Search|Search flights)$/i.test(button.textContent?.trim() || button.getAttribute("aria-label")?.replace("flights", "Flights") || ""))!;
       return {
         card: rect(card), hero: rect(hero), tabs: rect(element),
         heading: rect(hero.querySelector("h1")!),

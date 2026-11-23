@@ -53,6 +53,12 @@ export const changeCustomerEmail = (bookingId: string, email: string, options?: 
     ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "The email address couldn't be saved right now. Nothing was changed.",
   });
 
+/** #56: change the customer's mobile number and email on this booking (no re-hold: the hold and price stay). Logged. */
+export const changeCustomerContact = (bookingId: string, contact: { phoneCode: string; phone: string; email?: string }, options?: GatewayOptions) =>
+  gatewayPut("/v1/admin/bookings/{booking_id}/customer-contact", { phone_code: contact.phoneCode, phone: contact.phone, email: contact.email?.trim() || null }, {
+    ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "The contact details couldn't be saved right now. Nothing was changed.",
+  });
+
 /** Send a customer email for this booking again (gateway#53); the answer says sent or why not, in plain words. */
 export const resendEmail = (bookingId: string, email: string, options?: GatewayOptions) =>
   gatewayPost("/v1/admin/bookings/{booking_id}/emails/{email}/resend", undefined as never, {
