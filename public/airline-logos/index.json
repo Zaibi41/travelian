@@ -47,7 +47,15 @@
     "turkish": "TK",
     "etihad": "EY",
     "etihad airways": "EY",
-    "travelport": "1G"
+    "travelport": "1G",
+    "ba": "BA",
+    "british airways": "BA",
+    "c6": "C6",
+    "centrum air": "C6",
+    "centrum": "C6",
+    "srilankan airlines": "UL",
+    "sri lankan airlines": "UL",
+    "srilankan": "UL"
   },
   "logos": {
     "1g": "/airline-logos/travelport.svg",
@@ -62,7 +70,7 @@
     "ku": "/airline-logos/kuwait-airways.png",
     "ov": "/airline-logos/salam-air.png",
     "pa": "/airline-logos/airblue.png",
-    "pf": "/airline-logos/airsial.png",
+    "pf": "/airline-logos/airsial-mark.png",
     "z8": "/airline-logos/south-air.png",
     "pk": "/airline-logos/pia.png",
     "qr": "/airline-logos/qatar-airways.png",
@@ -74,8 +82,8 @@
     "airblue": "/airline-logos/airblue.png",
     "air blue": "/airline-logos/airblue.png",
     "air china": "/airline-logos/air-china.png",
-    "airsial": "/airline-logos/airsial.png",
-    "air sial": "/airline-logos/airsial.png",
+    "airsial": "/airline-logos/airsial-mark.png",
+    "air sial": "/airline-logos/airsial-mark.png",
     "south air": "/airline-logos/south-air.png",
     "southair": "/airline-logos/south-air.png",
     "south air international regional airways limited": "/airline-logos/south-air.png",
@@ -113,6 +121,11 @@
     "ul": "/airline-logos/srilankan-airlines.png",
     "travelport": "/airline-logos/travelport.svg",
     "turkish": "/airline-logos/turkish-airlines.png",
-    "turkish airlines": "/airline-logos/turkish-airlines.png"
+    "turkish airlines": "/airline-logos/turkish-airlines.png",
+    "ba": "/airline-logos/british-airways.png",
+    "british airways": "/airline-logos/british-airways.png",
+    "c6": "/airline-logos/centrum-air.png",
+    "centrum air": "/airline-logos/centrum-air.png",
+    "centrum": "/airline-logos/centrum-air.png"
   }
 }
