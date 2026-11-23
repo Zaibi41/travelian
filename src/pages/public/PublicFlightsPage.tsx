@@ -1227,10 +1227,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           <p className="self-center text-xs text-muted-foreground">{duration !== "Duration TBA" ? duration : ""}</p>
                           <span aria-hidden="true" />
                           <div className="min-w-0">
-                            <p className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+                            <div className="flex min-w-0 items-center gap-2 text-sm text-foreground">
                               <AirlineLogo airline={segmentAirline} flightNumber={flightNumber} imageUrl={isSameAsParent && !adminMode ? flight.airlineImage : undefined} className="h-6 w-6 shrink-0 rounded-md border-0 shadow-none ring-0" />
                               <span className="truncate" title={segmentAirline}>{segmentAirline}</span>
-                            </p>
+                            </div>
                             <p className="mt-0.5 truncate text-xs text-muted-foreground" title={[cabin, flightNumber].filter(Boolean).join(" • ")}>
                               {[cabin, flightNumber].filter(Boolean).join(" • ")}
                             </p>

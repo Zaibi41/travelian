@@ -100,12 +100,15 @@ for (const width of [360, 390, 768, 1440]) {
     await shot(page, `popup-2stops-${width}`);
     await expect(longDialog.getByRole("region", { name: /^Stop at / })).toHaveCount(2);
     await expect(longDialog.getByText("2 stops", { exact: false }).first()).toBeVisible();
-    const dialogBox = (await longDialog.boundingBox())!;
-    expect(dialogBox.y + dialogBox.height).toBeLessThanOrEqual((width < 600 ? 800 : 900) + 1);
-    for (const flight of await longDialog.getByTestId("itinerary-flight").all()) {
-      const f = (await flight.boundingBox())!;
-      expect(f.x + f.width).toBeLessThanOrEqual(dialogBox.x + dialogBox.width + 1);
-    }
+    await expect(longDialog.getByTestId("itinerary-flight")).toHaveCount(3);
+    // Measured in the page once the dialog has settled (its open animation scales it).
+    await expect.poll(() => page.evaluate(() => {
+      const dialog = document.querySelector("[role=dialog][data-state=open]")?.getBoundingClientRect();
+      if (!dialog || Math.abs(dialog.width - (document.querySelector("[role=dialog][data-state=open]") as HTMLElement).offsetWidth) > 1) return "settling";
+      const wider = [...document.querySelectorAll("[role=dialog][data-state=open] [data-testid=itinerary-flight]")]
+        .some((el) => el.getBoundingClientRect().right > dialog.right + 1);
+      return dialog.bottom <= window.innerHeight + 1 && !wider ? "fits" : "overflows";
+    })).toBe("fits");
     await longDialog.getByRole("button", { name: "Close" }).click();
     await expect(longDialog).toBeHidden();
   });
