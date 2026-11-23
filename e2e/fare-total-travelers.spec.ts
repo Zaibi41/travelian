@@ -71,11 +71,12 @@ for (const width of [390, 768, 1440]) {
     expect(new URL(href!, "http://x").searchParams.get("total")).toBe("310176");
     expect(new URL(href!, "http://x").searchParams.get("price")).toBe("79392");
 
-    // Flight details: the same total.
+    // Flight details (#163): the itinerary.
     await airblue.getByRole("button", { name: "Flight Details" }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.getByRole("button", { name: /Fare Options|Options/ }).first().click().catch(() => undefined);
-    await expect(dialog.getByText("PKR 310,176", { exact: true }).first()).toBeVisible();
+    // #163: Flight Details is the itinerary only; the total stays on the card's fare rows (no per-adult price there either).
+    await expect(dialog.getByRole("heading", { name: /–/ })).toBeVisible();
+    await expect(dialog).not.toContainText("PKR 79,392");
     await shot(page, `details-${width}`);
   });
 }
