@@ -19,6 +19,7 @@ import { saveServerBooking } from "@/lib/booking-api";
 import { bookGroupFare, chooseReceivingAccount, getCardFee, getFlightDocuments, getFlightPaymentOptions, getPaymentMethods, requestPublicFlight, startPayFastCheckout, PublicBookingError, type BankAccountDisplay, type CardFee, type FlightPaymentOptions, type PaymentMethods } from "@/lib/public-booking";
 import { BankAccounts, HoldCountdown } from "@/components/public/BankTransferDetails";
 import { PaymentSlipUpload } from "@/components/public/PaymentSlipUpload";
+import { BookingContactDetails } from "@/components/public/BookingContactDetails";
 import { saveBooking, saveGatewayBooking, type BookingRecord, type BookingTraveler } from "@/lib/booking-store";
 import { submitHostedPayment } from "@/lib/payment-api";
 import { downloadETicket } from "@/lib/eticket-pdf-lazy";
@@ -72,7 +73,7 @@ interface ProductCtx {
   emoji: string;
   base: number;
   currency: string;
-  extra?: { airline?: string; flightNumber?: string; from?: string; to?: string; fromCode?: string; toCode?: string; date?: string; returnDate?: string; cabin?: string; airlineImage?: string; fareTier?: string; farePerks?: string[]; refund?: RefundStatus; layovers?: BookingLayover[]; segments?: BookingSegment[]; baseFare?: number | null; taxes?: number | null };
+  extra?: { airline?: string; flightNumber?: string; from?: string; to?: string; fromCode?: string; toCode?: string; date?: string; returnDate?: string; cabin?: string; airlineImage?: string; fareTier?: string; farePerks?: string[]; refund?: RefundStatus; layovers?: BookingLayover[]; segments?: BookingSegment[]; baseFare?: number | null; taxes?: number | null; allTravelersTotal?: number | null };
 }
 
 type BookingLayover = {
@@ -123,6 +124,8 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
     const baseFare = params.has("baseFare") ? Number(params.get("baseFare")) : null;
     const taxes = params.has("taxes") ? Number(params.get("taxes")) : null;
     const price = Number(params.get("price"));
+    // #113: the gateway's total for all travelers (from the results), when it priced every passenger type.
+    const allTravelersTotal = params.has("total") ? Number(params.get("total")) : null;
     const currency = params.get("currency") || "PKR";
     if (!airline || !flightNumber || !from || !to || !date || !Number.isFinite(price) || price <= 0) return null;
     return {
@@ -133,7 +136,7 @@ function buildCtx(params: URLSearchParams, inventory: PackageInventory): Product
       emoji: "",
       base: price,
       currency,
-      extra: { airline, flightNumber, from, to, date, returnDate, cabin, airlineImage, fareTier, farePerks, refund, layovers, segments, baseFare: Number.isFinite(baseFare) ? baseFare : null, taxes: Number.isFinite(taxes) ? taxes : null },
+      extra: { airline, flightNumber, from, to, date, returnDate, cabin, airlineImage, fareTier, farePerks, refund, layovers, segments, baseFare: Number.isFinite(baseFare) ? baseFare : null, taxes: Number.isFinite(taxes) ? taxes : null, allTravelersTotal: allTravelersTotal && Number.isFinite(allTravelersTotal) && allTravelersTotal > 0 ? allTravelersTotal : null },
     };
   }
   if (type === "hotel") {
@@ -250,9 +253,12 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   // When the supplier only returns a single total, synthesize an industry-standard split (≈78% base / 22% taxes & fees) so the breakdown card is never a single line.
   const derivedBasePerPax = knownBaseFare ? (ctxBaseFare as number) : Math.round(productCtx.base * 0.78);
   const derivedTaxesPerPax = knownTaxes ? (ctxTaxes as number) : Math.max(0, productCtx.base - derivedBasePerPax);
-  const fareBaseTotal = derivedBasePerPax * passengerTotal;
-  const fareTaxesTotal = derivedTaxesPerPax * passengerTotal;
   const fareSplitIsEstimated = !knownBaseFare && !knownTaxes;
+  // #113: with the gateway's total for all travelers, the (estimated) split is of that total, so the lines add up to it.
+  const ctxAllTravelersTotal = productCtx.extra?.allTravelersTotal ?? null;
+  const splitOfGatewayTotal = Boolean(ctxAllTravelersTotal && fareSplitIsEstimated);
+  const fareBaseTotal = splitOfGatewayTotal ? Math.round((ctxAllTravelersTotal as number) * 0.78) : derivedBasePerPax * passengerTotal;
+  const fareTaxesTotal = splitOfGatewayTotal ? (ctxAllTravelersTotal as number) - fareBaseTotal : derivedTaxesPerPax * passengerTotal;
   const passengerSummary = `${passengerTotal} ${passengerTotal === 1 ? "Adult" : "Travelers"}`;
   // #153: each journey's time from the flights' own durations (gateway minutes) and the stays between them, never
   // local arrival minus local departure (airports are in different time zones). Same wording as the results card.
@@ -377,7 +383,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
   const seatFee = 0;
   const addonsTotal = addons.filter(a => selectedAddons.includes(a.id)).reduce((sum, a) => sum + a.price, 0) + seatFee;
-  const baseTotal = isFlight ? productCtx.base * passengerTotal : productCtx.base;
+  const baseTotal = isFlight ? (ctxAllTravelersTotal ?? productCtx.base * passengerTotal) : productCtx.base;
   const taxes = 0;
   const grandTotal = baseTotal + addonsTotal + taxes;
   const displayAmount = (amount: number) => convertCurrencyAmount(amount, sourceCurrency, displayCurrency);
@@ -1287,6 +1293,31 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
                   {savedBooking.gateway?.live && savedBooking.holdExpiresAt && (
                     <div className="mx-auto mb-4 max-w-lg text-left"><HoldCountdown until={savedBooking.holdExpiresAt} /></div>
+                  )}
+                  {/* #56: before paying, who is travelling and the contact details (editable in place, no re-hold). */}
+                  {savedBooking.gateway && savedBooking.paymentStatus !== "paid" && (
+                    <div className="mx-auto mb-4 max-w-lg space-y-3 text-left">
+                      <section aria-labelledby="pay-travelers" className="rounded-xl border bg-card p-4 text-sm">
+                        <h3 id="pay-travelers" className="font-semibold text-foreground">Travelers</h3>
+                        <ul className="mt-1 space-y-1" data-testid="pay-travelers">
+                          {passengerForms.map((passenger, index) => (
+                            <li key={`${passenger.label}-${index}`} className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="min-w-0 break-words font-medium text-foreground">{travelerFullName(passenger)}</span>
+                              <span className="text-xs text-muted-foreground">{passenger.label}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </section>
+                      <BookingContactDetails
+                        reference={savedBooking.gateway.reference}
+                        token={savedBooking.gateway.token}
+                        initial={{ phoneCode, phone, email: email.trim() }}
+                        onSaved={(next) => {
+                          setPhoneCode(next.phoneCode); setPhone(next.phone); setEmail(next.email);
+                          setSavedBooking((current) => current && { ...current, contact: { ...current.contact, email: next.email || undefined, phone: `${next.phoneCode}${next.phone}` } });
+                        }}
+                      />
+                    </div>
                   )}
                   {savedBooking.gateway?.live && savedBooking.paymentMethod === "bank" && methods?.bank_accounts?.length ? (
                     <div className="mx-auto mb-4 max-w-lg space-y-2 text-left">

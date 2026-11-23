@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/components/ui/calendar-popup";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users, Loader2, SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users, Loader2, SlidersHorizontal, ArrowUpDown, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays, parseISO, startOfDay } from "date-fns";
 import { GroupFareCalendar } from "@/components/GroupFareCalendar";
@@ -27,6 +27,7 @@ import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { ResultsSheet } from "@/components/public/ResultsSheet";
 import { formatDateOnly, parseDateOnly } from "@/lib/date-only";
 import { keepReturnDate, returnDateError, RETURN_CLEARED_MESSAGE } from "@/lib/return-date";
+import { firstLegError, legErrors, nextLeg, remainingLegErrors, updateLeg, type Leg, type LegErrors } from "@/lib/multi-city";
 import { whatsappUrl } from "@/lib/site-config";
 import { airportByCode, loadPublicAirports } from "@/data/airports";
 import { isGroupTicketingProvider, groupTicketToFlight } from "@/lib/provider-systems";
@@ -34,6 +35,7 @@ import { searchPublicGroups, GATEWAY_GROUP_PROVIDER } from "@/lib/public-booking
 import { normalizeAirlineName, isSameAirline, extractAllAirlines, getAirlineNameFromCarrier } from "@/lib/airline-normalization";
 import { journeyMinutes, minutesText, stayAt, stayBetween, stopLine, stopSummary, type Stay } from "@/lib/flight-stays";
 import { activeFilterCount, filtersFromParams, FLIGHT_SORTS, sortShortLabel, withFilterParams, type FlightSort } from "@/lib/flight-result-filters";
+import { mealStatus, mealText } from "@/lib/meal";
 import { BAGGAGE_UNKNOWN, baggageFilterOptions, baggageText, checkedText, handCarryText, underBaggageLabel, type BaggageText } from "@/lib/baggage";
 
 // Preload airports for routeLabel lookup
@@ -76,6 +78,9 @@ type DisplayFare = {
   bagsDetail?: string | null;
   /** A round trip's baggage per flight (#123). */
   legBags?: { label: string; bags: string; bagsDetail: string }[];
+  /** #113: the gateway's total for every traveler searched, and how many travelers it is for. */
+  allTravelersTotal?: number;
+  travelerCount?: number;
   meal?: string | null;
   refund?: string | null;
   change?: string | null;
@@ -288,6 +293,18 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     if (editTripType === "roundtrip") setEditReturnDateOpen(true);
   };
   const [editSegmentDateOpen, setEditSegmentDateOpen] = useState<number | null>(null);
+  // #160: each multi-city leg's messages, under its fields; a new leg starts where the last one lands.
+  const [editLegErrors, setEditLegErrors] = useState<LegErrors[]>([]);
+  const changeEditLeg = (index: number, patch: Partial<Leg>) => {
+    const next = updateLeg(editSegments, index, patch);
+    setEditSegments(next);
+    setEditLegErrors(current => remainingLegErrors(current, next));
+  };
+  const removeEditLeg = (index: number) => {
+    const next = editSegments.filter((_, at) => at !== index);
+    setEditSegments(next);
+    setEditLegErrors(current => remainingLegErrors(current.filter((_, at) => at !== index), next));
+  };
   // Phones (#148): choosing From opens To (`key`), choosing To opens the departure date.
   const [editAdvance, setEditAdvance] = useState({ key: "", n: 0 });
   const editSignal = (key: string) => (editAdvance.key === key ? editAdvance.n : 0);
@@ -304,6 +321,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     ]);
     setEditTravelers(travelers);
     setEditReturnError(undefined);
+    setEditLegErrors([]);
     setModifyOpen(true);
   };
 
@@ -317,9 +335,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         return;
       }
     }
-    if (editTripType === "multicity" && (effectiveSegments.length < 2 || effectiveSegments.some((segment) => !/^[A-Z]{3}$/.test(segment.from) || !/^[A-Z]{3}$/.test(segment.to) || segment.from === segment.to || !segment.date))) {
-      setApiMessage("Complete each multi-city flight with different airports and a travel date.");
-      return;
+    if (editTripType === "multicity") {
+      const found = legErrors(effectiveSegments);
+      setEditLegErrors(found);
+      const toFix = firstLegError(found);
+      if (toFix) {
+        document.getElementById(`modify-leg${toFix[0]}-${toFix[1]}`)?.focus();
+        return;
+      }
     }
     const firstSegment = effectiveSegments[0];
     const effectiveFrom = firstSegment?.from || editFrom;
@@ -597,6 +620,31 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return `${dst} ${Math.round(converted).toLocaleString()}`;
   };
 
+  // #113: with several travelers a fare shows the gateway's total for all of them, and the per-adult price below it.
+  // Without a gateway total (a passenger type the supplier didn't price) it shows the per-adult price, labelled so.
+  const searchedTravelers = Number(travelers.adults || 0) + Number(travelers.children || 0) + Number(travelers.infants || 0);
+  const farePrice = (fare: DisplayFare, flight: TravelianFlight) => {
+    const currency = fare.price.currency || flight.currency;
+    const perAdult = formatFare(fare.price.total, currency);
+    if (searchedTravelers <= 1) return { main: perAdult, note: "", secondary: "" };
+    if (fare.allTravelersTotal && fare.allTravelersTotal > 0) {
+      const count = fare.travelerCount || searchedTravelers;
+      return { main: formatFare(fare.allTravelersTotal, currency), note: `total for ${count} travelers`, secondary: `${perAdult} per adult` };
+    }
+    return { main: perAdult, note: "per adult", secondary: "" };
+  };
+  const FarePriceText = ({ fare, flight, className, align = "left" }: { fare: DisplayFare; flight: TravelianFlight; className: string; align?: "left" | "center" }) => {
+    const price = farePrice(fare, flight);
+    const label = [price.main, price.note, price.secondary && `(${price.secondary})`].filter(Boolean).join(" ");
+    return (
+      <span className={cn("flex min-w-0 flex-col", align === "center" ? "items-center text-center" : "items-start text-left")} title={label}>
+        <span className={cn("block max-w-full truncate whitespace-nowrap", className)}>{price.main}</span>
+        {price.note && <span className="block max-w-full truncate text-xs font-medium text-muted-foreground">{price.note}</span>}
+        {price.secondary && <span className="block max-w-full truncate text-xs text-muted-foreground">{price.secondary}</span>}
+      </span>
+    );
+  };
+
   const isUnclearDisplayValue = (value: unknown) => {
     const text = String(value || "").trim();
     return !text || /^(null|undefined|n\/a|na|-|none|not available|see supplier details|subject to supplier rules|meal info not available|baggage info not available)$/i.test(text);
@@ -622,17 +670,19 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return text;
   };
 
-  const mealLabel = (fare: DisplayFare, flight: TravelianFlight) => {
-    const meal = cleanFareText(fare.meal || flight.meal, "No Meal");
-    if (/included|available|yes/i.test(meal)) return "Meal";
-    return meal === "No Meal" ? "No Meal" : "Meal";
+  // #154: "No Meal" only when the fare says so; missing data is "Meal info not available".
+  const mealLabel = (fare: DisplayFare, flight: TravelianFlight) => mealText(fare.meal || flight.meal);
+  /** Meal served: green fork and knife; no meal: crossed out; unknown: a muted fork and knife. */
+  const MealIcon = ({ fare, flight, className }: { fare: DisplayFare; flight: TravelianFlight; className: string }) => {
+    const status = mealStatus(fare.meal || flight.meal);
+    if (status === "none") return <UtensilsCrossed aria-hidden="true" className={cn(className, "shrink-0 text-muted-foreground")} />;
+    return <Utensils aria-hidden="true" className={cn(className, "shrink-0", status === "included" ? "text-emerald-600" : "text-muted-foreground opacity-50")} />;
   };
 
   // Shown under a "Baggage" heading: "Check with airline" rather than repeating "Baggage:".
   const baggageLabel = (fare: DisplayFare, flight: TravelianFlight) => underBaggageLabel(fareBaggage(fare, flight).short);
   const baggageWords = (fare: DisplayFare, flight: TravelianFlight) => fareBaggage(fare, flight).detail;
 
-  const hasMeal = (fare: DisplayFare, flight: TravelianFlight) => mealLabel(fare, flight) !== "No Meal";
   const hasBaggage = (fare: DisplayFare, flight: TravelianFlight) => fareBaggage(fare, flight).known;
 
   const fareRows = (flight: TravelianFlight): DisplayFare[] => {
@@ -643,6 +693,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         bags: fare.bags,
         bagsDetail: fare.bagsDetail,
         legBags: fare.legBags,
+        allTravelersTotal: fare.allTravelersTotal,
+        travelerCount: fare.travelerCount,
         meal: fare.meal || flight.meal,
         refund: fare.refund,
         change: fare.change,
@@ -759,14 +811,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       `Fare option: ${fare.tier}`,
       `Baggage: ${baggageLabel(fare, flight)}`,
       `Meal: ${mealLabel(fare, flight)}`,
-      `Fare: ${formatFare(fare.price.total, fare.price.currency || flight.currency)}`,
+      `Fare: ${[farePrice(fare, flight).main, farePrice(fare, flight).note].filter(Boolean).join(" ")}`,
       "",
       "Please guide me with booking details.",
     ].join("\n");
     return whatsappUrl(message);
   };
 
-  const bookingHref = (flight: TravelianFlight, fare?: { tier: string; price: { base?: number | null; taxes?: number | null; total: number; currency?: string }; amenities?: string[]; gatewayFareIds?: string[]; refund?: string | null; cancellation?: string | null }) => {
+  const bookingHref = (flight: TravelianFlight, fare?: { allTravelersTotal?: number; tier: string; price: { base?: number | null; taxes?: number | null; total: number; currency?: string }; amenities?: string[]; gatewayFareIds?: string[]; refund?: string | null; cancellation?: string | null }) => {
     if (adminMode) {
       // Admin checkout never takes a price or supplier flight ID from the URL: the gateway
       // must reprice the fare (booking is blocked until it can). Itinerary only.
@@ -796,6 +848,9 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       price: String(fare?.price.total ?? flight.price),
       currency: fare?.price.currency || flight.currency || "PKR",
     });
+    // #113: the gateway's total for all travelers, so checkout shows it instead of the per-adult price x travelers.
+    const allTravelers = fare && "allTravelersTotal" in fare ? fare.allTravelersTotal : flight.fareOptions?.[0]?.allTravelersTotal;
+    if (allTravelers && allTravelers > 0) query.set("total", String(allTravelers));
     if (fare?.tier) query.set("fare", fare.tier);
     // A group fare from the Travelian gateway: booked and priced by the gateway (the price here is for display only).
     if (flight.provider === GATEWAY_GROUP_PROVIDER && flight.offerId) query.set("groupTicketId", String(flight.offerId));
@@ -1425,7 +1480,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                     setParams(next, { replace: true });
                   }}
                   aria-label="Swap origin and destination"
-                  className={cn("h-6 w-6 rounded-full border border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0")}
+                  className={cn("relative h-6 w-6 rounded-full border border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0 before:absolute before:-inset-3 before:content-[''] sm:before:hidden")}
                 >
                   <ArrowLeftRight className="h-3.5 w-3.5" />
                 </button>
@@ -1461,7 +1516,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 size="sm"
                 variant="secondary"
                 onClick={openModify}
-                className="rounded-lg gap-2"
+                className="h-11 rounded-lg gap-2 sm:h-9"
               >
                 <Pencil className="h-3.5 w-3.5" /> Modify Search
               </Button>
@@ -1726,7 +1781,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               {/* Long names: one line with an ellipsis; tap to read the full name (issue #90). */}
                               <button type="button" title={flight.airline} aria-expanded={expandedAirlines.has(flight.flightId)}
                                 onClick={() => toggleAirlineName(flight.flightId)}
-                                className={cn("min-w-0 text-left text-xs sm:text-sm font-semibold text-foreground",
+                                className={cn("min-w-0 text-left text-xs sm:text-sm font-semibold text-foreground", "relative before:absolute before:-inset-x-3 before:-inset-y-3.5 before:content-[''] sm:before:hidden",
                                   expandedAirlines.has(flight.flightId) ? "whitespace-normal break-words" : "truncate")}>
                                 {flight.airline}
                               </button>
@@ -1815,7 +1870,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="ml-auto h-7 sm:h-8 shrink-0 rounded-lg px-2.5 sm:px-3 text-xs sm:text-xs font-semibold lg:mt-1"
+                            className="ml-auto h-11 sm:h-8 shrink-0 rounded-lg px-3 text-xs sm:text-xs font-semibold lg:mt-1"
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
@@ -1864,10 +1919,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 </td>
                                 <td className="px-4 py-3 align-middle">
                                   <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={mealLabel(fare, flight)}>
-                                    {hasMeal(fare, flight)
-                                      ? <Utensils className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                                      : <UtensilsCrossed className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
-                                    <span className="truncate">{mealLabel(fare, flight)}</span>
+                                    <MealIcon fare={fare} flight={flight} className="h-3.5 w-3.5" />
+                                    <span className="line-clamp-2 break-words">{mealLabel(fare, flight)}</span>
                                   </p>
                                 </td>
                                 <td className="px-4 py-3 align-middle">
@@ -1878,7 +1931,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                   </p>
                                 </td>
                                 <td className="overflow-hidden px-3 py-3 text-center align-middle">
-                                  <span className="block truncate whitespace-nowrap text-base font-black text-foreground" title={formatFare(fare.price.total, fare.price.currency || flight.currency)}>{formatFare(fare.price.total, fare.price.currency || flight.currency)}</span>
+                                  <FarePriceText fare={fare} flight={flight} align="center" className="text-base font-black text-foreground" />
                                 </td>
                                 <td className="overflow-hidden px-3 py-3 text-right align-middle">
                                   <div className="flex min-w-0 flex-col items-stretch gap-2">
@@ -1911,10 +1964,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               {/* Meal and Baggage in 2-column grid */}
                               <div className="grid grid-cols-2 gap-3">
                                 <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={mealLabel(fare, flight)}>
-                                  {hasMeal(fare, flight)
-                                    ? <Utensils className="h-4 w-4 shrink-0 text-emerald-600" />
-                                    : <UtensilsCrossed className="h-4 w-4 shrink-0 text-muted-foreground" />}
-                                  <span className="truncate">{mealLabel(fare, flight)}</span>
+                                  <MealIcon fare={fare} flight={flight} className="h-4 w-4" />
+                                  <span className="line-clamp-2 break-words">{mealLabel(fare, flight)}</span>
                                 </p>
                                 <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={baggageWords(fare, flight)}>
                                   <Luggage aria-hidden="true" className={cn("h-4 w-4 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
@@ -1925,18 +1976,18 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               
                               {/* Price and fare actions */}
                               <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-                                <p className="whitespace-nowrap text-lg font-black text-primary">{formatFare(fare.price.total, fare.price.currency || flight.currency)}</p>
+                                <FarePriceText fare={fare} flight={flight} className="text-lg font-black text-primary" />
                                 <div className="grid w-full grid-cols-2 gap-2 sm:w-auto">
                                   <a href={fareWhatsAppHref(flight, fare)} target="_blank" rel="noreferrer" className="min-w-0">
-                                    <Button variant="outline" size="sm" className="h-9 w-full min-w-0 whitespace-nowrap rounded-xl gap-2 px-2 font-semibold">
+                                    <Button variant="outline" size="sm" className="h-11 w-full min-w-0 whitespace-nowrap rounded-xl gap-2 px-2 font-semibold sm:h-9">
                                       <WhatsAppIcon className="h-4 w-4" /> WhatsApp
                                     </Button>
                                   </a>
                                   {searchExpired ? (
-                                    <Button size="sm" className="h-9 w-full rounded-xl px-3 font-semibold" onClick={revalidateSearch}>Revalidate</Button>
+                                    <Button size="sm" className="h-11 w-full rounded-xl px-3 font-semibold sm:h-9" onClick={revalidateSearch}>Revalidate</Button>
                                   ) : (
                                     <Link to={bookingHref(flight, fare)} className="min-w-0">
-                                      <Button size="sm" className="h-9 w-full rounded-xl px-3 font-semibold">Book</Button>
+                                      <Button size="sm" className="h-11 w-full rounded-xl px-3 font-semibold sm:h-9">Book</Button>
                                     </Link>
                                   )}
                                 </div>
@@ -1950,7 +2001,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="mx-auto flex h-8 gap-2 rounded-lg px-4 text-xs font-semibold text-primary hover:text-primary"
+                              className="mx-auto flex h-11 gap-2 rounded-lg px-4 text-xs font-semibold text-primary hover:text-primary sm:h-8"
                               aria-expanded={fareOptionsOpen}
                               onClick={() => setSelectedFlight((current) => current === flight.flightId ? null : flight.flightId)}
                             >
@@ -2122,36 +2173,68 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
             </div>
             {editTripType === "multicity" ? (
               <div className="space-y-3">
-                {editSegments.map((segment, index) => (
-                  <div key={index} className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-                    <AirportCombobox value={segment.from} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, from: value } : item))} placeholder="Origin"
-                      onAdvance={() => setEditAdvance(current => ({ key: `to-${index}`, n: current.n + 1 }))} />
-                    <AirportCombobox value={segment.to} onChange={(value) => setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, to: value } : item))} placeholder="Destination" iconVariant="arrival"
-                      openSignal={editSignal(`to-${index}`)} onAdvance={() => setEditSegmentDateOpen(index)} />
-                    <CalendarPopup open={editSegmentDateOpen === index} onOpenChange={(open) => setEditSegmentDateOpen(open ? index : null)}>
-                      <CalendarPopupTrigger asChild>
-                        <button type="button" className="flex h-11 items-center gap-2 rounded-xl border border-input bg-background px-3 text-left text-sm">
-                          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                          {segment.date ? format(segment.date, "MMM dd, yyyy") : "Select date"}
+                {editSegments.map((segment, index) => {
+                  const legError = editLegErrors[index] ?? {};
+                  const legId = `modify-leg${index}`;
+                  const previousDate = index > 0 ? editSegments[index - 1].date : undefined;
+                  const message = (key: keyof LegErrors) => legError[key]
+                    ? <p id={`${legId}-${key}-error`} className="mt-1 text-xs text-destructive">{legError[key]}</p> : null;
+                  return (
+                  <section key={index} aria-labelledby={`${legId}-title`} className="rounded-xl border border-border/70 bg-muted/20 p-3">
+                    <div className="mb-2 flex min-h-8 items-center justify-between gap-2">
+                      <h3 id={`${legId}-title`} className="text-xs font-semibold text-foreground">Flight {index + 1}</h3>
+                      {editSegments.length > 2 && (
+                        <button type="button" onClick={() => removeEditLeg(index)} aria-label={`Remove Flight ${index + 1}`}
+                          className="-my-1.5 flex h-11 w-11 items-center justify-center rounded-full text-destructive transition-colors hover:bg-destructive/10 sm:h-8 sm:w-8">
+                          <X className="h-4 w-4" aria-hidden="true" />
                         </button>
-                      </CalendarPopupTrigger>
-                      <CalendarPopupContent title="Select flight date">
-                        <Calendar size="large"
-                          mode="single"
-                          selected={segment.date}
-                          onSelect={(date) => {
-                            setEditSegments((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, date } : item));
-                            if (date) setEditSegmentDateOpen(null);
-                          }}
-                          initialFocus
-                          className="p-3 sm:p-5 pointer-events-auto"
-                        />
-                      </CalendarPopupContent>
-                    </CalendarPopup>
-                    <Button type="button" variant="outline" size="sm" className="shrink-0" disabled={editSegments.length <= 2} onClick={() => setEditSegments((current) => current.filter((_, itemIndex) => itemIndex !== index))}>Remove</Button>
-                  </div>
-                ))}
-                <Button type="button" variant="outline" size="sm" disabled={editSegments.length >= MAX_MULTI_CITY_FLIGHTS} onClick={() => setEditSegments((current) => current.length < MAX_MULTI_CITY_FLIGHTS ? [...current, { from: "", to: "", date: undefined }] : current)}>Add flight</Button>
+                      )}
+                    </div>
+                    <div className="grid items-start gap-2 sm:grid-cols-3">
+                      <div className="min-w-0">
+                        <label htmlFor={`${legId}-from`} className="mb-1 block text-xs font-medium text-muted-foreground">From</label>
+                        <AirportCombobox id={`${legId}-from`} value={segment.from} onChange={(value) => changeEditLeg(index, { from: value })} placeholder="Origin" invalid={!!legError.from}
+                          onAdvance={() => setEditAdvance(current => ({ key: `to-${index}`, n: current.n + 1 }))} />
+                        {message("from")}
+                      </div>
+                      <div className="min-w-0">
+                        <label htmlFor={`${legId}-to`} className="mb-1 block text-xs font-medium text-muted-foreground">To</label>
+                        <AirportCombobox id={`${legId}-to`} value={segment.to} onChange={(value) => changeEditLeg(index, { to: value })} placeholder="Destination" iconVariant="arrival" invalid={!!legError.to}
+                          openSignal={editSignal(`to-${index}`)} onAdvance={() => setEditSegmentDateOpen(index)} />
+                        {message("to")}
+                      </div>
+                      <div className="min-w-0">
+                        <label htmlFor={`${legId}-date`} className="mb-1 block text-xs font-medium text-muted-foreground">Date</label>
+                        <CalendarPopup open={editSegmentDateOpen === index} onOpenChange={(open) => setEditSegmentDateOpen(open ? index : null)}>
+                          <CalendarPopupTrigger asChild>
+                            <button id={`${legId}-date`} type="button" aria-invalid={legError.date ? true : undefined} aria-describedby={legError.date ? `${legId}-date-error` : undefined}
+                              className={cn("flex h-11 w-full items-center gap-2 rounded-xl border border-input bg-background px-3 text-left text-sm", legError.date && "border-destructive")}>
+                              <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                              <span className="truncate">{segment.date ? format(segment.date, "MMM dd, yyyy") : "Select date"}</span>
+                            </button>
+                          </CalendarPopupTrigger>
+                          <CalendarPopupContent title="Select flight date">
+                            <Calendar size="large"
+                              mode="single"
+                              selected={segment.date}
+                              onSelect={(date) => {
+                                changeEditLeg(index, { date });
+                                if (date) setEditSegmentDateOpen(null);
+                              }}
+                              disabled={previousDate ? { before: startOfDay(previousDate) } : undefined}
+                              defaultMonth={segment.date ?? previousDate}
+                              initialFocus
+                              className="p-3 sm:p-5 pointer-events-auto"
+                            />
+                          </CalendarPopupContent>
+                        </CalendarPopup>
+                        {message("date")}
+                      </div>
+                    </div>
+                  </section>
+                  );
+                })}
+                <Button type="button" variant="outline" size="sm" disabled={editSegments.length >= MAX_MULTI_CITY_FLIGHTS} onClick={() => setEditSegments((current) => current.length < MAX_MULTI_CITY_FLIGHTS ? [...current, nextLeg(current)] : current)}>Add flight</Button>
               </div>
             ) : (
             <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
@@ -2390,12 +2473,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                     <span className="truncate font-medium text-slate-700" title={baggageWords(fare, fareDetails.flight)}>{baggageLabel(fare, fareDetails.flight)}</span>
                                   </div>
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    {hasMeal(fare, fareDetails.flight) ? (
-                                      <Utensils className="h-4 w-4 shrink-0 text-emerald-600" />
-                                    ) : (
-                                      <UtensilsCrossed className="h-4 w-4 shrink-0 text-slate-400" />
-                                    )}
-                                    <span className="truncate font-medium text-slate-700">{mealLabel(fare, fareDetails.flight)}</span>
+                                    <MealIcon fare={fare} flight={fareDetails.flight} className="h-4 w-4" />
+                                    <span className="line-clamp-2 break-words font-medium text-slate-700">{mealLabel(fare, fareDetails.flight)}</span>
                                   </div>
                                   <div className="col-span-2 sm:col-span-1 flex items-center gap-2 text-xs text-muted-foreground">
                                     <Clock className="h-4 w-4 shrink-0 text-primary" />
@@ -2407,10 +2486,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
                                 <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
                                   <div>
-                                    <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Total Fare</span>
-                                    <p className="text-xl font-black text-primary">
-                                      {formatFare(fare.price.total, fare.price.currency || fareDetails.flight.currency)}
-                                    </p>
+                                    <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{searchedTravelers > 1 && !fare.allTravelersTotal ? "Fare" : "Total Fare"}</span>
+                                    <FarePriceText fare={fare} flight={fareDetails.flight} className="text-xl font-black text-primary" />
                                   </div>
                                   <a
                                     href={fareWhatsAppHref(fareDetails.flight, fare)}

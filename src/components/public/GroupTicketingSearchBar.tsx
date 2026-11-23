@@ -364,7 +364,9 @@ export function GroupTicketingSearchBar({
 
             <div className="order-2 col-span-full flex min-w-0 gap-1.5 overflow-x-auto pb-0.5 pr-1 scrollbar-hide sm:order-2 sm:flex-1 sm:flex-wrap sm:pb-0 sm:pr-0">
 
-              {displayedSectors.slice(0, 4).map((sec) => {
+              {/* Desktop: the first 4 sectors, the rest in the list beside them. Phones (#161): every sector here, scrolling
+                  sideways, and no list, so the same sector isn't offered twice. */}
+              {displayedSectors.map((sec, index) => {
 
                 const isSelected = fromValue === sec.from && toValue === sec.to;
 
@@ -382,7 +384,8 @@ export function GroupTicketingSearchBar({
 
                     className={cn(
 
-                      "min-h-8 shrink-0 whitespace-nowrap rounded-md border px-2 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-7",
+                      index >= 4 && "sm:hidden",
+                      "min-h-11 shrink-0 whitespace-nowrap rounded-md border px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-7 sm:px-2",
 
                       isSelected
 
@@ -408,11 +411,11 @@ export function GroupTicketingSearchBar({
 
 
 
-          <div className="order-3 w-full sm:ml-auto sm:w-auto">
+          <div className="order-3 hidden w-full sm:ml-auto sm:block sm:w-auto">
 
             <Select value={displayedSectors.some(sector => sector.sector === currentSectorKey) ? currentSectorKey : "select-sector-placeholder"} onValueChange={handleSectorSelect}>
 
-              <SelectTrigger aria-label={`Select available sector${currentSectorKey ? `, ${currentSectorKey}` : ""}`} className="h-8 w-full min-w-[11rem] justify-between gap-2 rounded-md border-border bg-transparent px-2 text-xs sm:w-auto hover:bg-muted">
+              <SelectTrigger aria-label={`Select available sector${currentSectorKey ? `, ${currentSectorKey}` : ""}`} className="h-11 w-full min-w-[11rem] justify-between gap-2 rounded-md border-border bg-transparent px-2 text-xs sm:h-8 sm:w-auto hover:bg-muted">
 
                 <SelectValue placeholder="Select available sector" />
 

@@ -120,7 +120,7 @@ const LIVE_UAT: FlightSearchView = {
 };
 
 describe("admin Flights search, live Southair shape", () => {
-  it("shows times, duration, stops and per-fare baggage; missing meal says No Meal, missing refund a dash", async () => {
+  it("shows times, duration, stops and per-fare baggage; missing meal and refund a dash (#154: missing meal is not No Meal)", async () => {
     gateway.search.mockReset().mockResolvedValue(LIVE_UAT);
     renderAt("/admin/search?tab=flights&from=LHE&to=KHI&date=2026-11-19");
     const results = await screen.findByRole("region", { name: "Results" });
@@ -136,7 +136,7 @@ describe("admin Flights search, live Southair shape", () => {
       "30 kg checked30 kg checked; hand carry: check with airline"]);
     for (const row of rows) {
       const cells = within(row).getAllByRole("cell").map(cell => cell.textContent);
-      expect([cells[1], cells[3]]).toEqual(["No Meal", "—Not available"]);  // meal says No Meal; refund a dash (screen readers hear "Not available"); no Hold left (#78)
+      expect([cells[1], cells[3]]).toEqual(["—Not available", "—Not available"]);  // missing meal is not "No Meal" (#154), a dash like refund; refund a dash (screen readers hear "Not available"); no Hold left (#78)
       expect(row).not.toHaveTextContent(/info not available|Not available yet|Hold time not available/);
     }
     expect(results).not.toHaveTextContent("Baggage info not available");

@@ -1,5 +1,5 @@
 import { ProductValuePills, TravelianTrustStrip } from "@/components/public/ProductTrust";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
@@ -910,7 +910,7 @@ function GroupCard({
 
                   size="sm"
 
-                  className="h-9 rounded-xl px-3 text-xs font-semibold"
+                  className="h-11 rounded-xl px-3 text-xs font-semibold sm:h-9"
 
                   onClick={() => {
 
@@ -928,7 +928,7 @@ function GroupCard({
 
                 <a href={whatsappHref(message)} target="_blank" rel="noreferrer">
 
-                  <Button size="sm" className="h-9 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover px-3.5 text-xs font-bold gap-1.5 shadow-sm">
+                  <Button size="sm" className="h-11 rounded-xl bg-whatsapp text-whatsapp-foreground hover:bg-whatsapp-hover px-3.5 text-xs font-bold gap-1.5 shadow-sm sm:h-9">
 
                     <WhatsAppIcon className="h-3.5 w-3.5" /> WhatsApp Help
 
@@ -1406,7 +1406,24 @@ export default function GroupTicketingPage() {
 
 
 
+  // #161: on phones the results start far below the search card, so after a sector tap or Search the page scrolls to
+  // the results heading (and puts the focus there for screen readers) once they have loaded. Desktop unchanged.
+  const resultsHeadingRef = useRef<HTMLHeadingElement>(null);
+  const scrollToResults = useRef(false);
+  useEffect(() => {
+    if (!scrollToResults.current || status === "loading") return;
+    const heading = resultsHeadingRef.current;
+    if (!heading) return;
+    scrollToResults.current = false;
+    if (!window.matchMedia("(max-width: 767px)").matches) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    heading.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    heading.focus({ preventScroll: true });
+  }, [status, searchFilters]);
+
   const handleSearch = (values: { from?: string; to?: string; dateFrom?: string }) => {
+
+    scrollToResults.current = true;
 
     const params = buildGroupTicketSearchParams(values);
 
@@ -1509,7 +1526,7 @@ export default function GroupTicketingPage() {
 
               <div>
 
-                <h2 className="text-2xl font-black text-foreground">
+                <h2 ref={resultsHeadingRef} tabIndex={-1} className="text-2xl font-black text-foreground focus:outline-none">
 
                   {searchFilters.from && searchFilters.to
 
@@ -1541,7 +1558,7 @@ export default function GroupTicketingPage() {
 
               <div className="flex items-center gap-2">
 
-                <Button variant="outline" size="sm" className="rounded-xl text-xs" onClick={clearSearch}>
+                <Button variant="outline" size="sm" className="h-11 rounded-xl text-xs sm:h-9" onClick={clearSearch}>
 
                   Clear search
 
@@ -1772,7 +1789,7 @@ export default function GroupTicketingPage() {
 
                         variant={isSelected ? "default" : "outline"}
 
-                        className="rounded-xl text-xs font-bold shrink-0"
+                        className="h-11 rounded-xl text-xs font-bold shrink-0 sm:h-9"
 
                         onClick={(e) => {
 

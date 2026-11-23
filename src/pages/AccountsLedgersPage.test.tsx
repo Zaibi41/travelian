@@ -209,4 +209,50 @@ describe("Accounts & Ledgers: Bank and cash book", () => {
     await waitFor(() => expect(api.updateReceivingAccount).toHaveBeenCalledTimes(1));
     expect(api.updateReceivingAccount.mock.calls[0][1]).toMatchObject({ account_number: "03111111111", qr_asset_key: null, remove_qr: true });
   });
+
+  it("#76: Add a bank account with a logo: uploaded as a bank logo and saved with the account", async () => {
+    uploads.uploadImage.mockResolvedValueOnce({ assetKey: "bank-logo/hbl.png", publicUrl: "https://assets.example/bank-logo/hbl.png" });
+    api.addReceivingAccount.mockResolvedValue({ id: "a-9", method: "bank_transfer", label: "HBL", active: true });
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Add account" }));
+    const dialog = await screen.findByRole("dialog", { name: "Add account" });
+    fireEvent.change(within(dialog).getByLabelText("Account name"), { target: { value: "HBL" } });
+    expect(within(dialog).getByText(/without one, the bank's initials are shown/)).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText("Bank logo"), { target: { files: [new File(["x"], "hbl.png", { type: "image/png" })] } });
+    expect(await within(dialog).findByAltText("Bank logo preview")).toHaveAttribute("src", "https://assets.example/bank-logo/hbl.png");
+    expect(uploads.uploadImage).toHaveBeenCalledWith("bank_logo", expect.any(File));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save account" }));
+    await waitFor(() => expect(api.addReceivingAccount).toHaveBeenCalled());
+    expect(api.addReceivingAccount.mock.calls[0][2]).toMatchObject({ logo_asset_key: "bank-logo/hbl.png", qr_asset_key: null });
+  });
+
+  it("#76: Edit: the current logo is shown, can be replaced or removed; a failed upload saves nothing", async () => {
+    api.fetchReceivingAccounts.mockResolvedValue({ accounts: [{ id: "a-1", method: "bank_transfer", label: "Meezan", active: true, bank_name: "Meezan Bank",
+      account_title: "Travelian (Private) Limited", account_number: "0101-0105555555", logo_url: "https://assets.example/bank-logo/old.png" }] });
+    api.updateReceivingAccount.mockResolvedValue({ id: "a-1", method: "bank_transfer", label: "Meezan", active: true });
+    uploads.uploadImage.mockRejectedValueOnce(new Error("Image upload failed: file too large (2 MB max)."));
+    uploads.uploadImage.mockResolvedValueOnce({ assetKey: "bank-logo/new.png", publicUrl: "https://assets.example/bank-logo/new.png" });
+    renderPage();
+    expect((await screen.findAllByAltText("Bank logo for Meezan"))[0]).toHaveAttribute("src", "https://assets.example/bank-logo/old.png");
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit Meezan" })[0]);
+    let dialog = await screen.findByRole("dialog", { name: "Edit Meezan" });
+    expect(within(dialog).getByAltText("Bank logo preview")).toHaveAttribute("src", "https://assets.example/bank-logo/old.png");
+    fireEvent.change(within(dialog).getByLabelText("Bank logo"), { target: { files: [new File(["x"], "big.png", { type: "image/png" })] } });
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("file too large");
+    fireEvent.change(within(dialog).getByLabelText("Bank logo"), { target: { files: [new File(["x"], "new.png", { type: "image/png" })] } });
+    await waitFor(() => expect(within(dialog).getByAltText("Bank logo preview")).toHaveAttribute("src", "https://assets.example/bank-logo/new.png"));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(api.updateReceivingAccount).toHaveBeenCalledTimes(1));
+    expect(api.updateReceivingAccount.mock.calls[0][1]).toMatchObject({ logo_asset_key: "bank-logo/new.png" });
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit Meezan" })[0]);
+    dialog = await screen.findByRole("dialog", { name: "Edit Meezan" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remove logo" }));
+    expect(within(dialog).getByText(/The bank logo will be removed when you save/)).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(api.updateReceivingAccount).toHaveBeenCalledTimes(2));
+    expect(api.updateReceivingAccount.mock.calls[1][1]).toMatchObject({ remove_logo: true });
+    expect(api.updateReceivingAccount.mock.calls[1][1].logo_asset_key).toBeUndefined();
+  });
 });
