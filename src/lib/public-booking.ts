@@ -6,6 +6,7 @@ import { groupBaggageText } from "@/lib/baggage";
 import { getAirlineNameFromCarrier } from "@/lib/airline-normalization";
 import type { GroupTicket } from "@/lib/group-ticketing";
 import type { RequiredDocument } from "@/lib/passenger-details";
+import type { components } from "@/lib/gateway/schema";
 
 export class PublicBookingError extends Error {
   constructor(message: string, readonly status: number, readonly code?: string, readonly fieldErrors: { path: (string | number)[]; message: string }[] = []) {
@@ -228,6 +229,8 @@ export interface BankAccountDisplay {
   bank_name?: string | null; account_title?: string | null; account_number?: string | null; iban?: string | null; qr_url?: string | null;
   /** Gateway path that sends the QR image as a file download (works in every browser; the S3 image itself can't be downloaded cross-site). */
   qr_download_url?: string | null;
+  /** #76: the bank's logo staff uploaded for this account; none: the card shows the bank's initials. */
+  logo_url?: string | null;
 }
 /** `flights`: website flight fares are held and paid here; false: a flight booking is a request (Travelian arranges payment). */
 export interface PaymentMethods {
@@ -332,6 +335,18 @@ const bookingPath = (reference: string, rest: string) => `/bookings/${encodeURIC
 
 export function chooseReceivingAccount(reference: string, accountId: string, access: BookingAccess) {
   return call<null>(bookingPath(reference, "/chosen-account"), { body: { account_id: accountId, contact: access.contact }, token: access.token });
+}
+
+/** The booking's contact details as the gateway saved them (types from the gateway OpenAPI schema). */
+export type BookingContact = components["schemas"]["PublicContactView"];
+
+/** #56: change the mobile number and email before paying, with the booking's private access token (the gateway does not
+ *  accept the reference + email/phone for this). The airline hold and the price stay (no re-hold); the gateway refuses
+ *  unless the booking is still unpaid and open, and tells the old email. Names, dates of birth and passports are not changed here. */
+export function changeBookingContact(reference: string, contact: { phoneCode: string; phone: string; email?: string }, token: string) {
+  return call<BookingContact>(bookingPath(reference, "/contact"), {
+    method: "PUT", token, body: { phone_code: contact.phoneCode, phone: contact.phone, email: contact.email?.trim() || null },
+  });
 }
 
 export const SLIP_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"] as const;
