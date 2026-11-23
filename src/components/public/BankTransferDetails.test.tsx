@@ -91,3 +91,27 @@ describe("bank initials", () => {
       .toEqual(["HBL", "UBL", "MB", "J", "BA"]);
   });
 });
+
+describe("Bank logo on the account cards (#76, option 2)", () => {
+  const HBL = { id: "a-1", bank_name: "Habib Bank Limited (HBL)", account_title: "Travelian", account_number: "0101010101", logo_url: "https://example.invalid/bank-logo/hbl.png" };
+  const UBL = { id: "a-2", bank_name: "United Bank Limited - UBL", account_title: "Travelian", account_number: "0202020202" };
+
+  it("shows the uploaded logo, and the bank's initials where no logo was uploaded", () => {
+    const { container } = render(<BankAccounts accounts={[HBL, UBL]} />);
+    const cards = Array.from(container.querySelectorAll("label"));
+    expect(cards[0].querySelector("img")).toHaveAttribute("src", HBL.logo_url);
+    expect(cards[0].textContent).not.toContain("HBL" + "Habib");  // the mark is the logo, not initials
+    expect(cards[1].querySelector("img")).toBeNull();
+    expect(cards[1]).toHaveTextContent("UBL");
+    expect(screen.getByRole("radio", { name: /Habib Bank Limited \(HBL\)/ })).toBeChecked();  // the name still labels the choice
+  });
+
+  it("falls back to the initials when the logo can't be loaded", async () => {
+    const { fireEvent } = await import("@testing-library/react");
+    const { container } = render(<BankAccounts accounts={[HBL, UBL]} />);
+    const logo = container.querySelector("label img")!;
+    fireEvent.error(logo);
+    expect(container.querySelector("label img")).toBeNull();
+    expect(container.querySelectorAll("label")[0]).toHaveTextContent(/^HBL/);
+  });
+});
