@@ -28,4 +28,12 @@ describe("airline logo manifest", () => {
     expect([codes["british airways"], codes["srilankan airlines"], codes["centrum air"]]).toEqual(["BA", "UL", "C6"]);
     for (const key of ["pf", "airsial", "air sial"]) expect(logos[key]).toBe("/airline-logos/airsial-mark.png");
   });
+
+  it("#171 / #172: Uzbekistan Airways and Azerbaijan Airlines by code and name", () => {
+    const logos = manifest.logos as Record<string, string>;
+    const codes = manifest.codes as Record<string, string>;
+    for (const key of ["hy", "uzbekistan airways", "uzbekistan"]) expect(logos[key]).toBe("/airline-logos/uzbekistan-airways.png");
+    for (const key of ["j2", "azerbaijan airlines", "azerbaijan", "azal"]) expect(logos[key]).toBe("/airline-logos/azerbaijan-airlines.png");
+    expect([codes["uzbekistan airways"], codes["azerbaijan airlines"]]).toEqual(["HY", "J2"]);
+  });
 });
