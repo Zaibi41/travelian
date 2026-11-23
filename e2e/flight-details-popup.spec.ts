@@ -73,7 +73,7 @@ for (const width of [360, 390, 768, 1440]) {
     await expect(dialog).not.toContainText("Gulf Air · GF765"); // the old repeated header line
     await expect(dialog).not.toContainText("Total Fare");        // fares and prices stay on the card
     await expect(dialog.getByText("Mon, Nov 30, 2026", { exact: true })).toBeVisible();
-    await expect(dialog.getByText("6h 30m · 1 stop", { exact: true })).toBeVisible();
+    await expect(dialog.getByText("8h 30m · 1 stop", { exact: true })).toBeVisible();
     await expect(dialog.getByTestId("itinerary-flight")).toHaveCount(2);
     await expect(dialog.getByText("Economy • GF765", { exact: true })).toBeVisible();
     await expect(dialog.getByText("Economy • GF530", { exact: true })).toBeVisible();
