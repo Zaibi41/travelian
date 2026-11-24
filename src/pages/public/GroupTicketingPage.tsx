@@ -38,7 +38,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-import { AirlineLogo } from "@/components/public/AirlineLogo";
+import { AirlineLogo } from "@/components/ui/airline-logo";
 
 import { SearchPageHero } from "@/components/public/SearchPageShell";
 import { SEO } from "@/components/SEO";

@@ -97,7 +97,7 @@ the page scrolls sideways, at 1280 and 1440px. The same guard test also fails on
 teal (`--action-primary` = `--brand-teal` = `184.8 98.4% 24.9%`), navy, surfaces, borders and the
 status colours, so a later change cannot recolour the admin by accident.
 
-Admin design system (docs/design-system.md): `src/components/admin/ui/admin-ui.test.tsx` covers the
+Admin design system (docs/design-system.md): `src/components/admin/ui/admin-ui.test.tsx` (through the admin re-exports of `src/components/ui`) covers the
 shared components (button variants and sizes from the tokens, a size override replacing the token
 size, fields with label, icon, hint and error, badges and tags always with text, notices, panels,
 empty and loading states, the chip toggle, the dialog's 85% height and inner scroll, the admin's own

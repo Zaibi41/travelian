@@ -1,15 +1,15 @@
 import * as React from "react";
-import { Slot } from "@radix-ui/react-slot";
-import type { VariantProps } from "class-variance-authority";
-import { adminButtonVariants } from "./classes";
-import { cn } from "@/lib/utils";
+import { Button as SharedButton, type ButtonProps as SharedButtonProps } from "@/components/ui/button";
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof adminButtonVariants> {
-  asChild?: boolean;
+// The admin uses the shared button (src/components/ui/button.tsx, issue 118) at the token sizes:
+// default 40px (44px on touch), sm 36px, lg 48px (search form), icon 40px square.
+const SIZE = { default: "control", sm: "control-sm", lg: "search", icon: "control-icon" } as const;
+
+export interface ButtonProps extends Omit<SharedButtonProps, "size"> {
+  size?: keyof typeof SIZE | null;
 }
 
-export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({ className, variant, size, asChild = false, ...props }, ref) => {
-  const Comp = asChild ? Slot : "button";
-  return <Comp ref={ref} className={cn(adminButtonVariants({ variant, size }), className)} {...props} />;
-});
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({ size, ...props }, ref) => (
+  <SharedButton ref={ref} size={SIZE[size ?? "default"]} {...props} />
+));
 Button.displayName = "AdminButton";
