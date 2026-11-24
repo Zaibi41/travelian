@@ -29,6 +29,7 @@ const STAFF_VIEW: BookingDetail = {
   fare: { billable_price: rs(12_500) },
   sections_not_available: ["itinerary", "passengers", "payments", "tickets", "servicing", "audit"],
   can_record_payments: false, can_issue_tickets: false, can_set_selling_price: false, can_edit_group_tickets: false, itinerary_available: true,
+  can_settle_due: false, ticket_document: false,
 };
 const ADMIN_VIEW: BookingDetail = {
   ...STAFF_VIEW, provider: "AirSial",

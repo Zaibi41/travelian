@@ -15,6 +15,7 @@ The previous long-form list (sections 1 to 10) is in git history before 21 Novem
 | Legacy `/content/bookings` and `/content/booking-requests` open to anyone; proxy Lambda `CORS_ORIGIN=*`; remove retired PayFast and group-feed routes from the Lambda (1, 9) | [gateway#82](https://github.com/Zaibi41/travelian-api-gateway/issues/82) |
 | `GET /v1/agency/bookings`, verified `bookings.agency_id`, agency dashboards, Agency filter (1, 2) | [gateway#83](https://github.com/Zaibi41/travelian-api-gateway/issues/83) |
 | Database protection for plain-text identity values (3) | [gateway#84](https://github.com/Zaibi41/travelian-api-gateway/issues/84) |
+| Settled outside Travelian, phase 2: tag the reseller/channel on a booking (same tagging as manual ticket-sale entries); a per-refund supplier credit picker if the supplier balance isn't enough. Phase 1 (Mark as issued, settle the rest, supplier paid from) is built | [travelian#202](https://github.com/Zaibi41/travelian/issues/202) |
 | Unknown issuance card, Dashboard and Bookings (2, 4) | [gateway#85](https://github.com/Zaibi41/travelian-api-gateway/issues/85) |
 | Dashboard Money and balances section (2) | [gateway#86](https://github.com/Zaibi41/travelian-api-gateway/issues/86) |
 | Dashboard Recent activity panel (2) | [gateway#87](https://github.com/Zaibi41/travelian-api-gateway/issues/87) |

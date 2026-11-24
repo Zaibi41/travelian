@@ -10,13 +10,16 @@ import { TABLE } from "@/components/admin/ui/classes";
 import { StatusBadge, Tag } from "@/components/admin/ui/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GatewayError } from "@/lib/gateway/client";
-import { fetchIssuance, fetchPaymentAccounts, issueTicket, recordPayment, requestIssuance, resolveIssuance, verifyIssuance } from "@/lib/admin-bookings/api";
+import {
+  attachTicketDocument, fetchIssuance, fetchPaymentAccounts, fetchTicketDocumentLink, issueTicket, recordIssue, recordPayment, requestIssuance, resolveIssuance,
+  settleDue, uploadTicketDocument, verifyIssuance,
+} from "@/lib/admin-bookings/api";
 import { formatDateTime, formatMoney, formatTimeLeft } from "@/lib/admin-bookings/format";
 import { bookingDetailPath } from "@/lib/admin-bookings/tabs";
 import {
   PAYMENT_METHODS, PAYMENT_METHOD_LABEL, isClockTime, paisaToInput, receivedAtIso, recordedByLabel, rupeesToPaisa,
 } from "@/lib/admin-bookings/payments";
-import type { BookingDetail, BookingPassenger, IssuanceChecklist, IssuanceResult, PaymentMethod, TicketNumber } from "@/lib/admin-bookings/types";
+import type { BookingDetail, BookingPassenger, IssuanceChecklist, IssuanceResult, PaymentMethod, SupplierPaidFrom, TicketNumber } from "@/lib/admin-bookings/types";
 import { cn } from "@/lib/utils";
 import { CopyPnr } from "@/components/CopyPnr";
 import { DatePickerField } from "@/components/ui/date-picker-field";
@@ -202,6 +205,18 @@ function RecordPayment({ booking }: { booking: BookingDetail }) {
           <dt className="text-body text-muted-foreground">Still to receive</dt>
           <dd className="text-body font-semibold tabular-nums text-foreground">{due ? formatMoney(due) : "—"}</dd>
         </div>
+        {booking.settlement && (
+          <div className="flex flex-col gap-0.5 border-b border-border py-2">
+            <div className="flex items-baseline justify-between gap-3">
+              <dt className="text-body text-muted-foreground">Waived by agreement</dt>
+              <dd className="text-body font-semibold tabular-nums text-foreground">{formatMoney(booking.settlement.waived)}</dd>
+            </div>
+            <p className="break-words text-label text-muted-foreground">
+              {`Original total ${formatMoney(booking.settlement.original_total)}`}
+              {booking.settlement.settled_at ? ` · ${formatDateTime(booking.settlement.settled_at)}` : ""} · {booking.settlement.reason}
+            </p>
+          </div>
+        )}
       </dl>
 
       {!booking.can_record_payments ? (
@@ -251,6 +266,8 @@ function RecordPayment({ booking }: { booking: BookingDetail }) {
         </form>
       )}
 
+      {booking.can_settle_due && due && paid && <SettleDue booking={booking} due={due} paid={paid} />}
+
       {payments.length > 0 && (
         <div className="overflow-x-auto">
           <table className={cn(TABLE.table, "min-w-[32rem]")}>
@@ -281,6 +298,52 @@ function RecordPayment({ booking }: { booking: BookingDetail }) {
   );
 }
 
+/** issue 202: the customer paid less than the total by agreement; the rest is waived with a reason. */
+function SettleDue({ booking, due, paid }: { booking: BookingDetail; due: Money; paid: Money }) {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [problem, setProblem] = useState<string | null>(null);
+  const settle = useMutation({
+    mutationFn: () => settleDue(booking.booking_id, reason.trim()),
+    onSuccess: () => { setOpen(false); setReason(""); void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] }); },
+    onError: error => setProblem(gatewayMessage(error, "The due couldn't be settled. Nothing was changed.")),
+  });
+  const submit = () => {
+    if (reason.trim().length < 5) return setProblem("Say what was agreed, and with whom.");
+    setProblem(null);
+    settle.mutate();
+  };
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div><Button type="button" variant="outline" onClick={() => { setProblem(null); setOpen(true); }}>Settle the rest</Button></div>
+      <p className="text-label text-muted-foreground">Agreed to take less? Settle the rest with a reason so nothing shows as due.</p>
+      <Dialog open={open} onOpenChange={next => { if (!settle.isPending) setOpen(next); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Settle the rest</DialogTitle>
+            <DialogDescription>
+              {`${formatMoney(paid)} was received of ${formatMoney(booking.amount)}. ${formatMoney(due)} will be waived and the booking total becomes ${formatMoney(paid)}. This can't be undone.`}
+            </DialogDescription>
+          </DialogHeader>
+          <form noValidate className="flex flex-col gap-3" onSubmit={event => { event.preventDefault(); submit(); }}>
+            <div className="flex min-w-0 flex-col gap-1">
+              <FieldLabel htmlFor="settle-reason">Reason</FieldLabel>
+              <Textarea id="settle-reason" maxLength={500} value={reason} onChange={event => setReason(event.target.value)}
+                placeholder="What was agreed, and with whom" />
+            </div>
+            {problem && <p role="alert" className="text-body text-status-critical-text">{problem}</p>}
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button type="button" variant="outline" disabled={settle.isPending} onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="submit" variant="primary" disabled={settle.isPending}>{settle.isPending ? "Saving…" : `Waive ${formatMoney(due)}`}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
 // ---------- 2 · Issue the ticket ----------
 
 function CheckRow({ label, children }: { label: string; children: React.ReactNode }) {
@@ -307,6 +370,7 @@ function IssueTicket({ booking, checklist, loading, error, onResult }: {
 }) {
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = useState(false);
+  const [recording, setRecording] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const refresh = () => void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] });
 
@@ -415,6 +479,9 @@ function IssueTicket({ booking, checklist, loading, error, onResult }: {
           {status !== "issued" && status !== "unknown" && (
             <div className="flex flex-col gap-2">
               <div className="flex flex-wrap gap-2">
+                {checklist.can_record_issue && (
+                  <Button type="button" variant="outline" onClick={() => { setProblem(null); setRecording(true); }}>Mark as issued</Button>
+                )}
                 {booking.can_issue_tickets ? (
                   <Button type="button" variant="primary" disabled={!checklist.can_issue || issue.isPending} onClick={() => { setProblem(null); setConfirming(true); }}>
                     Issue ticket
@@ -425,6 +492,9 @@ function IssueTicket({ booking, checklist, loading, error, onResult }: {
                   </Button>
                 )}
               </div>
+              {checklist.can_record_issue && (
+                <p className="text-label text-muted-foreground">Issued in the supplier's portal? Mark as issued records the ticket numbers here.</p>
+              )}
               <p className="text-label text-muted-foreground">
                 {booking.can_issue_tickets
                   ? "Issue ticket stays disabled until every check above is done and ticketing is on."
@@ -435,6 +505,8 @@ function IssueTicket({ booking, checklist, loading, error, onResult }: {
           {problem && <p role="alert" className="rounded-md border border-status-critical/40 bg-status-critical-soft px-3 py-2 text-body text-status-critical-text">{problem}</p>}
         </>
       )}
+
+      {recording && <RecordIssueDialog booking={booking} onClose={() => setRecording(false)} onResult={onResult} />}
 
       <Dialog open={confirming} onOpenChange={open => { if (!issue.isPending) setConfirming(open); }}>
         <DialogContent className="max-w-md" aria-busy={issue.isPending}>
@@ -732,9 +804,131 @@ function ResolveDialog({ booking, outcome, onClose, onResult }: {
   );
 }
 
+// ---------- Mark as issued (issue 202): issued in the supplier's portal ----------
+
+const PAID_FROM: { value: SupplierPaidFrom | typeof NO_ACCOUNT; label: string }[] = [
+  { value: NO_ACCOUNT, label: "Not recorded" }, { value: "bank", label: "Bank" }, { value: "supplier_wallet", label: "Supplier wallet" },
+  { value: "credit", label: "Credit" },
+];
+
+function RecordIssueDialog({ booking, onClose, onResult }: { booking: BookingDetail; onClose: () => void; onResult: (result: IssuanceResult) => void }) {
+  const queryClient = useQueryClient();
+  const travelers = travelersOf(booking);
+  const supplier = booking.supplier_payment; // only sent to cost and margin viewers
+  const [tickets, setTickets] = useState<Record<number, string>>({});
+  const [file, setFile] = useState<File | null>(null);
+  const [note, setNote] = useState("");
+  const [billed, setBilled] = useState(() => (supplier?.amount_due ? paisaToInput(supplier.amount_due.amount_minor) : ""));
+  const [paidFrom, setPaidFrom] = useState<string>(NO_ACCOUNT);
+  const [reference, setReference] = useState("");
+  const [date, setDate] = useState<string | undefined>(today);
+  const [time, setTime] = useState(nowClock);
+  const [problem, setProblem] = useState<string | null>(null);
+  const save = useMutation({
+    mutationFn: async () => {
+      const documentKey = file ? await uploadTicketDocument(booking.booking_id, file) : null;
+      const billedMinor = supplier ? rupeesToPaisa(billed) : null;
+      return recordIssue(booking.booking_id, {
+        ticket_numbers: travelers.map(traveler => ({ position: traveler.position, ticket_number: (tickets[traveler.position] ?? "").trim() })),
+        note: note.trim() || null, ticket_document_key: documentKey,
+        ...(supplier ? {
+          supplier_billed: billedMinor ? { amount_minor: billedMinor, currency: booking.amount.currency } : null,
+          paid_from: paidFrom === NO_ACCOUNT ? null : paidFrom as SupplierPaidFrom,
+          supplier_reference: reference.trim() || null,
+          paid_at: paidFrom === NO_ACCOUNT ? null : receivedAtIso(date, time),
+        } : {}),
+      });
+    },
+    onSuccess: result => { onResult(result); void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] }); onClose(); },
+    onError: failure => setProblem(failure instanceof GatewayError || failure instanceof Error ? failure.message : "This couldn't be saved. Nothing was changed."),
+  });
+  const submit = () => {
+    if (!travelers.length) return setProblem("The travelers aren't saved on this booking, so ticket numbers can't be entered here.");
+    if (travelers.some(traveler => !/^[A-Za-z0-9-]{6,32}$/.test((tickets[traveler.position] ?? "").trim()))) {
+      return setProblem("Give the ticket number for every traveler (6 to 32 letters or digits).");
+    }
+    if (supplier && billed.trim() && !rupeesToPaisa(billed)) return setProblem("Enter what the supplier billed in Rs, e.g. 74,886.");
+    if (supplier && paidFrom !== NO_ACCOUNT && (!receivedAtIso(date, time) || !isClockTime(time))) {
+      return setProblem("Enter the date and time the supplier was paid (time as 24-hour, e.g. 14:05).");
+    }
+    setProblem(null);
+    save.mutate();
+  };
+  return (
+    <Dialog open onOpenChange={open => { if (!open && !save.isPending) onClose(); }}>
+      <DialogContent className="flex max-h-[90vh] max-w-lg flex-col">
+        <DialogHeader>
+          <DialogTitle>Mark as issued</DialogTitle>
+          <DialogDescription>Only once the supplier has issued the tickets in their portal. Enter the ticket number for every traveler.</DialogDescription>
+        </DialogHeader>
+        <form noValidate className="flex min-h-0 flex-col gap-3" onSubmit={event => { event.preventDefault(); submit(); }}>
+          <div className="-mx-1 flex min-h-0 flex-col gap-3 overflow-y-auto px-1 pb-1">
+          {travelers.map(traveler => (
+            <div key={traveler.position} className="flex min-w-0 flex-col gap-1">
+              <FieldLabel htmlFor={`record-ticket-${traveler.position}`}>{`Ticket number, ${name(traveler)}`}</FieldLabel>
+              <Input id={`record-ticket-${traveler.position}`} maxLength={32} value={tickets[traveler.position] ?? ""} className="font-mono"
+                onChange={event => setTickets({ ...tickets, [traveler.position]: event.target.value })} />
+            </div>
+          ))}
+          <div className="flex min-w-0 flex-col gap-1">
+            <FieldLabel htmlFor="record-document">Ticket document (optional)</FieldLabel>
+            <Input id="record-document" type="file" accept="application/pdf,image/jpeg,image/png" className="h-auto py-1.5"
+              onChange={event => setFile(event.target.files?.[0] ?? null)} />
+            <p className="text-label text-muted-foreground">PDF, JPG or PNG, up to 10 MB.</p>
+          </div>
+          {supplier && (
+            <fieldset aria-label="Supplier payment (admin only)" className="flex min-w-0 flex-col gap-3 rounded-lg border border-dashed border-border px-3 py-2.5">
+              <legend className="px-1 text-label font-semibold text-foreground">Supplier payment (admin only)</legend>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex min-w-0 flex-col gap-1">
+                  <FieldLabel htmlFor="record-billed">Amount due</FieldLabel>
+                  <div className="relative">
+                    <span aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-body text-muted-foreground">Rs</span>
+                    <Input id="record-billed" inputMode="decimal" autoComplete="off" value={billed} onChange={event => setBilled(event.target.value)} className="pl-9 tabular-nums" />
+                  </div>
+                </div>
+                <LabeledSelect id="record-paid-from" label="Paid from" value={paidFrom} options={PAID_FROM} onChange={setPaidFrom} />
+                <div className="flex min-w-0 flex-col gap-1">
+                  <FieldLabel htmlFor="record-reference">Transfer reference</FieldLabel>
+                  <Input id="record-reference" maxLength={120} value={reference} onChange={event => setReference(event.target.value)} placeholder="Reference" />
+                </div>
+                {paidFrom !== NO_ACCOUNT && (
+                  <div className="grid min-w-0 grid-cols-2 gap-2">
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <FieldLabel htmlFor="record-date">Time sent</FieldLabel>
+                      <DatePickerField id="record-date" appearance="admin" value={date} max={today()} placeholder="Select date" onChange={setDate} />
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <FieldLabel htmlFor="record-time">Time (24-hour)</FieldLabel>
+                      <Input id="record-time" inputMode="numeric" maxLength={5} value={time} onChange={event => setTime(event.target.value)} placeholder="14:05" className="tabular-nums" />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <p className="text-label text-muted-foreground">
+                Supplier wallet and Credit take the amount from the supplier's balance in Finance › Supplier balances. Bank records a top-up of the same amount, so the balance doesn't change.
+              </p>
+            </fieldset>
+          )}
+          <div className="flex min-w-0 flex-col gap-1">
+            <FieldLabel htmlFor="record-note">Note (optional)</FieldLabel>
+            <Textarea id="record-note" maxLength={500} value={note} onChange={event => setNote(event.target.value)} placeholder="e.g. Issued in SooperFare's portal" />
+          </div>
+          </div>
+          {problem && <p role="alert" className="text-body text-status-critical-text">{problem}</p>}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button type="button" variant="outline" disabled={save.isPending} onClick={onClose}>Cancel</Button>
+            <Button type="submit" variant="primary" disabled={save.isPending}>{save.isPending ? "Saving…" : "Mark as issued"}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ---------- Tickets tab ----------
 
-/** Ticket numbers per traveler, from the booking's travelers (set when issued). */
+/** Ticket numbers per traveler, from the booking's travelers (set when issued), and the final ticket document (issue 202). */
 export function TicketsTab({ booking }: { booking: BookingDetail }) {
   const travelers = travelersOf(booking);
   const issued = travelers.some(traveler => traveler.ticket_number);
@@ -742,21 +936,62 @@ export function TicketsTab({ booking }: { booking: BookingDetail }) {
     return <Notice title="No tickets yet">Ticket numbers appear here after the booking is issued on the Payments tab.</Notice>;
   }
   return (
-    <section aria-label="Tickets" className={cn(TABLE.wrap, "px-card py-3.5")}>
-      <table className={cn(TABLE.table, "min-w-[28rem]")}>
-        <thead>
-          <tr className={TABLE.headRow}>{["Passenger", "Ticket number", "Status"].map(column => <th key={column} scope="col" className={TABLE.th}>{column}</th>)}</tr>
-        </thead>
-        <tbody>
-          {travelers.map(traveler => (
-            <tr key={traveler.position} className={TABLE.row}>
-              <td className={cn(TABLE.td, "max-w-[18rem] truncate")} title={name(traveler)}>{name(traveler)}</td>
-              <td className={cn(TABLE.td, "font-mono")}>{traveler.ticket_number ?? "—"}</td>
-              <td className={TABLE.td}>{traveler.ticket_number ? <StatusBadge severity="fine">Issued</StatusBadge> : <Tag>Not issued</Tag>}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="flex min-w-0 flex-col gap-section-gap">
+      <section aria-label="Tickets" className={cn(TABLE.wrap, "px-card py-3.5")}>
+        <table className={cn(TABLE.table, "min-w-[32rem]")}>
+          <thead>
+            <tr className={TABLE.headRow}>{["Passenger", "Ticket number", "Issue time", "Status"].map(column => <th key={column} scope="col" className={TABLE.th}>{column}</th>)}</tr>
+          </thead>
+          <tbody>
+            {travelers.map(traveler => (
+              <tr key={traveler.position} className={TABLE.row}>
+                <td className={cn(TABLE.td, "max-w-[18rem] truncate")} title={name(traveler)}>{name(traveler)}</td>
+                <td className={cn(TABLE.td, "font-mono")}>{traveler.ticket_number ?? "—"}</td>
+                <td className={cn(TABLE.td, "whitespace-nowrap tabular-nums")}>{traveler.ticket_number && booking.issued_at ? formatDateTime(booking.issued_at) : "—"}</td>
+                <td className={TABLE.td}>{traveler.ticket_number ? <StatusBadge severity="fine">Issued</StatusBadge> : <Tag>Not issued</Tag>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+      {booking.product === "flight" && <TicketDocument booking={booking} />}
+    </div>
+  );
+}
+
+function TicketDocument({ booking }: { booking: BookingDetail }) {
+  const queryClient = useQueryClient();
+  const [problem, setProblem] = useState<string | null>(null);
+  const open = useMutation({
+    mutationFn: () => fetchTicketDocumentLink(booking.booking_id),
+    onSuccess: link => { setProblem(null); window.open(link.url, "_blank", "noopener,noreferrer"); },
+    onError: error => setProblem(gatewayMessage(error, "The ticket document can't be opened right now.")),
+  });
+  const attach = useMutation({
+    mutationFn: async (file: File) => attachTicketDocument(booking.booking_id, await uploadTicketDocument(booking.booking_id, file)),
+    onSuccess: () => { setProblem(null); void queryClient.invalidateQueries({ queryKey: ["admin-bookings"] }); },
+    onError: error => setProblem(error instanceof Error ? error.message : "The ticket document couldn't be saved."),
+  });
+  if (!booking.ticket_document && !booking.can_issue_tickets) return null;
+  return (
+    <section aria-labelledby="ticket-document-title" className={CARD}>
+      <h2 id="ticket-document-title" className="text-section-title font-semibold font-display">Ticket document</h2>
+      <div className="flex flex-wrap items-center gap-2">
+        {booking.ticket_document ? (
+          <Button type="button" variant="outline" disabled={open.isPending} onClick={() => open.mutate()}>{open.isPending ? "Opening…" : "Open ticket document"}</Button>
+        ) : (
+          <p className="text-body text-muted-foreground">No ticket document attached.</p>
+        )}
+        {booking.can_issue_tickets && (
+          <label className={cn("inline-flex h-10 cursor-pointer items-center rounded-md border border-border px-3 text-body font-medium text-foreground hover:bg-muted",
+            attach.isPending && "pointer-events-none opacity-60")}>
+            {attach.isPending ? "Uploading…" : booking.ticket_document ? "Replace" : "Attach ticket document"}
+            <input type="file" accept="application/pdf,image/jpeg,image/png" className="sr-only"
+              onChange={event => { const file = event.target.files?.[0]; event.target.value = ""; if (file) attach.mutate(file); }} />
+          </label>
+        )}
+      </div>
+      {problem && <p role="alert" className="text-body text-status-critical-text">{problem}</p>}
     </section>
   );
 }
