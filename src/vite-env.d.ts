@@ -10,6 +10,8 @@ interface ImportMetaEnv {
   readonly VITE_TRAVELIAN_GATEWAY_BASE_URL?: string;
   /** Public site origin for links, sitemaps and structured data; default https://travelian.pk (src/lib/site-config.ts). */
   readonly VITE_SITE_URL?: string;
+  /** Google Analytics 4 measurement ID (G-XXXXXXXXXX). Analytics is off when unset (src/lib/analytics.ts). */
+  readonly VITE_GA_MEASUREMENT_ID?: string;
 }
 
 interface ImportMeta {
