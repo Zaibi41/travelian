@@ -770,8 +770,8 @@ export interface paths {
         get?: never;
         /**
          * Edit Document
-         * @description Edit a saved document (issue #12): number, country of issue, expiry. A new number (a renewed passport) keeps the
-         *     old document for past bookings and saves the new one; the same number only updates the expiry. Past bookings keep
+         * @description Edit a saved document (issue #12): number, country of issue, issue date, expiry. A new number (a renewed passport) keeps the
+         *     old document for past bookings and saves the new one; the same number only updates the dates. Past bookings keep
          *     their own copy.
          */
         put: operations["edit_document_v1_admin_customers__person_id__documents__document_id__put"];
@@ -5381,6 +5381,11 @@ export interface components {
             document_country: string;
             /** Document Expiry */
             document_expiry?: string | null;
+            /**
+             * Document Issue Date
+             * @description Optional issue date.
+             */
+            document_issue_date?: string | null;
             /** Document Number */
             document_number: string;
             /**
@@ -8318,6 +8323,11 @@ export interface components {
             document_country: string;
             /** Document Expiry */
             document_expiry?: string | null;
+            /**
+             * Document Issue Date
+             * @description Optional; documents saved before it existed have none.
+             */
+            document_issue_date?: string | null;
             /** Document Number */
             document_number: string;
             /** Document Validity */

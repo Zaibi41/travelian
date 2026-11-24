@@ -79,7 +79,7 @@ describe("request bodies", () => {
   const draft = { title: "MR", first_name: " Test ", last_name: "Person", date_of_birth: "", nationality: "PAK", phone_code: "92", phone: "", email: "" };
 
   it("create leaves out the country code without a phone and the document without a number", () => {
-    expect(createBody(draft, { id_type: "PSPT", document_country: "PAK", document_number: " ", document_expiry: "" })).toEqual({
+    expect(createBody(draft, { id_type: "PSPT", document_country: "PAK", document_number: " ", document_expiry: "", document_issue_date: "" })).toEqual({
       title: "MR", first_name: "Test", last_name: "Person", date_of_birth: null, nationality: "PAK", phone_code: null, phone: null, email: null, document: null,
     });
   });

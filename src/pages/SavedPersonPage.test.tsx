@@ -108,6 +108,26 @@ describe("Edit a saved document (#12)", () => {
     await waitFor(() => expect(editDocument).toHaveBeenCalledWith("p-00000001", "d-1", expect.objectContaining({ id_type: "PSPT", document_number: "AB1234568" })));
   });
 
+  it("shows the issue date (— when none) and sends a kept issue date with the edit", async () => {
+    const { waitFor } = await import("@testing-library/react");
+    fetchPerson.mockResolvedValue({ ...PERSON, can_manage: true, bookings: [], documents: [
+      { ...PERSON.documents[0], document_issue_date: "2021-01-02" },
+      { id: "d-9", id_type: "NATI", document_country: "PAK", document_number: "3520212345671" },
+    ] });
+    editDocument.mockResolvedValue({ ...PERSON, can_manage: true, bookings: [] });
+    renderPage();
+    const section = await screen.findByRole("region", { name: "Documents" });
+    expect(within(section).getByRole("columnheader", { name: "Issue date" })).toBeInTheDocument();
+    const [passportRow, idRow] = within(section).getAllByRole("row").slice(1);
+    expect(passportRow).toHaveTextContent("2 Jan 2021");
+    expect(within(idRow).getAllByRole("cell")[3]).toHaveTextContent("—");
+    fireEvent.click(within(section).getByRole("button", { name: "Edit Passport AB1234567" }));
+    const dialog = await screen.findByRole("dialog", { name: "Edit document" });
+    expect(within(dialog).getByLabelText("Issue date (optional)")).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save document" }));
+    await waitFor(() => expect(editDocument).toHaveBeenCalledWith("p-00000001", "d-1", expect.objectContaining({ document_issue_date: "2021-01-02", document_expiry: "2031-01-01" })));
+  });
+
   it("#75: a booking shows the airline logo beside the route", async () => {
     fetchPerson.mockResolvedValue({ ...PERSON, bookings: [{ ...BOOKING, airline_code: "EK", airline_name: "Emirates", flight_number: "EK623" }] });
     renderPage();
