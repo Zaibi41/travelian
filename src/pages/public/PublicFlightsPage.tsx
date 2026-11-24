@@ -731,10 +731,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   /** "1 Stop · Abu Dhabi, United Arab Emirates" ("" for a non-stop flight; callers show "Non-stop"). */
   const stopLabel = (flight: TravelianFlight) => (flight.stops ? stopLine(flight.stops, stopCodes(flight)) : "");
   /** Under the duration on a card (#119, #120): the stop count ("Non-stop", "1 Stop") and, below it, where the passenger stays. */
-  const stopsUnderDuration = (count: string, places?: string) => (
+  // #194: oneLine keeps the stop cities on one line (ellipsis) in the narrow phone time row; the full list is in the title
+  // and in Flight Details.
+  const stopsUnderDuration = (count: string, places?: string, oneLine = false) => (
     <span className="flex max-w-full flex-col items-center text-center" title={places ? `${count} · ${places}` : count}>
       <span className="max-w-full truncate text-xs font-medium text-success">{count}</span>
-      {places && <span className="line-clamp-2 max-w-full break-words text-xs text-muted-foreground">{places}</span>}
+      {places && <span data-testid="stop-places" className={cn("max-w-full text-xs text-muted-foreground", oneLine ? "truncate" : "line-clamp-2 break-words")}>{places}</span>}
     </span>
   );
 
@@ -1850,21 +1852,23 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               ))}
                             </div>
                           ) : (
-                            <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                              <div className="min-w-0 shrink-0 basis-[7.5rem] sm:basis-[8.75rem] text-left">
+                            /* #194: three balanced columns: departure and arrival take their own width (capped, with an
+                               ellipsis), arrival is right-aligned to the card edge, and the line between gets the rest. */
+                            <div data-testid="flight-time-row" className="grid min-w-0 grid-cols-[auto_minmax(4rem,1fr)_auto] items-center gap-2.5 sm:gap-3">
+                              <div className="min-w-0 max-w-[7.5rem] sm:max-w-[8.75rem] text-left">
                                 <p className="text-lg sm:text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.departureTime)}</p>
                                 <p className="mt-1 text-xs sm:text-xs text-muted-foreground">{formatFlightDate(flight.departureTime)}</p>
                                 <p className="truncate text-xs sm:text-xs text-muted-foreground" title={flightOriginLabel(flight)}>{flightOriginLabel(flight)}</p>
                               </div>
-                              <div className="flex min-w-[4rem] sm:min-w-[5rem] flex-1 flex-col items-center px-1">
+                              <div className="flex min-w-0 flex-col items-center px-1">
                                 <span className="max-w-full truncate text-xs sm:text-xs font-medium text-muted-foreground">{getFlightDuration(flight)}</span>
                                 <div className="relative my-1.5 h-px w-full bg-border">
                                   <div className="absolute left-0 top-1/2 h-2 w-2 sm:h-2.5 sm:w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
                                   <div className="absolute right-0 top-1/2 h-2 w-2 sm:h-2.5 sm:w-2.5 -translate-y-1/2 rounded-full bg-primary" />
                                 </div>
-                                {stopsUnderDuration(flightStopText(flight).stopText, flightStopText(flight).stopPlaces)}
+                                {stopsUnderDuration(flightStopText(flight).stopText, flightStopText(flight).stopPlaces, true)}
                               </div>
-                              <div className="min-w-0 shrink-0 basis-[7.5rem] sm:basis-[8.75rem] text-left">
+                              <div className="min-w-0 max-w-[7.5rem] sm:max-w-[8.75rem] text-right">
                                 <p className="text-lg sm:text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
                                 <p className="mt-1 text-xs sm:text-xs text-muted-foreground">{formatFlightDate(flight.arrivalTime)}</p>
                                 <p className="truncate text-xs sm:text-xs text-muted-foreground" title={flightDestinationLabel(flight)}>{flightDestinationLabel(flight)}</p>
