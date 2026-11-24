@@ -1,7 +1,7 @@
 import { SearchPageHero } from "@/components/public/SearchPageShell";
 import { SearchTabs } from "@/components/public/SearchTabs";
 import { SEO } from "@/components/SEO";
-import { ProductValuePills, TravelianTrustStrip } from "@/components/public/ProductTrust";
+import { ProductValuePills } from "@/components/public/ProductTrust";
 import { HomeWhyBook } from "@/components/public/HomeWhyBook";
 import { HomeSupplierNetwork } from "@/components/public/HomeSupplierNetwork";
 import { HomeTopRoutes } from "@/components/public/HomeTopRoutes";
@@ -62,7 +62,6 @@ export default function HomePage() {
         <div className="home-search"><SearchTabs /></div>
       </SearchPageHero>
 
-      <TravelianTrustStrip />
 
       <HomeTopRoutes />
       <HomeWhyBook />
