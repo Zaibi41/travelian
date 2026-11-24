@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AnalyticsPageViews } from "@/components/AnalyticsPageViews";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { ScrollToTop } from "@/components/ScrollToTop";
@@ -89,6 +90,7 @@ const App = () => (
             <LocaleProvider>
               <AdminProvider>
               <ScrollToTop />
+              <AnalyticsPageViews />
           <Suspense fallback={<div role="status" className="travelian-container py-8 text-sm text-muted-foreground">Loading page…</div>}>
           <Routes>
             {/* Public routes */}
