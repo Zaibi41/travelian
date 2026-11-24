@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { AirlineLogo as PublicAirlineLogo } from "./AirlineLogo";
+import { AirlineLogo as PublicAirlineLogo } from "./airline-logo";
 import { AirlineLogo as AdminAirlineLogo } from "@/components/admin/ui/AirlineLogo";
 
 describe.each([

@@ -73,6 +73,22 @@
   --deal: 0 72% 51%;
   --deal-foreground: 0 0% 100%;
 
+  /* Names the shared components use (src/components/ui). On the public site they point at the
+   * public palette; the admin block below gives them the admin values. */
+  --brand-navy: var(--primary);
+  --brand-teal: var(--teal);
+  --action-primary: var(--primary);
+  --action-primary-foreground: var(--primary-foreground);
+  --status-critical: var(--destructive);
+  --status-critical-text: 0 72% 42%;    /* #B81E1E on its tint 5.67:1 */
+  --status-critical-soft: 0 86% 96%;
+  --status-action: 37 97% 39%;          /* #C27803 stripe 3.5:1 */
+  --status-action-text: var(--warning-text);
+  --status-action-soft: 38 92% 92%;
+  --status-fine: var(--success);
+  --status-fine-text: var(--success-text);
+  --status-fine-soft: 142 60% 94%;
+
   --border: 218 22% 86%;                /* #D3D9E3 card and divider lines */
   --input: 219 13% 60%;                 /* #8C95A6 field borders 3.0:1 */
   --ring: 217 91% 30%;

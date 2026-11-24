@@ -1,3 +1,4 @@
+// The one airline logo for the public site, the admin and (through the manifest) the PDF (issue 118).
 import { useState } from "react";
 import { Plane } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -41,8 +42,9 @@ export function AirlineLogo({
   // Travelian's own logo file wins over a supplier-sent image, so an airline looks the same on every page;
   // the supplier image is only used for airlines we have no file for (or if our file fails to load).
   const logoSource = [localLogo, remoteLogo].find((source) => source && !failedSources.includes(source));
-  const logoShell = "flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-white to-slate-50 shadow-[0_6px_18px_rgba(15,23,42,0.08)] ring-1 ring-slate-900/5";
-  const logoImage = "max-h-10 w-[86%] object-contain drop-shadow-[0_1px_1px_rgba(15,23,42,0.16)] [filter:saturate(1.12)_contrast(1.08)]";
+  // The logo tile; its colours are the --logo-tile-* tokens (src/styles/tokens.css).
+  const logoShell = "flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[hsl(var(--logo-tile-border))] bg-gradient-to-br from-card via-card to-[hsl(var(--logo-tile-fade))] shadow-[var(--logo-tile-shadow)] ring-1 ring-[hsl(var(--logo-tile-ink)/0.05)]";
+  const logoImage = "max-h-10 w-[86%] object-contain drop-shadow-[0_1px_1px_hsl(var(--logo-tile-ink)/0.16)] [filter:saturate(1.12)_contrast(1.08)]";
 
   if (logoSource) {
     return (
@@ -67,7 +69,7 @@ export function AirlineLogo({
       aria-label={`${airlineName} logo`}
       className={cn("flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/15", className)}
     >
-      {code ? <span className="text-xs font-bold leading-none tracking-wide">{code}</span> : <Plane className="h-1/2 w-1/2" aria-hidden="true" />}
+      {code ? <span className="text-helper font-bold leading-none tracking-wide">{code}</span> : <Plane className="h-1/2 w-1/2" aria-hidden="true" />}
     </div>
   );
 }

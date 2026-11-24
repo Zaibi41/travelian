@@ -23,7 +23,7 @@ import { fetchFlightFares, hydrateSooperFareOptions, searchFlights, type FareOpt
 import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { FlightSearchLoader } from "@/components/public/FlightSearchLoader";
 import { CURRENCIES, useLocale, type CurrencyCode } from "@/contexts/LocaleContext";
-import { AirlineLogo } from "@/components/public/AirlineLogo";
+import { AirlineLogo } from "@/components/ui/airline-logo";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
 import { flightHelpMessage } from "@/lib/flight-whatsapp";
 import { ResultsSheet } from "@/components/public/ResultsSheet";

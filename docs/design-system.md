@@ -7,10 +7,12 @@ docs/DESIGN_STANDARD.md). It is being introduced in steps:
    control sizes, radii, spacing, focus ring, motion and the airline-logo tile are shared and
    defined once in `:root`. Colours have the public values in `:root` and the admin values in a
    `:root[data-app-theme="admin"]` block with the same names.
-2. **One component set (in progress):** buttons, fields, selects, date picker, cards, badges,
-   tables, tabs, dialogs, alerts/toasts, skeletons, empty states and the airline logo, used by both.
-   Until a component is moved, the admin keeps its copy in `src/components/admin/ui/` and the
-   rules below (admin files do not import from the public folders) still apply.
+2. **One component set (done):** buttons, fields, selects, date picker, cards, badges, tables,
+   tabs, dialogs, alerts/toasts, skeletons, empty states and the airline logo live in
+   `src/components/ui/` and are used by both. Colours come from the tokens, so the same component
+   is blue on the public site and navy/teal in the admin. The files in `src/components/admin/ui/`
+   with the old names are now thin re-exports (the admin `Button` maps its sizes to the shared
+   token sizes); admin-only pieces (search form, airport pickers, product tabs) stay there.
 3. **Screens moved one by one** in small PRs, with before/after screenshots.
 
 Colours stay separate on purpose: the admin keeps its navy/teal palette and the public site its
@@ -24,7 +26,8 @@ The admin keeps its own layout layer (sidebar, dense tables) in `src/styles/them
 | Every token, public and admin (colour, type, control heights, radii, shadows, spacing, focus ring, motion) | `src/styles/tokens.css` (`:root` shared + public colours; `:root[data-app-theme="admin"]` admin colours) |
 | Admin layout layer (sidebar, header, dense table rows, page padding) | `src/styles/theme.css` |
 | Tailwind names for the tokens (additive only) | `tailwind.config.ts` |
-| Shared admin components | `src/components/admin/ui/` |
+| Shared components (public and admin) | `src/components/ui/` |
+| Admin-only pieces and the admin names for the shared components | `src/components/admin/ui/` |
 | Guard test (sizes, colours, radii, public imports, pinned colours) | `src/styles/admin-type-scale.test.ts` |
 | Visual regression (public and admin screenshots) | `e2e/visual.spec.ts`, `e2e/__screenshots__/` |
 
@@ -106,27 +109,30 @@ Inside the admin itself, filled buttons are still of two colours: teal for the m
 Customer, Search flights / Search group fares). Unifying them is a colour decision, so it is left
 as it is.
 
-## Shared components (`src/components/admin/ui/`)
+## Shared components (`src/components/ui/`)
+
+Files are in `src/components/ui/` unless the row says `admin/ui`. The admin imports them through
+the re-exports in `src/components/admin/ui/` with the old names until its screens are moved.
 
 | Component | File | Use it for |
 | --- | --- | --- |
-| `Button` (`primary` teal, `default` navy, `secondary`, `outline`, `ghost`, `danger`, `link`; sizes `default` 40px, `sm` 36px, `lg` 48px, `icon`) | `button.tsx` | every admin button; `primary` for the one main action on a screen |
+| `Button` (`primary` action colour, `default` primary, `secondary`, `outline`, `ghost`, `danger`/`destructive`, `link`; public sizes `default` 40px, `sm` 36px, `lg` 44px, `icon`; token sizes `control` 40px/44px on touch, `control-sm` 36px, `control-icon`, `search` 48px). The admin `Button` (`admin/ui/button.tsx`) maps `default`/`sm`/`lg`/`icon` to the token sizes. | `button.tsx` | every button; `primary` for the one main action on an admin screen |
 | `Input`, `Textarea`, `FieldShell` (label above, leading icon, hint, error), `FieldLabel`, `describedBy`, `FormCard`, `FormRow` | `field.tsx` | forms and filters |
-| `LabeledSelect` (label above), `FilterSelect` (compact "Date All ▾") | `LabeledSelect.tsx`, `FilterSelect.tsx` | selects |
-| `DayFirstDateField` ("24 Nov 2026", typed day first or picked; value stays ISO; `variant="search"` for the search look) | `DayFirstDateField.tsx` | every date |
-| `TabLinks` (page tabs, each a URL) | `TabLinks.tsx` | Bookings, booking detail, Customers |
-| `SearchProductTabs` (Flights, Group Ticketing, Hotels, Umrah with the public icons) | `search-form.tsx`, `product-tabs.ts`, `UmrahIcon.tsx` | Search |
-| `RouteRow` + `SwapButton` (From, round outlined swap, To; stacks below 900px with up/down arrows), `AirportLines`, `SelectedAirportCard` (two-line airport card), `SearchSubmitButton` (magnifier), `FieldLabel`, `SEARCH_FIELD`, `AIRPORT_FIELD` | `search-form.tsx` | search forms |
-| `AirportCombobox` (free airport search), `SectorAirportSelect` (only the given sectors) | `AirportCombobox.tsx`, `SectorAirportSelect.tsx` | From / To |
+| `LabeledSelect` (label above), `FilterSelect` (compact "Date All ▾") | `labeled-select.tsx`, `filter-select.tsx` | selects |
+| `DayFirstDateField` ("24 Nov 2026", typed day first or picked; value stays ISO; `variant="search"` for the search look) | `day-first-date-field.tsx` | every date |
+| `TabLinks` (page tabs, each a URL) | `tab-links.tsx` | Bookings, booking detail, Customers |
+| `SearchProductTabs` (Flights, Group Ticketing, Hotels, Umrah with the public icons) | `admin/ui/search-form.tsx`, `admin/ui/product-tabs.ts`, `UmrahIcon.tsx` | Search |
+| `RouteRow` + `SwapButton` (From, round outlined swap, To; stacks below 900px with up/down arrows), `AirportLines`, `SelectedAirportCard` (two-line airport card), `SearchSubmitButton` (magnifier), `FieldLabel`, `SEARCH_FIELD`, `AIRPORT_FIELD` | `admin/ui/search-form.tsx` | search forms |
+| `AirportCombobox` (free airport search), `SectorAirportSelect` (only the given sectors) | `admin/ui/AirportCombobox.tsx`, `admin/ui/SectorAirportSelect.tsx` | From / To |
 | `Chip` (pressed state) | `feedback.tsx` | Suggested routes, quick filters |
-| `StatusBadge` (critical / needs action / fine, always with text), `Tag` (neutral, navy, teal) | `StatusBadge.tsx` | statuses and labels |
+| `StatusBadge` (critical / needs action / fine, always with text), `Tag` (neutral, navy, teal) | `status-badge.tsx` | statuses and labels |
 | `Notice` (info, critical, action, fine), `Panel`, `PanelHeader`, `EmptyState`, `LoadingCards` | `feedback.tsx` | notices, cards, empty and loading states |
-| Class builders: `adminButtonVariants`, `chipClass`, `TABLE` (dense table classes), `describedBy` | `classes.ts` | custom buttons, chips, tables, field descriptions |
-| `Dialog` … `DialogContent` (max 85% of the viewport, scrolls inside, rounded-xl) | `dialog.tsx` | every admin dialog |
-| `Pagination` (Previous, "Page 2 of 5", Next) | `pagination.tsx` | paged lists |
-| `Checkbox`, `Switch`, `RadioGroup` (the shared Radix primitives the public site also uses) | `choice.tsx` | choices and toggles |
-| `Card`, `CardHeader`, `CardTitle` (18px), `CardDescription`, `CardContent`, `CardFooter` (rounded-xl), `Label` (13px, in `field.tsx`) | `card.tsx` | drop-ins for the older pages that used the shared ui/card and ui/label |
-| `AirlineLogo` (admin copy of the public tile) | `AirlineLogo.tsx` | flight results |
+| Class builders: `buttonVariants`, `chipClass`, `TABLE` (dense table classes), `describedBy`, `DIALOG_PANEL` | `button.tsx`, `classes.ts` | custom buttons, chips, tables, field descriptions |
+| `Dialog` … and `PanelDialogContent` (max 85% of the viewport, scrolls inside, rounded-xl; the admin's `DialogContent`) | `dialog.tsx`, `panel-dialog.tsx` | every dialog |
+| `SimplePagination` (Previous, "Page 2 of 5", Next; the admin's `Pagination`) | `simple-pagination.tsx` | paged lists |
+| `Checkbox`, `Switch`, `RadioGroup` (the shared Radix primitives the public site also uses) | `checkbox.tsx`, `switch.tsx`, `radio-group.tsx` (admin: `admin/ui/choice.tsx`) | choices and toggles |
+| `Card` … (the admin's `admin/ui/card.tsx` wraps it: rounded-xl, 18px title, 14px description), `Label` (13px, in `field.tsx`) | `card.tsx` | drop-ins for the older pages that used the shared ui/card and ui/label |
+| `AirlineLogo` (one tile for the public site and the admin; IATA code badge 12px when there is no logo) | `airline-logo.tsx` | flight results, booking pages |
 
 Cards are `rounded-xl border border-border bg-card px-card py-3.5 shadow-card` (or `Panel`).
 
@@ -168,7 +174,7 @@ Header and sidebar are structural and keep their own layout.
 - **Token:** add it to `src/styles/tokens.css` (`:root` when shared, the admin block for an admin colour; with a comment saying where the value comes
   from), add a Tailwind name in `tailwind.config.ts` only if needed (new name, never change an
   existing one), and teach `cn` the name in `src/lib/utils.ts` if it is a size or radius.
-- **Component:** add it to `src/components/admin/ui/`, built from the tokens, with a unit test in
+- **Component:** add it to `src/components/ui/` (shared) or `src/components/admin/ui/` (admin only), built from the tokens, with a unit test in
   `admin-ui.test.tsx` (or its own test file), and list it in the table above. Replace one-off
   copies in admin screens with it.
 - Run `npx vitest run`, `npx playwright test e2e/admin-*.spec.ts e2e/visual.spec.ts`, and update

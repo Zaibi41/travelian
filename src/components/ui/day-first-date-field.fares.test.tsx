@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { DayFirstDateField } from "@/components/admin/ui/DayFirstDateField";
+import { DayFirstDateField } from "@/components/ui/day-first-date-field";
 
 globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
 

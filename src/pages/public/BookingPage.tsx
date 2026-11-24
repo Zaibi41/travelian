@@ -26,7 +26,7 @@ import { downloadETicket } from "@/lib/eticket-pdf-lazy";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SEO } from "@/components/SEO";
-import { AirlineLogo } from "@/components/public/AirlineLogo";
+import { AirlineLogo } from "@/components/ui/airline-logo";
 import type { UmrahPackage } from "@/data/models";
 import { findSeedUmrahOffer, umrahOfferToPackage } from "@/data/services/umrah-adapter";
 import { isPublishedUmrahPackage } from "@/lib/package-availability";
