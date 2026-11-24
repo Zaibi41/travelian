@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarPopup, CalendarPopupContent, CalendarPopupTrigger } from "@/components/ui/calendar-popup";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users, Loader2, SlidersHorizontal, ArrowUpDown, X } from "lucide-react";
+import { ArrowRight, Plane, Search, Wifi, Coffee, ArrowLeftRight, Shield, Luggage, CalendarIcon, Pencil, Calculator, Clock, FileText, TimerReset, Utensils, UtensilsCrossed, ChevronDown, ChevronUp, Check, Users, Loader2, SlidersHorizontal, ArrowUpDown, X } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays, parseISO, startOfDay } from "date-fns";
 import { GroupFareCalendar } from "@/components/GroupFareCalendar";
@@ -18,7 +18,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { FARE_RULES_FALLBACK, refundStatus } from "@/lib/fare-refund";
 import { SEO } from "@/components/SEO";
-import { TravelersClassPicker, formatTravelers, type TravelersValue } from "@/components/public/TravelersClassPicker";
+import { TravelersClassPicker, formatTravelerCount, formatTravelers, type TravelersValue } from "@/components/public/TravelersClassPicker";
 import { fetchFlightFares, hydrateSooperFareOptions, searchFlights, type FareOption, type TravelianFlight } from "@/lib/travelian-api";
 import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { FlightSearchLoader } from "@/components/public/FlightSearchLoader";
@@ -882,6 +882,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
   const expiryLabel = `${Math.floor(expirySeconds / 60)}:${String(expirySeconds % 60).padStart(2, "0")}`;
   const searchExpired = apiStatus === "success" && flights.length > 0 && expirySeconds === 0;
+  /** The expiry badge's words: the time left (bold), or why there is none. */
+  /** Flight Details on the public site shows Flight Info only. */
+  const shownDetailsTab = adminMode ? fareDetailsTab : "flight";
+  const expiryContent = apiStatus === "success" && flights.length > 0
+    ? searchExpired ? "Search expired" : <>Expires in <span className="font-extrabold">{expiryLabel}</span></>
+    : apiStatus === "error" ? "Expiry unavailable"
+    : apiStatus === "success" ? "No active fares" : "Waiting for fares";
   const calculatorTotal = (Number(calculatorBase) || 0) + (Number(calculatorTaxes) || 0) + (Number(calculatorServiceFee) || 0);
 
   /** #53: one WhatsApp link per flight: each journey's flight numbers, route and date, the cabin, and the lowest price
@@ -1061,6 +1068,25 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     const next = new URLSearchParams(params);
     next.set("depart", formatDateOnly(safeDate));
     next.delete("airline");
+    setParams(next, { replace: true });
+  };
+  /** The summary's city under an airport code ("Lahore"); the code when the airport isn't known. */
+  const summaryCity = (code: string) => {
+    const clean = airportCodeOf(code);
+    return (airportByCode(clean) || popularAirportByCode.get(clean))?.city || clean;
+  };
+  const summaryDates = tripType === "multicity" && segments.length
+    ? [segments[0].date, segments[segments.length - 1].date].filter((date): date is Date => Boolean(date)).map((date) => format(date, "EEE, d MMM")).filter((text, index, all) => all.indexOf(text) === index).join(" – ") + ` · ${segments.length} flights`
+    : tripType === "roundtrip" && returnDate ? `${format(departDate, "EEE, d MMM")} – ${format(returnDate, "EEE, d MMM")}` : format(departDate, "EEE, d MMM");
+  const swapRoute = () => {
+    const newFrom = to;
+    const newTo = from;
+    setFrom(newFrom);
+    setTo(newTo);
+    setSelectedFlight(null);
+    const next = new URLSearchParams(params);
+    next.set("from", newFrom);
+    next.set("to", newTo);
     setParams(next, { replace: true });
   };
   const routeLabel = (code: string, airportName?: string | null) => {
@@ -1604,69 +1630,129 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       <h1 className="sr-only">Flight search results: {from} to {to}</h1>
 
       {/* Search summary */}
-      <section aria-label="Flight search summary" className={cn("relative isolate bg-sidebar", adminMode ? "gradient-hero py-2" : "py-4")}>
+      <section aria-label="Flight search summary" className={cn("relative isolate bg-sidebar", adminMode ? "gradient-hero py-2" : "py-3 sm:py-4")}>
         <div className={adminMode ? "px-4 md:px-6" : "travelian-container"}>
-          <div className="rounded-2xl border border-primary-foreground/10 bg-primary-foreground/10 px-4 py-3">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <div className={cn("flex items-center gap-2 text-primary-foreground text-sm flex-wrap min-w-0")}>
-                <Plane className="h-4 w-4 shrink-0" />
-                <span className="min-w-0 max-w-[14rem] truncate font-semibold">{routeLabel(from)}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newFrom = to;
-                    const newTo = from;
-                    setFrom(newFrom);
-                    setTo(newTo);
-                    setSelectedFlight(null);
-                    const next = new URLSearchParams(params);
-                    next.set("from", newFrom);
-                    next.set("to", newTo);
-                    setParams(next, { replace: true });
-                  }}
-                  aria-label="Swap origin and destination"
-                  className={cn("relative h-6 w-6 rounded-full border border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0 before:absolute before:-inset-3 before:content-[''] sm:before:hidden")}
+          {adminMode ? (
+            <div className="rounded-2xl border border-primary-foreground/10 bg-primary-foreground/10 px-4 py-3">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className={cn("flex items-center gap-2 text-primary-foreground text-sm flex-wrap min-w-0")}>
+                  <Plane className="h-4 w-4 shrink-0" />
+                  <span className="min-w-0 max-w-[14rem] truncate font-semibold">{routeLabel(from)}</span>
+                  <button
+                    type="button"
+                    onClick={swapRoute}
+                    aria-label="Swap origin and destination"
+                    className={cn("relative h-6 w-6 rounded-full border border-primary-foreground/30 flex items-center justify-center text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground transition-colors shrink-0 before:absolute before:-inset-3 before:content-[''] sm:before:hidden")}
+                  >
+                    <ArrowLeftRight className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="min-w-0 max-w-[14rem] truncate font-semibold">{routeLabel(to)}</span>
+                  <span className={cn("text-primary-foreground text-xs")}>-</span>
+                  <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{format(departDate, "EEE, MMM d")}</span>
+                  {tripType === "roundtrip" && returnDate && <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>to {format(returnDate, "EEE, MMM d")}</span>}
+                  {tripType === "multicity" && <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{segments.length} flights</span>}
+                  <span className={cn("text-primary-foreground text-xs")}>-</span>
+                  <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{formatTravelers(travelers)}</span>
+                  <span className={cn("text-primary-foreground text-xs")}>-</span>
+                  <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{currency}</span>
+                  {apiStatus === "loading" ? (
+                    <>
+                      <span className={cn("text-primary-foreground text-xs")}>-</span>
+                      <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>Searching live fares</span>
+                    </>
+                  ) : !searchExpired ? (
+                    <>
+                      <span className={cn("text-primary-foreground text-xs")}>-</span>
+                      <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{filtered.length} live {filtered.length === 1 ? "fare" : "fares"}</span>
+                    </>
+                  ) : null}
+                  <Badge role="timer" aria-label="Search expiry" aria-live="off" className={cn("gap-1 rounded-full border-0 whitespace-nowrap tabular-nums", searchExpired ? "bg-destructive/20 text-primary-foreground" : "bg-primary-foreground/15 text-primary-foreground")}>
+                    <Clock className="h-3 w-3" aria-hidden="true" />
+                    {expiryContent}
+                  </Badge>
+                </div>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={openModify}
+                  className="h-11 rounded-lg gap-2 sm:h-9"
                 >
-                  <ArrowLeftRight className="h-3.5 w-3.5" />
-                </button>
-                <span className="min-w-0 max-w-[14rem] truncate font-semibold">{routeLabel(to)}</span>
-                <span className={cn("text-primary-foreground text-xs")}>-</span>
-                <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{format(departDate, "EEE, MMM d")}</span>
-                {tripType === "roundtrip" && returnDate && <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>to {format(returnDate, "EEE, MMM d")}</span>}
-                {tripType === "multicity" && <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{segments.length} flights</span>}
-                <span className={cn("text-primary-foreground text-xs")}>-</span>
-                <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{formatTravelers(travelers)}</span>
-                <span className={cn("text-primary-foreground text-xs")}>-</span>
-                <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{currency}</span>
-                {apiStatus === "loading" ? (
-                  <>
-                    <span className={cn("text-primary-foreground text-xs")}>-</span>
-                    <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>Searching live fares</span>
-                  </>
-                ) : !searchExpired ? (
-                  <>
-                    <span className={cn("text-primary-foreground text-xs")}>-</span>
-                    <span className={cn("text-primary-foreground text-xs whitespace-nowrap")}>{filtered.length} live {filtered.length === 1 ? "fare" : "fares"}</span>
-                  </>
-                ) : null}
-                <Badge role="timer" aria-label="Search expiry" aria-live="off" className={cn("gap-1 rounded-full border-0 whitespace-nowrap tabular-nums", searchExpired ? "bg-destructive/20 text-primary-foreground" : "bg-primary-foreground/15 text-primary-foreground")}>
-                  <Clock className="h-3 w-3" aria-hidden="true" />
-                  {apiStatus === "success" && flights.length > 0
-                    ? searchExpired ? "Search expired" : <>Expires in <span className="font-extrabold">{expiryLabel}</span></>
-                    : apiStatus === "error" ? "Expiry unavailable"
-                    : apiStatus === "success" ? "No active fares" : "Waiting for fares"}
-                </Badge>
+                  <Pencil className="h-3.5 w-3.5" /> Modify Search
+                </Button>
               </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={openModify}
-                className="h-11 rounded-lg gap-2 sm:h-9"
-              >
-                <Pencil className="h-3.5 w-3.5" /> Modify Search
-              </Button>
             </div>
-          </div>
+          ) : (
+            /* Public: the route (codes and cities, swap between), the trip as chips, then fares, expiry and Modify Search. */
+            <div className="flex flex-col gap-3 rounded-2xl border border-primary-foreground/10 bg-primary-foreground/[0.07] px-3.5 py-3.5 text-primary-foreground sm:px-5 lg:flex-row lg:items-center lg:gap-6 lg:py-3.5">
+              {tripType === "multicity" && segments.length ? (
+                <ol aria-label="Route" className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 lg:shrink-0">
+                  {[segments[0].from, ...segments.map((segment) => segment.to)].map((code, index) => (
+                    <li key={`${code}-${index}`} className="flex min-w-0 items-center gap-2">
+                      {index > 0 && <ArrowRight className="h-4 w-4 shrink-0 text-primary-foreground/70" aria-hidden="true" />}
+                      <span className="flex min-w-0 flex-col">
+                        <span className="font-display text-xl font-bold leading-none sm:text-2xl">{airportCodeOf(code)}</span>
+                        <span className="mt-1 truncate text-xs text-primary-foreground/80 sm:text-sm">{summaryCity(code)}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 lg:flex lg:shrink-0 lg:gap-3.5">
+                  <div className="min-w-0">
+                    <p className="font-display text-2xl font-bold leading-none">{airportCodeOf(from)}</p>
+                    <p className="mt-1 truncate text-sm text-primary-foreground/80" title={summaryCity(from)}>{summaryCity(from)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={swapRoute}
+                    aria-label="Swap origin and destination"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-primary-foreground/25 bg-primary-foreground/5 text-primary-foreground transition-colors duration-150 hover:bg-primary-foreground/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-foreground active:bg-primary-foreground/25 motion-reduce:transition-none lg:h-9 lg:w-9"
+                  >
+                    <ArrowLeftRight className="h-4 w-4" />
+                  </button>
+                  <div className="min-w-0 text-right lg:text-left">
+                    <p className="font-display text-2xl font-bold leading-none">{airportCodeOf(to)}</p>
+                    <p className="mt-1 truncate text-sm text-primary-foreground/80" title={summaryCity(to)}>{summaryCity(to)}</p>
+                  </div>
+                </div>
+              )}
+              <div aria-hidden="true" className="hidden w-px self-stretch bg-primary-foreground/15 lg:block" />
+              <ul aria-label="Trip" className="flex min-w-0 flex-wrap gap-1.5 lg:flex-1 lg:gap-2">
+                <li className="inline-flex min-h-7 items-center gap-1.5 rounded-full bg-primary-foreground/10 px-2.5 py-1 text-xs font-medium sm:text-sm">
+                  <CalendarIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  {summaryDates}
+                </li>
+                <li className="inline-flex min-h-7 items-center gap-1.5 rounded-full bg-primary-foreground/10 px-2.5 py-1 text-xs font-medium sm:text-sm">
+                  <Users className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  {formatTravelerCount(travelers)} · {travelers.cabin}
+                </li>
+              </ul>
+              <div className="flex items-center justify-between gap-3 border-t border-primary-foreground/10 pt-3 lg:shrink-0 lg:border-0 lg:pt-0">
+                <div className="flex min-w-0 flex-col gap-1 lg:items-end">
+                  <span className="text-xs text-primary-foreground/80 sm:text-sm">
+                    {apiStatus === "loading" ? "Searching live fares" : !searchExpired ? `${filtered.length} live ${filtered.length === 1 ? "fare" : "fares"}` : null}
+                    {apiStatus === "loading" || !searchExpired ? " · " : ""}{currency}
+                  </span>
+                  <span
+                    role="timer"
+                    aria-label="Search expiry"
+                    aria-live="off"
+                    className={cn(
+                      "inline-flex w-fit items-center gap-1.5 whitespace-nowrap text-xs tabular-nums sm:text-sm",
+                      searchExpired ? "rounded-full bg-destructive/25 px-2 py-0.5 font-bold text-red-100"
+                        : apiStatus === "success" && flights.length > 0 ? "text-amber-300" : "text-primary-foreground/80",
+                    )}
+                  >
+                    <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    {expiryContent}
+                  </span>
+                </div>
+                <Button onClick={openModify} className="h-11 shrink-0 gap-2 rounded-xl bg-card px-4 font-bold text-primary hover:bg-card/90 active:bg-card/80">
+                  <Pencil className="h-4 w-4" aria-hidden="true" /> Modify Search
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -2547,6 +2633,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 </DialogTitle>
               </DialogHeader>
 
+              {/* Public: Flight Info only (fare and baggage are on the card already); the admin keeps all three tabs. */}
+              {adminMode && (
               <div className="shrink-0 bg-white/60 px-4 pt-3 sm:px-5">
                 <div className="grid grid-cols-3 gap-1 overflow-hidden rounded-xl border border-primary/15 bg-white p-1 text-xs font-bold text-slate-600 shadow-sm">
                   {([
@@ -2569,13 +2657,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   ))}
                 </div>
               </div>
+              )}
 
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-                {fareDetailsTab === "flight" && (
+                {shownDetailsTab === "flight" && (
                   <JourneyTimeline flight={fareDetails.flight} />
                 )}
 
-                {fareDetailsTab === "rules" && (
+                {shownDetailsTab === "rules" && (
                   <div className="rounded-2xl border border-slate-200 bg-white/90 p-3 shadow-sm">
                     <div className="space-y-2">
                       {fareRows(fareDetails.flight).map((fare, idx) => {
@@ -2628,7 +2717,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   </div>
                 )}
 
-                {fareDetailsTab === "baggage" && (
+                {shownDetailsTab === "baggage" && (
                   // #123: every fare's baggage (hand carry and checked), not only the fare shown first; a round trip
                   // shows each flight's own allowance.
                   <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" role="table" aria-label="Baggage by fare">

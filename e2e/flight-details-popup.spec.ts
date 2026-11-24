@@ -3,8 +3,8 @@ import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
 // #163: Flight Details opens the itinerary the owner drew (no "Fare Options" tab repeating the card, no repeated
 // airline / route header): "Flight Details / Lahore – Doha", then per journey the date, duration and stops, each flight
-// on a vertical line with its airline and "Economy • flight number", and a layover line between flights. Fare Rules and
-// Baggage stay as tabs. 360/390/768/1440, one-way 1 stop and 2 stops with a long airline name, round trip.
+// on a vertical line with its airline and "Economy • flight number", and a layover line between flights. The public
+// site shows Flight Info only (no Fare Rules or Baggage tab: the fares and baggage are on the card). 360/390/768/1440, one-way 1 stop and 2 stops with a long airline name, round trip.
 // POPUP_SHOTS_DIR saves screenshots; POPUP_SHOTS=before only takes them.
 
 if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
@@ -83,10 +83,8 @@ for (const width of [360, 390, 768, 1440]) {
     await expect(stay.getByText("3h 20m layover", { exact: true })).toBeVisible();
     await expect(stay).toContainText("Manama (BAH)");
     await expect(dialog.getByText("Lahore (LHE)", { exact: true })).toBeVisible();
-    // Fare Rules and Baggage are still there.
-    await dialog.getByRole("button", { name: "Baggage" }).click();
-    await expect(dialog.getByRole("table", { name: "Baggage by fare" })).toBeVisible();
-    await dialog.getByRole("button", { name: "Flight Info" }).click();
+    // No tabs on the public site: Flight Info only.
+    for (const tab of ["Flight Info", "Fare Rules", "Baggage"]) await expect(dialog.getByRole("button", { name: tab, exact: true })).toHaveCount(0);
     // Inside the viewport, under the header; close with Escape.
     const box = (await dialog.boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0);
