@@ -18,15 +18,14 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     await expect(pills).toContainText("WhatsApp Support");
     await expect(pills).toContainText("Live + Group Fares");
     await expect(pills).not.toContainText(/B2B|Transparent fare/);
-    const confidence = page.getByRole("region", { name: "Booking confidence" });
-    await expect(confidence.getByRole("listitem")).toHaveCount(3);
+    // No separate trust strip on the homepage; "Why book with Travelian?" carries those messages.
+    await expect(page.getByRole("region", { name: "Booking confidence" })).toHaveCount(0);
     const popular = page.getByRole("region", { name: "Popular routes", exact: true });
     await expect(popular.getByRole("link")).toHaveCount(10);
     await expect(popular.getByText("Popular route", { exact: true })).toHaveCount(0);
     await expect(popular).not.toContainText(/PKR|Rs\.|\$/);
     await expect(popular.getByRole("link", { name: /Lahore.*Dubai.*Search Flights/i })).toHaveAttribute("href", /^\/flights-search\?from=LHE&to=DXB&depart=\d{4}-\d{2}-\d{2}$/);
     const tops = await page.evaluate(() => [
-      document.querySelector('[aria-label="Booking confidence"]')!,
       document.getElementById("popular-routes-heading")!,
       [...document.querySelectorAll("h2")].find(element => element.textContent?.trim() === "Why book with Travelian?")!,
       [...document.querySelectorAll("h2")].find(element => element.textContent?.includes("How Travelian"))!,

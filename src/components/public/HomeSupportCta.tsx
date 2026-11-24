@@ -7,7 +7,7 @@ import { useSiteSwitches } from "@/lib/site-switches";
 export function HomeSupportCta() {
   const { umrah } = useSiteSwitches(); // D39: Umrah wording only when Umrah is switched on
   return (
-    <section className="py-12 md:py-14">
+    <section className="py-6 md:py-9">
       <div className="travelian-container ">
         <div className="relative isolate overflow-hidden rounded-3xl gradient-hero p-6 shadow-elevated md:p-8">
           <div className="absolute inset-x-0 top-0 h-1 gradient-gold" aria-hidden="true" />

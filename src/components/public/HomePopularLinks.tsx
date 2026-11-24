@@ -30,7 +30,7 @@ const groups = [
 
 export function HomePopularLinks() {
   return (
-    <section className="py-12 md:py-14">
+    <section className="py-6 md:py-9">
       <div className="travelian-container ">
         <div className="mx-auto mb-7 max-w-2xl text-center">
           <h2 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">

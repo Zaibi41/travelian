@@ -29,6 +29,7 @@ import { BOOKINGS_TABS, bookingDetailPath, bookingsTabPath, type BookingsTab } f
 import { useBookings } from "@/lib/admin-bookings/use-bookings";
 import type { BookingCard, BookingList, BookingPeriod } from "@/lib/admin-bookings/types";
 import { CopyPnr } from "@/components/CopyPnr";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ANY = "any";
 
@@ -277,6 +278,8 @@ const TH = "h-table-header px-2.5 font-semibold text-foreground";
 const TD = "px-2.5 py-2 align-top";
 
 function BookingsTable({ data, loading, flights, filters, onPage, onClearSearch }: TableProps) {
+  // Under 768px the wide table hides statuses, amount and the action off-screen; a phone gets one card per booking instead.
+  const isMobile = useIsMobile();
   if (loading && !data) {
     return (
       <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-card px-card py-3.5 shadow-card" aria-busy="true" aria-label="Loading bookings">
@@ -300,6 +303,8 @@ function BookingsTable({ data, loading, flights, filters, onPage, onClearSearch 
         ) : (
           <p className="py-2 text-body text-muted-foreground">No bookings match these filters.</p>
         )
+      ) : isMobile ? (
+        <BookingCardList items={data.items} flights={flights} showSource={showSource} />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[52rem] border-collapse text-table">
@@ -379,5 +384,68 @@ function BookingsTable({ data, loading, flights, filters, onPage, onClearSearch 
       )}
       <Pagination page={filters.page} pages={pages} onPage={onPage} />
     </section>
+  );
+}
+
+/** Phone layout of the bookings list: the same fields and the same View / Open link as a table row. */
+function BookingCardList({ items, flights, showSource }: { items: BookingList["items"]; flights: boolean; showSource: boolean }) {
+  return (
+    <ul className="flex flex-col gap-2.5">
+      {items.map(item => {
+        const airline = [item.airline_name, item.flight_number].filter(Boolean).join(" · ");
+        return (
+          <li key={item.booking_id} className="flex min-w-0 flex-col gap-2 rounded-lg border border-border p-3 text-table">
+            <div className="flex min-w-0 items-start gap-2">
+              {(item.airline_code || item.airline_name) && (
+                <AirlineLogo airline={item.airline_name ?? item.airline_code ?? ""} flightNumber={item.flight_number ?? undefined}
+                  code={item.airline_code} className="mt-0.5 h-8 w-8 shrink-0 rounded-lg" />
+              )}
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="flex min-w-0 items-center gap-1">
+                  <Link to={bookingDetailPath(item.booking_id)} title={item.pnr ?? item.booking_id}
+                    className="block min-w-0 truncate rounded-sm font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1">
+                    {item.pnr ?? item.booking_id}
+                  </Link>
+                  <CopyPnr pnr={item.pnr} />
+                </span>
+                {airline && <span className="block truncate text-label text-muted-foreground" title={airline}>{airline}</span>}
+                {!flights && <span className="block truncate text-label text-muted-foreground" title={item.booking_id}>{item.booking_id}</span>}
+                {item.sample && <SampleDataBadge className="mt-1" label={item.data_label} />}
+              </span>
+            </div>
+            {!flights && <span className="block truncate text-foreground" title={item.customer_or_agency ?? undefined}>{item.customer_or_agency ?? "—"}</span>}
+            {showSource && (
+              <span className="flex min-w-0 gap-1.5"><span className="shrink-0 text-muted-foreground">{flights ? "Source" : "Supplier / source"}</span>
+                <span className="min-w-0 truncate text-foreground" title={item.provider ?? undefined}>{item.provider ?? "—"}</span></span>
+            )}
+            <StatusChips statuses={item.statuses} direction="row" />
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-1">
+              {flights ? (
+                <div className="flex min-w-0 flex-col"><dt className="text-label text-muted-foreground">Time left</dt>
+                  <dd className="tabular-nums text-foreground">{isOpenHold(item.statuses.booking) ? formatTimeLeft(item.expires_at) : "—"}</dd></div>
+              ) : (
+                <>
+                  <div className="flex min-w-0 flex-col"><dt className="text-label text-muted-foreground">Created at</dt><dd className="tabular-nums text-foreground">{formatDateTime(item.created_at)}</dd></div>
+                  <div className="flex min-w-0 flex-col"><dt className="text-label text-muted-foreground">Expiry at</dt><dd className="tabular-nums text-foreground">{formatDateTime(item.expires_at)}</dd></div>
+                </>
+              )}
+            </dl>
+            <div className="flex items-center justify-between gap-3">
+              {!flights ? (
+                <span className="flex min-w-0 flex-wrap items-center gap-1.5">
+                  <span className="font-semibold tabular-nums text-foreground">{formatMoney(item.amount)}</span>
+                  <PaidChip status={item.statuses.payment} />
+                </span>
+              ) : <span />}
+              <Button asChild variant="outline" size="sm">
+                <Link to={bookingDetailPath(item.booking_id)} aria-label={`${flights ? "Open" : "View"} booking ${item.pnr ?? item.booking_id}`}>
+                  {flights ? "Open" : "View"}
+                </Link>
+              </Button>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
