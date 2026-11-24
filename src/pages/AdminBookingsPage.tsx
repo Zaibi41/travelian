@@ -106,7 +106,7 @@ function BookingsRegister({ tab }: { tab: BookingsTab }) {
         <DashboardErrorNotice message={errorMessage(bookings.error)} />
       ) : (
         <>
-          {data ? <Cards cards={data.cards} flights={flights} filters={filters} /> : <CardGridSkeleton count={flights ? 4 : 6} className={flights ? "grid-cols-2 sm:grid-cols-2 xl:grid-cols-4" : "grid-cols-2 md:grid-cols-3 xl:grid-cols-6"} />}
+          {data ? <Cards cards={data.cards} flights={flights} filters={filters} /> : <CardGridSkeleton count={flights ? 4 : 6} className={flights ? "grid-cols-2 sm:grid-cols-2 xl:grid-cols-4" : "grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"} />}
           <Filters filters={filters} data={data} flights={flights} onChange={change} />
           {bookings.error && <DashboardErrorNotice message={errorMessage(bookings.error)} />}
           <BookingsTable data={data} loading={bookings.isPending} flights={flights} filters={filters} onPage={page => change({ page })}
@@ -151,7 +151,7 @@ function Cards({ cards, flights, filters }: { cards: BookingList["cards"]; fligh
   }
   // Unknown Issuance and Unassigned are hidden: not recorded yet.
   return (
-    <div className="grid grid-cols-2 gap-card-gap md:grid-cols-3 xl:grid-cols-6">
+    <div className="grid grid-cols-2 gap-card-gap lg:grid-cols-3 xl:grid-cols-6">
       <StatusKpiCard label="All Bookings" value={count(cards.all_bookings)} to={href(undefined)} selected={!filters.card} />
       {card("confirmed", "Confirmed", cards.confirmed)}
       {card("on_hold", "On Hold", cards.on_hold, "action")}
