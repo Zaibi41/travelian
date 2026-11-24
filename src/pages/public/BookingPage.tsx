@@ -904,26 +904,16 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
               <Lock className="h-3 w-3 text-success" /> Secure Checkout
             </div>
           </div>
-          <ol aria-label="Checkout progress" className="flex items-center gap-2 mt-4">
-            {steps.map((s, i) => (
-              <li key={s.id} aria-current={step === s.id ? "step" : undefined} className="flex items-center gap-2 flex-1">
+          {/* A thin line per step with its name (every width), the current step in bold blue; done steps stay blue. */}
+          <ol aria-label="Checkout progress" className="mt-3 grid grid-cols-4 gap-1.5 sm:gap-3">
+            {steps.map((s) => (
+              <li key={s.id} aria-current={step === s.id ? "step" : undefined} className="flex min-w-0 flex-col gap-1.5">
                 <span className="sr-only">{`Step ${s.id} of ${steps.length}: ${s.label}${step > s.id ? " (done)" : ""}`}</span>
-                <div aria-hidden="true" className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all duration-300 ${
-                  step >= s.id ? 'gradient-primary text-primary-foreground shadow-sm' : 'bg-muted text-muted-foreground'
-                }`}>
-                  {step > s.id ? <Check className="h-4 w-4" /> : s.id}
-                </div>
-                <span aria-hidden="true" className={`text-xs font-medium hidden sm:block transition-colors ${step >= s.id ? 'text-foreground' : 'text-muted-foreground'}`}>
-                  {s.label}
-                </span>
-                {i < steps.length - 1 && <div aria-hidden="true" className={`h-0.5 flex-1 rounded transition-all ${step > s.id ? 'bg-primary' : 'bg-muted'}`} />}
+                <span aria-hidden="true" className={`h-1 rounded-full transition-colors duration-300 motion-reduce:transition-none ${step >= s.id ? "bg-primary" : "bg-muted"}`} />
+                <span aria-hidden="true" className={`text-xs leading-tight ${step === s.id ? "font-bold text-primary" : "text-muted-foreground"}`}>{s.label}</span>
               </li>
             ))}
           </ol>
-          {/* Phones hide the step names beside the circles; name the current step so the traveller knows where they are. */}
-          <p aria-hidden="true" className="mt-2 text-xs font-semibold text-foreground sm:hidden">
-            Step {Math.min(step, steps.length)} of {steps.length}: {steps.find(s => s.id === step)?.label ?? steps[steps.length - 1].label}
-          </p>
         </div>
       </div>
 
@@ -932,39 +922,27 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
           {/* Main */}
           <div className="lg:col-span-2 space-y-6">
             {step === 1 && (
-              <div className="space-y-6 animate-fade-in">
-                <Card className="shadow-card border-0">
-                  <CardContent className="p-6">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <h2 className="text-lg font-bold text-foreground">Traveler Information</h2>
-                        <p className="mt-1 text-sm text-muted-foreground">Enter details exactly as shown on the identity document.</p>
-                      </div>
-                      <div className="grid w-full grid-cols-3 gap-2 rounded-xl border bg-muted/30 p-2 text-center text-xs text-muted-foreground sm:w-auto sm:min-w-[18rem]">
-                        <div className="rounded-lg bg-card px-3 py-2"><span className="block font-bold tabular-nums text-foreground">{adultCount}</span> Adult{adultCount === 1 ? "" : "s"}</div>
-                        <div className="rounded-lg bg-card px-3 py-2"><span className="block font-bold tabular-nums text-foreground">{childCount}</span> Child{childCount === 1 ? "" : "ren"}</div>
-                        <div className="rounded-lg bg-card px-3 py-2"><span className="block font-bold tabular-nums text-foreground">{infantCount}</span> Infant{infantCount === 1 ? "" : "s"}</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+              <div className="space-y-4 animate-fade-in sm:space-y-6">
+                {/* The traveler counts are in the total bar; only the heading and the instruction stay here. */}
+                <div>
+                  <h2 className="font-display text-xl font-bold text-foreground">Traveler Information</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">Enter details exactly as shown on the identity document.</p>
+                </div>
 
                 {passengerForms.map((passenger, index) => {
                   const isComplete = passengerComplete(passenger, travelDateIso, requiredDocs[index]);
                   return (
                   <Card key={`${passenger.passengerType}-${index}`} className="shadow-card border-0">
-                    <CardContent className="p-6">
-                      <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <h2 className="text-lg font-bold text-foreground">{passenger.label}</h2>
-                          <p className="text-sm text-muted-foreground">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="mb-4 flex items-center gap-3 sm:mb-5">
+                        <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">{index + 1}</span>
+                        <div className="min-w-0 flex-1">
+                          <h2 className="text-base font-bold text-foreground sm:text-lg">{passenger.label}</h2>
+                          <p className="text-xs text-muted-foreground sm:text-sm">
                             {passenger.passengerType === "adult" ? "12+ years" : passenger.passengerType === "child" ? "2-11 years" : "Under 2 years"}
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {isComplete && <Badge className="rounded-full bg-success/10 text-success hover:bg-success/10">Complete</Badge>}
-                          <Badge variant="outline" className="capitalize">{passenger.passengerType}</Badge>
-                        </div>
+                        {isComplete && <Badge className="rounded-full bg-success/10 text-success hover:bg-success/10">Complete</Badge>}
                       </div>
 
                       <PassengerFields
@@ -984,7 +962,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
                 {/* Contact Information */}
                 <Card className="shadow-card border-0">
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <h2 className="text-lg font-bold text-foreground mb-1">Contact Information</h2>
                     <p className="text-sm text-muted-foreground mb-6">We'll use the mobile number for booking follow-up. Email is optional.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1147,44 +1125,49 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
             {step === 3 && (
               <Card className="shadow-card border-0 animate-fade-in">
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <h2 className="text-lg font-bold text-foreground mb-1">Payment Method</h2>
                   <p className="text-sm text-muted-foreground mb-6">Choose how you'd like to pay</p>
-                  <div className="space-y-3 mb-6">
+                  <div role="radiogroup" aria-label="Payment method" className="space-y-3 mb-6">
                     {([
                       { id: "card", label: "Credit/Debit Card", icon: CreditCard, desc: "Pay online through secure PayFast checkout", badges: ["Visa", "Mastercard"] as string[] },
                       { id: "1link", label: "1Link", icon: Wallet, desc: "Pay through PayFast 1Link checkout", badges: ["1Link"] as string[] },
                       { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "Pay from your mobile wallet", badges: ["JazzCash", "Easypaisa"] as string[] },
                       { id: "bank", label: "Bank Transfer", icon: Building2, desc: "Direct bank transfer", badges: [] as string[] },
                     ]).filter(method => (method.id === "bank" ? paymentOptions.bank : method.id === "wallet" ? paymentOptions.wallet : paymentOptions.card))
-                    .map(method => (
-                      <div
-                        key={method.id}
-                        className={`border rounded-xl p-4 cursor-pointer transition-all duration-200 ${
-                          paymentMethod === method.id ? 'border-primary bg-accent/30 shadow-sm' : 'hover:border-primary/30'
-                        }`}
-                        onClick={() => setPaymentMethod(method.id)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`h-11 w-11 rounded-xl flex items-center justify-center transition-all ${
-                            paymentMethod === method.id ? 'gradient-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                          }`}>
+                    .map(method => {
+                      const on = paymentMethod === method.id;
+                      return (
+                        <button
+                          key={method.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          onClick={() => setPaymentMethod(method.id)}
+                          className={`flex w-full items-start gap-3 rounded-xl border p-3.5 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 motion-reduce:transition-none sm:p-4 ${
+                            on ? "border-2 border-primary bg-primary/5" : "border-border bg-card hover:border-primary/40 active:bg-primary/5"
+                          }`}
+                        >
+                          <span aria-hidden="true" className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${on ? "bg-primary text-primary-foreground" : "bg-muted text-foreground/70"}`}>
                             <method.icon className="h-5 w-5" />
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="text-sm font-semibold text-foreground">{method.label}</h4>
-                            <p className="text-xs text-muted-foreground">{method.desc}</p>
-                          </div>
-                          {method.badges && (
-                            <div className="flex gap-1">
-                              {method.badges.map(b => (
-                                <span key={b} className="text-xs bg-muted px-2 py-0.5 rounded-md">{b}</span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                          </span>
+                          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <span className="text-sm font-bold text-foreground sm:text-base">{method.label}</span>
+                            <span className="text-xs leading-snug text-muted-foreground sm:text-sm">{method.desc}</span>
+                            {method.badges.length > 0 && (
+                              <span className="mt-1.5 flex flex-wrap gap-1.5">
+                                {method.badges.map(b => (
+                                  <span key={b} className="rounded-md border bg-muted/60 px-2 py-0.5 text-xs font-semibold text-foreground/80">{b}</span>
+                                ))}
+                              </span>
+                            )}
+                          </span>
+                          <span aria-hidden="true" className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${on ? "border-primary" : "border-muted-foreground/50"}`}>
+                            {on && <span className="h-2.5 w-2.5 rounded-full bg-primary" />}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {!canPayHere && (
