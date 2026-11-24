@@ -13,6 +13,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { format, startOfDay, addDays, parseISO } from "date-fns";
 import { GroupFareCalendar } from "@/components/GroupFareCalendar";
 import { useFlightFares } from "@/hooks/use-flight-fares";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useOpenSignal } from "@/hooks/use-open-signal";
 import { TravelersClassPicker, type TravelersValue } from "@/components/public/TravelersClassPicker";
@@ -48,6 +49,8 @@ function DatePickerField({ id, date, onSelect, placeholder, fares, openSignal, m
   openSignal?: number; min?: Date; marked?: Date; invalid?: boolean; describedBy?: string;
 }) {
   const [open, setOpen] = useState(false);
+  // #192: phones show one month (two stacked months were too tall); wider screens keep two.
+  const calendarMonths = useIsMobile() ? 1 : 2;
   // Phones: choosing the destination opens this calendar next (#148); round-trip: picking the departure opens the return (#151).
   useOpenSignal(openSignal, () => setOpen(true));
   const today = startOfDay(new Date());
@@ -61,6 +64,7 @@ function DatePickerField({ id, date, onSelect, placeholder, fares, openSignal, m
   const calendar = (
     <Calendar
       size="large"
+      numberOfMonths={calendarMonths}
       mode="single"
       selected={date}
       onSelect={selectDate}
