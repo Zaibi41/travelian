@@ -232,29 +232,30 @@
     }
   }
   /* Phones (#148): From and To stacked straight under the trip type and travellers row, with the round swap
-     button on the line between them (not alone on a row of its own above). 8px between From and To keeps the
-     flight form inside the shared search height, so switching products or trip types doesn't move the card. */
+     button in its own column on the right, centred between them, so it covers neither field nor the To label.
+     8px between From and To keeps the flight form inside the shared search height, so switching products or trip
+     types doesn't move the card. */
   @media (max-width: 639px) {
+    /* From and To take the full width less the button's column; the rest of the grid is unchanged. */
     .unified-search-content .unified-search-flight-grid > :nth-child(1),
     .unified-search-content .unified-search-flight-grid > :nth-child(3) {
       grid-column: 1 / -1;
+      margin-right: 3.25rem;
     }
-    .unified-search-content .unified-search-flight-grid > :nth-child(3) { margin-top: -1rem; }
+    .unified-search-content .unified-search-flight-grid > :nth-child(1) { grid-row: 1; }
+    .unified-search-content .unified-search-flight-grid > :nth-child(3) { grid-row: 2; margin-top: -0.25rem; }
     .unified-search-content .unified-search-flight-grid > .unified-search-swap {
-      display: block;
+      display: flex;
       grid-column: 1 / -1;
-      position: relative;
+      grid-row: 1 / span 2;
+      justify-self: end;
+      align-self: stretch;
+      align-items: center;
       z-index: 1;
-      height: 0;
-      padding: 0;
+      /* Centre on the fields, not the labels above them (each label is about 1.25rem tall). */
+      padding: 1.25rem 0 0;
     }
-    .unified-search-content .unified-search-swap > button {
-      position: absolute;
-      right: 2.75rem;
-      top: -0.5rem;
-      transform: translateY(-50%);
-      background-color: hsl(var(--card));
-    }
+    .unified-search-content .unified-search-swap > button { background-color: hsl(var(--card)); }
     .unified-search-content .unified-search-swap > button > svg { transform: rotate(90deg); }
   }
   @media (max-width: 639px) {
