@@ -249,18 +249,19 @@ function SellingPriceForm({ booking }: { booking: BookingDetail }) {
   );
 }
 
-// Transfer reference, time sent, confirmation and paid from are hidden: not recorded yet.
+const PAID_FROM_LABEL = { bank: "Bank", supplier_wallet: "Supplier wallet", credit: "Credit" } as const;
+
+// Confirmation is hidden: not recorded yet. Transfer reference, time sent and paid from show once recorded at
+// Mark as issued (issue 202); the amount due is what the supplier billed once it's recorded, else the hold-time cost.
 function SupplierPaymentTab({ booking }: { booking: BookingDetail }) {
   const payment = booking.supplier_payment!;
-  return (
-    <FieldTable
-      label="Supplier payment"
-      rows={[
-        ["Amount due", <span className="tabular-nums">{payment.amount_due ? formatMoney(payment.amount_due) : "—"}</span>],
-        ["Hold deadline", <span className="tabular-nums">{formatDateTime(payment.hold_deadline)}</span>],
-      ]}
-    />
-  );
+  const due = payment.billed ?? payment.amount_due;
+  const rows: [string, React.ReactNode][] = [["Amount due", <span className="tabular-nums">{due ? formatMoney(due) : "—"}</span>]];
+  if (payment.transfer_reference) rows.push(["Transfer reference", <span className="break-all">{payment.transfer_reference}</span>]);
+  if (payment.time_sent) rows.push(["Time sent", <span className="tabular-nums">{formatDateTime(payment.time_sent)}</span>]);
+  if (payment.paid_from) rows.push(["Paid from", PAID_FROM_LABEL[payment.paid_from]]);
+  rows.push(["Hold deadline", <span className="tabular-nums">{formatDateTime(payment.hold_deadline)}</span>]);
+  return <FieldTable label="Supplier payment" rows={rows} />;
 }
 
 const PASSENGER_TYPE: Record<BookingPassenger["type"], string> = { ADT: "Adult", CHD: "Child", INF: "Infant" };
@@ -306,7 +307,8 @@ function Passengers({ booking }: { booking: BookingDetail }) {
 }
 
 const AUDIT_ACTION: Record<string, string> = { hold_created: "Hold created", identity_revealed: "Identity revealed", fare_terms_acknowledged: "Fare terms acknowledged",
-  final_pnr_recorded: "Final PNR recorded", ticket_numbers_recorded: "Ticket numbers recorded", group_ticketed: "Ticketed" };
+  final_pnr_recorded: "Final PNR recorded", ticket_numbers_recorded: "Ticket numbers recorded", group_ticketed: "Ticketed",
+  issuance_recorded_offline: "Marked as issued", due_settled: "Due settled", ticket_document_attached: "Ticket document attached" };
 const FARE_CHECK: Record<string, string> = { matches: "total verified", differs: "total differs", no_total: "total not verified", failed: "total not verified" };
 const REVEALED_FIELD: Record<string, string> = { date_of_birth: "date of birth", document_number: "document number", document_expiry: "document expiry" };
 
@@ -330,6 +332,16 @@ function auditDetails(entry: BookingAuditEntry) {
     return [d.final_pnr && `Final PNR ${d.final_pnr}`, typeof d.tickets === "number" && `${d.tickets} ${d.tickets === 1 ? "ticket" : "tickets"}`,
       typeof d.travelers === "number" && `of ${d.travelers} travelers`].filter(Boolean).join(" ");
   }
+  if (entry.action === "due_settled") {
+    const rupees = (minor: unknown) => typeof minor === "number" ? formatMoney({ amount_minor: minor, currency: String(d.currency ?? "PKR") }) : null;
+    return [rupees(d.waived_minor) && `${rupees(d.waived_minor)} waived`, rupees(d.previous_total_minor) && `total was ${rupees(d.previous_total_minor)}`,
+      d.reason && `Reason: ${d.reason}`].filter(Boolean).join(" · ");
+  }
+  if (entry.action === "issuance_recorded_offline") {
+    return [typeof d.tickets === "number" && `${d.tickets} ${d.tickets === 1 ? "ticket" : "tickets"}`, d.ticket_document && "ticket document attached",
+      d.note].filter(Boolean).join(" · ");
+  }
+  if (entry.action === "ticket_document_attached") return d.replaced ? "Replaced the earlier document" : "";
   return Object.entries(d).map(([key, value]) => `${key.replace(/_/g, " ")}: ${String(value)}`).join(" · ");
 }
 

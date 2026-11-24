@@ -450,6 +450,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{booking_id}/issuance/record": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Issue
+         * @description Mark as issued: the ticket was issued in the supplier's portal (suppliers Travelian can't issue for, SooperFare
+         *     today). A ticket number for every traveler; optionally the ticket document and a note. With the cost and margin
+         *     permission also what the supplier billed and how it was paid (bank, supplier wallet or credit). Logged and audited.
+         */
+        post: operations["record_issue_v1_admin_bookings__booking_id__issuance_record_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/bookings/{booking_id}/issuance/request": {
         parameters: {
             query?: never;
@@ -596,6 +618,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{booking_id}/settle-due": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Settle Due
+         * @description The customer paid less than the total by agreement: waive the rest with a reason. The booking total becomes what
+         *     was paid, so nothing is due (Payments, Customer Dues and profit all follow). Logged and audited.
+         */
+        post: operations["settle_due_v1_admin_bookings__booking_id__settle_due_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/bookings/{booking_id}/supplier-cancel": {
         parameters: {
             query?: never;
@@ -673,6 +716,66 @@ export interface paths {
          *     price_changed. Only after SooperFare's own record shows the old reservation is no longer active. Logged in the audit trail.
          */
         post: operations["rehold_at_supplier_v1_admin_bookings__booking_id__supplier_rehold_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{booking_id}/ticket-document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Attach Ticket Document
+         * @description Attach or replace the final ticket document on an issued flight booking. Logged. Answers with a link to open it.
+         */
+        put: operations["attach_ticket_document_v1_admin_bookings__booking_id__ticket_document_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{booking_id}/ticket-document/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ticket Document Link
+         * @description A signed link (5 minutes) to open the booking's final ticket document.
+         */
+        get: operations["ticket_document_link_v1_admin_bookings__booking_id__ticket_document_link_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{booking_id}/ticket-document/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign Ticket Document
+         * @description A one-time signed S3 upload (10 minutes) for the final ticket document: PDF, JPG or PNG, up to 10 MB, private.
+         */
+        post: operations["sign_ticket_document_v1_admin_bookings__booking_id__ticket_document_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4272,6 +4375,11 @@ export interface components {
             /** Starts At */
             starts_at?: string | null;
         };
+        /** AttachTicketDocument */
+        AttachTicketDocument: {
+            /** Asset Key */
+            asset_key: string;
+        };
         /** AttentionItem */
         AttentionItem: {
             /** Booking Id */
@@ -4445,6 +4553,12 @@ export interface components {
              */
             can_set_selling_price: boolean;
             /**
+             * Can Settle Due
+             * @description This viewer may settle the remaining due with a reason: something paid, something still due, record payments permission (the endpoint still checks).
+             * @default false
+             */
+            can_settle_due: boolean;
+            /**
              * Chosen Account
              * @description The receiving account the customer chose at checkout (travelian#76).
              */
@@ -4475,6 +4589,11 @@ export interface components {
              * @description Group bookings after full payment: Paid – awaiting final PNR, Final PNR received, Ticketed.
              */
             group_ticketing_status?: ("awaiting_final_pnr" | "final_pnr_received" | "ticketed") | null;
+            /**
+             * Issued At
+             * @description When the booking was recorded as issued.
+             */
+            issued_at?: string | null;
             /**
              * Itinerary
              * @description The Itinerary tab: the flights as held, in travel order. Omitted when not recorded (bookings held before 14 Nov 2026).
@@ -4522,6 +4641,8 @@ export interface components {
              * @description Tabs whose data the gateway doesn't record yet; the page shows them as not available.
              */
             sections_not_available: ("itinerary" | "passengers" | "payments" | "tickets" | "servicing" | "audit")[];
+            /** @description Omitted unless the due was settled with a reason. */
+            settlement?: components["schemas"]["DueSettlement"] | null;
             /**
              * Source
              * @default gateway_bookings
@@ -4533,6 +4654,12 @@ export interface components {
             supplier_booking?: components["schemas"]["SupplierBookingView"] | null;
             /** @description Omitted without the cost and margin permission. */
             supplier_payment?: components["schemas"]["SupplierPayment"] | null;
+            /**
+             * Ticket Document
+             * @description A final ticket document is attached (GET /ticket-document/link).
+             * @default false
+             */
+            ticket_document: boolean;
             /** Updated At */
             updated_at?: string | null;
         };
@@ -5388,6 +5515,18 @@ export interface components {
              * @enum {string}
              */
             id_type: "PSPT" | "NATI";
+        };
+        /**
+         * DueSettlement
+         * @description The customer paid less than the total by agreement and the rest was waived (travelian#202).
+         */
+        DueSettlement: {
+            original_total: components["schemas"]["BookingMoney"];
+            /** Reason */
+            reason: string;
+            /** Settled At */
+            settled_at?: string | null;
+            waived: components["schemas"]["BookingMoney"];
         };
         /** DuplicateChoice */
         DuplicateChoice: {
@@ -7045,6 +7184,12 @@ export interface components {
              * @description This viewer may issue now: permission, ticketing on, no blockers.
              */
             can_issue: boolean;
+            /**
+             * Can Record Issue
+             * @description Mark as issued is available (travelian#202): tickets for this supplier can't be issued from Travelian, the booking isn't issued, and this viewer has the issue tickets permission.
+             * @default false
+             */
+            can_record_issue: boolean;
             /** Can Request */
             can_request: boolean;
             /** Full Payment Recorded */
@@ -7864,6 +8009,41 @@ export interface components {
              */
             accounts: components["schemas"]["ReceivingAccount"][];
         };
+        /**
+         * RecordIssueRequest
+         * @description Mark as issued (travelian#202): the ticket was issued in the supplier's portal. Supplier fields need the cost and margin permission.
+         */
+        RecordIssueRequest: {
+            /** Note */
+            note?: string | null;
+            /**
+             * Paid At
+             * @description When the supplier was paid.
+             */
+            paid_at?: string | null;
+            /**
+             * Paid From
+             * @description bank: fresh payment (recorded as a top-up and the charge, the balance doesn't move); supplier_wallet or credit: taken from the supplier's balance, which includes refund credits kept with the supplier.
+             */
+            paid_from?: ("bank" | "supplier_wallet" | "credit") | null;
+            /** @description What the supplier billed, when it differs from the hold-time fare. Default: the hold-time supplier cost. */
+            supplier_billed?: components["schemas"]["BookingMoney"] | null;
+            /**
+             * Supplier Reference
+             * @description Transfer or supplier confirmation reference.
+             */
+            supplier_reference?: string | null;
+            /**
+             * Ticket Document Key
+             * @description From POST /ticket-document/upload, after the file is uploaded.
+             */
+            ticket_document_key?: string | null;
+            /**
+             * Ticket Numbers
+             * @description One per traveler.
+             */
+            ticket_numbers: components["schemas"]["TicketNumber"][];
+        };
         /** RecordPaymentRequest */
         RecordPaymentRequest: {
             /**
@@ -8631,6 +8811,20 @@ export interface components {
             /** Prices */
             prices: components["schemas"]["SellingPriceItem"][];
         };
+        /** SettleDueRequest */
+        SettleDueRequest: {
+            /**
+             * Reason
+             * @description What was agreed, and with whom.
+             */
+            reason: string;
+        };
+        /** SettleDueResult */
+        SettleDueResult: {
+            /** @description The booking total now: what was paid. */
+            total: components["schemas"]["BookingMoney"];
+            waived: components["schemas"]["BookingMoney"];
+        };
         /** SignUploadRequest */
         SignUploadRequest: {
             /**
@@ -9048,8 +9242,25 @@ export interface components {
          */
         SupplierPayment: {
             amount_due?: components["schemas"]["BookingMoney"] | null;
+            /** @description What the supplier actually charged (recorded supplier charges), once issued. */
+            billed?: components["schemas"]["BookingMoney"] | null;
             /** Hold Deadline */
             hold_deadline?: string | null;
+            /**
+             * Paid From
+             * @description How the supplier was paid, when recorded at Mark as issued.
+             */
+            paid_from?: ("bank" | "supplier_wallet" | "credit") | null;
+            /**
+             * Time Sent
+             * @description When the supplier was paid, when recorded.
+             */
+            time_sent?: string | null;
+            /**
+             * Transfer Reference
+             * @description The transfer or supplier confirmation reference, when recorded.
+             */
+            transfer_reference?: string | null;
         };
         /** SupplierSpendRow */
         SupplierSpendRow: {
@@ -9101,6 +9312,36 @@ export interface components {
             threshold?: components["schemas"]["BookingMoney"] | null;
             /** Tracking Since */
             tracking_since?: string | null;
+        };
+        /** TicketDocumentLink */
+        TicketDocumentLink: {
+            /** Content Type */
+            content_type?: string | null;
+            /** Expires In Seconds */
+            expires_in_seconds: number;
+            /** Url */
+            url: string;
+        };
+        /** TicketDocumentUpload */
+        TicketDocumentUpload: {
+            /** Asset Key */
+            asset_key: string;
+            /** Fields */
+            fields: {
+                [key: string]: string;
+            };
+            /** Max Bytes */
+            max_bytes: number;
+            /** Url */
+            url: string;
+        };
+        /** TicketDocumentUploadRequest */
+        TicketDocumentUploadRequest: {
+            /**
+             * Content Type
+             * @enum {string}
+             */
+            content_type: "application/pdf" | "image/jpeg" | "image/png";
         };
         /** TicketNumber */
         TicketNumber: {
@@ -10568,6 +10809,74 @@ export interface operations {
             };
         };
     };
+    record_issue_v1_admin_bookings__booking_id__issuance_record_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IssuanceResult"];
+                };
+            };
+            /** @description Needs the issue_tickets permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not issuable now (payment, hold, status, ticketing off, supplier total or balance). Nothing was issued. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A ticket number missing, or the ticket document isn't a valid upload. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The supplier couldn't be checked before sending. Nothing was issued. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     request_issuance_v1_admin_bookings__booking_id__issuance_request_post: {
         parameters: {
             query?: never;
@@ -11015,6 +11324,67 @@ export interface operations {
             };
         };
     };
+    settle_due_v1_admin_bookings__booking_id__settle_due_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettleDueRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettleDueResult"];
+                };
+            };
+            /** @description Needs the record_payments permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Closed booking, nothing paid yet, or nothing due. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Reason missing. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     cancel_at_supplier_v1_admin_bookings__booking_id__supplier_cancel_post: {
         parameters: {
             query?: never;
@@ -11240,6 +11610,168 @@ export interface operations {
                 content?: never;
             };
             /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    attach_ticket_document_v1_admin_bookings__booking_id__ticket_document_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AttachTicketDocument"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketDocumentLink"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not issued yet. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ticket_document_link_v1_admin_bookings__booking_id__ticket_document_link_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketDocumentLink"];
+                };
+            };
+            /** @description Caller is not back office, or asked for a field it may not see. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No ticket document. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    sign_ticket_document_v1_admin_bookings__booking_id__ticket_document_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketDocumentUploadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketDocumentUpload"];
+                };
+            };
+            /** @description Needs the issue tickets permission. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Uploads aren't available. */
             503: {
                 headers: {
                     [name: string]: unknown;

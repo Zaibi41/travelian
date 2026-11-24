@@ -11,7 +11,8 @@ import type { BookingDetail, IssuanceChecklist } from "@/lib/admin-bookings/type
 const api = vi.hoisted(() => ({
   fetchPaymentAccounts: vi.fn(),
   fetchIssuance: vi.fn(), recordPayment: vi.fn(), requestIssuance: vi.fn(), issueTicket: vi.fn(), verifyIssuance: vi.fn(), resolveIssuance: vi.fn(),
-  reholdAtSupplier: vi.fn(),
+  reholdAtSupplier: vi.fn(), settleDue: vi.fn(), recordIssue: vi.fn(), uploadTicketDocument: vi.fn(), attachTicketDocument: vi.fn(),
+  fetchTicketDocumentLink: vi.fn(),
 }));
 vi.mock("@/lib/admin-bookings/api", () => api);
 
@@ -50,11 +51,12 @@ const BOOKING: BookingDetail = {
   statuses: { booking: "held", payment: "unpaid", issuance: "not_issued" }, amount: rs(15_316), amount_paid: rs(0), amount_due: rs(15_316),
   deadline: SOON, fare: { billable_price: rs(15_316) }, sections_not_available: ["payments", "tickets"], can_set_selling_price: false,
   can_record_payments: true, can_issue_tickets: true, can_edit_group_tickets: false, itinerary_available: true,
+  can_settle_due: false, ticket_document: false,
   passengers: [traveler(1, "Ali"), traveler(2, "Sara")],
 };
 const READY: IssuanceChecklist = {
   issuance_status: "not_issued", blockers: [], full_payment_recorded: true, amount_paid: rs(15_316), amount_due: rs(0),
-  hold_expires_at: SOON, ticketing_enabled: true, can_request: true, can_issue: true, can_check: false,
+  hold_expires_at: SOON, ticketing_enabled: true, can_request: true, can_issue: true, can_check: false, can_record_issue: false,
 };
 
 function renderTab(booking: BookingDetail = BOOKING) {
@@ -401,8 +403,112 @@ describe("last issuing attempt", () => {
 
 describe("Tickets tab", () => {
   it("lists every traveler's ticket number once issued", () => {
-    render(<TicketsTab booking={{ ...BOOKING, passengers: [traveler(1, "Ali", "214-0000000001"), traveler(2, "Sara", "214-0000000002")] }} />);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <TicketsTab booking={{ ...BOOKING, passengers: [traveler(1, "Ali", "214-0000000001"), traveler(2, "Sara", "214-0000000002")] }} />
+      </QueryClientProvider>,
+    );
     const rows = screen.getAllByRole("row").slice(1);
-    expect(rows.map(row => row.textContent)).toEqual(["Mr Ali Khan214-0000000001Issued", "Mr Sara Khan214-0000000002Issued"]);
+    expect(rows.map(row => row.textContent)).toEqual(["Mr Ali Khan214-0000000001—Issued", "Mr Sara Khan214-0000000002—Issued"]);
+  });
+});
+
+// travelian#202: a SooperFare booking settled and ticketed outside Travelian (made-up names, the issue's amounts).
+describe("Settled and ticketed outside Travelian", () => {
+  const PART_PAID: BookingDetail = {
+    ...BOOKING, amount: rs(76_006), amount_paid: rs(75_000), amount_due: rs(1_006), can_settle_due: true,
+    statuses: { booking: "held", payment: "part_paid", issuance: "not_issued" },
+  };
+  const SOOPERFARE: IssuanceChecklist = {
+    ...READY, can_issue: false, ticketing_enabled: false, can_record_issue: true,
+    ticketing_note: "SooperFare ticketing from Travelian isn't switched on yet. Issue in SooperFare's portal, then record the ticket numbers.",
+  };
+
+  it("settles the rest with a reason", async () => {
+    api.settleDue.mockResolvedValue({ waived: rs(1_006), total: rs(75_000) });
+    renderTab(PART_PAID);
+    fireEvent.click(screen.getByRole("button", { name: "Settle the rest" }));
+    const dialog = await screen.findByRole("dialog", { name: "Settle the rest" });
+    expect(dialog).toHaveTextContent("Rs 75,000 was received of Rs 76,006. Rs 1,006 will be waived");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Waive Rs 1,006" }));
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("Say what was agreed");
+    fireEvent.change(within(dialog).getByLabelText("Reason"), { target: { value: "Quoted Rs 75,000 to the reseller" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Waive Rs 1,006" }));
+    await waitFor(() => expect(api.settleDue).toHaveBeenCalledWith("TRV-O5QZB5", "Quoted Rs 75,000 to the reseller"));
+  });
+
+  it("shows a settled due with its reason, and no settle button without the gateway's go-ahead", () => {
+    renderTab({ ...BOOKING, amount: rs(75_000), amount_paid: rs(75_000), amount_due: rs(0),
+      settlement: { original_total: rs(76_006), waived: rs(1_006), reason: "Agreed with the reseller" } });
+    const card = screen.getByRole("region", { name: "1 · Record the customer's payment" });
+    expect(card).toHaveTextContent("Waived by agreementRs 1,006");
+    expect(card).toHaveTextContent("Original total Rs 76,006 · Agreed with the reseller");
+    expect(screen.queryByRole("button", { name: "Settle the rest" })).not.toBeInTheDocument();
+  });
+
+  it("marks as issued with ticket numbers, the document and the supplier payment (admin)", async () => {
+    api.fetchIssuance.mockResolvedValue(SOOPERFARE);
+    api.uploadTicketDocument.mockResolvedValue("ticket-documents/0f8fad5b-d9cb-469f-a165-70867728950e.pdf");
+    api.recordIssue.mockResolvedValue({ result: "issued", issuance_status: "issued", message: "Marked as issued.", tickets: [] });
+    renderTab({ ...BOOKING, supplier_payment: { amount_due: rs(76_006) } });
+    fireEvent.click(await screen.findByRole("button", { name: "Mark as issued" }));
+    const dialog = await screen.findByRole("dialog", { name: "Mark as issued" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Mark as issued" }));
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("ticket number for every traveler");
+    fireEvent.change(within(dialog).getByLabelText("Ticket number, Mr Ali Khan"), { target: { value: "2142345678901" } });
+    fireEvent.change(within(dialog).getByLabelText("Ticket number, Mr Sara Khan"), { target: { value: "2142345678902" } });
+    const pdf = new File(["%PDF"], "ticket.pdf", { type: "application/pdf" });
+    fireEvent.change(within(dialog).getByLabelText("Ticket document (optional)"), { target: { files: [pdf] } });
+    expect(within(dialog).getByLabelText("Amount due")).toHaveValue("76006");
+    fireEvent.change(within(dialog).getByLabelText("Amount due"), { target: { value: "74,886" } });
+    await choose("Paid from", "Credit");
+    fireEvent.change(within(dialog).getByLabelText("Transfer reference"), { target: { value: "SF-CREDIT-77" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Mark as issued" }));
+    await waitFor(() => expect(api.recordIssue).toHaveBeenCalledOnce());
+    expect(api.uploadTicketDocument).toHaveBeenCalledWith("TRV-O5QZB5", pdf);
+    expect(api.recordIssue.mock.calls[0][1]).toMatchObject({
+      ticket_numbers: [{ position: 1, ticket_number: "2142345678901" }, { position: 2, ticket_number: "2142345678902" }],
+      ticket_document_key: "ticket-documents/0f8fad5b-d9cb-469f-a165-70867728950e.pdf",
+      supplier_billed: { amount_minor: 7_488_600, currency: "PKR" }, paid_from: "credit", supplier_reference: "SF-CREDIT-77",
+    });
+  });
+
+  it("without cost and margin the dialog has no supplier payment, and nothing supplier-side is sent", async () => {
+    api.fetchIssuance.mockResolvedValue(SOOPERFARE);
+    api.recordIssue.mockResolvedValue({ result: "issued", issuance_status: "issued", message: "Marked as issued.", tickets: [] });
+    renderTab();
+    fireEvent.click(await screen.findByRole("button", { name: "Mark as issued" }));
+    const dialog = await screen.findByRole("dialog", { name: "Mark as issued" });
+    expect(within(dialog).queryByText("Supplier payment (admin only)")).not.toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText("Ticket number, Mr Ali Khan"), { target: { value: "2142345678901" } });
+    fireEvent.change(within(dialog).getByLabelText("Ticket number, Mr Sara Khan"), { target: { value: "2142345678902" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Mark as issued" }));
+    await waitFor(() => expect(api.recordIssue).toHaveBeenCalledOnce());
+    const body = api.recordIssue.mock.calls[0][1];
+    expect(body).not.toHaveProperty("supplier_billed");
+    expect(body).not.toHaveProperty("paid_from");
+    expect(api.uploadTicketDocument).not.toHaveBeenCalled();
+  });
+
+  it("Mark as issued is offered only when the gateway says so", async () => {
+    renderTab();
+    expect(await screen.findByRole("button", { name: "Issue ticket" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mark as issued" })).not.toBeInTheDocument();
+  });
+
+  it("Tickets tab shows the issue time and opens or attaches the ticket document", async () => {
+    api.fetchTicketDocumentLink.mockResolvedValue({ url: "https://storage.invalid/t.pdf", expires_in_seconds: 300 });
+    const openWindow = vi.spyOn(window, "open").mockImplementation(() => null);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter><TicketsTab booking={{ ...BOOKING, ticket_document: true, issued_at: "2026-11-23T10:00:00Z",
+          passengers: [traveler(1, "Ali", "2142345678901")] }} /></MemoryRouter>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByRole("columnheader", { name: "Issue time" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Open ticket document" }));
+    await waitFor(() => expect(openWindow).toHaveBeenCalledWith("https://storage.invalid/t.pdf", "_blank", "noopener,noreferrer"));
+    expect(screen.getByText("Replace")).toBeInTheDocument();
+    openWindow.mockRestore();
   });
 });

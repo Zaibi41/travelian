@@ -1,5 +1,5 @@
 import { gatewayGet, gatewayGetFile, gatewayPost, gatewayPut, type GatewayOptions } from "@/lib/gateway/client";
-import type { BookingListParams, RecordPaymentBody, ResolveIssuanceBody } from "./types";
+import type { BookingListParams, RecordIssueBody, RecordPaymentBody, ResolveIssuanceBody } from "./types";
 
 export const fetchBookings = (params: BookingListParams, options?: GatewayOptions) =>
   gatewayGet("/v1/admin/bookings", params, options);
@@ -113,4 +113,52 @@ export const reholdAtSupplier = (bookingId: string, acceptTotalMinor?: number, o
 export const checkAtSupplier = (bookingId: string, options?: GatewayOptions) =>
   gatewayPost("/v1/admin/bookings/{booking_id}/supplier-check", undefined as never, {
     ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "SooperFare couldn't be reached. Nothing was changed.",
+  });
+
+// ---------- issue 202: settled and ticketed outside Travelian ----------
+
+/** Mark as issued: the ticket was issued in the supplier's portal. Supplier fields only with cost and margin. */
+export const recordIssue = (bookingId: string, body: RecordIssueBody, options?: GatewayOptions) =>
+  gatewayPost("/v1/admin/bookings/{booking_id}/issuance/record", body, issuancePath(bookingId, options));
+
+/** The customer paid less than the total by agreement: waive the rest with a reason. Needs record_payments; logged. */
+export const settleDue = (bookingId: string, reason: string, options?: GatewayOptions) =>
+  gatewayPost("/v1/admin/bookings/{booking_id}/settle-due", { reason }, {
+    ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "The due couldn't be settled right now. Nothing was changed.",
+  });
+
+const TICKET_DOCUMENT_TYPES = ["application/pdf", "image/jpeg", "image/png"] as const;
+export const TICKET_DOCUMENT_MAX_BYTES = 10 * 1024 * 1024;
+const UPLOAD_FAILED = "Ticket document upload failed:";
+
+/** Upload the final ticket document straight to private storage (signed by the gateway); returns its key. */
+export async function uploadTicketDocument(bookingId: string, file: File): Promise<string> {
+  if (!(TICKET_DOCUMENT_TYPES as readonly string[]).includes(file.type)) throw new Error(`${UPLOAD_FAILED} choose a PDF, JPG or PNG file.`);
+  if (file.size > TICKET_DOCUMENT_MAX_BYTES) throw new Error(`${UPLOAD_FAILED} the file is larger than 10 MB.`);
+  const signed = await gatewayPost("/v1/admin/bookings/{booking_id}/ticket-document/upload",
+    { content_type: file.type as (typeof TICKET_DOCUMENT_TYPES)[number] },
+    { pathParams: { booking_id: bookingId }, unavailableMessage: "Ticket document upload isn't available right now." });
+  const form = new FormData();
+  Object.entries(signed.fields).forEach(([key, value]) => form.append(key, value));
+  form.append("file", file);
+  let response: Response;
+  try {
+    response = await fetch(signed.url, { method: "POST", body: form });
+  } catch {
+    throw new Error(`${UPLOAD_FAILED} the storage server couldn't be reached. Nothing was saved.`);
+  }
+  if (!response.ok) throw new Error(`${UPLOAD_FAILED} storage answered HTTP ${response.status}. Nothing was saved.`);
+  return signed.asset_key;
+}
+
+/** Attach (or replace) the ticket document on an issued booking; answers with a link to open it. */
+export const attachTicketDocument = (bookingId: string, assetKey: string, options?: GatewayOptions) =>
+  gatewayPut("/v1/admin/bookings/{booking_id}/ticket-document", { asset_key: assetKey }, {
+    ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "The ticket document couldn't be saved right now.",
+  });
+
+/** A short-lived link (5 minutes) to open the booking's ticket document. */
+export const fetchTicketDocumentLink = (bookingId: string, options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/bookings/{booking_id}/ticket-document/link", undefined, {
+    ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "The ticket document can't be opened right now.",
   });

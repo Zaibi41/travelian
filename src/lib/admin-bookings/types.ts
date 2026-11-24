@@ -32,5 +32,7 @@ export type RecordPaymentBody = Schemas["RecordPaymentRequest"];
 export type IssuanceChecklist = Schemas["IssuanceChecklist"];
 export type IssuanceResult = Schemas["IssuanceResult"];
 export type ResolveIssuanceBody = Schemas["IssuanceResolveRequest"];
+export type RecordIssueBody = Schemas["RecordIssueRequest"];
+export type SupplierPaidFrom = NonNullable<RecordIssueBody["paid_from"]>;
 export type TicketNumber = Schemas["TicketNumber"];
 export type PaymentAccount = Schemas["PaymentAccount"];
