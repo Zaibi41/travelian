@@ -18,7 +18,7 @@ const MESSAGES: Record<string, string> = {
 
 const FIELD_LABELS: Record<string, string> = {
   first_name: "First name", last_name: "Last name", date_of_birth: "Date of birth", nationality: "Nationality", phone_code: "Country code",
-  phone: "Phone", email: "Email", document_number: "Document number", document_country: "Document country", document_expiry: "Document expiry",
+  phone: "Phone", email: "Email", document_number: "Document number", document_country: "Document country", document_expiry: "Document expiry", document_issue_date: "Issue date",
   reason: "Reason", title: "Title",
 };
 

@@ -50,13 +50,15 @@ interface DocumentDraft {
   document_country: string;
   document_number: string;
   document_expiry: string;
+  document_issue_date: string;
 }
 
-const blankDocument = (): DocumentDraft => ({ id_type: "PSPT", document_country: DEFAULT_COUNTRY_CODE, document_number: "", document_expiry: "" });
+const blankDocument = (): DocumentDraft => ({ id_type: "PSPT", document_country: DEFAULT_COUNTRY_CODE, document_number: "", document_expiry: "", document_issue_date: "" });
 
 const documentBody = (draft: DocumentDraft): DocumentInput => ({
   id_type: draft.id_type, document_country: draft.document_country, document_number: draft.document_number.trim(),
   document_expiry: optional(draft.document_expiry) ?? null,
+  document_issue_date: optional(draft.document_issue_date) ?? null,
 });
 
 function DocumentFields({ prefix, draft, onChange }: { prefix: string; draft: DocumentDraft; onChange: (next: DocumentDraft) => void }) {
@@ -77,6 +79,10 @@ function DocumentFields({ prefix, draft, onChange }: { prefix: string; draft: Do
       <Field id={`${prefix}-number`} label="Document number">
         <Input id={`${prefix}-number`} value={draft.document_number} maxLength={20} autoComplete="off" className="h-control text-body"
           onChange={event => set({ document_number: event.target.value })} />
+      </Field>
+      <Field id={`${prefix}-issued`} label="Issue date (optional)">
+        <DatePickerField id={`${prefix}-issued`} appearance="admin" value={draft.document_issue_date} placeholder="Select issue date"
+          max={todayIso()} onChange={value => set({ document_issue_date: value ?? "" })} />
       </Field>
       <Field id={`${prefix}-expiry`} label={draft.id_type === "PSPT" ? "Document expiry" : "Document expiry (optional)"}>
         <DatePickerField id={`${prefix}-expiry`} appearance="admin" value={draft.document_expiry} placeholder="Select expiry date"
@@ -290,7 +296,7 @@ export function PersonFormDialog({ open, onOpenChange, person, onSaved }: {
 
 // ---------- attach a document ----------
 
-/** Attach a document, or (with `document`, issue #12) edit a saved one: number, country of issue, expiry. */
+/** Attach a document, or (with `document`, issue #12) edit a saved one: number, country of issue, issue date, expiry. */
 export function DocumentDialog({ open, onOpenChange, person, onSaved, document }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -299,7 +305,8 @@ export function DocumentDialog({ open, onOpenChange, person, onSaved, document }
   document?: SavedDocument | null;
 }) {
   const fromDocument = (): DocumentDraft => document
-    ? { id_type: document.id_type, document_country: document.document_country, document_number: document.document_number, document_expiry: document.document_expiry ?? "" }
+    ? { id_type: document.id_type, document_country: document.document_country, document_number: document.document_number, document_expiry: document.document_expiry ?? "",
+        document_issue_date: document.document_issue_date ?? "" }
     : blankDocument();
   const [draft, setDraft] = useState<DocumentDraft>(fromDocument);
   const [error, setError] = useState<string | null>(null);

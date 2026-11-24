@@ -130,6 +130,7 @@ export default function SavedPersonPage() {
                   <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Document type</th>
                   <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Country</th>
                   <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Number</th>
+                  <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Issue date</th>
                   <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Expiry</th>
                   {data.can_manage && !merged && <th scope="col" className="h-table-header px-2.5 font-semibold text-foreground">Actions</th>}
                 </tr>
@@ -140,6 +141,7 @@ export default function SavedPersonPage() {
                     <td className="px-2.5 py-2 text-foreground">{ID_TYPE_LABEL[document.id_type]}</td>
                     <td className="px-2.5 py-2 text-foreground">{document.document_country}</td>
                     <td className="px-2.5 py-2 tabular-nums text-foreground">{document.document_number}</td>
+                    <td className="whitespace-nowrap px-2.5 py-2 tabular-nums text-foreground">{formatDay(document.document_issue_date) || "—"}</td>
                     <td className="px-2.5 py-2 text-foreground">
                       <span className="flex items-center gap-1.5 whitespace-nowrap tabular-nums">{formatDay(document.document_expiry) || "—"}<ValidityBadge validity={document.document_validity} /></span>
                     </td>
