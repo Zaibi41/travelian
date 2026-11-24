@@ -55,12 +55,12 @@ for (const width of [390, 360, 768, 1440]) {
     await shot(page, `oneway-${width}`);
     if (BEFORE) return;
     const pk = card(page, "PIA");
-    await pk.getByRole("button", { name: /^Show \d+ more fares?/ }).click(); // all three fares open: still one WhatsApp
+    await expect(pk.getByRole("group", { name: /^Fares for / }).getByRole("button")).toHaveCount(3); // all three fares: still one WhatsApp
     await shot(page, `oneway-all-fares-${width}`);
     const links = pk.getByRole("link", { name: /WhatsApp/ }).locator("visible=true");
     await expect(links).toHaveCount(1);
     await expect(pk.getByRole("button", { name: "WhatsApp", exact: true })).toHaveCount(0);
-    await expect(pk.getByRole("button", { name: "Book", exact: true }).locator("visible=true")).toHaveCount(3);
+    await expect(pk.getByRole("button", { name: "Book", exact: true }).locator("visible=true")).toHaveCount(1); // one Book per flight, for the picked fare
     const wa = links.first();
     await expect(wa).toHaveAccessibleName("Ask about PIA PK203 on WhatsApp");
     const box = (await wa.boundingBox())!;

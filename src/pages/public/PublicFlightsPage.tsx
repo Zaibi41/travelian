@@ -74,6 +74,8 @@ type FlightTripType = "oneway" | "roundtrip" | "multicity";
 type FlightSegment = { from: string; to: string; date: Date | undefined };
 type DisplayFare = {
   tier: string;
+  /** The gateway's id(s) of this fare, sent with Book so the fare booked is the fare shown. */
+  gatewayFareIds?: string[];
   price: { currency?: string; total: number; base?: number | null; taxes?: number | null };
   bags?: string | null;
   /** Baggage in full words (#36). */
@@ -232,6 +234,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const phoneBarPlace = useRef<HTMLDivElement>(null);
   const [phoneBarPinned, setPhoneBarPinned] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState<string | null>(null);
+  // Public cards: the fare picked on each flight (flight id → fare key); the card's single Book follows it.
+  const [pickedFares, setPickedFares] = useState<Record<string, string>>({});
   // Cards whose long airline name is shown in full (tapped open), issue #90.
   const [expandedAirlines, setExpandedAirlines] = useState<ReadonlySet<string>>(() => new Set());
   const toggleAirlineName = (flightId: string) => setExpandedAirlines(current => {
@@ -706,6 +710,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         cancellation: (fare as DisplayFare).cancellation || fare.refund,
         conditions: (fare as DisplayFare).conditions,
         amenities: fare.amenities,
+        gatewayFareIds: fare.gatewayFareIds,
       })).sort((a, b) => a.price.total - b.price.total);
     }
     // #149: refundable only when the flight data says so; unknown falls back to the airline's fare rules.
@@ -723,6 +728,100 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       conditions: "",
       amenities: [],
     }];
+  };
+
+  /** One fare on a card, for the picked-fare state. */
+  const fareKey = (fare: DisplayFare) => `${fare.tier}|${fare.price.total}`;
+
+  /** Public cards: the fares as selectable tiles (a swipe row below lg, columns from lg) and one Book for the picked fare. */
+  const renderFareChooser = (flight: TravelianFlight, fares: DisplayFare[], picked: DisplayFare | undefined) => {
+    if (!picked) return null;
+    const several = fares.length > 1;
+    const pickedPrice = farePrice(picked, flight);
+    return (
+      <div className="-mx-4 -mb-4 border-t sm:-mx-5 sm:-mb-5">
+        {several ? (
+          <div className="pt-3">
+            <div className="flex items-baseline justify-between gap-3 px-4 sm:px-5">
+              <p className="text-sm font-bold text-foreground">Choose your fare</p>
+              <p className="text-xs text-muted-foreground">{fares.length} options<span className="sm:hidden"> · swipe</span></p>
+            </div>
+            <div
+              role="group"
+              aria-label={`Fares for ${flight.airline} ${flight.flightNumber}`}
+              className="mt-2 flex snap-x snap-mandatory gap-2 overflow-x-auto scroll-px-4 px-4 pb-3 pt-0.5 [scrollbar-width:none] sm:scroll-px-5 sm:px-5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] lg:overflow-visible [&::-webkit-scrollbar]:hidden"
+            >
+              {fares.map((fare) => {
+                const on = fareKey(fare) === fareKey(picked);
+                return (
+                  <button
+                    key={fareKey(fare)}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setPickedFares((current) => ({ ...current, [flight.flightId]: fareKey(fare) }))}
+                    className={cn(
+                      "flex w-[9rem] shrink-0 snap-start flex-col justify-between gap-2 rounded-xl border bg-card p-3 text-left transition-colors duration-150 motion-reduce:transition-none lg:w-auto",
+                      "hover:border-primary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:bg-primary/5",
+                      on ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border",
+                    )}
+                  >
+                    <span className="flex min-w-0 items-center justify-between gap-1.5">
+                      <span className="truncate text-sm font-bold text-foreground" title={fare.tier}>{fare.tier}</span>
+                      <span aria-hidden="true" className={cn("flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[1.5px]", on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/60 bg-card")}>
+                        {on && <Check className="h-2.5 w-2.5" strokeWidth={4} />}
+                      </span>
+                    </span>
+                    <span className="flex min-w-0 flex-col gap-1 text-xs text-muted-foreground">
+                      <span className="flex min-w-0 items-center gap-1.5" title={mealLabel(fare, flight)}>
+                        <MealIcon fare={fare} flight={flight} className="h-3.5 w-3.5" />
+                        <span className="truncate">{mealLabel(fare, flight)}</span>
+                      </span>
+                      <span className="flex min-w-0 items-center gap-1.5" title={baggageWords(fare, flight)}>
+                        <Luggage aria-hidden="true" className={cn("h-3.5 w-3.5 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
+                        <span className="truncate" aria-hidden="true">{baggageLabel(fare, flight)}</span>
+                        <span className="sr-only">{baggageWords(fare, flight)}</span>
+                      </span>
+                    </span>
+                    <span className="truncate text-sm font-black text-foreground">{farePrice(fare, flight).main}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5 px-4 pt-3 text-xs text-muted-foreground sm:px-5">
+            <span className="truncate text-sm font-bold text-foreground" title={picked.tier}>{picked.tier}</span>
+            <span className="flex min-w-0 items-center gap-1.5" title={mealLabel(picked, flight)}>
+              <MealIcon fare={picked} flight={flight} className="h-3.5 w-3.5" />
+              <span className="truncate">{mealLabel(picked, flight)}</span>
+            </span>
+            <span className="flex min-w-0 items-center gap-1.5" title={baggageWords(picked, flight)}>
+              <Luggage aria-hidden="true" className={cn("h-3.5 w-3.5 shrink-0", hasBaggage(picked, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
+              <span className="truncate" aria-hidden="true">{baggageLabel(picked, flight)}</span>
+              <span className="sr-only">{baggageWords(picked, flight)}</span>
+            </span>
+          </div>
+        )}
+        <div className={cn("flex items-center justify-between gap-3 px-4 py-3 sm:px-5", several ? "border-t bg-muted/30" : "")}>
+          <div className="min-w-0" aria-live="polite">
+            {several && <p className="truncate text-xs text-muted-foreground" title={picked.tier}>{picked.tier}</p>}
+            <p className="truncate text-lg font-black leading-tight text-primary sm:text-xl" title={[pickedPrice.main, pickedPrice.note].filter(Boolean).join(" ")}>{pickedPrice.main}</p>
+            {(pickedPrice.note || pickedPrice.secondary) && (
+              <p className="truncate text-xs text-muted-foreground">{[pickedPrice.note, pickedPrice.secondary && `(${pickedPrice.secondary})`].filter(Boolean).join(" ")}</p>
+            )}
+          </div>
+          <div className="w-36 shrink-0 sm:w-40">
+            {searchExpired ? (
+              <Button className="h-11 w-full rounded-xl px-4 font-semibold" onClick={revalidateSearch}>Revalidate</Button>
+            ) : (
+              <Link to={bookingHref(flight, picked)} className="block min-w-0">
+                <Button className="h-11 w-full rounded-xl px-4 font-semibold">Book</Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Stop airports of the (outbound) trip: the gateway's stays, else the airports between this flight's own segments.
@@ -1770,6 +1869,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               const matchingFares = selectedBaggage.length ? allFares.filter(fare => selectedBaggage.includes(fareBaggage(fare, flight).short)) : allFares;
               const displayFares = matchingFares.length ? matchingFares : allFares;
               const primaryFare = displayFares[0];
+              // Public cards: the picked fare, else the cheapest (also when a filter hides the picked one).
+              const pickedFare = displayFares.find((fare) => fareKey(fare) === pickedFares[flight.flightId]) || primaryFare;
               const visibleFares = fareOptionsOpen ? displayFares : displayFares.slice(0, 1);
               const hiddenFareCount = Math.max(0, displayFares.length - 1);
               const journeyLegs = journeyLegsForCard(flight);
@@ -1896,7 +1997,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             onClick={(event) => {
                               event.preventDefault();
                               event.stopPropagation();
-                              void openFlightDetails(flight, primaryFare);
+                              void openFlightDetails(flight, adminMode ? primaryFare : pickedFare);
                             }}
                           >
                             Flight Details
@@ -1904,6 +2005,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           </div>
                         )}
                       </div>
+                      {!adminMode && renderFareChooser(flight, displayFares, pickedFare)}
+                      {adminMode && (
                       <div className="overflow-hidden rounded-2xl border">
                         <table className="hidden w-full table-fixed border-collapse lg:table">
                           <colgroup>
@@ -2024,6 +2127,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           </div>
                         )}
                       </div>
+                      )}
                       <div className="hidden">
                         <div className="flex flex-col gap-2">
                           {SHOW_HIDDEN_SECTIONS && (

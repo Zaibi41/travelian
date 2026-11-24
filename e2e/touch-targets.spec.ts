@@ -81,12 +81,12 @@ for (const width of [390, 360]) {
       await mock(page);
       await page.goto(`/flights-search?${trip.query}`);
       await expect(page.getByRole("button", { name: "Flight Details" }).first()).toBeVisible({ timeout: 20_000 });
-      await page.getByRole("button", { name: /^Show \d+ more fares?/ }).first().scrollIntoViewIfNeeded();
+      await page.getByRole("button", { name: "Book", exact: true }).first().scrollIntoViewIfNeeded();
       await shot(page, `flights-${trip.name}-${width}`);
       const small = await smallTargets(page, "main");
       if (BEFORE) { console.log(`flights ${trip.name} ${width}:`, small); return; }
       expect(small).toEqual([]);
-      // #53: WhatsApp is one per flight, beside Flight Details (8px apart); Book stays on each fare row.
+      // #53: WhatsApp is one per flight, beside Flight Details (8px apart); one Book per flight, for the picked fare.
       const details = page.getByRole("button", { name: "Flight Details" }).locator("visible=true").first();
       const wa = page.getByRole("link", { name: /on WhatsApp$/ }).locator("visible=true").first();
       const [d, w] = [await details.boundingBox(), await wa.boundingBox()];
