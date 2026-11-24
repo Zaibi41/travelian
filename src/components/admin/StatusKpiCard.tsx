@@ -45,8 +45,9 @@ export function StatusKpiCard({ label, value, severity, hint, fullValue, to, siz
         selected && "outline outline-2 outline-offset-1 outline-brand-navy",
       )}
     >
-      <div className="flex min-w-0 items-start justify-between gap-2">
-        <span className="min-w-0 text-label text-muted-foreground">{label}</span>
+      {/* Wraps so a narrow card puts the tag under the label instead of over it. */}
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-2 gap-y-1">
+        <span className="min-w-0 break-words text-label text-muted-foreground">{label}</span>
         {severity && showBadge && <StatusBadge severity={severity} className="shrink-0" />}
       </div>
       <span
