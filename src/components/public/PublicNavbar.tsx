@@ -3,7 +3,7 @@ import { PRODUCT_TABS, useProductTabs } from "./product-navigation";
 import { useSearchHeaderState } from "@/hooks/use-scroll-reveal";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, Globe, Menu, Phone, X, Info, Ticket } from "lucide-react";
+import { ChevronDown, ChevronRight, Globe, Menu, Phone, X, Info, Ticket } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   DropdownMenu,
@@ -93,6 +93,14 @@ export function PublicNavbar() {
     if (hidden) setMobileOpen(false);
   }, [hidden]);
 
+  // #195: the mobile menu fills the screen below the header, so the page behind it must not scroll.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const { overflow } = document.body.style;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = overflow; };
+  }, [mobileOpen]);
+
   useEffect(() => {
     if (!mobileOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -121,11 +129,21 @@ export function PublicNavbar() {
   const renderLinks = (links: Array<Pick<(typeof PRODUCT_TABS)[number], "label" | "href" | "icon" | "match">>, mobile = false) => links
     .map((link) => {
       const active = link.match.some((path) => path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(`${path}/`));
-      const className = `${mobile ? "min-h-11 px-3 py-3" : "px-3 py-2"} inline-flex items-center gap-2 rounded-lg whitespace-nowrap text-sm font-semibold transition-colors ${active ? "bg-accent text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`;
-      return <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} aria-current={active ? "page" : undefined} className={className}>{mobile && <link.icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />}<span>{link.label}</span></Link>;
+      if (mobile) {
+        return (
+          <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} aria-current={active ? "page" : undefined}
+            className={cn("group flex min-h-12 items-center gap-3 rounded-xl px-2 py-1.5 text-sm font-semibold transition-colors", active ? "bg-accent text-primary" : "text-foreground hover:bg-muted/60")}>
+            <span className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", active ? "bg-primary text-primary-foreground" : "bg-muted text-primary")}>
+              <link.icon className="h-[18px] w-[18px]" aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1 truncate">{link.label}</span>
+            <ChevronRight className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} aria-hidden="true" />
+          </Link>
+        );
+      }
+      const className = `px-3 py-2 inline-flex items-center gap-2 rounded-lg whitespace-nowrap text-sm font-semibold transition-colors ${active ? "bg-accent text-primary" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"}`;
+      return <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} aria-current={active ? "page" : undefined} className={className}><span>{link.label}</span></Link>;
     });
-
-  const requestBookingLink = <a href={whatsappUrl("Assalam o Alaikum Travelian, I would like to request a booking.")} target="_blank" rel="noreferrer" onClick={() => setMobileOpen(false)} className="inline-flex min-h-11 items-center rounded px-2 text-sm font-medium text-primary hover:bg-accent lg:min-h-0 lg:h-8 lg:text-xs">Request a Booking</a>;
 
   const phoneLink = (
     <a href={`tel:${SUPPORT_PHONE_TEL}`} className="inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-sm font-semibold text-muted-foreground hover:bg-muted/60 hover:text-foreground lg:min-h-0 lg:h-8 lg:text-xs">
@@ -167,17 +185,34 @@ export function PublicNavbar() {
               </button>
             </div>
             {mobileOpen && (
-              <div id="mobile-navigation" className="max-h-[calc(100dvh-3.5rem)] overflow-y-auto border-t border-border bg-card py-4 lg:hidden">
-                <section aria-label="Services">
-                  <h2 className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Services</h2>
-                  <div className="grid gap-1">{renderLinks(serviceLinks, true)}</div>
-                </section>
-                <section aria-label="Quick Links" className="mt-3 border-t border-border pt-3">
-                  <h2 className="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Quick Links</h2>
-                  <div className="grid gap-1">{renderLinks([{ label: bookingLink.label, href: bookingLink.href, icon: Ticket, match: [bookingLink.href] }, ...quickLinks], true)}</div>
-                </section>
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-2">{requestBookingLink}{signInLink}</div>
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3"><div className="flex flex-wrap items-center gap-1">{phoneLink}</div><div className="flex items-center gap-1"><LocaleControls key={hidden ? "hidden" : "visible"} /></div></div>
+              // #195: a full-height panel under the header (not a short dropdown with the page showing below it).
+              <div id="mobile-navigation" className="-mx-5 flex h-[calc(100dvh-3.5rem)] flex-col border-t border-border bg-card sm:-mx-6 lg:hidden">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4 sm:px-6">
+                  <section aria-label="Services">
+                    <h2 className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Services</h2>
+                    <div className="grid gap-1">{renderLinks(serviceLinks, true)}</div>
+                  </section>
+                  <section aria-label="Quick Links" className="mt-5">
+                    <h2 className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Quick Links</h2>
+                    <div className="grid gap-1">{renderLinks([{ label: bookingLink.label, href: bookingLink.href, icon: Ticket, match: [bookingLink.href] }, ...quickLinks], true)}</div>
+                  </section>
+                </div>
+                <div className="shrink-0 border-t border-border bg-muted/30 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:px-6">
+                  <div className="grid grid-cols-2 gap-3">
+                    <a href={whatsappUrl("Assalam o Alaikum Travelian, I would like to request a booking.")} target="_blank" rel="noreferrer" onClick={() => setMobileOpen(false)}
+                      className="inline-flex h-11 min-w-0 items-center justify-center truncate rounded-lg border border-primary/30 bg-card px-3 text-sm font-semibold text-primary transition-colors hover:bg-accent">
+                      Request a Booking
+                    </a>
+                    <Link to="/signin" onClick={() => setMobileOpen(false)} aria-current={signInActive ? "page" : undefined}
+                      className="inline-flex h-11 min-w-0 items-center justify-center truncate rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+                      Sign In
+                    </Link>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    {phoneLink}
+                    <div className="flex shrink-0 items-center gap-1"><LocaleControls key={hidden ? "hidden" : "visible"} /></div>
+                  </div>
+                </div>
               </div>
             )}
           </nav>
