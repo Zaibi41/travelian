@@ -284,7 +284,7 @@ export function GroupTicketingSearch() {
                           {back && <span className="block truncate text-label text-muted-foreground" title={back.baggage.detail}>Return {back.baggage.known ? back.baggage.short : "baggage: check with airline"}</span>}
                         </td>
                         <td className="whitespace-nowrap px-2.5 py-2 align-top text-foreground">
-                          {row.meal === "Yes" ? "Meal" : row.meal === "No" ? "No Meal" : <span className="text-muted-foreground">Meal info not available</span>}
+                          {row.meal === "Yes" ? "Meal" : "No Meal"}
                         </td>
                         <td className="whitespace-nowrap px-2.5 py-2 align-top text-foreground">{GROUP_FARE_REFUND}</td>
                         <td className="whitespace-nowrap px-2.5 py-2 align-top tabular-nums">

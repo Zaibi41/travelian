@@ -693,7 +693,7 @@ function FlightCard({ journey, flight, data, renderFareAction, actionNotes, trav
               return (
                 <tr key={fare.id} className="border-t border-border align-middle">
                   <td className="px-2.5 py-2 font-semibold text-foreground">{fare.name}</td>
-                  <td className="max-w-[9rem] px-2.5 py-2"><Missing value={fare.meal} /></td>
+                  <td className="max-w-[9rem] px-2.5 py-2"><Missing value={fare.meal} fallback="No Meal" /></td>
                   <td className="max-w-[9rem] px-2.5 py-2"><BaggageCell fare={fare} /></td>
                   <td className="max-w-[9rem] px-2.5 py-2">
                     {refundable === null ? <Missing value={null} />
