@@ -107,6 +107,7 @@ for (const width of [1440, 390]) {
       const qr = card(page, "Qatar Airways International Regional Connection Partner Airline Limited");
       await expect(qr.getByText("2 Stops", { exact: true }).locator("visible=true")).toHaveCount(1);
       await expect(qr.getByTestId("card-stay")).toHaveText(["2h 30m layover · Doha (DOH), Qatar", "9h 40m layover · Kinshasa (FIH), Congo, The Democratic Republic of the"]);
+      await qr.getByTestId("card-stay").last().scrollIntoViewIfNeeded();
       const [stayBox, cardBox] = [await qr.getByTestId("card-stay").last().boundingBox(), await qr.boundingBox()];
       expect(stayBox!.x + stayBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1);
       const z8 = card(page, "South Air");
@@ -115,10 +116,9 @@ for (const width of [1440, 390]) {
       await expect(page.locator("main")).not.toContainText(/undefined|null/);
     }
 
-    // Each tab of a 1-stop flight's details.
+    // A 1-stop flight's details.
     const dialog = await details(page, "Etihad Airways");
     await shot(page, `details-default-${width}`);
-    await dialog.getByRole("button", { name: "Flight Info" }).click();
     await shot(page, `details-flightinfo-onestop-${width}`);
     if (!BEFORE) {
       const stay = dialog.getByRole("region", { name: "Stop at Abu Dhabi, United Arab Emirates" });
@@ -136,15 +136,12 @@ for (const width of [1440, 390]) {
       await expect(dialog.getByText("14h 30m · 1 stop", { exact: true })).toBeVisible();
       await expect(dialog.getByText(/· Duration/)).toHaveCount(0); // was "Etihad Airways · EY254 · Duration 3h 30m"
     }
-    await dialog.getByRole("button", { name: "Fare Rules" }).click();
-    await shot(page, `details-rules-${width}`);
-    await dialog.getByRole("button", { name: "Baggage" }).click();
-    await shot(page, `details-baggage-${width}`);
+    // Flight Info only on the public site (no Fare Rules or Baggage tab).
+    if (!BEFORE) for (const tab of ["Flight Info", "Fare Rules", "Baggage"]) await expect(dialog.getByRole("button", { name: tab, exact: true })).toHaveCount(0);
     await page.keyboard.press("Escape");
 
     // 2 stops: both stays with country, city and duration; long names stay on one line inside the dialog.
     const qrDialog = await details(page, "Qatar Airways International Regional Connection Partner Airline Limited");
-    await qrDialog.getByRole("button", { name: "Flight Info" }).click();
     await shot(page, `details-flightinfo-twostops-${width}`);
     if (!BEFORE) {
       await expect(qrDialog.getByRole("region", { name: /^Stop at / })).toHaveCount(2);
@@ -160,12 +157,10 @@ for (const width of [1440, 390]) {
 
     // Non-stop: no stay at all. Stop city only (no flight-by-flight detail): the stay, without a guessed duration.
     const pkDialog = await details(page, "PIA");
-    await pkDialog.getByRole("button", { name: "Flight Info" }).click();
     await shot(page, `details-flightinfo-nonstop-${width}`);
     if (!BEFORE) await expect(pkDialog.getByRole("region", { name: /^Stop at / })).toHaveCount(0);
     await page.keyboard.press("Escape");
     const z8Dialog = await details(page, "South Air");
-    await z8Dialog.getByRole("button", { name: "Flight Info" }).click();
     await shot(page, `details-flightinfo-stopcity-${width}`);
     if (!BEFORE) {
       const multan = z8Dialog.getByRole("region", { name: "Stop at Multan, Pakistan" });
@@ -189,7 +184,6 @@ for (const width of [1440, 390]) {
       for (const time of ["9h 30m", "7h 30m"]) await expect(card(page, "PIA").getByText(time, { exact: true }).locator("visible=true")).toHaveCount(1);
     }
     const dialog = await details(page, "Etihad Airways");
-    await dialog.getByRole("button", { name: "Flight Info" }).click();
     await shot(page, `roundtrip-flightinfo-${width}`);
     if (!BEFORE) {
       // Two stays in Abu Dhabi (2h 45m out, 2h 0m back); none at London between the outbound and the return.

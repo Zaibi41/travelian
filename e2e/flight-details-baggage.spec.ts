@@ -1,8 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
-// #123: Flight details > Baggage lists every fare's baggage (hand carry and checked), not only the fare shown first;
-// a round trip shows the outbound and the return allowance. Intercepted gateway responses only.
+// #123: every fare's baggage is shown, not only the fare shown first. Public results: on the card's fare tiles (Flight
+// Details shows Flight Info only, no Fare Rules or Baggage tab); a fare without baggage says "Check with airline".
+// Intercepted gateway responses only.
 // BAGGAGE_TAB_SHOTS_DIR saves screenshots; BAGGAGE_TAB_SHOTS=before only takes them (page before the change), no checks.
 
 if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
@@ -53,51 +54,46 @@ const shot = async (page: Page, name: string) => {
 };
 const card = (page: Page, airline: string) => page.locator("main .shadow-card").filter({ has: page.getByRole("button", { name: airline, exact: true }) }).first();
 
-async function baggageTab(page: Page, width: number, query: string, answer: object, airline: string) {
+async function openResults(page: Page, width: number, query: string, answer: object) {
   await page.setViewportSize({ width, height: width < 600 ? 860 : 900 });
   await mock(page, answer);
   await page.goto(`/flights-search?${query}`);
-  await card(page, airline).getByRole("button", { name: "Flight Details" }).click({ timeout: 20_000 });
-  const dialog = page.getByRole("dialog");
-  await dialog.getByRole("button", { name: "Baggage" }).click();
-  return dialog;
+  await expect(page.getByRole("button", { name: "Flight Details" }).first()).toBeVisible({ timeout: 20_000 });
 }
-
-const rowText = (dialog: ReturnType<Page["getByRole"]>) =>
-  dialog.getByRole("row").evaluateAll(rows => rows.slice(1).map(row => [...row.querySelectorAll('[role="cell"]')].map(cell => cell.textContent?.trim())));
+const tiles = (page: Page, airline: string) => card(page, airline).getByRole("group", { name: /^Fares for / }).getByRole("button");
 
 for (const width of [1440, 390]) {
-  test(`one-way: every fare's baggage in the Baggage tab at ${width}px`, async ({ page }) => {
-    const dialog = await baggageTab(page, width, "from=LHE&to=KHI&depart=2026-12-10&trip=oneway&adults=1", ONE_WAY, "Airblue");
-    await shot(page, `baggage-tab-oneway-${width}`);
+  test(`one-way: every fare's baggage on the card, no Baggage tab at ${width}px`, async ({ page }) => {
+    await openResults(page, width, "from=LHE&to=KHI&depart=2026-12-10&trip=oneway&adults=1", ONE_WAY);
+    await shot(page, `baggage-card-oneway-${width}`);
     if (BEFORE) return;
-    expect(await rowText(dialog)).toEqual([
-      ["Value7 kg hand carry only, no checked bag", "7 kg", "No checked bag"],
-      ["Flexi7 kg hand carry + 20 kg checked", "7 kg", "20 kg"],
-      ["Xtra7 kg hand carry + 30 kg checked", "7 kg", "30 kg"],
-      [`${LONG_FARE}7 kg hand carry + 1 checked piece of up to 23 kg`, "7 kg", "1×23 kg"],
-    ]);
-    // A long fare name stays on one line inside the dialog.
-    const long = dialog.getByText(LONG_FARE, { exact: true });
-    const [box, dialogBox] = [await long.boundingBox(), await dialog.boundingBox()];
-    expect(box!.x + box!.width).toBeLessThanOrEqual(dialogBox!.x + dialogBox!.width);
-    expect(box!.height).toBeLessThan(30);
+    const pa = tiles(page, "Airblue");
+    await expect(pa).toHaveCount(4);
+    for (const [name, detail] of [["Value", HAND[1]], ["Flexi", B20[1]], ["Xtra", B30[1]], [LONG_FARE, PC[1]]]) {
+      await expect(pa.filter({ has: page.getByText(name, { exact: true }) })).toContainText(detail); // the full words, for screen readers too
+    }
+    // A long fare name stays inside its tile.
+    const long = pa.filter({ has: page.getByText(LONG_FARE, { exact: true }) });
+    const [box, tile] = [await long.locator("span").first().boundingBox(), await long.boundingBox()];
+    expect(box!.x + box!.width).toBeLessThanOrEqual(tile!.x + tile!.width + 1);
+
+    await card(page, "Airblue").getByRole("button", { name: "Flight Details" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText("Flight Details", { exact: true })).toBeVisible();
+    for (const tab of ["Flight Info", "Fare Rules", "Baggage"]) await expect(dialog.getByRole("button", { name: tab, exact: true })).toHaveCount(0);
   });
 
-  test(`missing baggage and round trip in the Baggage tab at ${width}px`, async ({ page }) => {
-    const missing = await baggageTab(page, width, "from=LHE&to=KHI&depart=2026-12-10&trip=oneway&adults=1", ONE_WAY, "AirSial");
-    await shot(page, `baggage-tab-missing-${width}`);
-    if (!BEFORE) expect(await rowText(missing)).toEqual([["EconomyBaggage: check with airline", "Check with airline", "Check with airline"]]);
-    await page.keyboard.press("Escape");
+  test(`missing baggage and round trip on the card at ${width}px`, async ({ page }) => {
+    await openResults(page, width, "from=LHE&to=KHI&depart=2026-12-10&trip=oneway&adults=1", ONE_WAY);
+    await shot(page, `baggage-card-missing-${width}`);
+    if (!BEFORE) await expect(card(page, "AirSial")).toContainText("Check with airline");
+    await page.unrouteAll({ behavior: "ignoreErrors" });
 
-    const dialog = await baggageTab(page, width, "from=LHE&to=KHI&depart=2026-12-10&return=2026-12-15&trip=roundtrip&adults=1", ROUND_TRIP, "Airblue");
-    await shot(page, `baggage-tab-roundtrip-${width}`);
+    await openResults(page, width, "from=LHE&to=KHI&depart=2026-12-10&return=2026-12-15&trip=roundtrip&adults=1", ROUND_TRIP);
+    await shot(page, `baggage-card-roundtrip-${width}`);
     if (BEFORE) return;
-    expect(await rowText(dialog)).toEqual([
-      ["ValueOutbound7 kg hand carry only, no checked bag", "7 kg", "No checked bag"],
-      ["Return7 kg hand carry + 30 kg checked", "7 kg", "30 kg"],
-      ["FlexiOutbound7 kg hand carry + 20 kg checked", "7 kg", "20 kg"],
-      ["Return7 kg hand carry + 30 kg checked", "7 kg", "30 kg"],
-    ]);
+    const pa = tiles(page, "Airblue");
+    await expect(pa).toHaveCount(2);
+    await expect(pa.first()).not.toContainText(/undefined|null/);
   });
 }
