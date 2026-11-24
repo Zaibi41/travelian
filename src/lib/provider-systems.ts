@@ -367,7 +367,7 @@ export function groupTicketToFlight(group: GroupTicket): TravelianFlight {
     class: "economy",
     fareBrand: "Group Ticket",
     baggage: group.baggage || firstLeg?.baggage || undefined,
-    meal: "Meal info not available",
+    meal: "No Meal", // #198
     // #175: the outbound journey's stops (a return fare's way back is not a stop).
     stops: outboundJourney ? outboundJourney.stops : Math.max(0, (group.itinerary?.length || 1) - 1),
     segments,

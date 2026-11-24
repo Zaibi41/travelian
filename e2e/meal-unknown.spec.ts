@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
 // #154/#198: "Meal" when the fare says one is served; otherwise, missing meal data included, the card says "No Meal" (#198), never
-// "Meal info not available". Flight details (the per-flight WhatsApp message of #53 has no meal line and never says "No Meal"). Admin: a missing meal is a dash (like a missing refund), never "No Meal".
+// "Meal info not available". Flight details (the per-flight WhatsApp message of #53 has no meal line and never says "No Meal"). Admin: a missing meal is "No Meal" too (#198).
 // Intercepted gateway responses only. MEAL_SHOTS_DIR saves screenshots; MEAL_SHOTS=before only takes them.
 
 if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
@@ -66,7 +66,7 @@ for (const width of [360, 390, 768, 1440]) {
   });
 }
 
-test("admin search 1440px: a missing meal is a dash, an explicit one as sent", async ({ page }) => {
+test("admin search 1440px: a missing meal is No Meal, an explicit one as sent", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await mock(page);
   await page.addInitScript(() => {
@@ -80,7 +80,7 @@ test("admin search 1440px: a missing meal is a dash, an explicit one as sent", a
   await shot(page, "admin-results-1440");
   if (BEFORE) return;
   const ek = page.getByRole("article", { name: /EK625$/ });
-  await expect(ek).not.toContainText("No Meal");
+  await expect(ek).toContainText("No Meal"); // #198
   await expect(page.getByRole("article", { name: /PA410$/ })).toContainText("No meal");
   await expect(page.getByRole("article", { name: /Z8266$/ })).toContainText("Snacks");
 });

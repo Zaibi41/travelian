@@ -88,7 +88,7 @@ describe("Search (internal roles)", () => {
     expect(within(first).getByRole("button", { name: /^Hold seats/ })).toBeEnabled();
     expect(second).toHaveTextContent("7 kg");
     expect(second).not.toHaveTextContent("0+7");
-    expect(second).toHaveTextContent("Meal info not available");
+    expect(second).toHaveTextContent("No Meal"); // #198
     expect(second).toHaveTextContent("Price not available");
     expect(within(second).getByRole("button", { name: /^Hold seats/ })).toBeDisabled();
     expect(within(second).getByRole("button", { name: /^Hold seats/ })).toHaveAccessibleDescription("Holding isn't available for this provider");
