@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
-// #154: "No Meal" only when the fare says so; missing meal data says "Meal info not available" on the card and in Flight
-// details (the per-flight WhatsApp message of #53 has no meal line and never says "No Meal"). Admin: a missing meal is a dash (like a missing refund), never "No Meal".
+// #154/#198: "Meal" when the fare says one is served; otherwise, missing meal data included, the card says "No Meal" (#198), never
+// "Meal info not available". Flight details (the per-flight WhatsApp message of #53 has no meal line and never says "No Meal"). Admin: a missing meal is a dash (like a missing refund), never "No Meal".
 // Intercepted gateway responses only. MEAL_SHOTS_DIR saves screenshots; MEAL_SHOTS=before only takes them.
 
 if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
@@ -47,8 +47,8 @@ for (const width of [360, 390, 768, 1440]) {
     await expect(page.getByRole("button", { name: "Flight Details" }).first()).toBeVisible({ timeout: 20_000 });
     await shot(page, `results-${width}`);
     if (BEFORE) return;
-    await expect(visible(page, "Emirates", "Meal info not available")).toHaveCount(1);
-    await expect(visible(page, "Emirates", "No Meal")).toHaveCount(0);
+    await expect(visible(page, "Emirates", "No Meal")).toHaveCount(1); // #198: missing meal data is "No Meal"
+    await expect(visible(page, "Emirates", "Meal info not available")).toHaveCount(0);
     await expect(visible(page, "Airblue", "No Meal")).toHaveCount(1);
     await expect(visible(page, "South Air", "Meal").first()).toBeVisible(); // "Snacks": a meal is served
     await expect(visible(page, "South Air", "No Meal")).toHaveCount(0);

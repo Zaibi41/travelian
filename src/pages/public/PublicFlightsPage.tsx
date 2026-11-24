@@ -671,13 +671,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     return text;
   };
 
-  // #154: "No Meal" only when the fare says so; missing data is "Meal info not available".
+  // #198: "Meal" when the fare says a meal is served; otherwise, missing data included, "No Meal".
   const mealLabel = (fare: DisplayFare, flight: TravelianFlight) => mealText(fare.meal || flight.meal);
-  /** Meal served: green fork and knife; no meal: crossed out; unknown: a muted fork and knife. */
+  /** Meal served: green fork and knife; otherwise crossed out, matching the "No Meal" label. */
   const MealIcon = ({ fare, flight, className }: { fare: DisplayFare; flight: TravelianFlight; className: string }) => {
     const status = mealStatus(fare.meal || flight.meal);
-    if (status === "none") return <UtensilsCrossed aria-hidden="true" className={cn(className, "shrink-0 text-muted-foreground")} />;
-    return <Utensils aria-hidden="true" className={cn(className, "shrink-0", status === "included" ? "text-emerald-600" : "text-muted-foreground opacity-50")} />;
+    if (status !== "included") return <UtensilsCrossed aria-hidden="true" className={cn(className, "shrink-0 text-muted-foreground")} />;
+    return <Utensils aria-hidden="true" className={cn(className, "shrink-0 text-emerald-600")} />;
   };
 
   // Shown under a "Baggage" heading: "Check with airline" rather than repeating "Baggage:".
@@ -2092,7 +2092,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 </span>
                                 <span className="flex items-center gap-1.5 text-muted-foreground md:text-sm">
                                   <Coffee className="h-3.5 w-3.5 text-primary shrink-0" /> 
-                                  <span className="truncate">{flight.meal || "Meal info not available"}</span>
+                                  <span className="truncate">{mealText(flight.meal)}</span>
                                 </span>
                               </div>
                               
@@ -2541,7 +2541,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
 
               <div className="grid gap-3 md:grid-cols-3">
                 <InfoBox title="Baggage" value={underBaggageLabel(fareBaggage(fareRows(detailsFlight)[0], detailsFlight).detail)} />
-                <InfoBox title="Meal" value={detailsFlight.meal || "Meal info not available"} />
+                <InfoBox title="Meal" value={mealText(detailsFlight.meal)} />
                 <InfoBox title="Fare" value={formatFare(detailsFlight.price, detailsFlight.currency)} />
               </div>
               <div className="rounded-2xl border p-4">
