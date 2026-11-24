@@ -50,6 +50,7 @@ async function render(browser, path) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
+  await page.addInitScript(() => { window.__TRAVELIAN_PRERENDER__ = true; });
   // Hold every request that leaves the preview server (API, fonts, analytics).
   await page.route(url => url.origin !== ORIGIN, () => new Promise(() => {}));
   await page.goto(ORIGIN + path, { waitUntil: "domcontentloaded" });
@@ -61,8 +62,14 @@ async function render(browser, path) {
   }, path, { timeout: 30_000 });
   await page.waitForTimeout(500);
   if (errors.length) throw new Error(`${path}: ${errors.join("; ")}`);
-  const html = await page.evaluate(({ path, guardJs }) => {
+  const html = await page.evaluate(async ({ path, guardJs }) => {
     const root = document.getElementById("root");
+    // Save the app's first render (what src/main.tsx's hydrateRoot will draw), not the DOM after its
+    // effects ran, so hydration matches.
+    const before = new Set(document.head.children);
+    root.innerHTML = await window.__travelianRenderToString();
+    // Loading the server renderer added preload links to <head>; visitors must not download it.
+    [...document.head.children].filter(el => !before.has(el)).forEach(el => el.remove());
     root.setAttribute("data-prerendered", path);
     const script = document.createElement("script");
     script.textContent = guardJs;

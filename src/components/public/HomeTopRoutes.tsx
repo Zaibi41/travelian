@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { addDays, startOfDay } from "date-fns";
 import { formatDateOnly } from "@/lib/date-only";
 import { ArrowRight, Plane } from "lucide-react";
@@ -17,8 +18,13 @@ const routes = [
   { from: "Islamabad", to: "Jeddah", code: "ISB -> JED", href: "/flights-search?from=ISB&to=JED" },
 ];
 
+const tomorrow = () => formatDateOnly(addDays(startOfDay(new Date()), 1));
+const noSubscription = () => () => {};
+
 export function HomeTopRoutes() {
-  const departureDate = formatDateOnly(addDays(startOfDay(new Date()), 1));
+  // The prerendered home page (scripts/prerender.mjs) is saved without a date, which would be stale
+  // by the time someone opens it; the browser adds tomorrow's date as soon as the page hydrates.
+  const departureDate = useSyncExternalStore(noSubscription, tomorrow, () => null);
   return (
     <section aria-labelledby="popular-routes-heading" className="bg-muted/30 py-8 md:py-10">
       <div className="travelian-container">
@@ -28,7 +34,7 @@ export function HomeTopRoutes() {
         </div>
         <div className="grid auto-cols-[80%] grid-flow-col gap-3 overflow-x-auto pb-2 snap-x snap-mandatory sm:auto-cols-[14rem] md:snap-none md:auto-cols-auto md:grid-flow-row md:grid-cols-3 md:overflow-visible lg:grid-cols-5">
           {routes.map(route => <Card key={route.code} className="h-full snap-start rounded-xl border-border shadow-sm transition-colors hover:border-primary/40">
-            <Link to={`${route.href}&depart=${departureDate}`} className="relative block h-full rounded-xl p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+            <Link to={departureDate ? `${route.href}&depart=${departureDate}` : route.href} className="relative block h-full rounded-xl p-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
               <h3 className="truncate text-sm font-semibold text-foreground" title={`${route.from} to ${route.to}`}>{route.from} <span aria-hidden="true">→</span><span className="sr-only"> to </span>{route.to}</h3>
               <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground"><Plane aria-hidden="true" className="h-3.5 w-3.5" />{route.code.replace(" -> ", " → ")}</p>
               <span className="mt-4 inline-flex items-center text-xs font-semibold text-primary">Search Flights <ArrowRight aria-hidden="true" className="ml-1.5 h-3.5 w-3.5" /></span>

@@ -48,7 +48,8 @@ export default defineConfig(({ mode, command, isPreview }) => {
         output: {
           codeSplitting: {
             groups: [
-              { name: "react-vendor", test: /[\\/]node_modules[\\/](react|react-dom|react-router-dom|react-helmet-async)[\\/]/, priority: 30 },
+              // react-dom/server is only loaded by the prerender (src/main.tsx), so it stays out of this shared chunk.
+              { name: "react-vendor", test: /[\\/]node_modules[\\/](react|react-dom|react-router-dom|react-helmet-async)[\\/](?!server|cjs[\\/]react-dom-server)/, priority: 30 },
               { name: "ui-vendor", test: /[\\/]node_modules[\\/](@radix-ui|clsx|tailwind-merge|class-variance-authority)[\\/]/, priority: 20 },
             ],
           },

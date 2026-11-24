@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
+import { renderToString } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { HomeTopRoutes } from "./HomeTopRoutes";
@@ -32,5 +33,11 @@ describe("Popular Routes departure dates", () => {
       expect([...url.searchParams.keys()]).toEqual(["from", "to", "depart"]);
     }
     expect(screen.getByRole("link", { name: /Lahore to Dubai.*Search Flights/i })).toHaveAttribute("href", `/flights-search?from=LHE&to=DXB&depart=${expected}`);
+  });
+
+  it("leaves the date out of the prerendered HTML, so a saved page never links to a past date", () => {
+    const html = renderToString(<MemoryRouter><HomeTopRoutes /></MemoryRouter>);
+    expect(html).toContain('href="/flights-search?from=LHE&amp;to=DXB"');
+    expect(html).not.toContain("depart=");
   });
 });
