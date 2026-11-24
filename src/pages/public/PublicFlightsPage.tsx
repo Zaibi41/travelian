@@ -14,6 +14,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { format, addDays, parseISO, startOfDay } from "date-fns";
 import { GroupFareCalendar } from "@/components/GroupFareCalendar";
 import { useFlightFares } from "@/hooks/use-flight-fares";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { FARE_RULES_FALLBACK, refundStatus } from "@/lib/fare-refund";
 import { SEO } from "@/components/SEO";
@@ -272,6 +273,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const [editTravelers, setEditTravelers] = useState<TravelersValue>(travelers);
   const [editDateOpen, setEditDateOpen] = useState(false);
   // #55: while Modify Search is open, its fares load in the background once From and To are set.
+  // #192: phones show one month in the date pickers (two stacked months were too tall); wider screens keep two.
+  const calendarMonths = useIsMobile() ? 1 : 2;
   const editFares = useFlightFares(modifyOpen, {
     from: airportCodeOf(editFrom), to: airportCodeOf(editTo), adults: editTravelers.adults,
     cabin: editTravelers.cabin.toLowerCase().replace(/\s+/g, "_"),
@@ -2224,7 +2227,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                             </button>
                           </CalendarPopupTrigger>
                           <CalendarPopupContent title="Select flight date">
-                            <Calendar size="large"
+                            <Calendar size="large" numberOfMonths={calendarMonths}
                               mode="single"
                               selected={segment.date}
                               onSelect={(date) => {
@@ -2283,7 +2286,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         onPick={(picked) => pickEditDeparture(parseISO(picked))} />
                     </div>
                   ) : (
-                  <Calendar size="large"
+                  <Calendar size="large" numberOfMonths={calendarMonths}
                     mode="single"
                     selected={editDate}
                     onSelect={pickEditDeparture}
@@ -2315,7 +2318,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           onPick={(picked) => { setEditReturnDate(parseISO(picked)); setEditReturnError(undefined); setEditReturnDateOpen(false); }} />
                       </div>
                     ) : (
-                    <Calendar size="large"
+                    <Calendar size="large" numberOfMonths={calendarMonths}
                       mode="single"
                       selected={editReturnDate}
                       onSelect={(date) => {
