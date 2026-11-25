@@ -16,7 +16,7 @@ import { Link, useSearchParams } from "react-router-dom";
 // SeatMap is intentionally paused in the UI for now. Keep the component available for the future seat-selection phase.
 // import { SeatMap } from "@/components/booking/SeatMap";
 import { saveServerBooking } from "@/lib/booking-api";
-import { bookGroupFare, chooseReceivingAccount, getCardFee, getFlightDocuments, getFlightPaymentOptions, getPaymentMethods, requestPublicFlight, startPayFastCheckout, PublicBookingError, type BankAccountDisplay, type CardFee, type FlightPaymentOptions, type PaymentMethods } from "@/lib/public-booking";
+import { bookGroupFare, chooseReceivingAccount, getCardFee, getFlightDocuments, getFlightPaymentOptions, getPaymentMethods, requestPublicFlight, startAlfalahCheckout, startPayFastCheckout, PublicBookingError, type BankAccountDisplay, type CardFee, type FlightPaymentOptions, type PaymentMethods } from "@/lib/public-booking";
 import { BankAccounts, HoldCountdown } from "@/components/public/BankTransferDetails";
 import { PaymentSlipUpload } from "@/components/public/PaymentSlipUpload";
 import { BookingContactDetails } from "@/components/public/BookingContactDetails";
@@ -323,18 +323,19 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   // #149: Refundable / Non-refundable only when the fare data says so. Group fares are always non-refundable.
   const ctxRefund: RefundStatus = isFlight ? (groupTicketId ? "non_refundable" : productCtx.extra?.refund ?? null) : null;
   const paymentOptions = groupTicketId ? {
-    card: Boolean(methods?.card), bank: Boolean(methods?.bank_transfer), wallet: Boolean(methods?.jazzcash),
+    card: Boolean(methods?.card), alfalah: Boolean(methods?.alfalah), bank: Boolean(methods?.bank_transfer), wallet: Boolean(methods?.jazzcash),
   } : flightPayable ? {
-    card: Boolean(flightOptions?.card), bank: Boolean(flightOptions?.bank_transfer), wallet: Boolean(flightOptions?.jazzcash),
-  } : { card: false, bank: false, wallet: false };
-  const canPayHere = paymentOptions.card || paymentOptions.bank || paymentOptions.wallet;
-  const firstMethod = paymentOptions.card ? "card" : paymentOptions.bank ? "bank" : paymentOptions.wallet ? "wallet" : "";
+    card: Boolean(flightOptions?.card), alfalah: Boolean(flightOptions?.alfalah), bank: Boolean(flightOptions?.bank_transfer), wallet: Boolean(flightOptions?.jazzcash),
+  } : { card: false, alfalah: false, bank: false, wallet: false };
+  const canPayHere = paymentOptions.card || paymentOptions.alfalah || paymentOptions.bank || paymentOptions.wallet;
+  const firstMethod = paymentOptions.card ? "card" : paymentOptions.alfalah ? "alfalah" : paymentOptions.bank ? "bank" : paymentOptions.wallet ? "wallet" : "";
   useEffect(() => {
     // Keep the selection on a method this booking can actually use.
     const usable = (paymentMethod === "card" || paymentMethod === "1link") ? paymentOptions.card
+      : paymentMethod === "alfalah" ? paymentOptions.alfalah
       : paymentMethod === "bank" ? paymentOptions.bank : paymentMethod === "wallet" ? paymentOptions.wallet : false;
     if (!usable && firstMethod) setPaymentMethod(firstMethod);
-  }, [paymentMethod, firstMethod, paymentOptions.card, paymentOptions.bank, paymentOptions.wallet]);
+  }, [paymentMethod, firstMethod, paymentOptions.card, paymentOptions.alfalah, paymentOptions.bank, paymentOptions.wallet]);
   const [fareTermsAccepted, setFareTermsAccepted] = useState(false);
   const [payConfirmOpen, setPayConfirmOpen] = useState(false);
   // #74: the card / 1Link fee, worked out by the gateway, shown before payment ("Card fee (3%): Rs X · Total Rs Y").
@@ -387,7 +388,9 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
   const displayAmount = (amount: number) => convertCurrencyAmount(amount, sourceCurrency, displayCurrency);
   const formatMoney = (amount: number) => `${displayCurrency} ${Math.round(displayAmount(amount)).toLocaleString()}`;
   const rs = (minor: number) => `Rs ${Math.round(minor / 100).toLocaleString("en-PK")}`;
-  const cardMethod = paymentMethod === "card" || paymentMethod === "1link";
+  const cardMethod = paymentMethod === "card" || paymentMethod === "1link" || paymentMethod === "alfalah";
+  // Where the online payment is made, named in the payment wording.
+  const onlineProvider = paymentMethod === "alfalah" ? "Bank Alfalah" : "PayFast";
   useEffect(() => {
     if (!payConfirmOpen || !cardMethod || !(grandTotal > 0)) { setCardFee(null); return; }
     const controller = new AbortController();
@@ -511,15 +514,17 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
       paymentStatus: online ? "pending" : "unpaid",
       toastTitle: online ? "Redirecting to payment" : "Booking request saved",
       toastDescription: online
-        ? "Travelian has saved this booking and is opening the secure PayFast checkout."
+        ? `Travelian has saved this booking and is opening the secure ${onlineProvider} checkout.`
         : "Online payment isn't available for this booking. Travelian's team will contact you to confirm the fare and arrange payment. Nothing has been charged.",
     });
-    if (!saved || !["card", "1link"].includes(paymentMethod)) return;
+    if (!saved || !["card", "1link", "alfalah"].includes(paymentMethod)) return;
     if (saved.gateway) {
       if (!saved.gateway.live) return; // a request: Travelian confirms the fare before any payment
       try {
         setProcessing(true);
-        const checkout = await startPayFastCheckout(saved.gateway.reference, saved.gateway.token);
+        const checkout = paymentMethod === "alfalah"
+          ? await startAlfalahCheckout(saved.gateway.reference, saved.gateway.token)
+          : await startPayFastCheckout(saved.gateway.reference, saved.gateway.token);
         submitHostedPayment({ method: "POST", action: checkout.action, fields: checkout.fields });
       } catch (error) {
         toast({
@@ -1132,9 +1137,11 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     {([
                       { id: "card", label: "Credit/Debit Card", icon: CreditCard, desc: "Pay online through secure PayFast checkout", badges: ["Visa", "Mastercard"] as string[] },
                       { id: "1link", label: "1Link", icon: Wallet, desc: "Pay through PayFast 1Link checkout", badges: ["1Link"] as string[] },
+                      { id: "alfalah", label: "Bank Alfalah", icon: CreditCard, desc: "Pay by card on Bank Alfalah's secure checkout", badges: ["Visa", "Mastercard"] as string[] },
                       { id: "wallet", label: "Digital Wallet", icon: Wallet, desc: "Pay from your mobile wallet", badges: ["JazzCash", "Easypaisa"] as string[] },
                       { id: "bank", label: "Bank Transfer", icon: Building2, desc: "Direct bank transfer", badges: [] as string[] },
-                    ]).filter(method => (method.id === "bank" ? paymentOptions.bank : method.id === "wallet" ? paymentOptions.wallet : paymentOptions.card))
+                    ]).filter(method => (method.id === "bank" ? paymentOptions.bank : method.id === "wallet" ? paymentOptions.wallet
+                      : method.id === "alfalah" ? paymentOptions.alfalah : paymentOptions.card))
                     .map(method => {
                       const on = paymentMethod === method.id;
                       return (
@@ -1197,6 +1204,12 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
                     </div>
                   ) : null}
 
+                  {canPayHere && paymentMethod === "alfalah" && (
+                    <div className="rounded-xl border border-primary/10 bg-accent/30 p-4 text-sm text-muted-foreground">
+                      You will be redirected to Bank Alfalah to enter card details securely. Travelian does not collect or store card numbers.
+                    </div>
+                  )}
+
                   {canPayHere && paymentMethod === "1link" && (
                     <div className="rounded-xl border border-primary/10 bg-accent/30 p-4 text-sm text-muted-foreground">
                       You will be redirected to PayFast 1Link checkout. Your booking will stay pending until payment is confirmed.
@@ -1205,7 +1218,7 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
 
                   <div className="flex items-start gap-2 mt-5 p-3 bg-success/5 rounded-xl border border-success/20">
                     <Lock className="h-4 w-4 text-success shrink-0 mt-0.5" />
-                    <p className="text-xs text-muted-foreground">Online payments are processed by PayFast. Booking details are saved before redirecting to payment.</p>
+                    <p className="text-xs text-muted-foreground">Online payments are processed by {onlineProvider}. Booking details are saved before redirecting to payment.</p>
                   </div>
 
                   <div className="flex justify-between mt-6">
@@ -1427,11 +1440,11 @@ function FlightCheckout({ productCtx, params }: { productCtx: ProductCtx; params
           <DialogHeader>
             <DialogTitle>Confirm payment</DialogTitle>
             <DialogDescription>
-              Review the amount. Online payments are made on PayFast; tickets are issued only after the payment is verified.
+              Review the amount. Online payments are made on {onlineProvider}; tickets are issued only after the payment is verified.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Method</span><span className="font-semibold capitalize">{paymentMethod === "1link" ? "1Link" : paymentMethod}</span></div>
+            <div className="flex justify-between"><span className="text-muted-foreground">Method</span><span className="font-semibold capitalize">{paymentMethod === "1link" ? "1Link" : paymentMethod === "alfalah" ? "Bank Alfalah" : paymentMethod}</span></div>
             <div className="flex justify-between"><span className="text-muted-foreground">{cardFee ? "Fare" : "Payable"}</span><span className="font-bold text-foreground">{formatMoney(grandTotal)}</span></div>
             {cardFee && (
               <p className="rounded-lg bg-accent/40 px-3 py-2 font-semibold text-foreground">

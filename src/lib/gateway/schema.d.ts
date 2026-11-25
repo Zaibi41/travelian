@@ -3756,6 +3756,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/bookings/{reference}/payments/alfalah": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Alfalah
+         * @description The Bank Alfalah (Alfa Payment Gateway) checkout form for the amount due. The browser posts `fields` to `action`.
+         */
+        post: operations["start_alfalah_v1_public_bookings__reference__payments_alfalah_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/bookings/{reference}/payments/payfast": {
         parameters: {
             query?: never;
@@ -3996,6 +4016,27 @@ export interface paths {
         get: operations["payment_qr_v1_public_payment_qr__account_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/public/payments/alfalah/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Alfalah Return
+         * @description The website forwards what APG sent the customer back with (the order id "O", in the query or the path). The gateway
+         *     asks APG for that order's status; nothing the browser sends is trusted as a payment.
+         */
+        post: operations["alfalah_return_v1_public_payments_alfalah_return_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5704,9 +5745,18 @@ export interface components {
         };
         /** FlightPaymentOptions */
         FlightPaymentOptions: {
+            /**
+             * Alfalah
+             * @description Card through Bank Alfalah (Alfa Payment Gateway).
+             * @default false
+             */
+            alfalah: boolean;
             /** Bank Transfer */
             bank_transfer: boolean;
-            /** Card */
+            /**
+             * Card
+             * @description Card / 1Link through PayFast.
+             */
             card: boolean;
             /**
              * Held
@@ -7483,6 +7533,12 @@ export interface components {
         /** PaymentMethodsView */
         PaymentMethodsView: {
             /**
+             * Alfalah
+             * @description Card on Bank Alfalah's page (Alfa Payment Gateway): on production APG, or the sandbox with ALFALAH_ALLOW_SANDBOX (test money).
+             * @default false
+             */
+            alfalah: boolean;
+            /**
              * Bank Accounts
              * @default []
              */
@@ -8265,7 +8321,7 @@ export interface components {
             reference?: string | null;
             /**
              * Result
-             * @description paid, failed, already_paid, already_failed, amount_mismatch, unknown_basket or not_verified.
+             * @description paid, failed, already_paid, already_failed, amount_mismatch, unknown_basket, not_verified, or not_paid (Bank Alfalah: the order isn't paid, yet).
              */
             result: string;
         };
@@ -20112,6 +20168,39 @@ export interface operations {
             };
         };
     };
+    start_alfalah_v1_public_bookings__reference__payments_alfalah_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Booking-Token": string;
+            };
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CheckoutView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     start_payfast_v1_public_bookings__reference__payments_payfast_post: {
         parameters: {
             query?: never;
@@ -20607,6 +20696,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    alfalah_return_v1_public_payments_alfalah_return_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReturnResult"];
+                };
             };
         };
     };

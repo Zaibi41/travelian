@@ -6,6 +6,7 @@ export const PRIVATE_PATH_PREFIXES = [
   "/request-booking",
   "/account",
   "/my-bookings",
+  "/payment",
   "/find-booking",
   "/auth/",
   "/signin",

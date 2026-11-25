@@ -189,6 +189,16 @@ export function confirmPayFastReturn(params: Record<string, string>) {
   return call<{ reference?: string; result: string }>("/payments/payfast/return", { body: params });
 }
 
+/** The Bank Alfalah (Alfa Payment Gateway) checkout form for the amount due; the browser posts it to Bank Alfalah's page. */
+export function startAlfalahCheckout(reference: string, token: string) {
+  return call<{ action: string; fields: Record<string, string>; sandbox: boolean }>(`/bookings/${encodeURIComponent(reference)}/payments/alfalah`, { method: "POST", token });
+}
+
+/** Forwards what Bank Alfalah sent the customer back with (its order id); the gateway asks Bank Alfalah for the status. */
+export function confirmAlfalahReturn(params: Record<string, string>) {
+  return call<{ reference?: string; result: string }>("/payments/alfalah/return", { body: params });
+}
+
 export function isPayFastReturn(params: URLSearchParams) {
   return params.has("validation_hash") || params.has("VALIDATION_HASH") || params.has("err_code") || params.has("basket_id");
 }
@@ -235,6 +245,8 @@ export interface BankAccountDisplay {
 /** `flights`: website flight fares are held and paid here; false: a flight booking is a request (Travelian arranges payment). */
 export interface PaymentMethods {
   card: boolean; bank_transfer: boolean; jazzcash: boolean; flights?: boolean;
+  /** Card on Bank Alfalah's page (Alfa Payment Gateway), when the gateway can take it. */
+  alfalah?: boolean;
   bank_accounts?: BankAccountDisplay[]; jazzcash_accounts?: BankAccountDisplay[]; logo_url?: string | null;
 }
 
@@ -281,7 +293,7 @@ export function toGatewayFlightPassenger(traveler: FlightRequestTraveler) {
 
 /** What checkout may offer for the chosen fares, decided by the gateway (D45). `held: false`: the booking is a request.
  *  Card is never offered for a fare whose tickets can't be issued from Travelian; the gateway refuses it too. */
-export interface FlightPaymentOptions { held: boolean; card: boolean; bank_transfer: boolean; jazzcash: boolean }
+export interface FlightPaymentOptions { held: boolean; card: boolean; alfalah?: boolean; bank_transfer: boolean; jazzcash: boolean }
 
 export function getFlightPaymentOptions(searchId: string, fareIds: string[], signal?: AbortSignal) {
   return call<FlightPaymentOptions>("/flights/payment-options", { body: { search_id: searchId, fare_ids: fareIds }, signal });

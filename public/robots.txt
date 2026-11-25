@@ -6,6 +6,7 @@ Disallow: /booking
 Disallow: /request-booking
 Disallow: /account
 Disallow: /my-bookings
+Disallow: /payment
 Disallow: /find-booking
 Disallow: /auth/
 Disallow: /signin
