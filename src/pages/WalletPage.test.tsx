@@ -1,23 +1,23 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GatewayError } from "@/lib/gateway/client";
 
-// Finance > Wallets (#68). Gateway mocked; made-up balances.
+// Finance > Wallets (issue 224, D3): B2B agency wallets only. Gateway mocked; made-up agencies and amounts.
 const role = vi.hoisted(() => ({ current: "super_admin" }));
 vi.mock("@/contexts/RoleContext", () => ({ useRole: () => ({ currentRole: role.current }) }));
-const api = vi.hoisted(() => ({ fetchSupplierWallets: vi.fn(), refreshSouthair: vi.fn(), recordWalletEntry: vi.fn(), setWalletThreshold: vi.fn(),
-  fetchWalletHistory: vi.fn() }));
-vi.mock("@/lib/finance/api", async (original) => ({ ...(await original<object>()), ...api }));
+const api = vi.hoisted(() => ({ fetchAgencyWallets: vi.fn(), addAgencyWalletEntry: vi.fn(), fetchAgencyWalletStatement: vi.fn(), setAgencyWalletLow: vi.fn(),
+  fetchSaleOptions: vi.fn() }));
+vi.mock("@/lib/finance/ops-api", async (original) => ({ ...(await original<object>()), ...api }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 import WalletPage from "./WalletPage";
 
 const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" });
-const WALLETS = { wallets: [
-  { provider_id: "southair", name: "Southair", mode: "api", balance: rs(90_000), as_of: "2026-11-21T06:00:00Z", threshold: rs(100_000), low: true },
-  { provider_id: "sooperfare", name: "SooperFare", mode: "calculated", balance: null, note: "SooperFare has no balance API. Record a top-up to start." },
+const WALLETS = { total_balance: rs(95_000), low_count: 1, wallets: [
+  { agency_id: "karachi", agency_name: "Karachi Travels", agency_status: "active", balance: rs(80_000), deposits: rs(100_000), last_deposit_at: "2026-11-24T08:00:00Z" },
+  { agency_id: "lahore", agency_name: "Lahore Tours", agency_status: "active", balance: rs(15_000), deposits: rs(15_000), low_threshold: rs(20_000), low: true },
 ] };
 
 function renderPage() {
@@ -25,43 +25,51 @@ function renderPage() {
   return render(<QueryClientProvider client={client}><MemoryRouter><WalletPage /></MemoryRouter></QueryClientProvider>);
 }
 
-beforeEach(() => { vi.clearAllMocks(); role.current = "super_admin"; api.fetchSupplierWallets.mockResolvedValue(WALLETS); });
+beforeEach(() => {
+  vi.clearAllMocks();
+  role.current = "super_admin";
+  api.fetchAgencyWallets.mockResolvedValue(WALLETS);
+  api.fetchSaleOptions.mockResolvedValue({ is_finance: true, suppliers: [], partners: [], accounts: [{ id: "a1", name: "UBL Business", detail: "business" }] });
+});
 
 describe("WalletPage", () => {
-  it("shows each supplier's balance with a Low label and the right actions", async () => {
+  it("shows agency wallets, not supplier balances", async () => {
     renderPage();
-    expect(await screen.findByText("Rs 90,000")).toBeInTheDocument();
-    expect(screen.getByText("Low")).toBeInTheDocument();
-    expect(screen.getByText("Not known")).toBeInTheDocument();
-    expect(screen.getByText(/no balance API/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Record top-up" })).toBeInTheDocument();
+    expect(await screen.findByText("Held for agencies")).toBeInTheDocument();
+    expect(screen.getAllByText("Karachi Travels").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Low").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Southair|South Air|Sooperfare/)).not.toBeInTheDocument();
   });
 
-  it("an adjustment needs a reason and can take off the balance", async () => {
-    api.recordWalletEntry.mockResolvedValue({});
+  it("a deposit needs the account and reference; an adjustment can take money off", async () => {
+    api.addAgencyWalletEntry.mockResolvedValue({ ...WALLETS.wallets[0], balance: rs(85_000) });
     renderPage();
-    fireEvent.click(await screen.findByRole("button", { name: "Adjust balance" }));
-    fireEvent.click(screen.getByRole("radio", { name: "Take off balance" }));
-    fireEvent.change(screen.getByLabelText("Amount (Rs)"), { target: { value: "1,230" } });
-    fireEvent.click(screen.getAllByRole("button", { name: "Adjust balance" }).at(-1)!);
-    expect(await screen.findByText("Say why, in plain words.")).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Portal shows less" } });
-    fireEvent.click(screen.getAllByRole("button", { name: "Adjust balance" }).at(-1)!);
-    await waitFor(() => expect(api.recordWalletEntry).toHaveBeenCalled());
-    expect(api.recordWalletEntry.mock.calls[0][0]).toBe("sooperfare");
-    expect(api.recordWalletEntry.mock.calls[0][1]).toBe("adjustments");
-    expect(api.recordWalletEntry.mock.calls[0][2]).toMatchObject({ amount_minor: -123_000, reason: "Portal shows less" });
+    fireEvent.click((await screen.findAllByRole("button", { name: "Record deposit for Karachi Travels" }))[0]);
+    const dialog = screen.getByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Amount (Rs)"), { target: { value: "5,000" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Record deposit" }));
+    expect(await within(dialog).findByText("Choose the account the money arrived in.")).toBeInTheDocument();
+    expect(api.addAgencyWalletEntry).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Adjust Karachi Travels wallet" })[0]);
+    fireEvent.click(screen.getByRole("radio", { name: "Take off wallet" }));
+    fireEvent.change(screen.getByLabelText("Amount (Rs)"), { target: { value: "1,000" } });
+    fireEvent.change(screen.getByLabelText("Reason"), { target: { value: "Fee agreed" } });
+    fireEvent.click(screen.getByRole("button", { name: "Adjust wallet" }));
+    await waitFor(() => expect(api.addAgencyWalletEntry).toHaveBeenCalled());
+    expect(api.addAgencyWalletEntry.mock.calls[0][0]).toBe("karachi");
+    expect(api.addAgencyWalletEntry.mock.calls[0][1]).toMatchObject({ kind: "adjustment", amount_minor: -100_000, reason: "Fee agreed", account_id: null });
   });
 
   it("no permission and agency roles", async () => {
-    api.fetchSupplierWallets.mockRejectedValueOnce(new GatewayError("forbidden", "Supplier balances need the cost and margin permission.", 403));
+    api.fetchAgencyWallets.mockRejectedValueOnce(new GatewayError("forbidden", "Needs Finance.", 403));
     const first = renderPage();
     expect(await screen.findByText("Not available for your role")).toBeInTheDocument();
     first.unmount();
     role.current = "agency_owner";
     renderPage();
     expect(screen.getByText("Not built yet.")).toBeInTheDocument();
-    expect(api.fetchSupplierWallets).toHaveBeenCalledTimes(1);
+    expect(api.fetchAgencyWallets).toHaveBeenCalledTimes(1);
   });
 });

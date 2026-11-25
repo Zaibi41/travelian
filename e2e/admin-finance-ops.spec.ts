@@ -5,6 +5,7 @@ import { gatewayView, isGateway, isLocal } from "./support/gateway";
 // Dues, Accounts & Ledgers balances. Local-only session and made-up gateway answers; nothing reaches a real gateway.
 if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
 
+const OPTIONS_PARTNER = "Karachi Travels and Tours (Private) Limited, Saddar branch";
 const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" });
 const LONG = "Fly Jinnah / Air Arabia Pakistan regional office direct airline ID (Lahore and Karachi)";
 const row = (over: Record<string, unknown>) => ({ section: "direct", booking_mode: "manual", balance_mode: "manual", total_topped_up: rs(0), total_deducted: rs(0), status: "ok", ...over });
@@ -14,7 +15,13 @@ const SUPPLIERS = [
   row({ id: "airsial", name: "AirSial", opening_balance: rs(100_000), opening_set_at: "2026-11-20T00:00:00Z", total_deducted: rs(90_000), current_balance: rs(10_000), low_threshold: rs(5_000), status: "ok", last_updated: "2026-11-22T10:00:00Z" }),
   row({ id: "flyjinnah", name: LONG, current_balance: rs(-1_500), opening_balance: rs(0), opening_set_at: "2026-11-21T00:00:00Z", total_deducted: rs(1_500), status: "negative", last_updated: "2026-11-23T10:00:00Z" }),
   row({ id: "pia", name: "PIA", current_balance: null, status: "not_set_up" }),
+  row({ id: "aeroglobe", name: "AeroGlobe", section: "b2b", opening_balance: rs(75_000), opening_set_at: "2026-11-20T00:00:00Z", current_balance: rs(75_000), status: "ok", last_updated: "2026-11-25T09:00:00Z" }),
+  row({ id: "ratehawk", name: "RateHawk", section: "hotels", booking_mode: "api", current_balance: null, status: "not_set_up" }),
 ];
+const AGENCY_WALLETS = { total_balance: rs(95_000), low_count: 1, wallets: [
+  { agency_id: "karachi", agency_name: OPTIONS_PARTNER, agency_status: "active", balance: rs(80_000), deposits: rs(100_000), last_deposit_at: "2026-11-24T08:00:00Z" },
+  { agency_id: "lahore", agency_name: "Lahore Tours", agency_status: "active", balance: rs(15_000), deposits: rs(15_000), low_threshold: rs(20_000), low: true },
+] };
 const LEDGER = { supplier: SUPPLIERS[2], items: [
   { at: "2026-11-20T00:00:00Z", kind: "opening", amount: rs(100_000), balance_after: rs(100_000), description: "Opening balance", counted: true },
   { at: "2026-11-21T08:00:00Z", kind: "ticket_sale", amount: rs(-60_000), balance_after: rs(40_000), description: "Ticket Sale Entry #7 (Muhammad Azam, LHE-JED)", ticket_sale_number: 7, by_role: "super_admin", counted: true },
@@ -63,7 +70,7 @@ const JSON_FOR: Record<string, unknown> = {
   "/v1/admin/finance/overview": OVERVIEW, "/v1/admin/finance/suppliers": { suppliers: SUPPLIERS }, "/v1/admin/finance/suppliers/airsial/ledger": LEDGER,
   "/v1/admin/finance/ticket-sales/options": OPTIONS, "/v1/admin/finance/ticket-sales/preview": PREVIEW, "/v1/admin/finance/ticket-sales": SALES,
   "/v1/admin/finance/supplier-refunds": REFUNDS, "/v1/admin/finance/customer-dues": DUES, "/v1/admin/finance/accounts": ACCOUNTS,
-  "/v1/admin/finance/payment-accounts": { accounts: [] },
+  "/v1/admin/finance/payment-accounts": { accounts: [] }, "/v1/admin/finance/agency-wallets": AGENCY_WALLETS,
 };
 
 async function open(page: Page, width: number, path: string, heading: string) {
@@ -112,6 +119,16 @@ for (const width of [1440, 1024, 768, 390]) {
     await page.screenshot({ ...shot(width, "ledger"), fullPage: false });
     await page.keyboard.press("Escape");
     await expect(drawer).toHaveCount(0);
+
+    for (const section of ["API-integrated", "Direct airline IDs", "B2B portals", "Hotels"]) {
+      await expect(page.getByRole("heading", { level: 2, name: section })).toBeVisible();
+    }
+
+    await page.goto("/admin/wallet");
+    await expect(page.getByText("Held for agencies")).toBeVisible();
+    await expect(page.getByText("Sooperfare")).toHaveCount(0);
+    expect(await overflow(page)).toBeLessThanOrEqual(0);
+    await page.screenshot(shot(width, "wallets"));
 
     await page.goto("/admin/finance/ticket-sales");
     await page.getByLabel("Cost (Rs)").fill("60000");

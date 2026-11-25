@@ -1031,6 +1031,80 @@ export interface paths {
         patch: operations["update_account_v1_admin_finance_accounts__account_id__patch"];
         trace?: never;
     };
+    "/v1/admin/finance/agency-wallets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Agency Wallets
+         * @description Every B2B agency's prepaid wallet (D3: agencies only; B2C customers have none).
+         */
+        get: operations["agency_wallets_v1_admin_finance_agency_wallets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/agency-wallets/{agency_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Agency Wallet Statement */
+        get: operations["agency_wallet_statement_v1_admin_finance_agency_wallets__agency_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/agency-wallets/{agency_id}/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Agency Wallet Entry
+         * @description A deposit (adds) or an adjustment (+/- with a reason). A wallet never goes below zero.
+         */
+        post: operations["add_agency_wallet_entry_v1_admin_finance_agency_wallets__agency_id__entries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/agency-wallets/{agency_id}/low": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Agency Wallet Low */
+        put: operations["set_agency_wallet_low_v1_admin_finance_agency_wallets__agency_id__low_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/finance/audit-log": {
         parameters: {
             query?: never;
@@ -4666,10 +4740,11 @@ export interface components {
             name: string;
             /**
              * Section
+             * @description api is for suppliers connected in code only.
              * @default direct
              * @enum {string}
              */
-            section: "api" | "direct";
+            section: "direct" | "b2b" | "hotels";
             /** Settlement Tag */
             settlement_tag?: ("DTS" | "IATA") | null;
         };
@@ -4779,6 +4854,95 @@ export interface components {
             contact_phone?: string | null;
             /** Expected Revision */
             expected_revision: number;
+        };
+        /** AgencyWalletEntryRequest */
+        AgencyWalletEntryRequest: {
+            /**
+             * Account Id
+             * @description Deposit: the Travelian account the money arrived in.
+             */
+            account_id?: string | null;
+            /** Amount Minor */
+            amount_minor: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "deposit" | "adjustment";
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Reason */
+            reason?: string | null;
+            /** Reference */
+            reference?: string | null;
+        };
+        /** AgencyWalletEntryView */
+        AgencyWalletEntryView: {
+            /** Account */
+            account?: string | null;
+            amount: components["schemas"]["BookingMoney"];
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            balance_after: components["schemas"]["BookingMoney"];
+            /** By Role */
+            by_role?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "deposit" | "adjustment";
+            /** Reason */
+            reason?: string | null;
+            /** Reference */
+            reference?: string | null;
+        };
+        /** AgencyWalletList */
+        AgencyWalletList: {
+            /** Low Count */
+            low_count: number;
+            /** @description Money Travelian holds for agencies (wallet liability). */
+            total_balance: components["schemas"]["BookingMoney"];
+            /** Wallets */
+            wallets: components["schemas"]["AgencyWalletView"][];
+        };
+        /** AgencyWalletLowRequest */
+        AgencyWalletLowRequest: {
+            /** Low Threshold Minor */
+            low_threshold_minor?: number | null;
+        };
+        /** AgencyWalletStatement */
+        AgencyWalletStatement: {
+            /**
+             * Entries
+             * @description Oldest first.
+             */
+            entries: components["schemas"]["AgencyWalletEntryView"][];
+            wallet: components["schemas"]["AgencyWalletView"];
+        };
+        /** AgencyWalletView */
+        AgencyWalletView: {
+            /** Agency Id */
+            agency_id: string;
+            /** Agency Name */
+            agency_name: string;
+            /** Agency Status */
+            agency_status: string;
+            balance: components["schemas"]["BookingMoney"];
+            deposits: components["schemas"]["BookingMoney"];
+            /** Last Deposit At */
+            last_deposit_at?: string | null;
+            /**
+             * Low
+             * @description Below its low-balance level; None when no level is set.
+             */
+            low?: boolean | null;
+            low_threshold?: components["schemas"]["BookingMoney"] | null;
         };
         /** AnnouncementList */
         AnnouncementList: {
@@ -10190,7 +10354,7 @@ export interface components {
              * Section
              * @enum {string}
              */
-            section: "api" | "direct";
+            section: "api" | "direct" | "b2b" | "hotels";
             /**
              * Settlement Tag
              * @description Reference only (D53).
@@ -13374,6 +13538,207 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccountList"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    agency_wallets_v1_admin_finance_agency_wallets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgencyWalletList"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    agency_wallet_statement_v1_admin_finance_agency_wallets__agency_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agency_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgencyWalletStatement"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    add_agency_wallet_entry_v1_admin_finance_agency_wallets__agency_id__entries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agency_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgencyWalletEntryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgencyWalletView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_agency_wallet_low_v1_admin_finance_agency_wallets__agency_id__low_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                agency_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgencyWalletLowRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgencyWalletView"];
                 };
             };
             /** @description Not allowed for this role. */

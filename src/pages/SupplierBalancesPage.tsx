@@ -41,7 +41,7 @@ export default function SupplierBalancesPage() {
         <>
           {suppliers.isPending && <LoadingCards count={2} label="Loading supplier balances" itemClassName="h-48" />}
           {suppliers.error && <Notice tone="critical">{suppliers.error.message}</Notice>}
-          {suppliers.data && (["api", "direct"] as const).map(section => (
+          {suppliers.data && SECTIONS.map(section => (
             <SupplierSection key={section} section={section} rows={rows.filter(row => row.section === section)} onLedger={setLedgerFor} />
           ))}
         </>
@@ -52,9 +52,13 @@ export default function SupplierBalancesPage() {
   );
 }
 
-const SECTION_TEXT = {
-  api: { title: "API-integrated", hint: "Booked through Travelian's connection to the supplier." },
+const SECTIONS = ["api", "direct", "b2b", "hotels"] as const;
+type Section = (typeof SECTIONS)[number];
+const SECTION_TEXT: Record<Section, { title: string; hint: string }> = {
+  api: { title: "API-integrated", hint: "Flights booked through Travelian's connection to the supplier." },
   direct: { title: "Direct airline IDs", hint: "Booked on the airline's own portal with Travelian's ID; the balance is calculated here." },
+  b2b: { title: "B2B portals", hint: "B2B flight and group ticketing portals not connected by API (for example AeroGlobe); the balance is calculated here." },
+  hotels: { title: "Hotels", hint: "Hotel suppliers. RateHawk is booked by API; its balance is calculated here until its API provides one." },
 };
 
 function ModeBadges({ row }: { row: SupplierRow }) {
@@ -72,7 +76,7 @@ function StatusPill({ row }: { row: SupplierRow }) {
   return status.severity ? <StatusBadge severity={status.severity}>{status.label}</StatusBadge> : <Tag>{status.label}</Tag>;
 }
 
-function SupplierSection({ section, rows, onLedger }: { section: "api" | "direct"; rows: SupplierRow[]; onLedger: (id: string) => void }) {
+function SupplierSection({ section, rows, onLedger }: { section: Section; rows: SupplierRow[]; onLedger: (id: string) => void }) {
   const text = SECTION_TEXT[section];
   const headingId = `suppliers-${section}`;
   return (
@@ -324,13 +328,14 @@ function AddSupplierDialog({ onClose }: { onClose: () => void }) {
   const id = useId();
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
+  const [section, setSection] = useState<"direct" | "b2b" | "hotels">("direct");
   const [tag, setTag] = useState("none");
   const [threshold, setThreshold] = useState("");
   const [touched, setTouched] = useState(false);
   const thresholdPaisa = threshold.trim() ? rupeesToPaisa(threshold) : null;
   const problem = name.trim().length < 2 ? "Enter the supplier's name." : threshold.trim() && !thresholdPaisa ? "Enter the threshold in rupees, or leave it empty." : null;
   const save = useMutation({
-    mutationFn: () => addSupplier({ name: name.trim(), section: "direct", settlement_tag: tag === "none" ? null : tag as "DTS" | "IATA", low_threshold_minor: thresholdPaisa }),
+    mutationFn: () => addSupplier({ name: name.trim(), section, settlement_tag: tag === "none" ? null : tag as "DTS" | "IATA", low_threshold_minor: thresholdPaisa }),
     onSuccess: created => {
       toast.success(`${created.name} added. Set its opening balance from its ledger.`);
       void queryClient.invalidateQueries({ queryKey: ["finance"] });
@@ -342,10 +347,12 @@ function AddSupplierDialog({ onClose }: { onClose: () => void }) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add Supplier</DialogTitle>
-          <DialogDescription>A direct airline ID or another supplier booked by hand. Its balance starts when you set the opening balance.</DialogDescription>
+          <DialogDescription>A direct airline ID, a B2B or group ticketing portal, or a hotel supplier. Its balance starts when you set the opening balance.</DialogDescription>
         </DialogHeader>
         <form id={id} className="flex flex-col gap-3" onSubmit={event => { event.preventDefault(); setTouched(true); if (!problem) save.mutate(); }}>
           <FieldShell id={`${id}-name`} label="Supplier name"><Input id={`${id}-name`} value={name} maxLength={120} onChange={event => setName(event.target.value)} /></FieldShell>
+          <LabeledSelect id={`${id}-type`} label="Type" value={section} onChange={value => setSection(value as typeof section)}
+            options={[{ value: "direct", label: "Direct airline ID" }, { value: "b2b", label: "B2B portal (flights / group ticketing)" }, { value: "hotels", label: "Hotels" }]} />
           <LabeledSelect id={`${id}-tag`} label="Settlement (reference only)" value={tag} onChange={setTag}
             options={[{ value: "none", label: "Not set" }, { value: "DTS", label: "DTS" }, { value: "IATA", label: "IATA" }]} />
           <FieldShell id={`${id}-threshold`} label="Low below (Rs, optional)"><Input id={`${id}-threshold`} inputMode="decimal" value={threshold} onChange={event => setThreshold(event.target.value)} /></FieldShell>

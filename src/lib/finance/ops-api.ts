@@ -134,3 +134,23 @@ export const LEDGER_KIND: Record<LedgerItem["kind"], string> = {
 
 /** "super_admin" → "Super Admin"; "system" for automatic actions. */
 export const roleName = (role?: string | null) => (role ? role.replace(/_/g, " ").replace(/\b\w/g, letter => letter.toUpperCase()) : "—");
+
+// ------------------------------------------------------------------ Agency wallets (D3: B2B agencies only)
+export type AgencyWalletList = GetResponse<"/v1/admin/finance/agency-wallets">;
+export type AgencyWallet = AgencyWalletList["wallets"][number];
+export type AgencyWalletStatement = GetResponse<"/v1/admin/finance/agency-wallets/{agency_id}">;
+
+const agency = (agencyId: string, options?: GatewayOptions): GatewayOptions => ({ ...options, pathParams: { agency_id: agencyId } });
+
+export const fetchAgencyWallets = (options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/finance/agency-wallets", undefined, { ...options, unavailableMessage: "Agency wallets couldn't be loaded. Try again in a moment." });
+
+export const fetchAgencyWalletStatement = (agencyId: string, options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/finance/agency-wallets/{agency_id}", undefined, agency(agencyId, { ...options, unavailableMessage: "The statement couldn't be loaded." }));
+
+export const addAgencyWalletEntry = (agencyId: string, body: PostBody<"/v1/admin/finance/agency-wallets/{agency_id}/entries">) =>
+  gatewayPost("/v1/admin/finance/agency-wallets/{agency_id}/entries", body, agency(agencyId, { unavailableMessage: "It couldn't be saved right now. Nothing was saved." }));
+
+export const setAgencyWalletLow = (agencyId: string, lowThresholdMinor: number | null) =>
+  gatewayPut("/v1/admin/finance/agency-wallets/{agency_id}/low", { low_threshold_minor: lowThresholdMinor },
+    agency(agencyId, { unavailableMessage: "The low-balance level couldn't be saved right now." }));
