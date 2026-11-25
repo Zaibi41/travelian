@@ -11,6 +11,7 @@ export const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
 export const PAYMENT_METHOD_LABEL: Record<RecordedPaymentMethod, string> = {
   ...(Object.fromEntries(PAYMENT_METHODS.map(method => [method.value, method.label])) as Record<PaymentMethod, string>),
   payfast: "PayFast (online)",
+  alfalah: "Bank Alfalah (online)",
 };
 
 /** "15,316", "15316.5", "Rs 15,316.50" -> 1531650 paisa. Exact (string digits, no floating point);

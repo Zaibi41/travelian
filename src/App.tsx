@@ -48,6 +48,11 @@ const FlightsPage = lazy(() => import("./pages/FlightsPage"));
 const WalletPage = lazy(() => import("./pages/WalletPage"));
 const PaymentsPage = lazy(() => import("./pages/PaymentsPage"));
 const AccountsLedgersPage = lazy(() => import("./pages/AccountsLedgersPage"));
+const FinanceOverviewPage = lazy(() => import("./pages/FinanceOverviewPage"));
+const SupplierBalancesPage = lazy(() => import("./pages/SupplierBalancesPage"));
+const TicketSaleEntryPage = lazy(() => import("./pages/TicketSaleEntryPage"));
+const SupplierRefundsPage = lazy(() => import("./pages/SupplierRefundsPage"));
+const CustomerDuesPage = lazy(() => import("./pages/CustomerDuesPage"));
 const AuditLogPage = lazy(() => import("./pages/AuditLogPage"));
 const ReconciliationPage = lazy(() => import("./pages/ReconciliationPage"));
 const ProviderSystemsPage = lazy(() => import("./pages/ProviderSystemsPage"));
@@ -168,6 +173,11 @@ const App = () => (
             <Route path="/admin/wallet" element={<AdminLayout><WalletPage /></AdminLayout>} />
             <Route path="/admin/payments" element={<AdminLayout><PaymentsPage /></AdminLayout>} />
             <Route path="/admin/finance/accounts-ledgers" element={<AdminLayout><AccountsLedgersPage /></AdminLayout>} />
+            <Route path="/admin/finance" element={<AdminLayout><FinanceOverviewPage /></AdminLayout>} />
+            <Route path="/admin/finance/supplier-balances" element={<AdminLayout><SupplierBalancesPage /></AdminLayout>} />
+            <Route path="/admin/finance/ticket-sales" element={<AdminLayout><TicketSaleEntryPage /></AdminLayout>} />
+            <Route path="/admin/finance/supplier-refunds" element={<AdminLayout><SupplierRefundsPage /></AdminLayout>} />
+            <Route path="/admin/finance/customer-dues" element={<AdminLayout><CustomerDuesPage /></AdminLayout>} />
             <Route path="/admin/users" element={<AdminLayout><UsersPage /></AdminLayout>} />
             <Route path="/admin/customers" element={<AdminLayout><CustomersTravelersPage /></AdminLayout>} />
             <Route path="/admin/customers/travelers" element={<AdminLayout><CustomersTravelersPage tab="travelers" /></AdminLayout>} />

@@ -679,6 +679,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{reference}/payment-shortfall": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Shortfall
+         * @description D57: accept the booking as paid with less received than its total, with the reason. Issuance can then go ahead.
+         */
+        post: operations["accept_shortfall_v1_admin_bookings__reference__payment_shortfall_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{reference}/sold-through": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Sold Through
+         * @description The reseller or channel the booking was sold through (not the customer). Empty clears it.
+         */
+        put: operations["set_sold_through_v1_admin_bookings__reference__sold_through_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{reference}/supplier-billing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Billable
+         * @description Issue #202: the supplier billable amount, the one figure the Fare and Payments tabs read. Editable until settled.
+         */
+        put: operations["set_billable_v1_admin_bookings__reference__supplier_billing_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{reference}/supplier-billing/settle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Settle
+         * @description Settle at the billable amount: fresh payment (the supplier balance pays) or a refund credit (D56). D52: no negative balance.
+         */
+        post: operations["settle_v1_admin_bookings__reference__supplier_billing_settle_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/customers": {
         parameters: {
             query?: never;
@@ -914,6 +994,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/finance/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Accounts
+         * @description Business and personal accounts (D54: personal accounts are never in the company totals).
+         */
+        get: operations["accounts_v1_admin_finance_accounts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/accounts/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Account */
+        patch: operations["update_account_v1_admin_finance_accounts__account_id__patch"];
+        trace?: never;
+    };
     "/v1/admin/finance/audit-log": {
         parameters: {
             query?: never;
@@ -989,6 +1106,43 @@ export interface paths {
          *     Needs the cost and margin permission too.
          */
         post: operations["add_supplier_charge_v1_admin_finance_bookings__reference__supplier_charges_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/customer-dues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Customer Dues */
+        get: operations["customer_dues_v1_admin_finance_customer_dues_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Overview
+         * @description Finance overview tiles. Supplier and profit figures need the cost and margin permission.
+         */
+        get: operations["overview_v1_admin_finance_overview_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1664,6 +1818,262 @@ export interface paths {
          * @description Record money Travelian paid into a supplier account with no balance API (SooperFare). Records only; moves no money.
          */
         post: operations["record_top_up_v1_admin_finance_supplier_balances__provider__top_ups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/supplier-refunds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Refunds */
+        get: operations["list_refunds_v1_admin_finance_supplier_refunds_get"];
+        put?: never;
+        /** Open Refund */
+        post: operations["open_refund_v1_admin_finance_supplier_refunds_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/supplier-refunds/{refund_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply Credit
+         * @description D56: settle a booking's supplier charge with this refund credit instead of fresh cash (the balance pays any rest; D52).
+         */
+        post: operations["apply_credit_v1_admin_finance_supplier_refunds__refund_id__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/supplier-refunds/{refund_id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Move Refund */
+        post: operations["move_refund_v1_admin_finance_supplier_refunds__refund_id__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Suppliers
+         * @description Every supplier: API-integrated first, then direct airline IDs. Balance, totals, status and threshold.
+         */
+        get: operations["list_suppliers_v1_admin_finance_suppliers_get"];
+        put?: never;
+        /**
+         * Add Supplier
+         * @description Onboard a supplier (manual booking and balance). Its balance starts once an opening balance or top-up is recorded.
+         */
+        post: operations["add_supplier_v1_admin_finance_suppliers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/suppliers/{supplier_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Supplier
+         * @description The low-balance threshold and the DTS / IATA reference tag. The balance itself is never edited here.
+         */
+        patch: operations["update_supplier_v1_admin_finance_suppliers__supplier_id__patch"];
+        trace?: never;
+    };
+    "/v1/admin/finance/suppliers/{supplier_id}/ledger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Supplier Ledger
+         * @description Every balance-affecting event in order: opening, top-ups, adjustments, refund credits applied, and each deduction with
+         *     what caused it (a Ticket Sale Entry, a booking issued automatically or by staff, or a Supplier payment settlement).
+         */
+        get: operations["supplier_ledger_v1_admin_finance_suppliers__supplier_id__ledger_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/suppliers/{supplier_id}/opening": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set Opening
+         * @description Once per manual supplier: the balance it held on `as_of` (from the portal or the Excel sheet). Later: adjustments.
+         */
+        post: operations["set_opening_v1_admin_finance_suppliers__supplier_id__opening_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/suppliers/{supplier_id}/top-ups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Top Up
+         * @description A top-up (adds) or an adjustment (+/-, with a reason; refused if it would take the balance below zero, D52).
+         */
+        post: operations["add_top_up_v1_admin_finance_suppliers__supplier_id__top_ups_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/ticket-sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Sales
+         * @description Finance sees every entry; other staff see only the ones they submitted.
+         */
+        get: operations["list_sales_v1_admin_finance_ticket_sales_get"];
+        put?: never;
+        /**
+         * Create Sale
+         * @description D55: Finance saves it confirmed (and the supplier deduction, if any, is checked against D52 first); anyone else submits it
+         *     for Finance to confirm.
+         */
+        post: operations["create_sale_v1_admin_finance_ticket_sales_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/ticket-sales/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sale Options */
+        get: operations["sale_options_v1_admin_finance_ticket_sales_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/ticket-sales/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Sale
+         * @description Worked out by the gateway as the form is filled: profit, what's due, and what saving will do. Saves nothing.
+         */
+        post: operations["preview_sale_v1_admin_finance_ticket_sales_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/ticket-sales/{sale_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Sale */
+        post: operations["confirm_sale_v1_admin_finance_ticket_sales__sale_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/ticket-sales/{sale_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject Sale */
+        post: operations["reject_sale_v1_admin_finance_ticket_sales__sale_id__reject_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4121,6 +4531,72 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountList */
+        AccountList: {
+            /** Business */
+            business: components["schemas"]["AccountView"][];
+            business_total: components["schemas"]["BookingMoney"];
+            /** Personal */
+            personal: components["schemas"]["AccountView"][];
+            personal_total: components["schemas"]["BookingMoney"];
+        };
+        /** AccountUpdate */
+        AccountUpdate: {
+            /** Opening Balance Minor */
+            opening_balance_minor?: number | null;
+            /** Ownership */
+            ownership?: ("business" | "personal") | null;
+        };
+        /** AccountView */
+        AccountView: {
+            /** Account Number */
+            account_number?: string | null;
+            /** Account Title */
+            account_title?: string | null;
+            /** Active */
+            active: boolean;
+            /** Bank Name */
+            bank_name?: string | null;
+            current_balance: components["schemas"]["BookingMoney"];
+            /** Iban */
+            iban?: string | null;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Method */
+            method: string;
+            opening_balance: components["schemas"]["BookingMoney"];
+            /**
+             * Ownership
+             * @enum {string}
+             */
+            ownership: "business" | "personal";
+            /** @description Booking payments recorded into it + Ticket Sale Entry amounts received into it. */
+            sales_received: components["schemas"]["BookingMoney"];
+            /** @description Supplier top-ups paid from it. */
+            top_ups_paid: components["schemas"]["BookingMoney"];
+        };
+        /** ActivityView */
+        ActivityView: {
+            amount: components["schemas"]["BookingMoney"];
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** By Role */
+            by_role?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "top_up" | "ticket_sale";
+            /** Link */
+            link?: string | null;
+            /** Title */
+            title: string;
+        };
         /** AddPaymentFeeRequest */
         AddPaymentFeeRequest: {
             /**
@@ -4181,6 +4657,21 @@ export interface components {
             supplier_reference?: string | null;
             /** Traveler Position */
             traveler_position?: number | null;
+        };
+        /** AddSupplierRequest */
+        AddSupplierRequest: {
+            /** Low Threshold Minor */
+            low_threshold_minor?: number | null;
+            /** Name */
+            name: string;
+            /**
+             * Section
+             * @default direct
+             * @enum {string}
+             */
+            section: "api" | "direct";
+            /** Settlement Tag */
+            settlement_tag?: ("DTS" | "IATA") | null;
         };
         /** AdminOverview */
         AdminOverview: {
@@ -4313,6 +4804,16 @@ export interface components {
             /** Starts At */
             starts_at?: string | null;
         };
+        /** ApplyCreditRequest */
+        ApplyCreditRequest: {
+            /**
+             * Billable Minor
+             * @description Set the booking's supplier billable amount first (if not set).
+             */
+            billable_minor?: number | null;
+            /** Booking Reference */
+            booking_reference: string;
+        };
         /** AttentionItem */
         AttentionItem: {
             /** Booking Id */
@@ -4406,6 +4907,30 @@ export interface components {
             /** Qr Url */
             qr_url?: string | null;
         };
+        /** BillableRequest */
+        BillableRequest: {
+            /** Billable Minor */
+            billable_minor: number;
+            /** Note */
+            note?: string | null;
+            /** Supplier Id */
+            supplier_id?: string | null;
+        };
+        /** BillingView */
+        BillingView: {
+            billable_amount: components["schemas"]["BookingMoney"];
+            credit_used?: components["schemas"]["BookingMoney"] | null;
+            /** Refund Number */
+            refund_number?: number | null;
+            /** Settled At */
+            settled_at?: string | null;
+            /** Settlement Method */
+            settlement_method?: ("fresh" | "refund_credit") | null;
+            /** Supplier Id */
+            supplier_id?: string | null;
+            /** Supplier Name */
+            supplier_name?: string | null;
+        };
         /** BookingAuditEntry */
         BookingAuditEntry: {
             /** Action */
@@ -4450,7 +4975,7 @@ export interface components {
         /** BookingDetail */
         BookingDetail: {
             amount: components["schemas"]["BookingMoney"];
-            /** @description Total less recorded payments. */
+            /** @description Total less recorded payments (and less an accepted difference, D57). */
             amount_due?: components["schemas"]["BookingMoney"] | null;
             /** @description Sum of recorded payments. */
             amount_paid?: components["schemas"]["BookingMoney"] | null;
@@ -4462,11 +4987,22 @@ export interface components {
             /** Booking Id */
             booking_id: string;
             /**
+             * Can Accept Shortfall
+             * @description Part paid, nothing accepted yet, and this viewer may record payments.
+             * @default false
+             */
+            can_accept_shortfall: boolean;
+            /**
              * Can Edit Group Tickets
              * @description Group bookings: this viewer may record the final PNR and ticket numbers on the Tickets tab (issue tickets permission, paid in full; the endpoint still checks).
              * @default false
              */
             can_edit_group_tickets: boolean;
+            /**
+             * Can Edit Sold Through
+             * @default false
+             */
+            can_edit_sold_through: boolean;
             /**
              * Can Issue Tickets
              * @description Whether this viewer may issue, verify and resolve (the endpoints still check).
@@ -4532,6 +5068,8 @@ export interface components {
              * @description The Passengers tab. Omitted when no travelers were saved.
              */
             passengers?: components["schemas"]["app__schemas__admin_bookings__BookingPassenger"][] | null;
+            /** @description D57: accepted as paid with less received, and why. */
+            payment_shortfall?: components["schemas"]["PaymentShortfall"] | null;
             /**
              * Payment Slips
              * @description Customer payment slips. Omitted when none.
@@ -4563,6 +5101,11 @@ export interface components {
              * @description Tabs whose data the gateway doesn't record yet; the page shows them as not available.
              */
             sections_not_available: ("itinerary" | "passengers" | "payments" | "tickets" | "servicing" | "audit")[];
+            /**
+             * Sold Through
+             * @description The reseller or channel the booking was sold through (not the customer).
+             */
+            sold_through?: string | null;
             /**
              * Source
              * @default gateway_bookings
@@ -4819,7 +5362,7 @@ export interface components {
              * Method
              * @enum {string}
              */
-            method: "bank_transfer" | "jazzcash" | "1link" | "payfast";
+            method: "bank_transfer" | "jazzcash" | "1link" | "payfast" | "alfalah";
             /**
              * Received At
              * Format: date-time
@@ -4867,7 +5410,7 @@ export interface components {
              * Supplier Charge Basis
              * @enum {string}
              */
-            supplier_charge_basis: "recorded" | "quoted" | "not_known";
+            supplier_charge_basis: "billable" | "recorded" | "quoted" | "not_known";
         };
         /** BookingRecord */
         BookingRecord: {
@@ -5435,6 +5978,34 @@ export interface components {
              */
             id_type: "PSPT" | "NATI";
         };
+        /** DueList */
+        DueList: {
+            /** Items */
+            items: components["schemas"]["DueView"][];
+            total_due: components["schemas"]["BookingMoney"];
+        };
+        /** DueView */
+        DueView: {
+            /** Customer */
+            customer?: string | null;
+            /** Days Outstanding */
+            days_outstanding: number;
+            due: components["schemas"]["BookingMoney"];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "booking" | "ticket_sale";
+            /**
+             * Payment Account
+             * @description Where the part payment went (partly paid only).
+             */
+            payment_account?: string | null;
+            received: components["schemas"]["BookingMoney"];
+            /** Reference */
+            reference: string;
+            total: components["schemas"]["BookingMoney"];
+        };
         /** DuplicateChoice */
         DuplicateChoice: {
             /**
@@ -5617,7 +6188,7 @@ export interface components {
              * Method
              * @enum {string}
              */
-            method: "bank_transfer" | "jazzcash" | "1link" | "payfast";
+            method: "bank_transfer" | "jazzcash" | "1link" | "payfast" | "alfalah";
             /** Payer Reference */
             payer_reference?: string | null;
             /** @description What the payment cost Travelian. Null = not recorded yet. */
@@ -7186,6 +7757,48 @@ export interface components {
             /** Origin */
             origin: string;
         };
+        /** LedgerItemView */
+        LedgerItemView: {
+            /** @description + adds, - deducts. None for a balance read. */
+            amount?: components["schemas"]["BookingMoney"] | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** @description Running balance (manual suppliers), or the balance read (API). */
+            balance_after?: components["schemas"]["BookingMoney"] | null;
+            /** Booking Reference */
+            booking_reference?: string | null;
+            /** By Role */
+            by_role?: string | null;
+            /**
+             * Counted
+             * @description False: before the balance started (shown for history, not in the balance).
+             * @default true
+             */
+            counted: boolean;
+            /** Description */
+            description: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "opening" | "top_up" | "adjustment" | "refund_credit" | "booking_charge" | "ticket_sale" | "balance_check";
+            /** Reference */
+            reference?: string | null;
+            /** Ticket Sale Number */
+            ticket_sale_number?: number | null;
+        };
+        /** LedgerView */
+        LedgerView: {
+            /**
+             * Items
+             * @description Oldest first.
+             */
+            items: components["schemas"]["LedgerItemView"][];
+            supplier: components["schemas"]["SupplierView"];
+        };
         /** LoginRequest */
         LoginRequest: {
             /**
@@ -7412,6 +8025,31 @@ export interface components {
              */
             urgent: boolean;
         };
+        /** OpenRefundRequest */
+        OpenRefundRequest: {
+            /** Amount Minor */
+            amount_minor: number;
+            /** Booking Reference */
+            booking_reference?: string | null;
+            /** Opened On */
+            opened_on?: string | null;
+            /** Reason */
+            reason: string;
+            /** Reference */
+            reference?: string | null;
+            /** Supplier Id */
+            supplier_id: string;
+        };
+        /** OpeningRequest */
+        OpeningRequest: {
+            /** Amount Minor */
+            amount_minor: number;
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+        };
         /** OperationCall */
         OperationCall: {
             /**
@@ -7451,6 +8089,55 @@ export interface components {
             data: unknown;
             /** Operation */
             operation: string;
+        };
+        /** Option */
+        Option: {
+            /** Detail */
+            detail?: string | null;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** OverviewView */
+        OverviewView: {
+            /** Activity */
+            activity: components["schemas"]["ActivityView"][];
+            /** Attention */
+            attention: components["schemas"]["SupplierAttention"][];
+            /** Customer Dues Count */
+            customer_dues_count: number;
+            /** Include Personal */
+            include_personal: boolean;
+            /** Pending Refunds Count */
+            pending_refunds_count: number;
+            pending_refunds_total: components["schemas"]["BookingMoney"];
+            /** Pending Sales Count */
+            pending_sales_count: number;
+            /**
+             * Profit Not Known
+             * @default 0
+             */
+            profit_not_known: number;
+            /** Suppliers */
+            suppliers: components["schemas"]["Option"][];
+            /**
+             * Suppliers Attention Count
+             * @description Negative or below threshold.
+             * @default 0
+             */
+            suppliers_attention_count: number;
+            /**
+             * Suppliers Negative Count
+             * @default 0
+             */
+            suppliers_negative_count: number;
+            total_bank_balance: components["schemas"]["BookingMoney"];
+            total_customer_dues: components["schemas"]["BookingMoney"];
+            /** @description Booking profit (as Reports) + Ticket Sale Entry profit, in the range. Cost and margin only. */
+            total_profit?: components["schemas"]["BookingMoney"] | null;
+            /** @description Suppliers whose balance is known. Cost and margin only. */
+            total_supplier_balance?: components["schemas"]["BookingMoney"] | null;
         };
         /** PassengerPrice */
         PassengerPrice: {
@@ -7506,7 +8193,7 @@ export interface components {
              * Method
              * @enum {string}
              */
-            method: "bank_transfer" | "jazzcash" | "1link" | "payfast";
+            method: "bank_transfer" | "jazzcash" | "1link" | "payfast" | "alfalah";
         };
         /** PaymentFeeView */
         PaymentFeeView: {
@@ -7589,6 +8276,27 @@ export interface components {
             card_fee_refunded: boolean;
         };
         /**
+         * PaymentShortfall
+         * @description D57: the booking accepted as paid with less received than its total, with the reason.
+         */
+        PaymentShortfall: {
+            amount: components["schemas"]["BookingMoney"];
+            /** Note */
+            note: string;
+            /** Reason */
+            reason: string;
+            /**
+             * Reason Kind
+             * @enum {string}
+             */
+            reason_kind: "discount" | "goodwill" | "channel_rate";
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+        };
+        /**
          * ProductResults
          * @description One product's share of the business results (same rules, same filters).
          */
@@ -7630,13 +8338,15 @@ export interface components {
             profit?: components["schemas"]["BookingMoney"] | null;
             refunds: components["schemas"]["BookingMoney"];
             selling: components["schemas"]["BookingMoney"];
+            /** @description D57: accepted payment difference (less received than the total). */
+            shortfall?: components["schemas"]["BookingMoney"] | null;
             /** @description Null when not known. */
             supplier_charge?: components["schemas"]["BookingMoney"] | null;
             /**
              * Supplier Charge Basis
              * @enum {string}
              */
-            supplier_charge_basis: "recorded" | "quoted" | "not_known";
+            supplier_charge_basis: "billable" | "recorded" | "quoted" | "not_known";
         };
         /** ProviderStatus */
         ProviderStatus: {
@@ -7966,6 +8676,21 @@ export interface components {
              */
             refresh_token: string;
         };
+        /**
+         * RefundCreditOption
+         * @description An open Supplier Refund held as credit by this booking's supplier, usable to settle it.
+         */
+        RefundCreditOption: {
+            /** Booking Reference */
+            booking_reference?: string | null;
+            /** Id */
+            id: string;
+            /** Number */
+            number: number;
+            /** Reason */
+            reason: string;
+            remaining: components["schemas"]["BookingMoney"];
+        };
         /** RefundDue */
         RefundDue: {
             /** Booking Reference */
@@ -7998,6 +8723,16 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** RefundStatusRequest */
+        RefundStatusRequest: {
+            /** Note */
+            note?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "chased" | "received" | "written_off";
+        };
         /** RefundView */
         RefundView: {
             amount: components["schemas"]["BookingMoney"];
@@ -8015,7 +8750,7 @@ export interface components {
              * Method
              * @enum {string}
              */
-            method: "bank_transfer" | "jazzcash" | "1link" | "payfast";
+            method: "bank_transfer" | "jazzcash" | "1link" | "payfast" | "alfalah";
             /** Paid At */
             paid_at?: string | null;
             /** Paid By User Id */
@@ -8077,6 +8812,11 @@ export interface components {
         };
         /** RejectRefundRequest */
         RejectRefundRequest: {
+            /** Reason */
+            reason: string;
+        };
+        /** RejectRequest */
+        RejectRequest: {
             /** Reason */
             reason: string;
         };
@@ -8238,7 +8978,7 @@ export interface components {
              * Method
              * @enum {string}
              */
-            method: "bank_transfer" | "jazzcash" | "1link" | "payfast";
+            method: "bank_transfer" | "jazzcash" | "1link" | "payfast" | "alfalah";
             /** Reason */
             reason: string;
         };
@@ -8341,6 +9081,144 @@ export interface components {
              * @description One age (0-17) per child.
              */
             children_ages?: number[];
+        };
+        /** SaleList */
+        SaleList: {
+            /** Can Confirm */
+            can_confirm: boolean;
+            /** Items */
+            items: components["schemas"]["SaleView"][];
+        };
+        /** SaleOptions */
+        SaleOptions: {
+            /** Accounts */
+            accounts: components["schemas"]["Option"][];
+            /** Is Finance */
+            is_finance: boolean;
+            /**
+             * Partners
+             * @description B2B partner agencies.
+             */
+            partners: components["schemas"]["Option"][];
+            /** Suppliers */
+            suppliers: components["schemas"]["Option"][];
+        };
+        /** SalePreviewView */
+        SalePreviewView: {
+            /**
+             * Confirmed On Save
+             * @description True for Finance (saved confirmed); False: submitted for Finance to confirm.
+             */
+            confirmed_on_save: boolean;
+            due: components["schemas"]["BookingMoney"];
+            /**
+             * Effects
+             * @description What saving will do, in order (the 'This entry will also' box).
+             */
+            effects: string[];
+            /**
+             * Problems
+             * @description Why it can't be saved yet; empty when it can.
+             */
+            problems: string[];
+            profit: components["schemas"]["BookingMoney"];
+        };
+        /** SaleRequest */
+        SaleRequest: {
+            /** Agency Id */
+            agency_id?: string | null;
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "direct" | "b2b" | "other";
+            /** Cost Minor */
+            cost_minor: number;
+            /** Customer Person Id */
+            customer_person_id?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Passenger Name */
+            passenger_name?: string | null;
+            /** Payment Account Id */
+            payment_account_id?: string | null;
+            /** Pnr */
+            pnr?: string | null;
+            /**
+             * Received Minor
+             * @default 0
+             */
+            received_minor: number;
+            /** Route */
+            route?: string | null;
+            /** Sale Minor */
+            sale_minor: number;
+            /** Supplier Id */
+            supplier_id?: string | null;
+            /**
+             * Ticket Status
+             * @default issued
+             * @enum {string}
+             */
+            ticket_status: "issued" | "on_hold";
+            /** Travel Date */
+            travel_date?: string | null;
+        };
+        /** SaleView */
+        SaleView: {
+            /** Agency Name */
+            agency_name?: string | null;
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "direct" | "b2b" | "other";
+            /** Confirmed At */
+            confirmed_at?: string | null;
+            cost: components["schemas"]["BookingMoney"];
+            due: components["schemas"]["BookingMoney"];
+            /** Id */
+            id: string;
+            /** Notes */
+            notes?: string | null;
+            /** Number */
+            number: number;
+            /** Passenger Name */
+            passenger_name: string;
+            /** Payment Account */
+            payment_account?: string | null;
+            /** Pnr */
+            pnr?: string | null;
+            profit: components["schemas"]["BookingMoney"];
+            received: components["schemas"]["BookingMoney"];
+            /** Rejected Reason */
+            rejected_reason?: string | null;
+            /** Route */
+            route?: string | null;
+            sale: components["schemas"]["BookingMoney"];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "confirmed" | "pending" | "rejected";
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+            /** Submitted By Role */
+            submitted_by_role?: string | null;
+            /** Supplier Id */
+            supplier_id?: string | null;
+            /** Supplier Name */
+            supplier_name?: string | null;
+            /**
+             * Ticket Status
+             * @enum {string}
+             */
+            ticket_status: "issued" | "on_hold";
+            /** Travel Date */
+            travel_date?: string | null;
         };
         /**
          * SaveOutcomeView
@@ -8697,6 +9575,44 @@ export interface components {
             /** Prices */
             prices: components["schemas"]["SellingPriceItem"][];
         };
+        /** SettleRequest */
+        SettleRequest: {
+            /**
+             * Method
+             * @enum {string}
+             */
+            method: "fresh" | "refund_credit";
+            /** Refund Id */
+            refund_id?: string | null;
+        };
+        /** ShortfallRequest */
+        ShortfallRequest: {
+            /** Note */
+            note: string;
+            /**
+             * Reason Kind
+             * @enum {string}
+             */
+            reason_kind: "discount" | "goodwill" | "channel_rate";
+        };
+        /** ShortfallView */
+        ShortfallView: {
+            amount: components["schemas"]["BookingMoney"];
+            /** Note */
+            note: string;
+            /** Reason */
+            reason: string;
+            /**
+             * Reason Kind
+             * @enum {string}
+             */
+            reason_kind: "discount" | "goodwill" | "channel_rate";
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+        };
         /** SignUploadRequest */
         SignUploadRequest: {
             /**
@@ -8872,6 +9788,16 @@ export interface components {
              */
             submitted_via: "checkout" | "my_bookings";
         };
+        /** SoldThroughRequest */
+        SoldThroughRequest: {
+            /** Sold Through */
+            sold_through?: string | null;
+        };
+        /** SoldThroughView */
+        SoldThroughView: {
+            /** Sold Through */
+            sold_through?: string | null;
+        };
         /** StatementColumns */
         StatementColumns: {
             /** Amount */
@@ -9038,6 +9964,20 @@ export interface components {
             /** File Name */
             file_name: string;
         };
+        /** SupplierAttention */
+        SupplierAttention: {
+            current_balance: components["schemas"]["BookingMoney"];
+            low_threshold?: components["schemas"]["BookingMoney"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "low" | "negative";
+            /** Supplier Id */
+            supplier_id: string;
+            /** Supplier Name */
+            supplier_name: string;
+        };
         /**
          * SupplierBookingView
          * @description The supplier's own booking (supplier-names permission only): its ids and, after a cancel request, what it says.
@@ -9108,14 +10048,104 @@ export interface components {
             /** Traveler Position */
             traveler_position?: number | null;
         };
+        /** SupplierList */
+        SupplierList: {
+            /** Suppliers */
+            suppliers: components["schemas"]["SupplierView"][];
+        };
         /**
          * SupplierPayment
          * @description The Supplier payment tab. Only sent with the cost and margin permission.
          */
         SupplierPayment: {
             amount_due?: components["schemas"]["BookingMoney"] | null;
+            /**
+             * Available
+             * @description False before the finance update (migration 0037) is applied.
+             * @default true
+             */
+            available: boolean;
+            /** @description Issue #202: what the supplier actually bills (editable until settled). The Fare tab and Issue the ticket read this figure. */
+            billable_amount?: components["schemas"]["BookingMoney"] | null;
+            /**
+             * Can Edit
+             * @description This viewer may set the billable amount and settle (Finance, or record payments).
+             * @default false
+             */
+            can_edit: boolean;
+            credit_used?: components["schemas"]["BookingMoney"] | null;
             /** Hold Deadline */
             hold_deadline?: string | null;
+            /** Note */
+            note?: string | null;
+            /**
+             * Refund Credits
+             * @description Open refund credits with this supplier.
+             */
+            refund_credits?: components["schemas"]["RefundCreditOption"][];
+            /** Refund Number */
+            refund_number?: number | null;
+            /** Settled At */
+            settled_at?: string | null;
+            /** Settlement Method */
+            settlement_method?: ("fresh" | "refund_credit") | null;
+            /** Supplier Id */
+            supplier_id?: string | null;
+            /** Supplier Name */
+            supplier_name?: string | null;
+            /**
+             * Suppliers
+             * @description Suppliers to choose from: [{id, name}].
+             */
+            suppliers?: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** SupplierRefundList */
+        SupplierRefundList: {
+            /** Items */
+            items: components["schemas"]["SupplierRefundView"][];
+            /** Pending Count */
+            pending_count: number;
+            pending_total: components["schemas"]["BookingMoney"];
+        };
+        /** SupplierRefundView */
+        SupplierRefundView: {
+            amount: components["schemas"]["BookingMoney"];
+            applied: components["schemas"]["BookingMoney"];
+            /** Booking Reference */
+            booking_reference?: string | null;
+            /** Can Apply Credit */
+            can_apply_credit: boolean;
+            /** Days Outstanding */
+            days_outstanding: number;
+            /** Id */
+            id: string;
+            /** Next Statuses */
+            next_statuses: string[];
+            /** Number */
+            number: number;
+            /**
+             * Opened On
+             * Format: date
+             */
+            opened_on: string;
+            /** Reason */
+            reason: string;
+            /** Reference */
+            reference?: string | null;
+            remaining: components["schemas"]["BookingMoney"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "requested" | "chased" | "received" | "written_off";
+            /** Status Note */
+            status_note?: string | null;
+            /** Supplier Id */
+            supplier_id: string;
+            /** Supplier Name */
+            supplier_name: string;
         };
         /** SupplierSpendRow */
         SupplierSpendRow: {
@@ -9131,6 +10161,50 @@ export interface components {
             supplier?: string | null;
             ticket_charges: components["schemas"]["BookingMoney"];
             top_ups: components["schemas"]["BookingMoney"];
+        };
+        /** SupplierView */
+        SupplierView: {
+            /**
+             * Balance Mode
+             * @enum {string}
+             */
+            balance_mode: "api" | "manual";
+            /**
+             * Booking Mode
+             * @enum {string}
+             */
+            booking_mode: "api" | "manual";
+            /** @description None: not set up yet (manual) or not read yet (API). */
+            current_balance?: components["schemas"]["BookingMoney"] | null;
+            /** Id */
+            id: string;
+            /** Last Updated */
+            last_updated?: string | null;
+            low_threshold?: components["schemas"]["BookingMoney"] | null;
+            /** Name */
+            name: string;
+            opening_balance?: components["schemas"]["BookingMoney"] | null;
+            /** Opening Set At */
+            opening_set_at?: string | null;
+            /**
+             * Section
+             * @enum {string}
+             */
+            section: "api" | "direct";
+            /**
+             * Settlement Tag
+             * @description Reference only (D53).
+             */
+            settlement_tag?: ("DTS" | "IATA") | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "low" | "negative" | "not_set_up";
+            total_deducted: components["schemas"]["BookingMoney"];
+            total_topped_up: components["schemas"]["BookingMoney"];
+            /** Tracking Since */
+            tracking_since?: string | null;
         };
         /** SupplierWalletList */
         SupplierWalletList: {
@@ -9191,6 +10265,28 @@ export interface components {
              */
             token_type: "Bearer";
         };
+        /** TopUpRequest */
+        TopUpRequest: {
+            /** Amount Minor */
+            amount_minor: number;
+            /**
+             * Kind
+             * @default top_up
+             * @enum {string}
+             */
+            kind: "top_up" | "adjustment";
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Paid From Account Id */
+            paid_from_account_id?: string | null;
+            /** Reason */
+            reason?: string | null;
+            /** Reference */
+            reference?: string | null;
+        };
         /** UpdatePaymentSettings */
         UpdatePaymentSettings: {
             /** Card Fee Bps */
@@ -9238,6 +10334,18 @@ export interface components {
              * @default false
              */
             remove_qr: boolean;
+        };
+        /** UpdateSupplierRequest */
+        UpdateSupplierRequest: {
+            /**
+             * Fields
+             * @description Which fields to change (null clears).
+             */
+            fields: ("low_threshold_minor" | "settlement_tag")[];
+            /** Low Threshold Minor */
+            low_threshold_minor?: number | null;
+            /** Settlement Tag */
+            settlement_tag?: ("DTS" | "IATA") | null;
         };
         /** UserAdminEvent */
         UserAdminEvent: {
@@ -11314,6 +12422,245 @@ export interface operations {
             };
         };
     };
+    accept_shortfall_v1_admin_bookings__reference__payment_shortfall_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShortfallRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShortfallView"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_sold_through_v1_admin_bookings__reference__sold_through_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SoldThroughRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SoldThroughView"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_billable_v1_admin_bookings__reference__supplier_billing_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BillableRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingView"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    settle_v1_admin_bookings__reference__supplier_billing_settle_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BillingView"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description negative_balance (D52), already settled, refund closed. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     search_people_v1_admin_customers_get: {
         parameters: {
             query?: {
@@ -11971,6 +13318,94 @@ export interface operations {
             };
         };
     };
+    accounts_v1_admin_finance_accounts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountList"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_account_v1_admin_finance_accounts__account_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountList"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     audit_log_v1_admin_finance_audit_log_get: {
         parameters: {
             query?: {
@@ -12188,6 +13623,88 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    customer_dues_v1_admin_finance_customer_dues_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DueList"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    overview_v1_admin_finance_overview_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+                account_type?: "business" | "all";
+                supplier_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
             /** @description Database not available. */
             503: {
@@ -14015,6 +15532,833 @@ export interface operations {
             };
             /** @description Caller doesn't have the Finance permission. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_refunds_v1_admin_finance_supplier_refunds_get: {
+        parameters: {
+            query?: {
+                status?: ("requested" | "chased" | "received" | "written_off") | null;
+                supplier_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierRefundList"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    open_refund_v1_admin_finance_supplier_refunds_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenRefundRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierRefundView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    apply_credit_v1_admin_finance_supplier_refunds__refund_id__apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refund_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyCreditRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierRefundView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    move_refund_v1_admin_finance_supplier_refunds__refund_id__status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                refund_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefundStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierRefundView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_suppliers_v1_admin_finance_suppliers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierList"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    add_supplier_v1_admin_finance_suppliers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddSupplierRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_supplier_v1_admin_finance_suppliers__supplier_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                supplier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSupplierRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    supplier_ledger_v1_admin_finance_suppliers__supplier_id__ledger_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                supplier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LedgerView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_opening_v1_admin_finance_suppliers__supplier_id__opening_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                supplier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpeningRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    add_top_up_v1_admin_finance_suppliers__supplier_id__top_ups_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                supplier_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopUpRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupplierView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_sales_v1_admin_finance_ticket_sales_get: {
+        parameters: {
+            query?: {
+                state?: ("confirmed" | "pending" | "rejected") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaleList"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_sale_v1_admin_finance_ticket_sales_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaleView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description negative_balance (D52). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    sale_options_v1_admin_finance_ticket_sales_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaleOptions"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    preview_sale_v1_admin_finance_ticket_sales_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalePreviewView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    confirm_sale_v1_admin_finance_ticket_sales__sale_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sale_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaleView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reject_sale_v1_admin_finance_ticket_sales__sale_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sale_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaleView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

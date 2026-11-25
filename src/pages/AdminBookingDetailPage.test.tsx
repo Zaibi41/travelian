@@ -29,11 +29,12 @@ const STAFF_VIEW: BookingDetail = {
   fare: { billable_price: rs(12_500) },
   sections_not_available: ["itinerary", "passengers", "payments", "tickets", "servicing", "audit"],
   can_record_payments: false, can_issue_tickets: false, can_set_selling_price: false, can_edit_group_tickets: false, itinerary_available: true,
+  can_accept_shortfall: false, can_edit_sold_through: false,
 };
 const ADMIN_VIEW: BookingDetail = {
   ...STAFF_VIEW, provider: "AirSial",
   fare: { billable_price: rs(12_500), supplier_cost: rs(11_000), margin: rs(1_500) },
-  supplier_payment: { amount_due: rs(11_000), hold_deadline: "2099-11-05T09:00:00Z" },
+  supplier_payment: { amount_due: rs(11_000), hold_deadline: "2099-11-05T09:00:00Z", available: false, can_edit: false },
 };
 
 const renderAt = (url: string) =>

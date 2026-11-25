@@ -34,9 +34,10 @@ describe("internal sidebar: 14 spec menus", () => {
     }
   });
 
-  it("Finance ends with Accounts & Ledgers, for Super Admin only", () => {
+  it("Finance: the D50 order, Accounts & Ledgers for Super Admin only", () => {
     const finance = (role: UserRole) => getInternalSidebarForRole(role).find((menu) => menu.title === "Finance")?.items.map((item) => item.title) ?? [];
-    expect(finance("super_admin")).toEqual(["Wallets", "Payments", "Reconciliation", "Accounts & Ledgers"]);
+    expect(finance("super_admin")).toEqual(["Supplier Balances", "Ticket Sale Entry", "Accounts & Ledgers", "Wallets", "Payments", "Reconciliation",
+      "Supplier Refunds", "Customer Dues"]);
     for (const role of ALL_ROLES) {
       expect(canAccessAdminPath(role, "/admin/finance/accounts-ledgers"), role).toBe(role === "super_admin");
       if (role !== "super_admin") expect(finance(role)).not.toContain("Accounts & Ledgers");
@@ -165,7 +166,21 @@ describe("Finance: Wallets (#68) and Payments (#69) are built, no Coming soon ta
   it("marks nothing", () => {
     const finance = getInternalSidebarForRole("super_admin").find(menu => menu.title === "Finance")!;
     expect(finance.items.map(item => [item.title, !!item.comingSoon])).toEqual([
-      ["Wallets", false], ["Payments", false], ["Reconciliation", false], ["Accounts & Ledgers", false],
+      ["Supplier Balances", false], ["Ticket Sale Entry", false], ["Accounts & Ledgers", false], ["Wallets", false], ["Payments", false],
+      ["Reconciliation", false], ["Supplier Refunds", false], ["Customer Dues", false],
     ]);
+  });
+
+  it("clicking Finance opens the overview, which has no submenu entry (D50)", () => {
+    const finance = getInternalSidebarForRole("super_admin").find(menu => menu.title === "Finance")!;
+    expect(finance.overview?.url).toBe("/admin/finance");
+    expect(finance.items.map(item => item.url)).not.toContain("/admin/finance");
+    expect(finance.items.map(item => item.title)).not.toContain("Dashboard");
+    expect(adminPageTitle("super_admin", "/admin/finance")).toBe("Finance");
+    expect(canAccessAdminPath("super_admin", "/admin/finance")).toBe(true);
+    expect(canAccessAdminPath("agency_owner", "/admin/finance")).toBe(false);
+    // The overview's access doesn't open the screens under it.
+    expect(canAccessAdminPath("staff", "/admin/finance/reconciliation")).toBe(false);
+    expect(canAccessAdminPath("staff", "/admin/finance/ticket-sales")).toBe(true);
   });
 });

@@ -16,6 +16,7 @@ import {
   Hotel,
   Hourglass,
   KeyRound,
+  Landmark,
   LayoutDashboard,
   LifeBuoy,
   Megaphone,
@@ -30,6 +31,7 @@ import {
   Tag,
   Ticket,
   UserCircle,
+  Undo2,
   UserCog,
   Users,
   Wallet,
@@ -85,6 +87,11 @@ const agencyStaffRoles: UserRole[] = ["agency_staff"];
 const customerRoles: UserRole[] = ["customer"];
 /** Finance > Accounts & Ledgers: the gateway's FINANCE_ACCOUNT_ROLES (Super Admin; Finance once that role exists). */
 const financeAccountRoles: UserRole[] = ["super_admin"];
+/** Finance overview, Supplier Balances, Supplier Refunds, Customer Dues: the gateway allows Super Admin and staff granted
+ *  "finance" (and refuses everyone else; the page then says which permission is needed). */
+const financeRoles: UserRole[] = ["super_admin", "admin", "staff"];
+/** Ticket Sale Entry: any back-office user; non-Finance staff get the "submit for Finance to confirm" form (D55). */
+const ticketSaleRoles: UserRole[] = ["super_admin", "admin", "staff"];
 
 /** Pages that show a "Not built yet" notice until the gateway serves them (#73). Wallets (#68) and Payments (#69) are built. */
 const COMING_SOON = new Set<string>();
@@ -158,6 +165,10 @@ export const adminNavigation: AdminNavSection[] = [
       item("Transactions Ledger", "/admin/wallet", Receipt, internalAdminRoles),
       item("Refunds", "/admin/flight-bookings?tab=refund", RefreshCw, internalAdminRoles),
       item("Accounts & Ledgers", "/admin/finance/accounts-ledgers", BookOpen, financeAccountRoles),
+      item("Supplier Balances", "/admin/finance/supplier-balances", Landmark, financeRoles),
+      item("Ticket Sale Entry", "/admin/finance/ticket-sales", Ticket, ticketSaleRoles),
+      item("Supplier Refunds", "/admin/finance/supplier-refunds", Undo2, financeRoles),
+      item("Customer Dues", "/admin/finance/customer-dues", Hourglass, financeRoles),
     ],
   },
   {
@@ -305,6 +316,8 @@ export interface SidebarMenuEntry {
   icon: AdminNavItem["icon"];
   /** One item: the menu opens it directly. Several: the menu expands. */
   items: AdminNavItem[];
+  /** Clicking the menu itself opens this page (and expands the submenu); it has no submenu entry of its own (D50). */
+  overview?: AdminNavItem;
 }
 
 const internalSidebarMenus: SidebarMenuEntry[] = [
@@ -313,11 +326,16 @@ const internalSidebarMenus: SidebarMenuEntry[] = [
   { number: "03", title: "Bookings", icon: ClipboardCheck, items: [item("Bookings", "/admin/bookings", ClipboardCheck, INTERNAL_ROLES)] },
   { number: "04", title: "Customers & Travelers", icon: Users, items: [item("Customers", "/admin/customers", Users, [...internalAdminRoles, "staff"])] },
   {
-    number: "05", title: "Finance", icon: Wallet, items: [
+    // D50: "Finance" opens the overview; the submenu has no Dashboard entry.
+    number: "05", title: "Finance", icon: Wallet, overview: item("Finance", "/admin/finance", Wallet, financeRoles), items: [
+      item("Supplier Balances", "/admin/finance/supplier-balances", Landmark, financeRoles),
+      item("Ticket Sale Entry", "/admin/finance/ticket-sales", Ticket, ticketSaleRoles),
+      item("Accounts & Ledgers", "/admin/finance/accounts-ledgers", BookOpen, financeAccountRoles),
       item("Wallets", "/admin/wallet", Wallet, internalAdminRoles),
       item("Payments", "/admin/payments", CreditCard, [...internalAdminRoles, "staff"]),
       item("Reconciliation", "/admin/finance/reconciliation", Receipt, platformOwnerRoles),
-      item("Accounts & Ledgers", "/admin/finance/accounts-ledgers", BookOpen, financeAccountRoles),
+      item("Supplier Refunds", "/admin/finance/supplier-refunds", Undo2, financeRoles),
+      item("Customer Dues", "/admin/finance/customer-dues", Hourglass, financeRoles),
     ],
   },
   { number: "06", title: "Flight Operations", icon: CalendarCheck, items: [item("Flight Operations", "/admin/flight-bookings", CalendarCheck, allSearchRoles)] },
@@ -367,7 +385,11 @@ const internalSidebarMenus: SidebarMenuEntry[] = [
 /** The 14 menus for an internal role, keeping only items that role may open. */
 export function getInternalSidebarForRole(role: UserRole): SidebarMenuEntry[] {
   return internalSidebarMenus
-    .map((menu) => ({ ...menu, items: menu.items.filter((navItem) => navItem.roles.includes(role)) }))
+    .map((menu) => ({
+      ...menu,
+      items: menu.items.filter((navItem) => navItem.roles.includes(role)),
+      overview: menu.overview && menu.overview.roles.includes(role) ? menu.overview : undefined,
+    }))
     .filter((menu) => menu.items.length > 0);
 }
 
@@ -396,6 +418,8 @@ export function canAccessAdminPath(role: UserRole, pathname: string) {
   if (normalized === "/admin/attention-queue") return ["super_admin", "admin", "staff", "qa", "internal_support"].includes(role);
   // Dashboard → Alerts placeholder (spec 2.01); same roles as the Dashboard item.
   if (normalized === "/admin/alerts") return ["super_admin", "admin", "staff", "qa", "internal_support"].includes(role);
+  // Finance overview (D50): this exact page only; each Finance screen keeps its own roles below.
+  if (normalized === "/admin/finance") return financeRoles.includes(role);
   if (role === "customer" && normalized === "/admin") return true;
   return adminNavigation.some((section) =>
     section.items.some((navItem) => {
@@ -441,6 +465,7 @@ export function adminPageTitle(role: UserRole, pathname: string): string {
   };
   if (isInternalRole(role)) {
     for (const menu of getInternalSidebarForRole(role)) {
+      if (menu.overview && path === menu.overview.url) return menu.overview.title;
       const found = menu.items.find((navItem) => matches(navItem.url));
       if (found) return menu.items.length === 1 ? menu.title : found.title;
     }

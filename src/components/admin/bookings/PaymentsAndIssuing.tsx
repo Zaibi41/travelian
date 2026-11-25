@@ -1,3 +1,4 @@
+import { PaymentDifference } from "@/components/admin/bookings/BookingFinanceOps";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -56,6 +57,7 @@ export function PaymentsAndIssuing({ booking }: { booking: BookingDetail }) {
         <RecordPayment booking={booking} />
         <IssueTicket booking={booking} checklist={checklist.data} loading={checklist.isPending} error={checklist.error} onResult={setResult} />
       </div>
+      <PaymentDifference booking={booking} />
       <CustomerSlips booking={booking} />
       {reheld && <Notice tone="fine">{reheld}</Notice>}
       <IssuanceOutcome booking={booking} checklist={checklist.data} result={result} onResult={setResult} onReheld={setReheld} />
