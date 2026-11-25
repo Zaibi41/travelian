@@ -18,8 +18,10 @@ import { cn } from "@/lib/utils";
 
 const STYLES = {
   public: {
-    grid: "grid grid-cols-1 gap-4 md:grid-cols-2",
-    span: "md:col-span-2",
+    // Phones: Title | Gender and Nationality | Country of Issuance share a row; the other fields take the full width.
+    grid: "grid grid-cols-2 gap-x-3 gap-y-4 md:gap-4",
+    span: "col-span-2",
+    full: "col-span-2 md:col-span-1",
     label: "text-sm font-medium",
     // #155: every field in error gets the same red border (aria-invalid), not only the date fields.
     control: "mt-1.5 h-11 rounded-xl aria-[invalid=true]:border-destructive",
@@ -30,6 +32,7 @@ const STYLES = {
   admin: {
     grid: "grid grid-cols-1 gap-3 sm:grid-cols-2",
     span: "sm:col-span-2",
+    full: "",
     label: "text-label font-medium text-muted-foreground",
     control: "mt-1 h-control rounded-md text-body aria-[invalid=true]:border-destructive",
     gap: "mt-1",
@@ -84,7 +87,7 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
 
   return (
     <div className={s.grid}>
-      <div>
+      <div className="min-w-0">
         <label htmlFor={id("title")} className={s.label}>Title *</label>
         {/* #155: the title sets the gender (Mr, Mstr: Male; Mrs, Ms, Miss: Female); the gender can still be changed. */}
         <Select value={value.title} onValueChange={title => onChange({ title, gender: genderForTitle(title) || value.gender })}>
@@ -97,7 +100,7 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
         </Select>
         {error("title")}
       </div>
-      <div data-error-key={id("gender")}>
+      <div data-error-key={id("gender")} className="min-w-0">
         <label htmlFor={id("gender")} className={s.label}>Gender *</label>
         <Select value={value.gender} onValueChange={gender => onChange({ gender })}>
           <SelectTrigger id={id("gender")} className={s.control} aria-invalid={Boolean(errors.gender) || undefined} aria-describedby={describedBy("gender")}>
@@ -110,14 +113,14 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
         </Select>
         {error("gender")}
       </div>
-      <div data-error-key={id("firstName")}>
+      <div data-error-key={id("firstName")} className={s.full || undefined}>
         <label htmlFor={id("firstName")} className={s.label}>First Name *</label>
         <Input id={id("firstName")} placeholder="Given Name" className={s.control} value={value.firstName} autoComplete="off" maxLength={30}
           aria-invalid={Boolean(errors.firstName) || undefined} aria-describedby={[nameIsLong(value) ? nameHelperId : null, errors.firstName ? `${id("firstName")}-error` : null].filter(Boolean).join(" ") || undefined}
           onChange={event => onChange({ firstName: event.target.value })} />
         {error("firstName")}
       </div>
-      <div data-error-key={id("lastName")}>
+      <div data-error-key={id("lastName")} className={s.full || undefined}>
         <label htmlFor={id("lastName")} className={s.label}>Last Name *</label>
         <Input id={id("lastName")} placeholder="Surnames" className={s.control} value={value.lastName} autoComplete="off" maxLength={30}
           aria-invalid={Boolean(errors.lastName) || undefined} aria-describedby={[nameIsLong(value) ? nameHelperId : null, errors.lastName ? `${id("lastName")}-error` : null].filter(Boolean).join(" ") || undefined}
@@ -131,7 +134,7 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
         </p>
       )}
 
-      <div data-error-key={id("dob")}>
+      <div data-error-key={id("dob")} className={s.full || undefined}>
         <label htmlFor={id("dob")} className={s.label}>Date of Birth *</label>
         <div className={s.gap}>
           <DatePickerField id={id("dob")} value={value.dob} onChange={dob => onChange({ dob })} placeholder="Select date of birth"
@@ -143,24 +146,49 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
           <p id={dobNoteId} role={dobNote.matches ? undefined : "alert"} className={dobNote.matches ? cn("mt-1", s.helper) : s.error}>{dobNote.text}</p>
         )}
       </div>
-      <div>
-        <label htmlFor={id("docType")} className={s.label}>Document *</label>
-        <Select value={value.docType ?? "passport"}
-          onValueChange={docType => onChange({ docType: docType as PassengerDetails["docType"], docNumber: "", expiryDate: undefined })}>
-          <SelectTrigger id={id("docType")} className={s.control} aria-label={`Document for ${value.label}`}
-            aria-describedby={requiredDoc === "cnic" ? `${id("docType")}-required` : undefined}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
-            <SelectItem value="passport" disabled={requiredDoc === "cnic"}>Passport</SelectItem>
-            <SelectItem value="cnic" disabled={requiredDoc === "passport"}>CNIC / B-form (Pakistan)</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className={s.full || undefined}>
+        {appearance === "public" ? (
+          /* Website: Passport / CNIC as two buttons (one tap); the airline's required document leaves the other disabled. */
+          <>
+            <p id={id("docType")} className={s.label}>Document *</p>
+            <div role="radiogroup" aria-label={`Document for ${value.label}`}
+              aria-describedby={requiredDoc === "cnic" ? `${id("docType")}-required` : undefined} className={cn("grid grid-cols-2 gap-2", s.gap)}>
+              {([["passport", "Passport"], ["cnic", "CNIC / B-form"]] as const).map(([option, text]) => {
+                const on = (value.docType ?? "passport") === option;
+                const disabled = requiredDoc !== undefined && requiredDoc !== option;
+                return (
+                  <button key={option} type="button" role="radio" aria-checked={on} disabled={disabled}
+                    onClick={() => { if (!on) onChange({ docType: option, docNumber: "", expiryDate: undefined }); }}
+                    className={cn("h-11 rounded-xl border px-3 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none",
+                      on ? "border-2 border-primary bg-primary/5 font-bold text-primary" : "border-input bg-background text-foreground hover:border-primary/50 active:bg-primary/5")}>
+                    {text}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <>
+          <label htmlFor={id("docType")} className={s.label}>Document *</label>
+          <Select value={value.docType ?? "passport"}
+            onValueChange={docType => onChange({ docType: docType as PassengerDetails["docType"], docNumber: "", expiryDate: undefined })}>
+            <SelectTrigger id={id("docType")} className={s.control} aria-label={`Document for ${value.label}`}
+              aria-describedby={requiredDoc === "cnic" ? `${id("docType")}-required` : undefined}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper" side="bottom" align="start" sideOffset={4}>
+              <SelectItem value="passport" disabled={requiredDoc === "cnic"}>Passport</SelectItem>
+              <SelectItem value="cnic" disabled={requiredDoc === "passport"}>CNIC / B-form (Pakistan)</SelectItem>
+            </SelectContent>
+          </Select>
+          </>
+        )}
+
         {/* #167: no "This airline needs the traveler's passport…" helper (Passport is the default); the CNIC one stays, as only CNIC can then be chosen. */}
         {requiredDoc === "cnic" && <p id={`${id("docType")}-required`} className={cn("mt-1", s.helper)}>{REQUIRED_DOC_TEXT.cnic}</p>}
         {error("docType")}
       </div>
-      <div data-error-key={id("docNumber")}>
+      <div data-error-key={id("docNumber")} className={s.full || undefined}>
         <label htmlFor={id("docNumber")} className={s.label}>{passport ? "Passport Number *" : "CNIC / B-form Number *"}</label>
         <Input id={id("docNumber")} placeholder={passport ? "e.g. AB1234567" : "e.g. 3520112345671"} className={s.control} value={value.docNumber}
           autoComplete="off" maxLength={passport ? 12 : 13} aria-invalid={Boolean(errors.docNumber) || undefined} aria-describedby={describedBy("docNumber", !passport)}
@@ -170,7 +198,7 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
         {!passport && <p id={`${id("docNumber")}-helper`} className={cn("mt-1", s.helper)}>Use 13 digits without dashes.</p>}
         {error("docNumber")}
       </div>
-      <div>
+      <div className="min-w-0">
         <label htmlFor={id("nationality")} className={s.label}>Nationality *</label>
         <div className={s.gap}>
           {country("nationality", value.nationality, nationality => onChange({ nationality }))}
@@ -179,7 +207,7 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
       </div>
       {passport && (
         <>
-          <div>
+          <div className="min-w-0">
             <label htmlFor={id("issuanceCountry")} className={s.label}>Country of Issuance *</label>
             <div className={s.gap}>
               {country("issuanceCountry", value.issuanceCountry, issuanceCountry => onChange({ issuanceCountry }))}
@@ -187,7 +215,7 @@ export function PassengerFields({ idPrefix, value, onChange, errors = {}, appear
             {error("issuanceCountry")}
           </div>
           {/* #167: Date of Expiry sits to the right of Country of Issuance. */}
-          <div data-error-key={id("expiryDate")}>
+          <div data-error-key={id("expiryDate")} className={s.full || undefined}>
             <label htmlFor={id("expiryDate")} className={s.label}>Date of Expiry *</label>
             <div className={s.gap}>
               <DatePickerField id={id("expiryDate")} value={value.expiryDate} onChange={expiryDate => onChange({ expiryDate })} placeholder="Select expiry date"

@@ -281,7 +281,8 @@ describe("Traveler Details form (#167)", () => {
     expect(phone.className).not.toMatch(/col-span-2/);
     // Date of Expiry is a half-width cell right after Country of Issuance.
     const expiry = document.querySelector('[data-error-key="passenger-0-expiryDate"]')!;
-    expect(expiry.className).not.toMatch(/col-span-2/);
+    // Half width from md (the phone layout gives it the full width, below Nationality | Country of Issuance).
+    expect(expiry.className).toMatch(/md:col-span-1/);
     expect(expiry.previousElementSibling).toHaveTextContent("Country of Issuance *");
   });
 });
