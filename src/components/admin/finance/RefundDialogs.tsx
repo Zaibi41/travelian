@@ -15,7 +15,7 @@ import { approveRefund, markRefundPaid, rejectRefund, requestRefund, type Refund
 import { pktDay } from "@/lib/finance/date-range";
 
 export const REFUND_METHOD_LABEL: Record<Refund["method"], string> = {
-  bank_transfer: "Bank transfer", jazzcash: "JazzCash", "1link": "1Link", payfast: "PayFast (card reversal)",
+  bank_transfer: "Bank transfer", jazzcash: "JazzCash", "1link": "1Link", payfast: "PayFast (card reversal)", alfalah: "Bank Alfalah (card reversal)",
 };
 export const REFUND_STATUS_LABEL: Record<Refund["status"], string> = { requested: "Requested", approved: "Approved", paid: "Paid", rejected: "Rejected" };
 

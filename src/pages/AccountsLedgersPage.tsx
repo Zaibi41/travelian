@@ -20,6 +20,7 @@ import {
   type PaymentMethod, type ReceivingAccount,
 } from "@/lib/finance/payment-accounts";
 import { cn } from "@/lib/utils";
+import { AccountBalances } from "@/components/admin/finance/AccountBalances";
 
 // Finance > Accounts & Ledgers (spec 5, "bank and cash book" tab). Only this tab is built; the
 // others are shown disabled. Page header, tabs and card follow the Payments page. The gateway
@@ -64,6 +65,8 @@ export default function AccountsLedgersPage() {
           Receiving accounts are managed by Super Admin. A super admin can tell you who to ask.
         </NotAvailableNotice>
       ) : (
+        <>
+        <AccountBalances />
         <Card className="shadow-card">
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0 p-5">
             <CardTitle id="receiving-accounts">Receiving accounts</CardTitle>
@@ -111,6 +114,7 @@ export default function AccountsLedgersPage() {
             )}
           </CardContent>
         </Card>
+        </>
       )}
 
       {adding && <AddAccountDialog initialMethod={adding} onClose={() => setAdding(null)} />}

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, Globe } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
 import { useSiteSwitches } from "@/lib/site-switches";
+import { cn } from "@/lib/utils";
 import { getInternalSidebarForRole, getNavigationForRole, isInternalRole, sidebarPathFor, type AdminNavItem } from "@/lib/admin-navigation";
 
 interface SidebarSection {
@@ -11,6 +12,8 @@ interface SidebarSection {
   items: AdminNavItem[];
   /** Menu icon (internal roles only). No number chips: removed at the user's request. */
   icon?: AdminNavItem["icon"];
+  /** Clicking the menu opens this page too (Finance → its overview, D50). */
+  overview?: AdminNavItem;
 }
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -28,13 +31,14 @@ export function AdminSidebar() {
   const { state, isMobile } = useSidebar();
   const collapsed = state === "collapsed" && !isMobile;
   const location = useLocation();
+  const navigate = useNavigate();
   const { currentRole } = useRole();
   // Internal roles: the 14 spec menus. Agency and customer roles: unchanged sidebar.
   const internal = isInternalRole(currentRole);
   const { umrah } = useSiteSwitches();
   const sections = useMemo<SidebarSection[]>(
     () => (internal
-      ? getInternalSidebarForRole(currentRole).map((menu) => ({ category: menu.title, items: menu.items, icon: menu.icon }))
+      ? getInternalSidebarForRole(currentRole).map((menu) => ({ category: menu.title, items: menu.items, icon: menu.icon, overview: menu.overview }))
       : getNavigationForRole(currentRole))
       // D39: "Umrah Packages" is hidden with the rest of Umrah until the gateway's switch is on.
       .map((section) => ({ ...section, items: section.items.filter((navItem) => umrah || navItem.url !== UMRAH_ADMIN_PATH) }))
@@ -54,7 +58,7 @@ export function AdminSidebar() {
   const isActive = (category: string, path: string, title: string) =>
     activeItemKey === `${category}-${path}-${title}`;
   const activeCategory = useMemo(
-    () => sections.find((section) => section.items.some((item) => isPathActive(item.url)))?.category,
+    () => sections.find((section) => section.overview?.url === currentPath || section.items.some((item) => isPathActive(item.url)))?.category,
     [activeItemKey, sections],
   );
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -69,11 +73,11 @@ export function AdminSidebar() {
   // highlighted while on any of its screens). Others: one icon per item, as before.
   const allItems = internal
     ? sections.map((section) => ({
-      ...section.items[0],
+      ...(section.overview ?? section.items[0]),
       title: section.category,
       icon: section.icon ?? section.items[0].icon,
       category: section.category,
-      menuActive: section.items.some((item) => isPathActive(item.url)),
+      menuActive: section.overview?.url === currentPath || section.items.some((item) => isPathActive(item.url)),
     }))
     : sections.flatMap((section) => section.items.map((item) => ({ ...item, category: section.category, menuActive: undefined as boolean | undefined })));
 
@@ -143,6 +147,8 @@ export function AdminSidebar() {
                 );
               }
               const open = !!openGroups[section.category];
+              const overview = section.overview;
+              const onOverview = !!overview && currentPath === overview.url;
               return (
                 <Collapsible
                   key={section.category}
@@ -150,8 +156,16 @@ export function AdminSidebar() {
                   onOpenChange={(nextOpen) => setOpenGroups(nextOpen ? { [section.category]: true } : {})}
                 >
                   <CollapsibleTrigger
+                    aria-current={onOverview ? "page" : undefined}
+                    onClick={overview ? (event) => {
+                      // The menu opens its overview and stays expanded (it doesn't fold up on a second click there).
+                      event.preventDefault();
+                      setOpenGroups({ [section.category]: true });
+                      if (!onOverview) navigate(overview.url);
+                    } : undefined}
                     className={internal
-                      ? "group flex h-10 w-full items-center justify-between gap-2 rounded-xl px-2.5 text-nav font-bold text-sidebar-foreground transition-colors hover:bg-sidebar-accent/80 data-[state=open]:bg-sidebar-accent/60"
+                      ? cn("group flex h-10 w-full items-center justify-between gap-2 rounded-xl px-2.5 text-nav font-bold text-sidebar-foreground transition-colors hover:bg-sidebar-accent/80 data-[state=open]:bg-sidebar-accent/60",
+                        onOverview && "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm hover:bg-sidebar-primary data-[state=open]:bg-sidebar-primary")
                       : "group flex h-9 w-full items-center justify-between rounded-lg px-2.5 text-label font-bold uppercase tracking-[0.04em] text-sidebar-muted transition-colors hover:bg-sidebar-accent/55 hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent/80 data-[state=open]:text-sidebar-accent-foreground"}
                   >
                     {internal

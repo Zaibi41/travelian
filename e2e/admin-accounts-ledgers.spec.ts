@@ -71,11 +71,12 @@ for (const width of [1440, 1024, 768, 390]) {
   });
 }
 
-test("Finance in the sidebar ends with Accounts & Ledgers, active on this page", async ({ page }) => {
+test("Finance in the sidebar: the D50 order, Accounts & Ledgers active on this page", async ({ page }) => {
   await open(page, 1440, "?method=1link");
   await expect(page.getByText("No 1Link account is set up yet.")).toBeVisible();
   const links = (await page.getByRole("link").filter({ visible: true }).allInnerTexts()).map(text => text.trim());
-  const at = links.indexOf("Reconciliation");
-  expect(links.slice(at - 2, at + 2)).toEqual(["Wallets", "Payments", "Reconciliation", "Accounts & Ledgers"]);
+  const at = links.indexOf("Supplier Balances");
+  expect(links.slice(at, at + 8)).toEqual(["Supplier Balances", "Ticket Sale Entry", "Accounts & Ledgers", "Wallets", "Payments", "Reconciliation",
+    "Supplier Refunds", "Customer Dues"]);
   await page.screenshot(shot(1440, "empty"));
 });

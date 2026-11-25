@@ -27,7 +27,7 @@ export type BookingPayment = Schemas["BookingPayment"];
 /** A payment as shown: also PayFast, which only the gateway records (from a verified PayFast result). */
 export type RecordedPaymentMethod = BookingPayment["method"];
 /** What staff can record by hand and receive into Travelian's accounts. */
-export type PaymentMethod = Exclude<RecordedPaymentMethod, "payfast">;
+export type PaymentMethod = Exclude<RecordedPaymentMethod, "payfast" | "alfalah">; // card methods are recorded by the gateway, never by staff
 export type RecordPaymentBody = Schemas["RecordPaymentRequest"];
 export type IssuanceChecklist = Schemas["IssuanceChecklist"];
 export type IssuanceResult = Schemas["IssuanceResult"];

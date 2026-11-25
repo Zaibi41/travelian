@@ -16,6 +16,7 @@ import { GroupNoCancelNotice } from "@/components/admin/bookings/GroupNoCancelNo
 import { GroupTicketsTab } from "@/components/admin/bookings/GroupTicketsTab";
 import { EmailNotSentNotice } from "@/components/admin/bookings/EmailNotSentNotice";
 import { SupplierBookingCard } from "@/components/admin/bookings/SupplierBookingCard";
+import { SoldThroughValue, SupplierPaymentPanel } from "@/components/admin/bookings/BookingFinanceOps";
 import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { GROUP_TICKETING_LABEL } from "@/lib/admin-search/group-holds";
 import { SampleDataBadge, StatusChips } from "@/components/admin/bookings/BookingChips";
@@ -98,7 +99,7 @@ export default function AdminBookingDetailPage() {
       {tab === "overview" && <Overview booking={booking} />}
       {tab === "overview" && booking.supplier_booking && <SupplierBookingCard booking={booking} />}
       {tab === "fare" && <Fare booking={booking} />}
-      {tab === "supplier-payment" && booking.supplier_payment && <SupplierPaymentTab booking={booking} />}
+      {tab === "supplier-payment" && booking.supplier_payment && <SupplierPaymentPanel booking={booking} />}
       {tab === "payments" && <PaymentsAndIssuing booking={booking} />}
       {tab === "tickets" && (booking.product === "group" ? <GroupTicketsTab booking={booking} /> : <TicketsTab booking={booking} />)}
       {tab === "itinerary" && booking.itinerary?.length ? <ItineraryTab segments={booking.itinerary} /> : null}
@@ -143,6 +144,8 @@ function Overview({ booking }: { booking: BookingDetail }) {
         ["Booking ID", booking.booking_id],
         ["Product", PRODUCT_LABEL[booking.product] ?? booking.product],
         ["Customer or agency", booking.customer_or_agency ?? "—"],
+        // Issue 202: the reseller or channel it was sold through, separate from the passenger / customer.
+        ...(booking.can_edit_sold_through || booking.sold_through ? [["Sold through", <SoldThroughValue booking={booking} />] as [string, React.ReactNode]] : []),
         // B20: the contact saved with the booking (who pays and is contacted). Passports and dates of birth are on Passengers.
         ...(booking.customer ? [
           ["Customer phone", <span className="tabular-nums">{booking.customer.phone}</span>],
@@ -184,6 +187,9 @@ function Fare({ booking }: { booking: BookingDetail }) {
     // travelian#70: the same profit as Finance > Reports and the dashboard (worked out by the gateway).
     if (profit.fees_charged.amount_minor) rows.push(["Card fees charged", formatMoney(profit.fees_charged)]);
     if (profit.supplier_charge && profit.supplier_charge_basis === "recorded") rows.push(["Supplier actual charge", formatMoney(profit.supplier_charge)]);
+    // Issue 202: the Supplier payment tab's billable amount, the one figure for what the supplier charges.
+    if (profit.supplier_charge && profit.supplier_charge_basis === "billable") rows.push(["Supplier billable amount", formatMoney(profit.supplier_charge)]);
+    if (profit.shortfall?.amount_minor) rows.push(["Accepted payment difference", `−${formatMoney(profit.shortfall)}`]);
     rows.push(["Payment fees", profit.missing.includes("payment_fees") && !profit.payment_fees.amount_minor ? "Not recorded" : formatMoney(profit.payment_fees)]);
     if (profit.refunds.amount_minor) rows.push(["Refunds paid", formatMoney(profit.refunds)]);
     rows.push(["Profit", profit.profit ? formatMoney(profit.profit) : "Not known", true]);
@@ -246,20 +252,6 @@ function SellingPriceForm({ booking }: { booking: BookingDetail }) {
       </form>
       {problem && <p role="alert" className="text-helper text-status-critical-text">{problem}</p>}
     </section>
-  );
-}
-
-// Transfer reference, time sent, confirmation and paid from are hidden: not recorded yet.
-function SupplierPaymentTab({ booking }: { booking: BookingDetail }) {
-  const payment = booking.supplier_payment!;
-  return (
-    <FieldTable
-      label="Supplier payment"
-      rows={[
-        ["Amount due", <span className="tabular-nums">{payment.amount_due ? formatMoney(payment.amount_due) : "—"}</span>],
-        ["Hold deadline", <span className="tabular-nums">{formatDateTime(payment.hold_deadline)}</span>],
-      ]}
-    />
   );
 }
 
