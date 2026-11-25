@@ -114,6 +114,7 @@ const App = () => (
             <Route path="/deals" element={<PublicLayout><Suspense fallback={<div role="status" className="px-4 py-8 text-sm text-muted-foreground">Loading page…</div>}><DealsPage /></Suspense></PublicLayout>} />
             <Route path="/destination/:slug" element={<PublicLayout><Suspense fallback={<div role="status" className="px-4 py-8 text-sm text-muted-foreground">Loading page…</div>}><DestinationPage /></Suspense></PublicLayout>} />
             <Route path="/group-ticketing" element={<PublicLayout><GroupTicketingPage /></PublicLayout>} />
+            <Route path="/group-ticketing/results" element={<PublicLayout><PublicFlightsPage groupsOnly /></PublicLayout>} />
             <Route path="/group-ticketing/:category" element={<PublicLayout><GroupTicketingPage /></PublicLayout>} />
             <Route path="/booking" element={<PublicLayout><BookingPage /></PublicLayout>} />
             <Route path="/request-booking" element={<PublicLayout><BookingRequestPage /></PublicLayout>} />

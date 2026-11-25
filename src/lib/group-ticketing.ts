@@ -484,6 +484,16 @@ export function buildGroupTicketSearchParams(values: GroupTicketSearchParams): U
 }
 
 
+/** The group results: the Flights results page in group-fares mode (date optional: every upcoming fare on the route). */
+export function groupResultsPath(values: { from?: string; to?: string; dateFrom?: string }) {
+  const query = new URLSearchParams();
+  if (values.from) query.set("from", values.from.toUpperCase());
+  if (values.to) query.set("to", values.to.toUpperCase());
+  if (values.dateFrom) query.set("depart", values.dateFrom);
+  query.set("adults", "1");
+  return `/group-ticketing/results?${query.toString()}`;
+}
+
 const ALL_GROUPS_SLUG = "all";
 function unwrapArray(payload: unknown): unknown[] {
   if (Array.isArray(payload)) return payload;

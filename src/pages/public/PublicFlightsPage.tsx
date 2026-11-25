@@ -33,7 +33,7 @@ import { firstLegError, legErrors, nextLeg, remainingLegErrors, updateLeg, type 
 import { whatsappUrl } from "@/lib/site-config";
 import { airportByCode, loadPublicAirports } from "@/data/airports";
 import { isGroupTicketingProvider, groupTicketToFlight } from "@/lib/provider-systems";
-import { searchPublicGroups, GATEWAY_GROUP_PROVIDER } from "@/lib/public-booking";
+import { publicGroupCalendar, searchPublicGroups, GATEWAY_GROUP_PROVIDER } from "@/lib/public-booking";
 import { normalizeAirlineName, isSameAirline, extractAllAirlines, getAirlineNameFromCarrier } from "@/lib/airline-normalization";
 import { journeyMinutes, minutesText, stayAt, stayBetween, stopLine, stopSummary, type Stay } from "@/lib/flight-stays";
 import { activeFilterCount, filtersFromParams, FLIGHT_SORTS, sortShortLabel, withFilterParams, type FlightSort } from "@/lib/flight-result-filters";
@@ -186,7 +186,12 @@ function consolidateFlights(list: TravelianFlight[]): TravelianFlight[] {
 /** "Karachi (KHI)" or "KHI" -> "KHI". */
 const airportCodeOf = (value: string) => (String(value || "").match(/\(([A-Z]{3})\)/i)?.[1] || String(value || "").trim()).toUpperCase();
 
-export default function PublicFlightsPage({ bookingPath = "/booking", adminMode = false }: { bookingPath?: string; adminMode?: boolean } = {}) {
+/** The group fare calendar in the shape the date strip reads (group fares are known for every day, never "pending"). */
+const groupCalendar = (origin: string, destination: string, adults: number, _cabin: string, signal?: AbortSignal) =>
+  publicGroupCalendar(origin, destination, adults, signal).then((answer) => ({ pending: false, days: answer.days.map((day) => ({ ...day, checked: true })) }));
+
+/** `groupsOnly`: the Group Ticketing results (the same list, cards, filters and Book as Flights, group fares only). */
+export default function PublicFlightsPage({ bookingPath = "/booking", adminMode = false, groupsOnly = false }: { bookingPath?: string; adminMode?: boolean; groupsOnly?: boolean } = {}) {
   const { currency: selectedCurrency } = useLocale();
   const [params, setParams] = useSearchParams();
   const initFrom = params.get("from") || "LHE";
@@ -201,6 +206,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const initChildren = parseInt(params.get("children") || "0") || 0;
   const initInfants = parseInt(params.get("infants") || "0") || 0;
   const initDate = clampToToday(parseDateOnly(initDateStr));
+  // Group Ticketing searches can leave the date out: every upcoming group fare on the route.
+  const anyDate = groupsOnly && !(params.get("depart") || params.get("date"));
   const initReturnDate = parseDateOnly(initReturnDateStr);
   const initSegments = segmentsFromParam(params.get("segments"));
   // #150: filters and sort come from the URL, so a reload or a shared link keeps them.
@@ -279,14 +286,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   // #55: while Modify Search is open, its fares load in the background once From and To are set.
   // #192: phones show one month in the date pickers (two stacked months were too tall); wider screens keep two.
   const calendarMonths = useIsMobile() ? 1 : 2;
-  const editFares = useFlightFares(modifyOpen, {
+  const editFares = useFlightFares(modifyOpen && !groupsOnly, {
     from: airportCodeOf(editFrom), to: airportCodeOf(editTo), adults: editTravelers.adults,
     cabin: editTravelers.cabin.toLowerCase().replace(/\s+/g, "_"),
   });
   const [editReturnDateOpen, setEditReturnDateOpen] = useState(false);
   // #151: the Return date uses the same fare calendar, for the way back from the departure date on; its message
   // shows at the field.
-  const editReturnFares = useFlightFares(modifyOpen && editTripType === "roundtrip" && !!editDate, {
+  const editReturnFares = useFlightFares(modifyOpen && !groupsOnly && editTripType === "roundtrip" && !!editDate, {
     from: airportCodeOf(editTo), to: airportCodeOf(editFrom), adults: editTravelers.adults,
     cabin: editTravelers.cabin.toLowerCase().replace(/\s+/g, "_"), start: editDate ? formatDateOnly(editDate) : undefined,
   });
@@ -444,7 +451,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     const isAdultsOnly = childrenCount === 0 && infantsCount === 0;
 
     Promise.allSettled([
-      searchFlights({
+      groupsOnly ? Promise.resolve({ flights: [] as TravelianFlight[] }) : searchFlights({
         from,
         to,
         tripType,
@@ -464,7 +471,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         },
       }, controller.signal, { signedIn: adminMode }),
       (isAdultsOnly
-        ? searchPublicGroups({ origin: originAirport, destination: destAirport, departureDate: departDateStr, adults: adultsCount }, controller.signal)
+        ? searchPublicGroups({ origin: originAirport, destination: destAirport, departureDate: anyDate ? undefined : departDateStr, adults: adultsCount }, controller.signal)
         : Promise.resolve([])),
     ])
       .then(async ([flightsOutcome, groupsOutcome]) => {
@@ -518,7 +525,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       });
 
     return () => controller.abort();
-  }, [from, to, departDate, returnDate, tripType, segments, travelers, currency, searchRefreshKey]);
+  }, [from, to, departDate, returnDate, tripType, segments, travelers, currency, searchRefreshKey, anyDate, groupsOnly]);
 
   useEffect(() => {
     if (expirySeconds <= 0 || apiStatus !== "success") return;
@@ -921,6 +928,8 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       if (tripType === "roundtrip" && returnDate) query.set("return", format(returnDate, "MMM dd, yyyy"));
       return `${bookingPath}?${query.toString()}`;
     }
+    // A group fare flies on its own date (a group search can be for any date, or show nearby dates).
+    const groupDay = flight.provider === GATEWAY_GROUP_PROVIDER ? parseDateOnly(String(flight.departureTime || "").slice(0, 10)) : undefined;
     const query = new URLSearchParams({
       type: "flight",
       flightId: flight.flightId,
@@ -928,7 +937,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       flightNo: flight.flightNumber,
       from: flight.origin,
       to: flight.destination,
-      date: format(departDate, "MMM dd, yyyy"),
+      date: format(groupDay ?? departDate, "MMM dd, yyyy"),
       cabin: flight.class,
       trip: tripType,
       adults: String(travelers.adults),
@@ -985,10 +994,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   // B24 / D46: the date strip reads the gateway's fare calendar (one call, asked again while the gateway checks the
   // missing dates itself) instead of running a live search per date, which used up the public search limit (429s).
   // The calendar is one-way, so a round trip shows the dates without prices.
-  const stripFares = useFlightFares(tripType === "oneway", {
+  const stripFares = useFlightFares(tripType === "oneway" || groupsOnly, {
     from: airportCodeOf(from), to: airportCodeOf(to), adults: travelers.adults,
     cabin: travelers.cabin.toLowerCase().replace(/\s+/g, "_"), start: formatDateOnly(dateFlexDays[0].date),
-  });
+  }, groupsOnly ? groupCalendar : undefined);
   const dateFareMap = useMemo<Record<string, { price: number; currency: string } | null>>(() => Object.fromEntries(
     stripFares.days.filter((day) => day.available && day.lowest_price)
       .map((day) => [day.date, { price: day.lowest_price!.amount_minor / 100, currency: day.lowest_price!.currency }]),
@@ -1077,6 +1086,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   };
   const summaryDates = tripType === "multicity" && segments.length
     ? [segments[0].date, segments[segments.length - 1].date].filter((date): date is Date => Boolean(date)).map((date) => format(date, "EEE, d MMM")).filter((text, index, all) => all.indexOf(text) === index).join(" – ") + ` · ${segments.length} flights`
+    : anyDate ? "Any date"
     : tripType === "roundtrip" && returnDate ? `${format(departDate, "EEE, d MMM")} – ${format(returnDate, "EEE, d MMM")}` : format(departDate, "EEE, d MMM");
   const swapRoute = () => {
     const newFrom = to;
@@ -1467,7 +1477,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   };
   const dateFareLabel = (date: Date) => {
     const dateKey = formatDateOnly(date);
-    if (dateKey === formatDateOnly(departDate) && bestFlight) return formatFare(bestFlight.price, bestFlight.currency);
+    if (!anyDate && dateKey === formatDateOnly(departDate) && bestFlight) return formatFare(bestFlight.price, bestFlight.currency);
     const fare = dateFareMap[dateKey];
     return fare ? formatFare(fare.price, fare.currency) : "-";
   };
@@ -1623,11 +1633,12 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   return (
     <div className={adminMode ? "-m-4 md:-m-6 bg-muted/30 min-h-[calc(100vh-3.5rem)]" : ""}>
       <SEO
-        title={`Flights ${from} to ${to} - Travelian`}
-        description={`Compare available ${from} to ${to} flight fares for ${format(departDate, "PPP")}.`}
+        title={groupsOnly ? `Group fares ${from} to ${to} - Travelian` : `Flights ${from} to ${to} - Travelian`}
+        description={groupsOnly ? `Book available ${from} to ${to} group ticket fares with Travelian.` : `Compare available ${from} to ${to} flight fares for ${format(departDate, "PPP")}.`}
+        {...(groupsOnly ? { breadcrumbs: [{ name: "Group Ticketing", path: "/group-ticketing" }] } : {})}
       />
       {/* Visually-hidden H1 for SEO/a11y, keeps premium look intact */}
-      <h1 className="sr-only">Flight search results: {from} to {to}</h1>
+      <h1 className="sr-only">{groupsOnly ? "Group fare results" : "Flight search results"}: {from} to {to}</h1>
 
       {/* Search summary */}
       <section aria-label="Flight search summary" className={cn("relative isolate bg-sidebar", adminMode ? "gradient-hero py-2" : "py-3 sm:py-4")}>
@@ -1768,13 +1779,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                 }}
                 className={cn(
                   "flex flex-col items-center px-4 py-2 rounded-xl text-xs font-medium transition-all min-w-[100px] shrink-0",
-                  formatDateOnly(day.date) === formatDateOnly(departDate)
+                  !anyDate && formatDateOnly(day.date) === formatDateOnly(departDate)
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted/50",
                 )}
               >
                 <span>{format(day.date, "EEE, MMM d")}</span>
-                <span className={cn("text-xs mt-0.5", formatDateOnly(day.date) === formatDateOnly(departDate) ? "text-primary-foreground" : "text-muted-foreground")}>
+                <span className={cn("text-xs mt-0.5", !anyDate && formatDateOnly(day.date) === formatDateOnly(departDate) ? "text-primary-foreground" : "text-muted-foreground")}>
                   {dateFareLabel(day.date)}
                 </span>
               </button>
