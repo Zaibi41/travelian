@@ -1,147 +1,168 @@
 import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { History, Plus, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { BookText, Plus, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/admin/ui/button";
-import { Card, CardContent } from "@/components/admin/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
-import { EmptyState, LoadingCards, Notice } from "@/components/admin/ui/feedback";
+import { EmptyState, LoadingCards, Notice, Panel } from "@/components/admin/ui/feedback";
 import { FieldShell, Input } from "@/components/admin/ui/field";
+import { LabeledSelect } from "@/components/admin/ui/LabeledSelect";
 import { StatusBadge, Tag } from "@/components/admin/ui/StatusBadge";
 import { TABLE } from "@/components/admin/ui/classes";
-import { NotAvailableNotice } from "@/components/admin/bookings/NotAvailable";
+import { StatusKpiCard } from "@/components/admin/StatusKpiCard";
 import { FinanceNotBuilt } from "@/components/admin/finance/FinanceNotBuilt";
+import { Fact, FinanceForbidden, FinancePageHeader, SideDrawer, isForbidden, moneyOrDash } from "@/components/admin/finance/FinanceShared";
 import { useRole } from "@/contexts/RoleContext";
-import { formatDateTime, formatMoney } from "@/lib/admin-bookings/format";
+import { formatDateTime } from "@/lib/admin-bookings/format";
 import { paisaToInput, receivedAtIso, rupeesToPaisa } from "@/lib/admin-bookings/payments";
 import { pktDay } from "@/lib/finance/date-range";
 import {
-  fetchSupplierWallets, fetchWalletHistory, recordWalletEntry, refreshSouthair, setWalletThreshold,
-  type SupplierWallet, type WalletHistoryItem,
-} from "@/lib/finance/api";
-import { GatewayError } from "@/lib/gateway/client";
+  addAgencyWalletEntry, fetchAgencyWalletStatement, fetchAgencyWallets, fetchSaleOptions, roleName, setAgencyWalletLow, type AgencyWallet,
+} from "@/lib/finance/ops-api";
 import { cn } from "@/lib/utils";
 
-// Finance > Wallets (travelian#68): Travelian's balance at each flight supplier. Southair is read from its system
-// (read-only); SooperFare has no balance API, so its balance is calculated from recorded top-ups, adjustments and the
-// actual charge of each issued ticket. No customer wallets (B2C customers have none). The gateway decides who sees it.
-const WALLETS_KEY = ["finance", "wallets"];
+// Finance > Wallets (issue 224, decision D3): each B2B agency's prepaid wallet. B2C customers have no wallet (they pay per
+// booking). Supplier balances (South Air, Sooperfare, airline IDs, portals, hotels) are on Supplier Balances. The gateway
+// works out every balance and keeps a wallet from going below zero.
+const KEY = ["finance", "agency-wallets"];
 const AGENCY_ROLES = ["agency_owner", "agency_staff", "customer"];
 
 export default function WalletPage() {
   const { currentRole } = useRole();
-  if (AGENCY_ROLES.includes(currentRole)) return <FinanceNotBuilt title="Wallets" />; // agency wallets: not built (D3)
-  return <SupplierWallets />;
+  if (AGENCY_ROLES.includes(currentRole)) return <FinanceNotBuilt title="Wallets" />; // the agency's own wallet view: not built yet
+  return <AgencyWallets />;
 }
 
-function SupplierWallets() {
-  const wallets = useQuery({ queryKey: WALLETS_KEY, queryFn: ({ signal }) => fetchSupplierWallets({ signal }) });
-  const forbidden = wallets.error instanceof GatewayError && wallets.error.kind === "forbidden";
-  const [dialog, setDialog] = useState<{ wallet: SupplierWallet; kind: "top-ups" | "adjustments" | "threshold" } | null>(null);
-  const [history, setHistory] = useState<SupplierWallet | null>(null);
+type Action = { wallet: AgencyWallet; kind: "deposit" | "adjustment" | "low" };
+
+function AgencyWallets() {
+  const wallets = useQuery({ queryKey: KEY, queryFn: ({ signal }) => fetchAgencyWallets({ signal }) });
+  const [action, setAction] = useState<Action | null>(null);
+  const [statementFor, setStatementFor] = useState<AgencyWallet | null>(null);
+  const items = wallets.data?.wallets ?? [];
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="space-y-1">
-        <h1 className="text-page-title font-bold font-display">Wallets</h1>
-        <p className="text-body text-muted-foreground">Travelian's balance at each flight supplier, and when it was last checked.</p>
-      </div>
-      {forbidden ? (
-        <NotAvailableNotice title="Not available for your role">
-          Supplier balances need the Finance and cost and margin permissions. A super admin can grant them.
-        </NotAvailableNotice>
-      ) : (
+    <div className="min-w-0 space-y-6 animate-fade-in">
+      <FinancePageHeader title="Wallets"
+        description="Each B2B agency's prepaid wallet: deposits they've paid in and corrections. Customers don't have wallets; supplier balances are on Supplier Balances." />
+      {isForbidden(wallets.error) ? <FinanceForbidden>Agency wallets need the Finance permission. A super admin can grant it.</FinanceForbidden> : (
         <>
-          {wallets.isPending && <LoadingCards count={2} label="Loading supplier balances" className="grid gap-card-gap md:grid-cols-2" itemClassName="h-56" />}
-          {wallets.error && !forbidden && <Notice tone="critical">{wallets.error.message}</Notice>}
+          {wallets.isPending && <LoadingCards count={3} label="Loading agency wallets" className="grid grid-cols-2 gap-card-gap lg:grid-cols-3" itemClassName="h-24" />}
+          {wallets.error && <Notice tone="critical">{wallets.error.message}</Notice>}
           {wallets.data && (
-            <div className="grid gap-card-gap md:grid-cols-2">
-              {wallets.data.wallets.map(wallet => (
-                <WalletCard key={wallet.provider_id} wallet={wallet} onAction={kind => setDialog({ wallet, kind })} onHistory={() => setHistory(wallet)} />
-              ))}
+            <div className="grid grid-cols-2 gap-card-gap lg:grid-cols-3">
+              <StatusKpiCard size="sm" label="Held for agencies" value={moneyOrDash(wallets.data.total_balance)} hint="Total of all agency wallets" />
+              <StatusKpiCard size="sm" label="Agencies" value={String(items.length)} />
+              <StatusKpiCard size="sm" label="Low balance" value={String(wallets.data.low_count)} severity={wallets.data.low_count ? "action" : "fine"} />
             </div>
           )}
-          <p className="text-label text-muted-foreground">
-            Customers have no wallet. Each issued ticket's actual supplier charge is on its booking; every change here is in the{" "}
-            <Link to="/admin/audit-log" className="font-medium text-primary underline-offset-2 hover:underline">Audit Log</Link>.
-          </p>
+          {wallets.data && items.length === 0 && (
+            <EmptyState title="No B2B agencies yet.">
+              Agencies are added under <Link to="/admin/agencies" className="font-medium text-primary underline-offset-2 hover:underline">B2B Partners</Link>; each gets a wallet.
+            </EmptyState>
+          )}
+          {items.length > 0 && (
+            <>
+              <ul className="grid grid-cols-[minmax(0,1fr)] gap-3 md:hidden" aria-label="Agency wallets">
+                {items.map(wallet => (
+                  <li key={wallet.agency_id}>
+                    <Panel className={cn("flex flex-col gap-3", wallet.low && "border-l-4 border-l-status-action")}>
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="min-w-0 truncate font-semibold" title={wallet.agency_name}>{wallet.agency_name}</span>
+                        <WalletStatus wallet={wallet} />
+                      </div>
+                      <dl className="grid grid-cols-2 gap-2">
+                        <Fact label="Balance"><span className="text-section">{moneyOrDash(wallet.balance)}</span></Fact>
+                        <Fact label="Last deposit">{wallet.last_deposit_at ? formatDateTime(wallet.last_deposit_at) : "—"}</Fact>
+                      </dl>
+                      <Actions wallet={wallet} onAction={kind => setAction({ wallet, kind })} onStatement={() => setStatementFor(wallet)} />
+                    </Panel>
+                  </li>
+                ))}
+              </ul>
+              <div className={cn(TABLE.wrap, "relative hidden md:block")}>
+                <table className={cn(TABLE.table, "min-w-[46rem]")}>
+                  <thead>
+                    <tr className={TABLE.headRow}>
+                      {["Agency", "Balance", "Low below", "Total deposited", "Last deposit", "Status", ""].map(column => (
+                        <th key={column || "actions"} scope="col" className={cn(TABLE.th, ["Balance", "Low below", "Total deposited"].includes(column) && "text-right")}>
+                          {column || <span className="sr-only">Actions</span>}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map(wallet => (
+                      <tr key={wallet.agency_id} className={TABLE.row}>
+                        <td className={TABLE.td}><span className="block max-w-[16rem] truncate font-semibold" title={wallet.agency_name}>{wallet.agency_name}</span></td>
+                        <td className={cn(TABLE.td, "whitespace-nowrap text-right font-semibold tabular-nums")}>{moneyOrDash(wallet.balance)}</td>
+                        <td className={cn(TABLE.td, "whitespace-nowrap text-right tabular-nums")}>{moneyOrDash(wallet.low_threshold)}</td>
+                        <td className={cn(TABLE.td, "whitespace-nowrap text-right tabular-nums")}>{moneyOrDash(wallet.deposits)}</td>
+                        <td className={cn(TABLE.td, "tabular-nums text-muted-foreground")}>{wallet.last_deposit_at ? formatDateTime(wallet.last_deposit_at) : "—"}</td>
+                        <td className={TABLE.td}><WalletStatus wallet={wallet} /></td>
+                        <td className={cn(TABLE.td, "text-right")}>
+                          <Actions wallet={wallet} onAction={kind => setAction({ wallet, kind })} onStatement={() => setStatementFor(wallet)} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </>
       )}
-      {dialog && (dialog.kind === "threshold"
-        ? <ThresholdDialog wallet={dialog.wallet} onClose={() => setDialog(null)} />
-        : <EntryDialog wallet={dialog.wallet} kind={dialog.kind} onClose={() => setDialog(null)} />)}
-      {history && <HistoryDialog wallet={history} onClose={() => setHistory(null)} />}
+      {action && (action.kind === "low"
+        ? <LowDialog wallet={action.wallet} onClose={() => setAction(null)} />
+        : <EntryDialog wallet={action.wallet} kind={action.kind} onClose={() => setAction(null)} />)}
+      {statementFor && <StatementDrawer wallet={statementFor} onClose={() => setStatementFor(null)} />}
     </div>
   );
 }
 
-function WalletCard({ wallet, onAction, onHistory }: { wallet: SupplierWallet; onAction: (kind: "top-ups" | "adjustments" | "threshold") => void; onHistory: () => void }) {
-  const queryClient = useQueryClient();
-  const refresh = useMutation({
-    mutationFn: refreshSouthair,
-    onSuccess: () => { toast.success("Southair balance updated."); void queryClient.invalidateQueries({ queryKey: WALLETS_KEY }); },
-    onError: error => toast.error(error.message),
-  });
-  const api = wallet.mode === "api";
+function WalletStatus({ wallet }: { wallet: AgencyWallet }) {
+  if (wallet.agency_status !== "active") return <Tag>Suspended</Tag>;
+  if (wallet.low === true) return <StatusBadge severity="action">Low</StatusBadge>;
+  if (wallet.low === false) return <StatusBadge severity="fine">OK</StatusBadge>;
+  return <Tag>No low level</Tag>;
+}
+
+function Actions({ wallet, onAction, onStatement }: { wallet: AgencyWallet; onAction: (kind: Action["kind"]) => void; onStatement: () => void }) {
   return (
-    <Card className={cn("shadow-card", wallet.low === true && "border-l-4 border-l-status-critical", wallet.low === false && "border-l-4 border-l-status-fine")}>
-      <CardContent className="flex flex-col gap-4 p-5">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h2 className="truncate text-section-title font-semibold font-display" title={wallet.name}>{wallet.name}</h2>
-            <p className="text-label text-muted-foreground">{api ? "Read from Southair's system" : "Calculated: top-ups − tickets ± adjustments"}</p>
-          </div>
-          {wallet.low === true && <StatusBadge severity="critical">Low</StatusBadge>}
-          {wallet.low === false && <StatusBadge severity="fine">Above alert level</StatusBadge>}
-          {wallet.low == null && <Tag>No alert set</Tag>}
-        </div>
-        <div>
-          <p className="text-kpi font-bold tabular-nums">{wallet.balance ? formatMoney(wallet.balance) : "Not known"}</p>
-          <p className="text-label text-muted-foreground">
-            {wallet.as_of ? `${api ? "Checked" : "Last change"} ${formatDateTime(wallet.as_of)}` : wallet.note}
-            {wallet.tracking_since ? ` · tracking since ${formatDateTime(wallet.tracking_since)}` : ""}
-          </p>
-          {wallet.threshold && <p className="text-label text-muted-foreground">Alert below {formatMoney(wallet.threshold)}</p>}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {api ? (
-            <Button variant="primary" size="sm" onClick={() => refresh.mutate()} disabled={refresh.isPending}>
-              <RefreshCw aria-hidden="true" className={cn(refresh.isPending && "animate-spin")} /> {refresh.isPending ? "Checking…" : "Refresh"}
-            </Button>
-          ) : (
-            <>
-              <Button variant="primary" size="sm" onClick={() => onAction("top-ups")}><Plus aria-hidden="true" /> Record top-up</Button>
-              <Button variant="outline" size="sm" onClick={() => onAction("adjustments")}>Adjust balance</Button>
-            </>
-          )}
-          <Button variant="outline" size="sm" onClick={() => onAction("threshold")}><SlidersHorizontal aria-hidden="true" /> Alert level</Button>
-          <Button variant="ghost" size="sm" onClick={onHistory}><History aria-hidden="true" /> History</Button>
-        </div>
-      </CardContent>
-    </Card>
+    <span className="flex flex-wrap justify-end gap-1 xl:flex-nowrap">
+      <Button size="sm" variant="primary" onClick={() => onAction("deposit")} aria-label={`Record deposit for ${wallet.agency_name}`}><Plus aria-hidden="true" /> Deposit</Button>
+      <Button size="sm" variant="outline" onClick={() => onAction("adjustment")} aria-label={`Adjust ${wallet.agency_name} wallet`}>Adjust</Button>
+      <Button size="sm" variant="outline" onClick={() => onAction("low")} aria-label={`${wallet.agency_name} low-balance level`}><SlidersHorizontal aria-hidden="true" /></Button>
+      <Button size="sm" variant="ghost" onClick={onStatement} aria-label={`${wallet.agency_name} statement`}><BookText aria-hidden="true" /> Statement</Button>
+    </span>
   );
 }
 
-function EntryDialog({ wallet, kind, onClose }: { wallet: SupplierWallet; kind: "top-ups" | "adjustments"; onClose: () => void }) {
+function EntryDialog({ wallet, kind, onClose }: { wallet: AgencyWallet; kind: "deposit" | "adjustment"; onClose: () => void }) {
   const id = useId();
   const queryClient = useQueryClient();
-  const topUp = kind === "top-ups";
+  const options = useQuery({ queryKey: ["finance", "sale-options"], queryFn: ({ signal }) => fetchSaleOptions({ signal }), enabled: kind === "deposit" });
+  const deposit = kind === "deposit";
   const [direction, setDirection] = useState<"add" | "remove">("add");
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
   const [reason, setReason] = useState("");
+  const [account, setAccount] = useState("none");
   const [date, setDate] = useState(pktDay(new Date()));
   const [time, setTime] = useState(() => new Date().toTimeString().slice(0, 5));
   const [touched, setTouched] = useState(false);
   const paisa = rupeesToPaisa(amount);
   const at = receivedAtIso(date, time);
-  const valid = !!paisa && !!at && (topUp ? !!reference.trim() : !!reason.trim());
+  const problem = !paisa ? "Enter an amount." : !at ? "Enter a date and time (24-hour)."
+    : deposit && account === "none" ? "Choose the account the money arrived in." : deposit && !reference.trim() ? "Enter the transfer reference."
+    : !deposit && !reason.trim() ? "Say why, in plain words." : null;
   const save = useMutation({
-    mutationFn: () => recordWalletEntry(wallet.provider_id, kind, {
-      amount_minor: topUp || direction === "add" ? paisa! : -paisa!, reference: reference.trim() || null, reason: reason.trim() || null, occurred_at: at!,
+    mutationFn: () => addAgencyWalletEntry(wallet.agency_id, {
+      kind, amount_minor: !deposit && direction === "remove" ? -paisa! : paisa!, reference: reference.trim() || null, reason: reason.trim() || null,
+      occurred_at: at!, account_id: deposit ? account : null,
     }),
-    onSuccess: () => {
-      toast.success(topUp ? "Top-up recorded." : "Balance adjusted.");
+    onSuccess: updated => {
+      toast.success(`${deposit ? "Deposit recorded" : "Wallet adjusted"}. ${wallet.agency_name}: ${moneyOrDash(updated.balance)}.`);
       void queryClient.invalidateQueries({ queryKey: ["finance"] });
       onClose();
     },
@@ -150,70 +171,63 @@ function EntryDialog({ wallet, kind, onClose }: { wallet: SupplierWallet; kind: 
     <Dialog open onOpenChange={open => !open && !save.isPending && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{topUp ? `Record ${wallet.name} top-up` : `Adjust ${wallet.name} balance`}</DialogTitle>
+          <DialogTitle>{deposit ? "Record deposit" : "Adjust wallet"}: {wallet.agency_name}</DialogTitle>
           <DialogDescription>
-            {topUp ? "Money Travelian already paid into the supplier account. This records it; it sends nothing."
-              : "Correct the calculated balance, for example to match the supplier's portal. The reason is kept in the audit log."}
+            {deposit ? "Money the agency already paid into a Travelian account. This records it; it moves no money."
+              : "Correct the wallet. It can't go below zero. The reason is kept in the audit log."}
           </DialogDescription>
         </DialogHeader>
-        <form id={id} className="flex flex-col gap-3" onSubmit={event => { event.preventDefault(); setTouched(true); if (valid) save.mutate(); }}>
-          {!topUp && (
+        <form id={id} className="flex flex-col gap-3" onSubmit={event => { event.preventDefault(); setTouched(true); if (!problem) save.mutate(); }}>
+          {!deposit && (
             <div role="radiogroup" aria-label="Direction" className="flex gap-2">
               {(["add", "remove"] as const).map(value => (
                 <Button key={value} type="button" role="radio" aria-checked={direction === value} size="sm" variant={direction === value ? "secondary" : "outline"}
-                  onClick={() => setDirection(value)}>{value === "add" ? "Add to balance" : "Take off balance"}</Button>
+                  onClick={() => setDirection(value)}>{value === "add" ? "Add to wallet" : "Take off wallet"}</Button>
               ))}
             </div>
           )}
-          <FieldShell id={`${id}-amount`} label="Amount (Rs)" error={touched && !paisa ? "Enter an amount." : undefined}>
-            <Input id={`${id}-amount`} inputMode="decimal" value={amount} onChange={event => setAmount(event.target.value)} />
-          </FieldShell>
-          <FieldShell id={`${id}-ref`} label={topUp ? "Bank / transfer reference" : "Reference (optional)"}
-            error={touched && topUp && !reference.trim() ? "Enter the transfer reference." : undefined}>
-            <Input id={`${id}-ref`} value={reference} maxLength={120} onChange={event => setReference(event.target.value)} />
-          </FieldShell>
-          {!topUp && (
-            <FieldShell id={`${id}-reason`} label="Reason" error={touched && !reason.trim() ? "Say why, in plain words." : undefined}>
-              <Input id={`${id}-reason`} value={reason} maxLength={500} onChange={event => setReason(event.target.value)} placeholder="For example: SooperFare portal shows Rs 120,500" />
-            </FieldShell>
+          <FieldShell id={`${id}-amount`} label="Amount (Rs)"><Input id={`${id}-amount`} inputMode="decimal" value={amount} onChange={event => setAmount(event.target.value)} /></FieldShell>
+          {deposit && (
+            <LabeledSelect id={`${id}-account`} label="Received into" value={account} onChange={setAccount}
+              options={[{ value: "none", label: "Choose the account" }, ...(options.data?.accounts ?? []).map(option => ({ value: option.id, label: option.detail === "personal" ? `${option.name} (personal)` : option.name }))]} />
           )}
+          <FieldShell id={`${id}-ref`} label={deposit ? "Transfer reference" : "Reference (optional)"}><Input id={`${id}-ref`} value={reference} maxLength={120} onChange={event => setReference(event.target.value)} /></FieldShell>
+          {!deposit && <FieldShell id={`${id}-reason`} label="Reason"><Input id={`${id}-reason`} value={reason} maxLength={500} onChange={event => setReason(event.target.value)} /></FieldShell>}
           <div className="grid grid-cols-2 gap-2">
-            <FieldShell id={`${id}-date`} label={topUp ? "Paid on" : "As of"} error={touched && !at ? "Enter a date and time (24-hour)." : undefined}>
-              <Input id={`${id}-date`} type="date" value={date} onChange={event => setDate(event.target.value)} />
-            </FieldShell>
+            <FieldShell id={`${id}-date`} label={deposit ? "Received on" : "As of"}><Input id={`${id}-date`} type="date" value={date} onChange={event => setDate(event.target.value)} /></FieldShell>
             <FieldShell id={`${id}-time`} label="Time"><Input id={`${id}-time`} value={time} onChange={event => setTime(event.target.value)} /></FieldShell>
           </div>
+          {touched && problem && <Notice tone="critical">{problem}</Notice>}
           {save.error && <Notice tone="critical">{save.error.message}</Notice>}
         </form>
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={save.isPending}>Cancel</Button>
-          <Button type="submit" form={id} variant="primary" disabled={save.isPending}>{save.isPending ? "Saving…" : topUp ? "Record top-up" : "Adjust balance"}</Button>
+          <Button type="submit" form={id} variant="primary" disabled={save.isPending}>{save.isPending ? "Saving…" : deposit ? "Record deposit" : "Adjust wallet"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
 
-function ThresholdDialog({ wallet, onClose }: { wallet: SupplierWallet; onClose: () => void }) {
+function LowDialog({ wallet, onClose }: { wallet: AgencyWallet; onClose: () => void }) {
   const id = useId();
   const queryClient = useQueryClient();
-  const [amount, setAmount] = useState(wallet.threshold ? paisaToInput(wallet.threshold.amount_minor) : "");
-  const [touched, setTouched] = useState(false);
+  const [amount, setAmount] = useState(wallet.low_threshold ? paisaToInput(wallet.low_threshold.amount_minor) : "");
   const paisa = amount.trim() ? rupeesToPaisa(amount) : null;
-  const save = useMutation({
-    mutationFn: () => setWalletThreshold(wallet.provider_id, paisa),
-    onSuccess: () => { toast.success(paisa ? "Alert level saved." : "Alert removed."); void queryClient.invalidateQueries({ queryKey: ["finance"] }); onClose(); },
-  });
   const invalid = !!amount.trim() && !paisa;
+  const save = useMutation({
+    mutationFn: () => setAgencyWalletLow(wallet.agency_id, paisa),
+    onSuccess: () => { toast.success("Low-balance level saved."); void queryClient.invalidateQueries({ queryKey: ["finance"] }); onClose(); },
+  });
   return (
     <Dialog open onOpenChange={open => !open && !save.isPending && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{wallet.name} alert level</DialogTitle>
-          <DialogDescription>Staff get one alert (Notifications and email) when the balance drops below this, and a warning on the booking's Issue panel.</DialogDescription>
+          <DialogTitle>{wallet.agency_name}: low-balance level</DialogTitle>
+          <DialogDescription>The wallet shows Low below this amount. Leave empty for none.</DialogDescription>
         </DialogHeader>
-        <form id={id} onSubmit={event => { event.preventDefault(); setTouched(true); if (!invalid) save.mutate(); }}>
-          <FieldShell id={`${id}-amount`} label="Alert below (Rs). Leave empty for no alert." error={touched && invalid ? "Enter an amount in rupees." : undefined}>
+        <form id={id} onSubmit={event => { event.preventDefault(); if (!invalid) save.mutate(); }}>
+          <FieldShell id={`${id}-amount`} label="Low below (Rs)" error={invalid ? "Enter an amount in rupees." : undefined}>
             <Input id={`${id}-amount`} inputMode="decimal" value={amount} onChange={event => setAmount(event.target.value)} />
           </FieldShell>
           {save.error && <Notice tone="critical" className="mt-3">{save.error.message}</Notice>}
@@ -227,65 +241,41 @@ function ThresholdDialog({ wallet, onClose }: { wallet: SupplierWallet; onClose:
   );
 }
 
-const KIND_LABEL: Record<WalletHistoryItem["kind"], string> = { balance_check: "Balance check", top_up: "Top-up", adjustment: "Adjustment", ticket: "Ticket charge" };
-
-function HistoryDialog({ wallet, onClose }: { wallet: SupplierWallet; onClose: () => void }) {
-  const history = useQuery({ queryKey: ["finance", "wallet-history", wallet.provider_id], queryFn: ({ signal }) => fetchWalletHistory(wallet.provider_id, { signal }) });
-  const items = history.data?.items ?? [];
+function StatementDrawer({ wallet, onClose }: { wallet: AgencyWallet; onClose: () => void }) {
+  const statement = useQuery({ queryKey: ["finance", "agency-wallet", wallet.agency_id], queryFn: ({ signal }) => fetchAgencyWalletStatement(wallet.agency_id, { signal }) });
+  const entries = [...(statement.data?.entries ?? [])].reverse();
   return (
-    <Dialog open onOpenChange={open => !open && onClose()}>
-      <DialogContent className="sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>{wallet.name} history</DialogTitle>
-          <DialogDescription>Balance checks, top-ups, adjustments and ticket charges, newest first.</DialogDescription>
-        </DialogHeader>
-        {history.isPending && <LoadingCards count={3} label="Loading history" itemClassName="h-10" />}
-        {history.error && <Notice tone="critical">{history.error.message}</Notice>}
-        {history.data && items.length === 0 && <EmptyState title="Nothing recorded yet." />}
-        {items.length > 0 && (
-          <ul className="flex flex-col gap-2 sm:hidden" aria-label={`${wallet.name} history`}>
-            {items.map((item, index) => (
-              <li key={index} className="flex flex-col gap-0.5 rounded-lg border p-3 text-body">
-                <span className="flex justify-between gap-2">
-                  <span className="font-medium">{KIND_LABEL[item.kind]}</span>
-                  <span className="whitespace-nowrap font-semibold tabular-nums">{item.amount ? formatMoney(item.amount) : item.balance ? formatMoney(item.balance) : "—"}</span>
-                </span>
-                <span className="text-label tabular-nums text-muted-foreground">{formatDateTime(item.at)}</span>
-                {(item.booking_reference || item.reference || item.reason) && (
-                  <span className="break-words text-label text-muted-foreground">{[item.booking_reference, item.reference, item.reason].filter(Boolean).join(" · ")}</span>
-                )}
+    <SideDrawer open onClose={onClose} title={`${wallet.agency_name} wallet`} description="Every deposit and correction, newest first.">
+      <div className="flex flex-col gap-4">
+        <dl className="grid grid-cols-2 gap-3">
+          <Fact label="Balance">{moneyOrDash(statement.data?.wallet.balance ?? wallet.balance)}</Fact>
+          <Fact label="Total deposited">{moneyOrDash(statement.data?.wallet.deposits ?? wallet.deposits)}</Fact>
+        </dl>
+        {statement.isPending && <LoadingCards count={3} label="Loading statement" itemClassName="h-10" />}
+        {statement.error && <Notice tone="critical">{statement.error.message}</Notice>}
+        {statement.data && entries.length === 0 && <EmptyState title="Nothing recorded yet.">Record the agency's first deposit.</EmptyState>}
+        {entries.length > 0 && (
+          <ol className="flex flex-col divide-y divide-border rounded-xl border border-border" aria-label={`${wallet.agency_name} statement`}>
+            {entries.map((entry, index) => (
+              <li key={index} className="flex flex-col gap-1 px-3 py-2.5">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Tag>{entry.kind === "deposit" ? "Deposit" : "Adjustment"}</Tag>
+                    <span className="min-w-0 truncate text-body" title={entry.reason ?? entry.reference ?? undefined}>{entry.reason ?? entry.reference ?? ""}</span>
+                  </span>
+                  <span className={cn("whitespace-nowrap font-semibold tabular-nums", entry.amount.amount_minor < 0 && "text-status-critical-text")}>
+                    {entry.amount.amount_minor > 0 ? "+" : ""}{moneyOrDash(entry.amount)}
+                  </span>
+                </div>
+                <div className="flex flex-wrap justify-between gap-x-3 text-label text-muted-foreground">
+                  <span>{formatDateTime(entry.at)} · {roleName(entry.by_role)}{entry.account ? ` · into ${entry.account}` : ""}{entry.kind === "adjustment" && entry.reference ? ` · ${entry.reference}` : ""}</span>
+                  <span className="tabular-nums">Balance {moneyOrDash(entry.balance_after)}</span>
+                </div>
               </li>
             ))}
-          </ul>
+          </ol>
         )}
-        {items.length > 0 && (
-          <div className={cn(TABLE.wrap, "hidden shadow-none sm:block")}>
-            <table className={cn(TABLE.table, "min-w-[34rem]")}>
-              <thead>
-                <tr className={TABLE.headRow}>
-                  {["When", "What", "Amount", "Balance", "Details"].map(column => <th key={column} scope="col" className={TABLE.th}>{column}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, index) => (
-                  <tr key={index} className={TABLE.row}>
-                    <td className={cn(TABLE.td, "whitespace-nowrap tabular-nums")}>{formatDateTime(item.at)}</td>
-                    <td className={TABLE.td}>{KIND_LABEL[item.kind]}</td>
-                    <td className={cn(TABLE.td, "whitespace-nowrap tabular-nums")}>{item.amount ? formatMoney(item.amount) : "—"}</td>
-                    <td className={cn(TABLE.td, "whitespace-nowrap tabular-nums")}>{item.balance ? formatMoney(item.balance) : "—"}</td>
-                    <td className={cn(TABLE.td, "max-w-[14rem] truncate")} title={[item.booking_reference, item.reference, item.reason].filter(Boolean).join(" · ")}>
-                      {item.booking_reference
-                        ? <Link to={`/admin/bookings/${encodeURIComponent(item.booking_reference)}`} className="text-primary underline-offset-2 hover:underline">{item.booking_reference}</Link>
-                        : null}
-                      {[item.booking_reference ? "" : null, item.reference, item.reason].filter(Boolean).join(" · ") || (item.booking_reference ? "" : "—")}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+      </div>
+    </SideDrawer>
   );
 }
