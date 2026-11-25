@@ -34,6 +34,7 @@ const UmrahDetailPage = lazy(() => import("./pages/public/UmrahDetailPage"));
 const MyBookingsPage = lazy(() => import("./pages/public/MyBookingsPage"));
 const FindBookingPage = lazy(() => import("./pages/public/FindBookingPage"));
 const BookingLinkPage = lazy(() => import("./pages/public/BookingLinkPage"));
+const AlfalahReturnPage = lazy(() => import("./pages/public/AlfalahReturnPage"));
 const BlogDetailPage = lazy(() => import("./pages/public/BlogDetailPage"));
 const DestinationPage = lazy(() => import("./pages/public/DestinationPage"));
 const BookingRequestPage = lazy(() => import("./pages/public/BookingRequestPage"));
@@ -113,6 +114,8 @@ const App = () => (
             <Route path="/request-booking" element={<PublicLayout><BookingRequestPage /></PublicLayout>} />
             <Route path="/account" element={<PublicLayout><AccountPage /></PublicLayout>} />
             <Route path="/my-bookings" element={<PublicLayout><MyBookingsPage /></PublicLayout>} />
+            {/* Bank Alfalah sends the customer back here (its order id in the query or the path). */}
+            <Route path="/payment/alfalah/*" element={<PublicLayout><AlfalahReturnPage /></PublicLayout>} />
             <Route path="/find-booking" element={<PublicLayout><FindBookingPage /></PublicLayout>} />
             <Route path="/my-bookings/view/:token" element={<PublicLayout><BookingLinkPage /></PublicLayout>} />
             <Route path="/signin" element={<PublicLayout showFooter={false}><SignInPage /></PublicLayout>} />

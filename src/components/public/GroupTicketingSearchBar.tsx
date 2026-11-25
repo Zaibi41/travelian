@@ -190,6 +190,8 @@ export function GroupTicketingSearchBar({
 
   availableSectors: initialSectors,
 
+  premium = false,
+
 }: {
 
   initialValues?: GroupTicketingSearchValues;
@@ -199,6 +201,10 @@ export function GroupTicketingSearchBar({
   showLabels?: boolean;
 
   availableSectors?: AvailableSector[];
+
+  /** Public website look (matches the Flights tab): two-line sector chips on phones, From and To stacked with the swap
+   *  button beside them, "All sectors" chip. Off (the admin): the earlier look. */
+  premium?: boolean;
 
 }) {
 
@@ -336,9 +342,9 @@ export function GroupTicketingSearchBar({
 
 
 
-  const label = (text: string) => showLabels ? (
+  const label = (text: string, hint?: string) => showLabels ? (
 
-    <label className="mb-1 block text-xs font-medium text-muted-foreground">{text}</label>
+    <label className="mb-1 block text-xs font-medium text-muted-foreground">{text}{hint && <span className="font-normal"> · {hint}</span>}</label>
 
   ) : null;
 
@@ -356,13 +362,17 @@ export function GroupTicketingSearchBar({
 
           <div className="contents">
 
-            <span className="order-1 flex items-center gap-1.5 whitespace-nowrap text-xs font-medium text-muted-foreground">
+            <span className={cn("order-1 flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground",
+              premium ? "font-bold uppercase tracking-wide" : "font-medium")}>
 
-              <Compass className="h-3.5 w-3.5" /> {hasAvailableSectors ? "Available Sectors:" : "Suggested routes:"}
+              <Compass className="h-3.5 w-3.5" /> {premium ? (hasAvailableSectors ? "Available sectors" : "Suggested routes") : (hasAvailableSectors ? "Available Sectors:" : "Suggested routes:")}
+              {premium && displayedSectors.length > 2 && <span className="ml-auto font-normal normal-case tracking-normal sm:hidden">swipe</span>}
 
             </span>
 
-            <div className="order-2 col-span-full flex min-w-0 gap-1.5 overflow-x-auto pb-0.5 pr-1 scrollbar-hide sm:order-2 sm:flex-1 sm:flex-wrap sm:pb-0 sm:pr-0">
+            <div className={cn("order-2 col-span-full flex min-w-0 overflow-x-auto pb-0.5 pr-1 scrollbar-hide sm:order-2 sm:flex-1 sm:flex-wrap sm:pb-0 sm:pr-0",
+              // Public: the chips get their own line under the heading until xl, then share it.
+              premium ? "gap-2 sm:order-3 sm:basis-full xl:order-2 xl:basis-0" : "gap-1.5")}>
 
               {/* Desktop: the first 4 sectors, the rest in the list beside them. Phones (#161): every sector here, scrolling
                   sideways, and no list, so the same sector isn't offered twice. */}
@@ -382,7 +392,19 @@ export function GroupTicketingSearchBar({
 
                     onClick={() => handleSectorSelect(sec.sector)}
 
-                    className={cn(
+                    className={premium ? cn(
+
+                      index >= 4 && "sm:hidden",
+                      // Phones: route on top, "37 available" under it; from sm one line ("LHE → DMM · 37 available").
+                      "flex min-h-[3.25rem] shrink-0 flex-col items-start justify-center whitespace-nowrap rounded-xl border px-3 py-1.5 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none sm:min-h-9 sm:flex-row sm:items-center sm:gap-1 sm:rounded-full",
+
+                      isSelected
+
+                        ? "border-2 border-primary bg-primary/5 text-primary"
+
+                        : "border-border bg-card text-foreground hover:border-primary/40 active:bg-primary/5",
+
+                    ) : cn(
 
                       index >= 4 && "sm:hidden",
                       "min-h-11 shrink-0 whitespace-nowrap rounded-md border px-3 py-1 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-7 sm:px-2",
@@ -397,7 +419,14 @@ export function GroupTicketingSearchBar({
 
                   >
 
-                    {sec.label} {hasAvailableSectors && <span className="text-xs opacity-70 font-normal">({sec.count})</span>}
+                    {premium ? (
+                      <>
+                        <span className="text-sm font-bold">{sec.label}</span>
+                        {hasAvailableSectors && <span className={cn("text-xs", isSelected ? "text-primary" : "text-muted-foreground")}><span className="hidden sm:inline">· </span>{sec.count} available</span>}
+                      </>
+                    ) : (
+                      <>{sec.label} {hasAvailableSectors && <span className="text-xs opacity-70 font-normal">({sec.count})</span>}</>
+                    )}
 
                   </button>
 
@@ -411,19 +440,21 @@ export function GroupTicketingSearchBar({
 
 
 
-          <div className="order-3 hidden w-full sm:ml-auto sm:block sm:w-auto">
+          <div className={cn("order-3 hidden w-full sm:ml-auto sm:block sm:w-auto", premium && "sm:order-2 xl:order-3")}>
 
             <Select value={displayedSectors.some(sector => sector.sector === currentSectorKey) ? currentSectorKey : "select-sector-placeholder"} onValueChange={handleSectorSelect}>
 
-              <SelectTrigger aria-label={`Select available sector${currentSectorKey ? `, ${currentSectorKey}` : ""}`} className="h-11 w-full min-w-[11rem] justify-between gap-2 rounded-md border-border bg-transparent px-2 text-xs sm:h-8 sm:w-auto hover:bg-muted">
+              <SelectTrigger aria-label={`Select available sector${currentSectorKey ? `, ${currentSectorKey}` : ""}`} className={premium
+                ? "h-11 w-full min-w-[8rem] justify-between gap-2 rounded-full border-border bg-card px-3 text-sm font-semibold text-primary hover:border-primary/40 sm:h-9 sm:w-auto"
+                : "h-11 w-full min-w-[11rem] justify-between gap-2 rounded-md border-border bg-transparent px-2 text-xs sm:h-8 sm:w-auto hover:bg-muted"}>
 
-                <SelectValue placeholder="Select available sector" />
+                <SelectValue placeholder={premium ? "All sectors" : "Select available sector"} />
 
               </SelectTrigger>
 
               <SelectContent className="z-[1120] max-h-60">
 
-                <SelectItem value="select-sector-placeholder" disabled className="text-xs">Select available sector</SelectItem>
+                <SelectItem value="select-sector-placeholder" disabled className="text-xs">{premium ? "All sectors" : "Select available sector"}</SelectItem>
 
                 <SelectItem value="all" className="text-xs font-semibold">
 
@@ -455,7 +486,9 @@ export function GroupTicketingSearchBar({
 
       {/* Main Search Inputs */}
 
-      <div className="group-search-fields grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_auto_1fr_1fr_auto]">
+      <div className={cn("group-search-fields grid grid-cols-1 items-end gap-3",
+        // Public: columns that can shrink (as Flights), so the date field keeps its room at 768-1024px.
+        premium ? "group-search-premium md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)_auto]" : "md:grid-cols-[1fr_auto_1fr_1fr_auto]")}>
 
         <div>
 
@@ -465,7 +498,7 @@ export function GroupTicketingSearchBar({
 
         </div>
 
-        <div className="hidden items-center justify-center pb-1 md:flex">
+        <div className={cn("hidden items-center justify-center pb-1 md:flex", premium && "group-search-swap")}>
 
           <button
 
@@ -503,7 +536,7 @@ export function GroupTicketingSearchBar({
 
         <div>
 
-          {label("Departure Date (Optional)")}
+          {premium ? label("Departure Date", "optional") : label("Departure Date (Optional)")}
 
           <DatePickerField date={dateFrom} onSelect={setDateFrom} placeholder="All departure dates" fares={fares} openSignal={dateSignal} />
 
