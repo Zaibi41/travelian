@@ -81,7 +81,9 @@ export function PublicNavbar() {
   const headerRef = useRef<HTMLElement>(null);
   const { pathname } = useLocation();
   const observedHeaderState = useSearchHeaderState({ pageKey: pathname, headerRef });
-  const headerState = pathname === "/flights-search" ? "sticky" : observedHeaderState;
+  // Search results (Flights, and Group Ticketing's, which use the same page): the header stays put.
+  const resultsPage = pathname === "/flights-search" || pathname === "/group-ticketing/results";
+  const headerState = resultsPage ? "sticky" : observedHeaderState;
   const compact = headerState !== "top";
   const hidden = headerState === "search";
 
@@ -217,7 +219,7 @@ export function PublicNavbar() {
             )}
           </nav>
           <div aria-label="Account and preferences" className="absolute right-5 top-1/2 hidden h-8 -translate-y-1/2 items-center gap-1 sm:right-6 lg:right-8 lg:flex">
-            <div className={compact ? pathname === "/flights-search" ? "hidden xl:block" : "hidden" : "block"}>{phoneLink}</div>
+            <div className={compact ? resultsPage ? "hidden xl:block" : "hidden" : "block"}>{phoneLink}</div>
             <LocaleControls key={hidden ? "hidden" : "visible"} compact />
             {findBookingLink}
             {signInLink}

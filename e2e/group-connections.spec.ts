@@ -1,9 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
-// #152: a connecting group ticket (LHE → MCT → JED, one-way) shows its whole route, stop and final arrival on the
-// Group Ticketing results, and its Flight Details name the flights "Flight 1" / "Flight 2", never "Return". A real
-// return fare still shows Outbound and Return. Intercepted gateway answers only (shapes read live on 22 Nov 2026).
+// Group Ticketing results are the Flights results page with group fares only: the same cards (stops, layovers, fare),
+// and Book opens the same booking steps. Intercepted gateway answers only (shapes read live on 22 Nov 2026).
 // GROUP_SHOTS_DIR saves screenshots; GROUP_SHOTS=before only takes them (for the origin/main before shots).
 
 if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
@@ -56,71 +55,44 @@ const shot = async (page: Page, name: string) => {
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/${BEFORE ? "before" : "after"}-${name}.png`, fullPage: false });
 };
 const sideScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-const card = (page: Page, flight: string) => (BEFORE
-  // origin/main has no test id on the card: the smallest block with the flight and its Flight Details button.
-  ? page.locator("div").filter({ hasText: `Flight ${flight}` }).filter({ has: page.getByRole("button", { name: "Flight Details" }) }).last()
-  : page.getByTestId("group-card").filter({ hasText: `Flight ${flight}` }));
+// The group results are the Flights results page (group fares only): the same card per fare, with its Book button.
+const card = (page: Page, text: string) => page.locator("article, div").filter({ hasText: text })
+  .filter({ has: page.getByRole("button", { name: "Book", exact: true }) }).last();
 
 for (const width of [1440, 768, 390]) {
-  test(`connecting group tickets show the whole route at ${width}px`, async ({ page }) => {
+  test(`group results are the Flights list, and Book opens the same booking steps, at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: width < 600 ? 860 : 900 });
     await mock(page);
+    // An old results link opens the new results page.
     await page.goto("/group-ticketing?from=LHE&to=JED");
-    const salam = card(page, "OV522");
+    await expect(page).toHaveURL(/\/group-ticketing\/results\?from=LHE&to=JED/);
+    const salam = card(page, "SalamAir");
     await expect(salam).toBeVisible({ timeout: 20_000 });
-    await salam.scrollIntoViewIfNeeded();
     await shot(page, `results-${width}`);
-    await salam.getByRole("button", { name: "Flight Details" }).click();
-    const dialog = page.getByRole("dialog");
-    await expect(dialog).toBeVisible();
-    await shot(page, `details-connecting-${width}`);
-    if (BEFORE) return;
+    await expect(page.getByText("Any date").first()).toBeVisible();
+    await expect(salam.getByText("1 Stop").filter({ visible: true }).first()).toBeVisible();
+    await expect(salam.getByText(/Muscat/).filter({ visible: true }).first()).toBeVisible();         // the stop and its layover
+    await expect(salam.getByText("Non-refundable").filter({ visible: true }).first()).toBeVisible();
+    await expect(card(page, "Saudia")).toBeVisible();                       // a carrier code reads as the airline's name
+    expect(await sideScroll(page)).toBe(0);
 
-    // The card: the final destination, the stop and the last flight's arrival; one-way, no return.
-    await expect(salam.getByText("LHE → JED", { exact: true })).toBeVisible();
-    await expect(salam.getByText("1 stop · via MCT (3h 0m)")).toBeVisible();
-    await expect(salam.getByText("03:25 → 11:10")).toBeVisible();
-    await expect(salam.getByText("One-Way", { exact: true })).toBeVisible();
-    await expect(salam.getByText("LHE → MCT", { exact: true })).toHaveCount(0);
-    await expect(salam.getByText(/Return/)).toHaveCount(0);
-
-    // Flight Details: Flight 1 and Flight 2 with the change of planes between them; "Direct" never repeated, no "Return".
-    await expect(dialog.getByText("Flight 1", { exact: true })).toBeVisible();
-    await expect(dialog.getByText("Flight 2", { exact: true })).toBeVisible();
-    await expect(dialog.getByTestId("group-connection")).toHaveText(/Change planes in MCT .* · 3h 0m/);
-    await expect(dialog.getByText(/OV522/).first()).toBeVisible();
-    await expect(dialog.getByText(/OV283/).first()).toBeVisible();
-    await expect(dialog.getByText(/^Return$/)).toHaveCount(0);
-    await expect(dialog.getByText(/Direct · Direct/)).toHaveCount(0);
-    await page.keyboard.press("Escape");
-    await expect(dialog).toBeHidden();
-
-    // A real return fare keeps Outbound and Return.
-    const airblue = card(page, "PA470");
-    await expect(airblue.getByText("Return", { exact: true })).toBeVisible();
-    await expect(airblue.getByText("Direct · Arrives 29 Dec 2026")).toBeVisible();
-    await airblue.getByRole("button", { name: "Flight Details" }).click();
-    await expect(dialog.getByText("Outbound", { exact: true })).toBeVisible();
-    await expect(dialog.getByText("Return", { exact: true }).first()).toBeVisible();
-    await page.keyboard.press("Escape");
-
-    // A carrier code reads as the airline's name.
-    await expect(card(page, "SV739").getByText("Saudia", { exact: true })).toBeVisible();
+    await salam.getByRole("button", { name: "Book", exact: true }).click();
+    await expect(page).toHaveURL(/\/booking\?.*groupTicketId=t1/);
+    await expect(page).toHaveURL(/date=Dec\+27%2C\+2026/);                // the fare's own date
+    for (const step of ["Traveler Details", "Review", "Payment", "Confirmation"]) await expect(page.getByText(step, { exact: true }).first()).toBeVisible();
+    await shot(page, `booking-${width}`);
     expect(await sideScroll(page)).toBe(0);
   });
 }
 
-test("a two-stop ticket with a long airline name stays inside its card at 390px", async ({ page }) => {
+test("a two-stop group fare with a long airline name stays inside its card at 390px", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 860 });
   await mock(page);
-  await page.goto("/group-ticketing?from=ISB&to=DMM");
-  const long = card(page, "XY101");
+  await page.goto("/group-ticketing/results?from=ISB&to=DMM&adults=1");
+  const long = card(page, "2 Stops");
   await expect(long).toBeVisible({ timeout: 20_000 });
   await long.scrollIntoViewIfNeeded();
   await shot(page, "results-two-stop-390");
-  if (BEFORE) return;
-  await expect(long.getByText("ISB → DMM", { exact: true })).toBeVisible();
-  await expect(long.getByText("2 stops · via MCT (1h 50m), DXB (2h 0m) · Arrives 31 Dec 2026")).toBeVisible();
   expect(await sideScroll(page)).toBe(0);
   const box = await long.boundingBox();
   expect(box!.x + box!.width).toBeLessThanOrEqual(390);

@@ -20,7 +20,7 @@ import { TravelersClassPicker, type TravelersValue } from "@/components/public/T
 import { AirportCombobox } from "@/components/public/AirportCombobox";
 import { useLocale } from "@/contexts/LocaleContext";
 import { formatDateOnly } from "@/lib/date-only";
-import { buildGroupTicketSearchParams } from "@/lib/group-ticketing";
+import { groupResultsPath } from "@/lib/group-ticketing";
 import { GroupTicketingSearchBar } from "@/components/public/GroupTicketingSearchBar";
 import { HotelSearchBar, type HotelSearchValues } from "@/components/public/HotelSearchBar";
 import { keepReturnDate, returnDateError, RETURN_CLEARED_MESSAGE } from "@/lib/return-date";
@@ -511,9 +511,8 @@ export function SearchTabs({
                 onGroupSearch(values);
                 return;
               }
-              const params = buildGroupTicketSearchParams(values);
-              const query = params.toString();
-              navigate(query ? `/group-ticketing?${query}` : "/group-ticketing");
+              // The group results are the Flights results page with group fares only (same list, cards and Book).
+              navigate(values.from || values.to ? groupResultsPath(values) : "/group-ticketing");
             }}
           />
         )}
