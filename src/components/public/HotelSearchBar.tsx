@@ -20,11 +20,11 @@ export interface HotelSearchValues {
   rooms: number;
 }
 
-function StayDate({ label, value, minimum, onChange }: { label: string; value: string; minimum: Date; onChange: (value: string) => void }) {
+function StayDate({ label, value, minimum, onChange, hint }: { label: string; value: string; minimum: Date; onChange: (value: string) => void; hint?: string }) {
   const [open, setOpen] = useState(false);
   const date = parseDateOnly(value);
   return <div className="min-w-0 space-y-1.5">
-    <span className="text-xs font-medium text-muted-foreground">{label}</span>
+    <span className="text-xs font-medium text-muted-foreground">{label}{hint && <span className="font-normal"> · {hint}</span>}</span>
     <CalendarPopup open={open} onOpenChange={setOpen}>
       <CalendarPopupTrigger asChild><Button type="button" variant="outline" aria-label={label} className="h-12 w-full justify-start gap-2 rounded-xl border-muted bg-muted/30 px-3 font-normal">
         <CalendarIcon className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="truncate sm:hidden">{date ? format(date, "dd MMM yy") : label}</span><span className="hidden truncate sm:block">{date ? format(date, "EEE, dd MMM yyyy") : label}</span>
@@ -36,6 +36,14 @@ function StayDate({ label, value, minimum, onChange }: { label: string; value: s
   </div>;
 }
 
+/** "3 nights" between two dates (nothing when they aren't a valid stay). */
+function nightsText(checkIn: string, checkOut: string) {
+  const from = parseDateOnly(checkIn), to = parseDateOnly(checkOut);
+  if (!from || !to) return undefined;
+  const nights = Math.round((startOfDay(to).getTime() - startOfDay(from).getTime()) / 86_400_000);
+  return nights > 0 ? `${nights} night${nights === 1 ? "" : "s"}` : undefined;
+}
+
 const popularCities = [
   "Makkah", "Al Madinah", "Dubai", "Baku",
   "Lahore", "Istanbul", "Karachi", "Islamabad",
@@ -44,7 +52,10 @@ const popularCities = [
   "Manama", "Skardu", "Tokyo", "Multan",
 ];
 
-export function HotelSearchBar({ initialValues, onSearch, loading, destinationSuggestions = [] }: { initialValues: HotelSearchValues; onSearch: (values: HotelSearchValues) => void; loading: boolean; destinationSuggestions?: string[] }) {
+/** appearance "public" (the website, as the Flights and Group Ticketing tabs): pill destination chips, the number of nights
+ *  next to Check-out, Guests & Rooms read from the left. "admin": the earlier look (AdminHotelSearchPanel). */
+export function HotelSearchBar({ initialValues, onSearch, loading, destinationSuggestions = [], appearance = "public" }: { initialValues: HotelSearchValues; onSearch: (values: HotelSearchValues) => void; loading: boolean; destinationSuggestions?: string[]; appearance?: "public" | "admin" }) {
+  const publicLook = appearance === "public";
   const cities = Array.from(new Set([...popularCities, ...destinationSuggestions]));
   const [values, setValues] = useState(initialValues);
   const [open, setOpen] = useState(false);
@@ -90,7 +101,7 @@ export function HotelSearchBar({ initialValues, onSearch, loading, destinationSu
     if (!parseDateOnly(values.checkIn) || !parseDateOnly(values.checkOut) || values.checkIn < formatDateOnly(new Date()) || values.checkOut <= values.checkIn) { setError("Choose a check-in date from today and a later check-out date."); return; }
     onSearch({ ...values, location: values.location.trim() });
   }}>
-    <SearchShortcuts label="Popular destinations" options={popularCities.filter(city => ["Makkah", "Al Madinah", "Dubai", "Istanbul"].includes(city))} value={values.location} onSelect={location => { update({ location }); setDestOpen(false); }} />
+    <SearchShortcuts label="Popular destinations" variant={publicLook ? "pill" : "plain"} options={popularCities.filter(city => ["Makkah", "Al Madinah", "Dubai", "Istanbul"].includes(city))} value={values.location} onSelect={location => { update({ location }); setDestOpen(false); }} />
     <div className="hotel-search-fields grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.1fr)_auto]">
       <div className="min-w-0 space-y-1.5">
         <label htmlFor="hotel-destination" className="text-xs font-medium text-muted-foreground">Destination</label>
@@ -134,11 +145,11 @@ export function HotelSearchBar({ initialValues, onSearch, loading, destinationSu
         </div>
       </div>
       <StayDate label="Check-in" value={values.checkIn} minimum={new Date()} onChange={checkIn => { const date = parseDateOnly(checkIn); update({ checkIn, ...(date && values.checkOut <= checkIn ? { checkOut: formatDateOnly(addDays(date, 1)) } : {}) }); }} />
-      <StayDate label="Check-out" value={values.checkOut} minimum={addDays(parseDateOnly(values.checkIn) || new Date(), 1)} onChange={checkOut => update({ checkOut })} />
+      <StayDate label="Check-out" hint={publicLook ? nightsText(values.checkIn, values.checkOut) : undefined} value={values.checkOut} minimum={addDays(parseDateOnly(values.checkIn) || new Date(), 1)} onChange={checkOut => update({ checkOut })} />
       <div className="min-w-0 space-y-1.5">
         <span className="text-xs font-medium text-muted-foreground">Guests &amp; Rooms</span>
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild><Button type="button" variant="outline" aria-label="Guests and rooms" className="h-12 w-full justify-between gap-2 rounded-xl border-muted bg-muted/30 px-3 font-normal"><Users className="h-4 w-4 shrink-0 text-muted-foreground" /><span className="truncate">{values.adults + values.children} Guests, {values.rooms} Room{values.rooms === 1 ? "" : "s"}</span><ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" /></Button></PopoverTrigger>
+          <PopoverTrigger asChild><Button type="button" variant="outline" aria-label="Guests and rooms" className="h-12 w-full justify-between gap-2 rounded-xl border-muted bg-muted/30 px-3 font-normal"><Users className="h-4 w-4 shrink-0 text-muted-foreground" /><span className={publicLook ? "min-w-0 flex-1 truncate text-left" : "truncate"}>{values.adults + values.children} Guests, {values.rooms} Room{values.rooms === 1 ? "" : "s"}</span><ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" /></Button></PopoverTrigger>
           <PopoverContent align="end" className="w-80 max-w-[calc(100vw-2rem)]">
             <h2 className="mb-3 font-semibold">Guests &amp; Rooms</h2>
             {([{ key: "adults", label: "Adults", min: 1, max: 20 }, { key: "children", label: "Children", min: 0, max: 10 }, { key: "rooms", label: "Rooms", min: 1, max: values.adults }] as const).map(row => <div key={row.key} className="flex items-center justify-between gap-3 py-2"><span className="text-sm">{row.label}</span><div className="flex items-center gap-2">

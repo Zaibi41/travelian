@@ -231,6 +231,30 @@
       width: 100%;
     }
   }
+  /* Phones, public Group Ticketing (as Flights): From and To stacked, full width less the swap button's column, the
+     round swap button centred between them; the date and Search below. The admin search keeps its two columns. */
+  @media (max-width: 639px) {
+    .unified-search-content .group-search-premium > :nth-child(1),
+    .unified-search-content .group-search-premium > :nth-child(3) {
+      grid-column: 1 / -1;
+      margin-right: 3.25rem;
+    }
+    .unified-search-content .group-search-premium > :nth-child(1) { grid-row: 1; }
+    .unified-search-content .group-search-premium > :nth-child(3) { grid-row: 2; margin-top: -0.25rem; }
+    .unified-search-content .group-search-premium > :nth-child(4) { grid-column: 1 / -1; }
+    .unified-search-content .group-search-premium > .group-search-swap {
+      display: flex;
+      grid-column: 1 / -1;
+      grid-row: 1 / span 2;
+      justify-self: end;
+      align-self: stretch;
+      align-items: center;
+      z-index: 1;
+      padding: 1.25rem 0 0; /* centre on the fields, not the labels above them */
+    }
+    .unified-search-content .group-search-swap > button { background-color: hsl(var(--card)); }
+    .unified-search-content .group-search-swap > button > svg { transform: rotate(90deg); }
+  }
   /* Phones (#148): From and To stacked straight under the trip type and travellers row, with the round swap
      button in its own column on the right, centred between them, so it covers neither field nor the To label.
      8px between From and To keeps the flight form inside the shared search height, so switching products or trip

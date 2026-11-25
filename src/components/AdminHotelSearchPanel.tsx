@@ -36,6 +36,7 @@ export function AdminHotelSearchPanel({ hotels }: { hotels: HotelModel[] }) {
             <p className="mt-1 text-body text-muted-foreground">Search active hotel inventory from Travelian database records.</p>
           </div>
           <HotelSearchBar
+            appearance="admin"
             initialValues={searchValues}
             destinationSuggestions={suggestions}
             loading={false}

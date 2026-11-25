@@ -504,6 +504,8 @@ export function SearchTabs({
           <GroupTicketingSearchBar
             initialValues={groupInitialValues}
             showLabels
+            // The public website's look (as the Flights tab); the admin search (no product navigation) keeps its own.
+            premium={showProductNavigation}
             onSearch={(values) => {
               if (onGroupSearch) {
                 onGroupSearch(values);
