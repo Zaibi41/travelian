@@ -12,6 +12,7 @@ import { AttentionQueuePanel } from "@/components/admin/dashboard/AttentionQueue
 import { BookingReportChart } from "@/components/admin/dashboard/BookingReportChart";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { GroupFinalPnrTracker } from "@/components/admin/dashboard/GroupFinalPnrTracker";
+import { RecentActivityPanel } from "@/components/admin/dashboard/RecentActivityPanel";
 
 function errorMessage(error: unknown) {
   if (error instanceof GatewayError) return error.message;
@@ -19,7 +20,7 @@ function errorMessage(error: unknown) {
 }
 
 // Data: travelian-api-gateway only (computed server-side). Hidden until the
-// backend provides data: Unknown issuance, Money and balances, Recent activity,
+// backend provides data: Money and balances,
 // Owner, and the Branch/Channel/Agency filters. See docs/backend-todo.md.
 export default function DashboardPage() {
   const { currentRole } = useRole();
@@ -63,6 +64,8 @@ export default function DashboardPage() {
           {/* #13: back office only (the gateway refuses agency roles); ignores the date filter. */}
           {!isAgency && <GroupFinalPnrTracker />}
           {report.error ? <DashboardErrorNotice message={errorMessage(report.error)} /> : <BookingReportChart data={report.data} loading={report.isPending} />}
+          {/* gateway#87: back office only (the gateway refuses agency roles); ignores the filters. */}
+          {!isAgency && <RecentActivityPanel />}
         </>
       )}
     </div>

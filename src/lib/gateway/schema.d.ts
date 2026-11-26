@@ -2275,6 +2275,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/recent-activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent Activity
+         * @description gateway#87: the latest booking events across bookings (who, what, which booking, when), newest first. Back office only.
+         *     Event details are never sent; a booking Travelian couldn't record shows only with the supplier names permission.
+         */
+        get: operations["recent_activity_v1_admin_recent_activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/roles": {
         parameters: {
             query?: never;
@@ -4691,6 +4712,41 @@ export interface components {
             sales_received: components["schemas"]["BookingMoney"];
             /** @description Supplier top-ups paid from it. */
             top_ups_paid: components["schemas"]["BookingMoney"];
+        };
+        /**
+         * ActivityItem
+         * @description gateway#87: one recent booking event. No details (amounts, supplier answers, names): open the booking for those.
+         */
+        ActivityItem: {
+            /**
+             * Action
+             * @description The event, e.g. payment_recorded.
+             */
+            action: string;
+            /** Actor Role */
+            actor_role?: string | null;
+            /**
+             * Actor User Id
+             * @description Omitted for the system (jobs, the website).
+             */
+            actor_user_id?: string | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Booking Id
+             * @description The booking reference; the row opens the booking.
+             */
+            booking_id: string;
+            /**
+             * Label
+             * @description The event in words, e.g. Payment recorded.
+             */
+            label: string;
+            /** Product */
+            product: string;
         };
         /** ActivityView */
         ActivityView: {
@@ -8888,6 +8944,11 @@ export interface components {
              * @description Every receiving account, active and inactive, by method then name.
              */
             accounts: components["schemas"]["ReceivingAccount"][];
+        };
+        /** RecentActivity */
+        RecentActivity: {
+            /** Items */
+            items: components["schemas"]["ActivityItem"][];
         };
         /** RecordPaymentRequest */
         RecordPaymentRequest: {
@@ -17111,6 +17172,51 @@ export interface operations {
                 content?: never;
             };
             /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    recent_activity_v1_admin_recent_activity_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecentActivity"];
+                };
+            };
+            /** @description Caller is not back office, or asked for a field it may not see. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Dashboard booking data is not available. */
             503: {
                 headers: {
                     [name: string]: unknown;

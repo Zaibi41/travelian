@@ -16,3 +16,7 @@ export const fetchAttentionQueue = (query: DashboardQuery, limit: number, option
 
 export const fetchDashboardFilterOptions = (options?: GatewayOptions) =>
   gatewayGet("/v1/admin/dashboard/filter-options", undefined, options);
+
+/** gateway#87: the latest booking events across bookings (back office only; ignores every filter). */
+export const fetchRecentActivity = (limit: number, options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/recent-activity", { limit }, options);
