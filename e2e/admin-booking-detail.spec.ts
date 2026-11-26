@@ -22,12 +22,14 @@ const DETAIL = {
   sections_not_available: ["itinerary", "payments", "tickets", "servicing"],
 };
 
+const DETAIL_WITH_CORRECT = { ready: false };
+
 async function open(page: Page, width: number, tab: string) {
   await page.setViewportSize({ width, height: 900 });
   await page.route("**/*", route => {
     const url = gatewayView(route.request().url());
     if (isGateway(url)) {
-      if (url.pathname === "/v1/admin/bookings/TRV-PE49ZP") return route.fulfill({ json: DETAIL });
+      if (url.pathname === "/v1/admin/bookings/TRV-PE49ZP") return route.fulfill({ json: { ...DETAIL, can_correct: DETAIL_WITH_CORRECT.ready } });
       return route.fulfill({ status: 404, json: { detail: "Not found." } });
     }
     return isLocal(url) ? route.continue() : route.fulfill({ json: {} });
@@ -54,5 +56,24 @@ for (const width of [1440, 1024, 768, 390]) {
     await expect(page.getByRole("region", { name: "Audit" })).toBeVisible();
     expect(await overflow(page)).toBe(0);
     await expectReadableText(page, `booking detail audit at ${width}px`);
+  });
+}
+
+// #225: Super Admin's Correct action (can_correct from the gateway) and its dialog fit at every width, long names included.
+for (const width of [1440, 1024, 768, 390]) {
+  test(`Correct traveler dialog fits at ${width}px and keeps Save visible`, async ({ page }) => {
+    DETAIL_WITH_CORRECT.ready = true;
+    await open(page, width, "passengers");
+    const tab = page.getByRole("region", { name: "Passengers" });
+    await tab.getByRole("button", { name: /^Correct Mr Muhammad/ }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Save correction" })).toBeInViewport();
+    await expect(dialog.getByRole("button", { name: "Close" })).toBeInViewport();
+    expect(await overflow(page)).toBe(0);
+    await page.screenshot({ path: `test-results/correct-traveler-${width}.png` });
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    DETAIL_WITH_CORRECT.ready = false;
   });
 }

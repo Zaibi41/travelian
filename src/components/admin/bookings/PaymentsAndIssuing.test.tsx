@@ -50,7 +50,7 @@ const BOOKING: BookingDetail = {
   statuses: { booking: "held", payment: "unpaid", issuance: "not_issued" }, amount: rs(15_316), amount_paid: rs(0), amount_due: rs(15_316),
   deadline: SOON, fare: { billable_price: rs(15_316) }, sections_not_available: ["payments", "tickets"], can_set_selling_price: false,
   can_record_payments: true, can_issue_tickets: true, can_edit_group_tickets: false, itinerary_available: true,
-  can_accept_shortfall: false, can_edit_sold_through: false,
+  can_accept_shortfall: false, can_edit_sold_through: false, can_correct: false,
   passengers: [traveler(1, "Ali"), traveler(2, "Sara")],
 };
 const READY: IssuanceChecklist = {
