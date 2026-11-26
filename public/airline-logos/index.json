@@ -84,7 +84,12 @@
     "lot": "LO",
     "lot polish airlines": "LO",
     "lot polish": "LO",
-    "polskie linie lotnicze lot": "LO"
+    "polskie linie lotnicze lot": "LO",
+    "av": "AV",
+    "avianca": "AV",
+    "aerovias del continente americano": "AV",
+    "aerovías del continente americano": "AV",
+    "avianca colombia": "AV"
   },
   "logos": {
     "1g": "/airline-logos/travelport.svg",
@@ -182,6 +187,11 @@
     "lot": "/airline-logos/lot-polish-airlines.png",
     "lot polish airlines": "/airline-logos/lot-polish-airlines.png",
     "lot polish": "/airline-logos/lot-polish-airlines.png",
-    "polskie linie lotnicze lot": "/airline-logos/lot-polish-airlines.png"
+    "polskie linie lotnicze lot": "/airline-logos/lot-polish-airlines.png",
+    "av": "/airline-logos/avianca.png",
+    "avianca": "/airline-logos/avianca.png",
+    "aerovias del continente americano": "/airline-logos/avianca.png",
+    "aerovías del continente americano": "/airline-logos/avianca.png",
+    "avianca colombia": "/airline-logos/avianca.png"
   }
 }
