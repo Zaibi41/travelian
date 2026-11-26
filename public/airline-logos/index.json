@@ -98,7 +98,11 @@
     "royal jordanian airlines": "RJ",
     "ms": "MS",
     "egyptair": "MS",
-    "egypt air": "MS"
+    "egypt air": "MS",
+    "az": "AZ",
+    "alitalia": "AZ",
+    "ita airways": "AZ",
+    "ita": "AZ"
   },
   "logos": {
     "1g": "/airline-logos/travelport.svg",
@@ -210,6 +214,10 @@
     "royal jordanian airlines": "/airline-logos/royal-jordanian.png",
     "ms": "/airline-logos/egyptair.png",
     "egyptair": "/airline-logos/egyptair.png",
-    "egypt air": "/airline-logos/egyptair.png"
+    "egypt air": "/airline-logos/egyptair.png",
+    "az": "/airline-logos/alitalia.png",
+    "alitalia": "/airline-logos/alitalia.png",
+    "ita airways": "/airline-logos/alitalia.png",
+    "ita": "/airline-logos/alitalia.png"
   }
 }
