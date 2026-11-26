@@ -9,9 +9,11 @@ import { HelmetProvider } from "react-helmet-async";
 
 const detail = { current: {} as Record<string, unknown> };
 vi.mock("@/lib/admin-bookings/use-bookings", () => ({ useBookingDetail: () => detail.current }));
-const gateway = vi.hoisted(() => ({ setSellingPrice: vi.fn(), downloadItinerary: vi.fn(), correctTraveler: vi.fn(), correctCustomerName: vi.fn() }));
+const gateway = vi.hoisted(() => ({ setSellingPrice: vi.fn(), downloadItinerary: vi.fn(), correctTraveler: vi.fn(), correctCustomerName: vi.fn(),
+  fetchBookingNotes: vi.fn(), addBookingNote: vi.fn() }));
 vi.mock("@/lib/admin-bookings/api", () => ({ setSellingPrice: gateway.setSellingPrice, downloadItinerary: gateway.downloadItinerary,
-  correctTraveler: gateway.correctTraveler, correctCustomerName: gateway.correctCustomerName }));
+  correctTraveler: gateway.correctTraveler, correctCustomerName: gateway.correctCustomerName,
+  fetchBookingNotes: gateway.fetchBookingNotes, addBookingNote: gateway.addBookingNote }));
 const groupApi = vi.hoisted(() => ({ recordGroupTickets: vi.fn() }));
 vi.mock("@/lib/admin-search/group-holds", async importOriginal => ({
   ...(await importOriginal<typeof import("@/lib/admin-search/group-holds")>()), recordGroupTickets: groupApi.recordGroupTickets,
@@ -57,6 +59,35 @@ const tabLabels = () => within(screen.getByRole("navigation", { name: "Booking" 
 describe("Booking detail", () => {
   beforeEach(() => {
     detail.current = ok(ADMIN_VIEW);
+    gateway.fetchBookingNotes.mockReset().mockResolvedValue({ notes: [] });
+  });
+
+  it("gateway#89: Overview has Notes: add one (trimmed), newest first, with who and when; empty is refused at the field", async () => {
+    gateway.fetchBookingNotes.mockResolvedValueOnce({ notes: [] }).mockResolvedValue({ notes: [
+      { id: "n2", body: "Customer will pay by Friday.", created_at: "2026-11-26T06:00:00Z", created_by_user_id: "0901a7ce-ef7d", created_by_role: "staff" },
+      { id: "n1", body: "Called the airline.", created_at: "2026-11-25T06:00:00Z" },
+    ] });
+    gateway.addBookingNote.mockResolvedValue({ id: "n2", body: "Customer will pay by Friday.", created_at: "2026-11-26T06:00:00Z" });
+    renderAt("/admin/bookings/TRV-1");
+    const notes = await screen.findByRole("region", { name: "Notes" });
+    expect(await within(notes).findByText("No notes yet.")).toBeInTheDocument();
+    fireEvent.click(within(notes).getByRole("button", { name: "Add note" }));
+    expect(within(notes).getByRole("alert")).toHaveTextContent("Write the note first.");
+    expect(gateway.addBookingNote).not.toHaveBeenCalled();
+    fireEvent.change(within(notes).getByLabelText("Add a note"), { target: { value: "  Customer will pay by Friday.  " } });
+    fireEvent.click(within(notes).getByRole("button", { name: "Add note" }));
+    await waitFor(() => expect(gateway.addBookingNote).toHaveBeenCalledWith("TRV-1", "Customer will pay by Friday."));
+    const items = await within(notes).findAllByRole("listitem");
+    expect(items.map(item => item.querySelector("p")?.textContent)).toEqual(["Customer will pay by Friday.", "Called the airline."]);
+    expect(items[0]).toHaveTextContent("Staff · 0901a7ce");
+    expect(items[1]).toHaveTextContent("System");
+  });
+
+  it("gateway#89: Notes are hidden when the gateway doesn't offer them", async () => {
+    gateway.fetchBookingNotes.mockRejectedValue(new GatewayError("not_found", "Not Found", 404));
+    renderAt("/admin/bookings/TRV-1");
+    await waitFor(() => expect(gateway.fetchBookingNotes).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByRole("region", { name: "Notes" })).not.toBeInTheDocument());
   });
 
   it("is a page with nine tabs for admins, statuses in the header, and no Edit booking", () => {
@@ -252,6 +283,7 @@ const HOLD_VIEW: BookingDetail = {
 
 describe("Passengers and Audit tabs", () => {
   beforeEach(() => {
+    gateway.fetchBookingNotes.mockReset().mockResolvedValue({ notes: [] });
     detail.current = ok(HOLD_VIEW);
   });
 

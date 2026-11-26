@@ -128,3 +128,12 @@ export const correctCustomerName = (bookingId: string, body: { first_name?: stri
   gatewayPut("/v1/admin/bookings/{booking_id}/customer-name", body, {
     ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "The correction couldn't be saved right now. Nothing was changed.",
   });
+
+/** gateway#89: staff notes on a booking, newest first. */
+export const fetchBookingNotes = (bookingId: string, options?: GatewayOptions) =>
+  gatewayGet("/v1/admin/bookings/{booking_id}/notes", undefined, { ...options, pathParams: { booking_id: bookingId },
+    unavailableMessage: "Notes couldn't be loaded. Try again in a moment." });
+
+export const addBookingNote = (bookingId: string, body: string, options?: GatewayOptions) =>
+  gatewayPost("/v1/admin/bookings/{booking_id}/notes", { body }, { ...options, pathParams: { booking_id: bookingId },
+    unavailableMessage: "The note couldn't be saved right now. Nothing was saved." });
