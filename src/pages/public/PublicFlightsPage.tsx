@@ -16,7 +16,7 @@ import { GroupFareCalendar } from "@/components/GroupFareCalendar";
 import { useFlightFares } from "@/hooks/use-flight-fares";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { FARE_RULES_FALLBACK, refundStatus } from "@/lib/fare-refund";
+import { FARE_RULES_FALLBACK, REFUND_LABEL, refundStatus } from "@/lib/fare-refund";
 import { SEO } from "@/components/SEO";
 import { TravelersClassPicker, formatTravelerCount, formatTravelers, type TravelersValue } from "@/components/public/TravelersClassPicker";
 import { fetchFlightFares, hydrateSooperFareOptions, searchFlights, type FareOption, type TravelianFlight } from "@/lib/travelian-api";
@@ -648,11 +648,11 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
     }
     return { main: perAdult, note: "per adult", secondary: "" };
   };
-  const FarePriceText = ({ fare, flight, className, align = "left" }: { fare: DisplayFare; flight: TravelianFlight; className: string; align?: "left" | "center" }) => {
+  const FarePriceText = ({ fare, flight, className, align = "left" }: { fare: DisplayFare; flight: TravelianFlight; className: string; align?: "left" | "center" | "right" }) => {
     const price = farePrice(fare, flight);
     const label = [price.main, price.note, price.secondary && `(${price.secondary})`].filter(Boolean).join(" ");
     return (
-      <span className={cn("flex min-w-0 flex-col", align === "center" ? "items-center text-center" : "items-start text-left")} title={label}>
+      <span className={cn("flex min-w-0 flex-col", align === "center" ? "items-center text-center" : align === "right" ? "items-end text-right" : "items-start text-left")} title={label}>
         <span className={cn("block max-w-full truncate whitespace-nowrap", className)}>{price.main}</span>
         {price.note && <span className="block max-w-full truncate text-xs font-medium text-muted-foreground">{price.note}</span>}
         {price.secondary && <span className="block max-w-full truncate text-xs text-muted-foreground">{price.secondary}</span>}
@@ -699,6 +699,25 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
   const baggageWords = (fare: DisplayFare, flight: TravelianFlight) => fareBaggage(fare, flight).detail;
 
   const hasBaggage = (fare: DisplayFare, flight: TravelianFlight) => fareBaggage(fare, flight).known;
+
+  /** #217: Refundable (green) / Non-refundable (red) only when the fare data says so; nothing when it doesn't. */
+  const fareRefund = (fare: DisplayFare, flight: TravelianFlight) => refundStatus(flight.refundable, fare.cancellation || fare.refund);
+  const RefundTag = ({ fare, flight }: { fare: DisplayFare; flight: TravelianFlight }) => {
+    const status = fareRefund(fare, flight);
+    if (!status) return null;
+    return (
+      <span className={cn("inline-flex max-w-full items-center rounded-md px-1.5 py-0.5 text-xs font-semibold",
+        status === "refundable" ? "bg-status-fine-soft text-status-fine-text" : "bg-status-critical-soft text-status-critical-text")}>
+        <span className="truncate">{REFUND_LABEL[status]}</span>
+      </span>
+    );
+  };
+  /** #217: a small "Meal included" tag when the fare serves a meal; nothing otherwise (full meal detail in Flight Details). */
+  const MealIncludedTag = ({ fare, flight }: { fare: DisplayFare; flight: TravelianFlight }) => (
+    mealStatus(fare.meal || flight.meal) === "included"
+      ? <span className="inline-flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-foreground"><Utensils aria-hidden="true" className="h-3 w-3" />Meal included</span>
+      : null
+  );
 
   const fareRows = (flight: TravelianFlight): DisplayFare[] => {
     if (flight.fareOptions?.length) {
@@ -778,16 +797,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                         {on && <Check className="h-2.5 w-2.5" strokeWidth={4} />}
                       </span>
                     </span>
-                    <span className="flex min-w-0 flex-col gap-1 text-xs text-muted-foreground">
-                      <span className="flex min-w-0 items-start gap-1.5" title={mealLabel(fare, flight)}>
-                        <MealIcon fare={fare} flight={flight} className="h-3.5 w-3.5" />
-                        <span className="line-clamp-2 break-words">{mealLabel(fare, flight)}</span>
-                      </span>
+                    <span className="flex min-w-0 flex-col items-start gap-1 text-xs text-muted-foreground">
                       <span className="flex min-w-0 items-start gap-1.5" title={baggageWords(fare, flight)}>
                         <Luggage aria-hidden="true" className={cn("h-3.5 w-3.5 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
                         <span className="line-clamp-2 break-words" aria-hidden="true">{baggageLabel(fare, flight)}</span>
                         <span className="sr-only">{baggageWords(fare, flight)}</span>
                       </span>
+                      <RefundTag fare={fare} flight={flight} />
+                      <MealIncludedTag fare={fare} flight={flight} />
                     </span>
                     <span className="break-words text-sm font-black text-foreground">{farePrice(fare, flight).main}</span>
                   </button>
@@ -798,15 +815,13 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
         ) : (
           <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1.5 px-4 pt-3 text-xs text-muted-foreground sm:px-5">
             <span className="min-w-0 break-words text-sm font-bold text-foreground" title={picked.tier}>{picked.tier}</span>
-            <span className="flex min-w-0 items-center gap-1.5" title={mealLabel(picked, flight)}>
-              <MealIcon fare={picked} flight={flight} className="h-3.5 w-3.5" />
-              <span className="break-words">{mealLabel(picked, flight)}</span>
-            </span>
             <span className="flex min-w-0 items-center gap-1.5" title={baggageWords(picked, flight)}>
               <Luggage aria-hidden="true" className={cn("h-3.5 w-3.5 shrink-0", hasBaggage(picked, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
               <span className="break-words" aria-hidden="true">{baggageLabel(picked, flight)}</span>
               <span className="sr-only">{baggageWords(picked, flight)}</span>
             </span>
+            <RefundTag fare={picked} flight={flight} />
+            <MealIncludedTag fare={picked} flight={flight} />
           </div>
         )}
         <div className={cn("flex items-center justify-between gap-3 px-4 py-3 sm:px-5", several ? "border-t bg-muted/30" : "")}>
@@ -2145,32 +2160,19 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                       {adminMode && (
                       <div className="overflow-hidden rounded-2xl border">
                         <table className="hidden w-full table-fixed border-collapse lg:table">
+                          {/* #217: FARE · BAGGAGE · REFUND · PRICE (with Book), filling the full width; no Meal column. */}
                           <colgroup>
+                            <col className="w-[30%]" />
+                            <col className="w-[25%]" />
+                            <col className="w-[25%]" />
                             <col className="w-[20%]" />
-                            <col className="w-[18%]" />
-                            <col className="w-[22%]" />
-                            <col className="w-[17%]" />
-                            <col className="w-[23%]" />
                           </colgroup>
                           <thead className="bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             <tr className="border-b">
                               <th className="px-4 py-2 text-left">Fare</th>
-                              <th className="px-4 py-2 text-left">
-                                <span className="inline-flex min-w-0 items-center gap-1.5">
-                                  <span className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                                  <span>Meal</span>
-                                </span>
-                              </th>
-                              <th className="px-4 py-2 text-left">
-                                <span className="inline-flex min-w-0 items-center gap-1.5">
-                                  <span className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                                  <span>Baggage</span>
-                                </span>
-                              </th>
-                              <th className="px-3 py-2 text-center">Price</th>
-                              <th className="px-3 py-2 text-right">
-                                <span className="sr-only">Actions</span>
-                              </th>
+                              <th className="px-4 py-2 text-left">Baggage</th>
+                              <th className="px-4 py-2 text-left">Refund</th>
+                              <th className="px-4 py-2 text-right">Price</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y">
@@ -2178,12 +2180,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                               <tr key={`${flight.flightId}-${fare.tier}-${fare.price.total}`} className="bg-card text-sm">
                                 <td className="min-w-0 px-4 py-3 align-middle">
                                   <p className="truncate font-bold text-foreground" title={fare.tier}>{fare.tier}</p>
-                                </td>
-                                <td className="px-4 py-3 align-middle">
-                                  <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={mealLabel(fare, flight)}>
-                                    <MealIcon fare={fare} flight={flight} className="h-3.5 w-3.5" />
-                                    <span className="line-clamp-2 break-words">{mealLabel(fare, flight)}</span>
-                                  </p>
+                                  <MealIncludedTag fare={fare} flight={flight} />
                                 </td>
                                 <td className="px-4 py-3 align-middle">
                                   <p className="flex min-w-0 items-center gap-1.5 text-muted-foreground" title={baggageWords(fare, flight)}>
@@ -2192,11 +2189,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                     <span className="sr-only">{baggageWords(fare, flight)}</span>
                                   </p>
                                 </td>
-                                <td className="overflow-hidden px-3 py-3 text-center align-middle">
-                                  <FarePriceText fare={fare} flight={flight} align="center" className="text-base font-black text-foreground" />
-                                </td>
-                                <td className="overflow-hidden px-3 py-3 text-right align-middle">
+                                <td className="px-4 py-3 align-middle"><RefundTag fare={fare} flight={flight} /></td>
+                                <td className="overflow-hidden px-4 py-3 text-right align-middle">
                                   <div className="flex min-w-0 flex-col items-stretch gap-2">
+                                    <FarePriceText fare={fare} flight={flight} align="right" className="text-base font-black text-foreground" />
                                     {searchExpired ? (
                                       <Button size="sm" className="w-full rounded-xl px-3" onClick={revalidateSearch}>Revalidate</Button>
                                     ) : (
@@ -2218,17 +2214,14 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                 <p className="truncate font-bold text-foreground text-base" title={fare.tier}>{fare.tier}</p>
                               </div>
                               
-                              {/* Meal and Baggage in 2-column grid */}
-                              <div className="grid grid-cols-2 gap-3">
-                                <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={mealLabel(fare, flight)}>
-                                  <MealIcon fare={fare} flight={flight} className="h-4 w-4" />
-                                  <span className="line-clamp-2 break-words">{mealLabel(fare, flight)}</span>
-                                </p>
+                              {/* #217: Baggage and Refund (no Meal; "Meal included" only when served) */}
+                              <div className="grid grid-cols-2 items-center gap-3">
                                 <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-xs" title={baggageWords(fare, flight)}>
                                   <Luggage aria-hidden="true" className={cn("h-4 w-4 shrink-0", hasBaggage(fare, flight) ? "text-emerald-600" : "text-muted-foreground opacity-50")} />
                                   <span className="truncate" aria-hidden="true">{baggageLabel(fare, flight)}</span>
                                   <span className="sr-only">{baggageWords(fare, flight)}</span>
                                 </p>
+                                <span className="flex flex-wrap gap-1"><RefundTag fare={fare} flight={flight} /><MealIncludedTag fare={fare} flight={flight} /></span>
                               </div>
                               
                               {/* Price and fare actions */}
