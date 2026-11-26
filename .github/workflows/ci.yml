@@ -33,6 +33,10 @@ jobs:
       - run: npm ci
       # The specs run on the runner's Google Chrome (playwright.config.ts channel "chrome").
       - run: npx playwright test $(grep -v '^#' e2e/ci-specs.txt | tr '\n' ' ') --trace off --workers=2 --reporter=line
+        env:
+          # A local gateway address that nothing listens on: the dev server proxies /__gateway there and every spec
+          # answers those calls itself (e2e/support/gateway.ts). Without it the admin says the gateway isn't configured.
+          VITE_TRAVELIAN_GATEWAY_BASE_URL: http://localhost:8000
   lint:
     # Existing lint debt is visible without blocking unrelated configuration work.
     continue-on-error: true
