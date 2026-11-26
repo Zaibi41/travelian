@@ -124,7 +124,7 @@ export default function SignInPage() {
                   </button>
                 </div>
                 <p role="alert" className="min-h-6 py-1 text-sm leading-5 text-destructive">{serverError}</p>
-                <Button type="submit" disabled={loading} className="h-12 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+                <Button type="submit" disabled={loading} className={`h-12 w-full rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 ${loading ? "signin-loading-gradient disabled:opacity-100" : ""}`}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
                   {loading ? "Signing in…" : "Sign In"}
                 </Button>
