@@ -389,3 +389,33 @@
 .text-gold { color: hsl(var(--gold-text)); }
 /* Gold on dark backgrounds (navy buttons, dark bands): the bright brand gold, 6.0:1 on navy. */
 .text-gold-on-dark { color: hsl(var(--gold)); }
+
+/* #218 "Smart Selling · Servicing · Sourcing": "Smart" fixed, the second word slides up one line at a time (3 s each,
+   9 s loop), CSS only. The word sits in a window sized by an invisible "Servicing", so the line never changes width. */
+@layer components {
+  .brand-tagline {
+    display: flex; align-items: center; justify-content: center; gap: 0.75rem;
+    font-size: 12px; line-height: 1rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; white-space: nowrap;
+  }
+  .brand-tagline__rule { height: 1px; width: 2.5rem; flex: none; }
+  .brand-tagline__rule--left { background: linear-gradient(to right, transparent, hsl(var(--tagline-muted) / 0.6)); }
+  .brand-tagline__rule--right { background: linear-gradient(to left, transparent, hsl(var(--tagline-muted) / 0.6)); }
+  .brand-tagline__smart { color: hsl(var(--tagline-muted)); }
+  .brand-tagline__window { position: relative; display: inline-block; height: 1rem; overflow: hidden; color: hsl(var(--tagline-accent)); text-align: left; }
+  .brand-tagline__sizer { visibility: hidden; display: block; }
+  .brand-tagline__words { position: absolute; inset: 0 auto auto 0; display: flex; flex-direction: column; animation: brand-tagline-roll 9s infinite; }
+  .brand-tagline__words > span { display: block; height: 1rem; }
+  @keyframes brand-tagline-roll {
+    0%, 28% { transform: translateY(0); }
+    33.33%, 61.33% { transform: translateY(-1rem); }
+    66.66%, 94.66% { transform: translateY(-2rem); }
+    100% { transform: translateY(-3rem); }
+  }
+  @media (max-width: 480px) {
+    .brand-tagline { font-size: 11px; letter-spacing: 0.18em; }
+    .brand-tagline__rule { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .brand-tagline__words { animation: none; transform: none; }
+  }
+}

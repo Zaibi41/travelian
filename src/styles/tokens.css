@@ -88,6 +88,9 @@
   --status-fine: var(--success);
   --status-fine-text: var(--success-text);
   --status-fine-soft: 142 60% 94%;
+  /* #218 brand tagline under the search box (dark hero): "Smart" #94a3b8, rotating word #5eead4 */
+  --tagline-muted: 215 20% 65%;
+  --tagline-accent: 170 77% 64%;
 
   --border: 218 22% 86%;                /* #D3D9E3 card and divider lines */
   --input: 219 13% 60%;                 /* #8C95A6 field borders 3.0:1 */

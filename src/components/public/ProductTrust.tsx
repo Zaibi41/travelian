@@ -9,6 +9,22 @@ const productValues = {
 
 type Product = keyof typeof productValues;
 
+/** #218: under the trust chips on Flights, Group Ticketing and Hotels. Screen readers hear the full line once. */
+export function BrandTagline() {
+  return (
+    <p className="brand-tagline mt-3">
+      <span className="sr-only">Smart Selling, Servicing, Sourcing</span>
+      <span aria-hidden="true" className="brand-tagline__rule brand-tagline__rule--left" />
+      <span aria-hidden="true" className="brand-tagline__smart">Smart</span>
+      <span aria-hidden="true" className="brand-tagline__window">
+        <span className="brand-tagline__sizer">Servicing</span>
+        <span className="brand-tagline__words"><span>Selling</span><span>Servicing</span><span>Sourcing</span><span>Selling</span></span>
+      </span>
+      <span aria-hidden="true" className="brand-tagline__rule brand-tagline__rule--right" />
+    </p>
+  );
+}
+
 export function ProductValuePills({ product }: { product: Product }) {
   const values = [
     { icon: Shield, label: "Secure Payments" },
@@ -16,14 +32,17 @@ export function ProductValuePills({ product }: { product: Product }) {
     { icon: Plane, label: productValues[product] },
   ];
   return (
-    <ul aria-label="Travelian value highlights" className="flex flex-wrap items-center justify-center gap-2">
-      {values.map(value => (
-        <li key={value.label} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1.5 text-xs font-medium text-primary-foreground ring-1 ring-white/15 sm:text-xs">
-          <value.icon aria-hidden="true" className="h-3.5 w-3.5 text-gold" />
-          {value.label}
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul aria-label="Travelian value highlights" className="flex flex-wrap items-center justify-center gap-2">
+        {values.map(value => (
+          <li key={value.label} className="inline-flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-1.5 text-xs font-medium text-primary-foreground ring-1 ring-white/15 sm:text-xs">
+            <value.icon aria-hidden="true" className="h-3.5 w-3.5 text-gold" />
+            {value.label}
+          </li>
+        ))}
+      </ul>
+      {product !== "umrah" && <BrandTagline />}
+    </>
   );
 }
 
