@@ -106,7 +106,10 @@
     "tp": "TP",
     "tap": "TP",
     "tap portugal": "TP",
-    "tap air portugal": "TP"
+    "tap air portugal": "TP",
+    "a3": "A3",
+    "aegean": "A3",
+    "aegean airlines": "A3"
   },
   "logos": {
     "1g": "/airline-logos/travelport.svg",
@@ -226,6 +229,9 @@
     "tp": "/airline-logos/tap-air-portugal.png",
     "tap": "/airline-logos/tap-air-portugal.png",
     "tap portugal": "/airline-logos/tap-air-portugal.png",
-    "tap air portugal": "/airline-logos/tap-air-portugal.png"
+    "tap air portugal": "/airline-logos/tap-air-portugal.png",
+    "a3": "/airline-logos/aegean.png",
+    "aegean": "/airline-logos/aegean.png",
+    "aegean airlines": "/airline-logos/aegean.png"
   }
 }
