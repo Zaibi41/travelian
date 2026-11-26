@@ -92,7 +92,10 @@
     "avianca colombia": "AV",
     "at": "AT",
     "royal air maroc": "AT",
-    "ram": "AT"
+    "ram": "AT",
+    "rj": "RJ",
+    "royal jordanian": "RJ",
+    "royal jordanian airlines": "RJ"
   },
   "logos": {
     "1g": "/airline-logos/travelport.svg",
@@ -198,6 +201,9 @@
     "avianca colombia": "/airline-logos/avianca.png",
     "at": "/airline-logos/royal-air-maroc.png",
     "royal air maroc": "/airline-logos/royal-air-maroc.png",
-    "ram": "/airline-logos/royal-air-maroc.png"
+    "ram": "/airline-logos/royal-air-maroc.png",
+    "rj": "/airline-logos/royal-jordanian.png",
+    "royal jordanian": "/airline-logos/royal-jordanian.png",
+    "royal jordanian airlines": "/airline-logos/royal-jordanian.png"
   }
 }
