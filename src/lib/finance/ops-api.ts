@@ -59,7 +59,7 @@ export const previewTicketSale = (body: SaleRequest, options?: GatewayOptions) =
 export const saveTicketSale = (body: SaleRequest) =>
   gatewayPost("/v1/admin/finance/ticket-sales", body, { unavailableMessage: "The sale couldn't be saved right now. Nothing was saved." });
 
-export const fetchTicketSales = (state?: TicketSale["state"], options?: GatewayOptions) =>
+export const fetchTicketSales = (state?: NonNullable<GetQuery<"/v1/admin/finance/ticket-sales">>["state"], options?: GatewayOptions) =>
   gatewayGet("/v1/admin/finance/ticket-sales", state ? { state } : undefined, { ...options, unavailableMessage: "Ticket sales couldn't be loaded." });
 
 export const confirmTicketSale = (saleId: string) =>
@@ -69,6 +69,20 @@ export const confirmTicketSale = (saleId: string) =>
 export const rejectTicketSale = (saleId: string, reason: string) =>
   gatewayPost("/v1/admin/finance/ticket-sales/{sale_id}/reject", { reason },
     { pathParams: { sale_id: saleId }, unavailableMessage: "The sale couldn't be rejected right now. Nothing was changed." });
+
+// Editing (correcting) and deleting a saved entry: Super Admin only. The gateway refuses anyone else; `can_edit` on the
+// list only says whether to show the buttons.
+export const previewTicketSaleCorrection = (saleId: string, body: SaleRequest, options?: GatewayOptions) =>
+  gatewayPost("/v1/admin/finance/ticket-sales/{sale_id}/correct/preview", body,
+    { ...options, pathParams: { sale_id: saleId }, unavailableMessage: "What this edit will do couldn't be worked out right now." });
+
+export const correctTicketSale = (saleId: string, body: PostBody<"/v1/admin/finance/ticket-sales/{sale_id}/correct">) =>
+  gatewayPost("/v1/admin/finance/ticket-sales/{sale_id}/correct", body,
+    { pathParams: { sale_id: saleId }, unavailableMessage: "The changes couldn't be saved right now. Nothing was changed." });
+
+export const deleteTicketSale = (saleId: string, reason: string) =>
+  gatewayPost("/v1/admin/finance/ticket-sales/{sale_id}/delete", { reason },
+    { pathParams: { sale_id: saleId }, unavailableMessage: "The entry couldn't be deleted right now. Nothing was changed." });
 
 // ------------------------------------------------------------------ Supplier Refunds, Customer Dues, accounts
 export const fetchSupplierRefunds = (query: NonNullable<GetQuery<"/v1/admin/finance/supplier-refunds">>, options?: GatewayOptions) =>
@@ -129,7 +143,7 @@ export const CHANNEL_LABEL: Record<TicketSale["channel"], string> = { direct: "D
 
 export const LEDGER_KIND: Record<LedgerItem["kind"], string> = {
   opening: "Opening balance", top_up: "Top-up", adjustment: "Adjustment", refund_credit: "Refund credit", booking_charge: "Booking",
-  ticket_sale: "Ticket Sale Entry", balance_check: "Balance read",
+  ticket_sale: "Ticket Sale Entry", ticket_sale_reversal: "Ticket Sale Entry reversed", balance_check: "Balance read",
 };
 
 /** "super_admin" → "Super Admin"; "system" for automatic actions. */
