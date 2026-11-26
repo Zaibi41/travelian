@@ -11,7 +11,7 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: width < 640 ? "Book travel with Travelian" : "Book Flights, Hotels & Umrah with Travelian", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: width < 640 ? "Book travel with Travelian" : "Book Flights, Group Tickets & Hotels", exact: true })).toBeVisible();
     const pills = page.getByRole("list", { name: "Travelian value highlights" });
     await expect(pills.getByRole("listitem")).toHaveCount(3);
     await expect(pills).toContainText("Secure Payments");
@@ -38,14 +38,17 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     });
     await page.waitForTimeout(150);
     const baseline = await geometry();
-    for (const name of ["Group Ticketing", "Hotels", "Umrah", "Flights", "Hotels", "Flights"]) {
+    // D39: Umrah is hidden while the gateway switch is off.
+    // Each product has its own form, so the card's height may differ; it never moves, and Flights comes back exactly.
+    for (const name of ["Group Ticketing", "Hotels", "Flights", "Hotels", "Flights"]) {
       await tabs.getByRole("button", { name, exact: true }).click();
-      await expect.poll(geometry).toEqual(baseline);
+      await expect.poll(async () => (await geometry()).top).toBe(baseline.top);
+      if (name === "Flights") await expect.poll(geometry).toEqual(baseline);
 
       await expect(tabs.getByRole("button", { name, exact: true })).toHaveAttribute("aria-pressed", "true");
     }
+    // Search stays enabled; with fields missing it says what to fill in (it isn't greyed out).
     const search = page.locator(".home-search .unified-search-submit");
-    await expect(search).toBeDisabled();
     const origin = page.getByLabel("From", { exact: true });
     await page.keyboard.press("Tab");
     await origin.focus();
@@ -55,7 +58,7 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     await page.getByLabel("To", { exact: true }).click();
     await page.getByRole("option", { name: /DXB/ }).first().click();
     await page.getByLabel("Departure Date", { exact: true }).click();
-    await page.getByRole("grid").locator("button:not([disabled])").first().click();
+    await page.getByRole("grid").first().locator("button:not([disabled])").first().click();
     await expect(page.getByRole("grid")).toHaveCount(0);
     await expect(search).toBeEnabled();
     expect(await search.evaluate(element => getComputedStyle(element).backgroundImage)).toBe("none");
@@ -77,8 +80,9 @@ for (const width of [1440, 1024, 320]) {
     await page.goto("/");
     await page.getByRole("button", { name: "Round-trip", exact: true }).click();
     await page.getByLabel("Return Date", { exact: true }).click();
-    await expect(page.getByRole("grid")).toBeVisible();
-    await page.getByRole("grid").locator("button:not([disabled])").first().click();
+    // The calendar shows two months side by side on wider screens.
+    await expect(page.getByRole("grid").first()).toBeVisible();
+    await page.getByRole("grid").first().locator("button:not([disabled])").first().click();
     await expect(page.getByRole("grid")).toHaveCount(0);
     await page.getByRole("button", { name: "Multi-city", exact: true }).click();
     await page.getByRole("button", { name: "Add Flight", exact: true }).click();
@@ -89,14 +93,6 @@ for (const width of [1440, 1024, 320]) {
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await tabs.getByRole("button", { name: "Umrah", exact: true }).click();
-    await page.getByRole("combobox", { name: "Departure City", exact: true }).click();
-    const cities = page.getByRole("listbox");
-    await expect(cities).toBeVisible();
-    const bounds = await cities.boundingBox();
-    expect(bounds!.x).toBeGreaterThanOrEqual(0);
-    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
-    await page.keyboard.press("Escape");
     await tabs.getByRole("button", { name: "Group Ticketing", exact: true }).click();
     await page.getByRole("combobox", { name: "Select available sector", exact: true }).click();
     await page.getByRole("option", { name: "LHE → JED", exact: true }).click();
