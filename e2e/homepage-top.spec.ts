@@ -62,7 +62,7 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     await expect(page.getByLabel("Departure Date", { exact: true })).toHaveAttribute("aria-expanded", "true");
     // The fare calendar: each open day is a button named by its date ("Thursday 26 November: …").
     const calendar = page.getByRole("dialog", { name: "Select departure date" });
-    await calendar.getByRole("button", { name: /^[A-Z][a-z]+day \d{1,2} [A-Z][a-z]+/ }).first().click();
+    await calendar.locator("button:not([disabled])").filter({ hasText: /^\d{1,2}/ }).first().click();
     await expect(calendar).toHaveCount(0);
     await expect(search).toBeEnabled();
     expect(await search.evaluate(element => getComputedStyle(element).backgroundImage)).toBe("none");
