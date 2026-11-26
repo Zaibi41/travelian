@@ -54,6 +54,17 @@ describe("Notifications booking alerts (#54)", () => {
     expect(screen.getByRole("link", { name: "Paid, not ticketed: TRV-URG1" })).toHaveAttribute("href", "/admin/bookings/TRV-URG1");
   });
 
+  it("gateway#114: a Contact page message shows who, how to reply and the message, never booking lines", () => {
+    alerts.items = [alert({ kind: "contact_message", reference: null, title: "Website message from Ayesha Khan",
+      details: { name: "Ayesha Khan", email: "ayesha@example.invalid", phone: "+92 300 1234567", message: "Group seats to Jeddah\nin March?" } })];
+    renderPage();
+    expect(screen.getByText("Website message from Ayesha Khan")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "ayesha@example.invalid" })).toHaveAttribute("href", "mailto:ayesha@example.invalid");
+    expect(screen.getByRole("link", { name: "+92 300 1234567" })).toHaveAttribute("href", "tel:+923001234567");
+    expect(screen.getByText(/Group seats to Jeddah/)).toBeInTheDocument();
+    expect(screen.queryByText(/No supplier hold|isn't linked to a booking/)).not.toBeInTheDocument();
+  });
+
   it("an alert without a booking reference is plain text with a short note", () => {
     alerts.items = [alert({ reference: null, title: "Booking request" })];
     renderPage();

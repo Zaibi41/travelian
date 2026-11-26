@@ -4,6 +4,7 @@ import { ArrowRight, Mail, Phone, MapPin, Clock, MessageSquare } from "lucide-re
 import { SEO } from "@/components/SEO";
 import { SearchPageHero, PageSection } from "@/components/public/SearchPageShell";
 import { WhatsAppIcon } from "@/components/public/WhatsAppIcon";
+import { ContactForm } from "@/components/public/ContactForm";
 import { SUPPORT_ADDRESS, SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_TEL, whatsappUrl } from "@/lib/site-config";
 import { useSiteSwitches } from "@/lib/site-switches";
 
@@ -30,7 +31,7 @@ export default function ContactPage() {
           </div>
 
           <div className="grid items-stretch gap-6 md:grid-cols-2">
-            {/* Direct contact channels — contact form stays hidden until backed by a real gateway endpoint (docs/backend-todo.md). */}
+            {/* Direct contact channels. The message form (gateway#114) is below. */}
             <Card className="rounded-xl border-border/70 shadow-card">
               <CardContent className="divide-y divide-border/60 p-3 sm:p-4">
                 <a
@@ -119,6 +120,17 @@ export default function ContactPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* gateway#114: the message goes to the team (admin Notifications and email). */}
+          <Card className="rounded-xl border-border/70 shadow-card">
+            <CardContent className="space-y-4 p-4 sm:p-6">
+              <div>
+                <h2 className="font-display text-lg font-semibold text-foreground">Send us a message</h2>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">We reply within working hours. For anything urgent, WhatsApp or call us.</p>
+              </div>
+              <ContactForm />
+            </CardContent>
+          </Card>
         </div>
       </PageSection>
     </div>

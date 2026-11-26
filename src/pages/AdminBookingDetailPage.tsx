@@ -32,6 +32,7 @@ import { setSellingPrice } from "@/lib/admin-bookings/api";
 import type { BookingAuditEntry, BookingDetail, BookingPassenger } from "@/lib/admin-bookings/types";
 import { titleText } from "@/lib/passenger-details";
 import { CorrectCustomerNameDialog, CorrectTravelerDialog } from "@/components/admin/bookings/CorrectEntryDialog";
+import { BookingNotes } from "@/components/admin/bookings/BookingNotes";
 
 // Tabs the gateway doesn't record yet: the mockup's columns with a not-available row
 // (docs/backend-todo.md, Booking detail). No "Edit booking" (decided 2026-11-09).
@@ -99,6 +100,8 @@ export default function AdminBookingDetailPage() {
       {tab === "overview" && <EmailNotSentNotice booking={booking} />}
       {tab === "overview" && <Overview booking={booking} />}
       {tab === "overview" && booking.supplier_booking && <SupplierBookingCard booking={booking} />}
+      {/* gateway#89: staff notes (back office; the gateway refuses others). */}
+      {tab === "overview" && !booking.sample && <BookingNotes bookingId={booking.booking_id} />}
       {tab === "fare" && <Fare booking={booking} />}
       {tab === "supplier-payment" && booking.supplier_payment && <SupplierPaymentPanel booking={booking} />}
       {tab === "payments" && <PaymentsAndIssuing booking={booking} />}
@@ -321,7 +324,7 @@ function Passengers({ booking }: { booking: BookingDetail }) {
 
 const AUDIT_ACTION: Record<string, string> = { hold_created: "Hold created", identity_revealed: "Identity revealed", fare_terms_acknowledged: "Fare terms acknowledged",
   final_pnr_recorded: "Final PNR recorded", ticket_numbers_recorded: "Ticket numbers recorded", group_ticketed: "Ticketed",
-  traveler_corrected: "Traveler corrected", customer_corrected: "Customer name corrected" };
+  traveler_corrected: "Traveler corrected", customer_corrected: "Customer name corrected", note_added: "Note added" };
 const CORRECTED_FIELD: Record<string, string> = { title: "title", first_name: "first name", last_name: "last name", date_of_birth: "date of birth",
   document_number: "document number", document_country: "issuing country", nationality: "nationality", document_expiry: "document expiry" };
 const FARE_CHECK: Record<string, string> = { matches: "total verified", differs: "total differs", no_total: "total not verified", failed: "total not verified" };

@@ -555,6 +555,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{booking_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Booking Notes
+         * @description Staff notes on this booking, newest first. Back office only.
+         */
+        get: operations["list_booking_notes_v1_admin_bookings__booking_id__notes_get"];
+        put?: never;
+        /**
+         * Add Booking Note
+         * @description Add a note (up to 1,000 characters). Back office only; also logged on the Audit tab as "Note added" (without the text).
+         */
+        post: operations["add_booking_note_v1_admin_bookings__booking_id__notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/bookings/{booking_id}/payments": {
         parameters: {
             query?: never;
@@ -4363,6 +4387,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/contact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Contact
+         * @description gateway#114: send a message to the Travelian team (stored in the admin under Notifications and emailed to the team
+         *     when email is set up). At most 5 per hour from one address. Never logs the message.
+         */
+        post: operations["contact_v1_public_contact_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/flights/calendar": {
         parameters: {
             query?: never;
@@ -4767,6 +4812,14 @@ export interface components {
             link?: string | null;
             /** Title */
             title: string;
+        };
+        /** AddBookingNote */
+        AddBookingNote: {
+            /**
+             * Body
+             * @description The note, up to 1,000 characters.
+             */
+            body: string;
         };
         /** AddPaymentFeeRequest */
         AddPaymentFeeRequest: {
@@ -5621,6 +5674,33 @@ export interface components {
             currency: string;
         };
         /**
+         * BookingNote
+         * @description gateway#89: a staff note on a booking.
+         */
+        BookingNote: {
+            /** Body */
+            body: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By Role */
+            created_by_role?: string | null;
+            /** Created By User Id */
+            created_by_user_id?: string | null;
+            /** Id */
+            id: string;
+        };
+        /** BookingNotes */
+        BookingNotes: {
+            /**
+             * Notes
+             * @description Newest first.
+             */
+            notes: components["schemas"]["BookingNote"][];
+        };
+        /**
          * BookingPayment
          * @description A customer payment (Payments tab).
          */
@@ -5963,6 +6043,31 @@ export interface components {
              * Format: date-time
              */
             received_at: string;
+        };
+        /**
+         * ContactMessage
+         * @description A message from the Contact page. Name and message are required, and an email or a mobile number to reply to.
+         *     `website` is a hidden field people never fill in: when it has a value the message is treated as spam (accepted, not kept).
+         */
+        ContactMessage: {
+            /** Email */
+            email?: string | null;
+            /** Message */
+            message: string;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone?: string | null;
+            /**
+             * Website
+             * @description Leave empty (spam trap).
+             */
+            website?: string | null;
+        };
+        /** ContactReceived */
+        ContactReceived: {
+            /** Message */
+            message: string;
         };
         /** CorrectionResult */
         CorrectionResult: {
@@ -12405,6 +12510,110 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_booking_notes_v1_admin_bookings__booking_id__notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingNotes"];
+                };
+            };
+            /** @description Back office only. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Empty or too long. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    add_booking_note_v1_admin_bookings__booking_id__notes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddBookingNote"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingNote"];
+                };
+            };
+            /** @description Back office only. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Empty or too long. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Booking data is not available. */
             503: {
@@ -23327,6 +23536,51 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    contact_v1_public_contact_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactMessage"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContactReceived"];
+                };
+            };
+            /** @description Missing or invalid fields. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Too many messages. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description It couldn't be sent; nothing was saved. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

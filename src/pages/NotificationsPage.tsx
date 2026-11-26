@@ -150,12 +150,25 @@ export default function NotificationsPage() {
                       </span>
                       <time className="text-helper text-muted-foreground" dateTime={alert.created_at}>{new Date(alert.created_at).toLocaleString()}</time>
                     </div>
-                    <p className="text-body text-muted-foreground">
-                      {[d.passenger, d.route, d.fare].filter(Boolean).map(part => `${part} · `).join("")}
-                      {d.pnr ? <>PNR {d.pnr} <CopyPnr pnr={d.pnr} /></> : "No supplier hold"}
-                      {d.hold_expires_at ? ` · expires ${new Date(d.hold_expires_at).toLocaleString()}` : null}
-                    </p>
-                    {!alert.reference && <p className="text-helper text-muted-foreground">This alert isn't linked to a booking, so it can't be opened.</p>}
+                    {alert.kind === "contact_message" ? (
+                      // gateway issue 114: a message from the website's Contact page; reply to the customer directly.
+                      <div className="flex min-w-0 flex-col gap-1 text-body">
+                        <p className="flex flex-wrap gap-x-3 gap-y-0.5 text-muted-foreground">
+                          {d.email && <a href={`mailto:${d.email}`} className="break-all text-teal hover:underline">{d.email}</a>}
+                          {d.phone && <a href={`tel:${d.phone.replace(/[^+\d]/g, "")}`} className="text-teal hover:underline">{d.phone}</a>}
+                        </p>
+                        <p className="whitespace-pre-wrap break-words text-foreground">{d.message}</p>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-body text-muted-foreground">
+                          {[d.passenger, d.route, d.fare].filter(Boolean).map(part => `${part} · `).join("")}
+                          {d.pnr ? <>PNR {d.pnr} <CopyPnr pnr={d.pnr} /></> : "No supplier hold"}
+                          {d.hold_expires_at ? ` · expires ${new Date(d.hold_expires_at).toLocaleString()}` : null}
+                        </p>
+                        {!alert.reference && <p className="text-helper text-muted-foreground">This alert isn't linked to a booking, so it can't be opened.</p>}
+                      </>
+                    )}
                     {alert.urgent ? (
                       <dl className="grid grid-cols-1 gap-x-4 gap-y-0.5 text-helper sm:grid-cols-2">
                         {([["Amount received", d.amount], ["PayFast transaction", d.payfast_transaction_id], ["Supplier", d.supplier],
