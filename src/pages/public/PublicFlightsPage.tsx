@@ -1981,7 +1981,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               <>
                 <FlightSearchLoader from={from} to={to} />
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <Card key={`skel-${i}`} className="border-0 shadow-card animate-pulse">
+                  <Card key={`skel-${i}`} className="flight-skeleton-shimmer border-0 shadow-card">
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between gap-6">
                         <div className="flex items-center gap-3">
