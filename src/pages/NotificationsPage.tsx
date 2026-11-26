@@ -151,7 +151,7 @@ export default function NotificationsPage() {
                       <time className="text-helper text-muted-foreground" dateTime={alert.created_at}>{new Date(alert.created_at).toLocaleString()}</time>
                     </div>
                     {alert.kind === "contact_message" ? (
-                      // gateway#114: a message from the website's Contact page; reply to the customer directly.
+                      // gateway issue 114: a message from the website's Contact page; reply to the customer directly.
                       <div className="flex min-w-0 flex-col gap-1 text-body">
                         <p className="flex flex-wrap gap-x-3 gap-y-0.5 text-muted-foreground">
                           {d.email && <a href={`mailto:${d.email}`} className="break-all text-teal hover:underline">{d.email}</a>}
