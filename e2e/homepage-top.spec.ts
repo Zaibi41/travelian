@@ -56,9 +56,10 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     expect(await origin.evaluate(element => getComputedStyle(element.parentElement!).boxShadow)).toContain("rgb(7, 60, 146)");
     await origin.click();
     await page.getByRole("option", { name: /LHE/ }).first().click();
-    await page.getByLabel("Destination", { exact: true }).click();
+    // The form moves on by itself: choosing From opens To, and choosing To opens the departure calendar.
+    await expect(page.getByLabel("Destination", { exact: true })).toHaveAttribute("aria-expanded", "true");
     await page.getByRole("option", { name: /DXB/ }).first().click();
-    await page.getByLabel("Departure Date", { exact: true }).click();
+    await expect(page.getByLabel("Departure Date", { exact: true })).toHaveAttribute("aria-expanded", "true");
     await page.getByRole("grid").first().locator("button:not([disabled])").first().click();
     await expect(page.getByRole("grid")).toHaveCount(0);
     await expect(search).toBeEnabled();
