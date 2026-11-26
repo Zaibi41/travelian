@@ -30,7 +30,7 @@ for (const width of widths) {
       await expect(panel).toHaveAttribute("aria-hidden", "true");
       expect(await panel.evaluate(element => element.inert)).toBe(true);
       await scroll(geometry.bottom + 12, "sticky");
-      await expect(panel).toHaveCSS("height", "61px");
+      await expect(panel).toHaveCSS("height", "57px");
       await expect.poll(() => panel.evaluate(element => element.getBoundingClientRect().top)).toBe(0);
       await expect(header.getByRole("link", { name: "Travelian home" })).toBeVisible();
       const logoBox = await header.getByRole("link", { name: "Travelian home" }).boundingBox();
@@ -72,7 +72,8 @@ for (const width of widths) {
       expect(currentTop).toBe(geometry.top);
       await scroll(0, "top");
       await expect(panel).toHaveAttribute("aria-hidden", "false");
-      if (desktop) await expect(header.getByRole("link", { name: "Request a Booking", exact: true })).toBeVisible();
+      // Desktop header no longer carries Request a Booking (phone, Find my booking, Sign In); it stays in the mobile menu.
+      if (desktop) await expect(header.getByRole("link", { name: "Request a Booking", exact: true })).toHaveCount(0);
       expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
     }
     expect(errors).toEqual([]);
@@ -101,7 +102,8 @@ test("sticky product links reset correctly and deep reload restores sticky", asy
     await panel.getByRole("link", { name, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(path === "/" ? "/$" : path + "$"));
     await expect(panel).toHaveAttribute("data-header-state", "top");
-    await expect(panel.getByRole("link", { name, exact: true })).toHaveAttribute("aria-current", "page");
+    // At the top of the page the product switch is in the search card (the header's product links show once sticky).
+    await expect(page.locator("[data-product-search-navigation]").first().getByRole("button", { name, exact: true })).toHaveAttribute("aria-current", "page");
   }
   await page.evaluate(() => scrollTo(0, 900));
   await expect(panel).toHaveAttribute("data-header-state", "sticky");

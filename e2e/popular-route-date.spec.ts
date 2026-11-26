@@ -17,7 +17,8 @@ for (const [today, tomorrow] of [["2026-10-29", "2026-10-30"], ["2026-10-31", "2
     expect(departures).toEqual(Array(10).fill(tomorrow));
     await routes.getByRole("link", { name: /Lahore.*Dubai.*Search Flights/i }).click();
     await expect(page).toHaveURL(new RegExp(`/flights-search\\?from=LHE&to=DXB&depart=${tomorrow}$`));
-    await expect(page.locator(".travelian-search-card").getByText(format(parseDateOnly(tomorrow)!, "EEE, MMM d"), { exact: true })).toBeVisible();
+    // The results summary bar shows the searched day ("Fri, 30 Oct").
+    await expect(page.getByText(format(parseDateOnly(tomorrow)!, "EEE, d MMM"), { exact: true }).first()).toBeVisible();
     await context.close();
   });
 }

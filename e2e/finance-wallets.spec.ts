@@ -2,27 +2,30 @@ import { expect, test } from "@playwright/test";
 import { BEFORE, openAdmin, overflow, rs, shot } from "./support/finance";
 import { expectReadableText } from "./support/type-scale";
 
-// travelian#68: Finance > Wallets (supplier balances). Made-up balances; before = live site.
+// travelian#226: Finance > Wallets is B2B agency wallets (B2C customers have no wallet; supplier balances are on Supplier
+// Balances). Made-up agencies and amounts, one with a long name; before = live site.
 if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
 if (process.env.FINANCE_BASE_URL) test.use({ baseURL: process.env.FINANCE_BASE_URL });
 
+const wallet = (id: string, name: string, balance: number, low: boolean) => ({
+  agency_id: id, agency_name: name, agency_status: "active", balance: rs(balance), deposits: rs(balance + 10_000),
+  last_deposit_at: "2026-11-21T06:00:00Z", low, low_threshold: rs(100_000),
+});
 const WALLETS = { wallets: [
-  { provider_id: "southair", name: "Southair", mode: "api", balance: rs(90_000), as_of: "2026-11-21T06:00:00Z", threshold: rs(100_000), low: true },
-  { provider_id: "sooperfare", name: "SooperFare", mode: "calculated", balance: rs(453_000), as_of: "2026-11-21T05:00:00Z",
-    tracking_since: "2026-11-01T05:00:00Z", threshold: rs(200_000), low: false },
+  wallet("ag-1", "Karachi Travels", 90_000, true),
+  wallet("ag-2", "Al Noor International Travel and Tours Private Limited (Gulberg Branch)", 453_000, false),
+], total_balance: rs(543_000), low_count: 1 };
+const STATEMENT = { wallet: WALLETS.wallets[1], entries: [
+  { at: "2026-11-21T05:00:00Z", kind: "deposit", amount: rs(500_000), balance_after: rs(500_000), reference: "IBFT-998877", account: "Meezan Bank" },
+  { at: "2026-11-22T05:00:00Z", kind: "adjustment", amount: rs(-47_000), balance_after: rs(453_000), reason: "Ticket TRV-SF1234 charged to the agency" },
 ] };
-const HISTORY = { items: [
-  { at: "2026-11-21T05:00:00Z", kind: "ticket", amount: rs(-45_770), booking_reference: "TRV-SF1234" },
-  { at: "2026-11-20T05:00:00Z", kind: "adjustment", amount: rs(-1_230), reason: "SooperFare portal shows a lower balance after a platform fee" },
-  { at: "2026-11-01T05:00:00Z", kind: "top_up", amount: rs(500_000), reference: "IBFT-998877" },
-] };
-const answer = (path: string) => path === "/v1/admin/finance/supplier-balances" ? WALLETS
-  : path.endsWith("/history") ? HISTORY : undefined;
+const answer = (path: string) => path === "/v1/admin/finance/agency-wallets" ? WALLETS
+  : path.startsWith("/v1/admin/finance/agency-wallets/") ? STATEMENT : undefined;
 
 for (const width of [1440, 768, 390]) {
   test(`wallets at ${width}px`, async ({ page }) => {
     await openAdmin(page, "/admin/wallet", width, answer);
-    if (!BEFORE) await expect(page.getByText("Rs 90,000")).toBeVisible();
+    if (!BEFORE) await expect(page.getByText("Rs 90,000").locator("visible=true").first()).toBeVisible();
     await shot(page, `wallets-${width}`);
     if (BEFORE) return;
     expect(await overflow(page)).toBe(0);
@@ -30,10 +33,10 @@ for (const width of [1440, 768, 390]) {
   });
 }
 
-test("wallet history at 390px", async ({ page }) => {
+test("wallet statement at 390px", async ({ page }) => {
   test.skip(BEFORE);
   await openAdmin(page, "/admin/wallet", 390, answer);
-  await page.getByRole("button", { name: "History" }).nth(1).click();
-  await expect(page.getByRole("dialog")).toContainText("TRV-SF1234");
-  await shot(page, "wallet-history-390");
+  await page.getByRole("button", { name: /Al Noor International.* statement/ }).locator("visible=true").first().click();
+  await expect(page.getByRole("dialog")).toContainText("IBFT-998877");
+  await shot(page, "wallet-statement-390");
 });

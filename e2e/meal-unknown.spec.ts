@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { gatewayView, isGateway, isLocal } from "./support/gateway";
 
-// #154/#198: "Meal" when the fare says one is served; otherwise, missing meal data included, the card says "No Meal" (#198), never
-// "Meal info not available". Flight details (the per-flight WhatsApp message of #53 has no meal line and never says "No Meal"). Admin: a missing meal is "No Meal" too (#198).
+// #154/#198/#217: the website card says "Meal included" when the fare serves one and nothing otherwise (#217 put Refund in that
+// place), never "No Meal" or "Meal info not available". Flight details (the per-flight WhatsApp message of #53 has no meal line and never says "No Meal"). Admin: a missing meal is "No Meal" too (#198).
 // Intercepted gateway responses only. MEAL_SHOTS_DIR saves screenshots; MEAL_SHOTS=before only takes them.
 
 if (process.env.PLAYWRIGHT_CHANNEL) test.use({ channel: process.env.PLAYWRIGHT_CHANNEL });
@@ -47,10 +47,11 @@ for (const width of [360, 390, 768, 1440]) {
     await expect(page.getByRole("button", { name: "Flight Details" }).first()).toBeVisible({ timeout: 20_000 });
     await shot(page, `results-${width}`);
     if (BEFORE) return;
-    await expect(visible(page, "Emirates", "No Meal")).toHaveCount(1); // #198: missing meal data is "No Meal"
-    await expect(visible(page, "Emirates", "Meal info not available")).toHaveCount(0);
-    await expect(visible(page, "Airblue", "No Meal")).toHaveCount(1);
-    await expect(visible(page, "South Air", "Meal").first()).toBeVisible(); // "Snacks": a meal is served
+    // #217: fare cards show Refund in place of the meal line; a meal shows only when the fare includes one ("Meal included").
+    for (const airline of ["Emirates", "Airblue"]) {
+      for (const text of ["No Meal", "Meal info not available", "Meal included"]) await expect(visible(page, airline, text)).toHaveCount(0);
+    }
+    await expect(visible(page, "South Air", "Meal included").first()).toBeVisible(); // "Snacks": a meal is served
     await expect(visible(page, "South Air", "No Meal")).toHaveCount(0);
     await expect(visible(page, "South Air", "Meal info not available")).toHaveCount(0);
     const wa = await card(page, "Emirates").getByRole("link").filter({ hasText: "WhatsApp" }).locator("visible=true").first().getAttribute("href");
