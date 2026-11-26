@@ -36,6 +36,7 @@ e2e/finance-not-built.spec.ts
 e2e/finance-payments.spec.ts
 e2e/finance-reconciliation.spec.ts
 e2e/finance-reports.spec.ts
+e2e/finance-wallets.spec.ts
 e2e/find-booking-links.spec.ts
 e2e/flight-details-baggage.spec.ts
 e2e/flight-details-popup.spec.ts
@@ -46,6 +47,7 @@ e2e/flight-whatsapp.spec.ts
 e2e/group-connections.spec.ts
 e2e/group-return-on-flights.spec.ts
 e2e/homepage-top.spec.ts
+e2e/meal-unknown.spec.ts
 e2e/mobile-airport-picker.spec.ts
 e2e/mobile-filters-sort.spec.ts
 e2e/mobile-listing-194.spec.ts
@@ -54,6 +56,7 @@ e2e/no-demo-data.spec.ts
 e2e/passenger-limit.spec.ts
 e2e/payment-contact-edit.spec.ts
 e2e/popular-route-date.spec.ts
+e2e/product-trust.spec.ts
 e2e/public-footer.spec.ts
 e2e/public-header.spec.ts
 e2e/roundtrip-return-date.spec.ts

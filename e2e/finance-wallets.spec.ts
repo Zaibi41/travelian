@@ -25,7 +25,7 @@ const answer = (path: string) => path === "/v1/admin/finance/agency-wallets" ? W
 for (const width of [1440, 768, 390]) {
   test(`wallets at ${width}px`, async ({ page }) => {
     await openAdmin(page, "/admin/wallet", width, answer);
-    if (!BEFORE) await expect(page.getByText("Rs 90,000").first()).toBeVisible();
+    if (!BEFORE) await expect(page.getByText("Rs 90,000").locator("visible=true").first()).toBeVisible();
     await shot(page, `wallets-${width}`);
     if (BEFORE) return;
     expect(await overflow(page)).toBe(0);
