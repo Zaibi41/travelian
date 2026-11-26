@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 
-import { ArrowRight, Info, Luggage, Search, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { ArrowRight, Info, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -50,6 +50,8 @@ const popularAirportByCode = new Map(
 
     { code: "RUH", city: "Riyadh" },
 
+    { code: "DMM", city: "Dammam" },
+
     { code: "IST", city: "Istanbul" },
 
     { code: "DOH", city: "Doha" },
@@ -84,7 +86,7 @@ function airportCity(code?: string | null) {
 
   if (!cleanCode) return "";
 
-  const airport = airportByCode(cleanCode) || popularAirportByCode.get(cleanCode);
+  const airport = popularAirportByCode.get(cleanCode) || airportByCode(cleanCode);
 
   return airport?.city || cleanCode;
 
@@ -209,73 +211,6 @@ export default function GroupTicketingPage() {
 
         )}
 
-        {/* 4. On Platform: Live + Group Tickets Section */}
-        <section className="relative overflow-hidden rounded-3xl border border-white/10 gradient-hero p-6 text-white shadow-xl sm:p-8 lg:p-10">
-          <div
-            className="pointer-events-none absolute inset-0 opacity-[0.06]"
-            aria-hidden="true"
-            style={{
-              backgroundImage: "radial-gradient(circle at 1px 1px, hsl(0 0% 100%) 1px, transparent 0)",
-              backgroundSize: "22px 22px",
-            }}
-          />
-          <div className="relative">
-            <div className="max-w-3xl">
-              <Badge className="mb-3 border border-white/15 bg-white/10 text-xs font-semibold uppercase tracking-wider text-gold-on-dark">
-                Group Ticketing
-              </Badge>
-              <h2 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-                Fixed-Fare Group Seats Alongside Live Flights
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-white/85 sm:text-base">
-                Compare scheduled airline fares with dedicated group seat allocations across popular routes from Pakistan to Saudi Arabia, the UAE, and the Gulf.
-              </p>
-            </div>
-
-            <div className="mt-6 grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm transition-colors hover:bg-white/[0.09]">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/10">
-                  <ShieldCheck className="h-5 w-5 text-gold-on-dark" aria-hidden="true" />
-                </div>
-                <h3 className="text-sm font-bold text-white">Fixed Group Fares</h3>
-                <p className="mt-1 text-xs leading-5 text-white/80">
-                  Locked seat pricing on group departures without sudden dynamic fare jumps during busy travel periods.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm transition-colors hover:bg-white/[0.09]">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/10">
-                  <Luggage className="h-5 w-5 text-emerald-400" aria-hidden="true" />
-                </div>
-                <h3 className="text-sm font-bold text-white">Clear Baggage Allowances</h3>
-                <p className="mt-1 text-xs leading-5 text-white/80">
-                  Checked and hand-carry baggage limits are listed upfront on every group fare before you confirm.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm transition-colors hover:bg-white/[0.09]">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/10">
-                  <Sparkles className="h-5 w-5 text-sky-400" aria-hidden="true" />
-                </div>
-                <h3 className="text-sm font-bold text-white">Verified Seat Inventory</h3>
-                <p className="mt-1 text-xs leading-5 text-white/80">
-                  Live group departure dates, flight timings, and fare conditions presented clearly for every sector.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4 backdrop-blur-sm transition-colors hover:bg-white/[0.09]">
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/10">
-                  <Users className="h-5 w-5 text-gold-on-dark" aria-hidden="true" />
-                </div>
-                <h3 className="text-sm font-bold text-white">Direct Desk Support</h3>
-                <p className="mt-1 text-xs leading-5 text-white/80">
-                  Share your selected route and travel dates directly with our group ticketing team on WhatsApp for fast confirmation.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* 5. Popular Group Sectors Section */}
 
         {availableSectors.length > 0 && (
@@ -392,7 +327,7 @@ export default function GroupTicketingPage() {
 
         {/* 6. How It Works Section */}
 
-        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-6 sm:p-10 space-y-6">
+        <section className="rounded-3xl border border-slate-200 bg-slate-50/70 p-4 sm:p-10 space-y-4 sm:space-y-6">
 
           <div className="text-center max-w-xl mx-auto">
 
@@ -406,11 +341,11 @@ export default function GroupTicketingPage() {
 
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
 
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2">
+            <div className="grid grid-cols-[2rem_1fr] items-start gap-x-3 gap-y-1 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:block sm:space-y-2 sm:p-5">
 
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">
+              <span className="row-span-2 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">
 
                 1
 
@@ -420,14 +355,14 @@ export default function GroupTicketingPage() {
 
               <p className="text-xs text-muted-foreground">
 
-                Search with origin and destination airports or choose from the dynamic Available Sectors dropdown.
+                Search by origin and destination, or pick one of the available sectors.
 
               </p>
 
             </div>
 
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">
+            <div className="grid grid-cols-[2rem_1fr] items-start gap-x-3 gap-y-1 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:block sm:space-y-2 sm:p-5">
+              <span className="row-span-2 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">
                 2
               </span>
               <h3 className="text-sm font-bold text-foreground">Compare Fares &amp; Baggage</h3>
@@ -436,8 +371,8 @@ export default function GroupTicketingPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">
+            <div className="grid grid-cols-[2rem_1fr] items-start gap-x-3 gap-y-1 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:block sm:space-y-2 sm:p-5">
+              <span className="row-span-2 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">
                 3
               </span>
               <h3 className="text-sm font-bold text-foreground">Confirm with Our Team</h3>
@@ -446,8 +381,8 @@ export default function GroupTicketingPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm space-y-2">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">
+            <div className="grid grid-cols-[2rem_1fr] items-start gap-x-3 gap-y-1 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:block sm:space-y-2 sm:p-5">
+              <span className="row-span-2 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-sm font-black text-primary">
                 4
               </span>
               <h3 className="text-sm font-bold text-foreground">Receive Your Ticket</h3>
