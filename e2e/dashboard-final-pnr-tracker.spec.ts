@@ -11,7 +11,7 @@ const BEFORE = process.env.TRACKER_SHOTS === "before";
 const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" });
 const SUMMARY = {
   source: "gateway_bookings", contains_sample_data: false, generated_at: "2026-11-22T07:00:00Z",
-  needs_action: { pending_issuance: 2, payment_pending: 0, expiring_holds: 1, expiring_window_hours: 2 },
+  needs_action: { pending_issuance: 2, payment_pending: 0, expiring_holds: 1, expiring_window_hours: 2, unknown_issuance: 1 },
   business: { total_bookings: 42, held: 7, paid: 31, issued_tickets: 30, total_sales: [rs(1_284_500)], gross_profit: [rs(96_400)] },
 };
 const TRACKER = { window_hours: 48, total: 3, departs_soon: 1, items: [

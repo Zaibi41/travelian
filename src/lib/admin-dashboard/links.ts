@@ -18,7 +18,7 @@ import type { AttentionItem, DashboardQuery } from "./types";
 
 export const ATTENTION_QUEUE_PLACEHOLDER = "/admin/attention-queue";
 
-type FlightsCard = "awaiting_issuance" | "payment_pending" | "expiring_soon";
+type FlightsCard = "awaiting_issuance" | "payment_pending" | "expiring_soon" | "unknown_issuance";
 
 function flightsCardList(card: FlightsCard, query: DashboardQuery) {
   if (query.product && query.product !== "flight") return ATTENTION_QUEUE_PLACEHOLDER;
@@ -32,6 +32,7 @@ export function needsActionLinks(query: DashboardQuery) {
     pendingIssuance: flightsCardList("awaiting_issuance", query),
     paymentPending: flightsCardList("payment_pending", query),
     expiringHolds: flightsCardList("expiring_soon", query),
+    unknownIssuance: flightsCardList("unknown_issuance", query),
   };
 }
 

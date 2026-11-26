@@ -5483,6 +5483,11 @@ export interface components {
              * @description Flights tab only: open holds not fully paid and not past their deadline (the dashboard's Payment pending).
              */
             payment_pending?: number | null;
+            /**
+             * Unknown Issuance
+             * @description Flights tab only (gateway#85): issuing timed out or was unclear, so a ticket may or may not exist; check with the supplier (the dashboard's Unknown issuance).
+             */
+            unknown_issuance?: number | null;
             /** Unpaid */
             unpaid: number;
         };
@@ -8220,6 +8225,12 @@ export interface components {
             payment_pending: number;
             /** Pending Issuance */
             pending_issuance: number;
+            /**
+             * Unknown Issuance
+             * @description gateway#85: flight bookings whose issuing outcome is unknown (a ticket may or may not exist). Not affected by the date filter.
+             * @default 0
+             */
+            unknown_issuance: number;
         };
         /** NotificationList */
         NotificationList: {
@@ -11608,7 +11619,7 @@ export interface operations {
                 provider?: string | null;
                 agency?: string | null;
                 /** @description List only the rows this card counts. */
-                card?: ("confirmed" | "on_hold" | "cancelled" | "unpaid" | "expiring_soon" | "awaiting_issuance" | "hold_deadlines" | "payment_pending" | "paid_not_issued") | null;
+                card?: ("confirmed" | "on_hold" | "cancelled" | "unpaid" | "expiring_soon" | "awaiting_issuance" | "hold_deadlines" | "payment_pending" | "paid_not_issued" | "unknown_issuance") | null;
                 limit?: number;
                 offset?: number;
             };

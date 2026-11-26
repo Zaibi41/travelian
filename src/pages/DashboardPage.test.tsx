@@ -30,12 +30,12 @@ const ok = <T,>(data: T) => ({ data, error: null, isPending: false });
 const failed = (error: unknown) => ({ data: undefined, error, isPending: false });
 const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" as const });
 
-function summary(counts: [number, number, number], business: Partial<DashboardSummary["business"]> = {}): DashboardSummary {
+function summary(counts: [number, number, number, number?], business: Partial<DashboardSummary["business"]> = {}): DashboardSummary {
   return {
     source: "gateway_bookings",
     contains_sample_data: false,
     generated_at: "2026-11-05T07:00:00Z",
-    needs_action: { pending_issuance: counts[0], payment_pending: counts[1], expiring_holds: counts[2], expiring_window_hours: 2 },
+    needs_action: { pending_issuance: counts[0], payment_pending: counts[1], expiring_holds: counts[2], expiring_window_hours: 2, unknown_issuance: counts[3] ?? 0 },
     business: { total_bookings: 42, held: 5, paid: 31, issued_tickets: 30, total_sales: [rs(1_284_500)], gross_profit: [rs(96_400)], ...business },
   };
 }
@@ -85,6 +85,14 @@ describe("DashboardPage", () => {
     expect(within(payment).getByText("Fine")).toBeInTheDocument();
     expect(payment).toHaveAttribute("href", "/admin/bookings/flights?card=payment_pending");
     expect(screen.getByRole("link", { name: /Expiring holds: 1, Needs action\. Within 2 hours/ })).toHaveAttribute("href", "/admin/bookings/flights?card=expiring_soon");
+    // gateway#85: a real zero is the green Fine stripe.
+    expect(screen.getByRole("link", { name: /Unknown issuance: 0, Fine/ })).toHaveAttribute("href", "/admin/bookings/flights?card=unknown_issuance");
+  });
+
+  it("gateway#85: unknown issuance above zero is Critical and opens the filtered Flights list", () => {
+    setData({ summary: ok(summary([0, 0, 0, 3])) });
+    renderPage();
+    expect(screen.getByRole("link", { name: /Unknown issuance: 3, Critical/ })).toHaveAttribute("href", "/admin/bookings/flights?card=unknown_issuance");
   });
 
   it("keeps the provider filter on the Pending issuance list", () => {
@@ -169,7 +177,8 @@ describe("DashboardPage", () => {
 
   it("hides elements with no data source and labels not in the mockup", () => {
     renderPage();
-    for (const hidden of [/Unknown issuance/i, /Money and balances/i, /Recent activity/i, /Low airline balance/i, /Business today/i, /Local preview/i, /Showing \d/]) {
+    // Unknown issuance is shown since gateway#85 (needs-action cards).
+    for (const hidden of [/Money and balances/i, /Recent activity/i, /Low airline balance/i, /Business today/i, /Local preview/i, /Showing \d/]) {
       expect(screen.queryByText(hidden)).not.toBeInTheDocument();
     }
     for (const filter of [/^Branch/, /^Channel/, /^Agency/]) {
