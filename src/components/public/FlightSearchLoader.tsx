@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Loader2, Plane, Radar } from "lucide-react";
+import { Plane, Radar } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface FlightSearchLoaderProps {
   from: string;
   to: string;
+  roundTrip?: boolean;
 }
 
 const loadingMessages = [
@@ -14,7 +15,7 @@ const loadingMessages = [
   "Preparing bookable flight options",
 ];
 
-export function FlightSearchLoader({ from, to }: FlightSearchLoaderProps) {
+export function FlightSearchLoader({ from, to, roundTrip = false }: FlightSearchLoaderProps) {
   const [messageIndex, setMessageIndex] = useState(0);
 
   useEffect(() => {
@@ -46,7 +47,9 @@ export function FlightSearchLoader({ from, to }: FlightSearchLoaderProps) {
           </div>
           <div className="flex items-center gap-3 rounded-xl border bg-muted/30 px-4 py-3">
             <span className="text-sm font-bold text-foreground">{from}</span>
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <span className="flight-loader-route" aria-hidden="true">
+              <Plane className={`flight-loader-plane ${roundTrip ? "flight-loader-plane--roundtrip" : ""} h-4 w-4 fill-primary text-primary`} />
+            </span>
             <span className="text-sm font-bold text-foreground">{to}</span>
           </div>
         </div>
