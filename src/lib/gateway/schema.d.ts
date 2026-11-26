@@ -4387,6 +4387,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/public/contact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Contact
+         * @description gateway#114: send a message to the Travelian team (stored in the admin under Notifications and emailed to the team
+         *     when email is set up). At most 5 per hour from one address. Never logs the message.
+         */
+        post: operations["contact_v1_public_contact_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/public/flights/calendar": {
         parameters: {
             query?: never;
@@ -6022,6 +6043,31 @@ export interface components {
              * Format: date-time
              */
             received_at: string;
+        };
+        /**
+         * ContactMessage
+         * @description A message from the Contact page. Name and message are required, and an email or a mobile number to reply to.
+         *     `website` is a hidden field people never fill in: when it has a value the message is treated as spam (accepted, not kept).
+         */
+        ContactMessage: {
+            /** Email */
+            email?: string | null;
+            /** Message */
+            message: string;
+            /** Name */
+            name: string;
+            /** Phone */
+            phone?: string | null;
+            /**
+             * Website
+             * @description Leave empty (spam trap).
+             */
+            website?: string | null;
+        };
+        /** ContactReceived */
+        ContactReceived: {
+            /** Message */
+            message: string;
         };
         /** CorrectionResult */
         CorrectionResult: {
@@ -23490,6 +23536,51 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    contact_v1_public_contact_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContactMessage"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContactReceived"];
+                };
+            };
+            /** @description Missing or invalid fields. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Too many messages. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description It couldn't be sent; nothing was saved. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
