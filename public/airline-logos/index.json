@@ -71,7 +71,20 @@
     "azores airlines": "S4",
     "sata azores airlines": "S4",
     "sata air acores": "SP",
-    "sata air açores": "SP"
+    "sata air açores": "SP",
+    "br": "BR",
+    "eva air": "BR",
+    "eva airways": "BR",
+    "eva": "BR",
+    "jl": "JL",
+    "japan airlines": "JL",
+    "jal": "JL",
+    "japan airlines domestic": "JL",
+    "lo": "LO",
+    "lot": "LO",
+    "lot polish airlines": "LO",
+    "lot polish": "LO",
+    "polskie linie lotnicze lot": "LO"
   },
   "logos": {
     "1g": "/airline-logos/travelport.svg",
@@ -156,6 +169,19 @@
     "azores airlines": "/airline-logos/sata.png",
     "sata azores airlines": "/airline-logos/sata.png",
     "sata air acores": "/airline-logos/sata.png",
-    "sata air açores": "/airline-logos/sata.png"
+    "sata air açores": "/airline-logos/sata.png",
+    "br": "/airline-logos/eva-air.png",
+    "eva air": "/airline-logos/eva-air.png",
+    "eva airways": "/airline-logos/eva-air.png",
+    "eva": "/airline-logos/eva-air.png",
+    "jl": "/airline-logos/japan-airlines.png",
+    "japan airlines": "/airline-logos/japan-airlines.png",
+    "jal": "/airline-logos/japan-airlines.png",
+    "japan airlines domestic": "/airline-logos/japan-airlines.png",
+    "lo": "/airline-logos/lot-polish-airlines.png",
+    "lot": "/airline-logos/lot-polish-airlines.png",
+    "lot polish airlines": "/airline-logos/lot-polish-airlines.png",
+    "lot polish": "/airline-logos/lot-polish-airlines.png",
+    "polskie linie lotnicze lot": "/airline-logos/lot-polish-airlines.png"
   }
 }

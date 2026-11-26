@@ -43,4 +43,18 @@ describe("airline logo manifest", () => {
     for (const key of ["s4", "sp", "sata", "sata international", "azores airlines", "sata air açores"]) expect(logos[key]).toBe("/airline-logos/sata.png");
     expect([codes["sata international"], codes["azores airlines"], codes["sata air acores"]]).toEqual(["S4", "S4", "SP"]);
   });
+
+  it("#216: EVA Air (BR) and Japan Airlines (JL) by code and name", () => {
+    const logos = manifest.logos as Record<string, string>;
+    const codes = manifest.codes as Record<string, string>;
+    for (const key of ["br", "eva air", "eva airways"]) expect(logos[key]).toBe("/airline-logos/eva-air.png");
+    for (const key of ["jl", "japan airlines", "jal"]) expect(logos[key]).toBe("/airline-logos/japan-airlines.png");
+    expect([codes["eva air"], codes["japan airlines"], codes.jal]).toEqual(["BR", "JL", "JL"]);
+  });
+
+  it("#216: LOT Polish Airlines (LO) by code and name", () => {
+    const logos = manifest.logos as Record<string, string>;
+    for (const key of ["lo", "lot", "lot polish airlines"]) expect(logos[key]).toBe("/airline-logos/lot-polish-airlines.png");
+    expect((manifest.codes as Record<string, string>)["lot polish airlines"]).toBe("LO");
+  });
 });
