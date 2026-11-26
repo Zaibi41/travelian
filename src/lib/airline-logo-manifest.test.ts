@@ -105,4 +105,16 @@ describe("airline logo manifest", () => {
       expect(codes[name]).toBe(code.toUpperCase());
     }
   });
+
+  it("#216 follow-up: square logos for the airlines Travelian sells (low-cost, Gulf, Asia, Europe, Americas, Africa)", () => {
+    const logos = manifest.logos as Record<string, string>;
+    const codes = manifest.codes as Record<string, string>;
+    for (const [code, name, file] of [["fr", "ryanair", "ryanair"], ["u2", "easyjet", "easyjet"], ["w6", "wizz air", "wizz-air"], ["6e", "indigo", "indigo"],
+      ["sq", "singapore airlines", "singapore-airlines"], ["ai", "air india", "air-india"], ["dl", "delta", "delta"], ["et", "ethiopian airlines", "ethiopian"],
+      ["vf", "ajet", "ajet"], ["ls", "jet2", "jet2"]] as const) {
+      expect([logos[code], logos[name]]).toEqual([`/airline-logos/${file}.png`, `/airline-logos/${file}.png`]);
+      expect(codes[name]).toBe(code.toUpperCase());
+    }
+    expect(Object.keys(manifest.logos).length).toBeGreaterThan(250);
+  });
 });

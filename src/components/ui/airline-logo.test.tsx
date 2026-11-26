@@ -50,8 +50,8 @@ describe.each([
   });
 
   it("shows the IATA code badge when there is no logo file and no supplier image", () => {
-    render(<AirlineLogo airline="Unknown Air" flightNumber="X3 1200" />);
-    expect(screen.getByRole("img", { name: "Unknown Air logo" })).toHaveTextContent(/^X3$/);
+    render(<AirlineLogo airline="Unknown Air" flightNumber="QQ 1200" />);
+    expect(screen.getByRole("img", { name: "Unknown Air logo" })).toHaveTextContent(/^QQ$/);
   });
 
   it("falls back to the code badge when both our file and the supplier image fail", () => {
@@ -65,8 +65,8 @@ describe.each([
     const { unmount } = render(<AirlineLogo airline="South Air" code="Z8" />);
     expect(screen.getByRole("img")).toHaveAttribute("src", "/airline-logos/south-air.png");
     unmount();
-    render(<AirlineLogo airline="Some New Airline" code="x3" />);
-    expect(screen.getByRole("img", { name: "Some New Airline logo" })).toHaveTextContent(/^X3$/);
+    render(<AirlineLogo airline="Some New Airline" code="qq" />);
+    expect(screen.getByRole("img", { name: "Some New Airline logo" })).toHaveTextContent(/^QQ$/);
   });
 
   it("shows the plane icon only when the airline code is unknown", () => {

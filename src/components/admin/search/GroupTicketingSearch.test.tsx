@@ -103,9 +103,9 @@ describe("Group Ticketing results: airline logo", () => {
   });
 
   it("an airline with no logo file and no gateway logo shows its IATA code, not an empty box", async () => {
-    gateway.search.mockResolvedValue(view({ airline: "Unknown Air", flight_number: "X3 1200" }));
+    gateway.search.mockResolvedValue(view({ airline: "Unknown Air", flight_number: "QQ 1200" }));
     renderAt();
     const results = await screen.findByRole("region", { name: "Results" });
-    expect(await within(results).findByRole("img", { name: "Unknown Air logo" })).toHaveTextContent(/^X3$/);
+    expect(await within(results).findByRole("img", { name: "Unknown Air logo" })).toHaveTextContent(/^QQ$/);
   });
 });
