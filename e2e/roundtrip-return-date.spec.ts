@@ -80,7 +80,8 @@ for (const width of [1440, 1024, 768, 390]) {
       await chooseAirport(page, "Origin", "LHE", phone);
       await chooseAirport(page, "Destination", "DXB", phone);
       const depart = addDays(new Date(), 20);
-      if (!(await page.getByRole("dialog", { name: /departure date/i }).isVisible())) await card(page).getByRole("button", { name: /Departure date/i }).click();
+      // Choosing To opens the departure calendar by itself (waiting for it avoids a race with clicking the field under it).
+      await expect(page.getByRole("dialog", { name: /departure date/i })).toBeVisible();
       await pickIn(page, /departure date/i, depart);
 
       // The return calendar opens by itself: the fare calendar, from the departure on, departure outlined.
