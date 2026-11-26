@@ -7,7 +7,7 @@ import { GatewayError } from "@/lib/gateway/client";
 // Finance operations screens. Gateway mocked; made-up suppliers, amounts and people.
 const api = vi.hoisted(() => ({
   fetchSuppliers: vi.fn(), fetchSupplierLedger: vi.fn(), fetchSaleOptions: vi.fn(), previewTicketSale: vi.fn(), saveTicketSale: vi.fn(),
-  fetchTicketSales: vi.fn(), fetchFinanceOverview: vi.fn(), fetchCustomerDues: vi.fn(), fetchSupplierRefunds: vi.fn(), applySupplierRefund: vi.fn(),
+  fetchTicketSales: vi.fn(), previewTicketSaleCorrection: vi.fn(), correctTicketSale: vi.fn(), deleteTicketSale: vi.fn(), fetchFinanceOverview: vi.fn(), fetchCustomerDues: vi.fn(), fetchSupplierRefunds: vi.fn(), applySupplierRefund: vi.fn(),
 }));
 vi.mock("@/lib/finance/ops-api", async (original) => ({ ...(await original<object>()), ...api }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -107,6 +107,65 @@ describe("Ticket Sale Entry", () => {
     expect(screen.getByLabelText("B2B partner")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Cost (Rs)"), { target: { value: "50000" } });
     expect(await screen.findByText(/would go below zero/)).toBeInTheDocument();
+  });
+
+  const SALE = {
+    id: "s1", number: 1, channel: "direct", passenger_name: "Muhammad Azam", customer_person_id: "c1", travel_date: null, route: null, pnr: null,
+    supplier_id: "airsial", supplier_name: "AirSial", cost: rs(75_000), sale: rs(75_000), received: rs(75_000), due: rs(0), profit: rs(0),
+    payment_account_id: "a1", payment_account: "UBL Business", ticket_status: "issued", state: "confirmed", submitted_at: "2026-11-25T13:57:00Z",
+    submitted_by_role: "super_admin",
+  };
+
+  it("hides Edit and Delete unless the gateway says this user can edit", async () => {
+    api.fetchSaleOptions.mockResolvedValue({ ...OPTIONS, is_finance: true });
+    api.fetchTicketSales.mockResolvedValue({ items: [SALE], can_confirm: true, can_edit: false });
+    renderPage(<TicketSaleEntryPage />);
+    expect(await screen.findByText("Muhammad Azam")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Edit entry #1" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Delete entry #1" })).not.toBeInTheDocument();
+  });
+
+  it("Super Admin edits an entry in the same form, with a reason, and sees what the gateway will do", async () => {
+    api.fetchSaleOptions.mockResolvedValue({ ...OPTIONS, is_finance: true });
+    api.fetchTicketSales.mockResolvedValue({ items: [SALE, { ...SALE, id: "s0", number: 0, state: "reversed", corrected_by_number: 1, correction_reason: "Cost was wrong" }],
+      can_confirm: true, can_edit: true });
+    api.previewTicketSaleCorrection.mockResolvedValue({ profit: rs(0), due: rs(0), problems: [], confirmed_on_save: true,
+      effects: ["Update entry #1 in place: route, PNR.", "No balance, account or profit changes."] });
+    api.correctTicketSale.mockResolvedValue({ ...SALE, route: "LHE-JED", pnr: "9Y08DC" });
+    renderPage(<TicketSaleEntryPage />);
+    expect(await screen.findByText("Reversed")).toBeInTheDocument();
+    expect(screen.getByText("Replaced by #1")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Edit entry #0" })).not.toBeInTheDocument(); // a reversed entry can't be edited
+    fireEvent.click(screen.getByRole("button", { name: "Edit entry #1" }));
+    const form = await screen.findByRole("form", { name: "Edit Ticket Sale Entry #1" });
+    expect(within(form).getByLabelText("Cost (Rs)")).toHaveValue("75000");
+    expect(within(form).getByText("Muhammad Azam")).toBeInTheDocument();
+    fireEvent.change(within(form).getByLabelText("Route"), { target: { value: "LHE-JED" } });
+    fireEvent.change(within(form).getByLabelText("PNR"), { target: { value: "9y08dc" } });
+    await waitFor(() => expect(api.previewTicketSaleCorrection).toHaveBeenCalledWith("s1", expect.objectContaining({ route: "LHE-JED", pnr: "9Y08DC" }), expect.anything()));
+    expect(await within(form).findByText("Update entry #1 in place: route, PNR.")).toBeInTheDocument();
+    fireEvent.click(within(form).getByRole("button", { name: "Save changes" }));
+    expect(await within(form).findAllByText("Say why the entry is being changed.")).not.toHaveLength(0);
+    expect(api.correctTicketSale).not.toHaveBeenCalled();
+    fireEvent.change(within(form).getByLabelText("Reason for the change"), { target: { value: "PNR missing" } });
+    fireEvent.click(within(form).getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(api.correctTicketSale).toHaveBeenCalledWith("s1", expect.objectContaining({ pnr: "9Y08DC", customer_person_id: "c1", reason: "PNR missing" })));
+    expect(await screen.findByRole("form", { name: "Ticket Sale Entry" })).toBeInTheDocument();
+  });
+
+  it("Super Admin deletes an entry only with a reason", async () => {
+    api.fetchSaleOptions.mockResolvedValue({ ...OPTIONS, is_finance: true });
+    api.fetchTicketSales.mockResolvedValue({ items: [SALE], can_confirm: true, can_edit: true });
+    api.deleteTicketSale.mockResolvedValue({ ...SALE, state: "deleted" });
+    renderPage(<TicketSaleEntryPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Delete entry #1" }));
+    const dialog = await screen.findByRole("dialog", { name: "Delete Ticket Sale Entry #1?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Delete entry" }));
+    expect(await within(dialog).findByText("Say why it's deleted.")).toBeInTheDocument();
+    expect(api.deleteTicketSale).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText("Reason"), { target: { value: "Entered twice" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Delete entry" }));
+    await waitFor(() => expect(api.deleteTicketSale).toHaveBeenCalledWith("s1", "Entered twice"));
   });
 });
 

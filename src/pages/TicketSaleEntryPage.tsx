@@ -1,7 +1,7 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, ListChecks, UserPlus, X } from "lucide-react";
+import { CheckCircle2, ListChecks, Pencil, Trash2, UserPlus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/admin/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/admin/ui/dialog";
@@ -16,8 +16,8 @@ import { FinanceForbidden, FinancePageHeader, isForbidden, moneyOrDash } from "@
 import { formatDateTime } from "@/lib/admin-bookings/format";
 import { rupeesToPaisa } from "@/lib/admin-bookings/payments";
 import {
-  CHANNEL_LABEL, confirmTicketSale, fetchSaleOptions, fetchTicketSales, previewTicketSale, rejectTicketSale, roleName, saveTicketSale,
-  type SaleRequest, type TicketSale,
+  CHANNEL_LABEL, confirmTicketSale, correctTicketSale, deleteTicketSale, fetchSaleOptions, fetchTicketSales, previewTicketSale,
+  previewTicketSaleCorrection, rejectTicketSale, roleName, saveTicketSale, type SaleRequest, type TicketSale,
 } from "@/lib/finance/ops-api";
 import { fetchPerson } from "@/lib/saved-people/api";
 import { fullName } from "@/lib/saved-people/states";
@@ -25,15 +25,29 @@ import { cn } from "@/lib/utils";
 
 // Finance > Ticket Sale Entry: a ticket sold outside the booking flow (replaces the Excel sheet). The gateway works out the
 // profit and what saving will do ("This entry will also"), checks the negative-balance block (D52), and decides who
-// saves it confirmed (Finance, D55) and who submits it for Finance to confirm.
+// saves it confirmed (Finance, D55) and who submits it for Finance to confirm. Editing and deleting a saved entry is Super
+// Admin only: the gateway refuses anyone else and says (can_edit) whether to show the buttons. An edit to a confirmed
+// entry's money reverses it and saves a corrected entry; the gateway decides that and works out what it will do.
 const NONE = "none";
 const SALES_KEY = ["finance", "ticket-sales"];
 
 interface Draft {
-  channel: SaleRequest["channel"]; partner: string; customer: { id: string; name: string } | null; travelDate: string; route: string; pnr: string;
+  channel: SaleRequest["channel"]; partner: string; customer: { id: string | null; name: string } | null; travelDate: string; route: string; pnr: string;
   supplier: string; cost: string; sale: string; received: string; account: string; status: "issued" | "on_hold"; notes: string;
 }
 const BLANK: Draft = { channel: "direct", partner: NONE, customer: null, travelDate: "", route: "", pnr: "", supplier: NONE, cost: "", sale: "", received: "", account: NONE, status: "issued", notes: "" };
+
+const rupees = (minor: number) => (minor ? String(minor / 100) : "");
+
+/** A saved entry as the form's starting point for an edit. */
+function fromSale(sale: TicketSale): Draft {
+  return {
+    channel: sale.channel, partner: sale.agency_id ?? NONE, customer: { id: sale.customer_person_id ?? null, name: sale.passenger_name },
+    travelDate: sale.travel_date ?? "", route: sale.route ?? "", pnr: sale.pnr ?? "", supplier: sale.supplier_id ?? NONE,
+    cost: rupees(sale.cost.amount_minor), sale: rupees(sale.sale.amount_minor), received: rupees(sale.received.amount_minor),
+    account: sale.payment_account_id ?? NONE, status: sale.ticket_status, notes: sale.notes ?? "",
+  };
+}
 
 /** Rupees typed → paisa; empty or zero → 0; not a rupee amount → null. */
 const paisaOr0 = (text: string) => (!text.trim() || /^\s*0+(\.0{1,2})?\s*$/.test(text) ? 0 : rupeesToPaisa(text));
@@ -59,6 +73,7 @@ function useSettled<T>(value: T, delay = 300) {
 
 export default function TicketSaleEntryPage() {
   const options = useQuery({ queryKey: ["finance", "sale-options"], queryFn: ({ signal }) => fetchSaleOptions({ signal }) });
+  const [editing, setEditing] = useState<TicketSale | null>(null);
   if (isForbidden(options.error)) return <div className="min-w-0 space-y-6"><FinancePageHeader title="Ticket Sale Entry" description="Record a ticket sold outside the booking flow." /><FinanceForbidden /></div>;
   const finance = options.data?.is_finance ?? false;
   return (
@@ -68,45 +83,60 @@ export default function TicketSaleEntryPage() {
           : "Record a ticket sold outside the booking flow. It goes to Finance to confirm; nothing changes until they do."} />
       {options.isPending && <LoadingCards count={2} label="Loading the form" itemClassName="h-64" />}
       {options.error && <Notice tone="critical">{options.error.message}</Notice>}
-      {options.data && <SaleForm />}
-      {options.data && <SalesList />}
+      {options.data && <SaleForm key={editing?.id ?? "new"} editing={editing} onDone={() => setEditing(null)} />}
+      {options.data && <SalesList onEdit={setEditing} />}
     </div>
   );
 }
 
-function SaleForm() {
+function SaleForm({ editing, onDone }: { editing: TicketSale | null; onDone: () => void }) {
   const id = useId();
   const queryClient = useQueryClient();
   const options = useQuery({ queryKey: ["finance", "sale-options"], queryFn: ({ signal }) => fetchSaleOptions({ signal }) }).data!;
-  const [draft, setDraft] = useState<Draft>(BLANK);
+  const [draft, setDraft] = useState<Draft>(() => (editing ? fromSale(editing) : BLANK));
+  const [reason, setReason] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => { if (editing) formRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" }); }, [editing]);
   const [adding, setAdding] = useState(false);
   const [touched, setTouched] = useState(false);
   const set = (patch: Partial<Draft>) => setDraft(current => ({ ...current, ...patch }));
   const request = useMemo(() => toRequest(draft), [draft]);
   const settled = useSettled(request);
   const preview = useQuery({
-    queryKey: ["finance", "sale-preview", settled],
-    queryFn: ({ signal }) => previewTicketSale(settled!, { signal }),
+    queryKey: ["finance", "sale-preview", editing?.id ?? null, settled],
+    queryFn: ({ signal }) => (editing ? previewTicketSaleCorrection(editing.id, settled!, { signal }) : previewTicketSale(settled!, { signal })),
     enabled: !!settled, placeholderData: previous => previous, staleTime: 5_000,
   });
   const save = useMutation({
-    mutationFn: () => saveTicketSale(request!),
+    mutationFn: () => (editing ? correctTicketSale(editing.id, { ...request!, reason: reason.trim() }) : saveTicketSale(request!)),
     onSuccess: sale => {
-      toast.success(sale.state === "confirmed" ? `Ticket Sale Entry #${sale.number} saved.` : `Ticket Sale Entry #${sale.number} sent to Finance to confirm.`);
+      toast.success(editing
+        ? sale.id === editing.id ? `Ticket Sale Entry #${sale.number} updated.` : `Ticket Sale Entry #${editing.number} reversed and replaced by #${sale.number}.`
+        : sale.state === "confirmed" ? `Ticket Sale Entry #${sale.number} saved.` : `Ticket Sale Entry #${sale.number} sent to Finance to confirm.`);
       void queryClient.invalidateQueries({ queryKey: ["finance"] });
       setDraft(BLANK);
       setTouched(false);
+      if (editing) onDone();
     },
   });
   const amountError = (text: string) => (paisaOr0(text) === null ? "Enter an amount in rupees." : undefined);
   const problems = preview.data?.problems ?? [];
-  const missing = !draft.customer ? "Find or add the passenger." : !draft.cost.trim() || !draft.sale.trim() ? "Enter the cost and the sale price." : null;
+  const missing = !draft.customer ? "Find or add the passenger." : !draft.cost.trim() || !draft.sale.trim() ? "Enter the cost and the sale price."
+    : editing && !reason.trim() ? "Say why the entry is being changed." : null;
   const finance = options.is_finance;
   const submit = () => { setTouched(true); if (request && !missing && !problems.length && !preview.isFetching) save.mutate(); };
   const accountOptions = [{ value: NONE, label: "Not received yet" }, ...options.accounts.map(account => ({ value: account.id, label: account.detail === "personal" ? `${account.name} (personal)` : account.name }))];
   return (
-    <form id={id} aria-label="Ticket Sale Entry" className="grid gap-card-gap lg:grid-cols-[minmax(0,1fr)_22rem]" onSubmit={event => { event.preventDefault(); submit(); }}>
+    <form ref={formRef} id={id} aria-label={editing ? `Edit Ticket Sale Entry #${editing.number}` : "Ticket Sale Entry"} className="scroll-mt-20 grid gap-card-gap lg:grid-cols-[minmax(0,1fr)_22rem]" onSubmit={event => { event.preventDefault(); submit(); }}>
       <Panel className="flex flex-col gap-4">
+        {editing && (
+          <Notice tone="action" title={`Editing Ticket Sale Entry #${editing.number}`}>
+            <span className="flex flex-wrap items-center justify-between gap-2">
+              <span>Changes to the cost, sale price, amount received, airline ID, payment account or status reverse this entry and save a corrected one.</span>
+              <Button type="button" variant="outline" size="sm" onClick={onDone} disabled={save.isPending}>Cancel edit</Button>
+            </span>
+          </Notice>
+        )}
         <fieldset className="flex flex-col gap-2">
           <legend className="text-label font-medium text-muted-foreground">Channel</legend>
           <div role="radiogroup" aria-label="Channel" className="flex flex-wrap gap-2">
@@ -157,6 +187,11 @@ function SaleForm() {
         </div>
         <LabeledSelect id={`${id}-account`} label="Payment account" value={draft.account} onChange={account => set({ account })} options={accountOptions} />
         <FieldShell id={`${id}-notes`} label="Notes (optional)"><Textarea id={`${id}-notes`} value={draft.notes} maxLength={1000} rows={2} onChange={event => set({ notes: event.target.value })} /></FieldShell>
+        {editing && (
+          <FieldShell id={`${id}-reason`} label="Reason for the change" error={touched && !reason.trim() ? "Say why the entry is being changed." : undefined}>
+            <Input id={`${id}-reason`} value={reason} maxLength={500} onChange={event => setReason(event.target.value)} />
+          </FieldShell>
+        )}
       </Panel>
       <div className="flex flex-col gap-3 lg:sticky lg:top-20 lg:self-start">
         <Panel aria-live="polite" className="flex flex-col gap-3">
@@ -171,7 +206,7 @@ function SaleForm() {
             <span className="font-semibold tabular-nums">{preview.data ? moneyOrDash(preview.data.due) : "—"}</span>
           </div>
           <div className="border-t border-border pt-2">
-            <h2 className="text-body font-semibold">This entry will also</h2>
+            <h2 className="text-body font-semibold">{editing ? "Saving the changes will" : "This entry will also"}</h2>
             {!request ? <p className="text-label text-muted-foreground">Fix the amounts to see what saving will do.</p>
               : preview.error ? <p className="text-label text-status-critical-text">{preview.error.message}</p>
               : !preview.data ? <p className="text-label text-muted-foreground">Working it out…</p>
@@ -185,7 +220,7 @@ function SaleForm() {
           {touched && missing && <Notice tone="critical">{missing}</Notice>}
           {save.error && <Notice tone="critical">{save.error.message}</Notice>}
           <Button type="submit" variant="primary" disabled={save.isPending} className="w-full">
-            {save.isPending ? "Saving…" : finance ? "Save entry" : "Submit for Finance to confirm"}
+            {save.isPending ? "Saving…" : editing ? "Save changes" : finance ? "Save entry" : "Submit for Finance to confirm"}
           </Button>
         </Panel>
       </div>
@@ -203,16 +238,37 @@ function SaleForm() {
   );
 }
 
-const STATE_BADGE: Record<TicketSale["state"], { label: string; severity: "fine" | "action" | "critical" }> = {
+const STATE_BADGE: Record<Exclude<TicketSale["state"], "reversed" | "deleted">, { label: string; severity: "fine" | "action" | "critical" }> = {
   confirmed: { label: "Confirmed", severity: "fine" }, pending: { label: "Waiting for Finance", severity: "action" }, rejected: { label: "Rejected", severity: "critical" },
 };
 
-function SalesList() {
+function SaleState({ sale }: { sale: TicketSale }) {
+  if (sale.state === "reversed" || sale.state === "deleted") {
+    return (
+      <>
+        <Tag>{sale.state === "reversed" ? "Reversed" : "Deleted"}</Tag>
+        {sale.corrected_by_number != null && <span className="mt-0.5 block text-label text-muted-foreground">Replaced by #{sale.corrected_by_number}</span>}
+        {sale.correction_reason && <span className="mt-0.5 block max-w-[12rem] truncate text-label text-muted-foreground" title={sale.correction_reason}>{sale.correction_reason}</span>}
+      </>
+    );
+  }
+  return (
+    <>
+      <StatusBadge severity={STATE_BADGE[sale.state].severity}>{STATE_BADGE[sale.state].label}</StatusBadge>
+      {sale.corrects_number != null && <span className="mt-0.5 block text-label text-muted-foreground">Corrects #{sale.corrects_number}</span>}
+      {sale.rejected_reason && <span className="mt-0.5 block max-w-[12rem] truncate text-label text-muted-foreground" title={sale.rejected_reason}>{sale.rejected_reason}</span>}
+    </>
+  );
+}
+
+function SalesList({ onEdit }: { onEdit: (sale: TicketSale) => void }) {
   const [params, setParams] = useSearchParams();
   const filter = (["pending", "confirmed", "rejected"] as const).find(value => value === params.get("state")) ?? "all";
   const highlighted = Number(params.get("entry")) || null;
   const sales = useQuery({ queryKey: [...SALES_KEY, filter], queryFn: ({ signal }) => fetchTicketSales(filter === "all" ? undefined : filter, { signal }) });
   const [rejecting, setRejecting] = useState<TicketSale | null>(null);
+  const [deleting, setDeleting] = useState<TicketSale | null>(null);
+  const canEdit = sales.data?.can_edit ?? false;
   const queryClient = useQueryClient();
   const confirm = useMutation({
     mutationFn: (sale: TicketSale) => confirmTicketSale(sale.id),
@@ -241,7 +297,7 @@ function SalesList() {
             </thead>
             <tbody>
               {items.map(sale => (
-                <tr key={sale.id} className={cn(TABLE.row, highlighted === sale.number && "bg-accent/60")} aria-current={highlighted === sale.number ? "true" : undefined}>
+                <tr key={sale.id} className={cn(TABLE.row, highlighted === sale.number && "bg-accent/60", sale.state === "reversed" && "text-muted-foreground")} aria-current={highlighted === sale.number ? "true" : undefined}>
                   <td className={cn(TABLE.td, "tabular-nums")}>{sale.number}</td>
                   <td className={cn(TABLE.td, "max-w-[12rem] truncate")} title={sale.passenger_name}>{sale.passenger_name}</td>
                   <td className={cn(TABLE.td, "max-w-[10rem] truncate")} title={sale.agency_name ?? undefined}>{sale.agency_name ?? CHANNEL_LABEL[sale.channel]}</td>
@@ -251,18 +307,23 @@ function SalesList() {
                   <td className={cn(TABLE.td, "whitespace-nowrap text-right tabular-nums")}>{moneyOrDash(sale.sale)}</td>
                   <td className={cn(TABLE.td, "whitespace-nowrap text-right tabular-nums")}>{moneyOrDash(sale.received)}</td>
                   <td className={cn(TABLE.td, "whitespace-nowrap text-right font-semibold tabular-nums", sale.profit.amount_minor < 0 && "text-status-critical-text")}>{moneyOrDash(sale.profit)}</td>
-                  <td className={TABLE.td}>
-                    <StatusBadge severity={STATE_BADGE[sale.state].severity}>{STATE_BADGE[sale.state].label}</StatusBadge>
-                    {sale.rejected_reason && <span className="mt-0.5 block max-w-[12rem] truncate text-label text-muted-foreground" title={sale.rejected_reason}>{sale.rejected_reason}</span>}
-                  </td>
+                  <td className={TABLE.td}><SaleState sale={sale} /></td>
                   <td className={cn(TABLE.td, "whitespace-nowrap text-label text-muted-foreground")}>{formatDateTime(sale.submitted_at)}<br />{roleName(sale.submitted_by_role)}</td>
                   <td className={cn(TABLE.td, "whitespace-nowrap text-right")}>
-                    {sales.data?.can_confirm && sale.state === "pending" && (
-                      <span className="flex justify-end gap-1">
-                        <Button size="sm" variant="primary" onClick={() => confirm.mutate(sale)} disabled={confirm.isPending}><CheckCircle2 aria-hidden="true" /> Confirm</Button>
-                        <Button size="sm" variant="outline" onClick={() => setRejecting(sale)}>Reject</Button>
-                      </span>
-                    )}
+                    <span className="flex justify-end gap-1">
+                      {sales.data?.can_confirm && sale.state === "pending" && (
+                        <>
+                          <Button size="sm" variant="primary" onClick={() => confirm.mutate(sale)} disabled={confirm.isPending}><CheckCircle2 aria-hidden="true" /> Confirm</Button>
+                          <Button size="sm" variant="outline" onClick={() => setRejecting(sale)}>Reject</Button>
+                        </>
+                      )}
+                      {canEdit && (sale.state === "confirmed" || sale.state === "pending") && (
+                        <Button size="sm" variant="outline" onClick={() => onEdit(sale)} aria-label={`Edit entry #${sale.number}`}><Pencil aria-hidden="true" /> Edit</Button>
+                      )}
+                      {canEdit && sale.state !== "reversed" && sale.state !== "deleted" && (
+                        <Button size="sm" variant="outline" className="text-status-critical-text" onClick={() => setDeleting(sale)} aria-label={`Delete entry #${sale.number}`}><Trash2 aria-hidden="true" /> Delete</Button>
+                      )}
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -272,6 +333,7 @@ function SalesList() {
       )}
       {!sales.data?.can_confirm && sales.data && <p className="flex items-center gap-1.5 text-label text-muted-foreground"><ListChecks className="h-4 w-4" aria-hidden="true" /> Only the entries you submitted are shown.</p>}
       {rejecting && <RejectDialog sale={rejecting} onClose={() => setRejecting(null)} />}
+      {deleting && <DeleteDialog sale={deleting} onClose={() => setDeleting(null)} />}
     </section>
   );
 }
@@ -301,6 +363,40 @@ function RejectDialog({ sale, onClose }: { sale: TicketSale; onClose: () => void
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={onClose} disabled={save.isPending}>Cancel</Button>
           <Button type="submit" form={id} variant="destructive" disabled={save.isPending}>{save.isPending ? "Rejecting…" : "Reject entry"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteDialog({ sale, onClose }: { sale: TicketSale; onClose: () => void }) {
+  const id = useId();
+  const queryClient = useQueryClient();
+  const [reason, setReason] = useState("");
+  const [touched, setTouched] = useState(false);
+  const save = useMutation({
+    mutationFn: () => deleteTicketSale(sale.id, reason.trim()),
+    onSuccess: () => { toast.success(`Ticket Sale Entry #${sale.number} deleted.`); void queryClient.invalidateQueries({ queryKey: ["finance"] }); onClose(); },
+  });
+  return (
+    <Dialog open onOpenChange={open => !open && !save.isPending && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Delete Ticket Sale Entry #{sale.number}?</DialogTitle>
+          <DialogDescription>
+            It comes off this list and out of every balance: the supplier balance, the payment account, Customer Dues and profit.
+            The audit log keeps a record of it and the reason.
+          </DialogDescription>
+        </DialogHeader>
+        <form id={id} onSubmit={event => { event.preventDefault(); setTouched(true); if (reason.trim()) save.mutate(); }}>
+          <FieldShell id={`${id}-reason`} label="Reason" error={touched && !reason.trim() ? "Say why it's deleted." : undefined}>
+            <Input id={`${id}-reason`} value={reason} maxLength={500} onChange={event => setReason(event.target.value)} />
+          </FieldShell>
+          {save.error && <Notice tone="critical" className="mt-3">{save.error.message}</Notice>}
+        </form>
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} disabled={save.isPending}>Cancel</Button>
+          <Button type="submit" form={id} variant="destructive" disabled={save.isPending}>{save.isPending ? "Deleting…" : "Delete entry"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

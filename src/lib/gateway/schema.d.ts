@@ -2132,7 +2132,7 @@ export interface paths {
         };
         /**
          * List Sales
-         * @description Finance sees every entry; other staff see only the ones they submitted.
+         * @description Finance sees every entry; other staff see only the ones they submitted. Deleted entries are never listed.
          */
         get: operations["list_sales_v1_admin_finance_ticket_sales_get"];
         put?: never;
@@ -2196,6 +2196,67 @@ export interface paths {
         put?: never;
         /** Confirm Sale */
         post: operations["confirm_sale_v1_admin_finance_ticket_sales__sale_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/ticket-sales/{sale_id}/correct": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Correct Sale
+         * @description Super Admin. Details only, or a pending entry: changed in place. A confirmed entry's money (cost, sale, received, airline
+         *     ID, payment account, status): the original is reversed and the corrected entry returned (a new number). Logged with the reason.
+         */
+        post: operations["correct_sale_v1_admin_finance_ticket_sales__sale_id__correct_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/ticket-sales/{sale_id}/correct/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Correction
+         * @description What saving the edit will do, worked out against the real balances and rolled back. Saves nothing.
+         */
+        post: operations["preview_correction_v1_admin_finance_ticket_sales__sale_id__correct_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/finance/ticket-sales/{sale_id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Sale
+         * @description Super Admin. Takes the entry off the list and out of every balance. The record and the audit log keep it.
+         */
+        post: operations["delete_sale_v1_admin_finance_ticket_sales__sale_id__delete_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6069,6 +6130,52 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** CorrectionRequest */
+        CorrectionRequest: {
+            /** Agency Id */
+            agency_id?: string | null;
+            /**
+             * Channel
+             * @enum {string}
+             */
+            channel: "direct" | "b2b" | "other";
+            /** Cost Minor */
+            cost_minor: number;
+            /** Customer Person Id */
+            customer_person_id?: string | null;
+            /** Notes */
+            notes?: string | null;
+            /** Passenger Name */
+            passenger_name?: string | null;
+            /** Payment Account Id */
+            payment_account_id?: string | null;
+            /** Pnr */
+            pnr?: string | null;
+            /**
+             * Reason
+             * @description Why the entry is being corrected (kept in the audit log).
+             */
+            reason: string;
+            /**
+             * Received Minor
+             * @default 0
+             */
+            received_minor: number;
+            /** Route */
+            route?: string | null;
+            /** Sale Minor */
+            sale_minor: number;
+            /** Supplier Id */
+            supplier_id?: string | null;
+            /**
+             * Ticket Status
+             * @default issued
+             * @enum {string}
+             */
+            ticket_status: "issued" | "on_hold";
+            /** Travel Date */
+            travel_date?: string | null;
+        };
         /** CorrectionResult */
         CorrectionResult: {
             /**
@@ -6319,6 +6426,11 @@ export interface components {
              * @constant
              */
             source: "gateway_bookings";
+        };
+        /** DeleteRequest */
+        DeleteRequest: {
+            /** Reason */
+            reason: string;
         };
         /** DeletedAnnouncement */
         DeletedAnnouncement: {
@@ -8193,7 +8305,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "opening" | "top_up" | "adjustment" | "refund_credit" | "booking_charge" | "ticket_sale" | "balance_check";
+            kind: "opening" | "top_up" | "adjustment" | "refund_credit" | "booking_charge" | "ticket_sale" | "ticket_sale_reversal" | "balance_check";
             /** Reference */
             reference?: string | null;
             /** Ticket Sale Number */
@@ -9506,6 +9618,12 @@ export interface components {
         SaleList: {
             /** Can Confirm */
             can_confirm: boolean;
+            /**
+             * Can Edit
+             * @description Super Admin: may edit (correct) and delete entries.
+             * @default false
+             */
+            can_edit: boolean;
             /** Items */
             items: components["schemas"]["SaleView"][];
         };
@@ -9586,6 +9704,8 @@ export interface components {
         };
         /** SaleView */
         SaleView: {
+            /** Agency Id */
+            agency_id?: string | null;
             /** Agency Name */
             agency_name?: string | null;
             /**
@@ -9595,7 +9715,24 @@ export interface components {
             channel: "direct" | "b2b" | "other";
             /** Confirmed At */
             confirmed_at?: string | null;
+            /**
+             * Corrected By Number
+             * @description Reversed: the entry number that replaced it.
+             */
+            corrected_by_number?: number | null;
+            /**
+             * Correction Reason
+             * @description Why it was reversed or deleted.
+             */
+            correction_reason?: string | null;
+            /**
+             * Corrects Number
+             * @description This entry is the correction of that entry number.
+             */
+            corrects_number?: number | null;
             cost: components["schemas"]["BookingMoney"];
+            /** Customer Person Id */
+            customer_person_id?: string | null;
             due: components["schemas"]["BookingMoney"];
             /** Id */
             id: string;
@@ -9607,12 +9744,19 @@ export interface components {
             passenger_name: string;
             /** Payment Account */
             payment_account?: string | null;
+            /** Payment Account Id */
+            payment_account_id?: string | null;
             /** Pnr */
             pnr?: string | null;
             profit: components["schemas"]["BookingMoney"];
             received: components["schemas"]["BookingMoney"];
             /** Rejected Reason */
             rejected_reason?: string | null;
+            /**
+             * Reversed At
+             * @description When it was reversed or deleted.
+             */
+            reversed_at?: string | null;
             /** Route */
             route?: string | null;
             sale: components["schemas"]["BookingMoney"];
@@ -9620,7 +9764,7 @@ export interface components {
              * State
              * @enum {string}
              */
-            state: "confirmed" | "pending" | "rejected";
+            state: "confirmed" | "pending" | "rejected" | "reversed" | "deleted";
             /**
              * Submitted At
              * Format: date-time
@@ -16961,7 +17105,7 @@ export interface operations {
     list_sales_v1_admin_finance_ticket_sales_get: {
         parameters: {
             query?: {
-                state?: ("confirmed" | "pending" | "rejected") | null;
+                state?: ("confirmed" | "pending" | "rejected" | "reversed") | null;
             };
             header?: never;
             path?: never;
@@ -17185,6 +17329,191 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    correct_sale_v1_admin_finance_ticket_sales__sale_id__correct_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sale_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CorrectionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaleView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    preview_correction_v1_admin_finance_ticket_sales__sale_id__correct_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sale_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SalePreviewView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Database not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_sale_v1_admin_finance_ticket_sales__sale_id__delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sale_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SaleView"];
+                };
+            };
+            /** @description Not allowed for this role. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Database not available. */
             503: {
