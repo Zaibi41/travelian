@@ -72,4 +72,9 @@ describe("airline logo manifest", () => {
     for (const key of ["rj", "royal jordanian"]) expect((manifest.logos as Record<string, string>)[key]).toBe("/airline-logos/royal-jordanian.png");
     expect((manifest.codes as Record<string, string>)["royal jordanian"]).toBe("RJ");
   });
+
+  it("#216: EgyptAir (MS) by code and name", () => {
+    for (const key of ["ms", "egyptair", "egypt air"]) expect((manifest.logos as Record<string, string>)[key]).toBe("/airline-logos/egyptair.png");
+    expect((manifest.codes as Record<string, string>).egyptair).toBe("MS");
+  });
 });

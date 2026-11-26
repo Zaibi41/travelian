@@ -95,7 +95,10 @@
     "ram": "AT",
     "rj": "RJ",
     "royal jordanian": "RJ",
-    "royal jordanian airlines": "RJ"
+    "royal jordanian airlines": "RJ",
+    "ms": "MS",
+    "egyptair": "MS",
+    "egypt air": "MS"
   },
   "logos": {
     "1g": "/airline-logos/travelport.svg",
@@ -204,6 +207,9 @@
     "ram": "/airline-logos/royal-air-maroc.png",
     "rj": "/airline-logos/royal-jordanian.png",
     "royal jordanian": "/airline-logos/royal-jordanian.png",
-    "royal jordanian airlines": "/airline-logos/royal-jordanian.png"
+    "royal jordanian airlines": "/airline-logos/royal-jordanian.png",
+    "ms": "/airline-logos/egyptair.png",
+    "egyptair": "/airline-logos/egyptair.png",
+    "egypt air": "/airline-logos/egyptair.png"
   }
 }
