@@ -89,7 +89,10 @@
     "avianca": "AV",
     "aerovias del continente americano": "AV",
     "aerovías del continente americano": "AV",
-    "avianca colombia": "AV"
+    "avianca colombia": "AV",
+    "at": "AT",
+    "royal air maroc": "AT",
+    "ram": "AT"
   },
   "logos": {
     "1g": "/airline-logos/travelport.svg",
@@ -192,6 +195,9 @@
     "avianca": "/airline-logos/avianca.png",
     "aerovias del continente americano": "/airline-logos/avianca.png",
     "aerovías del continente americano": "/airline-logos/avianca.png",
-    "avianca colombia": "/airline-logos/avianca.png"
+    "avianca colombia": "/airline-logos/avianca.png",
+    "at": "/airline-logos/royal-air-maroc.png",
+    "royal air maroc": "/airline-logos/royal-air-maroc.png",
+    "ram": "/airline-logos/royal-air-maroc.png"
   }
 }
