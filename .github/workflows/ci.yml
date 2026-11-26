@@ -19,6 +19,20 @@ jobs:
       - run: npm run build
       # Static public pages as HTML for crawlers (uses the runner's Google Chrome).
       - run: npm run prerender
+  e2e:
+    # Playwright specs in e2e/ci-specs.txt against the dev server (started by playwright.config.ts). Every gateway call
+    # is answered inside the spec (page.route), so nothing reaches a real gateway or supplier. A failure fails the check.
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # The specs run on the runner's Google Chrome (playwright.config.ts channel "chrome").
+      - run: npx playwright test $(grep -v '^#' e2e/ci-specs.txt | tr '\n' ' ') --trace off --workers=2 --reporter=line
   lint:
     # Existing lint debt is visible without blocking unrelated configuration work.
     continue-on-error: true
