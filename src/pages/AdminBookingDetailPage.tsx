@@ -31,6 +31,7 @@ import { useBookingDetail } from "@/lib/admin-bookings/use-bookings";
 import { setSellingPrice } from "@/lib/admin-bookings/api";
 import type { BookingAuditEntry, BookingDetail, BookingPassenger } from "@/lib/admin-bookings/types";
 import { titleText } from "@/lib/passenger-details";
+import { CorrectCustomerNameDialog, CorrectTravelerDialog } from "@/components/admin/bookings/CorrectEntryDialog";
 
 // Tabs the gateway doesn't record yet: the mockup's columns with a not-available row
 // (docs/backend-todo.md, Booking detail). No "Edit booking" (decided 2026-11-09).
@@ -135,7 +136,12 @@ function deadline(value: string | null | undefined, open: boolean) {
 
 // Owner (and Assign) and Supplier status are hidden: not recorded yet.
 function Overview({ booking }: { booking: BookingDetail }) {
+  // Issue 225: Super Admin corrects the customer's name (can_correct from the gateway, which also refuses everyone else).
+  const canCorrect = !!booking.can_correct && !!booking.customer;
+  const [correcting, setCorrecting] = useState(false);
   return (
+    <>
+    {correcting && <CorrectCustomerNameDialog booking={booking} onClose={() => setCorrecting(false)} />}
     <FieldTable
       label="Overview"
       rows={[
@@ -143,7 +149,12 @@ function Overview({ booking }: { booking: BookingDetail }) {
         ...(booking.product === "group" ? [["Final PNR", booking.final_pnr ?? "—"] as [string, React.ReactNode]] : []),
         ["Booking ID", booking.booking_id],
         ["Product", PRODUCT_LABEL[booking.product] ?? booking.product],
-        ["Customer or agency", booking.customer_or_agency ?? "—"],
+        ["Customer or agency", canCorrect ? (
+          <span className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+            <span className="min-w-0 break-words">{booking.customer_or_agency ?? "—"}</span>
+            <Button type="button" variant="ghost" onClick={() => setCorrecting(true)} aria-label="Correct customer name">Correct name</Button>
+          </span>
+        ) : booking.customer_or_agency ?? "—"],
         // Issue 202: the reseller or channel it was sold through, separate from the passenger / customer.
         ...(booking.can_edit_sold_through || booking.sold_through ? [["Sold through", <SoldThroughValue booking={booking} />] as [string, React.ReactNode]] : []),
         // B20: the contact saved with the booking (who pays and is contacted). Passports and dates of birth are on Passengers.
@@ -161,6 +172,7 @@ function Overview({ booking }: { booking: BookingDetail }) {
           <span className="text-muted-foreground">({acknowledgedBy(booking.fare_terms, formatDateTime(booking.fare_terms.acknowledged_at))})</span></span>] as [string, React.ReactNode]] : []),
       ]}
     />
+    </>
   );
 }
 
@@ -265,14 +277,19 @@ function Cell({ children, muted }: { children: React.ReactNode; muted?: boolean 
 // Passengers tab (mockup booking-detail-passengers): the full passport or ID number and date of birth, as stored.
 function Passengers({ booking }: { booking: BookingDetail }) {
   const passengers = booking.passengers ?? [];
+  // Issue 225: Super Admin corrects a traveler (can_correct from the gateway, which also refuses everyone else).
+  const canCorrect = !!booking.can_correct;
+  const [correcting, setCorrecting] = useState<BookingPassenger | null>(null);
   const columns = ["Passenger name", "Type", "Document", "Date of birth", "Nationality", "Ticket number"];
   return (
     <section aria-label="Passengers" className="flex flex-col gap-2">
-      <div className="overflow-x-auto rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
+      {correcting && <CorrectTravelerDialog booking={booking} passenger={correcting} onClose={() => setCorrecting(null)} />}
+      <div className="relative overflow-x-auto rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
         <table className="w-full min-w-[44rem] border-collapse text-table">
           <thead>
             <tr className="bg-muted text-left">
               {columns.map(column => <th key={column} scope="col" className="h-table-header px-2.5 font-semibold text-foreground">{column}</th>)}
+              {canCorrect && <th scope="col" className="h-table-header px-2.5"><span className="sr-only">Actions</span></th>}
             </tr>
           </thead>
           <tbody>
@@ -287,6 +304,11 @@ function Passengers({ booking }: { booking: BookingDetail }) {
                   <Cell>{formatDay(passenger.date_of_birth)}</Cell>
                   <Cell muted={!passenger.nationality}>{passenger.nationality ?? "—"}</Cell>
                   <Cell muted={!passenger.ticket_number}>{passenger.ticket_number ?? "—"}</Cell>
+                  {canCorrect && (
+                    <td className="h-table-row px-2.5 text-right">
+                      <Button type="button" variant="ghost" onClick={() => setCorrecting(passenger)} aria-label={`Correct ${name}`}>Correct</Button>
+                    </td>
+                  )}
                 </tr>
               );
             })}
@@ -298,7 +320,10 @@ function Passengers({ booking }: { booking: BookingDetail }) {
 }
 
 const AUDIT_ACTION: Record<string, string> = { hold_created: "Hold created", identity_revealed: "Identity revealed", fare_terms_acknowledged: "Fare terms acknowledged",
-  final_pnr_recorded: "Final PNR recorded", ticket_numbers_recorded: "Ticket numbers recorded", group_ticketed: "Ticketed" };
+  final_pnr_recorded: "Final PNR recorded", ticket_numbers_recorded: "Ticket numbers recorded", group_ticketed: "Ticketed",
+  traveler_corrected: "Traveler corrected", customer_corrected: "Customer name corrected" };
+const CORRECTED_FIELD: Record<string, string> = { title: "title", first_name: "first name", last_name: "last name", date_of_birth: "date of birth",
+  document_number: "document number", document_country: "issuing country", nationality: "nationality", document_expiry: "document expiry" };
 const FARE_CHECK: Record<string, string> = { matches: "total verified", differs: "total differs", no_total: "total not verified", failed: "total not verified" };
 const REVEALED_FIELD: Record<string, string> = { date_of_birth: "date of birth", document_number: "document number", document_expiry: "document expiry" };
 
@@ -310,6 +335,10 @@ function auditDetails(entry: BookingAuditEntry) {
   }
   if (entry.action === "identity_revealed") {
     const fields = Array.isArray(d.fields) ? d.fields.map(field => REVEALED_FIELD[String(field)] ?? String(field)).join(", ") : "";
+    return [typeof d.traveler_position === "number" && `Passenger ${d.traveler_position + 1}`, fields, d.reason && `Reason: ${d.reason}`].filter(Boolean).join(" · ");
+  }
+  if (entry.action === "traveler_corrected" || entry.action === "customer_corrected") {
+    const fields = Array.isArray(d.fields) ? d.fields.map(field => CORRECTED_FIELD[String(field)] ?? String(field)).join(", ") : "";
     return [typeof d.traveler_position === "number" && `Passenger ${d.traveler_position + 1}`, fields, d.reason && `Reason: ${d.reason}`].filter(Boolean).join(" · ");
   }
   if (entry.action === "fare_terms_acknowledged") {

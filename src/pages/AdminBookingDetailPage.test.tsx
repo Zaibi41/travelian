@@ -9,8 +9,9 @@ import { HelmetProvider } from "react-helmet-async";
 
 const detail = { current: {} as Record<string, unknown> };
 vi.mock("@/lib/admin-bookings/use-bookings", () => ({ useBookingDetail: () => detail.current }));
-const gateway = vi.hoisted(() => ({ setSellingPrice: vi.fn(), downloadItinerary: vi.fn() }));
-vi.mock("@/lib/admin-bookings/api", () => ({ setSellingPrice: gateway.setSellingPrice, downloadItinerary: gateway.downloadItinerary }));
+const gateway = vi.hoisted(() => ({ setSellingPrice: vi.fn(), downloadItinerary: vi.fn(), correctTraveler: vi.fn(), correctCustomerName: vi.fn() }));
+vi.mock("@/lib/admin-bookings/api", () => ({ setSellingPrice: gateway.setSellingPrice, downloadItinerary: gateway.downloadItinerary,
+  correctTraveler: gateway.correctTraveler, correctCustomerName: gateway.correctCustomerName }));
 const groupApi = vi.hoisted(() => ({ recordGroupTickets: vi.fn() }));
 vi.mock("@/lib/admin-search/group-holds", async importOriginal => ({
   ...(await importOriginal<typeof import("@/lib/admin-search/group-holds")>()), recordGroupTickets: groupApi.recordGroupTickets,
@@ -29,7 +30,7 @@ const STAFF_VIEW: BookingDetail = {
   fare: { billable_price: rs(12_500) },
   sections_not_available: ["itinerary", "passengers", "payments", "tickets", "servicing", "audit"],
   can_record_payments: false, can_issue_tickets: false, can_set_selling_price: false, can_edit_group_tickets: false, itinerary_available: true,
-  can_accept_shortfall: false, can_edit_sold_through: false,
+  can_accept_shortfall: false, can_edit_sold_through: false, can_correct: false,
 };
 const ADMIN_VIEW: BookingDetail = {
   ...STAFF_VIEW, provider: "AirSial",
@@ -276,6 +277,42 @@ describe("Passengers and Audit tabs", () => {
     expect(tab).not.toHaveTextContent(/masked|•/);
     expect(within(tab).queryByRole("button", { name: /Reveal/ })).not.toBeInTheDocument();
     expect(screen.queryByText(/Not available yet/)).not.toBeInTheDocument();
+  });
+
+  it("#225 without can_correct (staff): no Correct buttons on Passengers or Overview", () => {
+    renderAt("/admin/bookings/TRV-1/passengers");
+    expect(screen.queryByRole("button", { name: /^Correct/ })).not.toBeInTheDocument();
+  });
+
+  it("#225 Super Admin corrects a traveler: only changed fields are sent, with the reason", async () => {
+    detail.current = ok({ ...HOLD_VIEW, can_correct: true });
+    gateway.correctTraveler.mockResolvedValue({ fields: ["first_name"], sent_to_airline: true, message: "Corrected and logged." });
+    renderAt("/admin/bookings/TRV-1/passengers");
+    const tab = screen.getByRole("region", { name: "Passengers" });
+    expect(within(tab).getAllByRole("columnheader")).toHaveLength(7);
+    fireEvent.click(within(tab).getByRole("button", { name: "Correct Mr Test Passenger" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("correct it with the airline too");
+    fireEvent.change(within(dialog).getByLabelText("First name"), { target: { value: "Tess" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save correction" }));
+    expect(await within(dialog).findByText(/Say why this is being corrected/)).toBeInTheDocument();
+    expect(gateway.correctTraveler).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText("Reason for the correction"), { target: { value: "Spelling on the passport" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save correction" }));
+    await waitFor(() => expect(gateway.correctTraveler).toHaveBeenCalledWith("TRV-1", 0, { first_name: "Tess", reason: "Spelling on the passport" }));
+  });
+
+  it("#225 Super Admin corrects the customer name from Overview; the audit shows the fields and reason", async () => {
+    detail.current = ok({ ...HOLD_VIEW, can_correct: true, audit: [{ action: "customer_corrected", at: "2026-11-26T05:00:00Z", actor_user_id: "11111111-aaaa",
+      actor_role: "super_admin", details: { fields: ["first_name"], reason: "Customer spelled it wrong" } }] });
+    gateway.correctCustomerName.mockResolvedValue({ fields: ["last_name"], sent_to_airline: false, message: "Corrected and logged." });
+    renderAt("/admin/bookings/TRV-1");
+    fireEvent.click(screen.getByRole("button", { name: "Correct customer name" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("Last name"), { target: { value: "Customers" } });
+    fireEvent.change(within(dialog).getByLabelText("Reason for the correction"), { target: { value: "Customer spelled it wrong" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save correction" }));
+    await waitFor(() => expect(gateway.correctCustomerName).toHaveBeenCalledWith("TRV-1", { last_name: "Customers", reason: "Customer spelled it wrong" }));
   });
 
   describe("group final PNR and tickets", () => {

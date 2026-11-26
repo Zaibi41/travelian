@@ -114,3 +114,17 @@ export const checkAtSupplier = (bookingId: string, options?: GatewayOptions) =>
   gatewayPost("/v1/admin/bookings/{booking_id}/supplier-check", undefined as never, {
     ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "SooperFare couldn't be reached. Nothing was changed.",
   });
+
+/** #225 Super Admin: correct one traveler on a booking (title, name, date of birth, document). Needs a reason; logged. */
+export type TravelerCorrection = Partial<{ title: "MR" | "MRS" | "MISS" | "MASTER"; first_name: string; last_name: string; date_of_birth: string;
+  document_number: string; document_country: string; nationality: string; document_expiry: string }> & { reason: string };
+export const correctTraveler = (bookingId: string, position: number, body: TravelerCorrection, options?: GatewayOptions) =>
+  gatewayPut("/v1/admin/bookings/{booking_id}/travelers/{position}", body, {
+    ...options, pathParams: { booking_id: bookingId, position: String(position) }, unavailableMessage: "The correction couldn't be saved right now. Nothing was changed.",
+  });
+
+/** #225 Super Admin: correct the customer's name on a booking. Needs a reason; logged. */
+export const correctCustomerName = (bookingId: string, body: { first_name?: string; last_name?: string; reason: string }, options?: GatewayOptions) =>
+  gatewayPut("/v1/admin/bookings/{booking_id}/customer-name", body, {
+    ...options, pathParams: { booking_id: bookingId }, unavailableMessage: "The correction couldn't be saved right now. Nothing was changed.",
+  });

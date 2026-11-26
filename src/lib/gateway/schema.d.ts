@@ -387,6 +387,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/bookings/{booking_id}/customer-name": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Correct Customer Name
+         * @description Correct the customer's name on this booking. Super Admin only; needs a reason; logged.
+         */
+        put: operations["correct_customer_name_v1_admin_bookings__booking_id__customer_name_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/bookings/{booking_id}/emails/{email}/resend": {
         parameters: {
             query?: never;
@@ -673,6 +693,27 @@ export interface paths {
          *     price_changed. Only after SooperFare's own record shows the old reservation is no longer active. Logged in the audit trail.
          */
         post: operations["rehold_at_supplier_v1_admin_bookings__booking_id__supplier_rehold_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/bookings/{booking_id}/travelers/{position}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Correct Traveler
+         * @description Correct a traveler's title, name, date of birth or document on this booking. Super Admin only; needs a reason;
+         *     logged on the booking (fields and reason, never values). Prices, payments and tickets are not changed.
+         */
+        put: operations["correct_traveler_v1_admin_bookings__booking_id__travelers__position__put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5157,6 +5198,12 @@ export interface components {
              */
             can_accept_shortfall: boolean;
             /**
+             * Can Correct
+             * @description Super Admin: may correct travelers and the customer name (travelian#225; the endpoints still check).
+             * @default false
+             */
+            can_correct: boolean;
+            /**
              * Can Edit Group Tickets
              * @description Group bookings: this viewer may record the final PNR and ticket numbers on the Tickets tab (issue tickets permission, paid in full; the endpoint still checks).
              * @default false
@@ -5856,6 +5903,21 @@ export interface components {
              */
             received_at: string;
         };
+        /** CorrectionResult */
+        CorrectionResult: {
+            /**
+             * Fields
+             * @description The fields that changed.
+             */
+            fields: string[];
+            /** Message */
+            message: string;
+            /**
+             * Sent To Airline
+             * @description The booking already has a PNR or ticket: correct it with the airline too.
+             */
+            sent_to_airline: boolean;
+        };
         /** CreateAnnouncementRequest */
         CreateAnnouncementRequest: {
             /**
@@ -6047,6 +6109,18 @@ export interface components {
              * @description The address it went to, masked (a***@gmail.com).
              */
             to?: string | null;
+        };
+        /**
+         * CustomerNameCorrection
+         * @description Super Admin: correct the customer's name on a booking (travelian#225). Contact details: customer-contact.
+         */
+        CustomerNameCorrection: {
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Reason */
+            reason: string;
         };
         /** DashboardFilterOptions */
         DashboardFilterOptions: {
@@ -10451,6 +10525,34 @@ export interface components {
             /** Reference */
             reference?: string | null;
         };
+        /**
+         * TravelerCorrection
+         * @description Super Admin: correct one traveler on a booking (travelian#225). Leave a field out to keep it. Logged with the reason
+         *     (which fields, never the values).
+         */
+        TravelerCorrection: {
+            /** Date Of Birth */
+            date_of_birth?: string | null;
+            /** Document Country */
+            document_country?: string | null;
+            /** Document Expiry */
+            document_expiry?: string | null;
+            /** Document Number */
+            document_number?: string | null;
+            /** First Name */
+            first_name?: string | null;
+            /** Last Name */
+            last_name?: string | null;
+            /** Nationality */
+            nationality?: string | null;
+            /**
+             * Reason
+             * @description Why this is corrected; shown in the booking's audit trail.
+             */
+            reason: string;
+            /** Title */
+            title?: ("MR" | "MRS" | "MISS" | "MASTER") | null;
+        };
         /** UpdatePaymentSettings */
         UpdatePaymentSettings: {
             /** Card Fee Bps */
@@ -11712,6 +11814,67 @@ export interface operations {
             };
         };
     };
+    correct_customer_name_v1_admin_bookings__booking_id__customer_name_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerNameCorrection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorrectionResult"];
+                };
+            };
+            /** @description Super Admin only. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking or traveler. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Nothing changed, or no customer record. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid value or no reason. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     resend_email_v1_admin_bookings__booking_id__emails__email__resend_post: {
         parameters: {
             query?: never;
@@ -12572,6 +12735,68 @@ export interface operations {
             };
             /** @description SooperFare couldn't be checked or didn't hold it; nothing was booked. */
             502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    correct_traveler_v1_admin_bookings__booking_id__travelers__position__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+                position: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TravelerCorrection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CorrectionResult"];
+                };
+            };
+            /** @description Super Admin only. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such booking or traveler. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Nothing changed, or no customer record. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid value or no reason. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
