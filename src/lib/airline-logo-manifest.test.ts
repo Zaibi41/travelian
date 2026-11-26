@@ -92,4 +92,17 @@ describe("airline logo manifest", () => {
     for (const key of ["a3", "aegean", "aegean airlines"]) expect((manifest.logos as Record<string, string>)[key]).toBe("/airline-logos/aegean.png");
     expect((manifest.codes as Record<string, string>)["aegean airlines"]).toBe("A3");
   });
+
+  it("#216: the rest of the list (and Thai) by code and name", () => {
+    const logos = manifest.logos as Record<string, string>;
+    const codes = manifest.codes as Record<string, string>;
+    const expected: [string, string, string][] = [["ei", "aer lingus", "aer-lingus"], ["af", "air france", "air-france"], ["kl", "klm", "klm"],
+      ["lh", "lufthansa", "lufthansa"], ["vy", "vueling", "vueling"], ["lx", "swiss", "swiss"], ["ew", "eurowings", "eurowings"],
+      ["ly", "el al", "el-al"], ["ib", "iberia", "iberia"], ["vs", "virgin atlantic", "virgin-atlantic"], ["nh", "all nippon airways", "ana"],
+      ["ac", "air canada", "air-canada"], ["tg", "thai airways", "thai-airways"]];
+    for (const [code, name, file] of expected) {
+      expect([logos[code], logos[name]]).toEqual([`/airline-logos/${file}.png`, `/airline-logos/${file}.png`]);
+      expect(codes[name]).toBe(code.toUpperCase());
+    }
+  });
 });
