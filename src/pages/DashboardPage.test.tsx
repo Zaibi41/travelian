@@ -14,6 +14,10 @@ vi.mock("@/contexts/RoleContext", () => ({
 const tracker = vi.fn();
 vi.mock("@/lib/flight-operations/api", () => ({ fetchGroupBookingsAwaitingFinalPnr: (...args: unknown[]) => tracker(...args) }));
 
+// gateway#87: Recent activity reads its own list from the gateway.
+const activity = vi.fn();
+vi.mock("@/lib/admin-dashboard/api", () => ({ fetchRecentActivity: (...args: unknown[]) => activity(...args) }));
+
 const dashboard = { current: {} as Record<string, unknown> };
 vi.mock("@/lib/admin-dashboard/use-dashboard", () => ({ useDashboard: () => dashboard.current }));
 
@@ -30,12 +34,12 @@ const ok = <T,>(data: T) => ({ data, error: null, isPending: false });
 const failed = (error: unknown) => ({ data: undefined, error, isPending: false });
 const rs = (rupees: number) => ({ amount_minor: rupees * 100, currency: "PKR" as const });
 
-function summary(counts: [number, number, number], business: Partial<DashboardSummary["business"]> = {}): DashboardSummary {
+function summary(counts: [number, number, number, number?], business: Partial<DashboardSummary["business"]> = {}): DashboardSummary {
   return {
     source: "gateway_bookings",
     contains_sample_data: false,
     generated_at: "2026-11-05T07:00:00Z",
-    needs_action: { pending_issuance: counts[0], payment_pending: counts[1], expiring_holds: counts[2], expiring_window_hours: 2 },
+    needs_action: { pending_issuance: counts[0], payment_pending: counts[1], expiring_holds: counts[2], expiring_window_hours: 2, unknown_issuance: counts[3] ?? 0 },
     business: { total_bookings: 42, held: 5, paid: 31, issued_tickets: 30, total_sales: [rs(1_284_500)], gross_profit: [rs(96_400)], ...business },
   };
 }
@@ -62,6 +66,42 @@ describe("DashboardPage", () => {
     role.current = "super_admin";
     tracker.mockReset();
     tracker.mockResolvedValue({ window_hours: 48, total: 0, departs_soon: 0, items: [] });
+    activity.mockReset();
+    activity.mockResolvedValue({ items: [] });
+  });
+
+  it("gateway#87: Recent activity lists the latest events, each opening the booking's Audit tab; not for agencies", async () => {
+    activity.mockResolvedValue({ items: [
+      { at: "2026-11-26T06:00:00Z", action: "payment_recorded", label: "Payment recorded", booking_id: "TRV-K0AE0A", product: "flight",
+        actor_user_id: "0901a7ce-ef7d-4af6-8ca4-31fd1252137a", actor_role: "super_admin" },
+      { at: "2026-11-26T05:00:00Z", action: "hold_expired", label: "Hold expired", booking_id: "TRV-GRP-LONGREFERENCE-0001", product: "group" },
+    ] });
+    const { unmount } = renderPage();
+    const panel = await screen.findByRole("region", { name: "Recent activity" });
+    const rows = await within(panel).findAllByRole("listitem");
+    expect(rows.map(row => within(row).getByRole("link").getAttribute("href"))).toEqual(
+      ["/admin/bookings/TRV-K0AE0A/audit", "/admin/bookings/TRV-GRP-LONGREFERENCE-0001/audit"]);
+    expect(rows[0]).toHaveTextContent("Payment recorded");
+    expect(rows[0]).toHaveTextContent("Super Admin · 0901a7ce");
+    expect(rows[1]).toHaveTextContent("System");
+    expect(activity).toHaveBeenCalledWith(8, expect.anything());
+    unmount();
+    role.current = "agency_owner";
+    activity.mockClear();
+    renderPage();
+    expect(screen.queryByRole("region", { name: "Recent activity" })).not.toBeInTheDocument();
+    expect(activity).not.toHaveBeenCalled();
+  });
+
+  it("gateway#87: Recent activity is hidden when the gateway doesn't offer it, and says when there is none", async () => {
+    activity.mockRejectedValue(new GatewayError("not_found", "Not found.", 404));
+    const { unmount } = renderPage();
+    await vi.waitFor(() => expect(screen.queryByRole("region", { name: "Recent activity" })).not.toBeInTheDocument());
+    expect(activity).toHaveBeenCalled();
+    unmount();
+    activity.mockResolvedValue({ items: [] });
+    renderPage();
+    expect(await screen.findByText("No booking activity yet.")).toBeInTheDocument();
   });
 
   it("shows the group final PNR tracker to the back office, not to agencies (#13)", async () => {
@@ -85,6 +125,14 @@ describe("DashboardPage", () => {
     expect(within(payment).getByText("Fine")).toBeInTheDocument();
     expect(payment).toHaveAttribute("href", "/admin/bookings/flights?card=payment_pending");
     expect(screen.getByRole("link", { name: /Expiring holds: 1, Needs action\. Within 2 hours/ })).toHaveAttribute("href", "/admin/bookings/flights?card=expiring_soon");
+    // gateway#85: a real zero is the green Fine stripe.
+    expect(screen.getByRole("link", { name: /Unknown issuance: 0, Fine/ })).toHaveAttribute("href", "/admin/bookings/flights?card=unknown_issuance");
+  });
+
+  it("gateway#85: unknown issuance above zero is Critical and opens the filtered Flights list", () => {
+    setData({ summary: ok(summary([0, 0, 0, 3])) });
+    renderPage();
+    expect(screen.getByRole("link", { name: /Unknown issuance: 3, Critical/ })).toHaveAttribute("href", "/admin/bookings/flights?card=unknown_issuance");
   });
 
   it("keeps the provider filter on the Pending issuance list", () => {
@@ -169,7 +217,8 @@ describe("DashboardPage", () => {
 
   it("hides elements with no data source and labels not in the mockup", () => {
     renderPage();
-    for (const hidden of [/Unknown issuance/i, /Money and balances/i, /Recent activity/i, /Low airline balance/i, /Business today/i, /Local preview/i, /Showing \d/]) {
+    // Unknown issuance (gateway#85) and Recent activity (gateway#87) are shown now.
+    for (const hidden of [/Money and balances/i, /Low airline balance/i, /Business today/i, /Local preview/i, /Showing \d/]) {
       expect(screen.queryByText(hidden)).not.toBeInTheDocument();
     }
     for (const filter of [/^Branch/, /^Channel/, /^Agency/]) {

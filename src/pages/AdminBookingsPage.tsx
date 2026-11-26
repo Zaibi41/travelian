@@ -147,10 +147,12 @@ function Cards({ cards, flights, filters }: { cards: BookingList["cards"]; fligh
         {card("expiring_soon", expiringLabel, cards.expiring_soon, "action")}
         {/* Paid by the customer, no ticket: Paid, issuance pending + Paid, not ticketed (approved 19 Nov 2026). */}
         {cards.paid_not_issued != null && card("paid_not_issued", "Paid, not ticketed", cards.paid_not_issued, "critical")}
+        {/* gateway#85: issuing timed out, a ticket may or may not exist; the dashboard card opens this. */}
+        {cards.unknown_issuance != null && card("unknown_issuance", "Unknown issuance", cards.unknown_issuance, "critical")}
       </div>
     );
   }
-  // Unknown Issuance and Unassigned are hidden: not recorded yet.
+  // Unassigned is hidden: not recorded yet. Unknown issuance is on the Flights tab (issuance is flights only).
   return (
     <div className="grid grid-cols-2 gap-card-gap lg:grid-cols-3 xl:grid-cols-6">
       <StatusKpiCard label="All Bookings" value={count(cards.all_bookings)} to={href(undefined)} selected={!filters.card} />

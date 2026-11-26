@@ -58,6 +58,7 @@ describe("card links: only to lists whose counts match", () => {
       pendingIssuance: "/admin/bookings/flights?card=awaiting_issuance",
       paymentPending: "/admin/bookings/flights?card=payment_pending",
       expiringHolds: "/admin/bookings/flights?card=expiring_soon",
+      unknownIssuance: "/admin/bookings/flights?card=unknown_issuance",
     });
     // Needs-action cards ignore the date filter; the list defaults to all dates.
     expect(needsActionLinks({ period: "today", product: "flight" }).pendingIssuance).toBe("/admin/bookings/flights?card=awaiting_issuance");
@@ -66,6 +67,7 @@ describe("card links: only to lists whose counts match", () => {
   it("falls back to the placeholder for another product", () => {
     expect(needsActionLinks({ period: "all", product: "group" })).toEqual({
       pendingIssuance: ATTENTION_QUEUE_PLACEHOLDER, paymentPending: ATTENTION_QUEUE_PLACEHOLDER, expiringHolds: ATTENTION_QUEUE_PLACEHOLDER,
+      unknownIssuance: ATTENTION_QUEUE_PLACEHOLDER,
     });
   });
   it("opens the row's booking", () => {
