@@ -49,13 +49,14 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080], [1024, 76
     }
     // Search stays enabled; with fields missing it says what to fill in (it isn't greyed out).
     const search = page.locator(".home-search .unified-search-submit");
-    const origin = page.getByLabel("From", { exact: true });
+    const origin = page.getByLabel("Origin", { exact: true });
     await page.keyboard.press("Tab");
     await origin.focus();
-    expect(await origin.evaluate(element => getComputedStyle(element).outlineStyle)).toBe("solid");
+    // Keyboard focus shows as a brand-blue ring on the field box around the input.
+    expect(await origin.evaluate(element => getComputedStyle(element.parentElement!).boxShadow)).toContain("rgb(7, 60, 146)");
     await origin.click();
     await page.getByRole("option", { name: /LHE/ }).first().click();
-    await page.getByLabel("To", { exact: true }).click();
+    await page.getByLabel("Destination", { exact: true }).click();
     await page.getByRole("option", { name: /DXB/ }).first().click();
     await page.getByLabel("Departure Date", { exact: true }).click();
     await page.getByRole("grid").first().locator("button:not([disabled])").first().click();
@@ -94,9 +95,16 @@ for (const width of [1440, 1024, 320]) {
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await tabs.getByRole("button", { name: "Group Ticketing", exact: true }).click();
-    await page.getByRole("combobox", { name: "Select available sector", exact: true }).click();
-    await page.getByRole("option", { name: "LHE → JED", exact: true }).click();
-    await expect(page).toHaveURL(/\/group-ticketing$/);
+    // Group Ticketing: Origin and Destination everywhere; the "available sector" shortcut is on wider screens only.
+    await expect(page.getByLabel("Origin", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Destination", { exact: true })).toBeVisible();
+    if (width >= 1024) {
+      await page.getByRole("combobox", { name: "Select available sector", exact: true }).click();
+      await page.getByRole("option", { name: "LHE → JED", exact: true }).click();
+      await expect(page).toHaveURL(/\/group-ticketing$/);
+    } else {
+      await expect(page.getByRole("combobox", { name: "Select available sector", exact: true })).toHaveCount(0);
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   });
 }
