@@ -43,4 +43,78 @@ describe("airline logo manifest", () => {
     for (const key of ["s4", "sp", "sata", "sata international", "azores airlines", "sata air açores"]) expect(logos[key]).toBe("/airline-logos/sata.png");
     expect([codes["sata international"], codes["azores airlines"], codes["sata air acores"]]).toEqual(["S4", "S4", "SP"]);
   });
+
+  it("#216: EVA Air (BR) and Japan Airlines (JL) by code and name", () => {
+    const logos = manifest.logos as Record<string, string>;
+    const codes = manifest.codes as Record<string, string>;
+    for (const key of ["br", "eva air", "eva airways"]) expect(logos[key]).toBe("/airline-logos/eva-air.png");
+    for (const key of ["jl", "japan airlines", "jal"]) expect(logos[key]).toBe("/airline-logos/japan-airlines.png");
+    expect([codes["eva air"], codes["japan airlines"], codes.jal]).toEqual(["BR", "JL", "JL"]);
+  });
+
+  it("#216: LOT Polish Airlines (LO) by code and name", () => {
+    const logos = manifest.logos as Record<string, string>;
+    for (const key of ["lo", "lot", "lot polish airlines"]) expect(logos[key]).toBe("/airline-logos/lot-polish-airlines.png");
+    expect((manifest.codes as Record<string, string>)["lot polish airlines"]).toBe("LO");
+  });
+
+  it("#216: Avianca (AV) by code and name", () => {
+    for (const key of ["av", "avianca"]) expect((manifest.logos as Record<string, string>)[key]).toBe("/airline-logos/avianca.png");
+    expect((manifest.codes as Record<string, string>).avianca).toBe("AV");
+  });
+
+  it("#216: Royal Air Maroc (AT) by code and name", () => {
+    for (const key of ["at", "royal air maroc"]) expect((manifest.logos as Record<string, string>)[key]).toBe("/airline-logos/royal-air-maroc.png");
+    expect((manifest.codes as Record<string, string>)["royal air maroc"]).toBe("AT");
+  });
+
+  it("#216: Royal Jordanian (RJ) by code and name", () => {
+    for (const key of ["rj", "royal jordanian"]) expect((manifest.logos as Record<string, string>)[key]).toBe("/airline-logos/royal-jordanian.png");
+    expect((manifest.codes as Record<string, string>)["royal jordanian"]).toBe("RJ");
+  });
+
+  it("#216: EgyptAir (MS) by code and name", () => {
+    for (const key of ["ms", "egyptair", "egypt air"]) expect((manifest.logos as Record<string, string>)[key]).toBe("/airline-logos/egyptair.png");
+    expect((manifest.codes as Record<string, string>).egyptair).toBe("MS");
+  });
+
+  it("#216: Alitalia / ITA Airways (AZ) by code and name", () => {
+    for (const key of ["az", "alitalia", "ita airways"]) expect((manifest.logos as Record<string, string>)[key]).toBe("/airline-logos/alitalia.png");
+    expect((manifest.codes as Record<string, string>).alitalia).toBe("AZ");
+  });
+
+  it("#216: TAP Air Portugal (TP) by code and name", () => {
+    for (const key of ["tp", "tap portugal", "tap air portugal"]) expect((manifest.logos as Record<string, string>)[key]).toBe("/airline-logos/tap-air-portugal.png");
+    expect((manifest.codes as Record<string, string>)["tap air portugal"]).toBe("TP");
+  });
+
+  it("#216: Aegean (A3) by code and name", () => {
+    for (const key of ["a3", "aegean", "aegean airlines"]) expect((manifest.logos as Record<string, string>)[key]).toBe("/airline-logos/aegean.png");
+    expect((manifest.codes as Record<string, string>)["aegean airlines"]).toBe("A3");
+  });
+
+  it("#216: the rest of the list (and Thai) by code and name", () => {
+    const logos = manifest.logos as Record<string, string>;
+    const codes = manifest.codes as Record<string, string>;
+    const expected: [string, string, string][] = [["ei", "aer lingus", "aer-lingus"], ["af", "air france", "air-france"], ["kl", "klm", "klm"],
+      ["lh", "lufthansa", "lufthansa"], ["vy", "vueling", "vueling"], ["lx", "swiss", "swiss"], ["ew", "eurowings", "eurowings"],
+      ["ly", "el al", "el-al"], ["ib", "iberia", "iberia"], ["vs", "virgin atlantic", "virgin-atlantic"], ["nh", "all nippon airways", "ana"],
+      ["ac", "air canada", "air-canada"], ["tg", "thai airways", "thai-airways"]];
+    for (const [code, name, file] of expected) {
+      expect([logos[code], logos[name]]).toEqual([`/airline-logos/${file}.png`, `/airline-logos/${file}.png`]);
+      expect(codes[name]).toBe(code.toUpperCase());
+    }
+  });
+
+  it("#216 follow-up: square logos for the airlines Travelian sells (low-cost, Gulf, Asia, Europe, Americas, Africa)", () => {
+    const logos = manifest.logos as Record<string, string>;
+    const codes = manifest.codes as Record<string, string>;
+    for (const [code, name, file] of [["fr", "ryanair", "ryanair"], ["u2", "easyjet", "easyjet"], ["w6", "wizz air", "wizz-air"], ["6e", "indigo", "indigo"],
+      ["sq", "singapore airlines", "singapore-airlines"], ["ai", "air india", "air-india"], ["dl", "delta", "delta"], ["et", "ethiopian airlines", "ethiopian"],
+      ["vf", "ajet", "ajet"], ["ls", "jet2", "jet2"]] as const) {
+      expect([logos[code], logos[name]]).toEqual([`/airline-logos/${file}.png`, `/airline-logos/${file}.png`]);
+      expect(codes[name]).toBe(code.toUpperCase());
+    }
+    expect(Object.keys(manifest.logos).length).toBeGreaterThan(250);
+  });
 });
