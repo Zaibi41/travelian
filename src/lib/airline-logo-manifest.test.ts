@@ -36,4 +36,11 @@ describe("airline logo manifest", () => {
     for (const key of ["j2", "azerbaijan airlines", "azerbaijan", "azal"]) expect(logos[key]).toBe("/airline-logos/azerbaijan-airlines.png");
     expect([codes["uzbekistan airways"], codes["azerbaijan airlines"]]).toEqual(["HY", "J2"]);
   });
+
+  it("#216: SATA (Azores Airlines S4, SATA Air Açores SP) by code and name", () => {
+    const logos = manifest.logos as Record<string, string>;
+    const codes = manifest.codes as Record<string, string>;
+    for (const key of ["s4", "sp", "sata", "sata international", "azores airlines", "sata air açores"]) expect(logos[key]).toBe("/airline-logos/sata.png");
+    expect([codes["sata international"], codes["azores airlines"], codes["sata air acores"]]).toEqual(["S4", "S4", "SP"]);
+  });
 });
