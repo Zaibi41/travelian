@@ -62,7 +62,16 @@
     "j2": "J2",
     "azerbaijan airlines": "J2",
     "azerbaijan": "J2",
-    "azal": "J2"
+    "azal": "J2",
+    "s4": "S4",
+    "sp": "SP",
+    "sata": "S4",
+    "sata international": "S4",
+    "sata internacional": "S4",
+    "azores airlines": "S4",
+    "sata azores airlines": "S4",
+    "sata air acores": "SP",
+    "sata air açores": "SP"
   },
   "logos": {
     "1g": "/airline-logos/travelport.svg",
@@ -138,6 +147,15 @@
     "uzbekistan airways": "/airline-logos/uzbekistan-airways.png",
     "uzbekistan": "/airline-logos/uzbekistan-airways.png",
     "j2": "/airline-logos/azerbaijan-airlines.png",
-    "azal": "/airline-logos/azerbaijan-airlines.png"
+    "azal": "/airline-logos/azerbaijan-airlines.png",
+    "s4": "/airline-logos/sata.png",
+    "sp": "/airline-logos/sata.png",
+    "sata": "/airline-logos/sata.png",
+    "sata international": "/airline-logos/sata.png",
+    "sata internacional": "/airline-logos/sata.png",
+    "azores airlines": "/airline-logos/sata.png",
+    "sata azores airlines": "/airline-logos/sata.png",
+    "sata air acores": "/airline-logos/sata.png",
+    "sata air açores": "/airline-logos/sata.png"
   }
 }
