@@ -102,7 +102,11 @@
     "az": "AZ",
     "alitalia": "AZ",
     "ita airways": "AZ",
-    "ita": "AZ"
+    "ita": "AZ",
+    "tp": "TP",
+    "tap": "TP",
+    "tap portugal": "TP",
+    "tap air portugal": "TP"
   },
   "logos": {
     "1g": "/airline-logos/travelport.svg",
@@ -218,6 +222,10 @@
     "az": "/airline-logos/alitalia.png",
     "alitalia": "/airline-logos/alitalia.png",
     "ita airways": "/airline-logos/alitalia.png",
-    "ita": "/airline-logos/alitalia.png"
+    "ita": "/airline-logos/alitalia.png",
+    "tp": "/airline-logos/tap-air-portugal.png",
+    "tap": "/airline-logos/tap-air-portugal.png",
+    "tap portugal": "/airline-logos/tap-air-portugal.png",
+    "tap air portugal": "/airline-logos/tap-air-portugal.png"
   }
 }

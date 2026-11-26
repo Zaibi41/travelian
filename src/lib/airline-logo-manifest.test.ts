@@ -82,4 +82,9 @@ describe("airline logo manifest", () => {
     for (const key of ["az", "alitalia", "ita airways"]) expect((manifest.logos as Record<string, string>)[key]).toBe("/airline-logos/alitalia.png");
     expect((manifest.codes as Record<string, string>).alitalia).toBe("AZ");
   });
+
+  it("#216: TAP Air Portugal (TP) by code and name", () => {
+    for (const key of ["tp", "tap portugal", "tap air portugal"]) expect((manifest.logos as Record<string, string>)[key]).toBe("/airline-logos/tap-air-portugal.png");
+    expect((manifest.codes as Record<string, string>)["tap air portugal"]).toBe("TP");
+  });
 });
