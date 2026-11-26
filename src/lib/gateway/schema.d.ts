@@ -6695,7 +6695,11 @@ export interface components {
             /** Username */
             username: string;
         };
-        /** GroupAvailabilityRequest */
+        /**
+         * GroupAvailabilityRequest
+         * @description gateway#107: the group fare's ticket ID (GroupTicketView.id), as for a hold. The gateway looks up the fare's PNR and
+         *     supplier price itself, so callers without the cost permission can check, and the supplier price never leaves it.
+         */
         GroupAvailabilityRequest: {
             /** Adult */
             adult?: number | null;
@@ -6703,10 +6707,11 @@ export interface components {
             child?: number | null;
             /** Passenger Types */
             passenger_types?: ("adult" | "child" | "infant")[] | null;
-            /** Pnr */
-            pnr: string;
-            /** Price */
-            price: number | string;
+            /**
+             * Ticket Id
+             * Format: uuid
+             */
+            ticket_id: string;
         };
         /** GroupAvailabilityResponse */
         GroupAvailabilityResponse: {
