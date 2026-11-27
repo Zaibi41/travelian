@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkoutJourneys, durationMinutes, gapMinutes, journeyMinutes, minutesText, placeName, placeOf, stayAt, stayBetween, stopCountText, stopLine, stopSummary, type Place } from "./flight-stays";
+import { checkoutJourneys, durationMinutes, gapMinutes, journeyMinutes, minutesText, placeName, placeOf, stayAt, stayBetween, stopCountText, stopLine, stopSummary, viaText, type Place } from "./flight-stays";
 
 // The shared airport list's shape (src/data/airports.json): city and full country name per code.
 const AIRPORTS: Record<string, Place> = {
@@ -135,5 +135,16 @@ describe("checkout journey durations (#153)", () => {
   it("leaves the time out (never a wrong one) when a flight's duration is missing", () => {
     expect(checkoutJourneys([seg("LHE", "DXB", "2026-12-08 11:50", "2026-12-08 14:35")])[0].duration).toBeUndefined();
     expect(checkoutJourneys([])).toEqual([]);
+  });
+});
+
+describe("the card's stops under the stop count, as on the admin booking", () => {
+  const stay = (city: string, code: string, duration?: string) => ({ code, city, country: "", place: city || code, duration });
+  it("names each stop with how long, the time only when known", () => {
+    expect(viaText([stay("Jeddah", "JED", "6h 35m")])).toBe("via Jeddah (6h 35m)");
+    expect(viaText([stay("Doha", "DOH", "2h 30m"), stay("Kinshasa", "FIH", "9h 40m")])).toBe("via Doha (2h 30m), Kinshasa (9h 40m)");
+    expect(viaText([stay("Multan", "MUX")])).toBe("via Multan");
+    expect(viaText([stay("", "XYZ", "1h 0m")])).toBe("via XYZ (1h 0m)");
+    expect(viaText([])).toBe("");
   });
 });
