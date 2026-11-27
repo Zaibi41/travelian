@@ -191,6 +191,37 @@ const groupCalendar = (origin: string, destination: string, adults: number, _cab
   publicGroupCalendar(origin, destination, adults, signal).then((answer) => ({ pending: false, days: answer.days.map((day) => ({ ...day, checked: true })) }));
 
 /** `groupsOnly`: the Group Ticketing results (the same list, cards, filters and Book as Flights, group fares only). */
+/** The airlines that fly a trip's flights, in order, each once (a codeshare counts as the airline that flies it). */
+function flyingAirlines(flight: TravelianFlight) {
+  const seen = new Set<string>();
+  const found: { name: string; code: string }[] = [];
+  for (const segment of flight.segments || []) {
+    const code = String(segment.operatingCarrier || segment.carrier || "").trim().toUpperCase();
+    const name = segment.operatingAirline || (segment.operatingCarrier ? getAirlineNameFromCarrier(code) : segment.airline) || getAirlineNameFromCarrier(code) || code;
+    const key = normalizeAirlineName(name || "").toLowerCase() || code;
+    if (!name || !key || seen.has(key)) continue;
+    seen.add(key);
+    found.push({ name, code });
+  }
+  return found;
+}
+
+/** The card's logo tile: one logo, or for a trip on two airlines both logos in the same tile, overlapping. */
+function CardAirlineLogos({ flight, adminMode }: { flight: TravelianFlight; adminMode: boolean }) {
+  const airlines = flyingAirlines(flight);
+  if (airlines.length < 2) {
+    return <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={adminMode ? undefined : flight.airlineImage} className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl shrink-0" />;
+  }
+  const [first, second] = airlines;
+  const small = "absolute h-8 w-8 sm:h-[2.125rem] sm:w-[2.125rem] rounded-lg";
+  return (
+    <div className="relative h-11 w-11 shrink-0 sm:h-12 sm:w-12" data-testid="card-airline-logos" title={airlines.map((a) => a.name).join(" + ")}>
+      <AirlineLogo airline={first.name} code={first.code} className={cn(small, "left-0 top-0")} />
+      <AirlineLogo airline={second.name} code={second.code} className={cn(small, "bottom-0 right-0")} />
+    </div>
+  );
+}
+
 export default function PublicFlightsPage({ bookingPath = "/booking", adminMode = false, groupsOnly = false }: { bookingPath?: string; adminMode?: boolean; groupsOnly?: boolean } = {}) {
   const { currency: selectedCurrency } = useLocale();
   const [params, setParams] = useSearchParams();
@@ -1455,7 +1486,10 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                   const nextSegment = group[index + 1];
                   const stay = nextSegment ? stayBetween(segment, nextSegment, layoverAt(String(nextSegment.origin || segment.destination || "").trim().toUpperCase())) : undefined;
                   const flightNumber = segment.flightNumber || flight.flightNumber;
-                  const segmentAirline = segment.airline || getAirlineNameFromCarrier(segment.carrier) || segment.carrier || flight.airline;
+                  const soldBy = segment.airline || getAirlineNameFromCarrier(segment.carrier) || segment.carrier || flight.airline;
+                  // A codeshare is shown as the airline that flies it, with "Operated by" under it.
+                  const operatedBy = segment.operatingAirline || segment.operatingCarrier || "";
+                  const segmentAirline = operatedBy || soldBy;
                   const isSameAsParent = isSameAirline(segmentAirline, flight.airline);
                   const duration = segmentDuration(segment);
                   return (
@@ -1468,12 +1502,15 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           <span aria-hidden="true" />
                           <div className="min-w-0">
                             <div className="flex min-w-0 items-center gap-2 text-sm text-foreground">
-                              <AirlineLogo airline={segmentAirline} flightNumber={flightNumber} imageUrl={isSameAsParent && !adminMode ? flight.airlineImage : undefined} className="h-6 w-6 shrink-0 rounded-md border-0 shadow-none ring-0" />
+                              <AirlineLogo airline={segmentAirline} flightNumber={operatedBy ? undefined : flightNumber} code={operatedBy ? segment.operatingCarrier : segment.carrier} imageUrl={isSameAsParent && !adminMode ? flight.airlineImage : undefined} className="h-6 w-6 shrink-0 rounded-md border-0 shadow-none ring-0" />
                               <span className="truncate" title={segmentAirline}>{segmentAirline}</span>
                             </div>
                             <p className="mt-0.5 truncate text-xs text-muted-foreground" title={[cabin, flightNumber].filter(Boolean).join(" • ")}>
                               {[cabin, flightNumber].filter(Boolean).join(" • ")}
                             </p>
+                            {operatedBy && (
+                              <p className="truncate text-xs text-muted-foreground" title={`Operated by ${operatedBy}`}>Operated by {operatedBy}</p>
+                            )}
                           </div>
                         </div>
                         <PointRow time={segment.arrivalTime} date={segment.arrivalTime} code={segment.destination} last />
@@ -2039,7 +2076,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           that it stacks (airline, timeline, Flight Details), so nothing is pushed off-screen. */}
                       <div className="flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-start">
                         <div className="flex min-w-0 items-center gap-2.5 sm:gap-3 lg:w-[11rem] lg:shrink-0 lg:pt-1">
-                          <AirlineLogo airline={flight.airline} flightNumber={flight.flightNumber} imageUrl={adminMode ? undefined : flight.airlineImage} className="h-11 w-11 sm:h-12 sm:w-12 rounded-xl shrink-0" />
+                          <CardAirlineLogos flight={flight} adminMode={adminMode} />
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
                               {/* Long names: one line with an ellipsis; tap to read the full name (issue #90). */}
