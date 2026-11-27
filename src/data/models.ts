@@ -239,6 +239,9 @@ export interface FlightItinerarySegment {
   id?: string | null;
   carrier?: string | null;
   airline?: string | null;
+  /** A codeshare: the airline that actually flies it, when it isn't `carrier` (the airline it is sold under). */
+  operatingCarrier?: string | null;
+  operatingAirline?: string | null;
   flightNumber?: string | null;
   origin?: string | null;
   destination?: string | null;

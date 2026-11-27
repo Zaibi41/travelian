@@ -10086,6 +10086,13 @@ export interface components {
          */
         SegmentView: {
             /**
+             * Airline Code
+             * @description IATA code of the airline this flight is sold under (its flight number). Can differ from the connection's airline_code.
+             */
+            airline_code?: string | null;
+            /** Airline Name */
+            airline_name?: string | null;
+            /**
              * Arrival Local
              * @description Local time at destination, YYYY-MM-DDTHH:MM.
              */
@@ -10109,6 +10116,13 @@ export interface components {
              * @description Time on the ground at `origin` before this flight (the stop). Omitted for the first flight.
              */
             layover_minutes?: number | null;
+            /**
+             * Operating Code
+             * @description IATA code of the airline that actually flies it (a codeshare). Only sent when it differs from airline_code.
+             */
+            operating_code?: string | null;
+            /** Operating Name */
+            operating_name?: string | null;
             /** Origin */
             origin: string;
         };

@@ -1,5 +1,5 @@
 import type { Flight } from "@/data/models";
-import { normalizeAirlineName } from "./airline-normalization";
+import { getAirlineNameFromCarrier, normalizeAirlineName } from "./airline-normalization";
 
 import { API_BASE_URL } from "./api-config";
 import { baggageText } from "./baggage";
@@ -262,7 +262,8 @@ interface GatewayFare {
 }
 /** One flight of a connection; layover_minutes: time on the ground at `origin` before it (left out for the first). */
 interface GatewaySegment {
-  flight_number?: string; origin: string; destination: string; departure_local?: string; arrival_local?: string;
+  flight_number?: string; airline_code?: string; airline_name?: string; operating_code?: string; operating_name?: string;
+  origin: string; destination: string; departure_local?: string; arrival_local?: string;
   duration_minutes?: number; layover_minutes?: number;
 }
 interface GatewayFlight {
@@ -335,12 +336,20 @@ function gatewaySegment(flight: GatewayFlight, origin: string, destination: stri
 /** A flight's own flights (a connection has one per stop); one segment for the whole trip when the gateway sent none. */
 function gatewaySegments(flight: GatewayFlight, origin: string, destination: string) {
   if (!flight.segments?.length) return [gatewaySegment(flight, origin, destination)];
-  return flight.segments.map((segment) => ({
-    carrier: flight.airline_code || null, airline: flight.airline_name || null, flightNumber: segment.flight_number || null,
-    origin: segment.origin, destination: segment.destination, departureAirport: segment.origin, arrivalAirport: segment.destination,
-    departureTime: segment.departure_local || null, arrivalTime: segment.arrival_local || null,
-    duration: minutesText(segment.duration_minutes) || null,
-  }));
+  return flight.segments.map((segment) => {
+    // Each flight's own airline: a connection can change airline at the stop, and a codeshare is flown by another.
+    const carrier = segment.airline_code || flight.airline_code || null;
+    const sameAsTrip = !segment.airline_code || segment.airline_code === flight.airline_code;
+    return {
+      carrier, airline: segment.airline_name || (sameAsTrip ? flight.airline_name : getAirlineNameFromCarrier(carrier)) || null,
+      operatingCarrier: segment.operating_code || null,
+      operatingAirline: segment.operating_name || getAirlineNameFromCarrier(segment.operating_code) || null,
+      flightNumber: segment.flight_number || null,
+      origin: segment.origin, destination: segment.destination, departureAirport: segment.origin, arrivalAirport: segment.destination,
+      departureTime: segment.departure_local || null, arrivalTime: segment.arrival_local || null,
+      duration: minutesText(segment.duration_minutes) || null,
+    };
+  });
 }
 
 /** Where the passenger stays and for how long (#37, #83, #84): one per stop, in order. Only the stop city when the

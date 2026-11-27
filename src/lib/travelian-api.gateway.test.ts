@@ -50,6 +50,22 @@ describe("flights through the gateway", () => {
       { location: "DOH", duration: "1h 30m", arrivalTime: "2026-12-12T08:30", departureTime: "2026-12-12T10:00", nextFlightNumber: "EY19" }]);
   });
 
+  it("each flight of a connection has its own airline, and a codeshare names the airline that flies it", () => {
+    const tk = { ...flight("f1", "TK", "TK715 / TK8050", "2026-12-05T06:00", [fare("a", "Economy", 150000)]), airline_name: "Turkish Airlines",
+      stops: 1, stop_cities: ["IST"], segments: [
+        { flight_number: "TK715", airline_code: "TK", airline_name: "Turkish Airlines", origin: "LHE", destination: "IST", departure_local: "2026-12-05T06:00", arrival_local: "2026-12-05T10:30" },
+        { flight_number: "TK8050", airline_code: "TK", operating_code: "EY", operating_name: "Etihad Airways", origin: "IST", destination: "AUH",
+          departure_local: "2026-12-05T13:55", arrival_local: "2026-12-05T19:25", layover_minutes: 205 },
+      ] };
+    const [offer] = gatewayOffers({ search_id: "s", status: "complete", journeys: [{ direction: "outbound", origin: "LHE", destination: "AUH", flights: [tk] }] }, "Economy");
+    expect(offer.segments?.map((s) => [s.carrier, s.airline, s.operatingCarrier, s.operatingAirline])).toEqual([
+      ["TK", "Turkish Airlines", null, null], ["TK", "Turkish Airlines", "EY", "Etihad Airways"]]);
+    const mixed = { ...flight("f2", "PK", "PK303 / EY11", "2026-12-05T06:00", [fare("a", "Economy", 150000)]), stops: 1, stop_cities: ["AUH"], segments: [
+      { flight_number: "PK303", airline_code: "PK", origin: "LHE", destination: "AUH" }, { flight_number: "EY11", airline_code: "EY", origin: "AUH", destination: "LHR" }] };
+    const [both] = gatewayOffers({ search_id: "s", status: "complete", journeys: [{ direction: "outbound", origin: "LHE", destination: "LHR", flights: [mixed] }] }, "Economy");
+    expect(both.segments?.map((s) => [s.carrier, s.airline])).toEqual([["PK", "PIA"], ["EY", "Etihad Airways"]]);
+  });
+
   it("without flight-by-flight detail: the stop city alone, and one segment with the flight's own duration", () => {
     const oneStop = { ...flight("f1", "PA", "PA200", "2026-12-12T08:00", [fare("a", "Value", 22050)]), stops: 1, stop_cities: ["MUX"] };
     const [offer] = gatewayOffers({ search_id: "s", status: "complete", journeys: [{ direction: "outbound", origin: "KHI", destination: "LHE", flights: [oneStop] }] }, "Economy");
