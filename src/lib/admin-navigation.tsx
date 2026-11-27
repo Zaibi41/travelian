@@ -153,7 +153,7 @@ export const adminNavigation: AdminNavSection[] = [
   {
     category: "Pricing & Revenue",
     items: [
-      item("Flight Pricing & Rules", "/admin/flights", Plane, platformOwnerRoles),
+      item("Flight Pricing & Rules", "/admin/pricing/flights", Plane, platformOwnerRoles),
       item("Deals & Promotions", "/admin/coupons", Tag, internalAdminRoles),
     ],
   },
@@ -348,7 +348,7 @@ const internalSidebarMenus: SidebarMenuEntry[] = [
   },
   {
     number: "08", title: "Pricing & Revenue", icon: Tag, items: [
-      item("Flight Pricing & Rules", "/admin/flights", Plane, platformOwnerRoles),
+      item("Flight Pricing & Rules", "/admin/pricing/flights", Plane, platformOwnerRoles),
       item("Deals & Promotions", "/admin/coupons", Tag, internalAdminRoles),
     ],
   },
@@ -400,6 +400,7 @@ const RENAMED_ADMIN_PATHS: Record<string, string> = {
   "/admin/roadmap/reconciliation": "/admin/finance/reconciliation",
   "/admin/roadmap/webhook-logs": "/admin/roadmap/system-logs-jobs",
   "/admin/roadmap/payment-gateways": "/admin/roadmap/payment-providers",
+  "/admin/flights": "/admin/pricing/flights",
 };
 
 export function canAccessAdminPath(role: UserRole, pathname: string) {

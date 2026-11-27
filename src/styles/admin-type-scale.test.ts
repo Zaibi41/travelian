@@ -23,7 +23,7 @@ const sources = {
     "/src/pages/CustomersTravelersPage.tsx", "/src/pages/SavedPersonPage.tsx", "/src/pages/AnnouncementsPage.tsx",
     // Older admin pages (moved to the admin components and the type scale on 11 November 2026).
     "/src/pages/AgenciesPage.tsx", "/src/pages/PackagesPage.tsx", "/src/pages/UsersPage.tsx", "/src/pages/RBACPage.tsx",
-    "/src/pages/HotelsPage.tsx", "/src/pages/FlightsPage.tsx", "/src/pages/FlightOperationsPage.tsx",
+    "/src/pages/HotelsPage.tsx", "/src/pages/FlightPricingPage.tsx", "/src/pages/FlightOperationsPage.tsx",
     "/src/pages/WalletPage.tsx", "/src/pages/FinanceOverviewPage.tsx", "/src/pages/SupplierBalancesPage.tsx", "/src/pages/TicketSaleEntryPage.tsx",
     "/src/pages/SupplierRefundsPage.tsx", "/src/pages/CustomerDuesPage.tsx", "/src/pages/PaymentsPage.tsx", "/src/pages/CouponsPage.tsx", "/src/pages/BlogPage.tsx",
     "/src/pages/NotificationsPage.tsx", "/src/pages/SettingsPage.tsx", "/src/pages/ProviderSystemsPage.tsx",

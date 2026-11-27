@@ -2320,6 +2320,65 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/flight-pricing/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Rules */
+        get: operations["list_rules_v1_admin_flight_pricing_rules_get"];
+        put?: never;
+        /**
+         * Create Rule
+         * @description One rule per supplier, source and airline (409 if it exists). Applies to new searches within seconds.
+         */
+        post: operations["create_rule_v1_admin_flight_pricing_rules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/flight-pricing/rules/{rule_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Rule */
+        put: operations["update_rule_v1_admin_flight_pricing_rules__rule_id__put"];
+        post?: never;
+        /** Delete Rule */
+        delete: operations["delete_rule_v1_admin_flight_pricing_rules__rule_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/flight-pricing/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Suppliers
+         * @description The flight suppliers a rule can be set on, whether each is searched for customers, and SooperFare's sources.
+         */
+        get: operations["list_suppliers_v1_admin_flight_pricing_suppliers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/notifications": {
         parameters: {
             query?: never;
@@ -6443,6 +6502,16 @@ export interface components {
             /** Id */
             id: string;
         };
+        /** DeletedFlightPricingRule */
+        DeletedFlightPricingRule: {
+            /**
+             * Deleted
+             * @default true
+             */
+            deleted: boolean;
+            /** Id */
+            id: string;
+        };
         /** DestinationSuggestRequest */
         DestinationSuggestRequest: {
             /** Query */
@@ -6860,6 +6929,74 @@ export interface components {
             /** Search Id */
             search_id: string;
         };
+        /** FlightPricingRule */
+        FlightPricingRule: {
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Airline Code
+             * @description IATA code; empty = any airline.
+             */
+            airline_code?: string | null;
+            /**
+             * Amount Minor
+             * @description Rs per passenger, in paisa (whole rupees): negative takes it off the selling price, positive adds it. Never below the supplier's cost.
+             */
+            amount_minor: number;
+            /** Id */
+            id: string;
+            /**
+             * Source
+             * @description SooperFare only; empty = any source.
+             */
+            source?: string | null;
+            /**
+             * Supplier
+             * @enum {string}
+             */
+            supplier: "southair" | "sooperfare" | "kyte";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** FlightPricingRuleInput */
+        FlightPricingRuleInput: {
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Airline Code
+             * @description IATA code; empty = any airline.
+             */
+            airline_code?: string | null;
+            /**
+             * Amount Minor
+             * @description Rs per passenger, in paisa (whole rupees): negative takes it off the selling price, positive adds it. Never below the supplier's cost.
+             */
+            amount_minor: number;
+            /**
+             * Source
+             * @description SooperFare only; empty = any source.
+             */
+            source?: string | null;
+            /**
+             * Supplier
+             * @enum {string}
+             */
+            supplier: "southair" | "sooperfare" | "kyte";
+        };
+        /** FlightPricingRuleList */
+        FlightPricingRuleList: {
+            /** Rules */
+            rules: components["schemas"]["FlightPricingRule"][];
+        };
         /** FlightSearchRequest */
         FlightSearchRequest: {
             /**
@@ -6929,6 +7066,33 @@ export interface components {
              * @enum {string}
              */
             status: "complete" | "unavailable";
+        };
+        /** FlightSupplier */
+        FlightSupplier: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "southair" | "sooperfare" | "kyte";
+            /** Name */
+            name: string;
+            /**
+             * Sources
+             * @description SooperFare only: the sources a rule can be limited to.
+             * @default []
+             */
+            sources: components["schemas"]["SupplierSource"][];
+            /**
+             * Status
+             * @description live: its fares are searched for customers; not_public: searched for staff only (Kyte until KYTE_PUBLIC_ENABLED); not_configured: no credentials on this server, so its rules apply to nothing yet.
+             * @enum {string}
+             */
+            status: "live" | "not_public" | "not_configured";
+        };
+        /** FlightSupplierList */
+        FlightSupplierList: {
+            /** Suppliers */
+            suppliers: components["schemas"]["FlightSupplier"][];
         };
         /** FlightView */
         FlightView: {
@@ -10724,6 +10888,16 @@ export interface components {
             supplier_id: string;
             /** Supplier Name */
             supplier_name: string;
+        };
+        /** SupplierSource */
+        SupplierSource: {
+            /**
+             * Code
+             * @description SooperFare's own source identifier, e.g. PK, PA, ONEAPI.
+             */
+            code: string;
+            /** Name */
+            name: string;
         };
         /** SupplierSpendRow */
         SupplierSpendRow: {
@@ -17659,6 +17833,274 @@ export interface operations {
                 content?: never;
             };
             /** @description Booking data is not available. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_rules_v1_admin_flight_pricing_rules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlightPricingRuleList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Super Admin only. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pricing rules unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_rule_v1_admin_flight_pricing_rules_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlightPricingRuleInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlightPricingRule"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Super Admin only. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pricing rules unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_rule_v1_admin_flight_pricing_rules__rule_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlightPricingRuleInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlightPricingRule"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Super Admin only. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pricing rules unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    delete_rule_v1_admin_flight_pricing_rules__rule_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                rule_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletedFlightPricingRule"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Super Admin only. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Pricing rules unavailable. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_suppliers_v1_admin_flight_pricing_suppliers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FlightSupplierList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Super Admin only. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Pricing rules unavailable. */
             503: {
                 headers: {
                     [name: string]: unknown;

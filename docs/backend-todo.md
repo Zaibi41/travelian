@@ -39,6 +39,7 @@ The previous long-form list (sections 1 to 10) is in git history before 21 Novem
 | Servicing tab: refund, reissue, void, cancellation (4) | [gateway#55](https://github.com/Zaibi41/travelian-api-gateway/issues/55) (existing) |
 | Group Ticketing child and infant passengers and prices (5, 6) | [gateway#105](https://github.com/Zaibi41/travelian-api-gateway/issues/105) |
 | Group Ticketing markup rules (5) | [gateway#106](https://github.com/Zaibi41/travelian-api-gateway/issues/106) |
+| Flight Pricing & Rules: Deals & Promotions, Supplier Priority, API Health, Failed Searches and Fare Simulator tabs (hidden; they read the old `/content/*` endpoints). Need gateway endpoints for flight deals, supplier priority, provider health, failed-search log and a fare preview | [gateway#170](https://github.com/Zaibi41/travelian-api-gateway/issues/170) |
 | Group Ticketing `/check-availability` takes the supplier price (5) | [gateway#107](https://github.com/Zaibi41/travelian-api-gateway/issues/107) |
 | Group Ticketing issue call, Dhillu & Sahi hold/release, hold rule, hold expiry on results, final PNR and tickets from the supplier (6, 8) | [gateway#108](https://github.com/Zaibi41/travelian-api-gateway/issues/108) |
 | Paid group holds expiring before the final PNR (8) | [gateway#109](https://github.com/Zaibi41/travelian-api-gateway/issues/109) |
