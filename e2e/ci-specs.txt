@@ -41,6 +41,7 @@ e2e/find-booking-links.spec.ts
 e2e/flight-details-baggage.spec.ts
 e2e/flight-details-popup.spec.ts
 e2e/flight-fare-choice.spec.ts
+e2e/flight-pricing-rules.spec.ts
 e2e/flight-stays.spec.ts
 e2e/flight-trip-height.spec.ts
 e2e/flight-whatsapp.spec.ts
