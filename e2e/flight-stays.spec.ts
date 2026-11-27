@@ -98,21 +98,22 @@ for (const width of [1440, 390]) {
       expect(await noSideScroll(page)).toBe(0);
       // #120: a direct flight says Non-stop under its duration.
       await expect(card(page, "PIA").getByText("Non-stop", { exact: true }).locator("visible=true")).toHaveCount(1);
-      // #119: "1 Stop" / "2 Stops" under the duration; each stay in full under the times (how long, city, airport,
-      // country), wrapping rather than cut off.
+      // "1 Stop" / "2 Stops" under the duration, and under that where and how long, as on the admin booking:
+      // "via Abu Dhabi (2h 45m)". No separate layover row under the times.
+      const via = (airline: string) => card(page, airline).getByTestId("stop-places").locator("visible=true");
       const ey = card(page, "Etihad Airways");
       await expect(ey.getByText("1 Stop", { exact: true }).locator("visible=true")).toHaveCount(1);
-      await expect(ey.getByTestId("card-stay")).toHaveCount(1);
-      await expect(ey.getByTestId("card-stay")).toHaveText("2h 45m layover · Abu Dhabi (AUH), United Arab Emirates");
-      const qr = card(page, "Qatar Airways International Regional Connection Partner Airline Limited");
+      await expect(via("Etihad Airways")).toHaveText("via Abu Dhabi (2h 45m)");
+      await expect(page.getByTestId("card-stay")).toHaveCount(0);
+      const qrName = "Qatar Airways International Regional Connection Partner Airline Limited";
+      const qr = card(page, qrName);
       await expect(qr.getByText("2 Stops", { exact: true }).locator("visible=true")).toHaveCount(1);
-      await expect(qr.getByTestId("card-stay")).toHaveText(["2h 30m layover · Doha (DOH), Qatar", "9h 40m layover · Kinshasa (FIH), Congo, The Democratic Republic of the"]);
-      await qr.getByTestId("card-stay").last().scrollIntoViewIfNeeded();
-      const [stayBox, cardBox] = [await qr.getByTestId("card-stay").last().boundingBox(), await qr.boundingBox()];
+      await expect(via(qrName)).toHaveText("via Doha (2h 30m), Kinshasa (9h 40m)");
+      await expect(qr.locator('[title="2 Stops · via Doha (2h 30m), Kinshasa (9h 40m)"]').first()).toBeAttached(); // full text when cut off
+      const [stayBox, cardBox] = [await via(qrName).boundingBox(), await qr.boundingBox()];
       expect(stayBox!.x + stayBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1);
-      const z8 = card(page, "South Air");
-      await expect(z8.getByTestId("card-stay")).toHaveText("Layover · Multan (MUX), Pakistan"); // no duration is guessed
-      await expect(card(page, "PIA").getByTestId("card-stay")).toHaveCount(0);
+      await expect(via("South Air")).toHaveText("via Multan"); // no duration is guessed
+      await expect(card(page, "PIA").getByTestId("stop-places")).toHaveCount(0);
       await expect(page.locator("main")).not.toContainText(/undefined|null/);
     }
 
@@ -177,7 +178,10 @@ for (const width of [1440, 390]) {
       expect(await noSideScroll(page)).toBe(0);
       const ey = card(page, "Etihad Airways");
       await expect(ey.getByText(/1 Stop/).locator("visible=true")).toHaveCount(2); // outbound and return
-      await expect(ey.getByTestId("card-stay")).toHaveText(["Outbound · 2h 45m layover · Abu Dhabi (AUH), United Arab Emirates", "Return · 2h 0m layover · Abu Dhabi (AUH), United Arab Emirates"]);
+      // Under each journey's stop count (desktop) or after it on the compact mobile row: where and how long.
+      for (const via of ["via Abu Dhabi (2h 45m)", "via Abu Dhabi (2h 0m)"]) {
+        await expect(ey.getByText(via).locator("visible=true")).toHaveCount(1);
+      }
       await expect(card(page, "PIA").getByText(/^Non-stop$/).locator("visible=true")).toHaveCount(2);
       // Each journey's time from the flights' own flying times and stays (not local clock differences across time zones).
       for (const time of ["14h 30m", "11h 30m"]) await expect(ey.getByText(time, { exact: true }).locator("visible=true")).toHaveCount(1);

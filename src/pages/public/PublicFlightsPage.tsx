@@ -35,7 +35,7 @@ import { airportByCode, loadPublicAirports } from "@/data/airports";
 import { isGroupTicketingProvider, groupTicketToFlight } from "@/lib/provider-systems";
 import { publicGroupCalendar, searchPublicGroups, GATEWAY_GROUP_PROVIDER } from "@/lib/public-booking";
 import { normalizeAirlineName, isSameAirline, extractAllAirlines, getAirlineNameFromCarrier } from "@/lib/airline-normalization";
-import { journeyMinutes, minutesText, stayAt, stayBetween, stopLine, stopSummary, type Stay } from "@/lib/flight-stays";
+import { journeyMinutes, minutesText, stayAt, stayBetween, stopLine, stopSummary, viaText, type Stay } from "@/lib/flight-stays";
 import { activeFilterCount, filtersFromParams, FLIGHT_SORTS, sortShortLabel, withFilterParams, type FlightSort } from "@/lib/flight-result-filters";
 import { mealStatus, mealText } from "@/lib/meal";
 import { BAGGAGE_UNKNOWN, baggageFilterOptions, baggageText, checkedText, handCarryText, underBaggageLabel, type BaggageText } from "@/lib/baggage";
@@ -1354,23 +1354,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
       return { label: labels[groupIndex] || "", stays: stays.filter((stay) => stay.code || stay.place) };
     }).filter((journey) => journey.stays.length);
   };
-  /** Under the card's times: every stop in full (how long, city, country, airport), wrapping instead of cut off. */
-  const renderCardStays = (journeys: { label: string; stays: Stay[] }[]) => (
-    <ul aria-label="Stops" className="flex min-w-0 flex-col gap-1.5">
-      {journeys.flatMap((journey) => journey.stays.map((stay, index) => (
-        <li key={`${journey.label}-${stay.code}-${index}`} data-testid="card-stay" className="flex min-w-0 items-start gap-2 rounded-lg bg-primary/5 px-3 py-1.5 text-xs text-foreground">
-          <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
-          <p className="min-w-0 break-words">
-            {journey.label && <span className="font-bold uppercase tracking-wide text-primary">{journey.label} · </span>}
-            <span className="font-semibold">{stay.duration ? `${stay.duration} layover` : "Layover"}</span>
-            <span aria-hidden="true"> · </span>
-            <span>{stay.city ? `${stay.city} (${stay.code})` : stay.place}</span>
-            {stay.country && stay.country.toLowerCase() !== stay.city.toLowerCase() && <span className="text-muted-foreground">, {stay.country}</span>}
-          </p>
-        </li>
-      )))}
-    </ul>
-  );
   // #163: the itinerary the owner asked for: per journey a date / duration / stops line, then each flight on a vertical
   // line (time and date, airport, airline and flight number) and a layover line between flights. #83, #84, #122: the
   // stay shows how long, the city and its country; never a flight name or number.
@@ -2018,12 +2001,19 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
               const pickedFare = displayFares.find((fare) => fareKey(fare) === pickedFares[flight.flightId]) || primaryFare;
               const visibleFares = fareOptionsOpen ? displayFares : displayFares.slice(0, 1);
               const hiddenFareCount = Math.max(0, displayFares.length - 1);
-              // Public cards: every stop in full under the times; the timeline then keeps just the stop count.
+              // Public cards: the stops under the stop count, as on the admin booking: "1 Stop" / "via Jeddah (6h 35m)".
               const stayJourneys = adminMode ? [] : cardStays(flight);
-              const staysShown = stayJourneys.length > 0;
               const legsForCard = journeyLegsForCard(flight);
-              const legHasStays = (label: string) => stayJourneys.some((journey) => journey.label === label || (!journey.label && legsForCard.length === 1));
-              const journeyLegs = legsForCard.map((leg) => (legHasStays(leg.label) ? { ...leg, stopPlaces: undefined } : leg));
+              const viaFor = (label: string) => {
+                const journey = stayJourneys.find((item) => item.label === label || (!item.label && legsForCard.length === 1));
+                return journey ? viaText(journey.stays) : undefined;
+              };
+              const journeyLegs = legsForCard.map((leg) => {
+                const via = viaFor(leg.label);
+                return via ? { ...leg, stopPlaces: via } : leg;
+              });
+              const flightVia = stayJourneys.length === 1 ? viaText(stayJourneys[0].stays) : "";
+              const flightStopPlaces = flightVia || flightStopText(flight).stopPlaces;
               const showStackedLegs = tripType === "roundtrip" || tripType === "multicity" || hasReturnLegs(flight);
 
               return (
@@ -2086,7 +2076,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                   <div className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
                                   <div className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-primary" />
                                 </div>
-                                {stopsUnderDuration(flightStopText(flight).stopText, staysShown ? undefined : flightStopText(flight).stopPlaces)}
+                                {stopsUnderDuration(flightStopText(flight).stopText, flightStopPlaces)}
                               </div>
                               <div className="min-w-0 shrink-0 basis-[8.75rem] text-left">
                                 <p className="text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
@@ -2120,7 +2110,7 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                                   <div className="absolute left-0 top-1/2 h-2 w-2 sm:h-2.5 sm:w-2.5 -translate-y-1/2 rounded-full border-2 border-primary bg-card" />
                                   <div className="absolute right-0 top-1/2 h-2 w-2 sm:h-2.5 sm:w-2.5 -translate-y-1/2 rounded-full bg-primary" />
                                 </div>
-                                {stopsUnderDuration(flightStopText(flight).stopText, staysShown ? undefined : flightStopText(flight).stopPlaces, true)}
+                                {stopsUnderDuration(flightStopText(flight).stopText, flightStopPlaces, true)}
                               </div>
                               <div className="min-w-0 max-w-[7.5rem] sm:max-w-[8.75rem] text-right">
                                 <p className="text-lg sm:text-xl font-bold leading-none text-foreground">{formatFlightTime(flight.arrivalTime)}</p>
@@ -2155,7 +2145,6 @@ export default function PublicFlightsPage({ bookingPath = "/booking", adminMode 
                           </div>
                         )}
                       </div>
-                      {staysShown && renderCardStays(stayJourneys)}
                       {!adminMode && renderFareChooser(flight, displayFares, pickedFare)}
                       {adminMode && (
                       <div className="overflow-hidden rounded-2xl border">

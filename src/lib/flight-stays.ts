@@ -91,6 +91,15 @@ export interface Stay {
   departureTime?: string | null;
 }
 
+/** Under a card's stop count: "via Jeddah (6h 35m)", "via Doha (2h 30m), Kinshasa (9h 40m)"; the time only when known. */
+export function viaText(stays: Stay[]) {
+  const parts = stays.map((stay) => {
+    const name = stay.city || stay.code || stay.place;
+    return name && stay.duration ? `${name} (${stay.duration})` : name;
+  }).filter(Boolean);
+  return parts.length ? `via ${parts.join(", ")}` : "";
+}
+
 /** The stay between two flights of one journey (the passenger lands at `before.destination` and leaves on `after`). */
 export function stayBetween(before: StaySegment, after: StaySegment, layover?: StayLayover, lookup: PlaceLookup = airportPlace): Stay {
   const code = clean(after.origin || before.destination || layover?.location).toUpperCase();
