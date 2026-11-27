@@ -49,8 +49,9 @@ for (const width of [1440, 1280, 390]) {
       expect(Math.abs(first - second)).toBeLessThan(2);
     }
 
-    // Picking a day fills the field and closes the popup.
-    await popup.getByRole("grid").first().getByRole("gridcell", { name: "26" }).first().click();
+    // Picking a day fills the field and closes the popup. A day in the second month: always in the future (in the first
+    // month the 26th is in the past, and can't be picked, from the 27th on).
+    await popup.getByRole("grid").nth(1).getByRole("gridcell", { name: "26" }).first().click();
     await expect(popup).toBeHidden();
     await expect(departure).toHaveValue(/^26 [A-Z][a-z]{2} \d{4}$/);
 
