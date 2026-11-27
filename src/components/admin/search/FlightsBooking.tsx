@@ -6,14 +6,18 @@ import { Button } from "@/components/admin/ui/button";
 import { DashboardErrorNotice } from "@/components/admin/dashboard/DashboardStates";
 import { GatewayError } from "@/lib/gateway/client";
 import { formatMoney } from "@/lib/admin-bookings/format";
-import { PASSENGER_LABEL, airlineLabel, parseFlightSearch, repriceFlights, type FlightSearch, type FlightSearchView, type RepriceView } from "@/lib/admin-search/flights";
+import {
+  PASSENGER_LABEL, airlineLabel, journeyKey, journeyLabel, parseFlightSearch, repriceFlights,
+  type FlightSearch, type FlightSearchView, type JourneyView, type RepriceView,
+} from "@/lib/admin-search/flights";
 import { HOLD_PATH, fareCheckFailure, type FareCheckState, type HoldDraft, type HoldMode } from "@/lib/admin-search/hold";
 import { flightShareMessage, whatsappShareUrl } from "@/lib/admin-search/share";
 import { useAirports } from "@/hooks/use-airports";
 import { FareCheckDialog } from "./FareCheckDialog";
 import { FlightsSearch, type FareSelection } from "./FlightsSearch";
 
-type Selections = Partial<Record<"outbound" | "return", FareSelection>>;
+/** The chosen fare per journey (journeyKey: outbound, return, or multi-city's leg-1, leg-2, ...). */
+type Selections = Partial<Record<string, FareSelection>>;
 
 const errorMessage = (error: unknown) =>
   error instanceof GatewayError ? error.message : "The fare couldn't be revalidated. Try again.";
@@ -45,7 +49,7 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
   useEffect(() => () => checking.current?.abort(), []);
 
   const picksFor = (search: FlightSearchView) => (selected.searchId === search.search_id ? selected.picks : {});
-  const directionsOf = (search: FlightSearchView) => search.journeys.map(journey => journey.direction);
+  const directionsOf = (search: FlightSearchView) => search.journeys.map(journeyKey);
 
   const openHold = (mode: HoldMode, search: FlightSearchView, picks: Selections, quote: RepriceView, acceptPriceChange: boolean) => {
     const draft: HoldDraft = {
@@ -78,7 +82,7 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
   /** Book (or Request to book) on a fare row: select it; once every direction has a fare, check the fare. */
   const bookOrHold = (mode: HoldMode, search: FlightSearchView, pick: FareSelection) => {
     reprice.reset();
-    const picks = { ...picksFor(search), [pick.journey.direction]: pick };
+    const picks = { ...picksFor(search), [journeyKey(pick.journey)]: pick };
     setSelected({ searchId: search.search_id, picks });
     if (directionsOf(search).every(direction => picks[direction])) void startCheck(mode, search, picks);
   };
@@ -142,13 +146,13 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
       }}
       renderBelow={(search, request) => {
         const picks = picksFor(search);
-        const directions = search.journeys.map(journey => journey.direction);
+        const directions = search.journeys.map(journeyKey);
         const ready = directions.length > 0 && directions.every(direction => picks[direction]);
         if (!Object.keys(picks).length) return null;
         return (
           <SelectionPanel
             picks={picks}
-            directions={directions}
+            journeys={search.journeys}
             ready={ready}
             pending={reprice.isPending}
             error={reprice.error}
@@ -163,8 +167,8 @@ export function FlightsBooking({ renderHold }: { renderHold?: (quote: RepriceVie
   );
 }
 
-function SelectionPanel({ picks, directions, ready, pending, error, quote, onReprice, hold }: {
-  picks: Selections; directions: ("outbound" | "return")[]; ready: boolean; pending: boolean; error: unknown;
+function SelectionPanel({ picks, journeys, pending, error, quote, onReprice, hold }: {
+  picks: Selections; journeys: JourneyView[]; ready: boolean; pending: boolean; error: unknown;
   quote?: RepriceView; onReprice: () => void; hold: React.ReactNode;
 }) {
   const secondsLeft = useSecondsLeft(quote?.expires_at);
@@ -173,11 +177,11 @@ function SelectionPanel({ picks, directions, ready, pending, error, quote, onRep
     <section aria-label="Selected fare" className="flex flex-col gap-3 rounded-xl border border-border bg-card px-card py-3.5 shadow-card">
       <h2 className="text-section font-semibold text-foreground">Selected fare</h2>
       <ul className="flex flex-col gap-1 text-body text-foreground">
-        {directions.map(direction => {
-          const pick = picks[direction];
+        {journeys.map(journey => {
+          const pick = picks[journeyKey(journey)];
           return (
-            <li key={direction} className="min-w-0 truncate">
-              <span className="font-semibold">{direction === "outbound" ? "Outbound" : "Return"}:</span>{" "}
+            <li key={journeyKey(journey)} className="min-w-0 truncate">
+              <span className="font-semibold">{journeyLabel(journey)}:</span>{" "}
               {pick ? `${airlineLabel(pick.flight)} ${pick.flight.flight_number ?? ""} · ${pick.fare.name}` : <span className="text-muted-foreground">choose a fare</span>}
             </li>
           );

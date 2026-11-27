@@ -5,6 +5,7 @@
 import { gatewayPost, type GatewayOptions } from "@/lib/gateway/client";
 import { baggageFilterOptions, baggageText, underBaggageLabel } from "@/lib/baggage";
 import type { components } from "@/lib/gateway/schema";
+import { MAX_MULTI_CITY_FLIGHTS } from "@/lib/flight-search-limits";
 
 type Schemas = components["schemas"];
 export type FlightSearchView = Schemas["FlightSearchView"];
@@ -15,13 +16,26 @@ export type FlightMoney = Schemas["FlightMoney"];
 
 const UNAVAILABLE = "Flight search can't run right now. The flight supplier isn't responding; try again in a few minutes.";
 
+/** A multi-city flight after the first (the first is from / to / date). */
+export interface FlightLeg {
+  from?: string;
+  to?: string;
+  /** yyyy-mm-dd */
+  date?: string;
+}
+
+/** Multi-city: at most this many flights, as on the public site (the gateway accepts up to 5). */
+export const MAX_FLIGHTS = MAX_MULTI_CITY_FLIGHTS;
+
 export interface FlightSearch {
-  trip: "oneway" | "roundtrip";
+  trip: "oneway" | "roundtrip" | "multicity";
   from?: string;
   to?: string;
   /** yyyy-mm-dd */
   date?: string;
   returnDate?: string;
+  /** Multi-city: flights 2, 3, ... (URL: one `leg=FROM,TO,yyyy-mm-dd` each). */
+  moreLegs: FlightLeg[];
   adults: number;
   children: number;
   infants: number;
@@ -43,13 +57,22 @@ export function parseFlightSearch(params: URLSearchParams): FlightSearch {
     const value = params.get(key) ?? "";
     return DATE.test(value) ? value : undefined;
   };
-  const trip = params.get("trip") === "roundtrip" ? "roundtrip" : "oneway";
+  const tripParam = params.get("trip");
+  const trip = tripParam === "roundtrip" || tripParam === "multicity" ? tripParam : "oneway";
+  const legCode = (value?: string) => (value && CODE.test(value.trim().toUpperCase()) ? value.trim().toUpperCase() : undefined);
+  const moreLegs = trip === "multicity"
+    ? params.getAll("leg").slice(0, MAX_FLIGHTS - 1).map((value): FlightLeg => {
+      const [from, to, day] = value.split(",");
+      return { from: legCode(from), to: legCode(to), date: day && DATE.test(day) ? day : undefined };
+    })
+    : [];
   return {
     trip,
     from: code("from"),
     to: code("to"),
     date: date("date"),
     returnDate: trip === "roundtrip" ? date("return") : undefined,
+    moreLegs: trip === "multicity" && !moreLegs.length ? [{}] : moreLegs,
     adults: count(params.get("adults"), 1, 9, 1),
     children: count(params.get("children"), 0, 8, 0),
     infants: count(params.get("infants"), 0, 8, 0),
@@ -58,12 +81,13 @@ export function parseFlightSearch(params: URLSearchParams): FlightSearch {
 
 export function writeFlightSearch(params: URLSearchParams, search: FlightSearch): URLSearchParams {
   const next = new URLSearchParams(params);
-  for (const key of ["trip", "from", "to", "date", "return", "adults", "children", "infants"]) next.delete(key);
-  if (search.trip === "roundtrip") next.set("trip", "roundtrip");
+  for (const key of ["trip", "from", "to", "date", "return", "leg", "adults", "children", "infants"]) next.delete(key);
+  if (search.trip !== "oneway") next.set("trip", search.trip);
   if (search.from) next.set("from", search.from);
   if (search.to) next.set("to", search.to);
   if (search.date) next.set("date", search.date);
   if (search.trip === "roundtrip" && search.returnDate) next.set("return", search.returnDate);
+  if (search.trip === "multicity") for (const leg of search.moreLegs) next.append("leg", [leg.from ?? "", leg.to ?? "", leg.date ?? ""].join(","));
   if (search.adults !== 1) next.set("adults", String(search.adults));
   if (search.children) next.set("children", String(search.children));
   if (search.infants) next.set("infants", String(search.infants));
@@ -74,7 +98,40 @@ export function isCompleteFlightSearch(search: FlightSearch): search is FlightSe
   if (!search.from || !search.to || !search.date || search.from === search.to) return false;
   if (search.infants > search.adults) return false;
   if (search.trip === "roundtrip") return Boolean(search.returnDate && search.returnDate >= search.date);
+  if (search.trip === "multicity") return search.moreLegs.length > 0 && legProblems(search).every(problem => problem === null);
   return true;
+}
+
+/** Every flight of the search in order: the first (from / to / date), then multi-city's others. */
+export const searchLegs = (search: FlightSearch): FlightLeg[] =>
+  [{ from: search.from, to: search.to, date: search.date }, ...(search.trip === "multicity" ? search.moreLegs : [])];
+
+/** Multi-city flights 2, 3, ...: null when the flight is ready to search; "" while a field is still empty (nothing to
+ *  show yet); otherwise the message to show under its fields. */
+export function legProblems(search: FlightSearch): (string | null)[] {
+  const legs = searchLegs(search);
+  return search.moreLegs.map((leg, index) => {
+    if (leg.from && leg.from === leg.to) return "Origin and destination are the same airport. Choose a different destination.";
+    const previous = legs[index].date;
+    if (leg.date && previous && leg.date < previous) return `Choose a date on or after flight ${index + 1}'s date.`;
+    return leg.from && leg.to && leg.date ? null : "";
+  });
+}
+
+/** A new multi-city flight leaves where the last one lands. */
+export const nextFlightLeg = (search: FlightSearch): FlightLeg => ({ from: searchLegs(search).at(-1)?.to });
+
+/** A journey's own key: its leg number (multi-city), else its direction. Fare picks are kept per journey. */
+export const journeyKey = (journey: Pick<JourneyView, "direction" | "leg">) => (journey.leg ? `leg-${journey.leg}` : journey.direction);
+
+/** "Outbound", "Return", or multi-city's "Flight 2". */
+export const journeyLabel = (journey: Pick<JourneyView, "direction" | "leg">) =>
+  journey.leg ? `Flight ${journey.leg}` : journey.direction === "outbound" ? "Outbound" : "Return";
+
+/** The date searched for a journey. */
+export function journeyDate(search: FlightSearch, journey: Pick<JourneyView, "direction" | "leg">) {
+  if (journey.leg) return searchLegs(search)[journey.leg - 1]?.date;
+  return journey.direction === "outbound" ? search.date : search.returnDate;
 }
 
 export const searchFlights = (search: FlightSearch & { from: string; to: string; date: string }, options?: GatewayOptions) =>
@@ -83,6 +140,9 @@ export const searchFlights = (search: FlightSearch & { from: string; to: string;
     {
       origin: search.from, destination: search.to, departure_date: search.date,
       return_date: search.trip === "roundtrip" ? search.returnDate ?? null : null,
+      ...(search.trip === "multicity"
+        ? { legs: searchLegs(search).map(leg => ({ origin: leg.from!, destination: leg.to!, departure_date: leg.date! })) }
+        : {}),
       adults: search.adults, children: search.children, infants: search.infants,
       cabin: "economy", currency: "PKR",
     },

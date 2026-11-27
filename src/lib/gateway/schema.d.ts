@@ -6783,6 +6783,11 @@ export interface components {
              * @default 0
              */
             infants: number;
+            /**
+             * Legs
+             * @description Multi-city: every flight in order (2 to 5), each searched as a one-way. origin, destination and departure_date must be the first flight's; return_date must be empty. Each journey of the answer carries its `leg` number; choose one fare per leg.
+             */
+            legs?: components["schemas"]["SearchLeg"][] | null;
             /** Origin */
             origin: string;
             /** Return Date */
@@ -8163,6 +8168,11 @@ export interface components {
             direction: "outbound" | "return";
             /** Flights */
             flights: components["schemas"]["FlightView"][];
+            /**
+             * Leg
+             * @description Multi-city only: the flight's number in the trip (1, 2, ...); every multi-city journey's direction is outbound.
+             */
+            leg?: number | null;
             /** Origin */
             origin: string;
         };
@@ -8891,7 +8901,7 @@ export interface components {
             contact: components["schemas"]["HoldContact"];
             /**
              * Fare Ids
-             * @description The chosen fare, and its return fare for a round trip.
+             * @description The chosen fare, and its return fare for a round trip; multi-city: one fare per leg, in leg order.
              */
             fare_ids: string[];
             /** Passengers */
@@ -9328,7 +9338,7 @@ export interface components {
         RepriceRequest: {
             /**
              * Fare Ids
-             * @description Outbound fare, then the return fare for a round trip.
+             * @description Outbound fare, then the return fare for a round trip; multi-city: one fare per leg, in leg order.
              */
             fare_ids: string[];
             /** Search Id */
@@ -9935,6 +9945,21 @@ export interface components {
             phone_code?: string | null;
             /** Title */
             title?: ("MR" | "MRS" | "MISS" | "MASTER") | null;
+        };
+        /**
+         * SearchLeg
+         * @description One flight of a multi-city trip.
+         */
+        SearchLeg: {
+            /**
+             * Departure Date
+             * Format: date
+             */
+            departure_date: string;
+            /** Destination */
+            destination: string;
+            /** Origin */
+            origin: string;
         };
         /**
          * SegmentView

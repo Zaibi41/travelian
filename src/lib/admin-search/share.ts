@@ -47,6 +47,7 @@ export function flightShareMessage(
     "Flight details from Travelian",
     "",
     ...(request?.trip === "roundtrip" ? [journey.direction === "return" ? "Return flight" : "Outbound flight"] : []),
+    ...(request?.trip === "multicity" && journey.leg ? [`Flight ${journey.leg}`] : []),
     [airlineLabel(flight), clean(flight.flight_number)].filter(Boolean).join(" "),
     `${airport(journey.origin, airports)} to ${airport(journey.destination, airports)}`,
     ...(departs ? [`Departs: ${departs}`] : []),

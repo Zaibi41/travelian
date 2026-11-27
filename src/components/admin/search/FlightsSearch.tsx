@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { ChevronDown, Luggage, Minus, Plus, Users, X } from "lucide-react";
+import { ChevronDown, Luggage, Minus, Plus, Trash2, Users, X } from "lucide-react";
 import { AirlineLogo } from "@/components/admin/ui/AirlineLogo";
 import { Button } from "@/components/admin/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/admin/ui/dialog";
@@ -25,9 +25,10 @@ import { formatMoney } from "@/lib/admin-bookings/format";
 import { underBaggageLabel } from "@/lib/baggage";
 import { cn } from "@/lib/utils";
 import {
-  DEFAULT_FILTERS, airlineLabel, baggageOptions, fareBaggage, filterFlights, formatDuration, isCompleteFlightSearch, isRefundable, parseFlightSearch,
+  DEFAULT_FILTERS, MAX_FLIGHTS, airlineLabel, baggageOptions, fareBaggage, filterFlights, formatDuration, isCompleteFlightSearch, isRefundable,
+  journeyDate, journeyKey, journeyLabel, legProblems, nextFlightLeg, parseFlightSearch, searchLegs,
   SORT_OPTIONS, adminFlightCalendar, priceBands, searchFlights, stopsLabel, writeFlightSearch,
-  type FareView, type FlightSearch, type FlightSearchView, type FlightView, type JourneyView, type ResultFilters,
+  type FareView, type FlightLeg, type FlightSearch, type FlightSearchView, type FlightView, type JourneyView, type ResultFilters,
 } from "@/lib/admin-search/flights";
 import { flightStays, stayPlace, stopsBelowLine, type Stay } from "@/lib/admin-search/stays";
 
@@ -58,7 +59,6 @@ export function useCountdown(expiresAt?: string) {
 
 /** Honest reasons for controls that are shown (mockup) but can't be used yet. */
 export const REASONS = {
-  multiCity: "Multi-city isn't available from the current flight provider.",
   cabin: "Only Economy is searched for now.",
   returnDate: "Choose Round-trip to add a return date.",
   refund: "Not provided by suppliers yet",
@@ -101,7 +101,7 @@ interface FlightsSearchProps {
 }
 
 // Search > Flights (spec 6, D26, mockup search-flights) on the gateway's live search (Southair).
-// Shown but disabled, with the reason (REASONS): Multi-city, cabins other than Economy, Refundable
+// Shown but disabled, with the reason (REASONS): cabins other than Economy, Refundable
 // filter without refund data, Fare rules, Book, Hold, Quote. Hidden until there is data
 // (docs/backend-todo.md, Search): Quotes pending card, "Staff fare" tag, gateway-served logos (airlines without our logo file show their code).
 export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: FlightsSearchProps) {
@@ -146,7 +146,10 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
         >
           {/* Line 1: trip type, Travelers and Cabin, left-aligned. */}
           <div className="flex flex-wrap items-center gap-2">
-            <TripTypeControl value={draft.trip} onChange={trip => setDraft({ ...draft, trip, returnDate: trip === "oneway" ? undefined : draft.returnDate })} />
+            <TripTypeControl value={draft.trip} onChange={trip => setDraft({
+              ...draft, trip, returnDate: trip === "roundtrip" ? draft.returnDate : undefined,
+              moreLegs: trip === "multicity" ? (draft.moreLegs.length ? draft.moreLegs : [nextFlightLeg({ ...draft, trip })]) : [],
+            })} />
             <TravelersPicker value={draft} onChange={next => setDraft({ ...draft, ...next })} />
             <CabinPicker />
           </div>
@@ -176,6 +179,9 @@ export function FlightsSearch({ renderFareAction, renderBelow, actionNotes }: Fl
             )}
             <div data-size="submit"><SearchSubmitButton label="Search flights" disabled={!canSearch} /></div>
           </div>
+          {draft.trip === "multicity" && (
+            <MoreFlights draft={draft} onChange={moreLegs => setDraft({ ...draft, moreLegs })} />
+          )}
         </form>
         {sameAirport && <p role="alert" className="text-body text-status-critical-text">Origin and destination are the same airport. Choose a different destination.</p>}
       </section>
@@ -211,24 +217,74 @@ function DateInput({ id, label, value, min, onChange, fareRoute, openSignal }: {
   );
 }
 
-/** Trip type above the fields (as before): One-way | Round-trip | Multi-city, a segmented control; Multi-city
- *  is shown but off, with the reason. */
+const TRIP_LABELS: Record<FlightSearch["trip"], string> = { oneway: "One-way", roundtrip: "Round-trip", multicity: "Multi-city" };
+
+/** Trip type above the fields (as before): One-way | Round-trip | Multi-city, a segmented control. */
 function TripTypeControl({ value, onChange }: { value: FlightSearch["trip"]; onChange: (trip: FlightSearch["trip"]) => void }) {
   return (
     <div role="radiogroup" aria-label="Trip type" className="inline-flex rounded-sm border border-border bg-muted p-0.5">
-      {(["oneway", "roundtrip"] as const).map(trip => (
+      {(["oneway", "roundtrip", "multicity"] as const).map(trip => (
         <button key={trip} type="button" role="radio" aria-checked={value === trip} onClick={() => onChange(trip)}
           className={cn("h-8 rounded-sm px-3 text-body font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             value === trip ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
-          {trip === "oneway" ? "One-way" : "Round-trip"}
+          {TRIP_LABELS[trip]}
         </button>
       ))}
-      <WithReason reason={REASONS.multiCity}>
-        {describedBy => (
-          <button type="button" role="radio" aria-checked={false} disabled aria-describedby={describedBy}
-            className="h-8 cursor-not-allowed rounded-sm px-3 text-body font-medium text-muted-foreground opacity-60">Multi-city</button>
-        )}
-      </WithReason>
+    </div>
+  );
+}
+
+/** Multi-city: flights 2 to 5 under the first flight's line, each with From, swap, To and its date; a new flight
+ *  leaves where the last one lands. Each flight's message shows under its own fields. */
+function MoreFlights({ draft, onChange }: { draft: FlightSearch; onChange: (legs: FlightLeg[]) => void }) {
+  const problems = legProblems(draft);
+  const legs = searchLegs(draft);
+  const update = (index: number, patch: FlightLeg) => {
+    const next = draft.moreLegs.map((leg, at) => (at === index ? { ...leg, ...patch } : leg));
+    // A changed destination carries on as the next flight's origin, unless that one was set to somewhere else.
+    const following = next[index + 1];
+    if (patch.to && following && (!following.from || following.from === draft.moreLegs[index].to)) next[index + 1] = { ...following, from: patch.to };
+    onChange(next);
+  };
+  return (
+    <div className="flex min-w-0 flex-col gap-3">
+      {draft.moreLegs.map((leg, index) => {
+        const number = index + 2;
+        const problem = problems[index];
+        return (
+          <fieldset key={index} aria-label={`Flight ${number}`} className="flex min-w-0 flex-col gap-1 border-t border-border pt-3">
+            <legend className="sr-only">Flight {number}</legend>
+            <p aria-hidden="true" className="text-label font-semibold text-foreground">Flight {number}</p>
+            <div className="admin-search-row">
+              <div data-size="route" className="min-w-0">
+                <RouteRow
+                  from={<AirportCombobox id={`flight-from-${number}`} label="From" placeholder="Origin" icon="departure" value={leg.from} onChange={from => update(index, { from })} />}
+                  to={<AirportCombobox id={`flight-to-${number}`} label="To" placeholder="Destination" icon="arrival" value={leg.to} onChange={to => update(index, { to })} />}
+                  onSwap={() => update(index, { from: leg.to, to: leg.from })}
+                />
+              </div>
+              <div data-size="date"><DateInput id={`flight-date-${number}`} label="Departure date" value={leg.date} min={legs[index].date ?? todayIso()}
+                onChange={date => update(index, { date })}
+                fareRoute={leg.from && leg.to ? { from: leg.from, to: leg.to, adults: draft.adults, cabin: "economy" } : undefined} /></div>
+              <div data-size="submit">
+                <Button type="button" variant="outline" size="lg" className="h-14" disabled={draft.moreLegs.length <= 1}
+                  title={draft.moreLegs.length <= 1 ? "A multi-city trip has at least two flights" : undefined}
+                  aria-label={`Remove flight ${number}`} onClick={() => onChange(draft.moreLegs.filter((_, at) => at !== index))}>
+                  <Trash2 aria-hidden="true" /> Remove
+                </Button>
+              </div>
+            </div>
+            {problem && <p role="alert" className="text-body text-status-critical-text">{problem}</p>}
+          </fieldset>
+        );
+      })}
+      {legs.length < MAX_FLIGHTS && (
+        <div>
+          <Button type="button" variant="outline" size="sm" onClick={() => onChange([...draft.moreLegs, nextFlightLeg(draft)])}>
+            <Plus aria-hidden="true" /> Add another flight
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -458,18 +514,18 @@ function Results({ data, search, filters, onFilters, renderFareAction, actionNot
           )}
           {data.journeys.map(journey => {
             const flights = filterFlights(journey.flights, filters);
-            const journeyDate = journey.direction === "outbound" ? search.date : search.returnDate;
+            const date = journeyDate(search, journey);
             // Nothing came back for this journey: the date message, unless a provider failed (then the
             // partial-failure notice stays). Filters only explain an empty list when there were flights.
             const empty = journey.flights.length === 0
               ? (providerFailed ? (data.notice ? null : <p className="py-1 text-body text-status-action-text">{partialNotice}</p>)
-                : <p className="py-1 text-body text-muted-foreground">{noFlightsMessage(journey.origin, journey.destination, journeyDate)}</p>)
+                : <p className="py-1 text-body text-muted-foreground">{noFlightsMessage(journey.origin, journey.destination, date)}</p>)
               : <p className="py-1 text-body text-muted-foreground">No flights match these filters.</p>;
             return (
-              <div key={journey.direction} className="flex flex-col gap-2.5">
+              <div key={journeyKey(journey)} className="flex flex-col gap-2.5">
                 {data.journeys.length > 1 && (
                   <h3 className="text-body font-semibold text-foreground">
-                    {journey.direction === "outbound" ? "Outbound" : "Return"} · {journey.origin} → {journey.destination}
+                    {journeyLabel(journey)} · {journey.origin} → {journey.destination}
                   </h3>
                 )}
                 {flights.length === 0 ? empty : flights.map(flight => (

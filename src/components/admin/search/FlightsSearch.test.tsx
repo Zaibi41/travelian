@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { FlightSearchView } from "@/lib/admin-search/flights";
-import { filterFlights, DEFAULT_FILTERS, parseFlightSearch, writeFlightSearch, isCompleteFlightSearch, baggageOptions, priceBands } from "@/lib/admin-search/flights";
+import { filterFlights, DEFAULT_FILTERS, parseFlightSearch, writeFlightSearch, isCompleteFlightSearch, legProblems, baggageOptions, priceBands } from "@/lib/admin-search/flights";
 
 const gateway = vi.hoisted(() => ({ search: vi.fn() }));
 vi.mock("@/lib/admin-search/flights", async importOriginal => ({ ...(await importOriginal<object>()), searchFlights: gateway.search }));
@@ -161,11 +161,29 @@ describe("admin Flights search, live Southair shape", () => {
 describe("flight search helpers", () => {
   it("keeps the search in the URL and validates it", () => {
     const search = parseFlightSearch(new URLSearchParams("trip=roundtrip&from=khi&to=MUX&date=2026-11-27&return=2026-11-30&adults=2&infants=1"));
-    expect(search).toEqual({ trip: "roundtrip", from: "KHI", to: "MUX", date: "2026-11-27", returnDate: "2026-11-30", adults: 2, children: 0, infants: 1 });
+    expect(search).toEqual({ trip: "roundtrip", from: "KHI", to: "MUX", date: "2026-11-27", returnDate: "2026-11-30", moreLegs: [], adults: 2, children: 0, infants: 1 });
     expect(writeFlightSearch(new URLSearchParams("tab=flights"), search).toString()).toBe("tab=flights&trip=roundtrip&from=KHI&to=MUX&date=2026-11-27&return=2026-11-30&adults=2&infants=1");
     expect(isCompleteFlightSearch(search)).toBe(true);
     expect(isCompleteFlightSearch({ ...search, returnDate: "2026-11-01" })).toBe(false);
     expect(isCompleteFlightSearch({ ...search, infants: 3 })).toBe(false);
+  });
+  it("multi-city: flights 2 onwards in the URL, each complete and in date order", () => {
+    const params = new URLSearchParams("trip=multicity&from=KHI&to=LHE&date=2026-11-27&leg=lhe,DXB,2026-11-30&leg=DXB,KHI,2026-12-05&return=2026-12-09");
+    const search = parseFlightSearch(params);
+    expect(search).toMatchObject({ trip: "multicity", returnDate: undefined,
+      moreLegs: [{ from: "LHE", to: "DXB", date: "2026-11-30" }, { from: "DXB", to: "KHI", date: "2026-12-05" }] });
+    expect(writeFlightSearch(new URLSearchParams("tab=flights"), search).toString())
+      .toBe("tab=flights&trip=multicity&from=KHI&to=LHE&date=2026-11-27&leg=LHE%2CDXB%2C2026-11-30&leg=DXB%2CKHI%2C2026-12-05");
+    expect(isCompleteFlightSearch(search)).toBe(true);
+    expect(legProblems(search)).toEqual([null, null]);
+    const early = { ...search, moreLegs: [search.moreLegs[0], { ...search.moreLegs[1], date: "2026-11-29" }] };
+    expect(isCompleteFlightSearch(early)).toBe(false);
+    expect(legProblems(early)[1]).toBe("Choose a date on or after flight 2's date.");
+    expect(legProblems({ ...search, moreLegs: [{ from: "LHE", to: "LHE" }] })[0]).toMatch(/same airport/);
+    expect(legProblems({ ...search, moreLegs: [{ from: "LHE" }] })).toEqual([""]); // still being filled in: no message
+    // Multi-city without a second flight starts with one empty flight; the other trip types carry none.
+    expect(parseFlightSearch(new URLSearchParams("trip=multicity&from=KHI")).moreLegs).toEqual([{}]);
+    expect(parseFlightSearch(new URLSearchParams("from=KHI&leg=LHE,DXB,2026-11-30")).moreLegs).toEqual([]);
   });
   it("filters by stops, time and refund, dropping flights with no fares left", () => {
     const flights = STAFF.journeys[0].flights;
@@ -180,6 +198,26 @@ describe("mockup elements (Search > Flights)", () => {
   beforeEach(() => gateway.search.mockReset().mockResolvedValue(STAFF));
   const url = "/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27";
 
+  it("multi-city: Flight 2 starts where flight 1 lands, flights can be added up to four and removed down to two", async () => {
+    renderAt(url);
+    fireEvent.click(screen.getByRole("radio", { name: "Multi-city" }));
+    const second = screen.getByRole("group", { name: "Flight 2" });
+    expect(within(second).getByLabelText("Departure date")).toBeInTheDocument();
+    expect(within(second).getByRole("button", { name: "Remove flight 2" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Search flights" })).toBeDisabled(); // flight 2 has no destination or date yet
+    expect(screen.queryByLabelText("Return date")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Add another flight" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add another flight" }));
+    expect(screen.getAllByRole("group", { name: /^Flight \d$/ }).map(group => group.getAttribute("aria-label"))).toEqual(["Flight 2", "Flight 3", "Flight 4"]);
+    expect(screen.queryByRole("button", { name: "Add another flight" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Remove flight 3" }));
+    expect(screen.getAllByRole("group", { name: /^Flight \d$/ })).toHaveLength(2);
+    // Back to One-way: the extra flights go, the approved line 2 is unchanged.
+    fireEvent.click(screen.getByRole("radio", { name: "One-way" }));
+    expect(screen.queryByRole("group", { name: "Flight 2" })).not.toBeInTheDocument();
+    expect([...document.querySelector(".admin-search-row")!.children].map(child => child.getAttribute("data-size"))).toEqual(["route", "date", "submit"]);
+  });
+
   it("two lines: trip type, Travelers and Cabin above; From, To, dates and Search flights in the field row; Return only for Round-trip", async () => {
     renderAt(url);
     const row = document.querySelector(".admin-search-row")!;
@@ -189,9 +227,7 @@ describe("mockup elements (Search > Flights)", () => {
     expect(within(line1).getByRole("button", { name: "Travelers: 1 adult" })).toBeInTheDocument();
     expect(within(line1).getByRole("combobox", { name: "Cabin Class" })).toHaveTextContent("Economy");
     expect(screen.queryByRole("combobox", { name: "Trip" })).not.toBeInTheDocument();
-    const multi = screen.getByRole("radio", { name: "Multi-city" });
-    expect(multi).toBeDisabled();
-    expect(multi).toHaveAccessibleDescription("Multi-city isn't available from the current flight provider.");
+    expect(screen.getByRole("radio", { name: "Multi-city" })).toBeEnabled();
     expect(screen.queryByLabelText("Return date")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: "Round-trip" }));
     expect(screen.getByLabelText("Return date")).toBeEnabled();

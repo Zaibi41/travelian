@@ -22,6 +22,15 @@ const ONE_WAY = {
   journeys: [{ direction: "outbound", origin: "KHI", destination: "MUX", flights: [flight("1", "fare-out", 467)] }],
 };
 const ROUND = { ...ONE_WAY, journeys: [...ONE_WAY.journeys, { direction: "return", origin: "MUX", destination: "KHI", flights: [flight("2", "fare-ret", 400)] }] };
+const requestFlight = (id: string, fareId: string, price: number) => {
+  const item = flight(id, fareId, price);
+  return { ...item, fares: item.fares.map(fare => ({ ...fare, booking_mode: "request" })) };
+};
+const MULTI = { ...ONE_WAY, journeys: [
+  { direction: "outbound", leg: 1, origin: "KHI", destination: "LHE", flights: [requestFlight("1", "fare-1", 467)] },
+  { direction: "outbound", leg: 2, origin: "LHE", destination: "DXB", flights: [requestFlight("2", "fare-2", 600)] },
+  { direction: "outbound", leg: 3, origin: "DXB", destination: "KHI", flights: [] },
+] };
 const QUOTE = {
   quote_id: "q1", expires_at: new Date(Date.now() + 600_000).toISOString(), selling_total: rs(934), new_total: rs(934), old_total: rs(934),
   passengers: [{ type: "ADT", count: 2, selling_each: rs(467) }], price_changed: false, booking_enabled: false,
@@ -191,6 +200,29 @@ describe("fare check on Book (mockup flights-fare-check)", () => {
     fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Try again" }));
     expect(await screen.findByRole("heading", { name: "Hold page" })).toBeInTheDocument();
     expect(gateway.reprice).toHaveBeenCalledTimes(2);
+  });
+
+  it("multi-city: one heading per flight, Request to book waits for a fare on every flight, in order", async () => {
+    gateway.search.mockResolvedValue({ ...MULTI, journeys: MULTI.journeys.slice(0, 2) });
+    renderAt("/admin/search?tab=flights&trip=multicity&from=KHI&to=LHE&date=2026-11-27&leg=LHE,DXB,2026-11-30");
+    expect(await screen.findByRole("heading", { name: "Flight 1 · KHI → LHE" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Flight 2 · LHE → DXB" })).toBeInTheDocument();
+    expect(gateway.search).toHaveBeenCalledWith(expect.objectContaining({ trip: "multicity", moreLegs: [{ from: "LHE", to: "DXB", date: "2026-11-30" }] }), expect.anything());
+    expect(screen.queryByRole("button", { name: /^Book / })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Request to book PA-2 Y" }));
+    expect(gateway.reprice).not.toHaveBeenCalled();
+    const panel = screen.getByRole("region", { name: "Selected fare" });
+    expect(within(panel).getByText("Flight 1:").parentElement).toHaveTextContent("choose a fare");
+    fireEvent.click(screen.getByRole("button", { name: "Request to book PA-1 Y" }));
+    await waitFor(() => expect(gateway.reprice).toHaveBeenCalledWith("s1", ["fare-1", "fare-2"], expect.anything()));
+    expect(await screen.findByRole("heading", { name: "Hold page" })).toBeInTheDocument();
+    expect(holdPage.search).toBe("?mode=request");
+  });
+
+  it("multi-city: a flight with no results says so for its own route and date", async () => {
+    gateway.search.mockResolvedValue(MULTI);
+    renderAt("/admin/search?tab=flights&trip=multicity&from=KHI&to=LHE&date=2026-11-27&leg=LHE,DXB,2026-11-30&leg=DXB,KHI,2026-12-05");
+    expect(await screen.findByText("No flights found for DXB to KHI on 5 Dec 2026. Try another date.")).toBeInTheDocument();
   });
 
   it("round trip: Book waits for a fare in each direction", async () => {

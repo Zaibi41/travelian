@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { AirlineLogo } from "@/components/admin/ui/AirlineLogo";
 import { StatusBadge } from "@/components/admin/ui/StatusBadge";
 import { formatMoney } from "@/lib/admin-bookings/format";
-import { airlineLabel, fareBaggage, formatDuration, stopsLabel } from "@/lib/admin-search/flights";
+import { airlineLabel, fareBaggage, formatDuration, journeyKey, stopsLabel } from "@/lib/admin-search/flights";
 import { underBaggageLabel } from "@/lib/baggage";
 import { travelerCount, type HoldDraft } from "@/lib/admin-search/hold";
 import { day, time, useCountdown } from "./FlightsSearch";
@@ -16,7 +16,7 @@ export function FlightFareDetails({ draft }: { draft: HoldDraft }) {
   return (
     <>
       {draft.picks.map(({ journey, flight }) => (
-        <div key={journey.direction} className="flex min-w-0 flex-col gap-1">
+        <div key={journeyKey(journey)} className="flex min-w-0 flex-col gap-1">
           <div className="flex min-w-0 items-center gap-2">
             {/* #88: the airline's logo (Travelian's logo file, else the IATA code badge), as on the search results. */}
             <AirlineLogo airline={airlineLabel(flight)} flightNumber={flight.flight_number ?? undefined} code={flight.airline_code} className="h-9 w-9 rounded-xl" />

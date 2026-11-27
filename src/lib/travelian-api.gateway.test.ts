@@ -34,6 +34,28 @@ describe("flights through the gateway", () => {
     expect(offers[0]).toMatchObject({ flightNumber: "PA400", returnDepartureTime: "2026-12-15T19:00", price: { total: 22050 + 21000 } });
   });
 
+  it("multi-city: each first flight with the cheapest flight of every later leg, any airline; none when a leg has no fare", () => {
+    const journeys = [
+      { direction: "outbound" as const, leg: 1, origin: "KHI", destination: "LHE", flights: [
+        flight("o1", "PA", "PA400", "2026-12-12T08:00", [fare("a", "Value", 22050), fare("b", "Xtra", 25050)]),
+        flight("o2", "PK", "PK302", "2026-12-12T09:00", [fare("c", "Lite", 21000)])] },
+      { direction: "outbound" as const, leg: 2, origin: "LHE", destination: "DXB", flights: [
+        flight("m1", "EK", "EK623", "2026-12-15T04:00", [fare("d", "Saver", 60000)]),
+        flight("m2", "PK", "PK203", "2026-12-15T09:00", [fare("e", "Lite", 55000)])] },
+      { direction: "outbound" as const, leg: 3, origin: "DXB", destination: "KHI", flights: [
+        flight("n1", "FZ", "FZ333", "2026-12-20T10:00", [{ ...fare("f", "Lite", 40000), baggage: "7 kg" }])] },
+    ];
+    const offers = gatewayOffers({ search_id: "s", status: "complete", journeys }, "Economy");
+    expect(offers.map((o) => o.flightNumber)).toEqual(["PA400", "PK302"]);
+    expect(offers[0].fareOptions?.map((o) => [o.tier, o.price.total, o.gatewayFareIds])).toEqual([
+      ["Value", 22050 + 55000 + 40000, ["a", "e", "f"]], ["Xtra", 25050 + 55000 + 40000, ["b", "e", "f"]]]);
+    expect(offers[0].fareOptions?.[0].legBags?.map((leg) => leg.label)).toEqual(["Flight 1", "Flight 2", "Flight 3"]);
+    expect(offers[0].fareOptions?.[0].bags).toBe("20 kg checked / 20 kg checked / 7 kg checked");
+    expect(offers[0].segments?.map((s) => s.flightNumber)).toEqual(["PA400", "PK203", "FZ333"]);
+    const noFare = journeys.map((journey) => (journey.leg === 3 ? { ...journey, flights: [] } : journey));
+    expect(gatewayOffers({ search_id: "s", status: "complete", journeys: noFare }, "Economy")).toEqual([]);
+  });
+
   it("keeps each flight of a connection and where and how long the passenger stays (#37, #83, #84)", () => {
     const twoStops = { ...flight("f1", "EY", "EY254 / EY11 / EY19", "2026-12-12T03:00", [fare("a", "Saver", 90000)]), stops: 2, stop_cities: ["AUH", "DOH"],
       duration_minutes: 900, segments: [
@@ -160,10 +182,30 @@ describe("flights through the gateway", () => {
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it("multi-city is refused before any call", async () => {
+    it("multi-city sends every flight as legs and books one fare per leg", async () => {
+      const multi = { search_id: "s4", expires_at: "2026-12-12T08:15:00Z", status: "complete", journeys: [
+        { direction: "outbound", leg: 1, origin: "KHI", destination: "LHE", flights: [flight("o1", "PA", "PA400", "2026-12-12T08:00", [fare("a", "Value", 22050)])] },
+        { direction: "outbound", leg: 2, origin: "LHE", destination: "DXB", flights: [flight("m1", "EK", "EK623", "2026-12-15T04:00", [fare("m", "Saver", 60000)])] },
+      ] };
+      const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(multi), { status: 200 }));
+      vi.stubGlobal("fetch", fetchMock);
+      const result = await searchFlights({ ...input, tripType: "multicity", returnDate: undefined,
+        segments: [{ from: "KHI", to: "Lahore (LHE)", date: "2026-12-12" }, { from: "LHE", to: "Dubai (DXB)", date: "2026-12-15" }] },
+      undefined, { signedIn: true });
+      expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({ origin: "KHI", destination: "LHE", departure_date: "2026-12-12", return_date: null,
+        legs: [{ origin: "KHI", destination: "LHE", departure_date: "2026-12-12" }, { origin: "LHE", destination: "DXB", departure_date: "2026-12-15" }] });
+      expect(result.flights).toHaveLength(1);
+      expect(result.flights[0].fareOptions?.[0]).toMatchObject({ gatewayFareIds: ["a", "m"], price: { total: 22050 + 60000 } });
+      expect(result.flights[0].segments?.map((s) => [s.origin, s.destination])).toEqual([["KHI", "LHE"], ["LHE", "DXB"]]);
+    });
+
+    it("multi-city needs two flights, each with airports and a date, before any call", async () => {
       const fetchMock = vi.fn();
       vi.stubGlobal("fetch", fetchMock);
-      await expect(searchFlights({ ...input, tripType: "multicity" }, undefined, { signedIn: true })).rejects.toThrow(/Multi-city/);
+      await expect(searchFlights({ ...input, tripType: "multicity", segments: [{ from: "KHI", to: "LHE", date: "2026-12-12" }] }, undefined, { signedIn: true }))
+        .rejects.toThrow(/at least two flights/);
+      await expect(searchFlights({ ...input, tripType: "multicity", segments: [{ from: "KHI", to: "LHE", date: "2026-12-12" }, { from: "LHE", to: "", date: "2026-12-14" }] }, undefined, { signedIn: true }))
+        .rejects.toThrow(/3-letter airport codes/);
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });

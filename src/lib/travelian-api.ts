@@ -269,7 +269,8 @@ interface GatewayFlight {
   id: string; airline_code?: string; airline_name?: string; flight_number?: string; departure_local?: string; arrival_local?: string;
   duration_minutes?: number; stops?: number; stop_cities?: string[]; segments?: GatewaySegment[]; fares: GatewayFare[];
 }
-interface GatewayJourney { direction: "outbound" | "return"; origin: string; destination: string; flights: GatewayFlight[] }
+/** leg: multi-city only, the flight's number in the trip (every multi-city journey is "outbound"). */
+interface GatewayJourney { direction: "outbound" | "return"; leg?: number; origin: string; destination: string; flights: GatewayFlight[] }
 interface GatewaySearchView { search_id: string; status: "complete" | "unavailable"; notice?: string; journeys: GatewayJourney[] }
 
 function gatewayBaseUrl() {
@@ -283,43 +284,51 @@ function minutesText(minutes?: number) {
   return typeof minutes === "number" && minutes > 0 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : undefined;
 }
 
-/** A round trip's baggage: one value when both flights have the same allowance, else outbound / return. */
-function fareBags(fare: GatewayFare, back?: GatewayFare) {
-  const out = baggageText(fare.baggage, fare.baggage_detail);
-  if (!back) return { bags: out.short, bagsDetail: out.detail };
-  const ret = baggageText(back.baggage, back.baggage_detail);
-  if (out.short === ret.short) return { bags: out.short, bagsDetail: out.detail };
-  return { bags: `${out.short} / ${ret.short}`, bagsDetail: `Outbound: ${out.detail}. Return: ${ret.detail}.` };
+/** The labels of a trip's flights: a round trip's Outbound and Return, multi-city's Flight 1, Flight 2, ... */
+function legLabels(count: number, multiCity: boolean) {
+  return multiCity ? Array.from({ length: count }, (_, index) => `Flight ${index + 1}`) : ["Outbound", "Return"];
 }
 
-/** Each flight's own baggage on a round trip (#123): outbound, then return. */
-function legBags(fare: GatewayFare, back: GatewayFare) {
-  return ([["Outbound", fare], ["Return", back]] as const).map(([label, item]) => {
+/** A trip's baggage: one value when every flight has the same allowance, else each flight's. */
+function fareBags(fare: GatewayFare, extras: GatewayFare[], multiCity: boolean) {
+  const out = baggageText(fare.baggage, fare.baggage_detail);
+  if (!extras.length) return { bags: out.short, bagsDetail: out.detail };
+  const texts = [out, ...extras.map((item) => baggageText(item.baggage, item.baggage_detail))];
+  if (texts.every((text) => text.short === out.short)) return { bags: out.short, bagsDetail: out.detail };
+  const labels = legLabels(texts.length, multiCity);
+  return { bags: texts.map((text) => text.short).join(" / "), bagsDetail: texts.map((text, index) => `${labels[index]}: ${text.detail}.`).join(" ") };
+}
+
+/** Each flight's own baggage (#123): outbound, then return; multi-city: flight by flight. */
+function legBags(fares: GatewayFare[], multiCity: boolean) {
+  const labels = legLabels(fares.length, multiCity);
+  return fares.map((item, index) => {
     const text = baggageText(item.baggage, item.baggage_detail);
-    return { label, bags: text.short, bagsDetail: text.detail };
+    return { label: labels[index], bags: text.short, bagsDetail: text.detail };
   });
 }
 
 const travelerCount = (fare: GatewayFare) => (fare.passenger_prices || []).reduce((sum, row) => sum + row.count, 0);
 
-/** The gateway's total for all travelers (#113): one fare's, or a round trip's outbound and return totals together. */
-function allTravelersTotal(fare: GatewayFare, extra?: GatewayFare) {
-  if (!fare.total_price || (extra && !extra.total_price)) return {};
-  return { allTravelersTotal: rupees(fare.total_price) + rupees(extra?.total_price), travelerCount: travelerCount(fare) };
+/** The gateway's total for all travelers (#113): one fare's, or every flight's totals together (round trip, multi-city). */
+function allTravelersTotal(fare: GatewayFare, extras: GatewayFare[]) {
+  if (!fare.total_price || extras.some((extra) => !extra.total_price)) return {};
+  return { allTravelersTotal: [fare, ...extras].reduce((sum, item) => sum + rupees(item.total_price), 0), travelerCount: travelerCount(fare) };
 }
 
-function fareOption(fare: GatewayFare, extra?: GatewayFare): FareOption {
-  const total = rupees(fare.selling_price) + rupees(extra?.selling_price);
+/** A fare row: the first flight's fare, with the fare of each later flight (a round trip's return, multi-city's next flights). */
+function fareOption(fare: GatewayFare, extras: GatewayFare[] = [], multiCity = false): FareOption {
+  const total = [fare, ...extras].reduce((sum, item) => sum + rupees(item.selling_price), 0);
   return {
     tier: fare.name,
     price: { currency: fare.selling_price?.currency || "PKR", total },
-    ...fareBags(fare, extra),
+    ...fareBags(fare, extras, multiCity),
     change: "As per airline fare rules",
     refund: fare.refund || "As per airline fare rules",
     meal: fare.meal || undefined,
-    ...(extra ? { legBags: legBags(fare, extra) } : {}),
-    gatewayFareIds: [fare.id, extra?.id].filter((id): id is string => Boolean(id)),
-    ...allTravelersTotal(fare, extra),
+    ...(extras.length ? { legBags: legBags([fare, ...extras], multiCity) } : {}),
+    gatewayFareIds: [fare, ...extras].map((item) => item.id),
+    ...allTravelersTotal(fare, extras),
   };
 }
 
@@ -357,8 +366,52 @@ function gatewayLayovers(flight: GatewayFlight) {
   return (flight.stop_cities || []).filter(Boolean).map((location) => ({ location }));
 }
 
-/** Gateway journeys -> offers: one-way, one per flight; round trip, each outbound with the cheapest return of the same airline. */
+const cheapestFare = (flight: GatewayFlight) => priced(flight).sort((a, b) => rupees(a.selling_price) - rupees(b.selling_price))[0];
+
+/** Multi-city: each first flight with the cheapest priced flight of every later leg (any airline: each leg is searched
+ *  and booked on its own). A first flight is left out when a later leg has no priced flight. */
+function multiCityOffers(journeys: GatewayJourney[], cabin: string): FlightOffer[] {
+  const [first, ...later] = journeys;
+  const picks: { journey: GatewayJourney; flight: GatewayFlight; fare: GatewayFare }[] = [];
+  for (const journey of later) {
+    let best: { flight: GatewayFlight; fare: GatewayFare } | undefined;
+    for (const flight of journey.flights) {
+      const fare = cheapestFare(flight);
+      if (fare && (!best || rupees(fare.selling_price) < rupees(best.fare.selling_price))) best = { flight, fare };
+    }
+    if (!best) return [];
+    picks.push({ journey, ...best });
+  }
+  const offers: FlightOffer[] = [];
+  for (const flight of first.flights) {
+    const fares = priced(flight);
+    if (!fares.length) continue;
+    const extras = picks.map((pick) => pick.fare);
+    const options = fares.map((fare) => fareOption(fare, extras, true)).sort((a, b) => a.price.total - b.price.total);
+    const lowest = options[0];
+    const segments = [gatewaySegments(flight, first.origin, first.destination), ...picks.map((pick) => gatewaySegments(pick.flight, pick.journey.origin, pick.journey.destination))].flat();
+    offers.push({
+      provider: GATEWAY_FLIGHT_PROVIDER,
+      offerId: ["gw", flight.id, ...picks.map((pick) => pick.flight.id)].join("-"),
+      airline: flight.airline_name || flight.airline_code || "Airline",
+      flightNumber: flight.flight_number || "Not specified",
+      origin: first.origin, destination: first.destination,
+      departureTime: flight.departure_local || "", arrivalTime: flight.arrival_local || "",
+      cabin, fareBrand: lowest.tier, duration: minutesText(flight.duration_minutes), stops: flight.stops ?? 0,
+      baggage: lowest.bags, meal: lowest.meal || null,
+      segments: segments as FlightOffer["segments"],
+      layovers: gatewayLayovers(flight),
+      price: lowest.price, fareOptions: options,
+    });
+  }
+  return offers;
+}
+
+/** Gateway journeys -> offers: one-way, one per flight; round trip, each outbound with the cheapest return of the same
+ *  airline; multi-city (journeys with a leg number), each first flight with the cheapest flight of every later leg. */
 export function gatewayOffers(view: GatewaySearchView, cabin: string): FlightOffer[] {
+  const legs = view.journeys.filter((journey) => typeof journey.leg === "number").sort((a, b) => (a.leg ?? 0) - (b.leg ?? 0));
+  if (legs.length >= 2) return multiCityOffers(legs, cabin);
   const outbound = view.journeys.find((journey) => journey.direction === "outbound");
   const back = view.journeys.find((journey) => journey.direction === "return");
   if (!outbound) return [];
@@ -378,7 +431,7 @@ export function gatewayOffers(view: GatewaySearchView, cabin: string): FlightOff
       }
       if (!returnFlight || !returnFare) continue; // a round trip needs a return on the same airline
     }
-    const options = fares.map((fare) => fareOption(fare, returnFare)).sort((a, b) => a.price.total - b.price.total);
+    const options = fares.map((fare) => fareOption(fare, returnFare ? [returnFare] : [])).sort((a, b) => a.price.total - b.price.total);
     const lowest = options[0];
     const segments = gatewaySegments(flight, outbound.origin, outbound.destination);
     if (returnFlight && back) segments.push(...gatewaySegments(returnFlight, back.origin, back.destination));
@@ -411,18 +464,22 @@ export interface FlightSearchOptions {
 const SIGNED_IN_UNAVAILABLE = "Flight search can't run right now. The flight supplier isn't responding; try again in a few minutes.";
 
 export async function searchFlights(input: FlightSearchInput, signal?: AbortSignal, options: FlightSearchOptions = {}): Promise<FlightSearchResult> {
-  const origin = extractAirportCode(input.from);
-  const destination = extractAirportCode(input.to);
-  if (!origin || !destination) {
+  const legs = input.tripType === "multicity"
+    ? (input.segments || []).map((segment) => ({ origin: extractAirportCode(segment.from), destination: extractAirportCode(segment.to), departure_date: segment.date }))
+    : null;
+  const origin = legs ? legs[0]?.origin : extractAirportCode(input.from);
+  const destination = legs ? legs[0]?.destination : extractAirportCode(input.to);
+  if (!origin || !destination || legs?.some((leg) => !leg.origin || !leg.destination)) {
     throw new Error("Please use 3-letter airport codes, for example SKT to LHR.");
   }
-  if (input.tripType === "multicity") {
-    throw new Error("Multi-city search isn't available online yet. Please contact Travelian.");
+  if (legs && (legs.length < 2 || legs.some((leg) => !leg.departure_date))) {
+    throw new Error("Add at least two flights, each with a date, for a multi-city search.");
   }
   const cabin = String(input.cabin || "economy").toLowerCase().replace(/\s+/g, "_");
   const body = {
-    origin, destination, departure_date: input.departureDate,
+    origin, destination, departure_date: legs ? legs[0].departure_date : input.departureDate,
     return_date: input.tripType === "roundtrip" ? input.returnDate || null : null,
+    ...(legs ? { legs } : {}),
     adults: input.passengers.adults, children: input.passengers.children, infants: input.passengers.infants,
     cabin: (["economy", "premium_economy", "business", "first"].includes(cabin) ? cabin : "economy") as "economy" | "premium_economy" | "business" | "first",
     currency: input.currency || "PKR",
