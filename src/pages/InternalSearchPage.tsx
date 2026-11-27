@@ -28,7 +28,7 @@ export default function InternalSearchPage() {
     // At most 1600px wide, centred (as on the public site), so a large monitor doesn't stretch the rows.
     // Search card, status line, filters and results share these left and right edges.
     <div className="mx-auto flex w-full min-w-0 max-w-[100rem] flex-col gap-section-gap">
-      <h1 className="font-display text-page-title font-bold text-foreground">Search</h1>
+      <h1 className="font-display text-page-title font-bold text-foreground">New Booking</h1>
       <SearchProductTabs active={active} />
       {active === "flights" ? <FlightsBooking /> : active === "hotels" ? <HotelsSearch /> : <GroupTicketingSearch />}
     </div>

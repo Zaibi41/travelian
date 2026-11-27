@@ -111,7 +111,7 @@ for (const width of [1440, 390]) {
       email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),
       accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
     })));
-    await page.goto("/admin/search?tab=flights&from=LHE&to=KHI&date=2026-12-10");
+    await page.goto("/admin/bookings/new?tab=flights&from=LHE&to=KHI&date=2026-12-10");
     await expect(page.getByRole("region", { name: "Results" })).toBeVisible();
     await page.getByText("PA401").first().scrollIntoViewIfNeeded();
     await shot(page, `admin-results-${width}`);

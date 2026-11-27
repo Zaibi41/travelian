@@ -64,3 +64,4 @@ e2e/roundtrip-return-date.spec.ts
 e2e/search-expiry-bold.spec.ts
 e2e/traveler-details-form-167.spec.ts
 e2e/trust-alignment.spec.ts
+e2e/admin-menu-cleanup.spec.ts

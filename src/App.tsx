@@ -2,6 +2,8 @@ import { lazy, Suspense } from "react";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { RedirectKeepingQuery } from "@/components/RedirectKeepingQuery";
+import { RENAMED_ADMIN_PATHS } from "@/lib/admin-redirects";
 import { HelmetProvider } from "react-helmet-async";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -44,8 +46,6 @@ const BookingRequestPage = lazy(() => import("./pages/public/BookingRequestPage"
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const AgenciesPage = lazy(() => import("./pages/AgenciesPage"));
 const PackagesPage = lazy(() => import("./pages/PackagesPage"));
-const HotelsPage = lazy(() => import("./pages/HotelsPage"));
-const FlightPricingPage = lazy(() => import("./pages/FlightPricingPage"));
 const WalletPage = lazy(() => import("./pages/WalletPage"));
 const PaymentsPage = lazy(() => import("./pages/PaymentsPage"));
 const AccountsLedgersPage = lazy(() => import("./pages/AccountsLedgersPage"));
@@ -54,10 +54,7 @@ const SupplierBalancesPage = lazy(() => import("./pages/SupplierBalancesPage"));
 const TicketSaleEntryPage = lazy(() => import("./pages/TicketSaleEntryPage"));
 const SupplierRefundsPage = lazy(() => import("./pages/SupplierRefundsPage"));
 const CustomerDuesPage = lazy(() => import("./pages/CustomerDuesPage"));
-const AuditLogPage = lazy(() => import("./pages/AuditLogPage"));
 const ReconciliationPage = lazy(() => import("./pages/ReconciliationPage"));
-const ProviderSystemsPage = lazy(() => import("./pages/ProviderSystemsPage"));
-const GroupTicketingCollectionsPage = lazy(() => import("./pages/GroupTicketingCollectionsPage"));
 const AdminSearchPage = lazy(() => import("./pages/AdminSearchPage"));
 const HoldFlightPage = lazy(() => import("./pages/HoldFlightPage"));
 const HoldResultPage = lazy(() => import("./pages/HoldResultPage"));
@@ -65,15 +62,10 @@ const GroupHoldPage = lazy(() => import("./pages/GroupHoldPage"));
 const GroupHeldPage = lazy(() => import("./pages/GroupHeldPage"));
 const FlightBookingsRoute = lazy(() => import("./pages/AdminBookingsRoutes").then(m => ({ default: m.FlightBookingsRoute })));
 const CustomerPortalPage = lazy(() => import("./pages/CustomerPortalPage"));
-const UsersPage = lazy(() => import("./pages/UsersPage"));
 const CustomersTravelersPage = lazy(() => import("./pages/CustomersTravelersPage"));
 const SavedPersonPage = lazy(() => import("./pages/SavedPersonPage"));
-const RBACPage = lazy(() => import("./pages/RBACPage"));
-const CouponsPage = lazy(() => import("./pages/CouponsPage"));
-const BlogPage = lazy(() => import("./pages/BlogPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const AnnouncementsPage = lazy(() => import("./pages/AnnouncementsPage"));
-const SiteLogoPage = lazy(() => import("./pages/SiteLogoPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookingsRoute = lazy(() => import("./pages/AdminBookingsRoutes").then(m => ({ default: m.BookingsRoute })));
@@ -82,6 +74,11 @@ const LegacyRequestsRoute = lazy(() => import("./pages/AdminBookingsRoutes").the
 const GroupBookingRoute = lazy(() => import("./pages/AdminBookingsRoutes").then(m => ({ default: m.GroupBookingRoute })));
 const ReportsPage = lazy(() => import("./pages/ReportsPage"));
 const RoadmapPlaceholderPage = lazy(() => import("./pages/RoadmapPlaceholderPage"));
+const PricingMenuPage = lazy(() => import("./pages/AdminMenuPages").then(m => ({ default: m.PricingMenuPage })));
+const IntegrationsMenuPage = lazy(() => import("./pages/AdminMenuPages").then(m => ({ default: m.IntegrationsMenuPage })));
+const UsersMenuPage = lazy(() => import("./pages/AdminMenuPages").then(m => ({ default: m.UsersMenuPage })));
+const WebsiteMenuPage = lazy(() => import("./pages/AdminMenuPages").then(m => ({ default: m.WebsiteMenuPage })));
+const LogsMenuPage = lazy(() => import("./pages/AdminMenuPages").then(m => ({ default: m.LogsMenuPage })));
 
 const queryClient = new QueryClient();
 
@@ -139,6 +136,8 @@ const App = () => (
             <Route path="/admin/agencies" element={<AdminLayout><AgenciesPage /></AdminLayout>} />
             <Route path="/admin/packages" element={<AdminLayout><PackagesPage /></AdminLayout>} />
             <Route path="/admin/bookings" element={<AdminLayout><BookingsRoute /></AdminLayout>} />
+            {/* New Booking: the old Search page (agency and customer roles keep their own search on it). */}
+            <Route path="/admin/bookings/new" element={<AdminLayout><AdminSearchPage /></AdminLayout>} />
             <Route path="/admin/bookings/umrah" element={<Navigate to="/admin/bookings" replace />} />
             {["flights", "group-ticketing", "hotels", "inquiries-requests", "quotations"].map(tab => (
               <Route key={tab} path={`/admin/bookings/${tab}`} element={<AdminLayout><BookingsRoute tab={tab} /></AdminLayout>} />
@@ -149,24 +148,24 @@ const App = () => (
             <Route path="/admin/bookings/holds" element={<AdminLayout><Navigate to="/admin/flight-bookings?tab=held" replace /></AdminLayout>} />
             <Route path="/admin/booking-requests" element={<AdminLayout><Navigate to="/admin/requests?tab=all" replace /></AdminLayout>} />
             <Route path="/admin/reports" element={<AdminLayout><ReportsPage /></AdminLayout>} />
+            <Route path="/admin/pricing" element={<AdminLayout><PricingMenuPage /></AdminLayout>} />
+            <Route path="/admin/integrations" element={<AdminLayout><IntegrationsMenuPage /></AdminLayout>} />
+            <Route path="/admin/users" element={<AdminLayout><UsersMenuPage /></AdminLayout>} />
+            <Route path="/admin/website" element={<AdminLayout><WebsiteMenuPage /></AdminLayout>} />
+            <Route path="/admin/system" element={<Navigate to="/admin/system/settings" replace />} />
+            <Route path="/admin/system/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
+            <Route path="/admin/system/announcements" element={<AdminLayout><AnnouncementsPage /></AdminLayout>} />
+            <Route path="/admin/system/logs" element={<AdminLayout><LogsMenuPage /></AdminLayout>} />
+            {/* Old admin URLs (menu cleanup 2026-11-27 and earlier renames): each opens its new page, keeping its query. */}
+            {Object.entries(RENAMED_ADMIN_PATHS).map(([from, to]) => (
+              <Route key={from} path={from} element={<RedirectKeepingQuery to={to} />} />
+            ))}
             <Route path="/admin/attention-queue" element={<AdminLayout><RoadmapPlaceholderPage title="Attention Queue" description="One list of cases needing a person, so nothing relies on memory or chat" /></AdminLayout>} />
             <Route path="/admin/alerts" element={<AdminLayout><RoadmapPlaceholderPage title="Alerts" description="Automatic warnings that need acknowledgement, separate from human cases" /></AdminLayout>} />
-            <Route path="/admin/audit-log" element={<AdminLayout><AuditLogPage /></AdminLayout>} />
-            <Route path="/admin/roadmap/audit-log" element={<AdminLayout><Navigate to="/admin/audit-log" replace /></AdminLayout>} />
-            <Route path="/admin/roadmap/audit-logs" element={<AdminLayout><Navigate to="/admin/audit-log" replace /></AdminLayout>} />
-            <Route path="/admin/roadmap/system-logs-jobs" element={<AdminLayout><RoadmapPlaceholderPage title="System Logs &amp; Jobs" description="Lets support trace an error to its cause" /></AdminLayout>} />
-            <Route path="/admin/roadmap/webhook-logs" element={<AdminLayout><Navigate to="/admin/roadmap/system-logs-jobs" replace /></AdminLayout>} />
             <Route path="/admin/finance/reconciliation" element={<AdminLayout><ReconciliationPage /></AdminLayout>} />
-            <Route path="/admin/roadmap/reconciliation" element={<AdminLayout><Navigate to="/admin/finance/reconciliation" replace /></AdminLayout>} />
-            <Route path="/admin/roadmap/payment-providers" element={<AdminLayout><RoadmapPlaceholderPage title="Payment Providers" description="Banks and gateways used for receipts and payouts" /></AdminLayout>} />
-            <Route path="/admin/roadmap/payment-gateways" element={<AdminLayout><Navigate to="/admin/roadmap/payment-providers" replace /></AdminLayout>} />
             <Route path="/admin/tickets" element={<AdminLayout><Navigate to="/admin/flight-bookings?tab=issued" replace /></AdminLayout>} />
-            <Route path="/admin/hotels" element={<AdminLayout><HotelsPage /></AdminLayout>} />
-            <Route path="/admin/pricing/flights" element={<AdminLayout><FlightPricingPage /></AdminLayout>} />
-            <Route path="/admin/flights" element={<Navigate to="/admin/pricing/flights" replace />} />
             <Route path="/admin/flights-search" element={<AdminLayout><PublicFlightsPage bookingPath="/admin/booking" adminMode /></AdminLayout>} />
-            <Route path="/admin/flight-search" element={<AdminLayout><Navigate to="/admin/search?tab=flights" replace /></AdminLayout>} />
-            <Route path="/admin/search" element={<AdminLayout><AdminSearchPage /></AdminLayout>} />
+            <Route path="/admin/flight-search" element={<AdminLayout><Navigate to="/admin/bookings/new?tab=flights" replace /></AdminLayout>} />
             <Route path="/admin/search/flights/hold" element={<AdminLayout><HoldFlightPage /></AdminLayout>} />
             <Route path="/admin/search/flights/hold/result" element={<AdminLayout><HoldResultPage /></AdminLayout>} />
             <Route path="/admin/search/group-ticketing/hold" element={<AdminLayout><GroupHoldPage /></AdminLayout>} />
@@ -182,20 +181,11 @@ const App = () => (
             <Route path="/admin/finance/ticket-sales" element={<AdminLayout><TicketSaleEntryPage /></AdminLayout>} />
             <Route path="/admin/finance/supplier-refunds" element={<AdminLayout><SupplierRefundsPage /></AdminLayout>} />
             <Route path="/admin/finance/customer-dues" element={<AdminLayout><CustomerDuesPage /></AdminLayout>} />
-            <Route path="/admin/users" element={<AdminLayout><UsersPage /></AdminLayout>} />
             <Route path="/admin/customers" element={<AdminLayout><CustomersTravelersPage /></AdminLayout>} />
             <Route path="/admin/customers/travelers" element={<AdminLayout><CustomersTravelersPage tab="travelers" /></AdminLayout>} />
             <Route path="/admin/customers/communications" element={<AdminLayout><CustomersTravelersPage tab="communications" /></AdminLayout>} />
             <Route path="/admin/customers/people/:personId" element={<AdminLayout><SavedPersonPage /></AdminLayout>} />
-            <Route path="/admin/rbac" element={<AdminLayout><RBACPage /></AdminLayout>} />
-            <Route path="/admin/provider-systems" element={<AdminLayout><ProviderSystemsPage /></AdminLayout>} />
-            <Route path="/admin/group-ticketing" element={<AdminLayout><GroupTicketingCollectionsPage /></AdminLayout>} />
-            <Route path="/admin/coupons" element={<AdminLayout><CouponsPage /></AdminLayout>} />
-            <Route path="/admin/blog" element={<AdminLayout><BlogPage /></AdminLayout>} />
             <Route path="/admin/notifications" element={<AdminLayout><NotificationsPage /></AdminLayout>} />
-            <Route path="/admin/announcements" element={<AdminLayout><AnnouncementsPage /></AdminLayout>} />
-            <Route path="/admin/site-logo" element={<AdminLayout><SiteLogoPage /></AdminLayout>} />
-            <Route path="/admin/settings" element={<AdminLayout><SettingsPage /></AdminLayout>} />
             <Route path="/admin/customer" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />
             <Route path="/admin/customer/*" element={<AdminLayout><CustomerPortalPage /></AdminLayout>} />
               <Route path="*" element={<PublicLayout><NotFound /></PublicLayout>} />

@@ -45,7 +45,7 @@ const renderPage = (draft: HoldDraft, mode = "hold") =>
         <Routes>
           <Route path="/admin/search/flights/hold" element={<HoldFlightPage />} />
           <Route path="/admin/search/flights/hold/result" element={<ResultProbe />} />
-          <Route path="/admin/search" element={<SearchProbe />} />
+          <Route path="/admin/bookings/new" element={<SearchProbe />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,

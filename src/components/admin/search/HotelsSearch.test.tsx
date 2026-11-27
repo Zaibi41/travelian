@@ -47,7 +47,7 @@ const renderAt = (url: string) =>
     </QueryClientProvider>,
   );
 
-const SEARCH_URL = "/admin/search?tab=hotels&dest=Dubai&dk=region&did=6053839&in=2099-01-10&out=2099-01-12";
+const SEARCH_URL = "/admin/bookings/new?tab=hotels&dest=Dubai&dk=region&did=6053839&in=2099-01-10&out=2099-01-12";
 
 describe("hotel search state", () => {
   it("round-trips through the URL and drops invalid values", () => {
@@ -138,7 +138,7 @@ describe("Search > Hotels", () => {
   });
 
   it("a popular destination fills Destination; searching writes the search to the URL", () => {
-    renderAt("/admin/search?tab=hotels&in=2099-01-10&out=2099-01-12");
+    renderAt("/admin/bookings/new?tab=hotels&in=2099-01-10&out=2099-01-12");
     fireEvent.click(screen.getByRole("button", { name: "Dubai" }));
     expect(screen.getByRole("combobox", { name: "Destination" })).toHaveValue("Dubai");
     fireEvent.click(screen.getByRole("button", { name: "Search hotels" }));
@@ -146,7 +146,7 @@ describe("Search > Hotels", () => {
   });
 
   it("says what is missing instead of searching", () => {
-    renderAt("/admin/search?tab=hotels");
+    renderAt("/admin/bookings/new?tab=hotels");
     fireEvent.click(screen.getByRole("button", { name: "Search hotels" }));
     expect(screen.getByRole("alert")).toHaveTextContent("Enter a destination.");
     expect(gateway.search).not.toHaveBeenCalled();

@@ -64,12 +64,13 @@ const NOT_AVAILABLE: Record<string, { title: string; body: string }> = {
 // Supplier status, Branch, Created by, Issued by, Ticket number, Source type,
 // Airline, Route, Travel date, Trip type, TTL, and the Assign, Add note,
 // Request issuance, Hold payment and Create manual booking actions.
-export default function AdminBookingsPage({ tab = "" }: { tab?: string }) {
+/** `showTitle` is false inside the Bookings menu page, whose own title is "Bookings". */
+export default function AdminBookingsPage({ tab = "", showTitle = true }: { tab?: string; showTitle?: boolean }) {
   const current: BookingsTab = BOOKINGS_TABS.find(entry => entry.slug === tab) ?? BOOKINGS_TABS[0];
   const unavailable = NOT_AVAILABLE[current.slug];
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
-      <h1 className="font-display text-page-title font-bold text-foreground">Bookings</h1>
+      {showTitle && <h1 className="font-display text-page-title font-bold text-foreground">Bookings</h1>}
       <ProductTabLinks label="Bookings"
         tabs={BOOKINGS_TABS.filter(entry => !entry.hidden).map(entry => ({ to: bookingsTabPath(entry), label: entry.label, icon: TAB_ICONS[entry.slug] }))} />
       {unavailable ? (

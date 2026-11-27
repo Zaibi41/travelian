@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/admin/TabbedAdminPage";
 import { useMemo, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
 import { Card, CardContent } from "@/components/admin/ui/card";
@@ -138,7 +139,7 @@ export default function UsersPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-page-title font-bold font-display">{isAgencyOwner ? "Agency Users" : "User Management"}</h1>
+          <PageHeading className="text-page-title font-bold font-display">{isAgencyOwner ? "Agency Users" : "User Management"}</PageHeading>
           <p className="text-body text-muted-foreground">
             {isAgencyOwner ? "Create staff users for your agency and sub agencies." : "Manage super admin, admin, staff, agency owner, and agency staff users."}
           </p>

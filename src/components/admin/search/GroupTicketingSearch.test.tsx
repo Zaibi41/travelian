@@ -24,7 +24,7 @@ const view = (overrides: Record<string, unknown> = {}) => ({ data: [{ id: "g1", 
 const renderAt = (query = "from=LHE&to=DMM&date=2026-11-20&adults=1") =>
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <MemoryRouter initialEntries={[`/admin/search?tab=group-ticketing&${query}`]}><GroupTicketingSearch /></MemoryRouter>
+      <MemoryRouter initialEntries={[`/admin/bookings/new?tab=group-ticketing&${query}`]}><GroupTicketingSearch /></MemoryRouter>
     </QueryClientProvider>,
   );
 

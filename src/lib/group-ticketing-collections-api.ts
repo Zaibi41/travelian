@@ -1,3 +1,6 @@
+// The admin Group Ticketing Collections page and its save/delete calls are removed (menu cleanup, 2026-11-27):
+// group ticketing comes from the supplier APIs. The public site still reads the labels below until the
+// Group Ticketing provider's "Public label" and "Category" fields (Integrations → Suppliers) replace them.
 import { API_BASE_URL } from "./api-config";
 
 export interface GroupTicketingCollection {
@@ -43,34 +46,9 @@ function apiUrl(path: string) {
   return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`.replace(/\/+$/, "") || API_BASE_URL;
 }
 
-export async function listGroupTicketingCollections(): Promise<GroupTicketingCollectionRecord[]> {
-  const response = await fetch(apiUrl("/content/group-ticketing-collections"));
-  if (!response.ok) throw new Error(`Unable to load group ticketing collections (${response.status})`);
-  const payload = await response.json();
-  return Array.isArray(payload.items) ? payload.items.map(normalizeCollection) : [];
-}
-
 export async function listPublicGroupTicketingCollections(): Promise<Pick<GroupTicketingCollectionRecord, "slug" | "publicLabel" | "supplierName" | "sortOrder">[]> {
   const response = await fetch(apiUrl("/content/group-ticketing-collections/public"));
   if (!response.ok) throw new Error(`Unable to load group ticketing collections (${response.status})`);
   const payload = await response.json();
   return Array.isArray(payload.items) ? payload.items.map(normalizeCollection) : [];
-}
-
-export async function saveGroupTicketingCollection(collection: GroupTicketingCollectionInput): Promise<GroupTicketingCollectionRecord> {
-  const response = await fetch(apiUrl("/content/group-ticketing-collections"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(collection),
-  });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(payload?.error || "Unable to save group ticketing collection");
-  return normalizeCollection(payload.item);
-}
-
-export async function deleteGroupTicketingCollection(slug: string): Promise<void> {
-  const response = await fetch(apiUrl(`/content/group-ticketing-collections/${encodeURIComponent(slug)}`), {
-    method: "DELETE",
-  });
-  if (!response.ok) throw new Error("Unable to delete group ticketing collection");
 }

@@ -56,10 +56,6 @@ interface AdminState {
   updateFlight: (id: string, data: Partial<Flight>) => void;
   deleteFlight: (id: string) => void;
 
-  // Hotel actions
-  addHotel: (h: Hotel) => void;
-  updateHotel: (id: string, data: Partial<Hotel>) => void;
-  deleteHotel: (id: string) => void;
 
   // Agency actions
   addAgency: (a: Agency) => void;
@@ -159,10 +155,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const updateFlight = useCallback((id: string, data: Partial<Flight>) => setFlights(p => p.map(f => f.flightId === id ? { ...f, ...data } : f)), []);
   const deleteFlight = useCallback((id: string) => setFlights(p => p.filter(f => f.flightId !== id)), []);
 
-  // Hotels
-  const addHotel = useCallback((h: Hotel) => setHotels(p => [...p, h]), []);
-  const updateHotel = useCallback((id: string, data: Partial<Hotel>) => setHotels(p => p.map(h => h.hotelId === id ? { ...h, ...data } : h)), []);
-  const deleteHotel = useCallback((id: string) => setHotels(p => p.filter(h => h.hotelId !== id)), []);
 
   // Agency
   const addAgency = useCallback((a: Agency) => setAgencies(p => [...p, a]), []);
@@ -250,7 +242,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       loadHotelContent,
       updateBookingStatus, addBooking, deleteBooking,
       addFlight, updateFlight, deleteFlight,
-      addHotel, updateHotel, deleteHotel,
       addAgency, updateAgency,
       addTicket, updateTicket, deleteTicket, issueTicketForBooking,
       addNotification, markNotificationRead, markAllRead,

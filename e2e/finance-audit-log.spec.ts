@@ -24,11 +24,11 @@ const DETAIL = {
 
 for (const width of [1440, 768, 390]) {
   test(`audit log at ${width}px`, async ({ page }) => {
-    await openAdmin(page, BEFORE ? "/admin/roadmap/audit-log" : "/admin/audit-log", width,
+    await openAdmin(page, BEFORE ? "/admin/roadmap/audit-log" : "/admin/system/logs?tab=audit", width,
       path => path === "/v1/admin/finance/audit-log" ? { entries: ENTRIES, total: 3 } : undefined);
     await shot(page, `audit-log-${width}`);
     if (BEFORE) return;
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Audit Log");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Logs");
     await expect(page.locator("main").getByText("Refund marked paid").locator("visible=true").first()).toBeVisible();
     await expect(page.locator("main").getByText("Automatic").locator("visible=true").first()).toBeVisible();
     expect(await overflow(page)).toBe(0);

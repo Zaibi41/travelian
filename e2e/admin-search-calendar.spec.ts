@@ -27,7 +27,7 @@ async function open(page: Page, width: number, tab: "flights" | "group-ticketing
     email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),
     accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
   })));
-  await page.goto(`/admin/search?tab=${tab}`);
+  await page.goto(`/admin/bookings/new?tab=${tab}`);
 }
 
 for (const width of [1440, 1280, 390]) {

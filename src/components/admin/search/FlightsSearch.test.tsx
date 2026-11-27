@@ -47,7 +47,7 @@ describe("admin Flights search", () => {
   beforeEach(() => gateway.search.mockReset().mockResolvedValue(STAFF));
 
   it("searches from the URL and shows flight cards with fare rows, cheapest first", async () => {
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-27");
     const results = await screen.findByRole("region", { name: "Results" });
     expect(gateway.search).toHaveBeenCalledWith(expect.objectContaining({ from: "KHI", to: "MUX", date: "2026-11-27", adults: 1, trip: "oneway" }), expect.anything());
     const cards = within(results).getAllByRole("article");
@@ -64,19 +64,19 @@ describe("admin Flights search", () => {
   });
 
   it("shows no provider count or names to staff; admins get 'Providers responding' in the status line from the gateway", async () => {
-    const { unmount } = renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    const { unmount } = renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-27");
     await screen.findByRole("region", { name: "Results" });
     expect(screen.queryByText(/Providers responding|southair|supplier/i)).not.toBeInTheDocument();
     unmount();
     gateway.search.mockResolvedValue({ ...STAFF, providers: [{ name: "southair", status: "responded" }] });
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-27");
     expect(await screen.findByLabelText("Search status")).toHaveTextContent(/^Providers responding 1 of 1 · Fares valid until/);
   });
 
   it("shows 'not available yet', never 'Some results may be missing', when nothing came back", async () => {
     // Even if an older gateway still sends the notice with no results.
     gateway.search.mockResolvedValue({ ...STAFF, status: "unavailable", notice: "Some results may be missing.", journeys: [] });
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-27");
     expect(await screen.findByText("Flight search isn't available yet")).toBeInTheDocument();
     expect(screen.queryByText(/Some results may be missing/)).not.toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Results" })).not.toBeInTheDocument();
@@ -84,7 +84,7 @@ describe("admin Flights search", () => {
 
   it("shows the general notice with the results when some providers failed (D24)", async () => {
     gateway.search.mockResolvedValue({ ...STAFF, notice: "Some results may be missing." });
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-27");
     const results = await screen.findByRole("region", { name: "Results" });
     expect(results).toHaveTextContent("Some results may be missing.");
     expect(results).toHaveTextContent("MM112");
@@ -92,7 +92,7 @@ describe("admin Flights search", () => {
   });
 
   it("waits for a complete search; travelers keep their minimums", () => {
-    renderAt("/admin/search?tab=flights");
+    renderAt("/admin/bookings/new?tab=flights");
     expect(screen.getByRole("button", { name: "Search flights" })).toBeDisabled();
     expect(gateway.search).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Travelers: 1 adult" }));
@@ -122,7 +122,7 @@ const LIVE_UAT: FlightSearchView = {
 describe("admin Flights search, live Southair shape", () => {
   it("shows times, duration, stops and per-fare baggage; missing meal 'No Meal' (#198), missing refund a dash", async () => {
     gateway.search.mockReset().mockResolvedValue(LIVE_UAT);
-    renderAt("/admin/search?tab=flights&from=LHE&to=KHI&date=2026-11-19");
+    renderAt("/admin/bookings/new?tab=flights&from=LHE&to=KHI&date=2026-11-19");
     const results = await screen.findByRole("region", { name: "Results" });
     expect(results).toHaveTextContent("00:25");
     expect(results).toHaveTextContent("02:35");
@@ -150,7 +150,7 @@ describe("admin Flights search, live Southair shape", () => {
     const noMarkup = structuredClone(LIVE_UAT);
     noMarkup.journeys[0].flights[0].fares.forEach(fare => { delete fare.selling_price; });
     gateway.search.mockReset().mockResolvedValue(noMarkup);
-    renderAt("/admin/search?tab=flights&from=LHE&to=KHI&date=2026-11-19");
+    renderAt("/admin/bookings/new?tab=flights&from=LHE&to=KHI&date=2026-11-19");
     const results = await screen.findByRole("region", { name: "Results" });
     fireEvent.click(within(results).getByRole("button", { name: "Show 1 more fares" }));
     expect(within(results).getAllByRole("row").slice(1).map(row => within(row).getAllByRole("cell")[4].textContent)).toEqual(["—Not available", "—Not available", "—Not available"]);
@@ -178,7 +178,7 @@ describe("flight search helpers", () => {
 
 describe("mockup elements (Search > Flights)", () => {
   beforeEach(() => gateway.search.mockReset().mockResolvedValue(STAFF));
-  const url = "/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27";
+  const url = "/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-27";
 
   it("two lines: trip type, Travelers and Cabin above; From, To, dates and Search flights in the field row; Return only for Round-trip", async () => {
     renderAt(url);
@@ -357,34 +357,34 @@ describe("Search > Flights small fixes (item 3)", () => {
 
   it("a) zero flights without filters names the route and date", async () => {
     gateway.search.mockResolvedValue(empty());
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-24");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-24");
     expect(await screen.findByText("No flights found for KHI to MUX on 24 Nov 2026. Try another date.")).toBeInTheDocument();
     expect(screen.queryByText("No flights match these filters.")).not.toBeInTheDocument();
   });
 
   it("a) the date message also covers a reply with no journeys", async () => {
     gateway.search.mockResolvedValue({ ...STAFF, journeys: [] });
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-24");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-24");
     expect(await screen.findByText("No flights found for KHI to MUX on 24 Nov 2026. Try another date.")).toBeInTheDocument();
   });
 
   it("a) a provider failure keeps the partial-failure notice instead of the empty message", async () => {
     gateway.search.mockResolvedValue(empty({ notice: "Some results may be missing." }));
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-24");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-24");
     expect(await screen.findByText("Some results may be missing.")).toBeInTheDocument();
     expect(screen.queryByText(/No flights found/)).not.toBeInTheDocument();
   });
 
   it("a) a failed provider without a notice still shows the general notice, not the empty message", async () => {
     gateway.search.mockResolvedValue(empty({ providers: [{ name: "southair", status: "failed" }] }));
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-24");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-24");
     expect(await screen.findByText("Some results may be missing.")).toBeInTheDocument();
     expect(screen.queryByText(/No flights found/)).not.toBeInTheDocument();
   });
 
   it("b) dates show day first with the year; times in 24-hour form; the fields show the same", async () => {
     gateway.search.mockResolvedValue(STAFF);
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27&trip=roundtrip&return=2026-12-03");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-27&trip=roundtrip&return=2026-12-03");
     const results = await screen.findByRole("region", { name: "Results" });
     expect(within(results).getAllByText(/27 Nov 2026 · KHI/).length).toBeGreaterThan(0);
     expect(within(results).getAllByText("23:00").length).toBeGreaterThan(0);
@@ -395,7 +395,7 @@ describe("Search > Flights small fixes (item 3)", () => {
 
   it("b) a typed day-first date is kept as ISO for the request", async () => {
     gateway.search.mockResolvedValue(STAFF);
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX");
     const field = screen.getByLabelText("Departure date");
     fireEvent.change(field, { target: { value: "5/1/2027" } });
     fireEvent.blur(field);
@@ -407,13 +407,13 @@ describe("Search > Flights small fixes (item 3)", () => {
 
   it("c) a running countdown sits in the status line; once over it says the fares expired, in red text", async () => {
     gateway.search.mockResolvedValue(STAFF);
-    const { unmount } = renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    const { unmount } = renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-27");
     const timer = await screen.findByRole("timer");
     expect(timer).toHaveTextContent(/\(\d\d:\d\d left\)/);
     expect(timer).not.toHaveTextContent("Needs action");
     unmount();
     gateway.search.mockResolvedValue({ ...STAFF, expires_at: new Date(Date.now() - 1000).toISOString() });
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-28");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-28");
     const expired = await screen.findByRole("timer");
     expect(expired).toHaveTextContent("Fares expired, search again");
     expect(expired.className).toMatch(/text-status-critical-text/);

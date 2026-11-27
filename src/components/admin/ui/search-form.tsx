@@ -156,7 +156,7 @@ export function SearchProductTabs({ active, label = "Search products" }: { activ
         {ADMIN_PRODUCT_TABS.map(tab => (
           <Link
             key={tab.id}
-            to={`/admin/search?tab=${tab.id}`}
+            to={`/admin/bookings/new?tab=${tab.id}`}
             aria-current={tab.id === active ? "page" : undefined}
             className={productTabClass(tab.id === active)}
           >

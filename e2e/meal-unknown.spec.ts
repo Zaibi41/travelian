@@ -76,7 +76,7 @@ test("admin search 1440px: a missing meal is No Meal, an explicit one as sent", 
       accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
     }));
   });
-  await page.goto("/admin/search?tab=flights&from=LHE&to=DXB&date=2026-12-08");
+  await page.goto("/admin/bookings/new?tab=flights&from=LHE&to=DXB&date=2026-12-08");
   await expect(page.getByRole("region", { name: "Results" })).toBeVisible({ timeout: 20_000 });
   await shot(page, "admin-results-1440");
   if (BEFORE) return;

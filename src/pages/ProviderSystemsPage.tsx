@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/admin/TabbedAdminPage";
 import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -85,7 +86,7 @@ export default function ProviderSystemsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-page-title font-bold font-display">Provider Systems</h1>
+          <PageHeading className="text-page-title font-bold font-display">Provider Systems</PageHeading>
           <p className="text-body text-muted-foreground">Manage flight, hotel, transfer, and payment integrations from one control center.</p>
         </div>
         <Button className="gradient-primary text-primary-foreground gap-2" onClick={() => toast.success("Provider health check queued")}>
