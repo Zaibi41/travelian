@@ -118,7 +118,7 @@ describe("Hold result (mockup flights-hold-result)", () => {
     const card = screen.getByRole("region", { name: "Booking is turned off" });
     expect(card).toHaveTextContent("Not available");
     expect(card).toHaveTextContent("Booking is turned off. Nothing was booked.");
-    expect(within(card).getByRole("link", { name: "Back to results" })).toHaveAttribute("href", "/admin/search?tab=flights&from=LHE&to=KHI&date=2026-11-19&infants=1");
+    expect(within(card).getByRole("link", { name: "Back to results" })).toHaveAttribute("href", "/admin/bookings/new?tab=flights&from=LHE&to=KHI&date=2026-11-19&infants=1");
   });
 
   it("without a hold (reload or direct link) explains there is nothing to show", () => {

@@ -21,7 +21,7 @@ export type HoldResultState =
   | { kind: "requested"; request: RequestView }
   | { kind: "problem"; code: string; message: string; extra: Record<string, unknown>; mode: HoldMode; draft?: HoldDraft };
 
-const SEARCH = "/admin/search?tab=flights";
+const SEARCH = "/admin/bookings/new?tab=flights";
 
 // Hold result (mockup flights-hold-result). Facts come from the gateway: the hold answer, then the
 // saved booking (customer and travelers). Problems show the gateway's own sentence.
@@ -185,7 +185,7 @@ function Problem({ state }: { state: Extract<HoldResultState, { kind: "problem" 
   const navigate = useNavigate();
   const problem = PROBLEMS[state.code] ?? { badge: "Not confirmed", severity: "critical" as const, title: "The hold didn't go through" };
   const pnr = typeof state.extra.pnr === "string" ? state.extra.pnr : null;
-  const results = state.draft ? `/admin/search?${writeFlightSearch(new URLSearchParams("tab=flights"), state.draft.request).toString()}` : SEARCH;
+  const results = state.draft ? `/admin/bookings/new?${writeFlightSearch(new URLSearchParams("tab=flights"), state.draft.request).toString()}` : SEARCH;
   const copyPnr = async () => {
     if (!pnr) return;
     try {

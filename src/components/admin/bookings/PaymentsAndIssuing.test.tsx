@@ -248,7 +248,7 @@ describe("2 · Issue the ticket", () => {
     api.fetchIssuance.mockResolvedValue({ ...READY, hold_expires_at: "2020-01-01T00:00:00Z", blockers: ["The hold has expired or is about to expire."], can_issue: false, can_request: false });
     renderTab();
     const card = await screen.findByRole("region", { name: "The hold ran out before issuing" });
-    expect(within(card).getByRole("link", { name: "Search again" })).toHaveAttribute("href", "/admin/search?tab=flights");
+    expect(within(card).getByRole("link", { name: "Search again" })).toHaveAttribute("href", "/admin/bookings/new?tab=flights");
   });
 });
 
@@ -267,7 +267,7 @@ describe("hold expired: one message", () => {
     const card = await screen.findByRole("region", { name: "The hold ran out before issuing" });
     expect(card).toHaveTextContent("SooperFare no longer holds PNR VFTATB");
     expect(within(card).getAllByRole("button").map(button => button.textContent)).toEqual(["Re-hold at SooperFare"]);
-    expect(within(card).getByRole("link", { name: "Search again" })).toHaveAttribute("href", "/admin/search?tab=flights");
+    expect(within(card).getByRole("link", { name: "Search again" })).toHaveAttribute("href", "/admin/bookings/new?tab=flights");
     expect(screen.queryByText("Not ready to issue")).not.toBeInTheDocument();
     expect(screen.queryByText("The hold has expired.")).not.toBeInTheDocument();
     expect(screen.queryByText(/Tickets can't be issued from Travelian|Ticketing is (switched|turned) off/)).not.toBeInTheDocument();

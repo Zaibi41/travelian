@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/admin/TabbedAdminPage";
 import { useState } from "react";
 import { Coupon } from "@/data/models";
 import { Card, CardContent } from "@/components/admin/ui/card";
@@ -44,7 +45,7 @@ export default function CouponsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-page-title font-bold font-display">Coupons & Deals</h1>
+          <PageHeading className="text-page-title font-bold font-display">Coupons & Deals</PageHeading>
           <p className="text-body text-muted-foreground">Manage promotional offers and discount codes</p>
         </div>
         {canEdit && <Button onClick={openAdd} className="gradient-primary text-primary-foreground gap-2"><Plus className="h-4 w-4" /> Create Coupon</Button>}

@@ -70,7 +70,7 @@ const shot = (page: Page, name: string) => page.screenshot({ path: `e2e/__screen
 for (const width of [1440, 390]) {
   test(`results, traveler details and seats held at ${width}px`, async ({ page }) => {
     await open(page, width);
-    await page.goto("/admin/search?tab=group-ticketing&from=ISB&to=JED&date=2026-11-22&adults=2");
+    await page.goto("/admin/bookings/new?tab=group-ticketing&from=ISB&to=JED&date=2026-11-22&adults=2");
     const results = page.getByRole("region", { name: "Results" });
     await expect(results).toContainText("Rs 168,000");
     await expect(results).toContainText("7+20 kg");
@@ -153,7 +153,7 @@ test("unpaid: Issue tickets is off until Due is Rs 0; long names truncate", asyn
 for (const width of [1920, 1440, 1280]) {
   test(`chosen airports keep the group search row aligned at ${width}px`, async ({ page }) => {
     await open(page, width);
-    await page.goto("/admin/search?tab=group-ticketing&from=ISB&to=JED&date=2026-11-22&adults=2");
+    await page.goto("/admin/bookings/new?tab=group-ticketing&from=ISB&to=JED&date=2026-11-22&adults=2");
     await expect(page.getByRole("button", { name: "From Islamabad – ISB" })).toBeVisible();
     await expect(page.getByRole("button", { name: "To Jeddah – JED" })).toBeVisible();
     await expect(page.locator(".admin-search-row")).not.toContainText(/International Airport|Pakistan|Saudi Arabia/);

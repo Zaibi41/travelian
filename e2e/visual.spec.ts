@@ -112,9 +112,9 @@ const PUBLIC = [
 
 const ADMIN = [
   ["admin-dashboard", "/admin"],
-  ["admin-search-flights", "/admin/search?tab=flights"],
-  ["admin-search-group-ticketing", "/admin/search?tab=group-ticketing"],
-  ["admin-search-hotels", "/admin/search?tab=hotels"],
+  ["admin-search-flights", "/admin/bookings/new?tab=flights"],
+  ["admin-search-group-ticketing", "/admin/bookings/new?tab=group-ticketing"],
+  ["admin-search-hotels", "/admin/bookings/new?tab=hotels"],
   ["admin-bookings", "/admin/bookings"],
   ["admin-customers", "/admin/customers"],
 ] as const;

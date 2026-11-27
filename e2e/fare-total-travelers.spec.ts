@@ -102,7 +102,7 @@ for (const width of [390, 1440]) {
         accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
       }));
     });
-    await page.goto("/admin/search?tab=flights&from=LHE&to=DXB&date=2026-12-15&adults=3&children=1&infants=1");
+    await page.goto("/admin/bookings/new?tab=flights&from=LHE&to=DXB&date=2026-12-15&adults=3&children=1&infants=1");
     await expect(page.getByRole("region", { name: "Results" })).toBeVisible({ timeout: 20_000 });
     await shot(page, `admin-results-${width}`);
     if (BEFORE) return;

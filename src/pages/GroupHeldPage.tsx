@@ -18,7 +18,7 @@ import { setSellingPrice } from "@/lib/admin-bookings/api";
 import { GROUP_TICKETING_LABEL, acceptHeldPrice, departureText, fetchGroupHold, returnFlightText, gatewayMessage, groupBookingPath, releaseGroupHold, travelerLine, type GroupHoldView } from "@/lib/admin-search/group-holds";
 import { CopyPnr } from "@/components/CopyPnr";
 
-const SEARCH = "/admin/search?tab=group-ticketing";
+const SEARCH = "/admin/bookings/new?tab=group-ticketing";
 export const groupHoldKey = (bookingId: string) => ["group-holds", bookingId];
 
 function flightText(view: GroupHoldView) {

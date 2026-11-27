@@ -331,7 +331,7 @@ describe("Group seats held (step 3)", () => {
     expect(await screen.findByText("This hold has expired")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Continue to payment" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Release hold" })).toBeDisabled();
-    expect(screen.getByRole("link", { name: "Search again" })).toHaveAttribute("href", "/admin/search?tab=group-ticketing");
+    expect(screen.getByRole("link", { name: "Search again" })).toHaveAttribute("href", "/admin/bookings/new?tab=group-ticketing");
   });
 });
 
@@ -494,7 +494,7 @@ describe("Supplier price changed at the hold: the selling price stays", () => {
     fireEvent.keyDown(dialog, { key: "Escape" });
     fireEvent.click(await screen.findByRole("button", { name: "Review it" }));
     fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Search again" }));
-    await waitFor(() => expect(location.current).toBe("/admin/search?tab=group-ticketing"));
+    await waitFor(() => expect(location.current).toBe("/admin/bookings/new?tab=group-ticketing"));
     expect(gateway.releaseGroupHold).not.toHaveBeenCalled();
     gateway.fetchGroupHold.mockResolvedValue(CHANGED);
     renderAt("/admin/bookings/group-ticketing/TRV-GRP-000123/payments");
@@ -791,7 +791,7 @@ describe("Payment and issue tickets (step 4)", () => {
     expect(screen.getAllByText("Expired").length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Record payment" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Issue tickets" })).toBeDisabled();
-    expect(screen.getByRole("link", { name: "search again" })).toHaveAttribute("href", "/admin/search?tab=group-ticketing");
+    expect(screen.getByRole("link", { name: "search again" })).toHaveAttribute("href", "/admin/bookings/new?tab=group-ticketing");
   });
 
   it("the countdown reaching zero disables both actions without a reload", async () => {

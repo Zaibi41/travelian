@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/admin/TabbedAdminPage";
 import { useMemo, useState } from "react";
 import { Check, ChevronDown, Plane } from "lucide-react";
 import { toast } from "sonner";
@@ -126,7 +127,7 @@ export default function FlightPricingPage() {
   return (
     <div className="mx-auto flex max-w-5xl min-w-0 flex-col gap-section-gap">
       <div>
-        <h1 className="flex items-center gap-2 font-display text-page-title font-bold text-foreground"><Plane aria-hidden="true" className="h-6 w-6 shrink-0 text-primary" /> Flight Pricing & Rules</h1>
+        <PageHeading className="flex items-center gap-2 font-display text-page-title font-bold text-foreground"><Plane aria-hidden="true" className="h-6 w-6 shrink-0 text-primary" /> Flight Pricing & Rules</PageHeading>
         <p className="mt-1 text-body text-muted-foreground">
           Add or take off an amount per passenger on a supplier's fares, for one airline or all. Taking an amount off can sell below the supplier's price.
         </p>

@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/admin/TabbedAdminPage";
 import { useEffect, useState } from "react";
 import { BlogPost } from "@/data/models";
 import { Card, CardContent } from "@/components/admin/ui/card";
@@ -62,7 +63,7 @@ export default function BlogPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-page-title font-bold font-display">Blog Management</h1>
+          <PageHeading className="text-page-title font-bold font-display">Blog Management</PageHeading>
           <p className="text-body text-muted-foreground">Manage blog posts and articles for the website</p>
         </div>
         {canEdit && <Button onClick={openAdd} className="gradient-primary text-primary-foreground gap-2"><Plus className="h-4 w-4" /> New Post</Button>}

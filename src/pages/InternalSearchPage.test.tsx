@@ -55,15 +55,15 @@ describe("Search (internal roles)", () => {
   });
 
   it("shows three product tabs (Umrah is hidden); Flights opens the live search; Hotels opens the hotel search", () => {
-    renderAt("/admin/search");
+    renderAt("/admin/bookings/new");
     expect(within(screen.getByRole("navigation", { name: "Search products" })).getAllByRole("link").map(link => link.textContent))
       .toEqual(["Flights", "Group Ticketing", "Hotels"]);
     expect(screen.getByRole("button", { name: "Search flights" })).toBeDisabled();
-    const hotels = renderAt("/admin/search?tab=hotels");
+    const hotels = renderAt("/admin/bookings/new?tab=hotels");
     expect(screen.getByRole("button", { name: "Search hotels" })).toBeInTheDocument();
     hotels.unmount();
     // An old Umrah link opens Flights; nothing about Umrah shows.
-    const umrah = renderAt("/admin/search?tab=umrah");
+    const umrah = renderAt("/admin/bookings/new?tab=umrah");
     expect(screen.queryByText(/Umrah/)).not.toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Search flights" }).length).toBeGreaterThan(0);
     umrah.unmount();
@@ -72,7 +72,7 @@ describe("Search (internal roles)", () => {
   });
 
   it("Group Ticketing: listing price in Rs, logo, flight number, meal, the baggage rule; Hold seats off with a reason where the provider can't hold; no supplier", async () => {
-    renderAt("/admin/search?tab=group-ticketing&from=LHE&to=DMM&date=2026-11-13&adults=2");
+    renderAt("/admin/bookings/new?tab=group-ticketing&from=LHE&to=DMM&date=2026-11-13&adults=2");
     const results = await screen.findByRole("region", { name: "Results" });
     await within(results).findByText("Airblue");
     expect(within(results).getAllByRole("columnheader").map(cell => cell.textContent)).toEqual(["Departure", "Airline", "Seats left", "Baggage", "Meal", "Refund", "Price per passenger", "Action"]);
@@ -99,7 +99,7 @@ describe("Search (internal roles)", () => {
   });
 
   it("Hold seats opens the traveler details page with the fare, sector and adults from the search", async () => {
-    renderAt("/admin/search?tab=group-ticketing&from=LHE&to=DMM&date=2026-11-13&adults=2");
+    renderAt("/admin/bookings/new?tab=group-ticketing&from=LHE&to=DMM&date=2026-11-13&adults=2");
     const results = await screen.findByRole("region", { name: "Results" });
     await within(results).findByText("Airblue");
     fireEvent.click(within(results).getAllByRole("button", { name: /^Hold seats/ })[0]);
@@ -110,14 +110,14 @@ describe("Search (internal roles)", () => {
   });
 
   it("asks for a complete search before calling the gateway", () => {
-    renderAt("/admin/search?tab=group-ticketing");
+    renderAt("/admin/bookings/new?tab=group-ticketing");
     expect(screen.getByRole("button", { name: "Search group fares" })).toBeDisabled();
     expect(gateway.search).not.toHaveBeenCalled();
   });
 
   it("agency roles keep the existing search", () => {
     role.current = "agency_owner";
-    renderAt("/admin/search?tab=flights");
+    renderAt("/admin/bookings/new?tab=flights");
     expect(screen.getByText("Old public search widget")).toBeInTheDocument();
   });
 });

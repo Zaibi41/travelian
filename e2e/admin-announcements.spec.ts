@@ -66,7 +66,7 @@ test("Super Admin: empty state, post, show in the top bar, end, delete", async (
   const items: Item[] = [];
   const calls = await mockGateway(page, items);
   await signIn(page, "super_admin", 1440);
-  await page.goto("/admin/announcements");
+  await page.goto("/admin/system/announcements");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Announcements");
   await expect(page.getByText("No announcements yet")).toBeVisible();
   await expect(ticker(page)).toHaveCount(0);                                  // no bar when there are none
@@ -97,12 +97,12 @@ test("Super Admin: empty state, post, show in the top bar, end, delete", async (
   ]));
 });
 
-test("the menu has Announcements under Website & CMS for Super Admin", async ({ page }) => {
+test("the menu has Announcements under System for Super Admin", async ({ page }) => {
   await mockGateway(page, []);
   await signIn(page, "super_admin", 1440);
   await page.goto("/admin/bookings");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  const menu = page.getByRole("button", { name: /Website & CMS/ });
+  const menu = page.getByRole("button", { name: /^System/ });
   if (await menu.count()) await menu.first().click();
   await expect(page.getByRole("link", { name: "Announcements" })).toBeVisible();
 });
@@ -120,7 +120,7 @@ test("a gateway refusal shows the gateway's message and nothing is listed", asyn
     return route.fulfill({ status: 404, json: { detail: "Not found." } });
   });
   await signIn(page, "super_admin", 390);
-  await page.goto("/admin/announcements");
+  await page.goto("/admin/system/announcements");
   await page.getByLabel("Announcement text").fill("<b>Fares</b>");
   await page.getByRole("button", { name: "Post announcement" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "Use plain text only: < and > are not allowed." })).toBeVisible();
@@ -130,7 +130,7 @@ test("a gateway refusal shows the gateway's message and nothing is listed", asyn
 test("the list can't load: an error, not an empty state", async ({ page }) => {
   await mockGateway(page, [], { failList: true });
   await signIn(page, "super_admin", 1440);
-  await page.goto("/admin/announcements");
+  await page.goto("/admin/system/announcements");
   await expect(page.getByText("Announcements couldn't be loaded")).toBeVisible();
   await expect(page.getByText("No announcements yet")).toHaveCount(0);
   await expect(ticker(page)).toHaveCount(0);
@@ -142,7 +142,7 @@ test("staff see the top bar announcements but not the Announcements page or menu
   await page.goto("/admin/bookings");
   await expect(ticker(page)).toContainText("Airblue fares are Rs 200 less today");
   await expect(page.getByRole("link", { name: "Announcements" })).toHaveCount(0);
-  await page.goto("/admin/announcements");
+  await page.goto("/admin/system/announcements");
   await expect(page.getByRole("heading", { level: 1 })).not.toHaveText("Announcements");
 });
 

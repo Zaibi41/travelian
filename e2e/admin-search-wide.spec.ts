@@ -82,8 +82,8 @@ const measure = (page: Page) => page.evaluate(() => {
 
 for (const [width, height] of SIZES) {
   for (const [tab, url] of [
-    ["flights", "/admin/search?tab=flights&from=LHE&to=KHI&date=2026-11-19"],
-    ["group", "/admin/search?tab=group-ticketing&from=LHE&to=JED&date=2026-11-24&adults=2"],
+    ["flights", "/admin/bookings/new?tab=flights&from=LHE&to=KHI&date=2026-11-19"],
+    ["group", "/admin/bookings/new?tab=group-ticketing&from=LHE&to=JED&date=2026-11-24&adults=2"],
   ] as const) {
     test(`${tab} at ${width}x${height}: one vertical scroller, no sideways scroll, shared edges, at most 1600px`, async ({ page }) => {
       await open(page, width, height, url);

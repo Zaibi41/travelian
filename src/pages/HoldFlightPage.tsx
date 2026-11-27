@@ -37,13 +37,13 @@ export default function HoldFlightPage() {
   const asked = params.get("mode");
   const mode: HoldMode = asked === "book" || asked === "request" ? asked : "hold";
   const title = mode === "request" ? "Request to book" : mode === "book" ? "Book flight" : "Hold flight";
-  const results = useMemo(() => (draft ? `/admin/search?${writeFlightSearch(new URLSearchParams("tab=flights"), draft.request).toString()}` : "/admin/search?tab=flights"), [draft]);
+  const results = useMemo(() => (draft ? `/admin/bookings/new?${writeFlightSearch(new URLSearchParams("tab=flights"), draft.request).toString()}` : "/admin/bookings/new?tab=flights"), [draft]);
   return (
     <BookingHoldLayout backTo={results} title={title} subtitle="Enter the customer and traveler details, then hold the seats.">
       {draft?.quote ? <FlightHold draft={draft} mode={mode} results={results} onDraft={setDraft} /> : (
         <NotAvailableNotice title="This fare check has ended">
           Choose the fare again from the search results: the fare is checked with the supplier before booking.{" "}
-          <Link to="/admin/search?tab=flights" className="font-medium text-teal hover:underline">Back to search</Link>
+          <Link to="/admin/bookings/new?tab=flights" className="font-medium text-teal hover:underline">Back to search</Link>
         </NotAvailableNotice>
       )}
     </BookingHoldLayout>

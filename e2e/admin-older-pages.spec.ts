@@ -10,11 +10,13 @@ test.use({ launchOptions: { ignoreDefaultArgs: ["--hide-scrollbars"] } });
 
 const PAGES: [string, string][] = [
   ["/admin/agencies", "Agency Management"], ["/admin/packages", "Umrah Package Management"], ["/admin/reports", "Reports"],
-  ["/admin/hotels", "Hotel Inventory & Pricing"], ["/admin/pricing/flights", "Flight Pricing & Rules"], ["/admin/flight-bookings", "Flight Operations"],
-  ["/admin/requests", "Bookings"], ["/admin/wallet", "Wallets"], ["/admin/payments", "Payments"], ["/admin/users", "User Management"],
-  ["/admin/rbac", "Access Control (RBAC)"], ["/admin/provider-systems", "Provider Systems"], ["/admin/group-ticketing", "Group Ticketing Collections"],
-  ["/admin/coupons", "Coupons & Deals"], ["/admin/blog", "Blog Management"], ["/admin/notifications", "Notifications"],
-  ["/admin/announcements", "Announcements"], ["/admin/attention-queue", "Attention Queue"],
+  ["/admin/pricing?tab=rules", "Pricing"], ["/admin/bookings?tab=operations", "Bookings"],
+  ["/admin/requests", "Bookings"], ["/admin/wallet", "Wallets"], ["/admin/payments", "Payments"], ["/admin/users", "Users"],
+  ["/admin/users?tab=roles", "Users"], ["/admin/integrations?tab=suppliers", "Integrations"], ["/admin/integrations?tab=payments", "Integrations"],
+  ["/admin/pricing?tab=promotions", "Pricing"], ["/admin/website?tab=blog", "Website"], ["/admin/website?tab=pages", "Website"],
+  ["/admin/website?tab=branding", "Website"], ["/admin/notifications", "Notifications"],
+  ["/admin/system/announcements", "Announcements"], ["/admin/system/logs?tab=errors", "Logs"], ["/admin/system/logs?tab=jobs", "Logs"],
+  ["/admin/attention-queue", "Attention Queue"],
 ];
 
 for (const width of [1280, 390]) {

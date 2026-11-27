@@ -40,7 +40,7 @@ const renderAt = (url: string) =>
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <MemoryRouter initialEntries={[url]}>
         <Routes>
-          <Route path="/admin/search" element={<FlightsBooking />} />
+          <Route path="/admin/bookings/new" element={<FlightsBooking />} />
           <Route path="/admin/search/flights/hold" element={<HoldPageProbe />} />
         </Routes>
       </MemoryRouter>
@@ -54,7 +54,7 @@ describe("fare row actions (mockup; #80, #81)", () => {
   });
 
   it("has Book and Share; no Hold, Revalidate, Quote or Fare rules on a fare (#112)", async () => {
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-27");
     expect(await screen.findByRole("button", { name: "Book PA-1 Y" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: /^Hold/ })).not.toBeInTheDocument();
     const share = screen.getByRole("link", { name: "Share PA-1 Y on WhatsApp" });
@@ -69,7 +69,7 @@ describe("fare row actions (mockup; #80, #81)", () => {
   });
 
   it("the Price column shows the gateway's price with no \"per adult\" text", async () => {
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27&adults=2");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-27&adults=2");
     const card = await screen.findByRole("article", { name: /PA-1/ });
     const row = within(card).getAllByRole("row")[1];
     expect(within(row).getByText("Rs 467")).toBeInTheDocument();
@@ -78,7 +78,7 @@ describe("fare row actions (mockup; #80, #81)", () => {
 
   it("restricted airline (request fare): Request to book stays, no Book (the gateway can't book it); Share works", async () => {
     gateway.search.mockResolvedValue({ ...ONE_WAY, journeys: [{ ...ONE_WAY.journeys[0], flights: [{ ...flight("1", "fare-out", 467), fares: [{ id: "fare-out", name: "Y", selling_price: rs(467), booking_mode: "request" }] }] }] });
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-27");
     expect(await screen.findByRole("button", { name: "Request to book PA-1 Y" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: "Book PA-1 Y" })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Share PA-1 Y on WhatsApp" })).toBeInTheDocument();
@@ -86,14 +86,14 @@ describe("fare row actions (mockup; #80, #81)", () => {
 
   it("can't book a fare with no price (Share still opens, without a price)", async () => {
     gateway.search.mockResolvedValue({ ...ONE_WAY, journeys: [{ ...ONE_WAY.journeys[0], flights: [{ ...flight("1", "fare-out", 0), fares: [{ id: "fare-out", name: "Y" }] }] }] });
-    renderAt("/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27");
+    renderAt("/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-27");
     expect(await screen.findByRole("button", { name: "Book PA-1 Y" })).toBeDisabled();
     expect(decodeURIComponent(screen.getByRole("link", { name: "Share PA-1 Y on WhatsApp" }).getAttribute("href")!)).not.toContain("Price:");
   });
 
   it("round trip: the Selected fare panel asks for the other direction until both are chosen", async () => {
     gateway.search.mockResolvedValue(ROUND);
-    renderAt("/admin/search?tab=flights&trip=roundtrip&from=KHI&to=MUX&date=2026-11-27&return=2026-11-30");
+    renderAt("/admin/bookings/new?tab=flights&trip=roundtrip&from=KHI&to=MUX&date=2026-11-27&return=2026-11-30");
     fireEvent.click(await screen.findByRole("button", { name: "Book PA-2 Y" }));  // return first
     expect(gateway.reprice).not.toHaveBeenCalled();
     expect(screen.getByRole("region", { name: "Selected fare" })).toHaveTextContent("Outbound: choose a fare");
@@ -101,7 +101,7 @@ describe("fare row actions (mockup; #80, #81)", () => {
 });
 
 describe("fare check on Book (mockup flights-fare-check)", () => {
-  const url = "/admin/search?tab=flights&from=KHI&to=MUX&date=2026-11-27&adults=2";
+  const url = "/admin/bookings/new?tab=flights&from=KHI&to=MUX&date=2026-11-27&adults=2";
   beforeEach(() => {
     gateway.search.mockReset().mockResolvedValue(ONE_WAY);
     gateway.reprice.mockReset().mockResolvedValue(QUOTE);
@@ -195,7 +195,7 @@ describe("fare check on Book (mockup flights-fare-check)", () => {
 
   it("round trip: Book waits for a fare in each direction", async () => {
     gateway.search.mockResolvedValue(ROUND);
-    renderAt("/admin/search?tab=flights&trip=roundtrip&from=KHI&to=MUX&date=2026-11-27&return=2026-11-30");
+    renderAt("/admin/bookings/new?tab=flights&trip=roundtrip&from=KHI&to=MUX&date=2026-11-27&return=2026-11-30");
     fireEvent.click(await screen.findByRole("button", { name: "Book PA-1 Y" }));
     expect(gateway.reprice).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Book PA-2 Y" }));

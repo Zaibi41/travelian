@@ -582,7 +582,7 @@ function IssuanceOutcome({ booking, checklist, result, onResult, onReheld }: {
           </p>
           <div className="flex flex-wrap gap-2">
             <ReholdAtSupplier booking={booking} onHeld={onReheld} />
-            <Button asChild variant="outline" className="h-11 sm:h-10"><Link to="/admin/search?tab=flights">Search again</Link></Button>
+            <Button asChild variant="outline" className="h-11 sm:h-10"><Link to="/admin/bookings/new?tab=flights">Search again</Link></Button>
           </div>
         </ResultCard>
       );
@@ -590,7 +590,7 @@ function IssuanceOutcome({ booking, checklist, result, onResult, onReheld }: {
     return (
       <ResultCard tone="critical" tag="Hold expired" title="The hold ran out before issuing">
         <p className="text-body text-muted-foreground">The seats were released. The payment stays recorded on the booking. Search again and choose a fare for the customer.</p>
-        <div><Button asChild variant="primary"><Link to="/admin/search?tab=flights">Search again</Link></Button></div>
+        <div><Button asChild variant="primary"><Link to="/admin/bookings/new?tab=flights">Search again</Link></Button></div>
       </ResultCard>
     );
   }

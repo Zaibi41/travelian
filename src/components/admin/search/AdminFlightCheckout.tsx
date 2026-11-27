@@ -95,7 +95,7 @@ export function AdminFlightCheckout({ params }: { params: URLSearchParams }) {
       </section>
       <div className="flex flex-wrap gap-2">
         <Button disabled>Book flight</Button>
-        <Button asChild variant="outline"><Link to="/admin/search?tab=flights">Back to search</Link></Button>
+        <Button asChild variant="outline"><Link to="/admin/bookings/new?tab=flights">Back to search</Link></Button>
       </div>
     </div>
   );

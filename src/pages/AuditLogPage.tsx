@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/admin/TabbedAdminPage";
 import { useId, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -50,7 +51,7 @@ export default function AuditLogPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="space-y-1">
-        <h1 className="text-page-title font-bold font-display">Audit Log</h1>
+        <PageHeading className="text-page-title font-bold font-display">Audit Log</PageHeading>
         <p className="text-body text-muted-foreground">Every finance action: who did it, when, and what changed. Entries can't be edited or deleted.</p>
       </div>
 

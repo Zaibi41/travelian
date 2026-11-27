@@ -51,7 +51,7 @@ async function openHotels(page: Page, width: number, query = "dest=Dubai&dk=regi
       accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
     }));
   });
-  await page.goto(`/admin/search?tab=hotels${query ? `&${query}` : ""}`);
+  await page.goto(`/admin/bookings/new?tab=hotels${query ? `&${query}` : ""}`);
 }
 
 const noPageScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/admin/TabbedAdminPage";
 import { useState } from "react";
 import { availableModules, User, UserRole } from "@/data/models";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/admin/ui/card";
@@ -55,7 +56,7 @@ export default function RBACPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-page-title font-bold font-display">Access Control (RBAC)</h1>
+        <PageHeading className="text-page-title font-bold font-display">Access Control (RBAC)</PageHeading>
         <p className="text-body text-muted-foreground">Manage module-level access for each user</p>
       </div>
 

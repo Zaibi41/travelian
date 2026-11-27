@@ -26,7 +26,7 @@ async function open(page: Page, width = 1440, query = "") {
     email: "layout-test@travelian.com", groups: ["super_admin"], name: "Layout Test", createdAt: new Date().toISOString(),
     accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
   })));
-  await page.goto(`/admin/search?tab=flights${query}`);
+  await page.goto(`/admin/bookings/new?tab=flights${query}`);
   await expect(page.getByRole("region", { name: "Search flights" })).toBeVisible();
   await page.waitForLoadState("networkidle");                       // the Search page, including the airport list, has loaded
   return searches;

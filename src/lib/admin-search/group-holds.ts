@@ -28,7 +28,7 @@ export const groupBookingPath = (bookingId: string, tab: GroupBookingTab = "paym
 
 /** Search results URL for a search (Back to results / search again). */
 export const groupResultsPath = (search: GroupSearch) =>
-  `/admin/search?${writeGroupSearch(new URLSearchParams("tab=group-ticketing"), search).toString()}`;
+  `/admin/bookings/new?${writeGroupSearch(new URLSearchParams("tab=group-ticketing"), search).toString()}`;
 
 /** The traveler details page for one result row: the fare and the search stay in the URL. */
 export const groupHoldFormPath = (ticketId: string, search: GroupSearch) => {

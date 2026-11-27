@@ -63,7 +63,7 @@ describe("shared search form parts", () => {
     expect(within(nav).getAllByRole("link").map(link => link.textContent)).toEqual(["Flights", "Group Ticketing", "Hotels"]);
     expect(nav.querySelectorAll("[data-tab-icon]")).toHaveLength(3);
     expect(within(nav).getByRole("link", { name: "Group Ticketing" })).toHaveAttribute("aria-current", "page");
-    expect(within(nav).getByRole("link", { name: "Flights" })).toHaveAttribute("href", "/admin/search?tab=flights");
+    expect(within(nav).getByRole("link", { name: "Flights" })).toHaveAttribute("href", "/admin/bookings/new?tab=flights");
   });
 
   it("SectorAirportSelect lists only the given codes and chooses with the keyboard", () => {

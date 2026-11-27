@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 
 const NO_ACCOUNT = "none";
 const CARD = "flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-card px-card py-4 shadow-card";
-const SEARCH = "/admin/search?tab=group-ticketing";
+const SEARCH = "/admin/bookings/new?tab=group-ticketing";
 export const groupHoldKey = (bookingId: string) => ["group-holds", bookingId];
 
 /** "+ Rs 7,000" / "− Rs 2,000". */

@@ -1,9 +1,8 @@
 import { Navigate, useSearchParams } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
 import { isInternalRole } from "@/lib/admin-navigation";
-import AdminBookingsPage from "./AdminBookingsPage";
 import AdminBookingDetailPage from "./AdminBookingDetailPage";
-import FlightOperationsPage from "./FlightOperationsPage";
+import { BookingsMenuPage } from "./AdminMenuPages";
 import GroupBookingPage from "./GroupBookingPage";
 import RoadmapPlaceholderPage from "./RoadmapPlaceholderPage";
 
@@ -12,7 +11,7 @@ import RoadmapPlaceholderPage from "./RoadmapPlaceholderPage";
 
 export function BookingsRoute({ tab }: { tab?: string }) {
   const { currentRole } = useRole();
-  return isInternalRole(currentRole) ? <AdminBookingsPage tab={tab} /> : <Navigate to="/admin/flight-bookings?tab=all" replace />;
+  return isInternalRole(currentRole) ? <BookingsMenuPage tab={tab} /> : <Navigate to="/admin/flight-bookings?tab=all" replace />;
 }
 
 export function BookingDetailRoute() {
@@ -38,13 +37,13 @@ export function LegacyRequestsRoute() {
 
 const FLIGHT_MENU_BY_TAB: Record<string, string> = { issued: "Invoices", refund: "Refunds" };
 
-/** /admin/flight-bookings: Flight Operations (the gateway's group departures queue) for internal roles; Refunds,
- *  Invoices and agency roles get the menu placeholder (no approved screen yet). B26: the old screen that changed
+/** /admin/flight-bookings: internal roles go to Bookings → Operations (was Flight Operations, the gateway's group
+ *  departures queue); agency roles' Refunds and Invoices menus keep their placeholder (no approved screen yet). B26: the old screen that changed
  *  bookings through the legacy Lambda store is retired; payments and issuing are on each booking in Bookings. */
 export function FlightBookingsRoute() {
   const { currentRole } = useRole();
   const [params] = useSearchParams();
   const menu = FLIGHT_MENU_BY_TAB[params.get("tab") ?? ""];
-  if (isInternalRole(currentRole) && !menu) return <FlightOperationsPage />;
+  if (isInternalRole(currentRole)) return <Navigate to="/admin/bookings?tab=operations" replace />;
   return <RoadmapPlaceholderPage title={menu ?? "Flight Operations"} />;
 }

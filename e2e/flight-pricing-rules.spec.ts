@@ -18,7 +18,7 @@ const SUPPLIERS = { suppliers: [
 
 type Rule = { id: string; supplier: string; source: string | null; airline_code: string | null; amount_minor: number; active: boolean; updated_at: string };
 
-async function open(page: Page, width: number, path = "/admin/pricing/flights", start: Rule[] = []) {
+async function open(page: Page, width: number, path = "/admin/pricing?tab=rules", start: Rule[] = []) {
   const rules = [...start];
   const sent: { method: string; body: unknown }[] = [];
   await page.setViewportSize({ width, height: 900 });
@@ -57,15 +57,18 @@ async function open(page: Page, width: number, path = "/admin/pricing/flights", 
     accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
   })));
   await page.goto(path);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Flight Pricing & Rules");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Pricing");
+  await expect(page.getByRole("heading", { level: 2, name: "Flight Pricing & Rules" })).toBeVisible();
   return { rules, sent };
 }
 
 const noSideScroll = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
-test("the old /admin/flights link opens the new address", async ({ page }) => {
+test("the old /admin/flights and /admin/pricing/flights links open Pricing → Rules", async ({ page }) => {
   await open(page, 1440, "/admin/flights");
-  await expect(page).toHaveURL(/\/admin\/pricing\/flights$/);
+  await expect(page).toHaveURL(/\/admin\/pricing\?tab=rules$/);
+  await page.goto("/admin/pricing/flights");
+  await expect(page).toHaveURL(/\/admin\/pricing\?tab=rules$/);
 });
 
 for (const width of [390, 768, 1024, 1440]) {

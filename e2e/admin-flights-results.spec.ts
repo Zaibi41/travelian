@@ -84,7 +84,7 @@ async function openFlights(page: Page, width: number, query = ONE_WAY) {
       accessToken: "local-test-only", idToken: "local-test-only", expiresAt: Date.now() + 3_600_000,
     }));
   });
-  await page.goto(`/admin/search?tab=flights&${query}`);
+  await page.goto(`/admin/bookings/new?tab=flights&${query}`);
   await expect(page.getByRole("region", { name: "Results" })).toBeVisible();
 }
 

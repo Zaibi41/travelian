@@ -1,3 +1,4 @@
+import { PageHeading } from "@/components/admin/TabbedAdminPage";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -45,7 +46,7 @@ export default function SiteLogoPage() {
   return (
     <div className="flex min-w-0 flex-col gap-section-gap">
       <div>
-        <h1 className="font-display text-page-title font-bold text-foreground">Site logo</h1>
+        <PageHeading className="font-display text-page-title font-bold text-foreground">Site logo</PageHeading>
         <p className="text-body text-muted-foreground">The logo in the public site's header. PNG, JPEG or WebP, up to 2 MB; stored in S3.</p>
       </div>
       <section className="flex flex-col gap-4 rounded-xl border bg-card p-card shadow-card">
