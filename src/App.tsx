@@ -45,7 +45,7 @@ const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const AgenciesPage = lazy(() => import("./pages/AgenciesPage"));
 const PackagesPage = lazy(() => import("./pages/PackagesPage"));
 const HotelsPage = lazy(() => import("./pages/HotelsPage"));
-const FlightsPage = lazy(() => import("./pages/FlightsPage"));
+const FlightPricingPage = lazy(() => import("./pages/FlightPricingPage"));
 const WalletPage = lazy(() => import("./pages/WalletPage"));
 const PaymentsPage = lazy(() => import("./pages/PaymentsPage"));
 const AccountsLedgersPage = lazy(() => import("./pages/AccountsLedgersPage"));
@@ -162,7 +162,8 @@ const App = () => (
             <Route path="/admin/roadmap/payment-gateways" element={<AdminLayout><Navigate to="/admin/roadmap/payment-providers" replace /></AdminLayout>} />
             <Route path="/admin/tickets" element={<AdminLayout><Navigate to="/admin/flight-bookings?tab=issued" replace /></AdminLayout>} />
             <Route path="/admin/hotels" element={<AdminLayout><HotelsPage /></AdminLayout>} />
-            <Route path="/admin/flights" element={<AdminLayout><FlightsPage /></AdminLayout>} />
+            <Route path="/admin/pricing/flights" element={<AdminLayout><FlightPricingPage /></AdminLayout>} />
+            <Route path="/admin/flights" element={<Navigate to="/admin/pricing/flights" replace />} />
             <Route path="/admin/flights-search" element={<AdminLayout><PublicFlightsPage bookingPath="/admin/booking" adminMode /></AdminLayout>} />
             <Route path="/admin/flight-search" element={<AdminLayout><Navigate to="/admin/search?tab=flights" replace /></AdminLayout>} />
             <Route path="/admin/search" element={<AdminLayout><AdminSearchPage /></AdminLayout>} />
