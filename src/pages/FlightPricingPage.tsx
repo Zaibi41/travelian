@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 // Pricing & Revenue > Flight Pricing & Rules (Super Admin): every flight supplier, and Rs-per-passenger rules on a
 // supplier's fares (optionally one SooperFare source and/or one airline). The gateway stores the rules, applies them
-// to live searches and booking prices, and never sells below the supplier's cost; this page only shows and sends.
+// to live searches and booking prices (a negative rule takes its full amount off, even below cost); this page only shows and sends.
 
 const ANY = "any";
 const STATUS: Record<FlightSupplier["status"], { label: string; tone: "teal" | "navy" | "neutral" }> = {
@@ -128,7 +128,7 @@ export default function FlightPricingPage() {
       <div>
         <h1 className="flex items-center gap-2 font-display text-page-title font-bold text-foreground"><Plane aria-hidden="true" className="h-6 w-6 shrink-0 text-primary" /> Flight Pricing & Rules</h1>
         <p className="mt-1 text-body text-muted-foreground">
-          Add or take off an amount per passenger on a supplier's fares, for one airline or all. A price never goes below the supplier's cost.
+          Add or take off an amount per passenger on a supplier's fares, for one airline or all. Taking an amount off can sell below the supplier's price.
         </p>
       </div>
 

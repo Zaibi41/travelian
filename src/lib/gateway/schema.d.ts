@@ -6943,7 +6943,7 @@ export interface components {
             airline_code?: string | null;
             /**
              * Amount Minor
-             * @description Rs per passenger, in paisa (whole rupees): negative takes it off the selling price, positive adds it. Never below the supplier's cost.
+             * @description Rs per passenger, in paisa (whole rupees): negative takes it off the selling price (even below the supplier's cost), positive adds it.
              */
             amount_minor: number;
             /** Id */
@@ -6978,7 +6978,7 @@ export interface components {
             airline_code?: string | null;
             /**
              * Amount Minor
-             * @description Rs per passenger, in paisa (whole rupees): negative takes it off the selling price, positive adds it. Never below the supplier's cost.
+             * @description Rs per passenger, in paisa (whole rupees): negative takes it off the selling price (even below the supplier's cost), positive adds it.
              */
             amount_minor: number;
             /**
